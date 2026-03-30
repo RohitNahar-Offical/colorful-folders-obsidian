@@ -1,23 +1,45 @@
-# Colorful Folders v2.0.0
+# 🌈 Colorful Folders v3.0.0
 
-Easily organize your Obsidian vault with beautiful, automatically applied premium colors for every folder and subfolder. 
+Elevate your Obsidian experience with premium, automated folder aesthetics. Colorful Folders transforms your file explorer into a vibrant, organized, and high-performance workflow tool.
 
-## Features
-- **Monochromatic Depth Blending (New!)**: Choose whether subfolders should cycle through colors or maintain a uniform hue with their parent root folder.
-- **Custom Hex Palettes (New!)**: Use your own brand or theme colors with a custom, comma-separated list of Hex codes.
-- **Active File Road Glow (New!)**: Deeply understand your vault hierarchy with glowing path lines leading down to your currently active file.
-- **Outline Only Mode (New!)**: Prefer a minimalist look? Toggle background colors off and keep only the bright, high-visibility folder guide lines.
-- **Advanced Exclusion List (New!)**: Skip styling for utility folders like `attachments`, `templates`, or `.obsidian`.
-- **Preconfigured Themes**: Choose between Vibrant Rainbow & Muted Dark Mode color palettes.
-- **Root Styles**: Select between **Solid Vivid Color** (Default) or a **Translucent Glow**.
-- **Real-time Refresh**: Instantly updates when toggled or modified in settings.
+![Colorful Folders Preview](https://raw.githubusercontent.com/ROHIT-NAHAR/colorful-folders/main/preview.png)
 
-## Installation
+---
 
-### From Obsidian Community Plugins
-*(Pending Approval)* Once approved, browse for **Colorful Folders** in the Obsidian community plugins tab and install directly.
+## 🚀 Version 3.0.0 - The Pro Update
+
+Version 3.0.0 introduces structural intelligence and deep customization, moving beyond simple colors into a true vault management utility.
+
+### ✨ Key Pro Features
+*   **🖱️ Context Menu Overrides**: Right-click any folder to assigned a specific Hex color.
+*   **🔥 Activity Heatmap**: Folders change color naturally (Hot/Red to Cool/Lavender) based on how recently you modified the files inside them.
+*   **🏷️ Auto-Generate Emoji Icons**: Pattern-based emoji icons injection (Journal -> 📅, Images -> 🖼️, etc.).
+*   **🧊 Glassmorphism**: Premium iOS-style backdrop blur for folder backgrounds.
+*   **🌬️ Breathing Active Path**: Pulsing "breathing" animation on the active folder glow.
+*   **🏳️‍🌈 Rainbow Root Text**: Vivid horizontal text gradients for top-level folders.
+*   **🔦 Focus Mode**: Dims inactive root folders when you are focused on a specific active path.
+
+### 🎨 Core Aesthetics
+*   **Active File Pathway Glow**: Never lose track of your location with a glowing breadcrumb trail.
+*   **Monochromatic Depth Blending**: Choose whether subfolders cycle colors or inherit their parent's hue.
+*   **Custom Hex Palettes**: Use your own brand or theme colors.
+*   **Outline Only Mode**: Minimalist view with bright lines and no background tints.
+*   **Advanced Exclusion**: Keep utility folders (templates, attachments, .obsidian) standard.
+
+---
+
+## 🛠️ Installation
 
 ### Manual Installation
-1. Download the latest release (`main.js`, `manifest.json`, `versions.json`) from our GitHub releases page.
-2. Place them in your vault's `.obsidian/plugins/colorful-folders/` folder.
-3. In Obsidian settings, go to Community plugins, disable Safe Mode, and enable **Colorful Folders**.
+1.  Download `main.js`, `manifest.json`, and `versions.json` from the [Releases](https://github.com/ROHIT-NAHAR/colorful-folders/releases) page.
+2.  Move them into your vault's `.obsidian/plugins/colorful-folders/` directory.
+3.  Enable **Colorful Folders** in Obsidian's **Community plugins** settings.
+
+---
+
+## 📖 Complete Changelog
+See [VERSION_3_0_0.md](VERSION_3_0_0.md) for a detailed breakdown of all new features and technical refinements.
+
+---
+
+**Developed with ❤️ by [ROHIT-NAHAR](https://github.com/ROHIT-NAHAR)**

@@ -18,18 +18,18 @@ const PALETTES = {
         { rgb: "180, 190, 254", hex: "#b4befe" } 
     ],
     "Muted Dark Mode": [
-        { rgb: "186, 113, 132", hex: "#ba7184" }, // Dimmed Rose
-        { rgb: "148, 128, 179", hex: "#9480b3" }, // Dimmed Iris
-        { rgb: "194, 150, 91", hex: "#c2965b" },  // Dimmed Gold
-        { rgb: "96, 148, 160", hex: "#6094a0" },  // Dimmed Cyan
-        { rgb: "48, 102, 125", hex: "#30667d" },  // Dimmed Pine
-        { rgb: "191, 120, 117", hex: "#bf7875" }, // Dimmed Love
-        { rgb: "199, 138, 105", hex: "#c78a69" }, // Dimmed Peach
-        { rgb: "128, 171, 115", hex: "#80ab73" }, // Dimmed Sage
-        { rgb: "91, 159, 189", hex: "#5b9fbd" },  // Dimmed Sapphire
-        { rgb: "160, 126, 181", hex: "#a07eb5" }, // Dimmed Mauve
-        { rgb: "186, 156, 156", hex: "#ba9c9c" }, // Dimmed Flamingo
-        { rgb: "143, 151, 199", hex: "#8f97c7" }  // Dimmed Lavender
+        { rgb: "186, 113, 132", hex: "#ba7184" },
+        { rgb: "148, 128, 179", hex: "#9480b3" },
+        { rgb: "194, 150, 91", hex: "#c2965b" },  
+        { rgb: "96, 148, 160", hex: "#6094a0" },  
+        { rgb: "48, 102, 125", hex: "#30667d" },  
+        { rgb: "191, 120, 117", hex: "#bf7875" }, 
+        { rgb: "199, 138, 105", hex: "#c78a69" }, 
+        { rgb: "128, 171, 115", hex: "#80ab73" }, 
+        { rgb: "91, 159, 189", hex: "#5b9fbd" },  
+        { rgb: "160, 126, 181", hex: "#a07eb5" }, 
+        { rgb: "186, 156, 156", hex: "#ba9c9c" }, 
+        { rgb: "143, 151, 199", hex: "#8f97c7" }  
     ]
 };
 
@@ -40,11 +40,81 @@ const DEFAULT_SETTINGS = {
     exclusionList: "",
     outlineOnly: false,
     activeGlow: true,
-    rootStyle: "solid",
-    rootOpacity: 0.35,
+    rootStyle: "translucent",
+    rootOpacity: 0.5,
     subfolderOpacity: 0.35,
-    tintOpacity: 0.05
+    tintOpacity: 0.05,
+    customFolderColors: {},
+    glassmorphism: true,
+    focusMode: false,
+    autoIcons: true,
+    animateActivePath: true,
+    rainbowRootText: true,
+    rainbowRootBgTransparent: false
 };
+
+class ColorPickerModal extends obsidian.Modal {
+    constructor(app, plugin, folder) {
+        super(app);
+        this.plugin = plugin;
+        this.folder = folder;
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+        contentEl.empty();
+        
+        contentEl.createEl("h2", { text: `Folder Color: ${this.folder.name}` });
+
+        const currentHex = (this.plugin.settings.customFolderColors && this.plugin.settings.customFolderColors[this.folder.path]) || "#eb6f92";
+        let selectedHex = currentHex;
+
+        new obsidian.Setting(contentEl)
+            .setName("Custom Hex Color")
+            .setDesc("Pick a color or paste a 6-digit Hex code (e.g. #ff0000)")
+            .addColorPicker(picker => picker
+                .setValue(currentHex)
+                .onChange(value => {
+                    selectedHex = value;
+                })
+            )
+            .addText(text => text
+                .setPlaceholder("#eb6f92")
+                .setValue(currentHex)
+                .onChange(value => {
+                    selectedHex = value;
+                })
+            );
+
+        new obsidian.Setting(contentEl)
+            .addButton(btn => btn
+                .setButtonText("Save Color")
+                .setCta()
+                .onClick(async () => {
+                    if (!this.plugin.settings.customFolderColors) this.plugin.settings.customFolderColors = {};
+                    this.plugin.settings.customFolderColors[this.folder.path] = selectedHex;
+                    await this.plugin.saveSettings();
+                    new obsidian.Notice(`Updated color for ${this.folder.name}`);
+                    this.close();
+                })
+            )
+            .addButton(btn => btn
+                .setButtonText("Clear Override")
+                .onClick(async () => {
+                    if (this.plugin.settings.customFolderColors) {
+                        delete this.plugin.settings.customFolderColors[this.folder.path];
+                    }
+                    await this.plugin.saveSettings();
+                    new obsidian.Notice(`Cleared color for ${this.folder.name}`);
+                    this.close();
+                })
+            );
+    }
+
+    onClose() {
+        this.contentEl.empty();
+    }
+}
 
 class ColorfulFoldersPlugin extends obsidian.Plugin {
     parseCustomPalette(hexString) {
@@ -63,8 +133,11 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
     }
 
     async onload() {
-        console.log("Loading Colorful Folders Plugin");
+        console.log("Loading Colorful Folders Plugin v3");
         await this.loadSettings();
+
+        // Migrate older settings models gracefully
+        if (!this.settings.customFolderColors) this.settings.customFolderColors = {};
 
         this.styleEl = document.createElement('style');
         this.styleEl.id = 'colorful-folders-style';
@@ -75,6 +148,22 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
         this.app.workspace.onLayoutReady(() => {
             this.generateStyles();
         });
+
+        // Register custom color context menu
+        this.registerEvent(
+            this.app.workspace.on('file-menu', (menu, file) => {
+                if (file instanceof obsidian.TFolder) {
+                    menu.addItem((item) => {
+                        item
+                            .setTitle('Set Custom Folder Color')
+                            .setIcon('palette')
+                            .onClick(() => {
+                                new ColorPickerModal(this.app, this, file).open();
+                            });
+                    });
+                }
+            })
+        );
 
         // Regenerate on vault tree changes
         this.registerEvent(this.app.vault.on('create', () => this.generateStyles()));
@@ -95,7 +184,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
 
     async saveSettings() {
         await this.saveData(this.settings);
-        this.generateStyles(); // Re-render instantly when saved
+        this.generateStyles(); 
     }
 
     generateStyles() {
@@ -121,6 +210,55 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
         const tintOp = this.settings.tintOpacity;
         const outlineOnly = this.settings.outlineOnly;
 
+        let heatmapData = null;
+        if (this.settings.colorMode === "heatmap") {
+            // Build heatmap by scanning all files and assigning the latest mtime to parent folders
+            heatmapData = new Map();
+            const files = this.app.vault.getFiles();
+            for (const f of files) {
+                let p = f.parent;
+                while (p != null) {
+                    const currentMax = heatmapData.get(p.path) || 0;
+                    if (f.stat.mtime > currentMax) {
+                        heatmapData.set(p.path, f.stat.mtime);
+                    }
+                    p = p.parent;
+                }
+            }
+        }
+
+        const now = Date.now();
+        const getHeatmapColor = (mtime) => {
+            if (!mtime) return PALETTES["Vibrant Rainbow"][11]; // Ice cold default
+            const diffDays = (now - mtime) / (1000 * 60 * 60 * 24);
+            const palettes = PALETTES["Vibrant Rainbow"]; // Heatmap explicitly uses vibrant scale
+            if (diffDays <= 1) return palettes[0]; // Red/Pink
+            if (diffDays <= 3) return palettes[2]; // Orange/Yellow
+            if (diffDays <= 7) return palettes[7]; // Green
+            if (diffDays <= 15) return palettes[4]; // Blue
+            if (diffDays <= 30) return palettes[10]; // Pale pink
+            return palettes[11]; // Cool lavender
+        };
+
+        if (this.settings.animateActivePath) {
+            css += `
+                @keyframes cf-breathe-glow {
+                    0% { border-color: rgba(var(--cf-rgb), 0.4) !important; }
+                    50% { border-color: rgba(var(--cf-rgb), 1.0) !important; }
+                    100% { border-color: rgba(var(--cf-rgb), 0.4) !important; }
+                }
+            `;
+        }
+
+        if (this.settings.focusMode) {
+            css += `
+                body .workspace-leaf-content[data-type="file-explorer"]:has(.is-active) .nav-folder:not(:has(.is-active)):not(:hover) {
+                    opacity: 0.35;
+                    transition: opacity 0.4s ease;
+                }
+            `;
+        }
+
         const traverse = (folder, depth, rootIndex = 0, passedColor = null) => {
             const copyFolders = folder.children
                 .filter(c => c.children !== undefined)
@@ -136,7 +274,15 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                 }
                 
                 let color;
-                if (this.settings.colorMode === "monochromatic") {
+                // Check if custom override exists
+                if (this.settings.customFolderColors && this.settings.customFolderColors[child.path]) {
+                    const overrideHex = this.settings.customFolderColors[child.path];
+                    const customParsed = this.parseCustomPalette(overrideHex);
+                    color = customParsed ? customParsed[0] : currentPalette[(validIndex + depth + rootIndex) % currentPalette.length];
+                } else if (this.settings.colorMode === "heatmap") {
+                    const mtime = heatmapData.get(child.path) || 0;
+                    color = getHeatmapColor(mtime);
+                } else if (this.settings.colorMode === "monochromatic") {
                     color = depth === 0 ? currentPalette[validIndex % currentPalette.length] : passedColor;
                 } else {
                     color = currentPalette[(validIndex + depth + rootIndex) % currentPalette.length];
@@ -147,7 +293,10 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                 let bg, text;
                 
                 if (depth === 0) {
-                    if (rootBgStyle === "solid") {
+                    if (this.settings.rainbowRootText && this.settings.rainbowRootBgTransparent) {
+                        bg = "transparent";
+                        text = color.hex;
+                    } else if (rootBgStyle === "solid") {
                         bg = outlineOnly ? "transparent" : color.hex;
                         text = outlineOnly ? color.hex : "#191724"; 
                     } else {
@@ -161,26 +310,70 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
 
                 const bgTint = outlineOnly ? "transparent" : `rgba(${color.rgb}, ${tintOp})`;
                 
+                let textCss = `
+                    color: ${text} !important;
+                    font-weight: bold !important;
+                `;
+
+                if (this.settings.rainbowRootText && depth === 0) {
+                    const nextColor = currentPalette[(validIndex + 1) % currentPalette.length];
+                    textCss = `
+                        background-image: linear-gradient(90deg, ${color.hex}, ${nextColor.hex}) !important;
+                        background-clip: text !important;
+                        -webkit-background-clip: text !important;
+                        color: transparent !important;
+                        font-weight: 800 !important;
+                        filter: drop-shadow(0px 2px 3px rgba(0, 0, 0, 0.7));
+                        -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.4);
+                    `;
+                }
+
+                let autoIconContent = "";
+                if (this.settings.autoIcons) {
+                    const lName = child.name.toLowerCase();
+                    if (/journal|daily|log/.test(lName)) autoIconContent = `"📅 "`;
+                    else if (/project|work/.test(lName)) autoIconContent = `"🚀 "`;
+                    else if (/asset|attachment|image|media|file/.test(lName)) autoIconContent = `"🖼️ "`;
+                    else if (/archive|old/.test(lName)) autoIconContent = `"📦 "`;
+                    else if (/template/.test(lName)) autoIconContent = `"📄 "`;
+                    else if (/resource|reference|book/.test(lName)) autoIconContent = `"📚 "`;
+                    else if (/finance|money|budget/.test(lName)) autoIconContent = `"💰 "`;
+                    else if (/person|people|contact|meeting/.test(lName)) autoIconContent = `"👥 "`;
+                    else if (/idea|brain|thought|note|learn/.test(lName)) autoIconContent = `"💡 "`;
+                }
+
+                if (autoIconContent) {
+                    css += `
+                        body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
+                        body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
+                            content: ${autoIconContent};
+                        }
+                    `;
+                }
+
+                const glassCss = this.settings.glassmorphism ? `backdrop-filter: blur(8px) saturate(120%); -webkit-backdrop-filter: blur(8px) saturate(120%);` : '';
+
                 css += `
                     body .nav-folder-title[data-path="${safePath}"],
                     body .tree-item-self[data-path="${safePath}"] {
                         background-color: ${bg} !important;
                         border-radius: 6px !important;
                         margin-bottom: 2px !important; margin-top: 2px !important;
-                        transition: background-color 0.2s ease, opacity 0.2s ease, color 0.2s ease !important;
+                        ${glassCss}
+                        transition: background-color 0.2s ease, opacity 0.2s ease, filter 0.2s ease !important;
                     }
                     body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content,
                     body .tree-item-self[data-path="${safePath}"] .tree-item-inner {
-                        color: ${text} !important;
-                        font-weight: bold !important;
+                        ${textCss}
                     }
                     body .nav-folder-title[data-path="${safePath}"] svg,
                     body .tree-item-self[data-path="${safePath}"] svg {
-                        color: ${text} !important;
+                        color: ${this.settings.rainbowRootText && depth === 0 ? color.hex : text} !important;
                     }
                     body .nav-folder-title[data-path="${safePath}"]:hover,
                     body .tree-item-self[data-path="${safePath}"]:hover {
                         filter: brightness(1.2);
+                        ${this.settings.glassmorphism ? 'backdrop-filter: blur(12px) saturate(150%);' : ''}
                     }
                     /* Tint the opened folder's content area (children) */
                     body .nav-folder:has(> .nav-folder-title[data-path="${safePath}"]) > .nav-folder-children,
@@ -193,21 +386,24 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                         margin-left: 16px !important;
                         padding-left: 8px !important;
                         padding-bottom: 12px !important;
+                        ${glassCss}
                     }
                 `;
                 
                 if (this.settings.activeGlow) {
+                    const animationProp = this.settings.animateActivePath ? `animation: cf-breathe-glow 3s infinite ease-in-out;` : '';
                     css += `
                         /* Active Folder Trail Glow */
                         body .nav-folder:has(.is-active):has(> .nav-folder-title[data-path="${safePath}"]) > .nav-folder-children,
                         body .tree-item:has(.is-active):has(> .tree-item-self[data-path="${safePath}"]) > .tree-item-children {
                             border-left: 2px solid rgba(${color.rgb}, 1.0) !important;
                             border-bottom: 2px solid rgba(${color.rgb}, 1.0) !important;
-                            box-shadow: -2px 0px 10px rgba(${color.rgb}, 0.3);
+                            --cf-rgb: ${color.rgb};
+                            ${animationProp}
                         }
                         body .nav-folder:has(.is-active):has(> .nav-folder-title[data-path="${safePath}"]) > .nav-folder-title,
                         body .tree-item:has(.is-active):has(> .tree-item-self[data-path="${safePath}"]) > .tree-item-self {
-                            filter: brightness(1.3) drop-shadow(0px 0px 4px rgba(${color.rgb}, 0.4));
+                            filter: brightness(1.05);
                         }
                     `;
                 }
@@ -234,6 +430,29 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         containerEl.createEl('h2', {text: 'Colorful Folders Configuration'});
 
+        const tipEl = containerEl.createEl('div');
+        tipEl.style.backgroundColor = "var(--background-secondary-alt)";
+        tipEl.style.borderLeft = "4px solid var(--interactive-accent)";
+        tipEl.style.padding = "14px 18px";
+        tipEl.style.margin = "15px 0 25px 0";
+        tipEl.style.borderRadius = "4px";
+        tipEl.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)";
+
+        tipEl.innerHTML = `
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <span style="font-size: 1.6em; line-height: 1;">💡</span>
+                <div>
+                    <div style="margin: 0 0 4px 0; color: var(--text-normal); font-weight: 700; font-size: 1.05em;">Context Menu Colors</div>
+                    <div style="color: var(--text-muted); font-size: 0.95em; line-height: 1.4;">
+                        Right-click any folder in your vault and click <strong>"Set Custom Folder Color"</strong> to assign it a specific overriding hex color!
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // SECTION 1: CORE CONFIGURATION
+        containerEl.createEl('h3', {text: 'Core Configuration'});
+
         new obsidian.Setting(containerEl)
             .setName('Color Palette Theme')
             .setDesc('Choose the vibe. Select Custom to use your own colors below.')
@@ -259,51 +478,24 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 }));
 
         new obsidian.Setting(containerEl)
-            .setName('Color Blending Mode')
-            .setDesc('Cycle through colors at each depth, or keep folders to one Monochromatic shade.')
+            .setName('Color Generation Mode')
+            .setDesc('How colors are assigned to folders across your vault.')
             .addDropdown(drop => drop
                 .addOption('cycle', 'Rainbow Cycle')
                 .addOption('monochromatic', 'Monochromatic Depth')
+                .addOption('heatmap', 'Activity Heatmap (Hot = Modified recently)')
                 .setValue(this.plugin.settings.colorMode)
                 .onChange(async (value) => {
                     this.plugin.settings.colorMode = value;
                     await this.plugin.saveSettings();
                 }));
 
-        new obsidian.Setting(containerEl)
-            .setName('Outline Only Mode')
-            .setDesc('Removes background tinting and only keeps the bright connecting lines and text.')
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.outlineOnly)
-                .onChange(async (value) => {
-                    this.plugin.settings.outlineOnly = value;
-                    await this.plugin.saveSettings();
-                }));
+        // SECTION 2: VISUAL STYLES
+        containerEl.createEl('h3', {text: 'Visual Styles'});
 
         new obsidian.Setting(containerEl)
-            .setName('Active File Glow')
-            .setDesc('Brightens the folder path lines leading down to your currently open active document.')
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.activeGlow)
-                .onChange(async (value) => {
-                    this.plugin.settings.activeGlow = value;
-                    await this.plugin.saveSettings();
-                }));
-
-        new obsidian.Setting(containerEl)
-            .setName('Excluded Folders')
-            .setDesc('Comma-separated list of folder names to ignore (e.g. attachments, .obsidian)')
-            .addTextArea(text => text
-                .setPlaceholder('attachments, templates')
-                .setValue(this.plugin.settings.exclusionList)
-                .onChange(async (value) => {
-                    this.plugin.settings.exclusionList = value;
-                    await this.plugin.saveSettings();
-                }));
-
-        new obsidian.Setting(containerEl)
-            .setName('Root Folder Appearance')
-            .setDesc('Should top-level folders stand out vividly (Solid) or blend in gracefully (Translucent).')
+            .setName('Root Folder Fill Appearance')
+            .setDesc('Should top-level background blocks stand out vividly (Solid) or blend in gracefully (Translucent).')
             .addDropdown(drop => drop
                 .addOption('solid', 'Solid Vivid Color')
                 .addOption('translucent', 'Translucent Glow')
@@ -314,8 +506,105 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 }));
 
         new obsidian.Setting(containerEl)
+            .setName('Focus Mode (Dim Inactive Roots)')
+            .setDesc('Dims other top-level folders softly when you dive into a specific active document path.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.focusMode)
+                .onChange(async (value) => {
+                    this.plugin.settings.focusMode = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new obsidian.Setting(containerEl)
+            .setName('Glassmorphism Blur Effect')
+            .setDesc('Adds a premium iOS-style backdrop blur to folder backgrounds. Best with translucent Obsidian themes.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.glassmorphism)
+                .onChange(async (value) => {
+                    this.plugin.settings.glassmorphism = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new obsidian.Setting(containerEl)
+            .setName('Outline Only Mode')
+            .setDesc('Removes background tinting globally and only keeps the bright connecting folder lines and text colors.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.outlineOnly)
+                .onChange(async (value) => {
+                    this.plugin.settings.outlineOnly = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new obsidian.Setting(containerEl)
+            .setName('Auto-Generate Emoji Icons')
+            .setDesc('Natively injects emoji icons for common folder names like (Journal -> 📅, Images -> 🖼️).')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.autoIcons)
+                .onChange(async (value) => {
+                    this.plugin.settings.autoIcons = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        // SECTION 3: ACTIVE PATH & TYPOGRAPHY
+        containerEl.createEl('h3', {text: 'Active Path & Typography'});
+
+        new obsidian.Setting(containerEl)
+            .setName('Active File Glow')
+            .setDesc('Brightens the glowing folder path connecting lines leading down to your currently open active document.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.activeGlow)
+                .onChange(async (value) => {
+                    this.plugin.settings.activeGlow = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new obsidian.Setting(containerEl)
+            .setName('Animate Active Path Glow')
+            .setDesc('Adds a subtle pulsing "breathing" animation to the active folder path glow. (Requires Active File Glow to be On)')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.animateActivePath)
+                .onChange(async (value) => {
+                    this.plugin.settings.animateActivePath = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new obsidian.Setting(containerEl)
+            .setName('Rainbow Root Text')
+            .setDesc('Applies a vivid rainbow-text horizontal gradient to all top level folders.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.rainbowRootText)
+                .onChange(async (value) => {
+                    this.plugin.settings.rainbowRootText = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new obsidian.Setting(containerEl)
+            .setName('Rainbow Root Background Transparent')
+            .setDesc('If Rainbow Root Text is on, completely strips the background block so the Rainbow text floats freely against your vault base.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.rainbowRootBgTransparent)
+                .onChange(async (value) => {
+                    this.plugin.settings.rainbowRootBgTransparent = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        // SECTION 4: ADVANCED TUNING
+        containerEl.createEl('h3', {text: 'Advanced Tuning'});
+
+        new obsidian.Setting(containerEl)
+            .setName('Excluded Folders')
+            .setDesc('Comma-separated list of folder names to strictly ignore (e.g. attachments, .obsidian)')
+            .addTextArea(text => text
+                .setPlaceholder('attachments, templates')
+                .setValue(this.plugin.settings.exclusionList)
+                .onChange(async (value) => {
+                    this.plugin.settings.exclusionList = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new obsidian.Setting(containerEl)
             .setName('Root Folder Opacity')
-            .setDesc('Controls brightness if Root Folder is set to Translucent')
+            .setDesc('Controls brightness if Root Folder Fill Appearance is set to Translucent.')
             .addSlider(slider => slider
                 .setLimits(0.05, 0.5, 0.05)
                 .setValue(this.plugin.settings.rootOpacity)
@@ -327,7 +616,7 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         new obsidian.Setting(containerEl)
             .setName('Subfolder Opacity')
-            .setDesc('Opacity for nested subfolders to distinguish hierarchy.')
+            .setDesc('Opacity for nested subfolders to properly distinguish depth hierarchy.')
             .addSlider(slider => slider
                 .setLimits(0.05, 0.5, 0.05)
                 .setValue(this.plugin.settings.subfolderOpacity)
@@ -339,7 +628,7 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         new obsidian.Setting(containerEl)
             .setName('Opened Folder Backing Tint')
-            .setDesc('Controls how highly tinted the nested files space becomes when you open a directory.')
+            .setDesc('Controls how highly tinted the background content space becomes when you open a directory.')
             .addSlider(slider => slider
                 .setLimits(0.0, 0.2, 0.01)
                 .setValue(this.plugin.settings.tintOpacity)
