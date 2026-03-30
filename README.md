@@ -1,45 +1,63 @@
-# 🌈 Colorful Folders v3.0.0
+# 🌈 Colorful Folders for Obsidian
 
-Elevate your Obsidian experience with premium, automated folder aesthetics. Colorful Folders transforms your file explorer into a vibrant, organized, and high-performance workflow tool.
+**Transform your Obsidian file explorer from a dull list into a vibrant, organized, and high-performance visual dashboard.** 
 
-![Colorful Folders Preview](https://raw.githubusercontent.com/ROHIT-NAHAR/colorful-folders/main/preview.png)
+Colorful Folders automatically applies premium color palettes and structural intelligence to your vault, making navigation intuitive and your workspace beautiful.
 
 ---
 
-## 🚀 Version 3.0.0 - The Pro Update
+## ✨ What does it do?
 
-Version 3.0.0 introduces structural intelligence and deep customization, moving beyond simple colors into a true vault management utility.
+Obsidian's default file explorer can feel cluttered as your vault grows. **Colorful Folders** solves this by:
+1.  **Color-Coding Hierarchy**: Automatically assigns distinct, beautiful colors to your top-level and nested folders.
+2.  **Visual Wayfinding**: Uses glowing connector lines to create a clear "breadcrumb trail" to your active file.
+3.  **Smart Features**: Introduces "Activity Heatmaps" and "Focus Modes" that react to how you actually use your vault.
 
-### ✨ Key Pro Features
-*   **🖱️ Context Menu Overrides**: Right-click any folder to assigned a specific Hex color.
-*   **🔥 Activity Heatmap**: Folders change color naturally (Hot/Red to Cool/Lavender) based on how recently you modified the files inside them.
-*   **🏷️ Auto-Generate Emoji Icons**: Pattern-based emoji icons injection (Journal -> 📅, Images -> 🖼️, etc.).
-*   **🧊 Glassmorphism**: Premium iOS-style backdrop blur for folder backgrounds.
-*   **🌬️ Breathing Active Path**: Pulsing "breathing" animation on the active folder glow.
-*   **🏳️‍🌈 Rainbow Root Text**: Vivid horizontal text gradients for top-level folders.
-*   **🔦 Focus Mode**: Dims inactive root folders when you are focused on a specific active path.
+---
 
-### 🎨 Core Aesthetics
-*   **Active File Pathway Glow**: Never lose track of your location with a glowing breadcrumb trail.
-*   **Monochromatic Depth Blending**: Choose whether subfolders cycle colors or inherit their parent's hue.
-*   **Custom Hex Palettes**: Use your own brand or theme colors.
-*   **Outline Only Mode**: Minimalist view with bright lines and no background tints.
-*   **Advanced Exclusion**: Keep utility folders (templates, attachments, .obsidian) standard.
+## 🚀 Version 3.0.0 Pro Features
+
+### 🖱️ 1. Context Menu Overrides
+Total freedom. Right-click any folder and select **"Set Custom Folder Color"** to pick a specific Hex color. This override stays stuck to that folder no matter what global theme you use.
+
+### 🔥 2. Activity Heatmap Mode
+Folders change color based on **freshness**. Hot/Vibrant colors indicate files you've worked on in the last 24 hours, while cool lavenders mark your stalest archives. Never lose track of where you've been working.
+
+### 🏷️ 3. Auto-Generate Emoji Icons
+Say goodbye to manual renaming. Enable **Auto-Icons** to automatically inject emojis based on folder names:
+- `Journal` -> 📅 | `Images` -> 🖼️ | `Project` -> 🚀 | `Settings` -> ⚙️
+
+### 🧊 4. Glassmorphism & Focus Mode
+*   **Glassmorphism**: Adds a premium iOS-style backdrop blur to your folder backgrounds.
+*   **Focus Mode**: Softly dims all inactive top-level folders, helping you zero in on your current project path.
+
+### 🌬️ 5. Breathing Active Path
+Optional "breathing" animation that makes the glowing lines of your current path pulse softly, bringing your vault to life.
+
+---
+
+## 🎨 Core Customization
+- **Monochromatic Mode**: Force subfolders to inherit their parent's color for a strictly organized look.
+- **Outline Only Mode**: Minimalist? Remove background tints entirely and keep only the bright connecting lines and text.
+- **Custom Palettes**: Enter your own comma-separated list of Hex codes to use your own brand colors.
+- **Exclusion List**: Keep utility folders like `attachments` or `templates` looking standard.
 
 ---
 
 ## 🛠️ Installation
 
-### Manual Installation
-1.  Download `main.js`, `manifest.json`, and `versions.json` from the [Releases](https://github.com/ROHIT-NAHAR/colorful-folders/releases) page.
-2.  Move them into your vault's `.obsidian/plugins/colorful-folders/` directory.
-3.  Enable **Colorful Folders** in Obsidian's **Community plugins** settings.
+### 1. Manual Installation (Easiest)
+1.  Go to the [Latest Release](https://github.com/RohitNahar-Offical/colorful-folders-obsidian/releases/latest).
+2.  Download these 3 files: `main.js`, `manifest.json`, and `versions.json`.
+3.  Go to your vault's folder: `.obsidian/plugins/`.
+4.  Create a new folder named `colorful-folders` and paste the 3 files inside.
+5.  In Obsidian: **Settings > Community plugins**, click the "Refresh" icon, then enable **Colorful Folders**.
 
 ---
 
-## 📖 Complete Changelog
-See [VERSION_3_0_0.md](VERSION_3_0_0.md) for a detailed breakdown of all new features and technical refinements.
+## 💡 Pro Tip
+You can access all these settings by going to **Settings > Colorful Folders**. Look for the large "💡 Pro Tip" banner at the top of the settings page for more hidden tricks!
 
 ---
 
-**Developed with ❤️ by [ROHIT-NAHAR](https://github.com/ROHIT-NAHAR)**
+**Developed with ❤️ by [ROHIT-NAHAR](https://github.com/RohitNahar-Offical)**
