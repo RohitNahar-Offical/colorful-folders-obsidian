@@ -45,6 +45,8 @@ Optional "breathing" animation that makes the glowing lines of your current path
 ---
 
 ## 🛠️ Installation
+### From Obsidian Community Plugins
+(Pending Approval) Once approved, browse for Colorful Folders in the Obsidian community plugins tab and install directly.
 
 ### 1. Manual Installation (Easiest)
 1.  Go to the [Latest Release](https://github.com/RohitNahar-Offical/colorful-folders-obsidian/releases/latest).
