@@ -10,7 +10,29 @@ Obsidian's default file explorer can feel cluttered as your vault grows. **Color
 
 1.  **Color-Coding Hierarchy**: Automatically assigns distinct, beautiful colors to your top-level and nested folders.
 2.  **Visual Wayfinding**: Uses glowing connector lines to create a clear "breadcrumb trail" to your active file.
-3.  **Smart Features**: Introduces "Activity Heatmaps" and "Focus Modes" that react to how you actually use your vault.
+3.  **Cross-Platform Performance**: Built for zero-lag with a robust CSS engine that works identically on Windows, macOS, and Linux.
+
+---
+
+## 🚀 Version 3.5.8 - The "Polish & Purity" Update
+
+The latest version focus on professional-grade stability and luxurious UI refinements.
+
+### 🎨 1. Two Stunning New Color Palettes
+Expand your aesthetic with:
+- **Pastel Dreams**: Soft, relaxing, low-saturation hues for a clean minimalist look.
+- **Neon Cyberpunk**: High-contrast, saturated glows for a striking, vibrant vault.
+
+### ✨ 2. Subtle & Non-Distracting Animations
+The "Active Folder Glow" has been completely redesigned to be atmospheric rather than distracting. Choose between:
+- **Smooth Breathe**: Elegant, rhythmic pulse.
+- **Neon Flicker**: Authentic, subtle neon sign vibe.
+- **Color Shimmer**: A whisper-quiet color-shifting effect.
+- **Animation Duration Slider**: Control the speed of your vault's "heartbeat" from 0.5s to 10s.
+
+### 🌈 3. Smart Rainbow Logic
+- **Rainbow Root Text**: Now smarter. Manually override a folder's background without losing your gorgeous text gradient.
+- **Auto-Color Rainbow Files**: Files no longer just match their parent; they now cycle independently through your palette for a full rainbow effect.
 
 ---
 
@@ -32,30 +54,6 @@ Manage large vaults with ease using our new inheritance engine:
 
 ### 📋 4. Simple Preset System
 Create your own "Design Language". Save any combination of color, typography, and opacity as a **Preset** in the style modal and apply it to other items with one click.
-
----
-
-## 🚀 Version 3.0.0 Classic Features
-
-### 🖱️ 1. Context Menu Overrides
-Total freedom. Right-click any folder and select **"Set Custom Folder Color"** to pick a specific Hex color. This override stays stuck to that folder no matter what global theme you use.
-
-### 🔥 2. Activity Heatmap Mode
-Folders change color based on **freshness**. Hot/Vibrant colors indicate files you've worked on in the last 24 hours, while cool lavenders mark your stalest archives. Never lose track of where you've been working.
-
-### 🏷️ 3. Auto-Generate Emoji Icons
-Say goodbye to manual renaming. Enable **Auto-Icons** to automatically inject emojis based on folder names:
-* `Journal` -> 📅 
-* `Images` -> 🖼️ 
-* `Project` -> 🚀 
-* `Settings` -> ⚙️
-
-### 🧊 4. Glassmorphism & Focus Mode
-* **Glassmorphism**: Adds a premium iOS-style backdrop blur to your folder backgrounds.
-* **Focus Mode**: Softly dims all inactive top-level folders, helping you zero in on your current project path.
-
-### 🌬️ 5. Breathing Active Path
-Optional "breathing" animation that makes the glowing lines of your current path pulse softly, bringing your vault to life.
 
 ---
 
@@ -87,9 +85,9 @@ Using the **BRAT** (Beta Reviewer's Auto-update Tool) plugin is the fastest way 
 
 ### 2. Manual Installation
 1.  Go to the [Latest Release](https://github.com/RohitNahar-Offical/colorful-folders-obsidian/releases/latest).
-2.  Download these 3 files: `main.js`, `manifest.json`, and `styles.css`.
+2.  Download these 2 files: `main.js` and `manifest.json`.
 3.  Go to your vault's folder: `.obsidian/plugins/`.
-4.  Create a new folder named `colorful-folders` and paste the 3 files inside.
+4.  Create a new folder named `colorful-folders` and paste the files inside.
 5.  In Obsidian: **Settings > Community plugins**, click the **Refresh** icon, then enable **Colorful Folders**.
 
 ---
