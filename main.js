@@ -30,6 +30,34 @@ const PALETTES = {
         { rgb: "160, 126, 181", hex: "#a07eb5" }, 
         { rgb: "186, 156, 156", hex: "#ba9c9c" }, 
         { rgb: "143, 151, 199", hex: "#8f97c7" }  
+    ],
+    "Pastel Dreams": [
+        { rgb: "255, 179, 186", hex: "#ffb3ba" },
+        { rgb: "255, 223, 186", hex: "#ffdfba" },
+        { rgb: "255, 255, 186", hex: "#ffffba" },
+        { rgb: "186, 255, 201", hex: "#baffc9" },
+        { rgb: "186, 225, 255", hex: "#bae1ff" },
+        { rgb: "219, 186, 255", hex: "#dbbaff" },
+        { rgb: "255, 186, 219", hex: "#ffbadb" },
+        { rgb: "250, 218, 221", hex: "#fadadd" },
+        { rgb: "207, 252, 220", hex: "#cffcdc" },
+        { rgb: "204, 237, 255", hex: "#ccedff" },
+        { rgb: "240, 217, 255", hex: "#f0d9ff" },
+        { rgb: "255, 217, 236", hex: "#ffd9ec" }
+    ],
+    "Neon Cyberpunk": [
+        { rgb: "255, 0, 153", hex: "#ff0099" },
+        { rgb: "0, 255, 255", hex: "#00ffff" },
+        { rgb: "255, 255, 0", hex: "#ffff00" },
+        { rgb: "0, 255, 102", hex: "#00ff66" },
+        { rgb: "153, 0, 255", hex: "#9900ff" },
+        { rgb: "255, 102, 0", hex: "#ff6600" },
+        { rgb: "0, 153, 255", hex: "#0099ff" },
+        { rgb: "255, 0, 85", hex: "#ff0055" },
+        { rgb: "51, 255, 0", hex: "#33ff00" },
+        { rgb: "204, 0, 255", hex: "#cc00ff" },
+        { rgb: "255, 204, 0", hex: "#ffcc00" },
+        { rgb: "0, 255, 204", hex: "#00ffcc" }
     ]
 };
 
@@ -43,7 +71,7 @@ const DEFAULT_SETTINGS = {
     rootStyle: "translucent",
     rootOpacity: 0.5,
     subfolderOpacity: 0.35,
-    tintOpacity: 0.05,
+    tintOpacity: 0.12,
     customFolderColors: {},
     presets: {}, // Added for color-folders-files feature parity
     glassmorphism: true,
@@ -51,7 +79,8 @@ const DEFAULT_SETTINGS = {
     autoIcons: true,
     animateActivePath: true,
     rainbowRootText: true,
-    rainbowRootBgTransparent: false
+    rainbowRootBgTransparent: false,
+    autoColorFiles: true
 };
 
 class ColorPickerModal extends obsidian.Modal {
@@ -166,14 +195,14 @@ class ColorPickerModal extends obsidian.Modal {
 
         // 🌫️ OPACITY
         new obsidian.Setting(contentEl)
-            .setName("Opacity")
-            .setDesc("Transparency level for this item.")
+            .setName("Opacity (%)")
+            .setDesc("Transparency level for this item (0-100).")
             .addSlider(slider => slider
-                .setLimits(0.1, 1.0, 0.05)
-                .setValue(this.style.opacity || 1.0)
+                .setLimits(0.1, 100, 0.1)
+                .setValue((this.style.opacity !== undefined ? this.style.opacity : 1.0) * 100)
                 .setDynamicTooltip()
                 .onChange(value => {
-                    this.style.opacity = value;
+                    this.style.opacity = parseFloat((value / 100).toFixed(3));
                     updatePreview();
                 })
             );
@@ -439,20 +468,84 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
 
             let validIndex = 0;
 
-            // 1. Handle File Inheritance (Once per folder)
-            if (inheritedStyle && inheritedStyle.applyToFiles && passedColor) {
+            // 1. Handle File Inheritance / Auto-color Files
+            if (passedColor || this.settings.autoColorFiles) {
+                let fileIndex = 0;
                 for (const child of copyFiles) {
                     const safePath = child.path.replace(/'/g, "\\'" ).replace(/"/g, '\\"');
-                    const op = inheritedStyle.opacity !== undefined ? inheritedStyle.opacity : 1.0;
+                    let color;
+                    let fileStyle = this.getStyle(child.path);
+
+                    if (fileStyle) {
+                        const customParsed = this.parseCustomPalette(fileStyle.hex);
+                        color = customParsed ? customParsed[0] : { rgb: "255, 255, 255", hex: fileStyle.hex };
+                    } else if (inheritedStyle && inheritedStyle.applyToFiles && passedColor) {
+                        color = passedColor;
+                    } else if (this.settings.autoColorFiles) {
+                        if (passedColor) {
+                            color = passedColor; // Files inside a folder share the folder's exact color
+                        } else {
+                            color = currentPalette[(validIndex + fileIndex) % currentPalette.length]; // Root files cycle
+                        }
+                    } else {
+                        continue; // Skip if no styling logic applies
+                    }
+
+                    const activeStyle = fileStyle || (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle : null);
+                    // Standard files shouldn't be dimmed if they have a tint
+                    const op = activeStyle && activeStyle.opacity !== undefined ? activeStyle.opacity : 1.0;
+                    const text = activeStyle && activeStyle.textColor ? activeStyle.textColor : "#ffffff";
+                    const isBold = activeStyle && activeStyle.isBold;
+                    const isItalic = activeStyle && activeStyle.isItalic;
+
                     css += `
                         body .nav-file-title[data-path="${safePath}"],
                         body .tree-item-self[data-path="${safePath}"] {
-                            background-color: ${passedColor.hex} !important;
+                            background-color: rgba(${color.rgb}, 0.1) !important;
+                            border-left: 2px solid rgba(${color.rgb}, 0.4) !important;
                             opacity: ${op} !important;
-                            color: ${inheritedStyle.textColor || "#ffffff"} !important;
-                            font-weight: ${inheritedStyle.isBold ? 'bold' : 'normal'} !important;
-                            font-style: ${inheritedStyle.isItalic ? 'italic' : 'normal'} !important;
+                            color: ${text} !important;
+                            font-weight: ${isBold ? 'bold' : 'normal'} !important;
+                            font-style: ${isItalic ? 'italic' : 'normal'} !important;
                             border-radius: 4px !important;
+                        }
+                    `;
+                    fileIndex++;
+                }
+            }
+
+            // 2. Style current folder's children container (Tint + Line)
+            if (depth > 0 && passedColor) {
+                const safePath = folder.path.replace(/'/g, "\\'" ).replace(/"/g, '\\"');
+                // Ensure consistent tint opacity across all depths
+                const minOp = depth === 1 ? 0.12 : 0.05;
+                const finalTintOp = Math.max(this.settings.tintOpacity, minOp);
+                const bgTint = outlineOnly ? "transparent" : `rgba(${passedColor.rgb}, ${finalTintOp})`;
+                const glassCss = this.settings.glassmorphism ? `backdrop-filter: blur(8px) saturate(120%); -webkit-backdrop-filter: blur(8px) saturate(120%);` : '';
+
+                css += `
+                    body .nav-folder-title[data-path="${safePath}"] ~ .nav-folder-children,
+                    body .tree-item-self[data-path="${safePath}"] ~ .tree-item-children {
+                        background-color: ${bgTint} !important;
+                        border-left: 2px solid rgba(${passedColor.rgb}, 0.8) !important;
+                        border-bottom: 2px solid rgba(${passedColor.rgb}, 0.8) !important;
+                        border-radius: 4px !important;
+                        border-bottom-left-radius: 8px !important;
+                        margin-left: 0 !important;
+                        padding-left: 24px !important;
+                        padding-bottom: 12px !important;
+                    }
+                `;
+                
+                if (this.settings.activeGlow) {
+                    const animationProp = this.settings.animateActivePath ? `animation: cf-breathe-glow 3s infinite ease-in-out;` : '';
+                    css += `
+                        body .nav-folder:has(.is-active) > .nav-folder-title[data-path="${safePath}"] ~ .nav-folder-children,
+                        body .tree-item:has(.is-active) > .tree-item-self[data-path="${safePath}"] ~ .tree-item-children {
+                            border-left: 2px solid rgba(${passedColor.rgb}, 1.0) !important;
+                            border-bottom: 2px solid rgba(${passedColor.rgb}, 1.0) !important;
+                            --cf-rgb: ${passedColor.rgb};
+                            ${animationProp}
                         }
                     `;
                 }
@@ -495,17 +588,23 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                         bg = outlineOnly ? "transparent" : color.hex;
                         text = outlineOnly ? color.hex : "#191724"; 
                     } else {
-                        bg = outlineOnly ? "transparent" : (isCustom ? color.hex : `rgba(${color.rgb}, ${op})`);
+                        // Translucent mode for root folders
+                        // Ignore default opacity=1.0 from custom assignments so they actually become translucent
+                        let finalOp = rootOp; 
+                        if (isCustom && activeStyle.opacity !== undefined && activeStyle.opacity < 1.0) {
+                            finalOp = activeStyle.opacity;
+                        }
+                        bg = outlineOnly ? "transparent" : `rgba(${color.rgb}, ${finalOp})`;
                         text = color.hex; 
                     }
                 } else {
-                    bg = outlineOnly ? "transparent" : (isCustom ? color.hex : `rgba(${color.rgb}, ${op})`);
+                    bg = outlineOnly ? "transparent" : `rgba(${color.rgb}, ${op})`;
                     text = color.hex;
                 }
 
                 // Manual Text Override
                 if (isCustom) {
-                    text = activeStyle.textColor || "#ffffff"; // Default to white for custom backgrounds
+                    text = activeStyle.textColor || (rootBgStyle === "solid" && depth === 0 ? "#191724" : "#ffffff"); 
                 } else if (activeStyle && activeStyle.textColor) {
                     text = activeStyle.textColor;
                 }
@@ -522,7 +621,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                     font-style: ${isItalic ? 'italic' : 'normal'} !important;
                 `;
 
-                if (this.settings.rainbowRootText && depth === 0 && !activeStyle) {
+                if (this.settings.rainbowRootText && depth === 0 && (!activeStyle || !activeStyle.textColor)) {
                     const nextColor = currentPalette[(validIndex + 1) % currentPalette.length];
                     textCss = `
                         background-image: linear-gradient(90deg, ${color.hex}, ${nextColor.hex}) !important;
@@ -575,40 +674,20 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                         ${textCss}
                     }
                     body .nav-folder-title[data-path="${safePath}"] svg,
-                    body .tree-item-self[data-path="${safePath}"] svg {
-                        color: ${this.settings.rainbowRootText && depth === 0 ? color.hex : text} !important;
+                    body .tree-item-self[data-path="${safePath}"] svg,
+                    body .nav-folder-title[data-path="${safePath}"] .nav-folder-collapse-indicator svg {
+                        color: ${(depth === 0 && rootBgStyle === 'solid' && !outlineOnly) ? text : color.hex} !important;
+                        opacity: 1 !important;
                     }
                     body .nav-folder-title[data-path="${safePath}"]:hover,
                     body .tree-item-self[data-path="${safePath}"]:hover {
                         filter: brightness(1.2);
                         ${this.settings.glassmorphism ? 'backdrop-filter: blur(12px) saturate(150%);' : ''}
                     }
-                    /* Tint the opened folder's content area (children) */
-                    body .nav-folder:has(> .nav-folder-title[data-path="${safePath}"]) > .nav-folder-children,
-                    body .tree-item:has(> .tree-item-self[data-path="${safePath}"]) > .tree-item-children {
-                        background-color: ${bgTint} !important;
-                        border-left: 2px solid rgba(${color.rgb}, 0.8) !important;
-                        border-bottom: 2px solid rgba(${color.rgb}, 0.8) !important;
-                        border-radius: 4px !important;
-                        border-bottom-left-radius: 8px !important;
-                        margin-left: 16px !important;
-                        padding-left: 8px !important;
-                        padding-bottom: 12px !important;
-                        ${glassCss}
-                    }
                 `;
                 
                 if (this.settings.activeGlow) {
-                    const animationProp = this.settings.animateActivePath ? `animation: cf-breathe-glow 3s infinite ease-in-out;` : '';
                     css += `
-                        /* Active Folder Trail Glow */
-                        body .nav-folder:has(.is-active):has(> .nav-folder-title[data-path="${safePath}"]) > .nav-folder-children,
-                        body .tree-item:has(.is-active):has(> .tree-item-self[data-path="${safePath}"]) > .tree-item-children {
-                            border-left: 2px solid rgba(${color.rgb}, 1.0) !important;
-                            border-bottom: 2px solid rgba(${color.rgb}, 1.0) !important;
-                            --cf-rgb: ${color.rgb};
-                            ${animationProp}
-                        }
                         body .nav-folder:has(.is-active):has(> .nav-folder-title[data-path="${safePath}"]) > .nav-folder-title,
                         body .tree-item:has(.is-active):has(> .tree-item-self[data-path="${safePath}"]) > .tree-item-self {
                             filter: brightness(1.05);
@@ -693,6 +772,8 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .addDropdown(drop => drop
                 .addOption('Vibrant Rainbow', 'Vibrant Rainbow')
                 .addOption('Muted Dark Mode', 'Muted Dark Mode')
+                .addOption('Pastel Dreams', 'Pastel Dreams')
+                .addOption('Neon Cyberpunk', 'Neon Cyberpunk')
                 .addOption('Custom', 'Custom Palette')
                 .setValue(this.plugin.settings.palette)
                 .onChange(async (value) => {
@@ -738,6 +819,7 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     this.plugin.settings.rootStyle = value;
                     await this.plugin.saveSettings();
                 }));
+
 
         new obsidian.Setting(containerEl)
             .setName('Focus Mode (Dim Inactive Roots)')
@@ -822,6 +904,16 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
+        new obsidian.Setting(containerEl)
+            .setName('Auto-color Files')
+            .setDesc('Automatically gives a subtle rainbow tint and color to all files. (No manual setup required!)')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.autoColorFiles)
+                .onChange(async (value) => {
+                    this.plugin.settings.autoColorFiles = value;
+                    await this.plugin.saveSettings();
+                }));
+
         // SECTION 4: ADVANCED TUNING
         containerEl.createEl('h3', {text: 'Advanced Tuning'});
 
@@ -837,38 +929,38 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 }));
 
         new obsidian.Setting(containerEl)
-            .setName('Root Folder Opacity')
-            .setDesc('Controls brightness if Root Folder Fill Appearance is set to Translucent.')
+            .setName('Root Folder Opacity (%)')
+            .setDesc('Controls brightness if Root Folder Fill Appearance is set to Translucent (e.g. 50%).')
             .addSlider(slider => slider
-                .setLimits(0.05, 0.5, 0.05)
-                .setValue(this.plugin.settings.rootOpacity)
+                .setLimits(1, 100, 0.1)
+                .setValue(this.plugin.settings.rootOpacity * 100)
                 .setDynamicTooltip()
                 .onChange(async (value) => {
-                    this.plugin.settings.rootOpacity = value;
+                    this.plugin.settings.rootOpacity = parseFloat((value / 100).toFixed(3));
                     await this.plugin.saveSettings();
                 }));
 
         new obsidian.Setting(containerEl)
-            .setName('Subfolder Opacity')
-            .setDesc('Opacity for nested subfolders to properly distinguish depth hierarchy.')
+            .setName('Subfolder Opacity (%)')
+            .setDesc('Opacity for nested subfolders to properly distinguish depth hierarchy (e.g. 35%).')
             .addSlider(slider => slider
-                .setLimits(0.05, 0.5, 0.05)
-                .setValue(this.plugin.settings.subfolderOpacity)
+                .setLimits(1, 100, 0.1)
+                .setValue(this.plugin.settings.subfolderOpacity * 100)
                 .setDynamicTooltip()
                 .onChange(async (value) => {
-                    this.plugin.settings.subfolderOpacity = value;
+                    this.plugin.settings.subfolderOpacity = parseFloat((value / 100).toFixed(3));
                     await this.plugin.saveSettings();
                 }));
 
         new obsidian.Setting(containerEl)
-            .setName('Opened Folder Backing Tint')
-            .setDesc('Controls how highly tinted the background content space becomes when you open a directory.')
+            .setName('Opened Folder Backing Tint (%)')
+            .setDesc('Controls how highly tinted the background content space becomes when you open a directory (e.g. 5.1%).')
             .addSlider(slider => slider
-                .setLimits(0.0, 0.2, 0.01)
-                .setValue(this.plugin.settings.tintOpacity)
+                .setLimits(0, 50, 0.1)
+                .setValue(this.plugin.settings.tintOpacity * 100)
                 .setDynamicTooltip()
                 .onChange(async (value) => {
-                    this.plugin.settings.tintOpacity = value;
+                    this.plugin.settings.tintOpacity = parseFloat((value / 100).toFixed(3));
                     await this.plugin.saveSettings();
                 }));
     }
