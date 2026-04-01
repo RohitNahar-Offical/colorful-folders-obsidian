@@ -80,7 +80,9 @@ const DEFAULT_SETTINGS = {
     animateActivePath: true,
     rainbowRootText: true,
     rainbowRootBgTransparent: false,
-    autoColorFiles: true
+    autoColorFiles: true,
+    activeAnimationStyle: "breathe",
+    activeAnimationDuration: 3.0
 };
 
 class ColorPickerModal extends obsidian.Modal {
@@ -312,8 +314,11 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
         if (!hexString) return null;
         const hexes = hexString.split(',').map(s => s.trim().toLowerCase());
         const result = [];
-        for (const hex of hexes) {
-            if (/^#[0-9a-f]{6}$/.test(hex)) {
+        for (let hex of hexes) {
+            if (/^#[0-9a-f]{3}$/i.test(hex)) {
+                hex = '#' + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3];
+            }
+            if (/^#[0-9a-f]{6}$/i.test(hex)) {
                 const r = parseInt(hex.slice(1, 3), 16);
                 const g = parseInt(hex.slice(3, 5), 16);
                 const b = parseInt(hex.slice(5, 7), 16);
@@ -441,9 +446,18 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
         if (this.settings.animateActivePath) {
             css += `
                 @keyframes cf-breathe-glow {
-                    0% { border-color: rgba(var(--cf-rgb), 0.4) !important; }
-                    50% { border-color: rgba(var(--cf-rgb), 1.0) !important; }
-                    100% { border-color: rgba(var(--cf-rgb), 0.4) !important; }
+                    0% { border-color: rgba(var(--cf-rgb), 0.6) !important; box-shadow: -1px 1px 4px rgba(var(--cf-rgb), 0.05) !important; filter: brightness(1.0); }
+                    50% { border-color: rgba(var(--cf-rgb), 0.9) !important; box-shadow: -1px 1px 8px rgba(var(--cf-rgb), 0.15) !important; filter: brightness(1.05); }
+                    100% { border-color: rgba(var(--cf-rgb), 0.6) !important; box-shadow: -1px 1px 4px rgba(var(--cf-rgb), 0.05) !important; filter: brightness(1.0); }
+                }
+                @keyframes cf-neon-flicker {
+                    0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { border-color: rgba(var(--cf-rgb), 0.8) !important; box-shadow: -1px 1px 5px rgba(var(--cf-rgb), 0.15) !important; }
+                    20%, 24%, 55% { border-color: rgba(var(--cf-rgb), 0.5) !important; box-shadow: none !important; }
+                }
+                @keyframes cf-shimmer-glow {
+                    0% { filter: brightness(1.0) saturate(100%); }
+                    50% { filter: brightness(1.08) saturate(110%); }
+                    100% { filter: brightness(1.0) saturate(100%); }
                 }
             `;
         }
@@ -472,7 +486,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
             if (passedColor || this.settings.autoColorFiles) {
                 let fileIndex = 0;
                 for (const child of copyFiles) {
-                    const safePath = child.path.replace(/'/g, "\\'" ).replace(/"/g, '\\"');
+                    const safePath = child.path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
                     let color;
                     let fileStyle = this.getStyle(child.path);
 
@@ -482,11 +496,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                     } else if (inheritedStyle && inheritedStyle.applyToFiles && passedColor) {
                         color = passedColor;
                     } else if (this.settings.autoColorFiles) {
-                        if (passedColor) {
-                            color = passedColor; // Files inside a folder share the folder's exact color
-                        } else {
-                            color = currentPalette[(validIndex + fileIndex) % currentPalette.length]; // Root files cycle
-                        }
+                        color = currentPalette[(validIndex + fileIndex) % currentPalette.length]; 
                     } else {
                         continue; // Skip if no styling logic applies
                     }
@@ -516,7 +526,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
 
             // 2. Style current folder's children container (Tint + Line)
             if (depth > 0 && passedColor) {
-                const safePath = folder.path.replace(/'/g, "\\'" ).replace(/"/g, '\\"');
+                const safePath = folder.path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
                 // Ensure consistent tint opacity across all depths
                 const minOp = depth === 1 ? 0.12 : 0.05;
                 const finalTintOp = Math.max(this.settings.tintOpacity, minOp);
@@ -538,7 +548,15 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                 `;
                 
                 if (this.settings.activeGlow) {
-                    const animationProp = this.settings.animateActivePath ? `animation: cf-breathe-glow 3s infinite ease-in-out;` : '';
+                    let animationProp = '';
+                    if (this.settings.animateActivePath) {
+                        const style = this.settings.activeAnimationStyle || "breathe";
+                        const dur = this.settings.activeAnimationDuration || 3.0;
+                        if (style === "breathe") animationProp = `animation: cf-breathe-glow ${dur}s infinite ease-in-out;`;
+                        else if (style === "neon") animationProp = `animation: cf-neon-flicker ${dur}s infinite alternate;`;
+                        else if (style === "shimmer") animationProp = `animation: cf-shimmer-glow ${dur}s infinite linear;`;
+                    }
+                    
                     css += `
                         body .nav-folder:has(.is-active) > .nav-folder-title[data-path="${safePath}"] ~ .nav-folder-children,
                         body .tree-item:has(.is-active) > .tree-item-self[data-path="${safePath}"] ~ .tree-item-children {
@@ -574,7 +592,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                     color = currentPalette[(validIndex + depth + rootIndex) % currentPalette.length];
                 }
                 
-                const safePath = child.path.replace(/'/g, "\\'" ).replace(/"/g, '\\"');
+                const safePath = child.path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
                 
                 let bg, text;
                 const isCustom = !!activeStyle;
@@ -604,7 +622,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
 
                 // Manual Text Override
                 if (isCustom) {
-                    text = activeStyle.textColor || (rootBgStyle === "solid" && depth === 0 ? "#191724" : "#ffffff"); 
+                    text = activeStyle.textColor || (rootBgStyle === "solid" && depth === 0 ? "#191724" : color.hex); 
                 } else if (activeStyle && activeStyle.textColor) {
                     text = activeStyle.textColor;
                 }
@@ -687,10 +705,23 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                 `;
                 
                 if (this.settings.activeGlow) {
+                    let titleAnim = '';
+                    if (this.settings.animateActivePath) {
+                        const style = this.settings.activeAnimationStyle || "breathe";
+                        const dur = this.settings.activeAnimationDuration || 3.0;
+                        if (style === "breathe") titleAnim = `animation: cf-breathe-glow ${dur}s infinite ease-in-out;`;
+                        else if (style === "neon") titleAnim = `animation: cf-neon-flicker ${dur}s infinite alternate;`;
+                        else if (style === "shimmer") titleAnim = `animation: cf-shimmer-glow ${dur}s infinite linear;`;
+                    }
+
                     css += `
-                        body .nav-folder:has(.is-active):has(> .nav-folder-title[data-path="${safePath}"]) > .nav-folder-title,
-                        body .tree-item:has(.is-active):has(> .tree-item-self[data-path="${safePath}"]) > .tree-item-self {
+                        body .nav-folder:has(.is-active) > .nav-folder-title[data-path="${safePath}"],
+                        body .tree-item:has(.is-active) > .tree-item-self[data-path="${safePath}"] {
                             filter: brightness(1.05);
+                            box-shadow: 0 0 8px rgba(${color.rgb}, 0.1) !important;
+                            z-index: 1;
+                            --cf-rgb: ${passedColor ? passedColor.rgb : color.rgb};
+                            ${titleAnim}
                         }
                     `;
                 }
@@ -710,15 +741,15 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                 const s = typeof style === 'string' ? { hex: style } : style;
                 const customParsed = this.parseCustomPalette(s.hex);
                 const color = customParsed ? customParsed[0] : { rgb: "255, 255, 255", hex: s.hex };
-                const safePath = path.replace(/'/g, "\\'" ).replace(/"/g, '\\"');
+                const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
                 const op = s.opacity !== undefined ? s.opacity : 1.0;
                 
                 css += `
                     body .nav-file-title[data-path="${safePath}"],
                     body .tree-item-self[data-path="${safePath}"] {
-                        background-color: ${s.hex} !important;
-                        opacity: ${op} !important;
-                        color: ${s.textColor || "#ffffff"} !important;
+                        background-color: rgba(${color.rgb}, ${op}) !important;
+                        opacity: 1.0 !important;
+                        color: ${s.textColor || color.hex} !important;
                         font-weight: ${s.isBold ? 'bold' : 'normal'} !important;
                         font-style: ${s.isItalic ? 'italic' : 'normal'} !important;
                         border-radius: 4px !important;
@@ -876,13 +907,41 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         new obsidian.Setting(containerEl)
             .setName('Animate Active Path Glow')
-            .setDesc('Adds a subtle pulsing "breathing" animation to the active folder path glow. (Requires Active File Glow to be On)')
+            .setDesc('Turns on animation for the glowing folder path.')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.animateActivePath)
                 .onChange(async (value) => {
                     this.plugin.settings.animateActivePath = value;
                     await this.plugin.saveSettings();
+                    this.display(); // Refresh to show/hide the style dropdown
                 }));
+
+        if (this.plugin.settings.animateActivePath) {
+            new obsidian.Setting(containerEl)
+                .setName('Animation Style')
+                .setDesc('Choose the visual style for the active path animation.')
+                .addDropdown(drop => drop
+                    .addOption('breathe', 'Smooth Breathe')
+                    .addOption('neon', 'Neon Flicker')
+                    .addOption('shimmer', 'Color Shimmer')
+                    .setValue(this.plugin.settings.activeAnimationStyle || "breathe")
+                    .onChange(async (value) => {
+                        this.plugin.settings.activeAnimationStyle = value;
+                        await this.plugin.saveSettings();
+                    }));
+
+            new obsidian.Setting(containerEl)
+                .setName('Animation Duration (s)')
+                .setDesc('Controls how fast the animation plays (e.g. 3.0 seconds). Lower is faster.')
+                .addSlider(slider => slider
+                    .setLimits(0.5, 10.0, 0.5)
+                    .setValue(this.plugin.settings.activeAnimationDuration !== undefined ? this.plugin.settings.activeAnimationDuration : 3.0)
+                    .setDynamicTooltip()
+                    .onChange(async (value) => {
+                        this.plugin.settings.activeAnimationDuration = value;
+                        await this.plugin.saveSettings();
+                    }));
+        }
 
         new obsidian.Setting(containerEl)
             .setName('Rainbow Root Text')
