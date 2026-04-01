@@ -14,7 +14,28 @@ Obsidian's default file explorer can feel cluttered as your vault grows. **Color
 
 ---
 
-## 🚀 Version 3.0.0 Pro Features
+## 🚀 Version 3.5.0 Pro Features
+
+### 📁 1. Individual File Styling
+The power of Colorful Folders is no longer limited to folders. You can now right-click any **File** and select **"Set Custom File Style"**. 
+
+### 🅱️ 2. Advanced Typography
+Take full control of your folder and file titles with new typography controls:
+- **Bold & Italic Toggles**: Make key projects or files stand out instantly.
+- **Custom Text Color**: Override the default theme colors for specific items.
+- **Improved Opacity**: Highly refined opacity controls that dim both background and text for a premium, consistent look.
+
+### 🔄 3. Smart Inheritance
+Manage large vaults with ease using our new inheritance engine:
+- **Apply to Subfolders**: Force a specific style down the entire folder tree.
+- **Apply to Files**: Instantly style all files within a folder to match its aesthetic.
+
+### 📋 4. Simple Preset System
+Create your own "Design Language". Save any combination of color, typography, and opacity as a **Preset** in the style modal and apply it to other items with one click.
+
+---
+
+## 🚀 Version 3.0.0 Classic Features
 
 ### 🖱️ 1. Context Menu Overrides
 Total freedom. Right-click any folder and select **"Set Custom Folder Color"** to pick a specific Hex color. This override stays stuck to that folder no matter what global theme you use.
