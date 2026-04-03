@@ -669,7 +669,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
         // Pre-cached common SVG markers
         const CF_FOLDER_ICON = encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#888888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><path d="M2 10h20"/></svg>');
         const CF_FILE_ICON = encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#888888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>');
-        const CF_FILE_TEXT_ICON = encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>');
+        const CF_FILE_TEXT_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; opacity: 0.85; vertical-align: middle;"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`;
         const CF_FOLDER_CLOSED = encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><path d="M2 10h20"/></svg>');
         const CF_FOLDER_OPEN = encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg>');
 
@@ -847,7 +847,11 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                             obsidian.setIcon(tempEl, autoLucideId);
                             const svgEl = tempEl.querySelector('svg');
                             if (svgEl) {
-                                svgEl.removeAttribute('width'); svgEl.removeAttribute('height');
+                                svgEl.style.width = "17px";
+                                svgEl.style.height = "17px";
+                                svgEl.style.marginRight = "6px";
+                                svgEl.style.opacity = "0.85";
+                                svgEl.style.verticalAlign = "middle";
                                 svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
                                 svgStr = encodeURIComponent(svgEl.outerHTML);
                                 this.iconCache.set(autoLucideId, svgStr);
@@ -897,7 +901,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                                 width: 17px !important;
                                 height: 17px !important;
                                 background-color: ${color.hex} !important;
-                                -webkit-mask-image: url('data:image/svg+xml;utf8,${CF_FILE_TEXT_ICON}') !important;
+                                -webkit-mask-image: url('data:image/svg+xml;utf8,${encodeURIComponent(CF_FILE_TEXT_ICON)}') !important;
                                 -webkit-mask-repeat: no-repeat !important;
                                 -webkit-mask-position: center !important;
                                 -webkit-mask-size: contain !important;
@@ -1364,7 +1368,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                             width: 17px !important;
                             height: 17px !important;
                             background-color: ${s.textColor || color.hex} !important;
-                            -webkit-mask-image: url('data:image/svg+xml;utf8,${CF_FILE_TEXT_ICON}') !important;
+                            -webkit-mask-image: url('data:image/svg+xml;utf8,${encodeURIComponent(CF_FILE_TEXT_ICON)}') !important;
                             -webkit-mask-repeat: no-repeat !important;
                             -webkit-mask-position: center !important;
                             -webkit-mask-size: contain !important;
