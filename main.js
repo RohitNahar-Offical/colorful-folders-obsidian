@@ -1220,14 +1220,13 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
 
                 if (this.settings.showItemCounters) {
                     const counts = countItems(child);
-                    // Official Lucide Folders (plural) high-fidelity SVG paths
+                    // Open Folder Lucide icon for maximum clarity at small scales
                     const totalWidth = 80;
                     const combinedSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="20" viewBox="0 0 ${totalWidth} 20">
-                        <g stroke="${color.hex}" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(0, 3) scale(0.65)">
-                            <path d="M20 17H4c-1.1 0-2-.9-2-2V9c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H20c1.1 0 2 .9 2 2v4c0 1.1-.9 2-2 2Z"/>
-                            <path d="M18 17V5c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12a2 2 0 0 0 2 2h1"/>
+                        <g stroke="${color.hex}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(0, 3) scale(0.65)">
+                            <path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/>
                         </g>
-                        <text x="18" y="15" fill="${color.hex}" font-family="var(--font-interface), sans-serif" font-size="11" font-weight="500">${counts.folders}</text>
+                        <text x="21" y="15" fill="${color.hex}" font-family="var(--font-interface), sans-serif" font-size="11" font-weight="500">${counts.folders}</text>
                         <g stroke="${color.hex}" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(42, 3) scale(0.65)">
                             <path d="M15.5 2H8.6c-.4 0-.8.2-1.1.5-.3.3-.5.7-.5 1.1v12.8c0 .4.2.8.5 1.1.3.3.7.5 1.1.5h9.8c.4 0 .8-.2 1.1-.5.3-.3.5-.7.5-1.1V7.5L15.5 2z"/>
                             <path d="M15 2v5h5"/>
