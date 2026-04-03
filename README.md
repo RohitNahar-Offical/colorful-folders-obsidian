@@ -14,14 +14,16 @@ Obsidian's default file explorer can feel cluttered as your vault grows. **Color
 
 ---
 
-## 🚀 Version 4.0.1 - The Reliability & Consistency Patch
-Version 4.0.1 is a critical maintenance release focusing on codebase stability, resolving recursive logic errors, and perfecting the visual inheritance model for files.
+## 🚀 Version 4.0.2 - Optimized Factory Defaults
+Version 4.0.2 hard-codes the user's preferred global configuration for all new installations, while keeping personal data private.
 
-- **Critical Stability**: Fixed multiple `ReferenceError` bugs to ensure smooth plugin initialization.
-- **Color Inheritance**: File icons now correctly inherit parent folder colors even when "Auto-color Files" is OFF.
-- **Improved Minimalism**: Neutralized file aesthetics for a cleaner look when auto-coloring is disabled.
+- **Global Baseline**: Hand-curated defaults for palette, opacity, and animations.
+- **Privacy Mode**: Custom folder styles and personal presets were excluded from the source code.
+- **Improved Performance**: Optimized settings initialization for a faster out-of-the-box experience.
 
 ---
+
+## 🚀 Version 4.0.1 - The Reliability & Consistency Patch
 
 ## 🚀 Version 4.0.0 - The Visual Intelligence & Performance Overhaul
 

@@ -62,30 +62,31 @@ const PALETTES = {
 };
 
 const DEFAULT_SETTINGS = {
-    palette: "Vibrant Rainbow",
+    palette: "Pastel Dreams",
     customPalette: "",
     colorMode: "cycle",
     exclusionList: "",
     outlineOnly: false,
     activeGlow: true,
     rootStyle: "translucent",
-    rootOpacity: 0.5,
-    subfolderOpacity: 0.35,
-    tintOpacity: 0.12,
+    rootOpacity: 0.548,
+    subfolderOpacity: 0.201,
+    tintOpacity: 0.028,
     customFolderColors: {},
     presets: {}, // Added for color-folders-files feature parity
-    glassmorphism: true,
+    glassmorphism: false,
     focusMode: false,
     autoIcons: true,
     autoIconVariety: true,
-    wideAutoIcons: false,
-    animateActivePath: true,
+    wideAutoIcons: true,
+    animateActivePath: false,
     rainbowRootText: true,
     rainbowRootBgTransparent: false,
-    autoColorFiles: true,
-    activeAnimationStyle: "breathe",
-    activeAnimationDuration: 3.0,
-    showItemCounters: true
+    autoColorFiles: false,
+    activeAnimationStyle: "shimmer",
+    activeAnimationDuration: 4,
+    showItemCounters: true,
+    rootTintOpacity: 0.06
 };
 
 class ColorPickerModal extends obsidian.Modal {
@@ -806,7 +807,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
 
                     const shouldColorFile = fileStyle || (inheritedStyle && inheritedStyle.applyToFiles) || this.settings.autoColorFiles;
                     const activeStyle = fileStyle || (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle : null);
-                    
+
                     // Standard files shouldn't be dimmed if they have a tint
                     const op = activeStyle && activeStyle.opacity !== undefined ? activeStyle.opacity : 1.0;
                     const text = activeStyle && activeStyle.textColor ? activeStyle.textColor : (shouldColorFile ? "#ffffff" : "var(--text-normal)");
@@ -1243,7 +1244,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                         </g>
                         <text x="60" y="15" fill="${color.hex}" font-family="var(--font-interface), sans-serif" font-size="11" font-weight="500">${counts.files}</text>
                     </svg>`;
-                    
+
                     const combinedIconUrl = `url('data:image/svg+xml;base64,${btoa(combinedSvg)}')`;
 
                     css += `
@@ -1366,7 +1367,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                     const shouldColor = this.settings.autoColorFiles || s;
                     const iconOpacity = shouldColor ? 0.9 : 0.5;
                     const iconColor = shouldColor ? (s.textColor || color.hex) : 'var(--text-muted)';
-                    
+
                     css += `
                         body .nav-file-title[data-path="${safePath}"] .nav-file-title-content::before,
                         body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before,
@@ -1528,7 +1529,7 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.autoIcons = value;
                     await this.plugin.saveSettings();
-                    this.display(); 
+                    this.display();
                 }));
 
         if (this.plugin.settings.autoIcons) {
@@ -1598,7 +1599,7 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     .addOption('breathe', 'Smooth Breathe')
                     .addOption('neon', 'Neon Flicker')
                     .addOption('shimmer', 'Color Shimmer')
-                    .setValue(this.plugin.settings.activeAnimationStyle || "breathe")
+                    .setValue(this.plugin.settings.activeAnimationStyle || "shimmer")
                     .onChange(async (value) => {
                         this.plugin.settings.activeAnimationStyle = value;
                         await this.plugin.saveSettings();
@@ -1609,7 +1610,7 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .setDesc('Controls how fast the animation plays (e.g. 3.0 seconds). Lower is faster.')
                 .addSlider(slider => slider
                     .setLimits(0.5, 10.0, 0.5)
-                    .setValue(this.plugin.settings.activeAnimationDuration !== undefined ? this.plugin.settings.activeAnimationDuration : 3.0)
+                    .setValue(this.plugin.settings.activeAnimationDuration !== undefined ? this.plugin.settings.activeAnimationDuration : 4)
                     .setDynamicTooltip()
                     .onChange(async (value) => {
                         this.plugin.settings.activeAnimationDuration = value;
