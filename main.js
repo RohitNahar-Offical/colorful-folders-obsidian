@@ -860,8 +860,8 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                                 body .notebook-navigator [data-path="${safePath}"] .nn-navitem-name::before {
                                     content: '' !important;
                                     display: inline-block !important;
-                                    width: 18px !important;
-                                    height: 18px !important;
+                                    width: 17px !important;
+                                    height: 17px !important;
                                     background-color: ${color.hex} !important;
                                     -webkit-mask-image: url('data:image/svg+xml;utf8,${svgStr}') !important;
                                     -webkit-mask-repeat: no-repeat !important;
@@ -869,7 +869,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                                     -webkit-mask-size: contain !important;
                                     margin-right: 6px !important;
                                     vertical-align: text-bottom !important;
-                                    opacity: 0.9 !important;
+                                    opacity: 0.85 !important;
                                 }
                                 body .notebook-navigator [data-path="${safePath}"] .nn-navitem-icon {
                                     display: none !important;
@@ -894,16 +894,16 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                             body .notebook-navigator [data-path="${safePath}"] .nn-navitem-name::before {
                                 content: '' !important;
                                 display: inline-block !important;
-                                width: 14px !important;
-                                height: 14px !important;
+                                width: 17px !important;
+                                height: 17px !important;
                                 background-color: ${color.hex} !important;
                                 -webkit-mask-image: url('data:image/svg+xml;utf8,${CF_FILE_TEXT_ICON}') !important;
                                 -webkit-mask-repeat: no-repeat !important;
                                 -webkit-mask-position: center !important;
                                 -webkit-mask-size: contain !important;
-                                margin-right: 5px !important;
+                                margin-right: 6px !important;
                                 vertical-align: text-bottom !important;
-                                opacity: 0.8 !important;
+                                opacity: 0.85 !important;
                             }
                             body .notebook-navigator [data-path="${safePath}"] .nn-navitem-icon {
                                 display: none !important;
@@ -1329,14 +1329,14 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                             body .notebook-navigator [data-path="${safePath}"] .nn-navitem-name::before {
                                 content: '' !important;
                                 display: inline-block !important;
-                                width: 14px !important;
-                                height: 14px !important;
+                                width: 17px !important;
+                                height: 17px !important;
                                 background-color: ${s.textColor || color.hex} !important;
                                 -webkit-mask-image: url('data:image/svg+xml;utf8,${svgStr}') !important;
                                 -webkit-mask-repeat: no-repeat !important;
                                 -webkit-mask-position: center !important;
                                 -webkit-mask-size: contain !important;
-                                margin-right: 5px !important;
+                                margin-right: 6px !important;
                                 vertical-align: text-bottom !important;
                                 opacity: 0.85 !important;
                             }
@@ -1353,16 +1353,16 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                         body .notebook-navigator [data-path="${safePath}"] .nn-navitem-name::before {
                             content: '' !important;
                             display: inline-block !important;
-                            width: 14px !important;
-                            height: 14px !important;
+                            width: 17px !important;
+                            height: 17px !important;
                             background-color: ${s.textColor || color.hex} !important;
                             -webkit-mask-image: url('data:image/svg+xml;utf8,${CF_FILE_TEXT_ICON}') !important;
                             -webkit-mask-repeat: no-repeat !important;
                             -webkit-mask-position: center !important;
                             -webkit-mask-size: contain !important;
-                            margin-right: 5px !important;
+                            margin-right: 6px !important;
                             vertical-align: text-bottom !important;
-                            opacity: 0.8 !important;
+                            opacity: 0.85 !important;
                         }
                         body .notebook-navigator [data-path="${safePath}"] .nn-navitem-icon {
                             display: none !important;
