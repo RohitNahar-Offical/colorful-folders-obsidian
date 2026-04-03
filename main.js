@@ -1126,14 +1126,14 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                                 display: inline-block !important;
                                 width: 18px !important;
                                 height: 18px !important;
-                                background-color: ${color.hex} !important;
+                                background-color: ${shouldColorFile ? color.hex : 'var(--text-muted)'} !important;
                                 -webkit-mask-image: url('data:image/svg+xml;utf8,${svgStr}') !important;
                                 -webkit-mask-repeat: no-repeat !important;
                                 -webkit-mask-position: center !important;
                                 -webkit-mask-size: contain !important;
                                 margin-right: 6px !important;
                                 vertical-align: text-bottom !important;
-                                opacity: 0.9 !important;
+                                opacity: ${shouldColorFile ? 0.9 : 0.5} !important;
                             }
                             body .notebook-navigator [data-path="${safePath}"] .nn-navitem-icon {
                                 display: none !important;
@@ -1362,7 +1362,10 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                         `;
                     }
                 } else if (this.settings.autoIcons) {
-                    // Default file icon if no custom icon selected but auto-color is active
+                    const shouldColor = this.settings.autoColorFiles || fileStyle || (inheritedStyle && inheritedStyle.applyToFiles);
+                    const iconOpacity = shouldColor ? 0.9 : 0.5;
+                    const iconColor = shouldColor ? (activeStyle && activeStyle.textColor ? activeStyle.textColor : color.hex) : 'var(--text-muted)';
+                    
                     css += `
                         body .nav-file-title[data-path="${safePath}"] .nav-file-title-content::before,
                         body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before,
@@ -1371,14 +1374,14 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                             display: inline-block !important;
                             width: 17px !important;
                             height: 17px !important;
-                            background-color: ${s.textColor || color.hex} !important;
+                            background-color: ${iconColor} !important;
                             -webkit-mask-image: url('data:image/svg+xml;utf8,${encodeURIComponent(CF_FILE_TEXT_ICON)}') !important;
                             -webkit-mask-repeat: no-repeat !important;
                             -webkit-mask-position: center !important;
                             -webkit-mask-size: contain !important;
                             margin-right: 6px !important;
-                            vertical-align: text-bottom !important;
-                            opacity: 0.85 !important;
+                            vertical-align: middle !important;
+                            opacity: ${iconOpacity} !important;
                         }
                         body .notebook-navigator [data-path="${safePath}"] .nn-navitem-icon {
                             display: none !important;
@@ -1641,6 +1644,7 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.autoColorFiles = value;
                     await this.plugin.saveSettings();
+                    this.plugin.generateStylesDebounced();
                 }));
 
         // SECTION 4: ADVANCED TUNING
