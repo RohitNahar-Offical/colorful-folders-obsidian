@@ -800,14 +800,16 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                     } else if (this.settings.autoColorFiles) {
                         color = currentPalette[(validIndex + fileIndex) % currentPalette.length];
                     } else {
-                        // If only auto-icons is on and not auto-color, we still need a default color if no tint
-                        color = { rgb: "255, 255, 255", hex: "#ffffff" };
+                        // If only auto-icons is on and not auto-color, we use the theme's text color for icons
+                        color = { rgb: "var(--text-normal-rgb)", hex: "var(--text-normal)" };
                     }
 
+                    const shouldColorFile = fileStyle || (inheritedStyle && inheritedStyle.applyToFiles) || this.settings.autoColorFiles;
                     const activeStyle = fileStyle || (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle : null);
+                    
                     // Standard files shouldn't be dimmed if they have a tint
                     const op = activeStyle && activeStyle.opacity !== undefined ? activeStyle.opacity : 1.0;
-                    const text = activeStyle && activeStyle.textColor ? activeStyle.textColor : "#ffffff";
+                    const text = activeStyle && activeStyle.textColor ? activeStyle.textColor : (shouldColorFile ? "#ffffff" : "var(--text-normal)");
                     const isBold = activeStyle && activeStyle.isBold;
                     const isItalic = activeStyle && activeStyle.isItalic;
 
@@ -815,8 +817,10 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                         body .nav-file-title[data-path="${safePath}"],
                         body .tree-item-self[data-path="${safePath}"],
                         body .notebook-navigator [data-path="${safePath}"] {
-                            background-color: rgba(${color.rgb}, 0.1) !important;
-                            border-left: 2px solid rgba(${color.rgb}, 0.4) !important;
+                            ${shouldColorFile ? `
+                                background-color: rgba(${color.rgb}, 0.1) !important;
+                                border-left: 2px solid rgba(${color.rgb}, 0.4) !important;
+                            ` : ''}
                             opacity: ${op} !important;
                             color: ${text} !important;
                             font-weight: ${isBold ? 'bold' : 'normal'} !important;
