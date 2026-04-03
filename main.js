@@ -1220,19 +1220,19 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
 
                 if (this.settings.showItemCounters) {
                     const counts = countItems(child);
-                    // Create a more subtle, sleek combined SVG with 'plural' Lucide variants
+                    // Fixed high-fidelity plural Lucide variants
                     const totalWidth = 80;
                     const combinedSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="20" viewBox="0 0 ${totalWidth} 20">
-                        <g stroke="${color.hex}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(0, 3) scale(0.65)">
-                            <path d="M9 17H7A2 2 0 0 1 5 15V7a2 2 0 0 1 2-2h2"/>
-                            <path d="M9 9h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V11a2 2 0 0 1 2-2Z"/>
-                            <path d="M9 9l1.58-1.59a2 2 0 0 1 1.41-.59H17a2 2 0 0 1 2 2v2"/>
+                        <g stroke="${color.hex}" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(0, 3) scale(0.65)">
+                            <path d="M2 17V7a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9h8.93a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2Z"/>
+                            <path d="M6 19v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V11a2 2 0 0 0-2-2h-2"/>
                         </g>
                         <text x="18" y="15" fill="${color.hex}" font-family="var(--font-interface), sans-serif" font-size="11" font-weight="500">${counts.folders}</text>
-                        <g stroke="${color.hex}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(42, 3) scale(0.65)">
-                            <path d="M20 7h-3a2 2 0 0 1-2-2V2"/>
-                            <path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z"/>
-                            <path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8"/>
+                        <g stroke="${color.hex}" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(42, 3) scale(0.65)">
+                            <path d="M15.5 2H8.6c-.4 0-.8.2-1.1.5-.3.3-.5.7-.5 1.1v12.8c0 .4.2.8.5 1.1.3.3.7.5 1.1.5h9.8c.4 0 .8-.2 1.1-.5.3-.3.5-.7.5-1.1V7.5L15.5 2z"/>
+                            <path d="M15 2v5h5"/>
+                            <path d="M2 17.6V7.1c0-.4.2-.8.5-1.1.3-.3.7-.5 1.1-.5h3.3"/>
+                            <path d="M13 22H3.6c-.4 0-.8-.2-1.1-.5-.3-.3-.5-.7-.5-1.1V10"/>
                         </g>
                         <text x="60" y="15" fill="${color.hex}" font-family="var(--font-interface), sans-serif" font-size="11" font-weight="500">${counts.files}</text>
                     </svg>`;
