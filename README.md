@@ -4,73 +4,41 @@
 
 ---
 
-## ✨ What does it do?
+## ✨ What's New in 4.0.0?
 
-Obsidian's default file explorer can feel cluttered as your vault grows. **Colorful Folders** solves this by:
+Version 4.0.0 is a milestone release that introduces **Visual Intelligence**. Your vault now automatically understands your folder structure and adapts its aesthetics in real-time.
 
-1.  **Color-Coding Hierarchy**: Automatically assigns distinct, beautiful colors to your top-level and nested folders.
-2.  **Visual Wayfinding**: Uses glowing connector lines to create a clear "breadcrumb trail" to your active file.
-3.  **Cross-Platform Performance**: Built for zero-lag with a robust CSS engine that works identically on Windows, macOS, and Linux.
+### 📅 1. Auto-Generated Lucide Icons
+No more manual icon setting! Colorful Folders now features a smart engine with **20+ categories** that automatically injects high-clarity Lucide icons for common folder and file names (e.g., *Journal* -> 📅, *Finance* -> 💰, *Tech* -> 💻).
+- **Universal Support**: Icons are applied to both folders and files.
+- **Dynamic Tinting**: Icons automatically match your folder colors for a unified look.
 
----
+### 📊 2. Dynamic Item Counters
+Keep track of your vault's growth with sleek, recursive folder and file counts.
+- **High-Visibility Design**: Uses a custom, combined SVG with a "folder-open" and plural "files" icon.
+- **Perfect Alignment**: Designed to sit perfectly at the right edge, matching your theme's aesthetics.
 
-## 🚀 Version 3.5.8 - The "Polish & Purity" Update
+### 📱 3. Deep Notebook Navigator Support
+Colorful Folders is now fully compatible with the **Notebook Navigator** plugin.
+- **Native Icon Replacement**: Automatically hides native icons and injects custom, color-synced Lucide icons for a seamless, professional experience.
+- **Unified Style**: Brings the same premium aesthetics to your navigation view that you love in the standard explorer.
 
-The latest version focus on professional-grade stability and luxurious UI refinements.
-
-### 🎨 1. Two Stunning New Color Palettes
-Expand your aesthetic with:
-- **Pastel Dreams**: Soft, relaxing, low-saturation hues for a clean minimalist look.
-- **Neon Cyberpunk**: High-contrast, saturated glows for a striking, vibrant vault.
-
-### ✨ 2. Subtle & Non-Distracting Animations
-The "Active Folder Glow" has been completely redesigned to be atmospheric rather than distracting. Choose between:
-- **Smooth Breathe**: Elegant, rhythmic pulse.
-- **Neon Flicker**: Authentic, subtle neon sign vibe.
-- **Color Shimmer**: A whisper-quiet color-shifting effect.
-- **Animation Duration Slider**: Control the speed of your vault's "heartbeat" from 0.5s to 10s.
-
-### 🌈 3. Smart Rainbow Logic
-- **Rainbow Root Text**: Now smarter. Manually override a folder's background without losing your gorgeous text gradient.
-- **Auto-Color Rainbow Files**: Files no longer just match their parent; they now cycle independently through your palette for a full rainbow effect.
-
----
-
-## 🚀 Version 4.0.0 Performance & UI Overhaul
-
-### ⚡ 1. Extreme Performance
-Version 4.0.0 is built for **speed**. We've introduced a **250ms debounce** and a persistent **iconCache** (Map) to ensure Obsidian never "stutters" or "lags" during bulk file operations, even in very large vaults.
-
-### 🎨 2. Reimagined Tabbed Modal
-The **Set Custom Style** modal has been completely rebuilt from the ground up:
-- **Tabbed Interface**: Organized into **Appearance**, **Icon**, **Inheritance**, and **Presets**.
-- **Live Preview Header**: See your changes (color, icon, text styling) update in real-time in a beautiful premium header.
-- **Improved Context Menu**: Simplified the file explorer context menu with a new **"Set Custom Style" submenu**.
-
-### 🔎 3. Integrated Lucide Icon Picker
-- **Native Integration**: Browse and search all ~600 built-in Lucide icons directly within Obsidian.
-- **Searchable Grid**: Quickly find the perfect icon with a fast, filtered search bar.
-- **Click-to-Apply**: Instantly swap icons for any file or folder with a single click.
-
-### 🛠️ 4. Internal Refinements
-- **Centralized Path Escaping**: Optimized CSS selector generation for better reliability.
-- **Heatmap Optimization**: Faster activity scanning for large vaults.
-- **Memory Management**: Automatic cleanup of temporary styles during regeneration.
-
----
-
-## 🚀 Version 3.5.0 Pro Features
-
-### 📁 1. Individual File Styling
-The power of Colorful Folders is no longer limited to folders. You can now right-click any **File** and select **"Set Custom File Style"**. 
+### 🔎 4. Integrated Lucide Icon Picker
+Want an overriding custom icon? Use the new searchable picker to browse all ~600 built-in Lucide icons directly within Obsidian.
 
 ---
 
 ## 🎨 Core Customization
-* **Monochromatic Mode**: Force subfolders to inherit their parent's color for a strictly organized look.
-* **Outline Only Mode**: Minimalist? Remove background tints entirely and keep only the bright connecting lines and text.
-* **Custom Palettes**: Enter your own comma-separated list of Hex codes to use your own brand colors.
-* **Exclusion List**: Keep utility folders like `attachments` or `templates` looking standard.
+*   **Active Path Glow**: Create a beautiful "breadcrumb trail" to your active file with rhythmic glowing connector lines.
+*   **Monochromatic Mode**: Force subfolders to inherit their parent's color for a strictly organized, deep-folder look.
+*   **Outline Only Mode**: Minimalist? Remove background tints entirely and keep only the bright connecting lines and text.
+*   **Custom Palettes**: Enter your own comma-separated list of Hex codes to use your own brand colors.
+*   **Exclusion List**: Keep utility folders like `attachments` or `templates` looking standard.
+
+---
+
+## ⚡ Extreme Performance
+Built for **speed**. Version 4.0.0 includes a **250ms debounce** and a persistent **iconCache** (Map) to ensure Obsidian never "stutters" or "lags" during bulk file operations, even in very large vaults.
 
 ---
 
@@ -88,26 +56,12 @@ Using the **BRAT** (Beta Reviewer's Auto-update Tool) plugin is the fastest way 
 
 > [!TIP]
 > **Why use BRAT?**
-> Manual installations do not update automatically. Using BRAT ensures you stay up-to-date with the latest bug fixes and color presets the moment they are released, all without any manual intervention.
-
----
-
-### 2. Manual Installation
-1.  Go to the [Latest Release](https://github.com/RohitNahar-Offical/colorful-folders-obsidian/releases/latest).
-2.  Download these 2 files: `main.js` and `manifest.json`.
-3.  Go to your vault's folder: `.obsidian/plugins/`.
-4.  Create a new folder named `colorful-folders` and paste the files inside.
-5.  In Obsidian: **Settings > Community plugins**, click the **Refresh** icon, then enable **Colorful Folders**.
-
----
-
-### 3. From Obsidian Community Plugins
-*(Pending Approval)* Once approved, browse for **Colorful Folders** in the Obsidian community plugins tab and install directly.
+> Manual installations do not update automatically. Using BRAT ensures you stay up-to-date with the latest bug fixes and color presets the moment they are released.
 
 ---
 
 ## 💡 Pro Tip
-You can access all these settings by going to **Settings > Colorful Folders**. Look for the large "💡 Pro Tip" banner at the top of the settings page for more hidden tricks!
+You can access all settings by going to **Settings > Colorful Folders**. Look for the large "💡 Pro Tip" banner for hidden tricks, including how to set custom overriding colors for specific folders!
 
 ---
 
