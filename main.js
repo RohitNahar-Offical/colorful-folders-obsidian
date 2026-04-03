@@ -1362,9 +1362,10 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                         `;
                     }
                 } else if (this.settings.autoIcons) {
-                    const shouldColor = this.settings.autoColorFiles || fileStyle || (inheritedStyle && inheritedStyle.applyToFiles);
+                    // Manual/Standalone file checking
+                    const shouldColor = this.settings.autoColorFiles || s;
                     const iconOpacity = shouldColor ? 0.9 : 0.5;
-                    const iconColor = shouldColor ? (activeStyle && activeStyle.textColor ? activeStyle.textColor : color.hex) : 'var(--text-muted)';
+                    const iconColor = shouldColor ? (s.textColor || color.hex) : 'var(--text-muted)';
                     
                     css += `
                         body .nav-file-title[data-path="${safePath}"] .nav-file-title-content::before,
