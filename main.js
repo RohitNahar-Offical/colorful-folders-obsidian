@@ -1243,9 +1243,9 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                         body .tree-item-self[data-path="${safePath}"]::after {
                             content: ${folderIcon} " ${counts.folders}  " ${fileIcon} " ${counts.files}" !important;
                             font-size: 0.85em !important;
-                            font-weight: 500 !important;
-                            color: var(--text-muted) !important;
-                            opacity: 0.7 !important;
+                            font-weight: 600 !important;
+                            color: ${color.hex} !important;
+                            opacity: 0.9 !important;
                         }
                     `;
                 }
