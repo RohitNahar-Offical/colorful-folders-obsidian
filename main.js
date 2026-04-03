@@ -1126,14 +1126,14 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                                 display: inline-block !important;
                                 width: 18px !important;
                                 height: 18px !important;
-                                background-color: ${shouldColorFile ? color.hex : 'var(--text-muted)'} !important;
+                                background-color: ${color.hex} !important;
                                 -webkit-mask-image: url('data:image/svg+xml;utf8,${svgStr}') !important;
                                 -webkit-mask-repeat: no-repeat !important;
                                 -webkit-mask-position: center !important;
                                 -webkit-mask-size: contain !important;
                                 margin-right: 6px !important;
                                 vertical-align: text-bottom !important;
-                                opacity: ${shouldColorFile ? 0.9 : 0.5} !important;
+                                opacity: 0.9 !important;
                             }
                             body .notebook-navigator [data-path="${safePath}"] .nn-navitem-icon {
                                 display: none !important;
