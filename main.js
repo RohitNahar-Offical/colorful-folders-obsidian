@@ -1220,18 +1220,18 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
 
                 if (this.settings.showItemCounters) {
                     const counts = countItems(child);
-                    // Create a combined wide SVG for icons and numbers for absolute reliability and alignment
-                    const totalWidth = 90;
-                    const combinedSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="24" viewBox="0 0 ${totalWidth} 24">
-                        <g stroke="${color.hex}" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(0, 5) scale(0.75)">
+                    // Create a more subtle, sleek combined SVG
+                    const totalWidth = 80;
+                    const combinedSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="20" viewBox="0 0 ${totalWidth} 20">
+                        <g stroke="${color.hex}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(0, 3) scale(0.65)">
                             <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z"/>
                         </g>
-                        <text x="22" y="18" fill="${color.hex}" font-family="var(--font-interface), sans-serif" font-size="13" font-weight="600">${counts.folders}</text>
-                        <g stroke="${color.hex}" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(48, 5) scale(0.75)">
+                        <text x="18" y="15" fill="${color.hex}" font-family="var(--font-interface), sans-serif" font-size="11" font-weight="500">${counts.folders}</text>
+                        <g stroke="${color.hex}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(42, 3) scale(0.65)">
                             <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/>
                             <polyline points="14 2 14 8 20 8"/>
                         </g>
-                        <text x="68" y="18" fill="${color.hex}" font-family="var(--font-interface), sans-serif" font-size="13" font-weight="600">${counts.files}</text>
+                        <text x="60" y="15" fill="${color.hex}" font-family="var(--font-interface), sans-serif" font-size="11" font-weight="500">${counts.files}</text>
                     </svg>`;
                     
                     const combinedIconUrl = `url('data:image/svg+xml;base64,${btoa(combinedSvg)}')`;
@@ -1243,11 +1243,11 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                             display: inline-flex !important;
                             align-items: center !important;
                             width: ${totalWidth}px !important;
-                            height: 24px !important;
+                            height: 20px !important;
                             margin-left: auto !important;
-                            padding-right: 4px !important;
+                            padding-right: 2px !important;
                             pointer-events: none !important;
-                            opacity: 0.9 !important;
+                            opacity: 0.75 !important;
                         }
                     `;
                 }
