@@ -1220,31 +1220,33 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
 
                 if (this.settings.showItemCounters) {
                     const counts = countItems(child);
-                    // Official Lucide 'folder' and 'file' SVG paths
-                    const folderSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z"/></svg>`;
-                    const fileSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+                    // Create a combined wide SVG for icons and numbers for absolute reliability and alignment
+                    const totalWidth = 90;
+                    const combinedSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="24" viewBox="0 0 ${totalWidth} 24">
+                        <g stroke="${color.hex}" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(0, 5) scale(0.75)">
+                            <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z"/>
+                        </g>
+                        <text x="22" y="18" fill="${color.hex}" font-family="var(--font-interface), sans-serif" font-size="13" font-weight="600">${counts.folders}</text>
+                        <g stroke="${color.hex}" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(48, 5) scale(0.75)">
+                            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                        </g>
+                        <text x="68" y="18" fill="${color.hex}" font-family="var(--font-interface), sans-serif" font-size="13" font-weight="600">${counts.files}</text>
+                    </svg>`;
                     
-                    const folderIcon = `url('data:image/svg+xml;base64,${btoa(folderSvg)}')`;
-                    const fileIcon = `url('data:image/svg+xml;base64,${btoa(fileSvg)}')`;
+                    const combinedIconUrl = `url('data:image/svg+xml;base64,${btoa(combinedSvg)}')`;
 
                     css += `
                         body .nav-folder-title[data-path="${safePath}"]::after,
                         body .tree-item-self[data-path="${safePath}"]::after {
-                            content: "" !important;
+                            content: ${combinedIconUrl} !important;
                             display: inline-flex !important;
                             align-items: center !important;
+                            width: ${totalWidth}px !important;
+                            height: 24px !important;
                             margin-left: auto !important;
-                            padding-right: 12px !important;
-                            font-family: var(--font-interface) !important;
+                            padding-right: 4px !important;
                             pointer-events: none !important;
-                            gap: 12px !important;
-                        }
-                        body .nav-folder-title[data-path="${safePath}"]::after,
-                        body .tree-item-self[data-path="${safePath}"]::after {
-                            content: ${folderIcon} " ${counts.folders}  " ${fileIcon} " ${counts.files}" !important;
-                            font-size: 0.85em !important;
-                            font-weight: 600 !important;
-                            color: ${color.hex} !important;
                             opacity: 0.9 !important;
                         }
                     `;
