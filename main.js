@@ -800,8 +800,8 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                     } else if (this.settings.autoColorFiles) {
                         color = currentPalette[(validIndex + fileIndex) % currentPalette.length];
                     } else {
-                        // If only auto-icons is on and not auto-color, we use the theme's text color for icons
-                        color = { rgb: "var(--text-normal-rgb)", hex: "var(--text-normal)" };
+                        // Inherit parent folder color for the icon even if shouldColorFile is false!
+                        color = passedColor || { rgb: "var(--text-normal-rgb)", hex: "var(--text-normal)" };
                     }
 
                     const shouldColorFile = fileStyle || (inheritedStyle && inheritedStyle.applyToFiles) || this.settings.autoColorFiles;
@@ -1133,7 +1133,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                                 -webkit-mask-size: contain !important;
                                 margin-right: 6px !important;
                                 vertical-align: text-bottom !important;
-                                opacity: 0.9 !important;
+                                opacity: 0.8 !important;
                             }
                             body .notebook-navigator [data-path="${safePath}"] .nn-navitem-icon {
                                 display: none !important;
