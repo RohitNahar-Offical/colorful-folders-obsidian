@@ -10,7 +10,7 @@ Obsidian's default file explorer can feel cluttered as your vault grows. **Color
 
 1.  **Color-Coding Hierarchy**: Automatically assigns distinct, beautiful colors to your top-level and nested folders.
 2.  **Visual Wayfinding**: Uses glowing connector lines to create a clear "breadcrumb trail" to your active file.
-3.  **Cross-Platform Performance**: Built for zero-lag with a robust CSS engine that works identically on Windows, macOS, and Linux.
+3.  **Cross-Platform Performance**: Built for zero-lag with a robust CSS engine that works identically on Windows, macOS, Linux, Android and iOS.
 
 ---
 
