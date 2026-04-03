@@ -77,6 +77,8 @@ const DEFAULT_SETTINGS = {
     glassmorphism: true,
     focusMode: false,
     autoIcons: true,
+    autoIconVariety: true,
+    wideAutoIcons: false,
     animateActivePath: true,
     rainbowRootText: true,
     rainbowRootBgTransparent: false,
@@ -498,7 +500,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
     }
 
     async onload() {
-        console.log("Loading Colorful Folders Plugin v3");
+        console.log("Loading Colorful Folders Plugin v4");
         await this.loadSettings();
 
         // Migrate older settings models gracefully
@@ -621,6 +623,44 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
         this.generateStylesDebounced();
     }
 
+    getAutoIconData(name) {
+        if (!this.settings.autoIcons) return null;
+        const lName = name.toLowerCase();
+
+        // 20+ Premium Categories for Auto-Icons
+        const categories = [
+            { rex: /journal|daily|log|diary/, emoji: "📅", lucide: "calendar" },
+            { rex: /image|photo|pic|asset|gallery|album/, emoji: "🖼️", lucide: "image" },
+            { rex: /project|task|todo|work|goal|action/, emoji: "🚀", lucide: "rocket" },
+            { rex: /setting|config|pref|options|setup|tool|pref/, emoji: "⚙️", lucide: "settings" },
+            { rex: /read|book|paper|article|literature|lib/, emoji: "📚", lucide: "book-open" },
+            { rex: /archive|old|past|backup|history|dump/, emoji: "📦", lucide: "archive" },
+            { rex: /idea|brain|thought|note|learn|insight|study/, emoji: "💡", lucide: "lightbulb" },
+            { rex: /personal|me|self|profile|account|bio/, emoji: "👤", lucide: "user" },
+            { rex: /finance|money|bank|pay|cost|bill|price|tax|wallet/, emoji: "💸", lucide: "banknote" },
+            { rex: /health|fit|exercise|diet|gym|doctor|med|sport/, emoji: "🥗", lucide: "activity" },
+            { rex: /travel|trip|vacation|flight|plane|map|explore/, emoji: "✈️", lucide: "plane" },
+            { rex: /tech|code|dev|script|bot|program|web|git|coding/, emoji: "💻", lucide: "code" },
+            { rex: /music|audio|song|playlist|sound|record/, emoji: "🎵", lucide: "music" },
+            { rex: /video|movie|film|clip|youtube|stream/, emoji: "🎬", lucide: "video" },
+            { rex: /school|study|class|course|exam|edu|lecture|uni/, emoji: "🎓", lucide: "graduation-cap" },
+            { rex: /people|contact|friend|family|team|group|social/, emoji: "👥", lucide: "users" },
+            { rex: /inbox|new|capture|draft|start/, emoji: "📥", lucide: "inbox" },
+            { rex: /chat|talk|discuss|social|comm|slack|discord/, emoji: "💬", lucide: "message-square" },
+            { rex: /star|fav|important|prior|hot|best/, emoji: "⭐", lucide: "star" },
+            { rex: /lock|secret|private|secure|vault|pass/, emoji: "🔒", lucide: "lock" },
+            { rex: /home|house|ref|base|living/, emoji: "🏠", lucide: "home" },
+            { rex: /search|find|query|explore/, emoji: "🔍", lucide: "search" },
+            { rex: /mail|letter|message|email/, emoji: "📧", lucide: "mail" },
+            { rex: /write|pen|edit|create|author/, emoji: "🖋️", lucide: "pen-tool" }
+        ];
+
+        for (const cat of categories) {
+            if (cat.rex.test(lName)) return cat;
+        }
+        return null;
+    }
+
     generateStyles() {
         let css = "";
         const root = this.app.vault.getRoot();
@@ -629,11 +669,12 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
         // Pre-cached common SVG markers
         const CF_FOLDER_ICON = encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#888888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><path d="M2 10h20"/></svg>');
         const CF_FILE_ICON = encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#888888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>');
+        const CF_FILE_TEXT_ICON = encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>');
         const CF_FOLDER_CLOSED = encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><path d="M2 10h20"/></svg>');
         const CF_FOLDER_OPEN = encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg>');
 
-
         let currentPalette = PALETTES[this.settings.palette] || PALETTES["Muted Dark Mode"];
+
         if (this.settings.palette === "Custom") {
             const custom = this.parseCustomPalette(this.settings.customPalette);
             if (custom) currentPalette = custom;
@@ -652,15 +693,15 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
 
         let heatmapData = null;
         if (this.settings.colorMode === "heatmap") {
-            // Build heatmap by scanning all files and assigning the latest mtime to parent folders
             heatmapData = new Map();
             const files = this.app.vault.getFiles();
-            for (const f of files) {
+            for (let i = 0, len = files.length; i < len; i++) {
+                const f = files[i];
                 let p = f.parent;
-                while (p != null) {
-                    const currentMax = heatmapData.get(p.path) || 0;
-                    if (f.stat.mtime > currentMax) {
-                        heatmapData.set(p.path, f.stat.mtime);
+                const mtime = f.stat.mtime;
+                while (p) {
+                    if ((heatmapData.get(p.path) || 0) < mtime) {
+                        heatmapData.set(p.path, mtime);
                     }
                     p = p.parent;
                 }
@@ -742,22 +783,25 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
             let validIndex = 0;
 
             // 1. Handle File Inheritance / Auto-color Files
-            if (passedColor || this.settings.autoColorFiles) {
+            if (passedColor || this.settings.autoColorFiles || this.settings.autoIcons) {
                 let fileIndex = 0;
                 for (const child of copyFiles) {
                     const safePath = this.safeEscape(child.path);
                     let color;
                     let fileStyle = this.getStyle(child.path);
 
+
                     if (fileStyle) {
-                        const customParsed = this.parseCustomPalette(fileStyle.hex);
-                        color = customParsed ? customParsed[0] : { rgb: "255, 255, 255", hex: fileStyle.hex };
+                        const s = fileStyle;
+                        const customParsed = this.parseCustomPalette(s.hex);
+                        color = customParsed ? customParsed[0] : currentPalette[(fileIndex + depth + rootIndex) % currentPalette.length];
                     } else if (inheritedStyle && inheritedStyle.applyToFiles && passedColor) {
                         color = passedColor;
                     } else if (this.settings.autoColorFiles) {
                         color = currentPalette[(validIndex + fileIndex) % currentPalette.length];
                     } else {
-                        continue; // Skip if no styling logic applies
+                        // If only auto-icons is on and not auto-color, we still need a default color if no tint
+                        color = { rgb: "255, 255, 255", hex: "#ffffff" };
                     }
 
                     const activeStyle = fileStyle || (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle : null);
@@ -780,8 +824,96 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                             border-radius: 4px !important;
                         }
                     `;
+
+                    // Auto-Icon logic for files (Moved here to ensure 'color' is defined!)
+                    const autoIcon = this.getAutoIconData(child.name);
+                    let isEmoji = false;
+                    let autoIconContent = "";
+                    let autoLucideId = null;
+
+                    if (autoIcon) {
+                        if (this.settings.wideAutoIcons) {
+                            autoLucideId = autoIcon.lucide;
+                        } else {
+                            autoIconContent = `"${autoIcon.emoji} "`;
+                            isEmoji = true;
+                        }
+                    }
+
+                    if (autoLucideId) {
+                        let svgStr = this.iconCache.get(autoLucideId);
+                        if (!svgStr) {
+                            const tempEl = document.createElement('div');
+                            obsidian.setIcon(tempEl, autoLucideId);
+                            const svgEl = tempEl.querySelector('svg');
+                            if (svgEl) {
+                                svgEl.removeAttribute('width'); svgEl.removeAttribute('height');
+                                svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                                svgStr = encodeURIComponent(svgEl.outerHTML);
+                                this.iconCache.set(autoLucideId, svgStr);
+                            }
+                        }
+                        if (svgStr) {
+                            css += `
+                                body .nav-file-title[data-path="${safePath}"] .nav-file-title-content::before,
+                                body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before,
+                                body .notebook-navigator [data-path="${safePath}"] .nn-navitem-name::before {
+                                    content: '' !important;
+                                    display: inline-block !important;
+                                    width: 18px !important;
+                                    height: 18px !important;
+                                    background-color: ${color.hex} !important;
+                                    -webkit-mask-image: url('data:image/svg+xml;utf8,${svgStr}') !important;
+                                    -webkit-mask-repeat: no-repeat !important;
+                                    -webkit-mask-position: center !important;
+                                    -webkit-mask-size: contain !important;
+                                    margin-right: 6px !important;
+                                    vertical-align: text-bottom !important;
+                                    opacity: 0.9 !important;
+                                }
+                                body .notebook-navigator [data-path="${safePath}"] .nn-navitem-icon {
+                                    display: none !important;
+                                }
+                            `;
+                        }
+                    } else if (isEmoji) {
+                        css += `
+                            body .nav-file-title[data-path="${safePath}"] .nav-file-title-content::before,
+                            body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before,
+                            body .notebook-navigator [data-path="${safePath}"] .nn-navitem-name::before {
+                                content: ${autoIconContent} !important;
+                            }
+                            body .notebook-navigator [data-path="${safePath}"] .nn-navitem-icon {
+                                display: none !important;
+                            }
+                        `;
+                    } else if (this.settings.autoIcons) {
+                        css += `
+                            body .nav-file-title[data-path="${safePath}"] .nav-file-title-content::before,
+                            body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before,
+                            body .notebook-navigator [data-path="${safePath}"] .nn-navitem-name::before {
+                                content: '' !important;
+                                display: inline-block !important;
+                                width: 14px !important;
+                                height: 14px !important;
+                                background-color: ${color.hex} !important;
+                                -webkit-mask-image: url('data:image/svg+xml;utf8,${CF_FILE_TEXT_ICON}') !important;
+                                -webkit-mask-repeat: no-repeat !important;
+                                -webkit-mask-position: center !important;
+                                -webkit-mask-size: contain !important;
+                                margin-right: 5px !important;
+                                vertical-align: text-bottom !important;
+                                opacity: 0.8 !important;
+                            }
+                            body .notebook-navigator [data-path="${safePath}"] .nn-navitem-icon {
+                                display: none !important;
+                            }
+                        `;
+                    }
+
                     fileIndex++;
                 }
+
             }
 
             // 2. Style current folder's children container (Tint + Line)
@@ -912,27 +1044,103 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                     `;
                 }
 
-                let autoIconContent = "";
+                const autoIcon = this.getAutoIconData(child.name);
                 let isEmoji = false;
-                if (this.settings.autoIcons) {
-                    const lName = child.name.toLowerCase();
-                    if (/journal|daily|log/.test(lName)) { autoIconContent = `"📅 "`; isEmoji = true; }
-                    else if (/project|work/.test(lName)) { autoIconContent = `"🚀 "`; isEmoji = true; }
-                    else if (/asset|attachment|image|media|file/.test(lName)) { autoIconContent = `"🖼️ "`; isEmoji = true; }
-                    else if (/archive|old/.test(lName)) { autoIconContent = `"📦 "`; isEmoji = true; }
-                    else if (/template/.test(lName)) { autoIconContent = `"📄 "`; isEmoji = true; }
-                    else if (/resource|reference|book/.test(lName)) { autoIconContent = `"📚 "`; isEmoji = true; }
-                    else if (/finance|money|budget/.test(lName)) { autoIconContent = `"💰 "`; isEmoji = true; }
-                    else if (/person|people|contact|meeting/.test(lName)) { autoIconContent = `"👥 "`; isEmoji = true; }
-                    else if (/idea|brain|thought|note|learn/.test(lName)) { autoIconContent = `"💡 "`; isEmoji = true; }
+                let autoIconContent = "";
+                let autoLucideId = null;
+
+                if (autoIcon) {
+                    if (this.settings.wideAutoIcons) {
+                        autoLucideId = autoIcon.lucide;
+                    } else {
+                        autoIconContent = `"${autoIcon.emoji} "`;
+                        isEmoji = true;
+                    }
                 }
 
-                if (isEmoji) {
+                if (activeStyle && activeStyle.iconId) {
+                    let svgStr = this.iconCache.get(activeStyle.iconId);
+                    if (!svgStr) {
+                        const tempEl = document.createElement('div');
+                        obsidian.setIcon(tempEl, activeStyle.iconId);
+                        const svgEl = tempEl.querySelector('svg');
+                        if (svgEl) {
+                            svgEl.removeAttribute('width');
+                            svgEl.removeAttribute('height');
+                            svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                            svgStr = encodeURIComponent(svgEl.outerHTML);
+                            this.iconCache.set(activeStyle.iconId, svgStr);
+                        }
+                    }
+
+                    if (svgStr) {
+                        css += `
+                            body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
+                            body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before,
+                            body .notebook-navigator [data-path="${safePath}"] .nn-navitem-name::before {
+                                content: '' !important;
+                                display: inline-block !important;
+                                width: 14px !important;
+                                height: 14px !important;
+                                background-color: ${color.hex} !important;
+                                -webkit-mask-image: url('data:image/svg+xml;utf8,${svgStr}') !important;
+                                -webkit-mask-repeat: no-repeat !important;
+                                -webkit-mask-position: center !important;
+                                -webkit-mask-size: contain !important;
+                                margin-right: 5px !important;
+                                vertical-align: text-bottom !important;
+                                opacity: 0.85 !important;
+                            }
+                            body .notebook-navigator [data-path="${safePath}"] .nn-navitem-icon {
+                                display: none !important;
+                            }
+                        `;
+                    }
+                } else if (autoLucideId) {
+                    let svgStr = this.iconCache.get(autoLucideId);
+                    if (!svgStr) {
+                        const tempEl = document.createElement('div');
+                        obsidian.setIcon(tempEl, autoLucideId);
+                        const svgEl = tempEl.querySelector('svg');
+                        if (svgEl) {
+                            svgEl.removeAttribute('width'); svgEl.removeAttribute('height');
+                            svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                            svgStr = encodeURIComponent(svgEl.outerHTML);
+                            this.iconCache.set(autoLucideId, svgStr);
+                        }
+                    }
+                    if (svgStr) {
+                        css += `
+                            body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
+                            body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before,
+                            body .notebook-navigator [data-path="${safePath}"] .nn-navitem-name::before {
+                                content: '' !important;
+                                display: inline-block !important;
+                                width: 18px !important;
+                                height: 18px !important;
+                                background-color: ${color.hex} !important;
+                                -webkit-mask-image: url('data:image/svg+xml;utf8,${svgStr}') !important;
+                                -webkit-mask-repeat: no-repeat !important;
+                                -webkit-mask-position: center !important;
+                                -webkit-mask-size: contain !important;
+                                margin-right: 6px !important;
+                                vertical-align: text-bottom !important;
+                                opacity: 0.9 !important;
+                            }
+                            body .notebook-navigator [data-path="${safePath}"] .nn-navitem-icon {
+                                display: none !important;
+                            }
+                        `;
+                    }
+                } else if (isEmoji) {
                     css += `
                         body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
                         body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before,
                         body .notebook-navigator [data-path="${safePath}"] .nn-navitem-name::before {
                             content: ${autoIconContent};
+                        }
+                        body .notebook-navigator [data-path="${safePath}"] .nn-navitem-icon {
+                            display: none !important;
                         }
                     `;
                 } else if (this.settings.autoIcons) {
@@ -1117,7 +1325,8 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                     if (svgStr) {
                         css += `
                             body .nav-file-title[data-path="${safePath}"] .nav-file-title-content::before,
-                            body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
+                            body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before,
+                            body .notebook-navigator [data-path="${safePath}"] .nn-navitem-name::before {
                                 content: '' !important;
                                 display: inline-block !important;
                                 width: 14px !important;
@@ -1129,10 +1338,36 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                                 -webkit-mask-size: contain !important;
                                 margin-right: 5px !important;
                                 vertical-align: text-bottom !important;
-                                opacity: 0.9 !important;
+                                opacity: 0.85 !important;
+                            }
+                            body .notebook-navigator [data-path="${safePath}"] .nn-navitem-icon {
+                                display: none !important;
                             }
                         `;
                     }
+                } else if (this.settings.autoIcons) {
+                    // Default file icon if no custom icon selected but auto-color is active
+                    css += `
+                        body .nav-file-title[data-path="${safePath}"] .nav-file-title-content::before,
+                        body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before,
+                        body .notebook-navigator [data-path="${safePath}"] .nn-navitem-name::before {
+                            content: '' !important;
+                            display: inline-block !important;
+                            width: 14px !important;
+                            height: 14px !important;
+                            background-color: ${s.textColor || color.hex} !important;
+                            -webkit-mask-image: url('data:image/svg+xml;utf8,${CF_FILE_TEXT_ICON}') !important;
+                            -webkit-mask-repeat: no-repeat !important;
+                            -webkit-mask-position: center !important;
+                            -webkit-mask-size: contain !important;
+                            margin-right: 5px !important;
+                            vertical-align: text-bottom !important;
+                            opacity: 0.8 !important;
+                        }
+                        body .notebook-navigator [data-path="${safePath}"] .nn-navitem-icon {
+                            display: none !important;
+                        }
+                    `;
                 }
             }
         }
@@ -1262,15 +1497,44 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
+        // SECTION 3: AUTO-GENERATED ICONS
+        containerEl.createEl('h3', { text: 'Auto-Generated Icons' });
+
         new obsidian.Setting(containerEl)
-            .setName('Auto-Generate Emoji Icons')
-            .setDesc('Natively injects emoji icons for common folder names like (Journal -> 📅, Images -> 🖼️).')
+            .setName('Enable Automatic Icons')
+            .setDesc('Natively injects icons for common folder and file names (e.g., Journal -> 📅). Features 20+ smart categories.')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.autoIcons)
                 .onChange(async (value) => {
                     this.plugin.settings.autoIcons = value;
                     await this.plugin.saveSettings();
+                    this.display(); 
                 }));
+
+        if (this.plugin.settings.autoIcons) {
+            new obsidian.Setting(containerEl)
+                .setName('Expanded Icon Variety')
+                .setDesc('Enable 20+ pattern-matching categories including Finance, Tech, Health, and more.')
+                .addToggle(toggle => toggle
+                    .setValue(this.plugin.settings.autoIconVariety)
+                    .onChange(async (value) => {
+                        this.plugin.settings.autoIconVariety = value;
+                        await this.plugin.saveSettings();
+                    }));
+
+            new obsidian.Setting(containerEl)
+                .setName('Wide Icon Rendering (Lucide SVGs)')
+                .setDesc('Replaces emojis with high-clarity Lucide icons. Adds a modern, wider look for improved visibility.')
+                .addToggle(toggle => toggle
+                    .setValue(this.plugin.settings.wideAutoIcons)
+                    .onChange(async (value) => {
+                        this.plugin.settings.wideAutoIcons = value;
+                        await this.plugin.saveSettings();
+                    }));
+        }
+
+        // SECTION 4: ACTIVE PATH & TYPOGRAPHY
+        containerEl.createEl('h3', { text: 'Active Path & Typography' });
 
         new obsidian.Setting(containerEl)
             .setName('Show Item Counters')
