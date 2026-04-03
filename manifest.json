@@ -2,7 +2,7 @@
 	"id": "colorful-folders",
 	"name": "Colorful Folders",
 	"version": "4.0.0",
-	"minAppVersion": "0.15.0",
+	"minAppVersion": "1.4.0",
 	"description": "Automatically adds premium preset colors to all folders and subfolders.",
 	"author": "ROHIT-NAHAR",
 	"authorUrl": "https://github.com/RohitNahar-Offical/colorful-folders-obsidian.git",
