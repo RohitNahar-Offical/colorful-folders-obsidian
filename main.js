@@ -1291,7 +1291,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                     `;
                 }
 
-                const nextInherited = (customStyle && customStyle.applyToSubfolders) ? customStyle : inheritedStyle;
+                const nextInherited = (activeStyle && activeStyle.applyToSubfolders) ? activeStyle : inheritedStyle;
                 traverse(child, depth + 1, depth === 0 ? validIndex : rootIndex, color, nextInherited);
                 validIndex++;
             }
