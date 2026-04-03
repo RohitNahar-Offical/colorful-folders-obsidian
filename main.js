@@ -1220,27 +1220,31 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
 
                 if (this.settings.showItemCounters) {
                     const counts = countItems(child);
-                    const folderIconUrl = encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><path d="M2 10h20"/></svg>');
-                    const fileIconUrl = encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>');
-                    const folderIcon = `url('data:image/svg+xml;utf8,${folderIconUrl}')`;
-                    const fileIcon = `url('data:image/svg+xml;utf8,${fileIconUrl}')`;
+                    const folderSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><path d="M2 10h20"/></svg>`;
+                    const fileSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+                    
+                    const folderIcon = `url('data:image/svg+xml;base64,${btoa(folderSvg)}')`;
+                    const fileIcon = `url('data:image/svg+xml;base64,${btoa(fileSvg)}')`;
 
                     css += `
                         body .nav-folder-title[data-path="${safePath}"]::after,
                         body .tree-item-self[data-path="${safePath}"]::after {
-                            content: ${folderIcon} " ${counts.folders}  " ${fileIcon} " ${counts.files}" !important;
+                            content: "" !important;
                             display: inline-flex !important;
                             align-items: center !important;
-                            font-size: 0.75em !important;
-                            opacity: 0.55 !important;
                             margin-left: auto !important;
-                            padding-right: 8px !important;
+                            padding-right: 12px !important;
                             font-family: var(--font-interface) !important;
-                            font-weight: 600 !important;
-                            white-space: nowrap !important;
-                            color: var(--text-muted) !important;
                             pointer-events: none !important;
-                            gap: 4px !important;
+                            gap: 10px !important;
+                        }
+                        body .nav-folder-title[data-path="${safePath}"]::after,
+                        body .tree-item-self[data-path="${safePath}"]::after {
+                            content: ${folderIcon} " ${counts.folders}  " ${fileIcon} " ${counts.files}" !important;
+                            font-size: 0.85em !important;
+                            font-weight: 500 !important;
+                            color: var(--text-muted) !important;
+                            opacity: 0.7 !important;
                         }
                     `;
                 }
