@@ -36,24 +36,33 @@ The "Active Folder Glow" has been completely redesigned to be atmospheric rather
 
 ---
 
+## 🚀 Version 4.0.0 Performance & UI Overhaul
+
+### ⚡ 1. Extreme Performance
+Version 4.0.0 is built for **speed**. We've introduced a **250ms debounce** and a persistent **iconCache** (Map) to ensure Obsidian never "stutters" or "lags" during bulk file operations, even in very large vaults.
+
+### 🎨 2. Reimagined Tabbed Modal
+The **Set Custom Style** modal has been completely rebuilt from the ground up:
+- **Tabbed Interface**: Organized into **Appearance**, **Icon**, **Inheritance**, and **Presets**.
+- **Live Preview Header**: See your changes (color, icon, text styling) update in real-time in a beautiful premium header.
+- **Improved Context Menu**: Simplified the file explorer context menu with a new **"Set Custom Style" submenu**.
+
+### 🔎 3. Integrated Lucide Icon Picker
+- **Native Integration**: Browse and search all ~600 built-in Lucide icons directly within Obsidian.
+- **Searchable Grid**: Quickly find the perfect icon with a fast, filtered search bar.
+- **Click-to-Apply**: Instantly swap icons for any file or folder with a single click.
+
+### 🛠️ 4. Internal Refinements
+- **Centralized Path Escaping**: Optimized CSS selector generation for better reliability.
+- **Heatmap Optimization**: Faster activity scanning for large vaults.
+- **Memory Management**: Automatic cleanup of temporary styles during regeneration.
+
+---
+
 ## 🚀 Version 3.5.0 Pro Features
 
 ### 📁 1. Individual File Styling
 The power of Colorful Folders is no longer limited to folders. You can now right-click any **File** and select **"Set Custom File Style"**. 
-
-### 🅱️ 2. Advanced Typography
-Take full control of your folder and file titles with new typography controls:
-- **Bold & Italic Toggles**: Make key projects or files stand out instantly.
-- **Custom Text Color**: Override the default theme colors for specific items.
-- **Improved Opacity**: Highly refined opacity controls that dim both background and text for a premium, consistent look.
-
-### 🔄 3. Smart Inheritance
-Manage large vaults with ease using our new inheritance engine:
-- **Apply to Subfolders**: Force a specific style down the entire folder tree.
-- **Apply to Files**: Instantly style all files within a folder to match its aesthetic.
-
-### 📋 4. Simple Preset System
-Create your own "Design Language". Save any combination of color, typography, and opacity as a **Preset** in the style modal and apply it to other items with one click.
 
 ---
 
