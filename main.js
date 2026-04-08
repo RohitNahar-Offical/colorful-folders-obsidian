@@ -77,7 +77,7 @@ const DEFAULT_SETTINGS = {
     glassmorphism: false,
     focusMode: false,
     autoIcons: true,
-    autoIconVariety: true,
+    autoIconVariety: true, // Deprecated — expanded variety is now always enabled with autoIcons
     wideAutoIcons: true,
     animateActivePath: false,
     rainbowRootText: true,
@@ -482,6 +482,22 @@ class ColorPickerModal extends obsidian.Modal {
 }
 
 class ColorfulFoldersPlugin extends obsidian.Plugin {
+    // Bug 3 Fix: Utility to convert a single #rrggbb hex to a {rgb, hex} color object
+    hexToRgb(hex) {
+        if (!hex || typeof hex !== 'string') return null;
+        let h = hex.trim().toLowerCase();
+        // Expand shorthand #abc -> #aabbcc
+        if (/^#[0-9a-f]{3}$/i.test(h)) {
+            h = '#' + h[1] + h[1] + h[2] + h[2] + h[3] + h[3];
+        }
+        const m = /^#([0-9a-f]{6})$/i.exec(h);
+        if (!m) return null;
+        const r = parseInt(m[1].slice(0, 2), 16);
+        const g = parseInt(m[1].slice(2, 4), 16);
+        const b = parseInt(m[1].slice(4, 6), 16);
+        return { rgb: `${r}, ${g}, ${b}`, hex: h };
+    }
+
     parseCustomPalette(hexString) {
         if (!hexString) return null;
         const hexes = hexString.split(',').map(s => s.trim().toLowerCase());
@@ -742,13 +758,32 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
         }
 
         if (this.settings.focusMode) {
+            // Focus Mode strategy: dim EVERYTHING, then selectively undim:
+            //   1. The active file (.nav-file-title.is-active)
+            //   2. Ancestor folders of the active file (.nav-folder:has(.is-active))
+            //   3. Anything being hovered
+            // Gate: body:has(.nav-file-title.is-active) ensures we only dim when a file IS open.
             css += `
-                body .workspace-leaf-content[data-type="file-explorer"]:has(.is-active) .nav-folder:not(:has(.is-active)):not(:hover) {
-                    opacity: 0.35;
-                    transition: opacity 0.4s ease;
+                body:has(.nav-file-title.is-active) .nav-file-title,
+                body:has(.nav-file-title.is-active) .nav-folder-title {
+                    opacity: 0.3 !important;
+                    transition: opacity 0.3s ease !important;
+                }
+                body:has(.nav-file-title.is-active) .nav-file-title.is-active {
+                    opacity: 1 !important;
+                }
+                body:has(.nav-file-title.is-active) .nav-folder:has(.is-active) > .nav-folder-title {
+                    opacity: 1 !important;
+                }
+                body:has(.nav-file-title.is-active) .nav-file-title:hover,
+                body:has(.nav-file-title.is-active) .nav-folder-title:hover {
+                    opacity: 1 !important;
+                    transition: opacity 0.15s ease !important;
                 }
             `;
         }
+
+
 
         const countCache = new Map();
         const countItems = (folderItem) => {
@@ -793,9 +828,10 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
 
 
                     if (fileStyle) {
+                        // Bug 2 Fix: Use the exact custom hex color for files, not a random palette index
                         const s = fileStyle;
                         const customParsed = this.parseCustomPalette(s.hex);
-                        color = customParsed ? customParsed[0] : currentPalette[(fileIndex + depth + rootIndex) % currentPalette.length];
+                        color = customParsed ? customParsed[0] : (this.hexToRgb(s.hex) || currentPalette[(fileIndex + depth + rootIndex) % currentPalette.length]);
                     } else if (inheritedStyle && inheritedStyle.applyToFiles && passedColor) {
                         color = passedColor;
                     } else if (this.settings.autoColorFiles) {
@@ -830,8 +866,9 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                         }
                     `;
 
-                    // Auto-Icon logic for files (Moved here to ensure 'color' is defined!)
-                    const autoIcon = this.getAutoIconData(child.name);
+                    // Bug 7 Fix: Only compute auto-icon data when autoIcons is enabled
+                    // Skip CSS generation entirely if there's no matching category
+                    const autoIcon = this.settings.autoIcons ? this.getAutoIconData(child.name) : null;
                     let isEmoji = false;
                     let autoIconContent = "";
                     let autoLucideId = null;
@@ -982,8 +1019,9 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                 let activeStyle = customStyle || inheritedStyle;
 
                 if (activeStyle) {
+                    // Bug 1 Fix: Use the exact custom hex color, not a random palette index
                     const customParsed = this.parseCustomPalette(activeStyle.hex);
-                    color = customParsed ? customParsed[0] : currentPalette[(validIndex + depth + rootIndex) % currentPalette.length];
+                    color = customParsed ? customParsed[0] : (this.hexToRgb(activeStyle.hex) || currentPalette[(validIndex + depth + rootIndex) % currentPalette.length]);
                 } else if (this.settings.colorMode === "heatmap") {
                     const mtime = heatmapData.get(child.path) || 0;
                     color = getHeatmapColor(mtime);
@@ -1310,15 +1348,18 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                 const safePath = this.safeEscape(path);
                 const op = s.opacity !== undefined ? s.opacity : 1.0;
 
+                // Bug 4 Fix: Use a subtle tint (0.12) for file background, not the raw opacity
+                // The raw opacity (op) controls the element's overall opacity, not background intensity
                 css += `
                     body .nav-file-title[data-path="${safePath}"],
                     body .tree-item-self[data-path="${safePath}"],
                     body .notebook-navigator [data-path="${safePath}"] {
-                        background-color: rgba(${color.rgb}, ${op}) !important;
-                        opacity: 1.0 !important;
+                        background-color: rgba(${color.rgb}, 0.12) !important;
+                        opacity: ${op} !important;
                         color: ${s.textColor || color.hex} !important;
                         font-weight: ${s.isBold ? 'bold' : 'normal'} !important;
                         font-style: ${s.isItalic ? 'italic' : 'normal'} !important;
+                        border-left: 2px solid rgba(${color.rgb}, 0.5) !important;
                         border-radius: 4px !important;
                     }
                 `;
@@ -1534,16 +1575,6 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         if (this.plugin.settings.autoIcons) {
             new obsidian.Setting(containerEl)
-                .setName('Expanded Icon Variety')
-                .setDesc('Enable 20+ pattern-matching categories including Finance, Tech, Health, and more.')
-                .addToggle(toggle => toggle
-                    .setValue(this.plugin.settings.autoIconVariety)
-                    .onChange(async (value) => {
-                        this.plugin.settings.autoIconVariety = value;
-                        await this.plugin.saveSettings();
-                    }));
-
-            new obsidian.Setting(containerEl)
                 .setName('Wide Icon Rendering (Lucide SVGs)')
                 .setDesc('Replaces emojis with high-clarity Lucide icons. Adds a modern, wider look for improved visibility.')
                 .addToggle(toggle => toggle
@@ -1567,8 +1598,7 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        // SECTION 3: ACTIVE PATH & TYPOGRAPHY
-        containerEl.createEl('h3', { text: 'Active Path & Typography' });
+        // Bug 5 Fix: Removed duplicate 'Active Path & Typography' heading that was rendered twice
 
         new obsidian.Setting(containerEl)
             .setName('Active File Glow')
