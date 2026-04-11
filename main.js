@@ -775,8 +775,8 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                 body:has(.nav-file-title.is-active) .nav-folder:has(.is-active) > .nav-folder-title {
                     opacity: 1 !important;
                 }
-                body:has(.nav-file-title.is-active) .nav-file-title:hover,
-                body:has(.nav-file-title.is-active) .nav-folder-title:hover {
+                body:not(.is-mobile):has(.nav-file-title.is-active) .nav-file-title:hover,
+                body:not(.is-mobile):has(.nav-file-title.is-active) .nav-folder-title:hover {
                     opacity: 1 !important;
                     transition: opacity 0.15s ease !important;
                 }
@@ -1184,7 +1184,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                         body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
                         body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before,
                         body .notebook-navigator [data-path="${safePath}"] .nn-navitem-name::before {
-                            content: ${autoIconContent};
+                            content: ${autoIconContent} !important;
                         }
                         body .notebook-navigator [data-path="${safePath}"] .nn-navitem-icon {
                             display: none !important;
@@ -1195,28 +1195,28 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                     css += `
                         body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
                         body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
-                            content: '';
-                            display: inline-block;
-                            width: 15px;
-                            height: 15px;
-                            background-color: currentColor;
-                            -webkit-mask-repeat: no-repeat;
-                            -webkit-mask-position: center;
-                            margin-right: 6px;
-                            vertical-align: text-bottom;
-                            opacity: 0.8;
+                            content: '' !important;
+                            display: inline-block !important;
+                            width: 15px !important;
+                            height: 15px !important;
+                            background-color: currentColor !important;
+                            -webkit-mask-repeat: no-repeat !important;
+                            -webkit-mask-position: center !important;
+                            margin-right: 6px !important;
+                            vertical-align: text-bottom !important;
+                            opacity: 0.8 !important;
                         }
                         
                         /* Closed Folder State */
                         body .nav-folder.is-collapsed > .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
                         body .tree-item.is-collapsed > .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
-                             -webkit-mask-image: url('data:image/svg+xml;utf8,${CF_FOLDER_CLOSED}');
+                             -webkit-mask-image: url('data:image/svg+xml;utf8,${CF_FOLDER_CLOSED}') !important;
                         }
 
                         /* Open Folder State */
                         body .nav-folder:not(.is-collapsed) > .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
                         body .tree-item:not(.is-collapsed) > .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
-                             -webkit-mask-image: url('data:image/svg+xml;utf8,${CF_FOLDER_OPEN}');
+                             -webkit-mask-image: url('data:image/svg+xml;utf8,${CF_FOLDER_OPEN}') !important;
                         }
 
                     `;
@@ -1257,9 +1257,9 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                         color: ${(depth === 0 && rootBgStyle === 'solid' && !outlineOnly) ? text : color.hex} !important;
                         opacity: 1 !important;
                     }
-                    body .nav-folder-title[data-path="${safePath}"]:hover,
-                    body .tree-item-self[data-path="${safePath}"]:hover,
-                    body .notebook-navigator [data-path="${safePath}"]:hover {
+                    body:not(.is-mobile) .nav-folder-title[data-path="${safePath}"]:hover,
+                    body:not(.is-mobile) .tree-item-self[data-path="${safePath}"]:hover,
+                    body:not(.is-mobile) .notebook-navigator [data-path="${safePath}"]:hover {
                         filter: brightness(1.2);
                         ${this.settings.glassmorphism ? 'backdrop-filter: blur(12px) saturate(150%);' : ''}
                     }
