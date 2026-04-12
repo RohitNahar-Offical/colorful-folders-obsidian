@@ -178,20 +178,21 @@ function createVisualColorPicker(container, initialHex, onChange, opts = {}) {
     // ── Wrapper ──
     const wrap = container.createDiv({ cls: 'cf-vcp' });
     wrap.style.cssText = `
-        display: flex; flex-direction: column; gap: 6px;
+        display: flex; flex-direction: row; gap: 12px;
         padding: 8px; border-radius: 10px;
         background: var(--background-secondary);
         border: 1px solid var(--background-modifier-border);
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        align-items: stretch;
     `;
 
-    // ── 2D Saturation-Value Board ──
+    // ── 2D Saturation-Value Board (Left) ──
     const board = wrap.createDiv({ cls: 'cf-vcp-board' });
     board.style.cssText = `
-        position: relative; width: 100%; height: 100px;
-        border-radius: 10px; cursor: crosshair; overflow: hidden;
+        position: relative; width: 140px; height: 100px;
+        border-radius: 6px; cursor: crosshair; overflow: hidden;
         background-color: hsl(${hsv.h}, 100%, 50%);
-        touch-action: none; user-select: none;
+        touch-action: none; user-select: none; flex-shrink: 0;
     `;
     const gradWhite = board.createDiv();
     gradWhite.style.cssText = `
@@ -212,27 +213,28 @@ function createVisualColorPicker(container, initialHex, onChange, opts = {}) {
         z-index: 2;
     `;
 
-    // ── Sliders Row ──
-    const slidersRow = wrap.createDiv();
-    slidersRow.style.cssText = 'display: flex; flex-direction: column; gap: 8px;';
+    // ── Right Wrapper ──
+    const rightCol = wrap.createDiv();
+    Object.assign(rightCol.style, { display: "flex", flexDirection: "column", gap: "6px", flex: "1", justifyContent: "center" });
 
-    // Color preview dot + hex row
-    const previewRow = wrap.createDiv();
-    previewRow.style.cssText = 'display: flex; align-items: center; gap: 10px;';
+    // ── Sliders Row ──
+    const slidersRow = rightCol.createDiv();
+    slidersRow.style.cssText = 'display: flex; flex-direction: column; gap: 4px;';
+
+    // Color preview hex row
+    const previewRow = rightCol.createDiv();
+    previewRow.style.cssText = 'display: flex; align-items: center; gap: 6px;';
     const previewDot = previewRow.createDiv();
     previewDot.style.cssText = `
-        width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
-        border: 2px solid var(--background-modifier-border);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        transition: background-color 0.1s ease;
+        width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0;
+        border: 1px solid var(--background-modifier-border);
     `;
     const hexInput = previewRow.createEl('input', { type: 'text' });
     hexInput.style.cssText = `
-        flex: 1; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.85em;
-        padding: 7px 10px; border-radius: 8px; border: 1px solid var(--background-modifier-border);
+        flex: 1; font-family: monospace; font-size: 0.75em;
+        padding: 3px 6px; border-radius: 4px; border: 1px solid var(--background-modifier-border);
         background: var(--background-primary); color: var(--text-normal);
-        outline: none; transition: border-color 0.2s ease;
-        letter-spacing: 0.5px; font-weight: 600;
+        outline: none; font-weight: 600;
     `;
     hexInput.maxLength = 7;
 
@@ -514,13 +516,19 @@ class ColorPickerModal extends obsidian.Modal {
         this._updatePreview = updatePreview;
 
         // ── SECTION: Background Color ──
-        const bgHeader = ap.createDiv();
-        Object.assign(bgHeader.style, { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" });
-        const bgLabel = bgHeader.createDiv();
-        bgLabel.style.cssText = 'font-size: 0.85em; font-weight: 700; color: var(--text-normal);';
-        bgLabel.textContent = 'Background Color';
+        const bgSection = ap.createDiv({ cls: 'cf-picker-section' });
+        Object.assign(bgSection.style, {
+            padding: "10px", borderRadius: "8px", border: "1px solid var(--background-modifier-border)",
+            backgroundColor: "rgba(var(--mono-rgb-100), 0.03)", marginBottom: "12px"
+        });
 
-        const applyBgBtn = bgHeader.createEl("button", { text: "Apply Only" });
+        const bgHeader = bgSection.createDiv();
+        Object.assign(bgHeader.style, { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" });
+        const bgLabel = bgHeader.createDiv();
+        bgLabel.style.cssText = 'font-size: 0.85em; font-weight: 700; color: var(--text-normal); opacity: 0.9;';
+        bgLabel.textContent = 'Background styling';
+
+        const applyBgBtn = bgHeader.createEl("button", { text: "Apply" });
         Object.assign(applyBgBtn.style, {
             padding: "2px 8px", borderRadius: "4px", fontSize: "0.7em", fontWeight: "600",
             cursor: "pointer", border: "1px solid var(--interactive-accent)",
@@ -536,48 +544,35 @@ class ColorPickerModal extends obsidian.Modal {
             this.plugin.settings.customFolderColors[path] = existing;
             await this.plugin.saveSettings();
             this.close();
-            new obsidian.Notice(`Background updated`);
         };
 
-        const bgPickerContainer = ap.createDiv();
-        const bgPicker = createVisualColorPicker(bgPickerContainer, this.style.hex, (hex, alpha) => {
+        const bgPickerContainer = bgSection.createDiv();
+        createVisualColorPicker(bgPickerContainer, this.style.hex, (hex, alpha) => {
             this.style.hex = hex;
             this.style.opacity = alpha;
             updatePreview();
         }, { showAlpha: true, initialAlpha: this.style.opacity || 1.0 });
 
-        // ── SECTION: Icon Color ──
-        const icHeader = ap.createDiv();
-        Object.assign(icHeader.style, { display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "12px", marginBottom: "4px" });
-        const icLabel = icHeader.createDiv();
-        icLabel.style.cssText = 'font-size: 0.85em; font-weight: 700; color: var(--text-normal);';
-        icLabel.innerHTML = '🎨 Icon Color';
-
-        const icActions = icHeader.createDiv();
-        Object.assign(icActions.style, { display: "flex", gap: "4px" });
-        const resetIcBtn = icActions.createEl("button", { text: "Reset" });
-        Object.assign(resetIcBtn.style, { padding: "2px 6px", borderRadius: "4px", fontSize: "0.7em", border: "1px solid var(--background-modifier-border)", background: "none", color: "var(--text-muted)", cursor: "pointer" });
-        
-        const iconColorPickerContainer = ap.createDiv();
-        const iconColorPicker = createVisualColorPicker(iconColorPickerContainer, this.style.iconColor || this.style.hex || '#eb6f92', (hex) => {
-            this.style.iconColor = hex;
-            updatePreview();
-        }, { showAlpha: false });
-        resetIcBtn.onclick = () => { this.style.iconColor = ''; iconColorPicker.setHex(this.style.hex || '#eb6f92'); updatePreview(); };
-
         // ── SECTION: Text Color ──
-        const txtHeader = ap.createDiv();
-        Object.assign(txtHeader.style, { display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "12px", marginBottom: "4px" });
-        const txtLabel = txtHeader.createDiv();
-        txtLabel.style.cssText = 'font-size: 0.85em; font-weight: 700; color: var(--text-normal);';
-        txtLabel.innerHTML = '✏️ Text Color';
+        const txtSection = ap.createDiv({ cls: 'cf-picker-section' });
+        Object.assign(txtSection.style, {
+            padding: "10px", borderRadius: "8px", border: "1px solid var(--background-modifier-border)",
+            backgroundColor: "rgba(var(--mono-rgb-100), 0.03)", marginBottom: "12px"
+        });
 
-        const txtActions = txtHeader.createDiv();
-        Object.assign(txtActions.style, { display: "flex", gap: "6px" });
-        const resetTxtBtn = txtActions.createEl("button", { text: "Reset" });
+        const txtHeader = txtSection.createDiv();
+        Object.assign(txtHeader.style, { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" });
+        const txtLabel = txtHeader.createDiv();
+        txtLabel.style.cssText = 'font-size: 0.85em; font-weight: 700; color: var(--text-normal); opacity: 0.9;';
+        txtLabel.textContent = 'Text styling';
+
+        const txtActionsRow = txtHeader.createDiv();
+        Object.assign(txtActionsRow.style, { display: "flex", gap: "6px" });
+
+        const resetTxtBtn = txtActionsRow.createEl("button", { text: "Reset" });
         Object.assign(resetTxtBtn.style, { padding: "2px 6px", borderRadius: "4px", fontSize: "0.7em", border: "1px solid var(--background-modifier-border)", background: "none", color: "var(--text-muted)", cursor: "pointer" });
         
-        const applyTxtBtn = txtActions.createEl("button", { text: "Apply Only" });
+        const applyTxtBtn = txtActionsRow.createEl("button", { text: "Apply" });
         Object.assign(applyTxtBtn.style, {
             padding: "2px 8px", borderRadius: "4px", fontSize: "0.7em", fontWeight: "600",
             cursor: "pointer", border: "1px solid var(--interactive-accent)",
@@ -594,20 +589,18 @@ class ColorPickerModal extends obsidian.Modal {
             this.plugin.settings.customFolderColors[path] = existing;
             await this.plugin.saveSettings();
             this.close();
-            new obsidian.Notice(`Text styled`);
         };
 
-        const textPickerContainer = ap.createDiv();
+        const textPickerContainer = txtSection.createDiv();
         const textPicker = createVisualColorPicker(textPickerContainer, this.style.textColor || '#ffffff', (hex) => {
             this.style.textColor = hex;
             updatePreview();
         }, { showAlpha: false });
         resetTxtBtn.onclick = () => { this.style.textColor = ''; textPicker.setHex('#ffffff'); updatePreview(); };
 
-        // Typography settings (Integrated into Text Color section for space)
-        const typoRow = ap.createDiv();
-        Object.assign(typoRow.style, { display: "flex", gap: "10px", marginTop: "6px" });
-        
+        // Inline Typography
+        const typoRow = txtSection.createDiv();
+        Object.assign(typoRow.style, { display: "flex", gap: "10px", marginTop: "8px" });
         const buildToggle = (lbl, key) => {
             const wrap = typoRow.createDiv();
             Object.assign(wrap.style, { display: "flex", alignItems: "center", gap: "4px" });
@@ -628,10 +621,54 @@ class ColorPickerModal extends obsidian.Modal {
         const ic = tabPanels["icon"];
 
         // Current icon display
+        // ── SECTION: Icon Color ──
+        const icColorSection = ic.createDiv();
+        Object.assign(icColorSection.style, {
+            padding: "10px", borderRadius: "8px", border: "1px solid var(--background-modifier-border)",
+            backgroundColor: "rgba(var(--mono-rgb-100), 0.03)", marginBottom: "12px"
+        });
+
+        const icColorHeader = icColorSection.createDiv();
+        Object.assign(icColorHeader.style, { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" });
+        const icColorLabel = icColorHeader.createDiv();
+        icColorLabel.style.cssText = 'font-size: 0.85em; font-weight: 700; color: var(--text-normal); opacity: 0.9;';
+        icColorLabel.textContent = 'Icon styling';
+
+        const icColorActions = icColorHeader.createDiv();
+        Object.assign(icColorActions.style, { display: "flex", gap: "6px" });
+        const resetIcBtn = icColorActions.createEl("button", { text: "Reset" });
+        Object.assign(resetIcBtn.style, { padding: "2px 6px", borderRadius: "4px", fontSize: "0.7em", border: "1px solid var(--background-modifier-border)", background: "none", color: "var(--text-muted)", cursor: "pointer" });
+        
+        const applyIcBtn = icColorActions.createEl("button", { text: "Apply" });
+        Object.assign(applyIcBtn.style, {
+            padding: "2px 8px", borderRadius: "4px", fontSize: "0.7em", fontWeight: "600",
+            cursor: "pointer", border: "1px solid var(--interactive-accent)",
+            background: "var(--interactive-accent)", color: "var(--text-on-accent)"
+        });
+        applyIcBtn.onclick = async () => {
+            const path = this.item.path;
+            const existing = this.plugin.getStyle(path) || {};
+            existing.iconId = this.style.iconId;
+            existing.iconColor = this.style.iconColor;
+            if (this.style.applyToSubfolders !== undefined) existing.applyToSubfolders = this.style.applyToSubfolders;
+            if (this.style.applyToFiles !== undefined) existing.applyToFiles = this.style.applyToFiles;
+            this.plugin.settings.customFolderColors[path] = existing;
+            await this.plugin.saveSettings();
+            this.close();
+        };
+
+        const icColorPickerContainer = icColorSection.createDiv();
+        const icColorPicker = createVisualColorPicker(icColorPickerContainer, this.style.iconColor || this.style.hex || '#eb6f92', (hex) => {
+            this.style.iconColor = hex;
+            updatePreview();
+        }, { showAlpha: false });
+        resetIcBtn.onclick = () => { this.style.iconColor = ''; icColorPicker.setHex(this.style.hex || '#eb6f92'); updatePreview(); };
+
+        // ── SECTION: Current Icon Box ──
         const curIconRow = ic.createDiv();
         Object.assign(curIconRow.style, {
             display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px",
-            padding: "10px", borderRadius: "8px", border: "1px solid var(--background-modifier-border)",
+            padding: "8px 10px", borderRadius: "8px", border: "1px solid var(--background-modifier-border)",
             backgroundColor: "var(--background-secondary)", marginBottom: "12px"
         });
         const curIconBox = curIconRow.createDiv();
