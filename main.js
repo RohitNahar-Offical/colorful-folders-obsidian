@@ -2337,9 +2337,9 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         Object.assign(gallery.style, { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "20px" });
 
         const packs = [
-            { name: "✨ Premium Line Icons", desc: "Minimalist outline set.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/master/icons/premium-lines.json" },
-            { name: "🌈 Vibrant Folders", desc: "Colorful folder variants.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/master/icons/vibrant-folders.json" },
-            { name: "📁 System Essentials", desc: "OS-style icon set.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/master/icons/system-essentials.json" }
+            { name: "✨ CF Starter Pack", desc: "A reliable set of 3 basic icons.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/master/icons/sample-pack.json" },
+            { name: "🌈 Vibrant Folders", desc: "Colorful folder variants. (Coming Soon)", url: "https://example.com/coming-soon" },
+            { name: "📁 System Essentials", desc: "OS-style icon set. (Coming Soon)", url: "https://example.com/coming-soon" }
         ];
 
         packs.forEach(p => {
