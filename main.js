@@ -377,26 +377,17 @@ class ColorPickerModal extends obsidian.Modal {
         this.focusSection = focusSection; // 'icon' | 'color' | 'background' | null
 
         // Initialize style - pre-fill from current appearance if no custom style exists
-        const existing = this.plugin.getStyle(this.item.path);
-        if (existing) {
-            this.style = { ...existing };
-            if (this.style.isBold === undefined && this.isFolder) this.style.isBold = true;
-            if (this.style.opacity === undefined) this.style.opacity = 1.0;
-        } else {
-            // New Smart Pre-filling: Fetch what the user actually sees right now
-            const effective = this.plugin.getEffectiveStyle(this.item);
-            this.style = effective || {
-                hex: "#eb6f92",
-                textColor: "",
-                iconColor: "",
-                isBold: this.isFolder,
-                isItalic: false,
-                opacity: 1.0,
-                applyToSubfolders: false,
-                applyToFiles: false,
-                iconId: ""
-            };
-        }
+        const effective = this.plugin.getEffectiveStyle(this.item) || {
+            hex: "#eb6f92", textColor: "", iconColor: "", isBold: this.isFolder, isItalic: false,
+            opacity: 1.0, applyToSubfolders: false, applyToFiles: false, iconId: ""
+        };
+        const existing = this.plugin.getStyle(this.item.path) || {};
+        
+        // Merge: effective provides the "live" fallback, existing provides the user's explicit overrides
+        this.style = { ...effective, ...existing };
+        // Ensure some defaults
+        if (this.style.isBold === undefined && this.isFolder) this.style.isBold = true;
+        if (this.style.opacity === undefined) this.style.opacity = 1.0;
         this.activeTab = this.focusSection === 'icon' ? 'icon' :
             (this.focusSection === 'color' || this.focusSection === 'background') ? 'appearance' : 'appearance';
     }
@@ -503,7 +494,7 @@ class ColorPickerModal extends obsidian.Modal {
         this._prevLabel = prevLabel;
 
         const updatePreview = () => {
-            const effectiveIconColor = this.style.iconColor || this.style.textColor || "#fff";
+            const effectiveIconColor = this.style.iconColor || this.style.textColor || this.style.hex || "#fff";
             // Update header icon
             this._headerIconWrap.style.backgroundColor = this.style.hex;
             this._headerIconWrap.innerHTML = "";
@@ -656,13 +647,15 @@ class ColorPickerModal extends obsidian.Modal {
         });
         applyIconBtn.onclick = async () => {
             const path = this.item.path;
-            const existing = this.plugin.settings.customFolderColors[path] || {};
-            // If it was a string (legacy), convert to object
-            const base = (typeof existing === 'string') ? { hex: existing } : { ...existing };
+            const existing = this.plugin.getStyle(path) || {};
+            
+            // Only update icon fields to keep this independent from background/text settings
+            existing.iconId = this.style.iconId;
+            if (this.style.iconColor) {
+                existing.iconColor = this.style.iconColor;
+            }
 
-            base.iconId = this.style.iconId;
-
-            this.plugin.settings.customFolderColors[path] = base;
+            this.plugin.settings.customFolderColors[path] = existing;
             await this.plugin.saveSettings();
             new obsidian.Notice(`Icon updated for ${this.item.name}`);
             this.close();
