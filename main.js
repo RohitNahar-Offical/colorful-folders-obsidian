@@ -2320,7 +2320,7 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         new obsidian.Setting(iconPanel)
             .setName("Bulk Import from URL")
-            .setDesc("Fetch a JSON file containing icon mappings. Format: { \"id\": \"<svg...>\" }. Useful for syncing icon sets across devices.")
+            .setDesc("Enter a URL to a JSON icon pack { 'id': '<svg...>' }")
             .addText(text => {
                 text.setPlaceholder("https://example.com/icons.json");
                 const impBtn = iconPanel.createEl("button", { text: "Import" });
@@ -2328,26 +2328,33 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 impBtn.onclick = async () => {
                     const url = text.getValue().trim();
                     if (!url) return;
-                    try {
-                        const res = await fetch(url);
-                        const data = await res.json();
-                        let count = 0;
-                        for (const [id, svg] of Object.entries(data)) {
-                            if (typeof svg === 'string' && svg.startsWith('<svg')) {
-                                this.plugin.settings.customIcons[id] = svg;
-                                count++;
-                            }
-                        }
-                        this.plugin.registerCustomIcons();
-                        await this.plugin.saveSettings();
-                        new obsidian.Notice(`Successfully imported ${count} icons!`);
-                        this.display();
-                    } catch (e) {
-                         new obsidian.Notice("Import failed. See console.");
-                         console.error(e);
-                    }
+                    this.importUrl(url);
                 };
             });
+
+        iconPanel.createEl("h4", { text: "Featured Icon Packs" }).style.marginTop = "20px";
+        const gallery = iconPanel.createDiv();
+        Object.assign(gallery.style, { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "20px" });
+
+        const packs = [
+            { name: "✨ Premium Line Icons", desc: "Minimalist outline set.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/master/icons/premium-lines.json" },
+            { name: "🌈 Vibrant Folders", desc: "Colorful folder variants.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/master/icons/vibrant-folders.json" },
+            { name: "📁 System Essentials", desc: "OS-style icon set.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/master/icons/system-essentials.json" }
+        ];
+
+        packs.forEach(p => {
+            const card = gallery.createDiv();
+            Object.assign(card.style, {
+                padding: "12px", background: "var(--background-secondary)", borderRadius: "8px", 
+                border: "1px solid var(--background-modifier-border)",
+                display: "flex", flexDirection: "column", gap: "6px"
+            });
+            card.createEl("div", { text: p.name }).style.fontWeight = "600";
+            card.createEl("div", { text: p.desc }).style.fontSize = "0.75em";
+            const btn = card.createEl("button", { text: "One-Click Import" });
+            Object.assign(btn.style, { width: "100%", marginTop: "5px", fontSize: "0.8em" });
+            btn.onclick = () => this.importUrl(p.url);
+        });
 
         iconPanel.createEl("h4", { text: "Custom Icon Library" }).style.marginTop = "20px";
         const lib = iconPanel.createDiv();
@@ -2656,6 +2663,29 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
     }
+
+    async importUrl(url) {
+        if (!url) return;
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+            let count = 0;
+            for (const [id, svg] of Object.entries(data)) {
+                if (typeof svg === 'string' && svg.startsWith('<svg')) {
+                    this.plugin.settings.customIcons[id] = svg;
+                    count++;
+                }
+            }
+            this.plugin.registerCustomIcons();
+            await this.plugin.saveSettings();
+            new obsidian.Notice(`Successfully imported ${count} icons!`);
+            this.display();
+        } catch (e) {
+             new obsidian.Notice("Import failed. See console.");
+             console.error(e);
+        }
+    }
 }
+
 
 module.exports = ColorfulFoldersPlugin;
