@@ -1311,11 +1311,12 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
 
 
                     if (fileStyle && fileStyle.hex) {
-                        // Use the exact custom hex color for files
+                        // Use exact custom hex color for files
                         const s = fileStyle;
                         const customParsed = this.parseCustomPalette(s.hex);
                         color = customParsed ? customParsed[0] : (this.hexToRgb(s.hex) || currentPalette[(fileIndex + depth + rootIndex) % currentPalette.length]);
-                    } else if (inheritedStyle && inheritedStyle.applyToFiles && passedColor && (!fileStyle || !fileStyle.hex)) {
+                    } else if (inheritedStyle && inheritedStyle.applyToFiles && passedColor) {
+                        // Inherit color from parent, even if fileStyle (icon-only) exists
                         color = passedColor;
                     } else if (this.settings.colorMode === "heatmap") {
                         const mtime = child.stat.mtime;
@@ -1323,19 +1324,20 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                     } else if (this.settings.autoColorFiles) {
                         color = currentPalette[(validIndex + fileIndex) % currentPalette.length];
                     } else {
-                        // Inherit parent folder color for the icon even if shouldColorFile is false!
+                        // Default to inherited color (icon-only fallback) or theme default
                         color = passedColor || { rgb: "var(--text-normal-rgb)", hex: "var(--text-normal)" };
                     }
 
                     const isCustomColor = fileStyle && fileStyle.hex;
                     const shouldColorFile = isCustomColor || (inheritedStyle && inheritedStyle.applyToFiles) || this.settings.autoColorFiles;
+                    
+                    // Logic fix: Merge styles to allow icon from fileStyle and color/font from inheritedStyle
                     const activeStyle = fileStyle || (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle : null);
-
-                    // Standard files shouldn't be dimmed if they have a tint
-                    const op = isCustomColor && activeStyle.opacity !== undefined ? activeStyle.opacity : 1.0;
+                    const textColor = (fileStyle && fileStyle.textColor) ? fileStyle.textColor : (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle.textColor : null);
+                    const op = (fileStyle && fileStyle.opacity !== undefined) ? fileStyle.opacity : (isCustomColor && activeStyle.opacity !== undefined ? activeStyle.opacity : 1.0);
                     let text;
-                    if (activeStyle && activeStyle.textColor) {
-                        text = activeStyle.textColor;
+                    if (textColor) {
+                        text = textColor;
                     } else if (shouldColorFile) {
                         // Use folder's color for file text to match the visual hierarchy
                         if (isDark) {
@@ -1349,8 +1351,8 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                         text = "var(--text-normal)";
                     }
 
-                    const isBold = activeStyle && activeStyle.isBold;
-                    const isItalic = activeStyle && activeStyle.isItalic;
+                    const isBold = (fileStyle && fileStyle.isBold !== undefined) ? fileStyle.isBold : (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle.isBold : false);
+                    const isItalic = (fileStyle && fileStyle.isItalic !== undefined) ? fileStyle.isItalic : (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle.isItalic : false);
 
                     css += `
                         body .nav-file-title[data-path="${safePath}"],
@@ -1525,10 +1527,13 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                 let customStyle = this.getStyle(child.path);
                 let activeStyle = customStyle || inheritedStyle;
 
-                if (activeStyle && activeStyle.hex) {
-                    // Use the exact custom hex color, not a random palette index
-                    const customParsed = this.parseCustomPalette(activeStyle.hex);
-                    color = customParsed ? customParsed[0] : (this.hexToRgb(activeStyle.hex) || currentPalette[(validIndex + depth + rootIndex) % currentPalette.length]);
+                if (customStyle && customStyle.hex) {
+                    // Use exact custom hex color for this folder
+                    const customParsed = this.parseCustomPalette(customStyle.hex);
+                    color = customParsed ? customParsed[0] : (this.hexToRgb(customStyle.hex) || currentPalette[(validIndex + depth + rootIndex) % currentPalette.length]);
+                } else if (inheritedStyle && passedColor) {
+                    // Use inherited color if customized at parent level, even if icon-only customStyle exists here
+                    color = passedColor;
                 } else if (this.settings.colorMode === "heatmap") {
                     const mtime = heatmapData.get(child.path) || 0;
                     color = getHeatmapColor(mtime);
@@ -1572,19 +1577,20 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                     text = (isDark && subAdjust === 0) ? color.hex : `rgb(${this.adjustBrightnessRgb(color.rgb, subAdjust)})`;
                 }
 
-                // Manual Text Override
-                if (isCustom) {
+                // Manual Text Override - respect custom, then inherited, then auto-calculated
+                const effectiveTextColor = (customStyle && customStyle.textColor) ? customStyle.textColor : (inheritedStyle ? inheritedStyle.textColor : null);
+                if (effectiveTextColor) {
+                    text = effectiveTextColor;
+                } else if (isCustom || inheritedStyle) {
                     const customAdjust = isDark ? Math.max(brightnessAmount, 0) : brightnessAmount;
-                    text = activeStyle.textColor || (rootBgStyle === "solid" && depth === 0 ? contrastColor : ((isDark && customAdjust === 0) ? color.hex : `rgb(${this.adjustBrightnessRgb(color.rgb, customAdjust)})`));
-                } else if (activeStyle && activeStyle.textColor) {
-                    text = activeStyle.textColor;
+                    text = (rootBgStyle === "solid" && depth === 0 && !outlineOnly) ? contrastColor : ((isDark && customAdjust === 0) ? color.hex : `rgb(${this.adjustBrightnessRgb(color.rgb, customAdjust)})`);
                 }
 
                 const bgTint = outlineOnly ? "transparent" : `rgba(${color.rgb}, ${tintOp})`;
 
-                // Advanced Typography
-                const isBold = (activeStyle && activeStyle.isBold !== undefined) ? activeStyle.isBold : true;
-                const isItalic = activeStyle && activeStyle.isItalic;
+                // Advanced Typography Inheritance
+                const isBold = (customStyle && customStyle.isBold !== undefined) ? customStyle.isBold : (inheritedStyle && inheritedStyle.isBold !== undefined ? inheritedStyle.isBold : true);
+                const isItalic = (customStyle && customStyle.isItalic !== undefined) ? customStyle.isItalic : (inheritedStyle ? inheritedStyle.isItalic : false);
 
                 let textCss = `
                     color: ${text} !important;
