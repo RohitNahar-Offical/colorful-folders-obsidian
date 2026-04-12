@@ -1304,12 +1304,12 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                     const iconColor = fileObj.iconColor || (inheritedStyle && inheritedStyle.applyToFiles && inheritedStyle.iconColor) || null;
 
 
-                    if (fileStyle) {
-                        // Bug 2 Fix: Use the exact custom hex color for files, not a random palette index
+                    if (fileStyle && fileStyle.hex) {
+                        // Use the exact custom hex color for files
                         const s = fileStyle;
                         const customParsed = this.parseCustomPalette(s.hex);
                         color = customParsed ? customParsed[0] : (this.hexToRgb(s.hex) || currentPalette[(fileIndex + depth + rootIndex) % currentPalette.length]);
-                    } else if (inheritedStyle && inheritedStyle.applyToFiles && passedColor) {
+                    } else if (inheritedStyle && inheritedStyle.applyToFiles && passedColor && (!fileStyle || !fileStyle.hex)) {
                         color = passedColor;
                     } else if (this.settings.colorMode === "heatmap") {
                         const mtime = child.stat.mtime;
@@ -1321,11 +1321,12 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                         color = passedColor || { rgb: "var(--text-normal-rgb)", hex: "var(--text-normal)" };
                     }
 
-                    const shouldColorFile = fileStyle || (inheritedStyle && inheritedStyle.applyToFiles) || this.settings.autoColorFiles;
+                    const isCustomColor = fileStyle && fileStyle.hex;
+                    const shouldColorFile = isCustomColor || (inheritedStyle && inheritedStyle.applyToFiles) || this.settings.autoColorFiles;
                     const activeStyle = fileStyle || (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle : null);
 
                     // Standard files shouldn't be dimmed if they have a tint
-                    const op = activeStyle && activeStyle.opacity !== undefined ? activeStyle.opacity : 1.0;
+                    const op = isCustomColor && activeStyle.opacity !== undefined ? activeStyle.opacity : 1.0;
                     let text;
                     if (activeStyle && activeStyle.textColor) {
                         text = activeStyle.textColor;
@@ -1513,8 +1514,8 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                 let customStyle = this.getStyle(child.path);
                 let activeStyle = customStyle || inheritedStyle;
 
-                if (activeStyle) {
-                    // Bug 1 Fix: Use the exact custom hex color, not a random palette index
+                if (activeStyle && activeStyle.hex) {
+                    // Use the exact custom hex color, not a random palette index
                     const customParsed = this.parseCustomPalette(activeStyle.hex);
                     color = customParsed ? customParsed[0] : (this.hexToRgb(activeStyle.hex) || currentPalette[(validIndex + depth + rootIndex) % currentPalette.length]);
                 } else if (this.settings.colorMode === "heatmap") {
@@ -1529,13 +1530,13 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                 const safePath = this.safeEscape(child.path);
 
                 let bg, text;
-                const isCustom = !!activeStyle;
-                const op = isCustom && activeStyle.opacity !== undefined ? activeStyle.opacity : (depth === 0 ? rootOp : subOp);
+                const isCustomColor = !!(activeStyle && activeStyle.hex);
+                const op = isCustomColor && activeStyle.opacity !== undefined ? activeStyle.opacity : (depth === 0 ? rootOp : subOp);
 
                 const contrastColor = isDark ? "#191724" : "#ffffff"; // Color for solid backgrounds (inverse of theme)
 
                 if (depth === 0) {
-                    if (this.settings.rainbowRootText && this.settings.rainbowRootBgTransparent && !activeStyle) {
+                    if (this.settings.rainbowRootText && this.settings.rainbowRootBgTransparent && !isCustomColor) {
                         bg = "transparent";
                         text = color.hex;
                     } else if (rootBgStyle === "solid") {
@@ -1843,9 +1844,11 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
             const tfile = this.app.vault.getAbstractFileByPath(path);
             if (tfile instanceof obsidian.TFile) {
                 const s = typeof style === 'string' ? { hex: style } : style;
+                if (!s.hex && !s.iconId && !this.settings.autoColorFiles) continue; // Skip if no color, no icon, and auto-color is off
+                
                 const customParsed = this.parseCustomPalette(s.hex);
-                // Fix: properly parse hex to RGB instead of hardcoding white
-                const color = customParsed ? customParsed[0] : (this.hexToRgb(s.hex) || { rgb: "200, 200, 200", hex: s.hex });
+                // Fallback to a neutral or themed color if no hex is provided for a standalone icon
+                const color = customParsed ? customParsed[0] : (this.hexToRgb(s.hex) || { rgb: "var(--text-normal-rgb)", hex: "var(--text-normal)" });
                 const safePath = this.safeEscape(path);
                 const op = s.opacity !== undefined ? s.opacity : 1.0;
                 const standaloneAdjust = isDark ? Math.max(brightnessAmount, 0) : brightnessAmount;
