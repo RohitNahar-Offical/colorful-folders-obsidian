@@ -2339,9 +2339,9 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         Object.assign(gallery.style, { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "20px" });
 
         const packs = [
-            { name: "🔥 Ultimate Community Pack", desc: "15+ essential category icons for Home, Code, and System.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/master/icons/community-core.json" },
-            { name: "🌈 Vibrant Folders", desc: "Stylized folder variants including plus, lock, and check markers.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/master/icons/vibrant-folders.json" },
-            { name: "📁 System Essentials", desc: "Tech-focused icons for terminals, databases, and hardware notes.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/master/icons/system-essentials.json" }
+            { name: "🚩 Font Awesome (Free)", desc: "5+ popular outline icons from the FA 6.x web collection.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/master/icons/fontawesome-free.json" },
+            { name: "🎨 Google Material Icons", desc: "Clean, geometric icons following Google's design system.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/master/icons/material-icons.json" },
+            { name: "🔥 Ultimate Community Pack", desc: "15+ essential category icons for Home, Code, and System.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/master/icons/community-core.json" }
         ];
 
         packs.forEach(p => {
