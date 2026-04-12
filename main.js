@@ -178,17 +178,17 @@ function createVisualColorPicker(container, initialHex, onChange, opts = {}) {
     // ── Wrapper ──
     const wrap = container.createDiv({ cls: 'cf-vcp' });
     wrap.style.cssText = `
-        display: flex; flex-direction: column; gap: 10px;
-        padding: 12px; border-radius: 12px;
+        display: flex; flex-direction: column; gap: 6px;
+        padding: 8px; border-radius: 10px;
         background: var(--background-secondary);
         border: 1px solid var(--background-modifier-border);
-        box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
     `;
 
     // ── 2D Saturation-Value Board ──
     const board = wrap.createDiv({ cls: 'cf-vcp-board' });
     board.style.cssText = `
-        position: relative; width: 100%; height: 180px;
+        position: relative; width: 100%; height: 100px;
         border-radius: 10px; cursor: crosshair; overflow: hidden;
         background-color: hsl(${hsv.h}, 100%, 50%);
         touch-action: none; user-select: none;
@@ -246,7 +246,7 @@ function createVisualColorPicker(container, initialHex, onChange, opts = {}) {
         slider.min = min; slider.max = max; slider.value = value;
         slider.style.cssText = `
             flex: 1; -webkit-appearance: none; appearance: none;
-            height: 14px; border-radius: 7px; outline: none; cursor: pointer;
+            height: 10px; border-radius: 5px; outline: none; cursor: pointer;
             background: ${gradient};
             border: 1px solid rgba(0,0,0,0.12);
         `;
@@ -513,105 +513,18 @@ class ColorPickerModal extends obsidian.Modal {
         };
         this._updatePreview = updatePreview;
 
-        // Background color — Visual Picker
-        const bgLabel = ap.createDiv();
-        bgLabel.style.cssText = 'font-size: 0.82em; font-weight: 700; color: var(--text-normal); margin-bottom: 4px;';
+        // ── SECTION: Background Color ──
+        const bgHeader = ap.createDiv();
+        Object.assign(bgHeader.style, { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" });
+        const bgLabel = bgHeader.createDiv();
+        bgLabel.style.cssText = 'font-size: 0.85em; font-weight: 700; color: var(--text-normal);';
         bgLabel.textContent = 'Background Color';
-        const bgDesc = ap.createDiv();
-        bgDesc.style.cssText = 'font-size: 0.72em; color: var(--text-muted); margin-bottom: 8px;';
-        bgDesc.textContent = 'Primary tint color for this item. Drag anywhere on the board or use sliders.';
-        const bgPickerContainer = ap.createDiv();
-        bgPickerContainer.dataset.cfSection = "background";
-        const bgPicker = createVisualColorPicker(bgPickerContainer, this.style.hex, (hex, alpha) => {
-            this.style.hex = hex;
-            this.style.opacity = alpha;
-            updatePreview();
-        }, { showAlpha: true, initialAlpha: this.style.opacity || 1.0 });
 
-        // Icon color — Visual Picker (independent from text color)
-        const iconColorLabel = ap.createDiv();
-        iconColorLabel.style.cssText = 'font-size: 0.82em; font-weight: 700; color: var(--text-normal); margin-top: 14px; margin-bottom: 4px;';
-        iconColorLabel.textContent = '🎨 Icon Color';
-        const iconColorDesc = ap.createDiv();
-        iconColorDesc.style.cssText = 'font-size: 0.72em; color: var(--text-muted); margin-bottom: 8px;';
-        iconColorDesc.textContent = 'Set a custom color for the icon and collapse arrows. Independent from text color.';
-        const iconColorPickerContainer = ap.createDiv();
-        iconColorPickerContainer.dataset.cfSection = "iconcolor";
-        const iconColorPicker = createVisualColorPicker(iconColorPickerContainer, this.style.iconColor || this.style.hex || '#eb6f92', (hex) => {
-            this.style.iconColor = hex;
-            updatePreview();
-        }, { showAlpha: false });
-
-        // Icon color reset button
-        const iconColorResetRow = ap.createDiv();
-        iconColorResetRow.style.cssText = 'display: flex; justify-content: flex-end; margin-top: 4px;';
-        const iconResetBtn = iconColorResetRow.createEl('button');
-        iconResetBtn.textContent = 'Reset Icon Color';
-        Object.assign(iconResetBtn.style, {
-            fontSize: '0.75em', padding: '4px 12px', borderRadius: '6px',
-            border: '1px solid var(--background-modifier-border)', background: 'var(--background-primary)',
-            color: 'var(--text-muted)', cursor: 'pointer', transition: 'all 0.15s ease'
-        });
-        iconResetBtn.addEventListener('click', () => {
-            this.style.iconColor = '';
-            iconColorPicker.setHex(this.style.hex || '#eb6f92');
-            updatePreview();
-        });
-        iconResetBtn.addEventListener('mouseenter', () => { iconResetBtn.style.borderColor = 'var(--interactive-accent)'; iconResetBtn.style.color = 'var(--text-normal)'; });
-        iconResetBtn.addEventListener('mouseleave', () => { iconResetBtn.style.borderColor = 'var(--background-modifier-border)'; iconResetBtn.style.color = 'var(--text-muted)'; });
-
-        // Text color — Visual Picker
-        const textLabel = ap.createDiv();
-        textLabel.style.cssText = 'font-size: 0.82em; font-weight: 700; color: var(--text-normal); margin-top: 14px; margin-bottom: 4px;';
-        textLabel.textContent = '✏️ Text Color';
-        const textDesc = ap.createDiv();
-        textDesc.style.cssText = 'font-size: 0.72em; color: var(--text-muted); margin-bottom: 8px;';
-        textDesc.textContent = 'Override the label text color for this item. Does not affect the icon.';
-        const textPickerContainer = ap.createDiv();
-        textPickerContainer.dataset.cfSection = "color";
-        const textPicker = createVisualColorPicker(textPickerContainer, this.style.textColor || '#ffffff', (hex) => {
-            this.style.textColor = hex;
-            updatePreview();
-        }, { showAlpha: false });
-
-        // Text color reset button
-        const textResetRow = ap.createDiv();
-        textResetRow.style.cssText = 'display: flex; justify-content: flex-end; margin-top: 4px;';
-        const resetBtn = textResetRow.createEl('button');
-        resetBtn.textContent = 'Reset Text Color';
-        Object.assign(resetBtn.style, {
-            fontSize: '0.75em', padding: '4px 12px', borderRadius: '6px',
-            border: '1px solid var(--background-modifier-border)', background: 'var(--background-primary)',
-            color: 'var(--text-muted)', cursor: 'pointer', transition: 'all 0.15s ease'
-        });
-        resetBtn.addEventListener('click', () => {
-            this.style.textColor = '';
-            textPicker.setHex('#ffffff');
-            updatePreview();
-        });
-        resetBtn.addEventListener('mouseenter', () => { resetBtn.style.borderColor = 'var(--interactive-accent)'; resetBtn.style.color = 'var(--text-normal)'; });
-        resetBtn.addEventListener('mouseleave', () => { resetBtn.style.borderColor = 'var(--background-modifier-border)'; resetBtn.style.color = 'var(--text-muted)'; });
-
-        // Typography
-        new obsidian.Setting(ap)
-            .setName("Typography")
-            .setDesc("Bold and Italic toggles.")
-            .addToggle(t => t.setTooltip("Bold").setValue(this.style.isBold || false).onChange(v => { this.style.isBold = v; updatePreview(); }))
-            .addToggle(t => t.setTooltip("Italic").setValue(this.style.isItalic || false).onChange(v => { this.style.isItalic = v; updatePreview(); }));
-
-        // Quick Apply Buttons for Appearance
-        const apActions = ap.createDiv();
-        Object.assign(apActions.style, {
-            display: "flex", justifyContent: "flex-end", marginTop: "24px", gap: "8px",
-            paddingTop: "16px", borderTop: "1px solid var(--background-modifier-border-focus)"
-        });
-
-        const applyBgBtn = apActions.createEl("button");
-        applyBgBtn.setText("Apply Background Only");
+        const applyBgBtn = bgHeader.createEl("button", { text: "Apply Only" });
         Object.assign(applyBgBtn.style, {
-            padding: "5px 12px", borderRadius: "6px", fontSize: "0.85em", fontWeight: "600",
+            padding: "2px 8px", borderRadius: "4px", fontSize: "0.7em", fontWeight: "600",
             cursor: "pointer", border: "1px solid var(--interactive-accent)",
-            background: "none", color: "var(--interactive-accent)"
+            background: "var(--interactive-accent)", color: "var(--text-on-accent)"
         });
         applyBgBtn.onclick = async () => {
             const path = this.item.path;
@@ -622,18 +535,55 @@ class ColorPickerModal extends obsidian.Modal {
             if (this.style.applyToFiles !== undefined) existing.applyToFiles = this.style.applyToFiles;
             this.plugin.settings.customFolderColors[path] = existing;
             await this.plugin.saveSettings();
-            new obsidian.Notice(`Background updated for ${this.item.name}`);
             this.close();
+            new obsidian.Notice(`Background updated`);
         };
 
-        const applyTextBtn = apActions.createEl("button");
-        applyTextBtn.setText("Apply Text Only");
-        Object.assign(applyTextBtn.style, {
-            padding: "5px 12px", borderRadius: "6px", fontSize: "0.85em", fontWeight: "600",
+        const bgPickerContainer = ap.createDiv();
+        const bgPicker = createVisualColorPicker(bgPickerContainer, this.style.hex, (hex, alpha) => {
+            this.style.hex = hex;
+            this.style.opacity = alpha;
+            updatePreview();
+        }, { showAlpha: true, initialAlpha: this.style.opacity || 1.0 });
+
+        // ── SECTION: Icon Color ──
+        const icHeader = ap.createDiv();
+        Object.assign(icHeader.style, { display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "12px", marginBottom: "4px" });
+        const icLabel = icHeader.createDiv();
+        icLabel.style.cssText = 'font-size: 0.85em; font-weight: 700; color: var(--text-normal);';
+        icLabel.innerHTML = '🎨 Icon Color';
+
+        const icActions = icHeader.createDiv();
+        Object.assign(icActions.style, { display: "flex", gap: "4px" });
+        const resetIcBtn = icActions.createEl("button", { text: "Reset" });
+        Object.assign(resetIcBtn.style, { padding: "2px 6px", borderRadius: "4px", fontSize: "0.7em", border: "1px solid var(--background-modifier-border)", background: "none", color: "var(--text-muted)", cursor: "pointer" });
+        
+        const iconColorPickerContainer = ap.createDiv();
+        const iconColorPicker = createVisualColorPicker(iconColorPickerContainer, this.style.iconColor || this.style.hex || '#eb6f92', (hex) => {
+            this.style.iconColor = hex;
+            updatePreview();
+        }, { showAlpha: false });
+        resetIcBtn.onclick = () => { this.style.iconColor = ''; iconColorPicker.setHex(this.style.hex || '#eb6f92'); updatePreview(); };
+
+        // ── SECTION: Text Color ──
+        const txtHeader = ap.createDiv();
+        Object.assign(txtHeader.style, { display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "12px", marginBottom: "4px" });
+        const txtLabel = txtHeader.createDiv();
+        txtLabel.style.cssText = 'font-size: 0.85em; font-weight: 700; color: var(--text-normal);';
+        txtLabel.innerHTML = '✏️ Text Color';
+
+        const txtActions = txtHeader.createDiv();
+        Object.assign(txtActions.style, { display: "flex", gap: "6px" });
+        const resetTxtBtn = txtActions.createEl("button", { text: "Reset" });
+        Object.assign(resetTxtBtn.style, { padding: "2px 6px", borderRadius: "4px", fontSize: "0.7em", border: "1px solid var(--background-modifier-border)", background: "none", color: "var(--text-muted)", cursor: "pointer" });
+        
+        const applyTxtBtn = txtActions.createEl("button", { text: "Apply Only" });
+        Object.assign(applyTxtBtn.style, {
+            padding: "2px 8px", borderRadius: "4px", fontSize: "0.7em", fontWeight: "600",
             cursor: "pointer", border: "1px solid var(--interactive-accent)",
-            background: "none", color: "var(--interactive-accent)"
+            background: "var(--interactive-accent)", color: "var(--text-on-accent)"
         });
-        applyTextBtn.onclick = async () => {
+        applyTxtBtn.onclick = async () => {
             const path = this.item.path;
             const existing = this.plugin.getStyle(path) || {};
             existing.textColor = this.style.textColor;
@@ -643,9 +593,36 @@ class ColorPickerModal extends obsidian.Modal {
             if (this.style.applyToFiles !== undefined) existing.applyToFiles = this.style.applyToFiles;
             this.plugin.settings.customFolderColors[path] = existing;
             await this.plugin.saveSettings();
-            new obsidian.Notice(`Text styling updated for ${this.item.name}`);
             this.close();
+            new obsidian.Notice(`Text styled`);
         };
+
+        const textPickerContainer = ap.createDiv();
+        const textPicker = createVisualColorPicker(textPickerContainer, this.style.textColor || '#ffffff', (hex) => {
+            this.style.textColor = hex;
+            updatePreview();
+        }, { showAlpha: false });
+        resetTxtBtn.onclick = () => { this.style.textColor = ''; textPicker.setHex('#ffffff'); updatePreview(); };
+
+        // Typography settings (Integrated into Text Color section for space)
+        const typoRow = ap.createDiv();
+        Object.assign(typoRow.style, { display: "flex", gap: "10px", marginTop: "6px" });
+        
+        const buildToggle = (lbl, key) => {
+            const wrap = typoRow.createDiv();
+            Object.assign(wrap.style, { display: "flex", alignItems: "center", gap: "4px" });
+            const chk = wrap.createEl("input", { type: "checkbox" });
+            chk.checked = !!this.style[key];
+            const span = wrap.createEl("span", { text: lbl });
+            span.style.fontSize = "0.75em";
+            chk.onchange = () => { this.style[key] = chk.checked; updatePreview(); };
+        };
+        buildToggle("Bold", "isBold");
+        buildToggle("Italic", "isItalic");
+
+        // Quick Apply Buttons for Appearance
+        // Icon selection tab info...
+
 
         // ── ICON TAB ────────────────────────────────────────────────────────
         const ic = tabPanels["icon"];
@@ -653,54 +630,37 @@ class ColorPickerModal extends obsidian.Modal {
         // Current icon display
         const curIconRow = ic.createDiv();
         Object.assign(curIconRow.style, {
-            display: "flex", alignItems: "center", gap: "12px",
-            padding: "12px 14px", borderRadius: "8px", marginBottom: "14px",
-            backgroundColor: "var(--background-secondary)", border: "1px solid var(--background-modifier-border)"
+            display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px",
+            padding: "10px", borderRadius: "8px", border: "1px solid var(--background-modifier-border)",
+            backgroundColor: "var(--background-secondary)", marginBottom: "12px"
         });
         const curIconBox = curIconRow.createDiv();
         Object.assign(curIconBox.style, {
-            width: "40px", height: "40px", borderRadius: "8px", flexShrink: "0",
-            backgroundColor: this.style.hex, display: "flex", alignItems: "center", justifyContent: "center"
+            width: "36px", height: "36px", borderRadius: "8px", background: "var(--interactive-accent)",
+            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: "0"
         });
-        obsidian.setIcon(curIconBox, this.style.iconId || (this.isFolder ? "folder" : "file"));
-        const svg0 = curIconBox.querySelector("svg");
-        if (svg0) Object.assign(svg0.style, { width: "22px", height: "22px", color: "#fff" });
-        const curIconInfo = curIconRow.createDiv();
-        curIconInfo.createEl("div", { text: "Current Icon" }).style.cssText = "font-size:0.75em;color:var(--text-muted);margin-bottom:2px";
+        this._refreshIconSelection(this.style.iconId, curIconBox);
+
+        const curIconHeader = curIconRow.createDiv();
+        Object.assign(curIconHeader.style, { display: "flex", alignItems: "center", justifyContent: "space-between", flex: "1", minWidth: "150px" });
+        
+        const curIconInfo = curIconHeader.createDiv();
+        curIconInfo.createEl("div", { text: "Current Icon" }).style.cssText = "font-size:0.75em;color:var(--text-muted);margin-bottom:0px";
         this._curIconNameEl = curIconInfo.createEl("div", { text: this.style.iconId || (this.isFolder ? "folder" : "file") });
-        this._curIconNameEl.style.cssText = "font-size:0.9em;font-weight:600;color:var(--text-normal)";
+        this._curIconNameEl.style.cssText = "font-size:0.85em;font-weight:600;color:var(--text-normal)";
         this._curIconBox = curIconBox;
 
-        const clearIconBtn = curIconRow.createEl("button");
-        clearIconBtn.setText("Clear");
-        Object.assign(clearIconBtn.style, {
-            marginLeft: "auto", padding: "4px 10px", borderRadius: "5px",
-            border: "1px solid var(--background-modifier-border)",
-            background: "var(--background-primary)", cursor: "pointer", fontSize: "0.8em",
-            color: "var(--text-muted)"
-        });
-        clearIconBtn.onclick = () => {
-            this.style.iconId = "";
-            this._refreshIconSelection("", curIconBox);
-            updatePreview();
-        };
-
-        const applyIconBtn = curIconRow.createEl("button");
-        applyIconBtn.setText("Apply Icon Only");
+        const applyIconBtn = curIconHeader.createEl("button", { text: "Apply Icon Only" });
         Object.assign(applyIconBtn.style, {
-            marginLeft: "6px", padding: "4px 12px", borderRadius: "5px",
-            border: "1px solid var(--interactive-accent)",
-            background: "var(--interactive-accent)", cursor: "pointer", fontSize: "0.8em",
-            fontWeight: "600", color: "var(--text-on-accent)"
+            padding: "3px 10px", borderRadius: "5px", fontSize: "0.75em", fontWeight: "600",
+            cursor: "pointer", border: "1px solid var(--interactive-accent)",
+            background: "var(--interactive-accent)", color: "var(--text-on-accent)"
         });
         applyIconBtn.onclick = async () => {
             const path = this.item.path;
             const existing = this.plugin.getStyle(path) || {};
-            
-            // Only update icon and inheritance fields to keep this focused on the icon operation
             existing.iconId = this.style.iconId;
             existing.iconColor = this.style.iconColor;
-            
             // Respect inheritance toggles if they were changed
             if (this.style.applyToSubfolders !== undefined) existing.applyToSubfolders = this.style.applyToSubfolders;
             if (this.style.applyToFiles !== undefined) existing.applyToFiles = this.style.applyToFiles;
