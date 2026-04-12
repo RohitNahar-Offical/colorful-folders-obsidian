@@ -2041,27 +2041,6 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
         };
 
         traverse(root, 0);
-
-                                height: 17px !important;
-                                background-color: ${iconColor} !important;
-                                -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${encodeURIComponent(CF_FILE_TEXT_ICON)}') !important;
-                                -webkit-mask-repeat: no-repeat !important;
-                                -webkit-mask-position: center !important;
-                                -webkit-mask-size: contain !important;
-                                margin-right: 6px !important;
-                                vertical-align: middle !important;
-                                opacity: 0.85 !important;
-                            }
-                            ${nnText} [data-path="${safePath}"] .nn-navitem-icon {
-                                display: none !important;
-                            }
-                        `;
-                    }
-                }
-            }
-        }
-
-
         this.styleEl.textContent = css;
     }
 }
