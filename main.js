@@ -494,7 +494,7 @@ class ColorPickerModal extends obsidian.Modal {
         this._prevLabel = prevLabel;
 
         const updatePreview = () => {
-            const effectiveIconColor = this.style.iconColor || this.style.textColor || this.style.hex || "#fff";
+            const effectiveIconColor = this.style.iconColor || this.style.hex || "#fff";
             // Update header icon
             this._headerIconWrap.style.backgroundColor = this.style.hex;
             this._headerIconWrap.innerHTML = "";
@@ -649,11 +649,13 @@ class ColorPickerModal extends obsidian.Modal {
             const path = this.item.path;
             const existing = this.plugin.getStyle(path) || {};
             
-            // Only update icon fields to keep this independent from background/text settings
+            // Only update icon and inheritance fields to keep this focused on the icon operation
             existing.iconId = this.style.iconId;
-            if (this.style.iconColor) {
-                existing.iconColor = this.style.iconColor;
-            }
+            existing.iconColor = this.style.iconColor;
+            
+            // Respect inheritance toggles if they were changed
+            if (this.style.applyToSubfolders !== undefined) existing.applyToSubfolders = this.style.applyToSubfolders;
+            if (this.style.applyToFiles !== undefined) existing.applyToFiles = this.style.applyToFiles;
 
             this.plugin.settings.customFolderColors[path] = existing;
             await this.plugin.saveSettings();
@@ -1540,20 +1542,82 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                     let autoIconContent = "";
                     let autoLucideId = null;
 
-                    if (autoIcon) {
-                        if (this.settings.wideAutoIcons) {
-                            autoLucideId = autoIcon.lucide;
+                    if (activeStyle && activeStyle.iconId) {
+                        const isCustomEmoji = !obsidian.getIconIds?.().includes(`lucide-${activeStyle.iconId}`) && 
+                                             !obsidian.getIconIds?.().includes(activeStyle.iconId);
+                        
+                        if (isCustomEmoji) {
+                            css += `
+                                body .nav-file-title[data-path="${safePath}"] .nav-file-title-content::before,
+                                body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before,
+                                ${nnText} [data-path="${safePath}"] .nn-navitem-name::before {
+                                    content: "${activeStyle.iconId} " !important;
+                                }
+                                ${nnText} [data-path="${safePath}"] .nn-navitem-icon {
+                                    display: none !important;
+                                }
+                            `;
                         } else {
-                            autoIconContent = `"${autoIcon.emoji} "`;
-                            isEmoji = true;
+                            let svgStr = this.iconCache.get(activeStyle.iconId);
+                            if (!svgStr) {
+                                const tempEl = document.createElement('div');
+                                const iconId = activeStyle.iconId;
+                                obsidian.setIcon(tempEl, iconId);
+                                if (!tempEl.querySelector('svg') && !iconId.startsWith('lucide-')) {
+                                    obsidian.setIcon(tempEl, `lucide-${iconId}`);
+                                }
+                                const svgEl = tempEl.querySelector('svg');
+                                if (svgEl) {
+                                    svgEl.removeAttribute('width'); svgEl.removeAttribute('height');
+                                    svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                                    svgStr = encodeURIComponent(svgEl.outerHTML);
+                                    this.iconCache.set(activeStyle.iconId, svgStr);
+                                }
+                            }
+                            if (svgStr) {
+                                css += `
+                                    body .nav-file-title[data-path="${safePath}"] .nav-file-title-content::before,
+                                    body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before,
+                                    ${nnText} [data-path="${safePath}"] .nn-navitem-name::before {
+                                        content: '' !important;
+                                        display: inline-block !important;
+                                        width: 17px !important;
+                                        height: 17px !important;
+                                        background-color: ${iconColor ? iconColor : color.hex} !important;
+                                        -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${svgStr}') !important;
+                                        -webkit-mask-repeat: no-repeat !important;
+                                        -webkit-mask-position: center !important;
+                                        -webkit-mask-size: contain !important;
+                                        margin-right: 6px !important;
+                                        vertical-align: text-bottom !important;
+                                        opacity: 0.85 !important;
+                                    }
+                                    ${nnText} [data-path="${safePath}"] .nn-navitem-icon {
+                                        display: none !important;
+                                    }
+                                `;
+                            }
                         }
-                    }
+                    } else {
+                        // 2. Parse Auto-icons if no custom icon is set
+                        if (autoIcon) {
+                            if (this.settings.wideAutoIcons) {
+                                autoLucideId = autoIcon.lucide;
+                            } else {
+                                autoIconContent = `"${autoIcon.emoji} "`;
+                                isEmoji = true;
+                            }
+                        }
 
-                    if (autoLucideId) {
+                        if (autoLucideId) {
                         let svgStr = this.iconCache.get(autoLucideId);
                         if (!svgStr) {
                             const tempEl = document.createElement('div');
                             obsidian.setIcon(tempEl, autoLucideId);
+                            // Fallback if built-in name fails to produce SVG
+                            if (!tempEl.querySelector('svg') && !autoLucideId.startsWith('lucide-')) {
+                                obsidian.setIcon(tempEl, `lucide-${autoLucideId}`);
+                            }
                             const svgEl = tempEl.querySelector('svg');
                             if (svgEl) {
                                 svgEl.style.width = "17px";
@@ -1623,11 +1687,12 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                             }
                         `;
                     }
-
-                    fileIndex++;
                 }
 
+                fileIndex++;
             }
+
+        }
 
             // 2. Style current folder's children container (Tint + Line)
             if (depth > 0 && passedColor) {
@@ -1810,7 +1875,12 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                         let svgStr = this.iconCache.get(activeStyle.iconId);
                         if (!svgStr) {
                             const tempEl = document.createElement('div');
-                            obsidian.setIcon(tempEl, activeStyle.iconId);
+                            const iconId = activeStyle.iconId;
+                            obsidian.setIcon(tempEl, iconId);
+                            // Fallback if built-in name fails (common lucide vs lucide- prefix)
+                            if (!tempEl.querySelector('svg') && !iconId.startsWith('lucide-')) {
+                                obsidian.setIcon(tempEl, `lucide-${iconId}`);
+                            }
                             const svgEl = tempEl.querySelector('svg');
                             if (svgEl) {
                                 svgEl.removeAttribute('width');
@@ -1828,14 +1898,14 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                                 ${nnText} [data-path="${safePath}"] .nn-navitem-name::before {
                                     content: '' !important;
                                     display: inline-block !important;
-                                    width: 14px !important;
-                                    height: 14px !important;
+                                    width: 18px !important;
+                                    height: 18px !important;
                                     background-color: ${(activeStyle && activeStyle.iconColor) ? activeStyle.iconColor : color.hex} !important;
                                     -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${svgStr}') !important;
                                     -webkit-mask-repeat: no-repeat !important;
                                     -webkit-mask-position: center !important;
                                     -webkit-mask-size: contain !important;
-                                    margin-right: 5px !important;
+                                    margin-right: 6px !important;
                                     vertical-align: text-bottom !important;
                                     opacity: 0.85 !important;
                                 }
