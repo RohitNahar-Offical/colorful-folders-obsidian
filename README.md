@@ -15,6 +15,25 @@ Obsidian's default file explorer can feel cluttered as your vault grows. **Color
 
 ---
 
+## 🚀 Version 4.0.5 - The "Independence & Stability" Release
+Version 4.0.5 introduces a decoupled icon system and critical rendering restorations for a more flexible and vibrant vault.
+
+### 🎨 1. Independent Icon Styling
+- **"Apply Icon Only" Mode**: Change icons and emojis without overriding your rainbow colors or custom tints. Icons are now fully decoupled from style inheritance.
+- **Emoji Folder Support**: Fixed manual emoji assignment—folders now correctly display custom emojis alongside Lucide icons.
+
+### 🧠 2. Smart Color Pre-filling
+- **WYSIWYG Modal**: The custom style menu now automatically pre-fills with the *effective* colors currently visible in your vault, making customization effortless.
+- **Dark Mode Sensitivity**: Intelligently handles dark-mode brightness adjustments when detecting colors.
+
+### 🌈 3. Visual & Performance Polish
+- **Restored Vibrancy**: Eliminated the "Double-Dimming" bug that made nested folders look faint.
+- **Full Glassmorphism**: Restored backdrop blur support for subfolders.
+- **Rainbow Compatibility**: Icons no longer disrupt the premium **Rainbow Root Text** gradient effect.
+- **Streamlined Engine**: Removed 150+ lines of redundant CSS logic for a leaner, faster UI.
+
+---
+
 ## 🚀 Version 4.0.2 - Optimized Factory Defaults
 Version 4.0.2 hard-codes the user's preferred global configuration for all new installations, while keeping personal data private.
 
