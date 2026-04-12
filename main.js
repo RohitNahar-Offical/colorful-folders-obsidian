@@ -1290,6 +1290,10 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
             const copyFiles = folder.children
                 .filter(c => c.children === undefined)
                 .sort((a, b) => a.name.localeCompare(b.name));
+            
+            const glassCss = this.settings.glassmorphism ? `backdrop-filter: blur(8px) saturate(120%); -webkit-backdrop-filter: blur(8px) saturate(120%);` : '';
+            const animStyle = this.settings.activeAnimationStyle || "breathe";
+            const animDur = this.settings.activeAnimationDuration || 3.0;
 
             let validIndex = 0;
 
@@ -1463,11 +1467,16 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
             // 2. Style current folder's children container (Tint + Line)
             if (depth > 0 && passedColor) {
                 const safePath = this.safeEscape(folder.path);
-                // Ensure consistent tint opacity across all depths
                 const minOp = depth === 1 ? 0.12 : 0.05;
                 const finalTintOp = Math.max(this.settings.tintOpacity, minOp);
                 const bgTint = outlineOnly ? "transparent" : `rgba(${passedColor.rgb}, ${finalTintOp})`;
-                const glassCss = this.settings.glassmorphism ? `backdrop-filter: blur(8px) saturate(120%); -webkit-backdrop-filter: blur(8px) saturate(120%);` : '';
+
+                let titleAnim = '';
+                if (this.settings.animateActivePath) {
+                    if (animStyle === "breathe") titleAnim = `animation: cf-breathe-glow ${animDur}s infinite ease-in-out;`;
+                    else if (animStyle === "neon") titleAnim = `animation: cf-neon-flicker ${animDur}s infinite alternate;`;
+                    else if (animStyle === "shimmer") titleAnim = `animation: cf-shimmer-glow ${animDur}s infinite linear;`;
+                }
 
                 css += `
                     body .nav-folder-title[data-path="${safePath}"] ~ .nav-folder-children,
@@ -1532,6 +1541,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                 const safePath = this.safeEscape(child.path);
 
                 let bg, text;
+                const isCustom = !!activeStyle;
                 const isCustomColor = !!(activeStyle && activeStyle.hex);
                 const op = isCustomColor && activeStyle.opacity !== undefined ? activeStyle.opacity : (depth === 0 ? rootOp : subOp);
 
@@ -1807,11 +1817,9 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                 if (this.settings.activeGlow) {
                     let titleAnim = '';
                     if (this.settings.animateActivePath) {
-                        const style = this.settings.activeAnimationStyle || "breathe";
-                        const dur = this.settings.activeAnimationDuration || 3.0;
-                        if (style === "breathe") titleAnim = `animation: cf-breathe-glow ${dur}s infinite ease-in-out;`;
-                        else if (style === "neon") titleAnim = `animation: cf-neon-flicker ${dur}s infinite alternate;`;
-                        else if (style === "shimmer") titleAnim = `animation: cf-shimmer-glow ${dur}s infinite linear;`;
+                        if (animStyle === "breathe") titleAnim = `animation: cf-breathe-glow ${animDur}s infinite ease-in-out;`;
+                        else if (animStyle === "neon") titleAnim = `animation: cf-neon-flicker ${animDur}s infinite alternate;`;
+                        else if (animStyle === "shimmer") titleAnim = `animation: cf-shimmer-glow ${animDur}s infinite linear;`;
                     }
 
                     css += `
