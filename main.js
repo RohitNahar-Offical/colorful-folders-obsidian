@@ -946,11 +946,13 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                         effText = `rgb(${this.adjustBrightnessRgb(color.rgb, fileBright)})`;
                     }
 
+                    const effIconColor = (activeStyle && activeStyle.iconColor) ? activeStyle.iconColor : color.hex;
+                    
                     const autoIcon = this.getAutoIconData(child.name);
                     result = {
                         hex: anyToHex((fileStyle && fileStyle.hex) ? fileStyle.hex : color.hex),
                         textColor: effText ? anyToHex(effText) : "",
-                        iconColor: anyToHex((fileStyle && fileStyle.iconColor) ? fileStyle.iconColor : ""),
+                        iconColor: anyToHex(effIconColor),
                         iconId: (fileStyle && fileStyle.iconId) ? fileStyle.iconId : (this.settings.autoIcons && autoIcon ? (this.settings.wideAutoIcons ? autoIcon.lucide : autoIcon.emoji) : ""),
                         opacity: (fileStyle && fileStyle.opacity !== undefined) ? fileStyle.opacity : 1.0,
                         isBold: (fileStyle && fileStyle.isBold !== undefined) ? fileStyle.isBold : (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle.isBold : false),
@@ -1003,11 +1005,13 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                         }
                     }
 
+                    const effIconColor = (customStyle && customStyle.iconColor) ? customStyle.iconColor : (inheritedStyle ? inheritedStyle.iconColor : color.hex);
+
                     const autoIcon = this.getAutoIconData(child.name);
                     result = {
                         hex: anyToHex(color.hex),
                         textColor: effText ? anyToHex(effText) : "",
-                        iconColor: anyToHex((customStyle && customStyle.iconColor) ? customStyle.iconColor : ""),
+                        iconColor: anyToHex(effIconColor),
                         iconId: (customStyle && customStyle.iconId) ? customStyle.iconId : (this.settings.autoIcons && autoIcon ? (this.settings.wideAutoIcons ? autoIcon.lucide : autoIcon.emoji) : ""),
                         opacity: (customStyle && customStyle.opacity !== undefined) ? customStyle.opacity : (depth === 0 ? this.settings.rootOpacity : this.settings.subfolderOpacity),
                         isBold: (customStyle && customStyle.isBold !== undefined) ? customStyle.isBold : (inheritedStyle && inheritedStyle.isBold !== undefined ? inheritedStyle.isBold : true),
