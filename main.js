@@ -2339,16 +2339,16 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         Object.assign(gallery.style, { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "20px" });
 
         const packs = [
-            { name: "✨ Remix Icons", desc: "Clean and neutral design system.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/ri.json" },
-            { name: "🪶 Feather Icons", desc: "Simply beautiful open source icons.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/feather.json" },
-            { name: "📐 Tabler Icons", desc: "Over 4000+ well-crafted icons.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/tabler.json" },
-            { name: "📦 BoxIcons", desc: "High quality web friendly icons.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/bx.json" },
-            { name: "🚩 FontAwesome Solid", desc: "Official professional solid set.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/fa-solid.json" },
-            { name: "🏳️ FontAwesome Regular", desc: "Official line icons from FA.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/fa-regular.json" },
-            { name: "🐙 Octicons", desc: "GitHub's native icon library.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/octicon.json" },
-            { name: "🎮 RPG Awesome", desc: "Fantasy icons for RPG notes.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/ra.json" },
-            { name: "⚡ Simple Icons", desc: "Brand icons for popular services.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/simple-icons.json" },
-            { name: "🔥 Ultimate Collection", desc: "Curated community starter pack.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/master/icons/community-core.json" }
+            { name: "✨ Remix Icons", desc: "Clean and neutral design system.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/ri.json", prefix: "ri" },
+            { name: "🪶 Feather Icons", desc: "Simply beautiful open source icons.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/feather.json", prefix: "feather" },
+            { name: "📐 Tabler Icons", desc: "Over 4000+ well-crafted icons.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/tabler.json", prefix: "tabler" },
+            { name: "📦 BoxIcons", desc: "High quality web friendly icons.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/bx.json", prefix: "bx" },
+            { name: "🚩 FontAwesome Solid", desc: "Official professional solid set.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/fa-solid.json", prefix: "fa-solid" },
+            { name: "🏳️ FontAwesome Regular", desc: "Official line icons from FA.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/fa-regular.json", prefix: "fa-regular" },
+            { name: "🐙 Octicons", desc: "GitHub's native icon library.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/octicon.json", prefix: "octicon" },
+            { name: "🎮 RPG Awesome", desc: "Fantasy icons for RPG notes.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/ra.json", prefix: "ra" },
+            { name: "⚡ Simple Icons", desc: "Brand icons for popular services.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/simple-icons.json", prefix: "simple-icons" },
+            { name: "🔥 Ultimate Collection", desc: "Curated community starter pack.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/master/icons/community-core.json", prefix: "cf" }
         ];
 
         packs.forEach(p => {
@@ -2370,9 +2370,29 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 fontSize: "0.7em", color: "var(--text-accent)", marginTop: "4px", display: "inline-block" 
             });
 
-            const downloadBtn = row.createEl("button", { text: "Download" });
-            Object.assign(downloadBtn.style, { minWidth: "90px" });
+            const btnGroup = row.createDiv();
+            Object.assign(btnGroup.style, { display: "flex", gap: "8px" });
+
+            const downloadBtn = btnGroup.createEl("button", { text: "Download" });
+            Object.assign(downloadBtn.style, { minWidth: "80px" });
             downloadBtn.onclick = () => this.importUrl(p.url);
+
+            const removeBtn = btnGroup.createEl("button", { text: "Remove" });
+            Object.assign(removeBtn.style, { minWidth: "80px", color: "var(--text-error)" });
+            removeBtn.onclick = async () => {
+                const prefix = p.prefix + "-";
+                let count = 0;
+                for (const id in this.plugin.settings.customIcons) {
+                    if (id.startsWith(prefix)) {
+                        delete this.plugin.settings.customIcons[id];
+                        count++;
+                    }
+                }
+                this.plugin.registerCustomIcons();
+                await this.plugin.saveSettings();
+                new obsidian.Notice(`Removed ${count} icons from ${p.name}.`);
+                this.display();
+            };
         });
 
         iconPanel.createEl("h4", { text: "Custom Icon Library" }).style.marginTop = "20px";
