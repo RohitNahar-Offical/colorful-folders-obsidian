@@ -1798,42 +1798,58 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                 }
 
                 if (activeStyle && activeStyle.iconId) {
-                    let svgStr = this.iconCache.get(activeStyle.iconId);
-                    if (!svgStr) {
-                        const tempEl = document.createElement('div');
-                        obsidian.setIcon(tempEl, activeStyle.iconId);
-                        const svgEl = tempEl.querySelector('svg');
-                        if (svgEl) {
-                            svgEl.removeAttribute('width');
-                            svgEl.removeAttribute('height');
-                            svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-                            svgStr = encodeURIComponent(svgEl.outerHTML);
-                            this.iconCache.set(activeStyle.iconId, svgStr);
-                        }
-                    }
-
-                    if (svgStr) {
+                    const isCustomEmoji = !obsidian.getIconIds?.().includes(`lucide-${activeStyle.iconId}`) && 
+                                         !obsidian.getIconIds?.().includes(activeStyle.iconId);
+                    
+                    if (isCustomEmoji) {
                         css += `
                             body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
                             body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before,
                             ${nnText} [data-path="${safePath}"] .nn-navitem-name::before {
-                                content: '' !important;
-                                display: inline-block !important;
-                                width: 14px !important;
-                                height: 14px !important;
-                                background-color: ${(activeStyle && activeStyle.iconColor) ? activeStyle.iconColor : color.hex} !important;
-                                -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${svgStr}') !important;
-                                -webkit-mask-repeat: no-repeat !important;
-                                -webkit-mask-position: center !important;
-                                -webkit-mask-size: contain !important;
-                                margin-right: 5px !important;
-                                vertical-align: text-bottom !important;
-                                opacity: 0.85 !important;
+                                content: "${activeStyle.iconId} " !important;
                             }
                             ${nnText} [data-path="${safePath}"] .nn-navitem-icon {
                                 display: none !important;
                             }
                         `;
+                    } else {
+                        let svgStr = this.iconCache.get(activeStyle.iconId);
+                        if (!svgStr) {
+                            const tempEl = document.createElement('div');
+                            obsidian.setIcon(tempEl, activeStyle.iconId);
+                            const svgEl = tempEl.querySelector('svg');
+                            if (svgEl) {
+                                svgEl.removeAttribute('width');
+                                svgEl.removeAttribute('height');
+                                svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                                svgStr = encodeURIComponent(svgEl.outerHTML);
+                                this.iconCache.set(activeStyle.iconId, svgStr);
+                            }
+                        }
+
+                        if (svgStr) {
+                            css += `
+                                body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
+                                body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before,
+                                ${nnText} [data-path="${safePath}"] .nn-navitem-name::before {
+                                    content: '' !important;
+                                    display: inline-block !important;
+                                    width: 14px !important;
+                                    height: 14px !important;
+                                    background-color: ${(activeStyle && activeStyle.iconColor) ? activeStyle.iconColor : color.hex} !important;
+                                    -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${svgStr}') !important;
+                                    -webkit-mask-repeat: no-repeat !important;
+                                    -webkit-mask-position: center !important;
+                                    -webkit-mask-size: contain !important;
+                                    margin-right: 5px !important;
+                                    vertical-align: text-bottom !important;
+                                    opacity: 0.85 !important;
+                                }
+                                ${nnText} [data-path="${safePath}"] .nn-navitem-icon {
+                                    display: none !important;
+                                }
+                            `;
+                        }
                     }
                 } else if (autoLucideId) {
                     let svgStr = this.iconCache.get(autoLucideId);
@@ -1920,7 +1936,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                     body .nav-folder-title[data-path="${safePath}"],
                     body .tree-item-self[data-path="${safePath}"] {
                         background-color: ${bg} !important;
-                        opacity: ${isCustomColor ? op : 1.0} !important;
+                        opacity: ${isCustomColor ? op : (depth === 0 ? rootOp : subOp)} !important;
                         border-radius: 6px !important;
                         margin-bottom: 2px !important; margin-top: 2px !important;
                         ${glassCss}
