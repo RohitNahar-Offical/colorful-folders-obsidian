@@ -1101,6 +1101,34 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
             return style;
         };
 
+        this.uiStyleEl = document.createElement('style');
+        this.uiStyleEl.id = 'colorful-folders-ui-style';
+        this.uiStyleEl.textContent = `
+            /* Fix invisible sliders in settings */
+            .colorful-folders-config .setting-item-control input[type="range"] {
+                width: 160px !important;
+                height: 6px !important;
+                background: var(--background-modifier-border) !important;
+                cursor: pointer !important;
+                appearance: none !important;
+                border-radius: 10px !important;
+                transition: background 0.2s !important;
+            }
+            .colorful-folders-config .setting-item-control input[type="range"]:hover {
+                background: var(--background-modifier-border-focus) !important;
+            }
+            .colorful-folders-config .setting-item-control input[type="range"]::-webkit-slider-thumb {
+                appearance: none !important;
+                width: 16px !important;
+                height: 16px !important;
+                background: var(--interactive-accent) !important;
+                border-radius: 50% !important;
+                border: 2px solid var(--background-primary) !important;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+            }
+        `;
+        document.head.appendChild(this.uiStyleEl);
+
         this.styleEl = document.createElement('style');
         this.styleEl.id = 'colorful-folders-style';
         document.head.appendChild(this.styleEl);
@@ -2172,6 +2200,7 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
     display() {
         const rootEl = this.containerEl;
         rootEl.empty();
+        rootEl.addClass('colorful-folders-config');
 
         rootEl.createEl('h2', { text: 'Colorful Folders Configuration' });
 
