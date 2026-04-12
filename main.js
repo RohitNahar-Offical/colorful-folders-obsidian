@@ -647,9 +647,9 @@ class ColorPickerModal extends obsidian.Modal {
             const existing = this.plugin.settings.customFolderColors[path] || {};
             // If it was a string (legacy), convert to object
             const base = (typeof existing === 'string') ? { hex: existing } : { ...existing };
-            
+
             base.iconId = this.style.iconId;
-            
+
             this.plugin.settings.customFolderColors[path] = base;
             await this.plugin.saveSettings();
             new obsidian.Notice(`Icon updated for ${this.item.name}`);
@@ -922,10 +922,10 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                     const fileStyle = this.getStyle(child.path);
                     const isCustomColor = !!(fileStyle && fileStyle.hex);
                     const activeStyle = fileStyle || (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle : null);
-                    
+
                     let color = passedColor || { rgb: "255, 255, 255", hex: "#ffffff" };
                     if (this.settings.autoColorFiles) {
-                         color = palette[(validIdx + i) % palette.length];
+                        color = palette[(validIdx + i) % palette.length];
                     }
 
                     const autoIcon = this.getAutoIconData(child.name);
@@ -1011,7 +1011,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
         this.iconCache = new Map();
         this.heatmapCache = null;
         this._debounceTimer = null;
-        
+
         // Robust CSS selector escaping for paths containing special characters (. , # , [ , ] etc)
         this.safeEscape = (path) => {
             if (!path) return "";
@@ -1417,7 +1417,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
             const copyFiles = folder.children
                 .filter(c => c.children === undefined)
                 .sort((a, b) => a.name.localeCompare(b.name));
-            
+
             const glassCss = this.settings.glassmorphism ? `backdrop-filter: blur(8px) saturate(120%); -webkit-backdrop-filter: blur(8px) saturate(120%);` : '';
             const animStyle = this.settings.activeAnimationStyle || "breathe";
             const animDur = this.settings.activeAnimationDuration || 3.0;
@@ -1431,7 +1431,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                     const safePath = this.safeEscape(child.path);
                     let color;
                     let fileStyle = this.getStyle(child.path);
-                    
+
                     // Determine icon color for this specific file
                     const fileObj = fileStyle || {};
                     const iconColor = fileObj.iconColor || (inheritedStyle && inheritedStyle.applyToFiles && inheritedStyle.iconColor) || null;
@@ -1457,7 +1457,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
 
                     const isCustomColor = !!(fileStyle && fileStyle.hex);
                     const shouldColorFile = isCustomColor || (inheritedStyle && inheritedStyle.applyToFiles) || this.settings.autoColorFiles;
-                    
+
                     // Logic fix: Merge styles to allow icon from fileStyle and color/font from inheritedStyle
                     const activeStyle = fileStyle || (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle : null);
                     const textColor = (fileStyle && fileStyle.textColor) ? fileStyle.textColor : (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle.textColor : null);
@@ -1990,7 +1990,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
             if (tfile instanceof obsidian.TFile) {
                 const s = typeof style === 'string' ? { hex: style } : style;
                 if (!s.hex && !s.iconId && !this.settings.autoColorFiles) continue; // Skip if no color, no icon, and auto-color is off
-                
+
                 const customParsed = this.parseCustomPalette(s.hex);
                 // Fallback to a neutral or themed color if no hex is provided for a standalone icon
                 const color = customParsed ? customParsed[0] : (this.hexToRgb(s.hex) || { rgb: "var(--text-normal-rgb)", hex: "var(--text-normal)" });
@@ -2208,7 +2208,7 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         // --- Integrations Tab ---
         intPanel.createEl('h3', { text: 'Notebook Navigator' });
-        
+
         new obsidian.Setting(intPanel)
             .setName('Enable Notebook Navigator Support')
             .setDesc('Allows Colorful Folders to safely style the icons and text of Notebook Navigator items.')
@@ -2218,7 +2218,7 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     this.plugin.settings.notebookNavigatorSupport = value;
                     await this.plugin.saveSettings();
                 }));
-                
+
         new obsidian.Setting(intPanel)
             .setName('Apply Background Colors to Files')
             .setDesc('Injects the faint background block and left border to file cards. Disable this to keep the cards strictly native and only color the text.')
@@ -2331,7 +2331,7 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 }));
 
         containerEl.createEl('h4', { text: 'Adaptive Theme Visibility' });
-        
+
         new obsidian.Setting(containerEl)
             .setName('Light Mode Brightness (%)')
             .setDesc('Adjusts color brightness in Light Mode (-100 = Darker, 0 = Natural, 100 = Brighter).')
