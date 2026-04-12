@@ -364,14 +364,16 @@ class ColorPickerModal extends obsidian.Modal {
         this.isFolder = item instanceof obsidian.TFolder;
         this.focusSection = focusSection; // 'icon' | 'color' | 'background' | null
 
-        // Initialize style
+        // Initialize style - pre-fill from current appearance if no custom style exists
         const existing = this.plugin.getStyle(this.item.path);
         if (existing) {
             this.style = { ...existing };
             if (this.style.isBold === undefined && this.isFolder) this.style.isBold = true;
             if (this.style.opacity === undefined) this.style.opacity = 1.0;
         } else {
-            this.style = {
+            // New Smart Pre-filling: Fetch what the user actually sees right now
+            const effective = this.plugin.getEffectiveStyle(this.item);
+            this.style = effective || {
                 hex: "#eb6f92",
                 textColor: "",
                 iconColor: "",
@@ -845,7 +847,6 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
     }
 
     parseCustomPalette(hexString) {
-
         if (!hexString) return null;
         const hexes = hexString.split(',').map(s => s.trim().toLowerCase());
         const result = [];
@@ -861,6 +862,110 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
             }
         }
         return result.length > 0 ? result : null;
+    }
+
+    // --- CALCULATE EFFECTIVE STYLE (Logic Mirroring generateStyles) ---
+    getEffectiveStyle(target) {
+        const root = this.app.vault.getRoot();
+        let result = null;
+
+        const PALETTES_LOCAL = PALETTES;
+        let palette = PALETTES_LOCAL[this.settings.palette] || PALETTES_LOCAL["Muted Dark Mode"];
+        if (this.settings.palette === "Custom") {
+            const custom = this.parseCustomPalette(this.settings.customPalette);
+            if (custom) palette = custom;
+        }
+
+        const excludeFolders = this.settings.exclusionList.split(',').map(s => s.trim().toLowerCase()).filter(s => s.length > 0);
+        const isDark = this.isDarkMode();
+        const brightnessAmount = (isDark ? this.settings.darkModeBrightness : this.settings.lightModeBrightness) / 100;
+
+        const traverse = (folder, depth, rootIdx = 0, passedColor = null, inheritedStyle = null) => {
+            if (result) return;
+
+            const copyFolders = folder.children
+                .filter(c => c instanceof obsidian.TFolder)
+                .sort((a, b) => a.name.localeCompare(b.name));
+
+            const copyFiles = folder.children
+                .filter(c => c instanceof obsidian.TFile)
+                .sort((a, b) => a.name.localeCompare(b.name));
+
+            let validIdx = 0;
+
+            // Handle Files
+            for (let i = 0; i < copyFiles.length; i++) {
+                const child = copyFiles[i];
+                if (child === target) {
+                    const fileStyle = this.getStyle(child.path);
+                    const isCustomColor = !!(fileStyle && fileStyle.hex);
+                    const activeStyle = fileStyle || (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle : null);
+                    
+                    let color = passedColor || { rgb: "255, 255, 255", hex: "#ffffff" };
+                    if (this.settings.autoColorFiles) {
+                         color = palette[(validIdx + i) % palette.length];
+                    }
+
+                    const autoIcon = this.getAutoIconData(child.name);
+                    result = {
+                        hex: (fileStyle && fileStyle.hex) ? fileStyle.hex : color.hex,
+                        textColor: (fileStyle && fileStyle.textColor) ? fileStyle.textColor : (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle.textColor : ""),
+                        iconColor: (fileStyle && fileStyle.iconColor) ? fileStyle.iconColor : "",
+                        iconId: (fileStyle && fileStyle.iconId) ? fileStyle.iconId : (this.settings.autoIcons && autoIcon ? (this.settings.wideAutoIcons ? autoIcon.lucide : autoIcon.emoji) : ""),
+                        opacity: (fileStyle && fileStyle.opacity !== undefined) ? fileStyle.opacity : 1.0,
+                        isBold: (fileStyle && fileStyle.isBold !== undefined) ? fileStyle.isBold : (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle.isBold : false),
+                        isItalic: (fileStyle && fileStyle.isItalic !== undefined) ? fileStyle.isItalic : (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle.isItalic : false),
+                        applyToSubfolders: false, applyToFiles: false
+                    };
+                    return;
+                }
+            }
+
+            // Handle Folders
+            for (let i = 0; i < copyFolders.length; i++) {
+                const child = copyFolders[i];
+                if (excludeFolders.includes(child.name.toLowerCase())) {
+                    traverse(child, depth + 1, rootIdx, passedColor, inheritedStyle);
+                    continue;
+                }
+
+                let customStyle = this.getStyle(child.path);
+                let activeStyle = customStyle || inheritedStyle;
+
+                let color;
+                if (customStyle && customStyle.hex) {
+                    const cp = this.parseCustomPalette(customStyle.hex);
+                    color = cp ? cp[0] : (this.hexToRgb(customStyle.hex) || palette[(validIdx + depth + rootIdx) % palette.length]);
+                } else if (inheritedStyle && passedColor) {
+                    color = passedColor;
+                } else {
+                    color = palette[(validIdx + depth + rootIdx) % palette.length];
+                }
+
+                if (child === target) {
+                    const autoIcon = this.getAutoIconData(child.name);
+                    result = {
+                        hex: color.hex,
+                        textColor: (customStyle && customStyle.textColor) ? customStyle.textColor : (inheritedStyle ? inheritedStyle.textColor : ""),
+                        iconColor: (customStyle && customStyle.iconColor) ? customStyle.iconColor : "",
+                        iconId: (customStyle && customStyle.iconId) ? customStyle.iconId : (this.settings.autoIcons && autoIcon ? (this.settings.wideAutoIcons ? autoIcon.lucide : autoIcon.emoji) : ""),
+                        opacity: (customStyle && customStyle.opacity !== undefined) ? customStyle.opacity : (depth === 0 ? this.settings.rootOpacity : this.settings.subfolderOpacity),
+                        isBold: (customStyle && customStyle.isBold !== undefined) ? customStyle.isBold : (inheritedStyle && inheritedStyle.isBold !== undefined ? inheritedStyle.isBold : true),
+                        isItalic: (customStyle && customStyle.isItalic !== undefined) ? customStyle.isItalic : (inheritedStyle ? inheritedStyle.isItalic : false),
+                        applyToSubfolders: customStyle ? !!customStyle.applyToSubfolders : false,
+                        applyToFiles: customStyle ? !!customStyle.applyToFiles : false
+                    };
+                    return;
+                }
+
+                const nextInherited = (activeStyle && activeStyle.applyToSubfolders) ? activeStyle : inheritedStyle;
+                traverse(child, depth + 1, depth === 0 ? validIdx : rootIdx, color, nextInherited);
+                validIdx++;
+            }
+        };
+
+        traverse(root, 0);
+        return result;
     }
 
     async onload() {
