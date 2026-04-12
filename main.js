@@ -2504,15 +2504,36 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         await this.plugin.saveSettings();
                     }));
 
+            const rulesDesc = containerEl.createEl("div");
+            Object.assign(rulesDesc.style, {
+                fontSize: "0.8em", color: "var(--text-muted)", marginBottom: "12px",
+                padding: "10px", background: "var(--background-secondary-alt)", borderRadius: "6px",
+                borderLeft: "3px solid var(--interactive-accent)", lineHeight: "1.4"
+            });
+            rulesDesc.innerHTML = `
+                <strong>How to use Priority Rules:</strong><br>
+                Define rules to automatically assign icons based on names. 
+                Higher priority values override default rules.<br><br>
+                <strong>Format:</strong> <code>Regex, Emoji, LucideID, Priority</code><br>
+                <strong>Example:</strong> <code>Projects, 🚀, rocket, 200</code>
+            `;
+
             new obsidian.Setting(containerEl)
                 .setName('Priority Rules')
+                .setDesc('Customize matching logic with your own triggers.')
                 .addTextArea(text => {
-                    text.setValue(this.plugin.settings.customIconRules || "")
+                    text.setPlaceholder("Journal, 📅, calendar, 100\nArchive, 📦, archive, 50")
+                        .setValue(this.plugin.settings.customIconRules || "")
                         .onChange(async (value) => {
                             this.plugin.settings.customIconRules = value;
                             await this.plugin.saveSettings();
                         });
-                    text.inputEl.rows = 4;
+                    Object.assign(text.inputEl.style, {
+                        width: "100%", height: "120px", background: "var(--background-secondary)",
+                        border: "1px solid var(--background-modifier-border-focus)",
+                        color: "var(--text-normal)", fontFamily: "var(--font-monospace)",
+                        fontSize: "0.85em", padding: "12px", borderRadius: "6px"
+                    });
                 });
         }
 
