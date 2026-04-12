@@ -1936,7 +1936,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                     body .nav-folder-title[data-path="${safePath}"],
                     body .tree-item-self[data-path="${safePath}"] {
                         background-color: ${bg} !important;
-                        opacity: ${isCustomColor ? op : (depth === 0 ? rootOp : subOp)} !important;
+                        opacity: ${isCustomColor ? op : (depth === 0 && rootBgStyle === "solid" ? rootOp : 1.0)} !important;
                         border-radius: 6px !important;
                         margin-bottom: 2px !important; margin-top: 2px !important;
                         ${glassCss}
