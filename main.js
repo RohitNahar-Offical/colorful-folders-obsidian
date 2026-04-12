@@ -2214,6 +2214,7 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
     constructor(app, plugin) {
         super(app, plugin);
         this.plugin = plugin;
+        this.activeTab = "gen";
     }
 
     display() {
@@ -2247,6 +2248,7 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         };
 
         const setTab = (t) => {
+            this.activeTab = t;
             generalPanel.style.display = (t === "gen" ? "block" : "none");
             intPanel.style.display = (t === "int" ? "block" : "none");
             iconPanel.style.display = (t === "icon" ? "block" : "none");
@@ -2258,7 +2260,7 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         btnGen.onclick = () => setTab("gen");
         btnInt.onclick = () => setTab("int");
         btnIcon.onclick = () => setTab("icon");
-        setTab("gen");
+        setTab(this.activeTab);
 
         // ── INTEGRATIONS PANEL ────────────────────────────────────────────────
         intPanel.createEl('h3', { text: 'Notebook Navigator' });
