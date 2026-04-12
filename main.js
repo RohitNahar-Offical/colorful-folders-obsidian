@@ -1456,8 +1456,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                     }
 
                     const isCustomColor = !!(fileStyle && fileStyle.hex);
-                    const isIconOnly = !!(fileStyle && fileStyle.iconId && !isCustomColor);
-                    const shouldColorFile = !isIconOnly && (isCustomColor || (inheritedStyle && inheritedStyle.applyToFiles) || this.settings.autoColorFiles);
+                    const shouldColorFile = isCustomColor || (inheritedStyle && inheritedStyle.applyToFiles) || this.settings.autoColorFiles;
                     
                     // Logic fix: Merge styles to allow icon from fileStyle and color/font from inheritedStyle
                     const activeStyle = fileStyle || (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle : null);
@@ -1477,10 +1476,6 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                         }
                     } else {
                         text = "var(--text-normal)";
-                        // Ensure icon-only files have transparent backgrounds
-                        if (isIconOnly) {
-                             // Color will still be used for the icon via iconColor resolution
-                        }
                     }
 
                     const isBold = (fileStyle && fileStyle.isBold !== undefined) ? fileStyle.isBold : (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle.isBold : false);
@@ -1684,12 +1679,8 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
 
                 const contrastColor = isDark ? "#191724" : "#ffffff"; // Color for solid backgrounds (inverse of theme)
 
-                const isIconOnly = isCustom && !isCustomColor;
-
-                if (isIconOnly) {
-                    bg = "transparent";
-                    text = "var(--text-normal)";
-                } else if (depth === 0) {
+                // Logic check: depth logic follows below
+                if (depth === 0) {
                     if (this.settings.rainbowRootText && this.settings.rainbowRootBgTransparent && !isCustomColor) {
                         bg = "transparent";
                         text = color.hex;
