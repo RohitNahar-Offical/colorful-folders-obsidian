@@ -144,7 +144,19 @@ function hexToRgbObj(hex) {
 }
 
 function rgbToHex(r, g, b) {
-    return '#' + [r, g, b].map(c => c.toString(16).padStart(2, '0')).join('');
+    return '#' + [r, g, b].map(c => Math.max(0, Math.min(255, c)).toString(16).padStart(2, '0')).join('');
+}
+
+function anyToHex(colorStr) {
+    if (!colorStr) return "#ffffff";
+    if (colorStr.startsWith('#')) return colorStr;
+    if (colorStr.startsWith('rgb')) {
+        const m = colorStr.match(/\d+/g);
+        if (m && m.length >= 3) {
+            return rgbToHex(parseInt(m[0]), parseInt(m[1]), parseInt(m[2]));
+        }
+    }
+    return "#ffffff";
 }
 
 /**
@@ -936,9 +948,9 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
 
                     const autoIcon = this.getAutoIconData(child.name);
                     result = {
-                        hex: (fileStyle && fileStyle.hex) ? fileStyle.hex : color.hex,
-                        textColor: effText || "",
-                        iconColor: (fileStyle && fileStyle.iconColor) ? fileStyle.iconColor : "",
+                        hex: anyToHex((fileStyle && fileStyle.hex) ? fileStyle.hex : color.hex),
+                        textColor: effText ? anyToHex(effText) : "",
+                        iconColor: anyToHex((fileStyle && fileStyle.iconColor) ? fileStyle.iconColor : ""),
                         iconId: (fileStyle && fileStyle.iconId) ? fileStyle.iconId : (this.settings.autoIcons && autoIcon ? (this.settings.wideAutoIcons ? autoIcon.lucide : autoIcon.emoji) : ""),
                         opacity: (fileStyle && fileStyle.opacity !== undefined) ? fileStyle.opacity : 1.0,
                         isBold: (fileStyle && fileStyle.isBold !== undefined) ? fileStyle.isBold : (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle.isBold : false),
@@ -993,9 +1005,9 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
 
                     const autoIcon = this.getAutoIconData(child.name);
                     result = {
-                        hex: color.hex,
-                        textColor: effText || "",
-                        iconColor: (customStyle && customStyle.iconColor) ? customStyle.iconColor : "",
+                        hex: anyToHex(color.hex),
+                        textColor: effText ? anyToHex(effText) : "",
+                        iconColor: anyToHex((customStyle && customStyle.iconColor) ? customStyle.iconColor : ""),
                         iconId: (customStyle && customStyle.iconId) ? customStyle.iconId : (this.settings.autoIcons && autoIcon ? (this.settings.wideAutoIcons ? autoIcon.lucide : autoIcon.emoji) : ""),
                         opacity: (customStyle && customStyle.opacity !== undefined) ? customStyle.opacity : (depth === 0 ? this.settings.rootOpacity : this.settings.subfolderOpacity),
                         isBold: (customStyle && customStyle.isBold !== undefined) ? customStyle.isBold : (inheritedStyle && inheritedStyle.isBold !== undefined ? inheritedStyle.isBold : true),
