@@ -1075,21 +1075,29 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
         return result;
     }
 
+    registerCustomIcons() {
+        Object.entries(this.settings.customIcons || {}).forEach(([id, svg]) => {
+            if (id && svg) {
+                try {
+                    obsidian.addIcon(id, svg);
+                } catch (e) {
+                    console.error("Failed to register custom icon:", id, e);
+                }
+            }
+        });
+    }
+
     async onload() {
         console.log("Loading Colorful Folders Plugin v4");
         await this.loadSettings();
-
-        // Migrate older settings models gracefully
         if (!this.settings.customFolderColors) this.settings.customFolderColors = {};
         if (!this.settings.customIcons) this.settings.customIcons = {};
-
-        // Register custom icons with Obsidian
         this.registerCustomIcons();
 
         this.getStyle = (path) => {
             const style = this.settings.customFolderColors?.[path];
             if (!style) return null;
-            if (typeof style === 'string') return { hex: style }; // Legacy hex support
+            if (typeof style === 'string') return { hex: style }; 
             return style;
         };
 
@@ -1101,14 +1109,8 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
         this.heatmapCache = null;
         this._debounceTimer = null;
 
-        // Robust CSS selector escaping for paths containing special characters (. , # , [ , ] etc)
         this.safeEscape = (path) => {
             if (!path) return "";
-            // We use a comprehensive approach for attribute selectors:
-            // 1. Double backslashes for JS-to-CSS literal conversion
-            // 2. Escape double quotes as these wrap the attribute value
-            // 3. We DON'T need to escape dots/hashes inside [data-path="..."] as they are treated as string literals,
-            //    BUT we must ensure the value string itself is valid.
             return path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
         };
 
@@ -1117,23 +1119,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
         this.app.workspace.onLayoutReady(() => {
             this.generateStyles();
         });
-    }
 
-    registerCustomIcons() {
-        Object.entries(this.settings.customIcons).forEach(([id, svg]) => {
-            if (id && svg) {
-                try {
-                    obsidian.addIcon(id, svg);
-                } catch (e) {
-                    console.error("Failed to register custom icon:", id, e);
-                }
-            }
-        });
-    }
-
-    onunload() {
-        console.log("Unloading Colorful Folders Plugin");
-    }      // Register custom color context menu
         this.registerEvent(
             this.app.workspace.on('file-menu', (menu, file) => {
                 if (file instanceof obsidian.TFolder || file instanceof obsidian.TFile) {
@@ -1223,6 +1209,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
             this.generateStyles();
         }));
     }
+
 
     generateStylesDebounced() {
         if (this._debounceTimer) clearTimeout(this._debounceTimer);
