@@ -93,7 +93,17 @@ const DEFAULT_SETTINGS = {
     iconDebugMode: false,
     notebookNavigatorSupport: true,
     notebookNavigatorFileBackground: true,
+    iconScale: 1.0, // Global multiplier for all custom/auto icons
     customIcons: {} // Added for custom icon packs support
+};
+
+const HeatmapColors = {
+    HOT: "235, 111, 146",      // Index 0 in Vibrant
+    WARM: "246, 193, 119",     // Index 2 in Vibrant
+    ACTIVE: "166, 218, 149",   // Index 7 in Vibrant
+    STABLE: "49, 116, 143",    // Index 4 in Vibrant
+    COLD: "202, 158, 230",     // Index 10 in Vibrant
+    ICE: "180, 190, 254"       // Index 11 in Vibrant
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -408,14 +418,21 @@ class ColorPickerModal extends obsidian.Modal {
             padding: "18px 20px 12px", borderBottom: "1px solid var(--background-modifier-border)",
             marginBottom: "0"
         });
+        const iconScale = this.plugin.settings.iconScale || 1.0;
+        const headerIconW = Math.round(18 * iconScale);
+        const headerIconSize = Math.round(36 * (iconScale > 1.0 ? iconScale : 1.0)); // Adjust container if needed
+
         const iconWrap = header.createDiv();
         Object.assign(iconWrap.style, {
-            width: "36px", height: "36px", borderRadius: "8px",
+            width: `${headerIconSize}px`, height: `${headerIconSize}px`, borderRadius: "8px",
             display: "flex", alignItems: "center", justifyContent: "center",
             backgroundColor: this.style.hex, flexShrink: "0"
         });
         obsidian.setIcon(iconWrap, this.style.iconId || (this.isFolder ? "folder" : "file"));
         iconWrap.querySelector("svg") && (iconWrap.querySelector("svg").style.color = this.style.iconColor || this.style.textColor || "#fff");
+        if (iconWrap.querySelector("svg")) {
+            Object.assign(iconWrap.querySelector("svg").style, { width: `${headerIconW}px`, height: `${headerIconW}px` });
+        }
 
         const titleWrap = header.createDiv();
         titleWrap.createEl("div", { text: this.item.name, cls: "cf-modal-title" }).style.cssText =
@@ -497,19 +514,23 @@ class ColorPickerModal extends obsidian.Modal {
         this._prevLabel = prevLabel;
 
         const updatePreview = () => {
+            const iconScale = this.plugin.settings.iconScale || 1.0;
+            const previewIconW = Math.round(16 * iconScale);
+            const headerIconW = Math.round(18 * iconScale);
+
             const effectiveIconColor = this.style.iconColor || this.style.hex || "#fff";
             // Update header icon
             this._headerIconWrap.style.backgroundColor = this.style.hex;
             this._headerIconWrap.innerHTML = "";
             obsidian.setIcon(this._headerIconWrap, this.style.iconId || (this.isFolder ? "folder" : "file"));
             const hsvg = this._headerIconWrap.querySelector("svg");
-            if (hsvg) Object.assign(hsvg.style, { color: effectiveIconColor, width: "18px", height: "18px" });
+            if (hsvg) Object.assign(hsvg.style, { color: effectiveIconColor, width: `${headerIconW}px`, height: `${headerIconW}px` });
             // Update preview bar
             this._prevIconWrap.style.backgroundColor = this.style.hex;
             this._prevIconWrap.innerHTML = "";
             obsidian.setIcon(this._prevIconWrap, this.style.iconId || (this.isFolder ? "folder" : "file"));
             const prevSvg = this._prevIconWrap.querySelector("svg");
-            if (prevSvg) Object.assign(prevSvg.style, { color: effectiveIconColor, width: "16px", height: "16px" });
+            if (prevSvg) Object.assign(prevSvg.style, { color: effectiveIconColor, width: `${previewIconW}px`, height: `${previewIconW}px` });
             this._prevLabel.style.fontWeight = this.style.isBold ? "700" : "400";
             this._prevLabel.style.fontStyle = this.style.isItalic ? "italic" : "normal";
             this._prevLabel.style.color = this.style.textColor || "var(--text-normal)";
@@ -709,10 +730,14 @@ class ColorPickerModal extends obsidian.Modal {
             this.close();
         };
 
-        // Search box
+        // Search & Filter Row
         const searchRow = ic.createDiv();
-        Object.assign(searchRow.style, { marginBottom: "10px", position: "relative" });
-        const searchInput = searchRow.createEl("input", { type: "text" });
+        Object.assign(searchRow.style, { display: "flex", gap: "8px", marginBottom: "12px", alignItems: "center" });
+        
+        const searchInputWrap = searchRow.createDiv();
+        Object.assign(searchInputWrap.style, { position: "relative", flex: "1" });
+        
+        const searchInput = searchInputWrap.createEl("input", { type: "text" });
         Object.assign(searchInput.style, {
             width: "100%", padding: "7px 12px 7px 34px", borderRadius: "7px",
             border: "1px solid var(--background-modifier-border)",
@@ -720,7 +745,8 @@ class ColorPickerModal extends obsidian.Modal {
             fontSize: "0.85em", boxSizing: "border-box"
         });
         searchInput.placeholder = "Search icons…";
-        const searchIcon = searchRow.createDiv();
+        
+        const searchIcon = searchInputWrap.createDiv();
         Object.assign(searchIcon.style, {
             position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)",
             pointerEvents: "none", color: "var(--text-muted)"
@@ -728,6 +754,26 @@ class ColorPickerModal extends obsidian.Modal {
         obsidian.setIcon(searchIcon, "search");
         const ssvg = searchIcon.querySelector("svg");
         if (ssvg) Object.assign(ssvg.style, { width: "14px", height: "14px" });
+
+        // Pack Filter Dropdown
+        const customIds = Object.keys(this.plugin.settings.customIcons);
+        const prefixes = new Set(['all', 'lucide']);
+        customIds.forEach(id => {
+            const parts = id.split('-');
+            if (parts.length > 1) prefixes.add(parts[0]);
+            else prefixes.add('custom');
+        });
+
+        const filterSelect = searchRow.createEl("select");
+        Object.assign(filterSelect.style, {
+            padding: "6px 10px", borderRadius: "6px", border: "1px solid var(--background-modifier-border)",
+            backgroundColor: "var(--background-secondary)", color: "var(--text-normal)", fontSize: "0.85em"
+        });
+        Array.from(prefixes).sort().forEach(p => {
+            const opt = filterSelect.createEl("option", { text: p === 'all' ? 'All Packs' : p.toUpperCase(), value: p });
+            if (p === 'all') opt.selected = true;
+        });
+
 
         // Icon grid
         const iconGrid = ic.createDiv({ cls: "cf-icon-grid" });
@@ -739,20 +785,45 @@ class ColorPickerModal extends obsidian.Modal {
         });
 
         // Merge custom icons into the list
-        const customIds = Object.keys(this.plugin.settings.customIcons);
-        const allIcons = (obsidian.getIconIds ? obsidian.getIconIds() : [])
+        const lucideIcons = (obsidian.getIconIds ? obsidian.getIconIds() : [])
             .filter(id => id.startsWith('lucide-'))
-            .map(id => id.replace('lucide-', ''))
-            .concat(customIds)
-            .sort();
+            .map(id => id.replace('lucide-', ''));
+        
+        // Prioritize custom icons at the top
+        const allIconsSet = new Set([...customIds, ...lucideIcons]);
+        const allIcons = Array.from(allIconsSet);
 
-        const renderIcons = (filter) => {
+        const renderIcons = (search, packFilter = "all") => {
             iconGrid.empty();
-            const filtered = filter ? allIcons.filter(id => id.includes(filter.toLowerCase())) : allIcons;
-            filtered.slice(0, 400).forEach(id => {
+            let filtered = allIcons;
+            
+            // 1. Apply Pack Filter
+            if (packFilter !== "all") {
+                if (packFilter === "lucide") {
+                    filtered = lucideIcons;
+                } else {
+                    filtered = customIds.filter(id => {
+                        if (packFilter === "custom") return !id.includes("-");
+                        return id.startsWith(packFilter + "-");
+                    });
+                }
+            }
+
+            // 2. Apply Search Filter
+            if (search) {
+                const s = search.toLowerCase();
+                filtered = filtered.filter(id => id.toLowerCase().includes(s));
+            }
+
+            // 3. Final display (Prioritized and capped)
+            filtered.slice(0, 1000).forEach(id => {
+                const iconScale = this.plugin.settings.iconScale || 1.0;
+                const gridIconW = Math.round(24 * iconScale);
+                const cellSize = Math.round(44 * (iconScale > 1.0 ? iconScale : 1.0));
+
                 const cell = iconGrid.createDiv({ cls: "cf-icon-cell" });
                 Object.assign(cell.style, {
-                    width: "44px", height: "44px", borderRadius: "7px",
+                    width: `${cellSize}px`, height: `${cellSize}px`, borderRadius: "7px",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     cursor: "pointer", transition: "all 0.12s ease",
                     backgroundColor: this.style.iconId === id ? "var(--interactive-accent)" : "transparent",
@@ -760,10 +831,14 @@ class ColorPickerModal extends obsidian.Modal {
                 });
                 obsidian.setIcon(cell, id);
                 const cellSvg = cell.querySelector("svg");
-                if (cellSvg) Object.assign(cellSvg.style, {
-                    width: "18px", height: "18px",
-                    color: this.style.iconId === id ? "#fff" : "var(--text-normal)"
-                });
+                if (cellSvg) {
+                    cellSvg.removeAttribute('width');
+                    cellSvg.removeAttribute('height');
+                    Object.assign(cellSvg.style, {
+                        width: `${gridIconW}px`, height: `${gridIconW}px`,
+                        color: this.style.iconId === id ? "#fff" : "var(--text-normal)"
+                    });
+                }
                 cell.title = id;
                 cell.onmouseenter = () => {
                     if (this.style.iconId !== id) cell.style.backgroundColor = "var(--background-modifier-hover)";
@@ -775,7 +850,7 @@ class ColorPickerModal extends obsidian.Modal {
                     this.style.iconId = id;
                     this._refreshIconSelection(id, curIconBox);
                     if (this._updatePreview) this._updatePreview();
-                    renderIcons(searchInput.value);
+                    renderIcons(searchInput.value, filterSelect.value);
                 };
             });
             if (filtered.length === 0) {
@@ -783,8 +858,9 @@ class ColorPickerModal extends obsidian.Modal {
                     "padding:20px;text-align:center;color:var(--text-muted);font-size:0.85em;grid-column:1/-1";
             }
         };
-        renderIcons("");
-        searchInput.oninput = () => renderIcons(searchInput.value);
+        renderIcons("", "all");
+        searchInput.oninput = () => renderIcons(searchInput.value, filterSelect.value);
+        filterSelect.onchange = () => renderIcons(searchInput.value, filterSelect.value);
 
         // ── INHERITANCE TAB ─────────────────────────────────────────────────
         if (this.isFolder && tabPanels["inherit"]) {
@@ -1260,6 +1336,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
 
     async saveSettings() {
         await this.saveData(this.settings);
+        this.iconCache.clear(); // Ensure icons are re-calculated with new scaling or pack updates
         this.generateStylesDebounced();
     }
 
@@ -1413,10 +1490,14 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
         const darkBrightness = (this.settings.darkModeBrightness || 0) / 100;
         const brightnessAmount = isDark ? darkBrightness : lightBrightness;
 
+        const iconScale = this.settings.iconScale || 1.0;
+        const fileIconW = Math.round(17 * iconScale);
+        const folderIconW = Math.round(18 * iconScale);
+
         // Pre-cached common SVG markers
-        const CF_FOLDER_ICON = encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><path d="M2 10h20"/></svg>');
-        const CF_FILE_ICON = encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>');
-        const CF_FILE_TEXT_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; opacity: 0.85; vertical-align: middle;"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+        const CF_FOLDER_ICON = encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${folderIconW}" height="${folderIconW}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><path d="M2 10h20"/></svg>`);
+        const CF_FILE_ICON = encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${fileIconW}" height="${fileIconW}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`);
+        const CF_FILE_TEXT_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="${fileIconW}" height="${fileIconW}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; opacity: 0.85; vertical-align: middle;"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`;
         const CF_FOLDER_CLOSED = encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><path d="M2 10h20"/></svg>');
         const CF_FOLDER_OPEN = encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg>');
 
@@ -1465,15 +1546,15 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
 
         const now = Date.now();
         const getHeatmapColor = (mtime) => {
-            if (!mtime) return PALETTES["Vibrant Rainbow"][11]; // Ice cold default
+            if (!mtime) return currentPalette[currentPalette.length - 1]; 
             const diffDays = (now - mtime) / (1000 * 60 * 60 * 24);
-            const palettes = PALETTES["Vibrant Rainbow"]; // Heatmap explicitly uses vibrant scale
-            if (diffDays <= 1) return palettes[0]; // Red/Pink
-            if (diffDays <= 3) return palettes[2]; // Orange/Yellow
-            if (diffDays <= 7) return palettes[7]; // Green
-            if (diffDays <= 15) return palettes[4]; // Blue
-            if (diffDays <= 30) return palettes[10]; // Pale pink
-            return palettes[11]; // Cool lavender
+            const palettes = currentPalette;
+            if (diffDays <= 1) return palettes[0]; 
+            if (diffDays <= 3) return palettes[Math.min(2, palettes.length - 1)]; 
+            if (diffDays <= 7) return palettes[Math.min(7, palettes.length - 1)]; 
+            if (diffDays <= 15) return palettes[Math.min(4, palettes.length - 1)]; 
+            if (diffDays <= 30) return palettes[Math.min(10, palettes.length - 1)]; 
+            return palettes[palettes.length - 1];
         };
 
         if (this.settings.animateActivePath) {
@@ -1682,15 +1763,15 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                                     ${nnText} [data-path="${safePath}"] .nn-navitem-name::before {
                                         content: '' !important;
                                         display: inline-block !important;
-                                        width: 17px !important;
-                                        height: 17px !important;
+                                        width: ${fileIconW}px !important;
+                                        height: ${fileIconW}px !important;
                                         background-color: ${iconColor ? iconColor : color.hex} !important;
                                         -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${svgStr}') !important;
                                         -webkit-mask-repeat: no-repeat !important;
                                         -webkit-mask-position: center !important;
                                         -webkit-mask-size: contain !important;
                                         margin-right: 6px !important;
-                                        vertical-align: text-bottom !important;
+                                        vertical-align: middle !important;
                                         opacity: 0.85 !important;
                                     }
                                     ${nnText} [data-path="${safePath}"] .nn-navitem-icon {
@@ -1721,8 +1802,8 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                             }
                             const svgEl = tempEl.querySelector('svg');
                             if (svgEl) {
-                                svgEl.style.width = "17px";
-                                svgEl.style.height = "17px";
+                                svgEl.style.width = `${fileIconW}px`;
+                                svgEl.style.height = `${fileIconW}px`;
                                 svgEl.style.marginRight = "6px";
                                 svgEl.style.opacity = "0.85";
                                 svgEl.style.verticalAlign = "middle";
@@ -1738,15 +1819,15 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                                 ${nnText} [data-path="${safePath}"] .nn-navitem-name::before {
                                     content: '' !important;
                                     display: inline-block !important;
-                                    width: 17px !important;
-                                    height: 17px !important;
+                                    width: ${fileIconW}px !important;
+                                    height: ${fileIconW}px !important;
                                     background-color: ${iconColor ? iconColor : color.hex} !important;
                                     -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${svgStr}') !important;
                                     -webkit-mask-repeat: no-repeat !important;
                                     -webkit-mask-position: center !important;
                                     -webkit-mask-size: contain !important;
                                     margin-right: 6px !important;
-                                    vertical-align: text-bottom !important;
+                                    vertical-align: middle !important;
                                     opacity: 0.85 !important;
                                 }
                                 ${nnText} [data-path="${safePath}"] .nn-navitem-icon {
@@ -1772,15 +1853,15 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                             ${nnText} [data-path="${safePath}"] .nn-navitem-name::before {
                                 content: '' !important;
                                 display: inline-block !important;
-                                width: 17px !important;
-                                height: 17px !important;
+                                width: ${fileIconW}px !important;
+                                height: ${fileIconW}px !important;
                                 background-color: ${iconColor ? iconColor : color.hex} !important;
                                 -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${encodeURIComponent(CF_FILE_TEXT_ICON)}') !important;
                                 -webkit-mask-repeat: no-repeat !important;
                                 -webkit-mask-position: center !important;
                                 -webkit-mask-size: contain !important;
                                 margin-right: 6px !important;
-                                vertical-align: text-bottom !important;
+                                vertical-align: middle !important;
                                 opacity: 0.85 !important;
                             }
                             ${nnText} [data-path="${safePath}"] .nn-navitem-icon {
@@ -1999,15 +2080,15 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                                 ${nnText} [data-path="${safePath}"] .nn-navitem-name::before {
                                     content: '' !important;
                                     display: inline-block !important;
-                                    width: 18px !important;
-                                    height: 18px !important;
+                                    width: ${folderIconW}px !important;
+                                    height: ${folderIconW}px !important;
                                     background-color: ${(activeStyle && activeStyle.iconColor) ? activeStyle.iconColor : color.hex} !important;
                                     -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${svgStr}') !important;
                                     -webkit-mask-repeat: no-repeat !important;
                                     -webkit-mask-position: center !important;
                                     -webkit-mask-size: contain !important;
                                     margin-right: 6px !important;
-                                    vertical-align: text-bottom !important;
+                                    vertical-align: middle !important;
                                     opacity: 0.85 !important;
                                 }
                                 ${nnText} [data-path="${safePath}"] .nn-navitem-icon {
@@ -2036,15 +2117,15 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                             ${nnText} [data-path="${safePath}"] .nn-navitem-name::before {
                                 content: '' !important;
                                 display: inline-block !important;
-                                width: 18px !important;
-                                height: 18px !important;
+                                width: ${folderIconW}px !important;
+                                height: ${folderIconW}px !important;
                                 background-color: ${(activeStyle && activeStyle.iconColor) ? activeStyle.iconColor : color.hex} !important;
                                 -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${svgStr}') !important;
                                 -webkit-mask-repeat: no-repeat !important;
                                 -webkit-mask-position: center !important;
                                 -webkit-mask-size: contain !important;
                                 margin-right: 6px !important;
-                                vertical-align: text-bottom !important;
+                                vertical-align: middle !important;
                                 opacity: 0.8 !important;
                             }
                             ${nnText} [data-path="${safePath}"] .nn-navitem-icon {
@@ -2070,13 +2151,13 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                         body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
                             content: '' !important;
                             display: inline-block !important;
-                            width: 15px !important;
-                            height: 15px !important;
+                            width: ${Math.round(15 * iconScale)}px !important;
+                            height: ${Math.round(15 * iconScale)}px !important;
                             background-color: ${text} !important;
                             -webkit-mask-repeat: no-repeat !important;
                             -webkit-mask-position: center !important;
                             margin-right: 6px !important;
-                            vertical-align: text-bottom !important;
+                            vertical-align: middle !important;
                             opacity: 0.8 !important;
                         }
                         
@@ -2548,6 +2629,28 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
+        new obsidian.Setting(containerEl)
+            .setName('Global Icon Scaling')
+            .setDesc('Multiplies the size of all folder and file icons (default 1.0). Range: 0.5 to 2.5.')
+            .addSlider(slider => slider
+                .setLimits(0.5, 2.5, 0.1)
+                .setValue(this.plugin.settings.iconScale || 1.0)
+                .setDynamicTooltip()
+                .onChange(async (value) => {
+                    this.plugin.settings.iconScale = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new obsidian.Setting(containerEl)
+            .setName('Icon Debug Mode')
+            .setDesc('Logs icon matching logic to the developer console. Useful if auto-icons are not appearing as expected.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.iconDebugMode)
+                .onChange(async (value) => {
+                    this.plugin.settings.iconDebugMode = value;
+                    await this.plugin.saveSettings();
+                }));
+
         containerEl.createEl('h3', { text: 'Auto-Generated Icons' });
         new obsidian.Setting(containerEl)
             .setName('Enable Automatic Icons')
@@ -2701,6 +2804,39 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     this.plugin.settings.tintOpacity = parseFloat((value / 100).toFixed(3));
                     await this.plugin.saveSettings();
                 }));
+
+        containerEl.createEl('h3', { text: 'Maintenance' });
+        new obsidian.Setting(containerEl)
+            .setName('Reset All Styling')
+            .setDesc('DANGER: This will permanently remove all custom colors, icons, and presets you have assigned to specific folders and files. General settings will be preserved.')
+            .addButton(btn => btn
+                .setButtonText('Reset Everything')
+                .setWarning()
+                .onClick(async () => {
+                    if (confirm("Are you sure you want to delete ALL custom styling data? This cannot be undone.")) {
+                        this.plugin.settings.customFolderColors = {};
+                        this.plugin.settings.presets = {};
+                        await this.plugin.saveSettings();
+                        new obsidian.Notice("All custom styling has been reset.");
+                        this.display();
+                    }
+                }));
+
+        new obsidian.Setting(containerEl)
+            .setName('Clear All Custom Icons')
+            .setDesc('Permanently deletes all imported icon packs and single custom icons from your library.')
+            .addButton(btn => btn
+                .setButtonText('Clear Icon Library')
+                .setWarning()
+                .onClick(async () => {
+                    if (confirm("Are you sure you want to delete ALL custom icons? Paths using these icons will revert to defaults.")) {
+                        this.plugin.settings.customIcons = {};
+                        this.plugin.registerCustomIcons();
+                        await this.plugin.saveSettings();
+                        new obsidian.Notice("Icon library cleared.");
+                        this.display();
+                    }
+                }));
     }
 
     async importUrl(url) {
@@ -2713,15 +2849,40 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             if (data.icons && (data.prefix || data.info)) {
                 // Iconify Format Support
                 const prefix = data.prefix || "cf";
-                for (const [name, iconData] of Object.entries(data.icons)) {
+                const commonW = data.width || 24;
+                const commonH = data.height || 24;
+                
+                const processIcon = (name, iconData) => {
                     const id = `${prefix}-${name}`;
-                    const w = iconData.width || data.width || 24;
-                    const h = iconData.height || data.height || 24;
+                    const w = iconData.width || commonW;
+                    const h = iconData.height || commonH;
+                    const l = iconData.left || 0;
+                    const t = iconData.top || 0;
                     const body = iconData.body;
-                    if (!body) continue;
-                    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${body}</svg>`;
+                    if (!body) return false;
+                    
+                    // Create robust SVG with proper viewBox to handle offsets
+                    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${l} ${t} ${w} ${h}">${body}</svg>`;
                     this.plugin.settings.customIcons[id] = svg;
-                    count++;
+                    return true;
+                };
+
+                // 1. Process Main Icons
+                for (const [name, iconData] of Object.entries(data.icons)) {
+                    if (processIcon(name, iconData)) count++;
+                }
+
+                // 2. Process Aliases
+                if (data.aliases) {
+                    for (const [aliasName, aliasData] of Object.entries(data.aliases)) {
+                        const targetName = aliasData.parent;
+                        const targetData = data.icons[targetName];
+                        if (targetData) {
+                            // Merge alias transformations if they exist
+                            const merged = { ...targetData, ...aliasData };
+                            if (processIcon(aliasName, merged)) count++;
+                        }
+                    }
                 }
             } else {
                 // Standard Map Format: { "id": "<svg...>" }

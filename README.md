@@ -15,8 +15,28 @@ Obsidian's default file explorer can feel cluttered as your vault grows. **Color
 
 ---
 
+## 🚀 Version 4.0.6 - The "Precision & Maintenance" Update
+Version 4.0.6 focuses on professional visual alignment, robust icon pack integration, and new maintenance tools for vault health.
+
+### 📐 1. Professional Visual Alignment
+- **Universal Middle-Alignment**: Standardized all icons (custom, auto, and default) to `vertical-align: middle` for perfect centering across all Obsidian themes and font sizes.
+- **Smart Cache Invalidation**: The icon cache now intelligently clears when settings are saved, ensuring that changes to **Global Icon Scaling** are reflected instantly without a reload.
+
+### 📦 2. Enhanced Iconify Importer
+- **ViewBox & Offset Support**: Fixed the "Small Icon Clipping" bug. The importer now correctly handles `left`, `top`, `width`, and `height` properties from Iconify JSON packs.
+- **Alias Preservation**: Properly imports aliases and transformations from icon packs, significantly expanding available icon variety.
+
+### 🛠️ 3. Maintenance & Discovery
+- **"Reset All Styling" Button**: New safety feature to clear all custom folder/file overrides and presets in one click.
+- **"Clear Icon Library" Button**: Easily remove all imported icon packs if your library becomes cluttered.
+- **Icon Debug Mode**: Exposed a toggle to log matching logic to the console, making it easy to see exactly why a folder chose a specific auto-icon.
+
+### 📊 4. Adaptive Heatmap
+- **Palette Sync**: Heatmap mode now uses your currently selected Color Palette instead of a hardcoded rainbow, keeping your vault's look perfectly unified.
+
+---
+
 ## 🚀 Version 4.0.5 - The "Independence & Stability" Release
-Version 4.0.5 introduces a decoupled icon system and critical rendering restorations for a more flexible and vibrant vault.
 
 ### 🎨 1. Independent Icon Styling
 - **"Apply Icon Only" Mode**: Change icons and emojis without overriding your rainbow colors or custom tints. Icons are now fully decoupled from style inheritance.
