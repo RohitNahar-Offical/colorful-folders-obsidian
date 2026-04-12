@@ -15,6 +15,7 @@ Version 4.0.5 delivers the highly requested "Independent Icon" system, alongside
 
 ### 🌈 Visual Vibrancy Restoration
 - **Stacked Folder Clarity**: Corrected a "Double-Dimming" bug where nested folders were appearing excessively faint. Subfolders now maintain their rich, intended color intensity relative to your root folders.
+- **Glassmorphism Restoration**: Fixed a rendering bug where the premium **Glassmorphism** backdrop blur was failing to apply to subfolders. Now, all nested folders properly inherit the blur and saturation effects for a consistent, modern aesthetic.
 - **Rainbow Root Text Compatibility**: Fixed a logic error where adding an icon to a root folder would accidentally disable the premium **Rainbow Root Text** gradient effect. You can now enjoy both icons and vibrant text together.
 
 ### 🛠️ Core Engine Optimization
