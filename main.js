@@ -2236,7 +2236,11 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         // ── ICON PACKS PANEL ──────────────────────────────────────────────────
         iconPanel.createEl("h3", { text: "Manage Custom Icons" });
-        iconPanel.createEl("p", { text: "Add individual SVG icons or import bulk packs from the internet." }).style.fontSize = "0.85em";
+        
+        const iconDesc = iconPanel.createEl("p", { text: "Add individual SVG icons or import bulk packs from the internet. All custom icons added here will appear in the icon selection grid when styling a folder or file." });
+        Object.assign(iconDesc.style, { fontSize: "0.85em", color: "var(--text-muted)", marginBottom: "20px", lineHeight: "1.4" });
+
+        iconPanel.createEl("div", { text: "Pro Tip: Custom IDs should be unique. Avoid starting them with 'lucide-' unless you intend to override a built-in Obsidian icon." }).style.cssText = "font-size:0.8em; color:var(--text-accent); margin-bottom:15px; font-style:italic;";
 
         const manualWrap = iconPanel.createDiv();
         Object.assign(manualWrap.style, {
@@ -2268,7 +2272,7 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         new obsidian.Setting(iconPanel)
             .setName("Bulk Import from URL")
-            .setDesc("Enter a URL to a JSON icon pack { 'id': '<svg...>' }")
+            .setDesc("Fetch a JSON file containing icon mappings. Format: { \"id\": \"<svg...>\" }. Useful for syncing icon sets across devices.")
             .addText(text => {
                 text.setPlaceholder("https://example.com/icons.json");
                 const impBtn = iconPanel.createEl("button", { text: "Import" });
@@ -2349,9 +2353,9 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             </div>
         `;
 
-        containerEl.createEl('h3', { text: 'Core Configuration' });
         new obsidian.Setting(containerEl)
             .setName('Color Palette Theme')
+            .setDesc('Select a curated color scheme for your vault. Choose "Custom" to enter your own hex codes below.')
             .addDropdown(drop => drop
                 .addOption('Vibrant Rainbow', 'Vibrant Rainbow')
                 .addOption('Muted Dark Mode', 'Muted Dark Mode')
@@ -2377,6 +2381,7 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         new obsidian.Setting(containerEl)
             .setName('Color Generation Mode')
+            .setDesc('Cycle assigns colors sequentially. Monochromatic uses depth-based shading. Heatmap colors folders based on the most recently modified file inside.')
             .addDropdown(drop => drop
                 .addOption('cycle', 'Rainbow Cycle')
                 .addOption('monochromatic', 'Monochromatic Depth')
@@ -2387,9 +2392,9 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        containerEl.createEl('h3', { text: 'Visual Styles' });
         new obsidian.Setting(containerEl)
-            .setName('Root Folder Fill Appearance')
+            .setName('Root Folder Appearance')
+            .setDesc('Solid uses vivid backgrounds for root folders. Translucent provides a softer, glowing look.')
             .addDropdown(drop => drop
                 .addOption('solid', 'Solid Vivid Color')
                 .addOption('translucent', 'Translucent Glow')
@@ -2401,6 +2406,7 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         new obsidian.Setting(containerEl)
             .setName('Focus Mode')
+            .setDesc('Dims inactive root folders when you are working deep inside a project path.')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.focusMode)
                 .onChange(async (value) => {
@@ -2409,7 +2415,8 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 }));
 
         new obsidian.Setting(containerEl)
-            .setName('Glassmorphism Blur Effect')
+            .setName('Glassmorphism Blur')
+            .setDesc('Adds an iOS-style backdrop blur to folder backgrounds. Best with semi-translucent themes.')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.glassmorphism)
                 .onChange(async (value) => {
@@ -2483,6 +2490,7 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         containerEl.createEl('h3', { text: 'Path & Typography' });
         new obsidian.Setting(containerEl)
             .setName('Show Item Counters')
+            .setDesc('Displays recursive folder and file counts next to folder names.')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.showItemCounters)
                 .onChange(async (value) => {
@@ -2492,6 +2500,7 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         new obsidian.Setting(containerEl)
             .setName('Active File Glow')
+            .setDesc('Highlights the path to the currently active document with a connecting line.')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.activeGlow)
                 .onChange(async (value) => {
@@ -2525,6 +2534,7 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         new obsidian.Setting(containerEl)
             .setName('Rainbow Root Text')
+            .setDesc('Applies a vivid rainbow-text horizontal gradient to all top-level folders.')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.rainbowRootText)
                 .onChange(async (value) => {
@@ -2534,6 +2544,7 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         new obsidian.Setting(containerEl)
             .setName('Auto-color Files')
+            .setDesc('Automatically gives a subtle rainbow tint and color to all files in your vault.')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.autoColorFiles)
                 .onChange(async (value) => {
