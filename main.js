@@ -1491,7 +1491,8 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                         const mtime = child.stat.mtime;
                         color = getHeatmapColor(mtime);
                     } else if (this.settings.autoColorFiles) {
-                        color = currentPalette[(validIndex + fileIndex) % currentPalette.length];
+                        // Inheritance fix: if parent specifies a color, use it as baseline
+                        color = (inheritedStyle && inheritedStyle.hex) ? (this.hexToRgb(inheritedStyle.hex) || currentPalette[(validIndex + fileIndex) % currentPalette.length]) : currentPalette[(validIndex + fileIndex) % currentPalette.length];
                     } else {
                         // Default to inherited color (icon-only fallback) or theme default
                         color = passedColor || { rgb: "var(--text-normal-rgb)", hex: "var(--text-normal)" };
@@ -1907,7 +1908,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                             display: inline-block !important;
                             width: 15px !important;
                             height: 15px !important;
-                            background-color: currentColor !important;
+                            background-color: ${text} !important;
                             -webkit-mask-repeat: no-repeat !important;
                             -webkit-mask-position: center !important;
                             margin-right: 6px !important;
