@@ -1238,14 +1238,16 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
             // Gate: body:has(.nav-file-title.is-active) ensures we only dim when a file IS open.
             css += `
                 body:has(.nav-file-title.is-active) .nav-file-title,
-                body:has(.nav-file-title.is-active) .nav-folder-title {
+                body:has(.nav-file-title.is-active) .nav-folder-title,
+                body:has(.nav-file-title.is-active) .nav-folder-content::before {
                     opacity: 0.3 !important;
                     transition: opacity 0.3s ease !important;
                 }
                 body:has(.nav-file-title.is-active) .nav-file-title.is-active {
                     opacity: 1 !important;
                 }
-                body:has(.nav-file-title.is-active) .nav-folder:has(.is-active) > .nav-folder-title {
+                body:has(.nav-file-title.is-active) .nav-folder:has(.is-active) > .nav-folder-title,
+                body:has(.nav-file-title.is-active) .nav-folder:has(.is-active) > .nav-folder-content::before {
                     opacity: 1 !important;
                 }
                 body:not(.is-mobile):has(.nav-file-title.is-active) .nav-file-title:hover,
