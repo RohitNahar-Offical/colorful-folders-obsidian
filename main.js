@@ -599,6 +599,54 @@ class ColorPickerModal extends obsidian.Modal {
             .addToggle(t => t.setTooltip("Bold").setValue(this.style.isBold || false).onChange(v => { this.style.isBold = v; updatePreview(); }))
             .addToggle(t => t.setTooltip("Italic").setValue(this.style.isItalic || false).onChange(v => { this.style.isItalic = v; updatePreview(); }));
 
+        // Quick Apply Buttons for Appearance
+        const apActions = ap.createDiv();
+        Object.assign(apActions.style, {
+            display: "flex", justifyContent: "flex-end", marginTop: "24px", gap: "8px",
+            paddingTop: "16px", borderTop: "1px solid var(--background-modifier-border-focus)"
+        });
+
+        const applyBgBtn = apActions.createEl("button");
+        applyBgBtn.setText("Apply Background Only");
+        Object.assign(applyBgBtn.style, {
+            padding: "5px 12px", borderRadius: "6px", fontSize: "0.85em", fontWeight: "600",
+            cursor: "pointer", border: "1px solid var(--interactive-accent)",
+            background: "none", color: "var(--interactive-accent)"
+        });
+        applyBgBtn.onclick = async () => {
+            const path = this.item.path;
+            const existing = this.plugin.getStyle(path) || {};
+            existing.hex = this.style.hex;
+            existing.opacity = this.style.opacity;
+            if (this.style.applyToSubfolders !== undefined) existing.applyToSubfolders = this.style.applyToSubfolders;
+            if (this.style.applyToFiles !== undefined) existing.applyToFiles = this.style.applyToFiles;
+            this.plugin.settings.customFolderColors[path] = existing;
+            await this.plugin.saveSettings();
+            new obsidian.Notice(`Background updated for ${this.item.name}`);
+            this.close();
+        };
+
+        const applyTextBtn = apActions.createEl("button");
+        applyTextBtn.setText("Apply Text Only");
+        Object.assign(applyTextBtn.style, {
+            padding: "5px 12px", borderRadius: "6px", fontSize: "0.85em", fontWeight: "600",
+            cursor: "pointer", border: "1px solid var(--interactive-accent)",
+            background: "none", color: "var(--interactive-accent)"
+        });
+        applyTextBtn.onclick = async () => {
+            const path = this.item.path;
+            const existing = this.plugin.getStyle(path) || {};
+            existing.textColor = this.style.textColor;
+            existing.isBold = this.style.isBold;
+            existing.isItalic = this.style.isItalic;
+            if (this.style.applyToSubfolders !== undefined) existing.applyToSubfolders = this.style.applyToSubfolders;
+            if (this.style.applyToFiles !== undefined) existing.applyToFiles = this.style.applyToFiles;
+            this.plugin.settings.customFolderColors[path] = existing;
+            await this.plugin.saveSettings();
+            new obsidian.Notice(`Text styling updated for ${this.item.name}`);
+            this.close();
+        };
+
         // ── ICON TAB ────────────────────────────────────────────────────────
         const ic = tabPanels["icon"];
 
