@@ -2339,23 +2339,33 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         Object.assign(gallery.style, { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "20px" });
 
         const packs = [
-            { name: "🔥 Ultimate Community Pack", desc: "15+ essential category icons.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/master/icons/community-core.json" },
-            { name: "🌈 Vibrant Folders", desc: "Colorful folder variants.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/master/icons/vibrant-folders.json" },
-            { name: "📁 System Essentials", desc: "OS-style icon set.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/master/icons/system-essentials.json" }
+            { name: "🔥 Ultimate Community Pack", desc: "15+ essential category icons for Home, Code, and System.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/master/icons/community-core.json" },
+            { name: "🌈 Vibrant Folders", desc: "Stylized folder variants including plus, lock, and check markers.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/master/icons/vibrant-folders.json" },
+            { name: "📁 System Essentials", desc: "Tech-focused icons for terminals, databases, and hardware notes.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/master/icons/system-essentials.json" }
         ];
 
         packs.forEach(p => {
-            const card = gallery.createDiv();
-            Object.assign(card.style, {
-                padding: "12px", background: "var(--background-secondary)", borderRadius: "8px", 
-                border: "1px solid var(--background-modifier-border)",
-                display: "flex", flexDirection: "column", gap: "6px"
+            const row = iconPanel.createDiv();
+            Object.assign(row.style, {
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "16px 0", borderBottom: "1px solid var(--background-modifier-border)",
+                gap: "20px"
             });
-            card.createEl("div", { text: p.name }).style.fontWeight = "600";
-            card.createEl("div", { text: p.desc }).style.fontSize = "0.75em";
-            const btn = card.createEl("button", { text: "One-Click Import" });
-            Object.assign(btn.style, { width: "100%", marginTop: "5px", fontSize: "0.8em" });
-            btn.onclick = () => this.importUrl(p.url);
+
+            const content = row.createDiv();
+            Object.assign(content.style, { flex: "1" });
+            
+            content.createEl("div", { text: p.name }).style.fontWeight = "600";
+            content.createEl("div", { text: p.desc }).style.fontSize = "0.8em";
+            
+            const link = content.createEl("a", { text: "View Source", href: p.url });
+            Object.assign(link.style, { 
+                fontSize: "0.7em", color: "var(--text-accent)", marginTop: "4px", display: "inline-block" 
+            });
+
+            const downloadBtn = row.createEl("button", { text: "Download" });
+            Object.assign(downloadBtn.style, { minWidth: "90px" });
+            downloadBtn.onclick = () => this.importUrl(p.url);
         });
 
         iconPanel.createEl("h4", { text: "Custom Icon Library" }).style.marginTop = "20px";
