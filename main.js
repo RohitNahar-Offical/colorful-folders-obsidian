@@ -1581,7 +1581,8 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                 const effectiveTextColor = (customStyle && customStyle.textColor) ? customStyle.textColor : (inheritedStyle ? inheritedStyle.textColor : null);
                 if (effectiveTextColor) {
                     text = effectiveTextColor;
-                } else if (isCustom || inheritedStyle) {
+                } else if (isCustomColor || (inheritedStyle && inheritedStyle.hex)) {
+                    // Only apply high-contrast solid colors if a CUSTOM COLOR is actually set
                     const customAdjust = isDark ? Math.max(brightnessAmount, 0) : brightnessAmount;
                     text = (rootBgStyle === "solid" && depth === 0 && !outlineOnly) ? contrastColor : ((isDark && customAdjust === 0) ? color.hex : `rgb(${this.adjustBrightnessRgb(color.rgb, customAdjust)})`);
                 }
