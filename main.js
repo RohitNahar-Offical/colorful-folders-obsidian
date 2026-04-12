@@ -1329,8 +1329,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                     }
 
                     const isCustomColor = !!(fileStyle && fileStyle.hex);
-                    const isCustomIcon = !!(fileStyle && fileStyle.iconId);
-                    const shouldColorFile = isCustomColor || isCustomIcon || (inheritedStyle && inheritedStyle.applyToFiles) || this.settings.autoColorFiles;
+                    const shouldColorFile = isCustomColor || (inheritedStyle && inheritedStyle.applyToFiles) || this.settings.autoColorFiles;
                     
                     // Logic fix: Merge styles to allow icon from fileStyle and color/font from inheritedStyle
                     const activeStyle = fileStyle || (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle : null);
@@ -1586,10 +1585,6 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                     // Only apply high-contrast solid colors if a CUSTOM COLOR is actually set for the background
                     const customAdjust = isDark ? Math.max(brightnessAmount, 0) : brightnessAmount;
                     text = (rootBgStyle === "solid" && depth === 0 && !outlineOnly) ? contrastColor : ((isDark && customAdjust === 0) ? color.hex : `rgb(${this.adjustBrightnessRgb(color.rgb, customAdjust)})`);
-                } else if (isCustom || inheritedStyle) {
-                    // If we only have an icon or generic style, ensure we use the automatic "vibrant" color
-                    const customAdjust = isDark ? Math.max(brightnessAmount, 0) : brightnessAmount;
-                    text = (isDark && customAdjust === 0) ? color.hex : `rgb(${this.adjustBrightnessRgb(color.rgb, customAdjust)})`;
                 }
 
                 const bgTint = outlineOnly ? "transparent" : `rgba(${color.rgb}, ${tintOp})`;
