@@ -928,10 +928,16 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                         color = palette[(validIdx + i) % palette.length];
                     }
 
+                    let effText = (fileStyle && fileStyle.textColor) ? fileStyle.textColor : (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle.textColor : null);
+                    if (!effText && (isCustomColor || (inheritedStyle && inheritedStyle.applyToFiles) || this.settings.autoColorFiles)) {
+                        const fileBright = isDark ? Math.max(brightnessAmount, 0.15) : brightnessAmount;
+                        effText = `rgb(${this.adjustBrightnessRgb(color.rgb, fileBright)})`;
+                    }
+
                     const autoIcon = this.getAutoIconData(child.name);
                     result = {
                         hex: (fileStyle && fileStyle.hex) ? fileStyle.hex : color.hex,
-                        textColor: (fileStyle && fileStyle.textColor) ? fileStyle.textColor : (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle.textColor : ""),
+                        textColor: effText || "",
                         iconColor: (fileStyle && fileStyle.iconColor) ? fileStyle.iconColor : "",
                         iconId: (fileStyle && fileStyle.iconId) ? fileStyle.iconId : (this.settings.autoIcons && autoIcon ? (this.settings.wideAutoIcons ? autoIcon.lucide : autoIcon.emoji) : ""),
                         opacity: (fileStyle && fileStyle.opacity !== undefined) ? fileStyle.opacity : 1.0,
@@ -965,10 +971,30 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                 }
 
                 if (child === target) {
+                    let effText = (customStyle && customStyle.textColor) ? customStyle.textColor : (inheritedStyle ? inheritedStyle.textColor : null);
+                    if (!effText) {
+                        const contrastColor = isDark ? "#191724" : "#ffffff";
+                        const rootAdjust = isDark ? Math.max(brightnessAmount, 0) : brightnessAmount;
+                        if (depth === 0) {
+                            if (!(this.settings.rainbowRootText && this.settings.rainbowRootBgTransparent && !isCustomColor)) {
+                                if (this.settings.rootStyle === "solid" && !this.settings.outlineOnly) {
+                                    effText = contrastColor;
+                                } else {
+                                    effText = (isDark && rootAdjust === 0) ? color.hex : `rgb(${this.adjustBrightnessRgb(color.rgb, rootAdjust)})`;
+                                }
+                            } else {
+                                effText = color.hex;
+                            }
+                        } else {
+                            const subAdjust = isDark ? Math.max(brightnessAmount, 0) : brightnessAmount;
+                            effText = (isDark && subAdjust === 0) ? color.hex : `rgb(${this.adjustBrightnessRgb(color.rgb, subAdjust)})`;
+                        }
+                    }
+
                     const autoIcon = this.getAutoIconData(child.name);
                     result = {
                         hex: color.hex,
-                        textColor: (customStyle && customStyle.textColor) ? customStyle.textColor : (inheritedStyle ? inheritedStyle.textColor : ""),
+                        textColor: effText || "",
                         iconColor: (customStyle && customStyle.iconColor) ? customStyle.iconColor : "",
                         iconId: (customStyle && customStyle.iconId) ? customStyle.iconId : (this.settings.autoIcons && autoIcon ? (this.settings.wideAutoIcons ? autoIcon.lucide : autoIcon.emoji) : ""),
                         opacity: (customStyle && customStyle.opacity !== undefined) ? customStyle.opacity : (depth === 0 ? this.settings.rootOpacity : this.settings.subfolderOpacity),
