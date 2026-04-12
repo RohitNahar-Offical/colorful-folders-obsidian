@@ -634,6 +634,28 @@ class ColorPickerModal extends obsidian.Modal {
             updatePreview();
         };
 
+        const applyIconBtn = curIconRow.createEl("button");
+        applyIconBtn.setText("Apply Icon Only");
+        Object.assign(applyIconBtn.style, {
+            marginLeft: "6px", padding: "4px 12px", borderRadius: "5px",
+            border: "1px solid var(--interactive-accent)",
+            background: "var(--interactive-accent)", cursor: "pointer", fontSize: "0.8em",
+            fontWeight: "600", color: "var(--text-on-accent)"
+        });
+        applyIconBtn.onclick = async () => {
+            const path = this.item.path;
+            const existing = this.plugin.settings.customFolderColors[path] || {};
+            // If it was a string (legacy), convert to object
+            const base = (typeof existing === 'string') ? { hex: existing } : { ...existing };
+            
+            base.iconId = this.style.iconId;
+            
+            this.plugin.settings.customFolderColors[path] = base;
+            await this.plugin.saveSettings();
+            new obsidian.Notice(`Icon updated for ${this.item.name}`);
+            this.close();
+        };
+
         // Search box
         const searchRow = ic.createDiv();
         Object.assign(searchRow.style, { marginBottom: "10px", position: "relative" });
