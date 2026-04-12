@@ -92,7 +92,8 @@ const DEFAULT_SETTINGS = {
     customIconRules: "",
     iconDebugMode: false,
     notebookNavigatorSupport: true,
-    notebookNavigatorFileBackground: true
+    notebookNavigatorFileBackground: true,
+    customIcons: {} // Added for custom icon packs support
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -737,10 +738,12 @@ class ColorPickerModal extends obsidian.Modal {
             borderRadius: "8px", padding: "8px"
         });
 
-        // Only show proper lucide icons — filter out internal Obsidian-only IDs
+        // Merge custom icons into the list
+        const customIds = Object.keys(this.plugin.settings.customIcons);
         const allIcons = (obsidian.getIconIds ? obsidian.getIconIds() : [])
             .filter(id => id.startsWith('lucide-'))
             .map(id => id.replace('lucide-', ''))
+            .concat(customIds)
             .sort();
 
         const renderIcons = (filter) => {
@@ -1078,6 +1081,10 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
 
         // Migrate older settings models gracefully
         if (!this.settings.customFolderColors) this.settings.customFolderColors = {};
+        if (!this.settings.customIcons) this.settings.customIcons = {};
+
+        // Register custom icons with Obsidian
+        this.registerCustomIcons();
 
         this.getStyle = (path) => {
             const style = this.settings.customFolderColors?.[path];
@@ -1110,8 +1117,23 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
         this.app.workspace.onLayoutReady(() => {
             this.generateStyles();
         });
+    }
 
-        // Register custom color context menu
+    registerCustomIcons() {
+        Object.entries(this.settings.customIcons).forEach(([id, svg]) => {
+            if (id && svg) {
+                try {
+                    obsidian.addIcon(id, svg);
+                } catch (e) {
+                    console.error("Failed to register custom icon:", id, e);
+                }
+            }
+        });
+    }
+
+    onunload() {
+        console.log("Unloading Colorful Folders Plugin");
+    }      // Register custom color context menu
         this.registerEvent(
             this.app.workspace.on('file-menu', (menu, file) => {
                 if (file instanceof obsidian.TFolder || file instanceof obsidian.TFile) {
@@ -2172,35 +2194,39 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         const generalPanel = rootEl.createDiv();
         const intPanel = rootEl.createDiv();
         intPanel.style.display = "none";
+        const iconPanel = rootEl.createDiv();
+        iconPanel.style.display = "none";
 
-        const btnGen = tabBar.createEl("button");
-        btnGen.innerHTML = '<span style="vertical-align: middle; margin-right: 6px;">⚙️</span>General Options';
-        const btnInt = tabBar.createEl("button");
-        btnInt.innerHTML = '<span style="vertical-align: middle; margin-right: 6px;">🔌</span>Plugin Integrations';
+        const btnGen = tabBar.createEl("button", { text: "⚙️ General Options" });
+        const btnInt = tabBar.createEl("button", { text: "🔗 Integrations" });
+        const btnIcon = tabBar.createEl("button", { text: "📦 Icon Packs" });
 
         const styleBtn = (btn, active) => {
             Object.assign(btn.style, {
                 background: "none", border: "none", padding: "8px 16px", cursor: "pointer",
                 fontSize: "0.95em", fontWeight: "600",
                 color: active ? "var(--interactive-accent)" : "var(--text-muted)",
-                borderBottom: active ? "2px solid var(--interactive-accent)" : "2px solid transparent",
+                borderBottom: active ? "3px solid var(--interactive-accent)" : "3px solid transparent",
+                transition: "all 0.15s ease"
             });
         };
 
-        styleBtn(btnGen, true); styleBtn(btnInt, false);
-
-        btnGen.onclick = () => {
-            styleBtn(btnGen, true); styleBtn(btnInt, false);
-            generalPanel.style.display = "block"; intPanel.style.display = "none";
-        };
-        btnInt.onclick = () => {
-            styleBtn(btnGen, false); styleBtn(btnInt, true);
-            generalPanel.style.display = "none"; intPanel.style.display = "block";
+        const setTab = (t) => {
+            generalPanel.style.display = (t === "gen" ? "block" : "none");
+            intPanel.style.display = (t === "int" ? "block" : "none");
+            iconPanel.style.display = (t === "icon" ? "block" : "none");
+            styleBtn(btnGen, t === "gen");
+            styleBtn(btnInt, t === "int");
+            styleBtn(btnIcon, t === "icon");
         };
 
-        // --- Integrations Tab ---
+        btnGen.onclick = () => setTab("gen");
+        btnInt.onclick = () => setTab("int");
+        btnIcon.onclick = () => setTab("icon");
+        setTab("gen");
+
+        // ── INTEGRATIONS PANEL ────────────────────────────────────────────────
         intPanel.createEl('h3', { text: 'Notebook Navigator' });
-
         new obsidian.Setting(intPanel)
             .setName('Enable Notebook Navigator Support')
             .setDesc('Allows Colorful Folders to safely style the icons and text of Notebook Navigator items.')
@@ -2213,7 +2239,7 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         new obsidian.Setting(intPanel)
             .setName('Apply Background Colors to Files')
-            .setDesc('Injects the faint background block and left border to file cards. Disable this to keep the cards strictly native and only color the text.')
+            .setDesc('Injects the faint background block and left border to file cards. Disable this to keep the cards strictly native.')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.notebookNavigatorFileBackground)
                 .onChange(async (value) => {
@@ -2221,7 +2247,99 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        // --- Shadow containerEl for the rest of the existing code ---
+        // ── ICON PACKS PANEL ──────────────────────────────────────────────────
+        iconPanel.createEl("h3", { text: "Manage Custom Icons" });
+        iconPanel.createEl("p", { text: "Add individual SVG icons or import bulk packs from the internet." }).style.fontSize = "0.85em";
+
+        const manualWrap = iconPanel.createDiv();
+        Object.assign(manualWrap.style, {
+            padding: "16px", background: "var(--background-secondary)", borderRadius: "10px",
+            border: "1px solid var(--background-modifier-border)", marginBottom: "20px"
+        });
+        
+        manualWrap.createEl("div", { text: "Add Single Icon" }).style.cssText = "font-weight:700;margin-bottom:10px;font-size:0.9em";
+        const manualRow = manualWrap.createDiv();
+        Object.assign(manualRow.style, { display: "flex", gap: "8px", flexWrap: "wrap" });
+        const idInp = manualRow.createEl("input", { placeholder: "Icon ID (e.g. cloud-logo)" });
+        const svgInp = manualRow.createEl("input", { placeholder: "SVG Code (<svg...)" });
+        idInp.style.flex = "1"; svgInp.style.flex = "3";
+        
+        const addBtn = manualRow.createEl("button", { text: "Add Icon" });
+        addBtn.onclick = async () => {
+            const id = idInp.value.trim();
+            const svg = svgInp.value.trim();
+            if (!id || !svg.startsWith("<svg")) {
+                new obsidian.Notice("Please provide a valid ID and SVG code.");
+                return;
+            }
+            this.plugin.settings.customIcons[id] = svg;
+            this.plugin.registerCustomIcons();
+            await this.plugin.saveSettings();
+            this.display();
+            new obsidian.Notice(`Icon '${id}' registered!`);
+        };
+
+        new obsidian.Setting(iconPanel)
+            .setName("Bulk Import from URL")
+            .setDesc("Enter a URL to a JSON icon pack { 'id': '<svg...>' }")
+            .addText(text => {
+                text.setPlaceholder("https://example.com/icons.json");
+                const impBtn = iconPanel.createEl("button", { text: "Import" });
+                Object.assign(impBtn.style, { marginLeft: "8px" });
+                impBtn.onclick = async () => {
+                    const url = text.getValue().trim();
+                    if (!url) return;
+                    try {
+                        const res = await fetch(url);
+                        const data = await res.json();
+                        let count = 0;
+                        for (const [id, svg] of Object.entries(data)) {
+                            if (typeof svg === 'string' && svg.startsWith('<svg')) {
+                                this.plugin.settings.customIcons[id] = svg;
+                                count++;
+                            }
+                        }
+                        this.plugin.registerCustomIcons();
+                        await this.plugin.saveSettings();
+                        new obsidian.Notice(`Successfully imported ${count} icons!`);
+                        this.display();
+                    } catch (e) {
+                         new obsidian.Notice("Import failed. See console.");
+                         console.error(e);
+                    }
+                };
+            });
+
+        iconPanel.createEl("h4", { text: "Custom Icon Library" }).style.marginTop = "20px";
+        const lib = iconPanel.createDiv();
+        Object.assign(lib.style, {
+            maxHeight: "350px", overflowY: "auto", padding: "8px",
+            border: "1px solid var(--background-modifier-border)", borderRadius: "8px"
+        });
+        const customIconList = Object.entries(this.plugin.settings.customIcons);
+        if (customIconList.length === 0) {
+            lib.createEl("div", { text: "No custom icons found." }).style.cssText = "color:var(--text-muted);font-style:italic;padding:10px";
+        } else {
+            customIconList.forEach(([id, svg]) => {
+                const item = lib.createDiv();
+                Object.assign(item.style, { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px", borderBottom: "1px solid var(--background-modifier-border-focus)" });
+                const left = item.createDiv();
+                Object.assign(left.style, { display: "flex", alignItems: "center", gap: "10px" });
+                const box = left.createDiv(); box.innerHTML = svg;
+                const sv = box.querySelector("svg"); if (sv) Object.assign(sv.style, { width: "18px", height: "18px" });
+                left.createEl("span", { text: id }).style.fontSize = "0.9em";
+                
+                const del = item.createEl("button", { text: "Remove" });
+                Object.assign(del.style, { color: "var(--text-error)", padding: "2px 8px", fontSize: "0.8em" });
+                del.onclick = async () => {
+                    delete this.plugin.settings.customIcons[id];
+                    await this.plugin.saveSettings();
+                    this.display();
+                };
+            });
+        }
+
+        // ── GENERAL PANEL (CONTAINS EXISTING CONFIG) ──────────────────────────
         const containerEl = generalPanel;
 
         const tipEl = containerEl.createEl('div');
@@ -2238,18 +2356,15 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 <div>
                     <div style="margin: 0 0 4px 0; color: var(--text-normal); font-weight: 700; font-size: 1.05em;">Context Menu Colors</div>
                     <div style="color: var(--text-muted); font-size: 0.95em; line-height: 1.4;">
-                        Right-click any folder in your vault and click <strong>"Set Custom Folder Color"</strong> to assign it a specific overriding hex color!
+                        Right-click any folder or file and click <strong>"Set Custom Style"</strong> to assign specific overrides!
                     </div>
                 </div>
             </div>
         `;
 
-        // SECTION 1: CORE CONFIGURATION
         containerEl.createEl('h3', { text: 'Core Configuration' });
-
         new obsidian.Setting(containerEl)
             .setName('Color Palette Theme')
-            .setDesc('Choose the vibe. Select Custom to use your own colors below.')
             .addDropdown(drop => drop
                 .addOption('Vibrant Rainbow', 'Vibrant Rainbow')
                 .addOption('Muted Dark Mode', 'Muted Dark Mode')
@@ -2264,7 +2379,7 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         new obsidian.Setting(containerEl)
             .setName('Custom Colors (Hex)')
-            .setDesc('If Custom is selected above, enter a comma-separated list of hex colors (e.g. #eb6f92, #9ccfd8)')
+            .setDesc('Comma-separated list of hex colors.')
             .addText(text => text
                 .setPlaceholder('#ff0000, #00ff00')
                 .setValue(this.plugin.settings.customPalette)
@@ -2275,23 +2390,19 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         new obsidian.Setting(containerEl)
             .setName('Color Generation Mode')
-            .setDesc('How colors are assigned to folders across your vault.')
             .addDropdown(drop => drop
                 .addOption('cycle', 'Rainbow Cycle')
                 .addOption('monochromatic', 'Monochromatic Depth')
-                .addOption('heatmap', 'Activity Heatmap (Hot = Modified recently)')
+                .addOption('heatmap', 'Activity Heatmap')
                 .setValue(this.plugin.settings.colorMode)
                 .onChange(async (value) => {
                     this.plugin.settings.colorMode = value;
                     await this.plugin.saveSettings();
                 }));
 
-        // SECTION 2: VISUAL STYLES
         containerEl.createEl('h3', { text: 'Visual Styles' });
-
         new obsidian.Setting(containerEl)
             .setName('Root Folder Fill Appearance')
-            .setDesc('Should top-level background blocks stand out vividly (Solid) or blend in gracefully (Translucent).')
             .addDropdown(drop => drop
                 .addOption('solid', 'Solid Vivid Color')
                 .addOption('translucent', 'Translucent Glow')
@@ -2301,10 +2412,8 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-
         new obsidian.Setting(containerEl)
-            .setName('Focus Mode (Dim Inactive Roots)')
-            .setDesc('Dims other top-level folders softly when you dive into a specific active document path.')
+            .setName('Focus Mode')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.focusMode)
                 .onChange(async (value) => {
@@ -2314,7 +2423,6 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         new obsidian.Setting(containerEl)
             .setName('Glassmorphism Blur Effect')
-            .setDesc('Adds a premium iOS-style backdrop blur to folder backgrounds. Best with translucent Obsidian themes.')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.glassmorphism)
                 .onChange(async (value) => {
@@ -2323,14 +2431,11 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 }));
 
         containerEl.createEl('h4', { text: 'Adaptive Theme Visibility' });
-
         new obsidian.Setting(containerEl)
             .setName('Light Mode Brightness (%)')
-            .setDesc('Adjusts color brightness in Light Mode (-100 = Darker, 0 = Natural, 100 = Brighter).')
             .addSlider(slider => slider
                 .setLimits(-100, 100, 1)
                 .setValue(this.plugin.settings.lightModeBrightness || 0)
-                .setDynamicTooltip()
                 .onChange(async (value) => {
                     this.plugin.settings.lightModeBrightness = value;
                     await this.plugin.saveSettings();
@@ -2338,11 +2443,9 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         new obsidian.Setting(containerEl)
             .setName('Dark Mode Brightness (%)')
-            .setDesc('Adjusts color brightness in Dark Mode (-100 = Darker, 0 = Natural, 100 = Brighter).')
             .addSlider(slider => slider
                 .setLimits(-100, 100, 1)
                 .setValue(this.plugin.settings.darkModeBrightness || 0)
-                .setDynamicTooltip()
                 .onChange(async (value) => {
                     this.plugin.settings.darkModeBrightness = value;
                     await this.plugin.saveSettings();
@@ -2350,7 +2453,6 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         new obsidian.Setting(containerEl)
             .setName('Outline Only Mode')
-            .setDesc('Removes background tinting globally and only keeps the bright connecting folder lines and text colors.')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.outlineOnly)
                 .onChange(async (value) => {
@@ -2358,12 +2460,9 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        // SECTION 3: AUTO-GENERATED ICONS
         containerEl.createEl('h3', { text: 'Auto-Generated Icons' });
-
         new obsidian.Setting(containerEl)
             .setName('Enable Automatic Icons')
-            .setDesc('Natively injects icons for common folder and file names (e.g., Journal -> 📅). Features 20+ smart categories.')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.autoIcons)
                 .onChange(async (value) => {
@@ -2375,7 +2474,6 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         if (this.plugin.settings.autoIcons) {
             new obsidian.Setting(containerEl)
                 .setName('Wide Icon Rendering (Lucide SVGs)')
-                .setDesc('Replaces emojis with high-clarity Lucide icons. Adds a modern, wider look for improved visibility.')
                 .addToggle(toggle => toggle
                     .setValue(this.plugin.settings.wideAutoIcons)
                     .onChange(async (value) => {
@@ -2384,36 +2482,20 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     }));
 
             new obsidian.Setting(containerEl)
-                .setName('Custom Priority-Based Auto-Icons')
-                .setDesc('Define custom rules. Format: regex, emoji, lucideIcon, priority. Example: ^docs$, 📚, book, 200. Higher priority resolves tie-breakers.')
+                .setName('Priority Rules')
                 .addTextArea(text => {
-                    text.setPlaceholder('^secrets$, 🔒, lock, 999\n^images$, 🖼️, image, 150')
-                        .setValue(this.plugin.settings.customIconRules || "")
+                    text.setValue(this.plugin.settings.customIconRules || "")
                         .onChange(async (value) => {
                             this.plugin.settings.customIconRules = value;
                             await this.plugin.saveSettings();
                         });
                     text.inputEl.rows = 4;
-                    text.inputEl.cols = 40;
                 });
-
-            new obsidian.Setting(containerEl)
-                .setName('Icon Matching Debug Mode')
-                .setDesc('Logs icon match resolution to the developer console. Useful if a folder matches multiple rules and you want to see why an icon was chosen.')
-                .addToggle(toggle => toggle
-                    .setValue(this.plugin.settings.iconDebugMode)
-                    .onChange(async (value) => {
-                        this.plugin.settings.iconDebugMode = value;
-                        await this.plugin.saveSettings();
-                    }));
         }
 
-        // SECTION 4: ACTIVE PATH & TYPOGRAPHY
-        containerEl.createEl('h3', { text: 'Active Path & Typography' });
-
+        containerEl.createEl('h3', { text: 'Path & Typography' });
         new obsidian.Setting(containerEl)
             .setName('Show Item Counters')
-            .setDesc('Displays recursive folder and file counts next to folders in the standard file explorer.')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.showItemCounters)
                 .onChange(async (value) => {
@@ -2421,11 +2503,8 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        // Bug 5 Fix: Removed duplicate 'Active Path & Typography' heading that was rendered twice
-
         new obsidian.Setting(containerEl)
             .setName('Active File Glow')
-            .setDesc('Brightens the glowing folder path connecting lines leading down to your currently open active document.')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.activeGlow)
                 .onChange(async (value) => {
@@ -2434,20 +2513,18 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 }));
 
         new obsidian.Setting(containerEl)
-            .setName('Animate Active Path Glow')
-            .setDesc('Turns on animation for the glowing folder path.')
+            .setName('Animate Active Path')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.animateActivePath)
                 .onChange(async (value) => {
                     this.plugin.settings.animateActivePath = value;
                     await this.plugin.saveSettings();
-                    this.display(); // Refresh to show/hide the style dropdown
+                    this.display();
                 }));
 
         if (this.plugin.settings.animateActivePath) {
             new obsidian.Setting(containerEl)
                 .setName('Animation Style')
-                .setDesc('Choose the visual style for the active path animation.')
                 .addDropdown(drop => drop
                     .addOption('breathe', 'Smooth Breathe')
                     .addOption('neon', 'Neon Flicker')
@@ -2457,23 +2534,10 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         this.plugin.settings.activeAnimationStyle = value;
                         await this.plugin.saveSettings();
                     }));
-
-            new obsidian.Setting(containerEl)
-                .setName('Animation Duration (s)')
-                .setDesc('Controls how fast the animation plays (e.g. 3.0 seconds). Lower is faster.')
-                .addSlider(slider => slider
-                    .setLimits(0.5, 10.0, 0.5)
-                    .setValue(this.plugin.settings.activeAnimationDuration !== undefined ? this.plugin.settings.activeAnimationDuration : 4)
-                    .setDynamicTooltip()
-                    .onChange(async (value) => {
-                        this.plugin.settings.activeAnimationDuration = value;
-                        await this.plugin.saveSettings();
-                    }));
         }
 
         new obsidian.Setting(containerEl)
             .setName('Rainbow Root Text')
-            .setDesc('Applies a vivid rainbow-text horizontal gradient to all top level folders.')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.rainbowRootText)
                 .onChange(async (value) => {
@@ -2482,47 +2546,21 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 }));
 
         new obsidian.Setting(containerEl)
-            .setName('Rainbow Root Background Transparent')
-            .setDesc('If Rainbow Root Text is on, completely strips the background block so the Rainbow text floats freely against your vault base.')
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.rainbowRootBgTransparent)
-                .onChange(async (value) => {
-                    this.plugin.settings.rainbowRootBgTransparent = value;
-                    await this.plugin.saveSettings();
-                }));
-
-        new obsidian.Setting(containerEl)
             .setName('Auto-color Files')
-            .setDesc('Automatically gives a subtle rainbow tint and color to all files. (No manual setup required!)')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.autoColorFiles)
                 .onChange(async (value) => {
                     this.plugin.settings.autoColorFiles = value;
                     await this.plugin.saveSettings();
-                    this.plugin.generateStylesDebounced();
+                    this.plugin.generateStyles();
                 }));
 
-        // SECTION 4: ADVANCED TUNING
         containerEl.createEl('h3', { text: 'Advanced Tuning' });
-
         new obsidian.Setting(containerEl)
-            .setName('Excluded Folders')
-            .setDesc('Comma-separated list of folder names to strictly ignore (e.g. attachments, .obsidian)')
-            .addTextArea(text => text
-                .setPlaceholder('attachments, templates')
-                .setValue(this.plugin.settings.exclusionList)
-                .onChange(async (value) => {
-                    this.plugin.settings.exclusionList = value;
-                    await this.plugin.saveSettings();
-                }));
-
-        new obsidian.Setting(containerEl)
-            .setName('Root Folder Opacity (%)')
-            .setDesc('Controls brightness if Root Folder Fill Appearance is set to Translucent (e.g. 50%).')
+            .setName('Root Opacity (%)')
             .addSlider(slider => slider
-                .setLimits(1, 100, 0.1)
+                .setLimits(1, 100, 1)
                 .setValue(this.plugin.settings.rootOpacity * 100)
-                .setDynamicTooltip()
                 .onChange(async (value) => {
                     this.plugin.settings.rootOpacity = parseFloat((value / 100).toFixed(3));
                     await this.plugin.saveSettings();
@@ -2530,7 +2568,6 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         new obsidian.Setting(containerEl)
             .setName('Subfolder Opacity (%)')
-            .setDesc('Opacity for nested subfolders to properly distinguish depth hierarchy (e.g. 35%).')
             .addSlider(slider => slider
                 .setLimits(1, 100, 0.1)
                 .setValue(this.plugin.settings.subfolderOpacity * 100)
