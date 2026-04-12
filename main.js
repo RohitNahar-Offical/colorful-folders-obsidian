@@ -2339,9 +2339,16 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         Object.assign(gallery.style, { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "20px" });
 
         const packs = [
-            { name: "🚩 Font Awesome (Free)", desc: "5+ popular outline icons from the FA 6.x web collection.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/master/icons/fontawesome-free.json" },
-            { name: "🎨 Google Material Icons", desc: "Clean, geometric icons following Google's design system.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/master/icons/material-icons.json" },
-            { name: "🔥 Ultimate Community Pack", desc: "15+ essential category icons for Home, Code, and System.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/master/icons/community-core.json" }
+            { name: "✨ Remix Icons", desc: "Clean and neutral design system.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/ri.json" },
+            { name: "🪶 Feather Icons", desc: "Simply beautiful open source icons.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/feather.json" },
+            { name: "📐 Tabler Icons", desc: "Over 4000+ well-crafted icons.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/tabler.json" },
+            { name: "📦 BoxIcons", desc: "High quality web friendly icons.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/bx.json" },
+            { name: "🚩 FontAwesome Solid", desc: "Official professional solid set.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/fa-solid.json" },
+            { name: "🏳️ FontAwesome Regular", desc: "Official line icons from FA.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/fa-regular.json" },
+            { name: "🐙 Octicons", desc: "GitHub's native icon library.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/octicon.json" },
+            { name: "🎮 RPG Awesome", desc: "Fantasy icons for RPG notes.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/ra.json" },
+            { name: "⚡ Simple Icons", desc: "Brand icons for popular services.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/simple-icons.json" },
+            { name: "🔥 Ultimate Collection", desc: "Curated community starter pack.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/master/icons/community-core.json" }
         ];
 
         packs.forEach(p => {
@@ -2682,19 +2689,36 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             const res = await fetch(url);
             const data = await res.json();
             let count = 0;
-            for (const [id, svg] of Object.entries(data)) {
-                if (typeof svg === 'string' && svg.startsWith('<svg')) {
+
+            if (data.icons && (data.prefix || data.info)) {
+                // Iconify Format Support
+                const prefix = data.prefix || "cf";
+                for (const [name, iconData] of Object.entries(data.icons)) {
+                    const id = `${prefix}-${name}`;
+                    const w = iconData.width || data.width || 24;
+                    const h = iconData.height || data.height || 24;
+                    const body = iconData.body;
+                    if (!body) continue;
+                    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${body}</svg>`;
                     this.plugin.settings.customIcons[id] = svg;
                     count++;
+                }
+            } else {
+                // Standard Map Format: { "id": "<svg...>" }
+                for (const [id, svg] of Object.entries(data)) {
+                    if (typeof svg === 'string' && svg.startsWith('<svg')) {
+                        this.plugin.settings.customIcons[id] = svg;
+                        count++;
+                    }
                 }
             }
             this.plugin.registerCustomIcons();
             await this.plugin.saveSettings();
-            new obsidian.Notice(`Successfully imported ${count} icons!`);
+            new obsidian.Notice(`Successfully imported ${count} icons from ${url.split('/').pop()}!`);
             this.display();
         } catch (e) {
-             new obsidian.Notice("Import failed. See console.");
-             console.error(e);
+             new obsidian.Notice("Import failed. See console for details.");
+             console.error("Colorful Folders: Import error", e);
         }
     }
 }
