@@ -9,6 +9,7 @@ This version focuses on long-standing visual alignment issues, improves icon pac
     - Added support for SVG offsets (`left`, `top`) and specific dimensions (`width`, `height`).
     - Added alias support to ensure all icons in a pack are imported.
     - Robust `viewBox` generation to prevent icon clipping.
+    - **New Built-in Collections**: Included `Material Icons`, `FontAwesome Free`, `Community Core`, `System Essentials`, `Vibrant Folders`, and `Sample Pack` directly in the plugin assets for zero-latency loading.
 - **Smart Cache Management**: `iconCache` is now cleared whenever settings are saved, preventing "sticky" icon scaling when adjusting the multiplier.
 - **Maintenance Section**:
     - **Reset All Styling**: Clears all folder/file overrides.

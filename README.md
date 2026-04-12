@@ -22,9 +22,10 @@ Version 4.0.6 focuses on professional visual alignment, robust icon pack integra
 - **Universal Middle-Alignment**: Standardized all icons (custom, auto, and default) to `vertical-align: middle` for perfect centering across all Obsidian themes and font sizes.
 - **Smart Cache Invalidation**: The icon cache now intelligently clears when settings are saved, ensuring that changes to **Global Icon Scaling** are reflected instantly without a reload.
 
-### 📦 2. Enhanced Iconify Importer
+### 📦 2. Enhanced Iconify Importer & New Icon Packs
 - **ViewBox & Offset Support**: Fixed the "Small Icon Clipping" bug. The importer now correctly handles `left`, `top`, `width`, and `height` properties from Iconify JSON packs.
 - **Alias Preservation**: Properly imports aliases and transformations from icon packs, significantly expanding available icon variety.
+- **New Built-in Collections**: Added 6 curated local icon packs (Material, FontAwesome, etc.) for instant use and faster offline loading.
 
 ### 🛠️ 3. Maintenance & Discovery
 - **"Reset All Styling" Button**: New safety feature to clear all custom folder/file overrides and presets in one click.
