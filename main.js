@@ -1489,7 +1489,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                                 background-color: rgba(${color.rgb}, ${isDark ? '0.1' : '0.15'}) !important;
                                 border-left: 2px solid rgba(${color.rgb}, 0.4) !important;
                             ` : ''}
-                            opacity: ${op} !important;
+                            opacity: ${isCustomColor ? op : 1.0} !important;
                             color: ${text} !important;
                             font-weight: ${isBold ? 'bold' : 'normal'} !important;
                             font-style: ${isItalic ? 'italic' : 'normal'} !important;
@@ -1878,7 +1878,7 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
                     body .nav-folder-title[data-path="${safePath}"],
                     body .tree-item-self[data-path="${safePath}"] {
                         background-color: ${bg} !important;
-                        opacity: ${isCustom ? op : 1.0} !important;
+                        opacity: ${isCustomColor ? op : 1.0} !important;
                         border-radius: 6px !important;
                         margin-bottom: 2px !important; margin-top: 2px !important;
                         ${glassCss}
