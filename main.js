@@ -1344,7 +1344,26 @@ class ColorfulFoldersPlugin extends obsidian.Plugin {
             const rules = this.settings.customIconRules.split('\n');
             for (const rule of rules) {
                 if (!rule.trim() || rule.startsWith('//')) continue;
-                // Expected format: regexPattern, emoji, lucideIconId, priority
+                // Simplified Format: Pattern = Icon @Priority
+                if (rule.includes('=')) {
+                    try {
+                        const [pattern, rightPart] = rule.split('=').map(s => s.trim());
+                        const [iconName, priorityStr] = rightPart.split('@').map(s => s.trim());
+                        const priority = parseInt(priorityStr) || 150;
+                        categories.push({
+                            rex: new RegExp(pattern, 'i'),
+                            emoji: iconName,
+                            lucide: iconName,
+                            priority: priority,
+                            isCustom: true
+                        });
+                    } catch (e) {
+                         console.warn("Colorful Folders: Failed to parse simplified rule:", rule, e);
+                    }
+                    continue;
+                }
+
+                // Legacy Format: regexPattern, emoji, lucideIconId, priority
                 const parts = rule.split(',').map(p => p.trim());
                 if (parts.length >= 4) {
                     try {
@@ -2512,17 +2531,17 @@ class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             });
             rulesDesc.innerHTML = `
                 <strong>How to use Priority Rules:</strong><br>
-                Define rules to automatically assign icons based on names. 
-                Higher priority values override default rules.<br><br>
-                <strong>Format:</strong> <code>Regex, Emoji, LucideID, Priority</code><br>
-                <strong>Example:</strong> <code>Projects, 🚀, rocket, 200</code>
+                Define rules to automatically assign icons based on folder/file names.<br><br>
+                <strong>Simplified Format:</strong> <code>Pattern = IconID @Priority</code><br>
+                <strong>Example:</strong> <code>Projects = rocket @200</code><br>
+                <strong>Example:</strong> <code>Journal = 📅 @150</code>
             `;
 
             new obsidian.Setting(containerEl)
                 .setName('Priority Rules')
-                .setDesc('Customize matching logic with your own triggers.')
+                .setDesc('Customize matching logic with simple patterns.')
                 .addTextArea(text => {
-                    text.setPlaceholder("Journal, 📅, calendar, 100\nArchive, 📦, archive, 50")
+                    text.setPlaceholder("Work = briefcase @200\nDaily = 📅 @150")
                         .setValue(this.plugin.settings.customIconRules || "")
                         .onChange(async (value) => {
                             this.plugin.settings.customIconRules = value;
