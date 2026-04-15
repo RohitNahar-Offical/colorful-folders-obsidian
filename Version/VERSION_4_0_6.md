@@ -1,4 +1,4 @@
-# Version 4.0.6 - Precision & Maintenance Update
+# Version 4.0.6 - Icon Pack & Maintenance Update
 
 ## Summary
 This version focuses on long-standing visual alignment issues, improves icon pack import robustness, and provides new tools for plugin maintenance.
