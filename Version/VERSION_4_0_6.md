@@ -1,4 +1,4 @@
-# Version 4.0.6 - Icone Pack & Maintenance Patch
+# Version 4.0.6 - Precision & Maintenance Update
 
 ## Summary
 This version focuses on long-standing visual alignment issues, improves icon pack import robustness, and provides new tools for plugin maintenance.
@@ -18,6 +18,7 @@ Added 6 curated, local JSON icon packs for instant use without requiring an inte
 - `System Essentials`
 - `Vibrant Folders`
 - `Sample Pack`
+
 - **Smart Cache Management**: `iconCache` is now cleared whenever settings are saved, preventing "sticky" icon scaling when adjusting the multiplier.
 - **Maintenance Section**:
     - **Reset All Styling**: Clears all folder/file overrides.
