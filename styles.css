@@ -1,0 +1,301 @@
+/* Colorful Folders (TS) Modern UI Design System */
+
+:root {
+    --cf-accent: #1e88e5; /* Modern bright blue from image */
+    --cf-accent-rgb: 30, 136, 229;
+    --cf-accent-glow: rgba(30, 136, 229, 0.4);
+    
+    --cf-glass-bg: rgba(var(--background-secondary-rgb), 0.7);
+    --cf-card-bg: var(--background-secondary);
+    --cf-card-border: rgba(var(--mono-rgb-100), 0.08);
+    --cf-row-bg: var(--background-primary);
+    
+    --cf-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    --cf-radius: 12px;
+}
+
+.theme-dark {
+    --cf-glass-bg: rgba(20, 20, 22, 0.75);
+    --cf-card-bg: rgba(35, 35, 38, 0.6);
+    --cf-row-bg: rgba(45, 45, 50, 0.4);
+    --cf-card-border: rgba(255, 255, 255, 0.06);
+    --cf-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Base UI Overrides */
+.colorful-folders-config {
+    padding: 30px;
+    max-width: 850px !important;
+    margin: 0 auto !important;
+}
+
+/* Hide default h2 */
+.colorful-folders-config > h2 {
+    display: none;
+}
+
+/* Hero Section */
+.cf-hero {
+    text-align: center;
+    margin-bottom: 40px;
+}
+.cf-hero h1 {
+    font-size: 2.5em;
+    font-weight: 800;
+    margin: 0;
+    color: var(--text-normal);
+    letter-spacing: -0.02em;
+}
+.cf-hero p {
+    font-size: 1.1em;
+    color: var(--text-muted);
+    margin: 8px 0 0 0;
+}
+
+/* Premium Tab Bar */
+.cf-tab-bar {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 30px;
+    padding: 0;
+}
+
+.cf-tab-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 1em;
+    color: var(--text-muted);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    background: transparent;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.cf-tab-btn:hover {
+    color: var(--text-normal);
+    background: rgba(var(--mono-rgb-100), 0.05);
+}
+
+.cf-tab-btn.is-active {
+    background: var(--cf-accent) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 16px var(--cf-accent-glow) !important;
+}
+
+/* Setting Cards */
+.cf-settings-card {
+    background: var(--cf-card-bg);
+    border: 1px solid var(--cf-card-border);
+    border-radius: var(--cf-radius);
+    padding: 24px;
+    margin-bottom: 32px;
+    box-shadow: var(--cf-shadow);
+}
+
+.cf-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    font-size: 1.15em;
+    font-weight: 800;
+    color: var(--text-normal);
+    letter-spacing: -0.01em;
+}
+
+.cf-card-header span.icon {
+    font-size: 1.2em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+}
+
+/* Individual Settings within Cards */
+.cf-settings-card .setting-item {
+    background: var(--cf-row-bg);
+    border: 1px solid var(--cf-card-border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.cf-settings-card .setting-item:last-child {
+    margin-bottom: 0;
+}
+
+.cf-settings-card .setting-item-name {
+    font-weight: 700;
+    font-size: 1.05em;
+    color: var(--text-normal);
+}
+
+.cf-settings-card .setting-item-description {
+    font-size: 0.85em;
+    color: var(--text-muted);
+}
+
+/* Pro Tip & Info Blocks */
+.cf-info-block {
+    background: rgba(var(--cf-accent-rgb), 0.08);
+    border-left: 4px solid var(--cf-accent);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.cf-info-icon {
+    font-size: 1.8em;
+    line-height: 1;
+}
+
+.cf-info-content h4 {
+    margin: 0 0 4px 0;
+    font-size: 1.05em;
+    font-weight: 800;
+    color: var(--text-normal);
+}
+
+.cf-info-content p {
+    margin: 0;
+    font-size: 0.9em;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+/* Custom Checkbox/Toggle Overrides */
+.colorful-folders-config .checkbox-container.is-enabled {
+    background-color: var(--cf-accent) !important;
+}
+
+/* Slider Overrides */
+.colorful-folders-config input[type='range']::-webkit-slider-thumb {
+    background-color: #ffffff !important;
+    border: 2px solid var(--cf-accent) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+}
+.colorful-folders-config input[type='range'] {
+    background-color: rgba(var(--mono-rgb-100), 0.1);
+}
+
+/* Buttons */
+.colorful-folders-config button:not(.cf-tab-btn) {
+    background-color: var(--cf-row-bg);
+    border: 1px solid var(--cf-card-border);
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.colorful-folders-config button.mod-warning {
+    background-color: rgba(var(--color-red-rgb), 0.1);
+    color: var(--text-error);
+    border-color: rgba(var(--color-red-rgb), 0.3);
+}
+
+.colorful-folders-config button.mod-cta {
+    background-color: var(--cf-accent);
+    color: #fff;
+    border-color: rgba(0,0,0,0.1);
+}
+
+.colorful-folders-config button:hover:not(.cf-tab-btn) {
+    background-color: var(--background-modifier-hover);
+}
+
+/* Grid for featured packs */
+.cf-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+/* Icon Rendering Stability */
+[data-path] .nav-folder-title-content::before,
+[data-path] .nav-file-title-content::before,
+[data-path] .tree-item-inner::before,
+[data-path] .nn-navitem-name::before {
+    background-size: contain !important;
+    background-position: center !important;
+    -webkit-mask-size: contain !important;
+    -webkit-mask-position: center !important;
+    mask-size: contain !important;
+    mask-position: center !important;
+    transition: width 0.25s ease, height 0.25s ease, opacity 0.25s ease !important;
+}
+
+/* Ensure icons don't clip when scaled wide */
+.nav-folder-title, .nav-file-title, .tree-item-self {
+    overflow: visible !important;
+}
+
+/* Custom Icon Library Grid */
+.cf-icon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+    gap: 12px;
+    padding: 15px;
+    background: var(--cf-row-bg);
+    border-radius: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.cf-icon-item {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--background-secondary-alt);
+    border: 1px solid var(--cf-card-border);
+    border-radius: 6px;
+    position: relative;
+    cursor: help;
+    transition: all 0.2s ease;
+}
+
+.cf-icon-item:hover {
+    background: var(--cf-accent);
+    border-color: var(--cf-accent);
+}
+
+.cf-icon-item:hover svg {
+    color: #ffffff !important;
+    fill: none !important;
+    stroke: #ffffff !important;
+}
+
+.cf-icon-item .cf-btn-remove {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50% !important;
+    background: var(--text-error) !important;
+    color: white !important;
+    font-size: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.cf-icon-item:hover .cf-btn-remove {
+    opacity: 1;
+}
