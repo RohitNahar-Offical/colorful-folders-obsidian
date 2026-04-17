@@ -32,6 +32,10 @@ Version 4.0.7 marks the official launch of modern organizational tools, introduc
 - **Unified 18px Sizing**: Standardized all icons to a professional **18px baseline** for perfect consistency.
 - **Full Rebranding**: Launching officially as **"Colorful Folders"** with a streamlined interface.
 
+### 🛠️ 4. Improved Visual Defaults
+- **Enhanced Patterns**: Increased thickness for Dashed and Dotted lines for better accessibility.
+- **Modern Defaults**: Glassmorphism is now auto-enabled for all new dividers.
+
 > [!NOTE]
 > For a full history of the plugin's development, see the [Version History](version.md).
 

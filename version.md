@@ -27,6 +27,4 @@ This milestone release marks the official launch of modern organizational tools,
 - **Diverse Matching & Variety**: High-priority regex patterns ensure higher icon hits across large vaults.
 
 ### 🎨 3. Premium Production UI
-- **Unified 18px Sizing**: Standardized all icons (Auto and Custom) to a professional **18px baseline** for perfect consistency.
-- **Full Rebranding**: Launching officially as **"Colorful Folders"** with a streamlined, clutter-free settings interface.
 - **Performance First**: Optimized the CSS engine to ensure zero lag, even while applying complex gradients and icons.
