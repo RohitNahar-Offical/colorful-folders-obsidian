@@ -4,29 +4,31 @@ Keep track of the evolution of the Colorful Folders plugin. Each update brings b
 
 ---
 
-## 🚀 Version 4.0.7 - The "Production Stability" Release
-This milestone release marks the official transition to the stable production branch with refined aesthetics and a smarter organization engine.
+## 🚀 Version 4.0.7 - The "Major Feature Debut" Release
+This milestone release marks the official launch of modern organizational tools, introducing section dividers and a smart icon engine to the production branch.
 
-### 🤖 1. Smarter Auto-Icon Engine
-- **10+ New Categories**: Automatically assigns high-quality icons for deeper organizational terms:
-    - `Question` / `Help` / `FAQ` -> ❓
-    - `TV Series` / `Episodes` / `Shows` -> 📺
+### ➕ 1. New: Section Dividers
+- **Vertical Organization**: For the first time, you can now add visual dividers to group your folders and files.
+- **Dynamic Styling**: Choose from **Solid**, **Dashed**, or **Dotted** lines to create a clean visual hierarchy.
+- **Glassmorphic Chip**: Dividers feature a premium, translucent pill-label that automatically blurs the background for a high-end aesthetic.
+- **Icon Support**: Add any Lucide icon or emoji to your dividers for even faster navigation.
+
+### 🤖 2. New: Smart Auto-Icon Engine
+- **Automatic Folder Styling**: A brand new system that detects folder names and assigns perfect icons automatically.
+- **10+ Launch Categories**: Out-of-the-box support for:
+    - `Question` / `FAQ` -> ❓
+    - `TV Series` / `Shows` -> 📺
     - `Quotes` / `References` -> 💬
     - `Templates` / `Layouts` -> 📝
-    - `Drafts` / `WIP` / `Building` -> 🚧
-    - `Recent` / `History` / `New` -> 🕒
+    - `Drafts` / `WIP` -> 🚧
+    - `Recent` / `History` -> 🕒
     - `Review` / `Feedback` -> 🔎
-- **Diverse Matching**: Improved regex patterns ensure more hits and higher icon variety across your vault.
+- **Diverse Matching**: High-priority regex patterns ensure higher icon hits and variety across large vaults.
 
-### 🎨 2. Premium UI & Visibility
-- **Standardized Pro Sizing**: All icons (Auto, Custom, and Default) are now locked to a professional **18px baseline** for perfect visual harmony.
-- **Enhanced Dividers**: Increased thickness and opacity for **Dotted** and **Dashed** patterns to ensure they stand out across all themes.
-- **Glassmorphism by Default**: New section dividers now ship with the modern **Glassmorphism** effect enabled out-of-the-box, providing a premium, blurred look immediately.
-
-### 🧹 3. Production Cleanup
-- **Full Rebranding**: Reverted all internal IDs and display names from "Colorful Folders (TS)" to the primary **"Colorful Folders"** brand.
-- **Purged Non-functional Features**: Successfully removed the legacy "Show File Separator" feature and its associated UI settings, resulting in a leaner and more focused interface.
-- **Cleaned Codebase**: Removed all redundant comments and internal debug logic to ensure maximum plugin stability.
+### 🎨 3. Premium Production UI
+- **Unified 18px Sizing**: Standardized all icons (Auto and Custom) to a professional **18px baseline** for perfect consistency.
+- **Full Rebranding**: Launching officially as **"Colorful Folders"** with a streamlined, clutter-free settings interface.
+- **Performance First**: Optimized the CSS engine to ensure zero lag, even while applying complex gradients and icons.
 
 ---
 

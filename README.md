@@ -15,24 +15,24 @@ Obsidian's default file explorer can feel cluttered as your vault grows. **Color
 
 ---
 
-## 🚀 Latest Version: 4.0.7 - The "Production Stability" Release
-Version 4.0.7 marks the stable production milestone with refined aesthetics and a smarter organization engine.
+## 🚀 Latest Version: 4.0.7 - The "Major Feature Debut" Release
+Version 4.0.7 marks the official launch of modern organizational tools, introducing section dividers and a smart icon engine to the production branch.
 
-### 🤖 1. Smarter Auto-Icon Engine
-- **10+ New Categories**: Automatically assigns high-quality icons for deeper organizational terms like `Questions`, `Drafts`, `TV Series`, `Quotes`, and `Reviews`.
-- **Diverse Matching**: Improved regex patterns ensure more hits and higher icon variety across your vault.
+### ➕ 1. New: Section Dividers
+- **Vertical Organization**: For the first time, you can now add visual dividers to group your folders and files.
+- **Dynamic Styling**: Choose from **Solid**, **Dashed**, or **Dotted** lines to create a clean visual hierarchy.
+- **Glassmorphic Chip**: Dividers feature a premium, translucent pill-label that automatically blurs the background.
 
-### 🎨 2. Premium UI & Visibility
-- **Standardized Pro Sizing**: All icons are now locked to a professional **18px baseline** for perfect visual harmony across any theme.
-- **Enhanced Dividers**: Increased thickness and opacity for **Dotted** and **Dashed** patterns to ensure they stand out.
-- **Glassmorphism by Default**: New section dividers now ship with modern **Glassmorphism** enabled out-of-the-box.
+### 🤖 2. New: Smart Auto-Icon Engine
+- **Automatic Folder Styling**: A brand new system that detects folder names and assigns perfect icons automatically.
+- **10+ Launch Categories**: Out-of-the-box support for `Questions`, `Drafts`, `TV Series`, `Quotes`, and more.
 
-### 🧹 3. Production Cleanup
-- **Full Rebranding**: Reverted all internal IDs and names to the primary **"Colorful Folders"** brand.
-- **Optimized Engine**: Purged non-functional legacy features and clarified the codebase for maximum stability.
+### 🎨 3. Premium Production UI
+- **Unified 18px Sizing**: Standardized all icons to a professional **18px baseline** for perfect consistency.
+- **Full Rebranding**: Launching officially as **"Colorful Folders"** with a streamlined interface.
 
 > [!NOTE]
-> For a full list of changes and historical updates, see the [Version History](version.md).
+> For a full history of the plugin's development, see the [Version History](version.md).
 
 ---
 
