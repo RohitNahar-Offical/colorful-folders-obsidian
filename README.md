@@ -25,6 +25,7 @@ Version 4.0.7 marks the official launch of modern organizational tools, introduc
 
 ### 🤖 2. New: Smart Auto-Icon Engine
 - **Automatic Folder Styling**: A brand new system that detects folder names and assigns perfect icons automatically.
+- **Icon Variety Mode**: Prevents repetitive icons by intelligently cycling through multiple variants for items in the same category.
 - **10+ Launch Categories**: Out-of-the-box support for `Questions`, `Drafts`, `TV Series`, `Quotes`, and more.
 
 ### 🎨 3. Premium Production UI

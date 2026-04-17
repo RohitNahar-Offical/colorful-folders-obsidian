@@ -23,7 +23,7 @@ This milestone release marks the official launch of modern organizational tools,
     - `Drafts` / `WIP` -> 🚧
     - `Recent` / `History` -> 🕒
     - `Review` / `Feedback` -> 🔎
-- **Diverse Matching**: High-priority regex patterns ensure higher icon hits and variety across large vaults.
+- **Diverse Matching & Variety**: High-priority regex patterns ensure higher icon hits, while the new **Icon Variety Mode** prevents repetitive icons by intelligently cycling through multiple variants for items in the same category.
 
 ### 🎨 3. Premium Production UI
 - **Unified 18px Sizing**: Standardized all icons (Auto and Custom) to a professional **18px baseline** for perfect consistency.
