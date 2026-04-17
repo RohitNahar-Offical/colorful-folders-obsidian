@@ -41,9 +41,6 @@ Version 4.0.7 marks the official launch of modern organizational tools, introduc
 
 ---
 
-
-
-
 ## 🎨 Core Customization
 * **Monochromatic Mode**: Force subfolders to inherit their parent's color for a strictly organized look.
 * **Outline Only Mode**: Minimalist? Remove background tints entirely and keep only the bright connecting lines and text.
