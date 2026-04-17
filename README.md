@@ -2,7 +2,27 @@
 
 **Transform your Obsidian file explorer from a dull list into a vibrant, organized, and high-performance visual dashboard.** Colorful Folders automatically applies premium color palettes, smart icons, and structural intelligence to your vault. Whether you want a strictly organized, monochromatic workspace or a neon-glowing cyberpunk aesthetic, this plugin makes navigation intuitive and your workspace beautiful.
 
------
+---
+
+## 🚀 Latest Version: 4.0.7 - The "Major Feature Debut" Release
+Version 4.0.7 marks the official launch of modern organizational tools, introducing section dividers and a smart icon engine to the production branch.
+
+### ➕ 1. New: Section Dividers
+For the first time, you can now add visual dividers to group your folders and files with high-end glassmorphic styling.
+
+### 🤖 2. New: Smart Auto-Icon Engine
+A brand new system that detects folder names and assigns perfect icons automatically, featuring the new **Icon Variety Mode**.
+
+### 🎨 3. Premium Production UI
+Rebranded and standardized to an **18px baseline** for perfect visual harmony across all themes.
+
+### 🛠️ 4. Improved Visual Defaults
+Enhanced line patterns and auto-enabled Glassmorphism for an instant professional look.
+
+> [!NOTE]
+> For a full list of technical changes and historical updates, see the [Version History](version.md).
+
+---
 
 ## ✨ Core Features
 
