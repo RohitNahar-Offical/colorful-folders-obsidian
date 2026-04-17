@@ -15,16 +15,15 @@ This milestone release marks the official launch of modern organizational tools,
 
 ### 🤖 2. New: Smart Auto-Icon Engine
 - **Automatic Folder Styling**: A brand new system that detects folder names and assigns perfect icons automatically.
-- **Icon Variety Mode**: Prevents repetitive icons by cycling through multiple variants for items in the same category.
-- **10+ Launch Categories**: Out-of-the-box support for:
-    - `Question` / `FAQ` -> ❓
-    - `TV Series` / `Shows` -> 📺
-    - `Quotes` / `References` -> 💬
-    - `Templates` / `Layouts` -> 📝
-    - `Drafts` / `WIP` -> 🚧
-    - `Recent` / `History` -> 🕒
-    - `Review` / `Feedback` -> 🔎
-- **Diverse Matching & Variety**: High-priority regex patterns ensure higher icon hits across large vaults.
+- **Icon Variety Mode**: Prevents repetitive icons by intelligently cycling through multiple variants for items in the same category.
+- **10+ Launch Categories**: Out-of-the-box support for `Questions`, `Drafts`, `TV Series`, `Quotes`, `Reviews`, and more.
+- **Diverse Matching**: High-priority regex patterns ensure higher icon hits across large vaults.
 
 ### 🎨 3. Premium Production UI
-- **Performance First**: Optimized the CSS engine to ensure zero lag, even while applying complex gradients and icons.
+- **Unified 18px Sizing**: Standardized all icons (Auto and Custom) to a professional **18px baseline** for perfect consistency.
+- **Full Rebranding**: Launching officially as **"Colorful Folders"** with a streamlined settings interface.
+- **Performance First**: Optimized CSS engine for zero-lag performance on all devices.
+
+### 🛠️ 4. Improved Visual Defaults
+- **Enhanced Patterns**: Increased thickness and opacity for **Dashed** and **Dotted** lines for better visibility across all themes.
+- **Modern Defaults**: **Glassmorphism** is now auto-enabled for all new dividers for an instant premium look.

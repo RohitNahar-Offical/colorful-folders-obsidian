@@ -5,7 +5,27 @@
 
 ---
 
-## ✨ What does it do?
+## 🚀 Latest Version: 4.0.7 - The "Major Feature Debut" Release
+Version 4.0.7 marks the official launch of modern organizational tools, introducing section dividers and a smart icon engine to the production branch.
+
+### ➕ 1. New: Section Dividers
+For the first time, you can now add visual dividers to group your folders and files with high-end glassmorphic styling.
+
+### 🤖 2. New: Smart Auto-Icon Engine
+A brand new system that detects folder names and assigns perfect icons automatically, featuring the new **Icon Variety Mode**.
+
+### 🎨 3. Premium Production UI
+Rebranded and standardized to an **18px baseline** for perfect visual harmony across all themes.
+
+### 🛠️ 4. Improved Visual Defaults
+Enhanced line patterns and auto-enabled Glassmorphism for an instant professional look.
+
+> [!NOTE]
+> For a full list of features and historical updates, see the [Version History](version.md).
+
+---
+
+## ✨ Core Features
 
 Obsidian's default file explorer can feel cluttered as your vault grows. **Colorful Folders** solves this by:
 
@@ -15,60 +35,22 @@ Obsidian's default file explorer can feel cluttered as your vault grows. **Color
 
 ---
 
-## 🚀 Latest Version: 4.0.7 - The "Major Feature Debut" Release
-Version 4.0.7 marks the official launch of modern organizational tools, introducing section dividers and a smart icon engine to the production branch.
-
-### ➕ 1. New: Section Dividers
-- **Vertical Organization**: For the first time, you can now add visual dividers to group your folders and files.
-- **Dynamic Styling**: Choose from **Solid**, **Dashed**, or **Dotted** lines to create a clean visual hierarchy.
-- **Glassmorphic Chip**: Dividers feature a premium, translucent pill-label that automatically blurs the background.
-
-### 🤖 2. New: Smart Auto-Icon Engine
-- **Automatic Folder Styling**: A brand new system that detects folder names and assigns perfect icons automatically.
-- **Icon Variety Mode**: Prevents repetitive icons by intelligently cycling through multiple variants for items in the same category.
-- **10+ Launch Categories**: Out-of-the-box support for `Questions`, `Drafts`, `TV Series`, `Quotes`, and more.
-
-### 🎨 3. Premium Production UI
-- **Unified 18px Sizing**: Standardized all icons to a professional **18px baseline** for perfect consistency.
-- **Full Rebranding**: Launching officially as **"Colorful Folders"** with a streamlined interface.
-
-### 🛠️ 4. Improved Visual Defaults
-- **Enhanced Patterns**: Increased thickness for Dashed and Dotted lines for better accessibility.
-- **Modern Defaults**: Glassmorphism is now auto-enabled for all new dividers.
-
-> [!NOTE]
-> For a full history of the plugin's development, see the [Version History](version.md).
-
----
-
-## 🎨 Core Customization
-* **Monochromatic Mode**: Force subfolders to inherit their parent's color for a strictly organized look.
-* **Outline Only Mode**: Minimalist? Remove background tints entirely and keep only the bright connecting lines and text.
-* **Custom Palettes**: Enter your own comma-separated list of Hex codes to use your own brand colors.
-* **Exclusion List**: Keep utility folders like `attachments` or `templates` looking standard.
-
----
-
 ## 🛠️ Installation
 
 ### 1. Via BRAT (Recommended & Fastest)
-Using the **BRAT** (Beta Reviewer's Auto-update Tool) plugin is the fastest way to get the latest features and ensures the plugin stays updated automatically.
+Using the **BRAT** (Beta Reviewer's Auto-update Tool) plugin is the fastest way to get the latest features.
 
 1.  Install the **BRAT** plugin from the Obsidian Community Plugins gallery.
 2.  Go to **Settings** > **BRAT** > **Beta Plugin List**.
 3.  Click **Add Beta plugin**.
 4.  Paste the repository URL: `https://github.com/RohitNahar-Offical/colorful-folders-obsidian`
 5.  Click **Add Plugin**.
-6.  Enable **Colorful Folders** under **Community plugins**.
-
-> [!TIP]
-> **Why use BRAT?**
-> Manual installations do not update automatically. Using BRAT ensures you stay up-to-date with the latest bug fixes and color presets the moment they are released.
+6.  Enable **Colorful Folders**.
 
 ---
 
 ## 💡 Pro Tip
-You can access all these settings by going to **Settings > Colorful Folders**. Look for the large "💡 Pro Tip" banner at the top of the settings page for more hidden tricks, including custom overriding colors!
+You can access all styling configurations by navigating to **Settings > Colorful Folders**. Look for the large "💡 Pro Tip" banner for hidden tricks!
 
 ---
 
