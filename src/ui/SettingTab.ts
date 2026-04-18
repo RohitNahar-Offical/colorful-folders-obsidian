@@ -41,10 +41,10 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         const btnSys = tabBar.createEl("button", { text: "System", cls: 'cf-tab-btn' });
 
         const setHeroInfo = (t: string) => {
-            if (t === "gen") { heroTitle.setText("Visual Design"); heroSubtitle.setText("Base palettes, layout, and structural aesthetics."); }
-            if (t === "int") { heroTitle.setText("Integrations"); heroSubtitle.setText("Connections with external Obsidian extensions."); }
-            if (t === "icon") { heroTitle.setText("Icon Logic"); heroSubtitle.setText("Automation rules and custom icon packs."); }
-            if (t === "sys") { heroTitle.setText("System"); heroSubtitle.setText("Maintenance tools and database operations."); }
+            if (t === "gen") { heroTitle.setText("Visual Design"); heroSubtitle.setText("Tailor your vault's interface with premium palettes and refined structural aesthetics."); }
+            if (t === "int") { heroTitle.setText("Integrations"); heroSubtitle.setText("Seamlessly connect with external extensions and optimize your workflow."); }
+            if (t === "icon") { heroTitle.setText("Icon Logic"); heroSubtitle.setText("Command a vast library of symbols with intelligent automation rules."); }
+            if (t === "sys") { heroTitle.setText("System"); heroSubtitle.setText("Maintain peak performance and manage your styling engine's core."); }
         };
 
         const setTab = (t: string) => {

@@ -1,15 +1,16 @@
 /* Colorful Folders (TS) Modern UI Design System */
 
 :root {
-    --cf-accent: #1e88e5; /* Modern bright blue from image */
+    --cf-accent: #1e88e5;
+    /* Modern bright blue from image */
     --cf-accent-rgb: 30, 136, 229;
     --cf-accent-glow: rgba(30, 136, 229, 0.4);
-    
+
     --cf-glass-bg: rgba(var(--background-secondary-rgb), 0.7);
     --cf-card-bg: var(--background-secondary);
     --cf-card-border: rgba(var(--mono-rgb-100), 0.08);
     --cf-row-bg: var(--background-primary);
-    
+
     --cf-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     --cf-radius: 12px;
 }
@@ -30,7 +31,7 @@
 }
 
 /* Hide default h2 */
-.colorful-folders-config > h2 {
+.colorful-folders-config>h2 {
     display: none;
 }
 
@@ -39,6 +40,7 @@
     text-align: center;
     margin-bottom: 40px;
 }
+
 .cf-hero h1 {
     font-size: 2.5em;
     font-weight: 800;
@@ -46,6 +48,7 @@
     color: var(--text-normal);
     letter-spacing: -0.02em;
 }
+
 .cf-hero p {
     font-size: 1.1em;
     color: var(--text-muted);
@@ -125,7 +128,7 @@
     border-radius: 8px;
     padding: 16px 20px;
     margin-bottom: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .cf-settings-card .setting-item:last-child {
@@ -185,6 +188,7 @@
     border: 2px solid var(--cf-accent) !important;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
 }
+
 .colorful-folders-config input[type='range'] {
     background-color: rgba(var(--mono-rgb-100), 0.1);
 }
@@ -209,7 +213,7 @@
 .colorful-folders-config button.mod-cta {
     background-color: var(--cf-accent);
     color: #fff;
-    border-color: rgba(0,0,0,0.1);
+    border-color: rgba(0, 0, 0, 0.1);
 }
 
 .colorful-folders-config button:hover:not(.cf-tab-btn) {
@@ -238,7 +242,9 @@
 }
 
 /* Ensure icons don't clip when scaled wide */
-.nav-folder-title, .nav-file-title, .tree-item-self {
+.nav-folder-title,
+.nav-file-title,
+.tree-item-self {
     overflow: visible !important;
 }
 
