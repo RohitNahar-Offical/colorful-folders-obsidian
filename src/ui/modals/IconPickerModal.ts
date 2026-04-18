@@ -151,7 +151,7 @@ export class IconPickerModal extends obsidian.Modal {
         filterSelect.onchange = () => renderIcons(searchInput.value, filterSelect.value);
         
         // Auto-focus search
-        setTimeout(() => searchInput.focus(), 50);
+        activeWindow.setTimeout(() => searchInput.focus(), 50);
     }
 
     onClose() {

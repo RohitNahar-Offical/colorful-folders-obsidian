@@ -1430,7 +1430,7 @@ var IconPickerModal = class extends obsidian2.Modal {
     renderIcons("", "all");
     searchInput.oninput = () => renderIcons(searchInput.value, filterSelect.value);
     filterSelect.onchange = () => renderIcons(searchInput.value, filterSelect.value);
-    setTimeout(() => searchInput.focus(), 50);
+    activeWindow.setTimeout(() => searchInput.focus(), 50);
   }
   onClose() {
     this.contentEl.empty();
@@ -2253,7 +2253,7 @@ var StyleGenerator = class {
     }
   }
   isDarkMode() {
-    return document.body.classList.contains("theme-dark");
+    return activeDocument.body.classList.contains("theme-dark");
   }
   getStyle(path) {
     return this.settings.customFolderColors[path] || null;
@@ -2509,7 +2509,7 @@ var StyleGenerator = class {
                   svgStr = encodeURIComponent(this.settings.customIcons[iconId]);
                   this.iconCache.set(iconId, svgStr);
                 } else {
-                  const tempEl = document.createElement("div");
+                  const tempEl = activeDocument.createElement("div");
                   obsidian5.setIcon(tempEl, iconId);
                   if (!tempEl.querySelector("svg") && !iconId.startsWith("lucide-")) {
                     obsidian5.setIcon(tempEl, `lucide-${iconId}`);
@@ -2749,7 +2749,7 @@ var StyleGenerator = class {
                 svgStr = encodeURIComponent(this.settings.customIcons[activeStyle.iconId]);
                 this.iconCache.set(activeStyle.iconId, svgStr);
               } else {
-                const tempEl = document.createElement("div");
+                const tempEl = activeDocument.createElement("div");
                 const iconId = activeStyle.iconId;
                 obsidian5.setIcon(tempEl, iconId);
                 if (!tempEl.querySelector("svg") && !iconId.startsWith("lucide-")) {
@@ -2793,7 +2793,7 @@ var StyleGenerator = class {
         } else if (autoLucideId) {
           let svgStr = this.iconCache.get(autoLucideId);
           if (!svgStr) {
-            const tempEl = document.createElement("div");
+            const tempEl = activeDocument.createElement("div");
             obsidian5.setIcon(tempEl, autoLucideId);
             const svgEl = tempEl.querySelector("svg");
             if (svgEl) {
@@ -3104,7 +3104,7 @@ var DividerManager = class {
   buildDividerNode(path, conf) {
     const dividerThickness = this.plugin.settings.dividerThickness || 1.5;
     const globalLineStyle = this.plugin.settings.dividerLineStyle || "solid";
-    const div = document.createElement("div");
+    const div = activeDocument.createElement("div");
     div.className = "cf-interactive-divider";
     div.dataset.dividerTarget = path;
     const name = conf.dividerText || "SECTION";
@@ -3114,43 +3114,58 @@ var DividerManager = class {
     const useGlass = conf.dividerGlass !== void 0 ? conf.dividerGlass : this.plugin.settings.glassmorphism;
     const lineStyle = conf.dividerLineStyle && conf.dividerLineStyle !== "global" ? conf.dividerLineStyle : globalLineStyle;
     const bridge = div.createDiv({ cls: "cf-divider-bridge" });
-    bridge.style.cssText = "display:flex;align-items:center;width:100%;gap:8px";
+    bridge.setCssStyles({
+      display: "flex",
+      alignItems: "center",
+      width: "100%",
+      gap: "8px"
+    });
     const makeLine = (side) => {
       const line = bridge.createDiv({ cls: `cf-divider-line cf-divider-line-${side}` });
-      line.style.flexGrow = "1";
-      line.style.height = `${dividerThickness}px`;
+      line.setCssStyles({
+        flexGrow: "1",
+        height: `${dividerThickness}px`
+      });
       const gradDir = side === "left" ? "right" : "left";
       if (lineStyle === "solid") {
-        line.style.background = `linear-gradient(to ${gradDir}, transparent, ${color})`;
+        line.setCssStyles({ background: `linear-gradient(to ${gradDir}, transparent, ${color})` });
       } else {
         const thick = lineStyle === "dotted" || lineStyle === "dashed" ? dividerThickness + 1 : dividerThickness;
-        line.style.borderBottom = `${thick}px ${lineStyle} ${color}`;
-        line.style.opacity = "0.5";
+        line.setCssStyles({
+          borderBottom: `${thick}px ${lineStyle} ${color}`,
+          opacity: "0.5"
+        });
         const mask = `linear-gradient(to ${gradDir}, transparent, black)`;
-        line.style.maskImage = mask;
-        line.style.webkitMaskImage = mask;
+        line.setCssStyles({
+          maskImage: mask,
+          webkitMaskImage: mask
+        });
       }
       return line;
     };
     if (alignment === "center" || alignment === "right")
       makeLine("left");
     const chip = bridge.createDiv({ cls: "cf-divider-chip" });
-    chip.style.color = color;
+    chip.setCssStyles({ color });
     if (this.plugin.settings.dividerPillMode !== false) {
       if (useGlass) {
-        chip.style.backgroundColor = "rgba(var(--mono-rgb-100), 0.04)";
-        chip.style.backdropFilter = "blur(16px)";
-        chip.style.webkitBackdropFilter = "blur(16px)";
+        chip.setCssStyles({
+          backgroundColor: "rgba(var(--mono-rgb-100), 0.04)",
+          backdropFilter: "blur(16px)",
+          webkitBackdropFilter: "blur(16px)"
+        });
       } else {
-        chip.style.backgroundColor = "var(--background-secondary-alt)";
+        chip.setCssStyles({ backgroundColor: "var(--background-secondary-alt)" });
       }
     } else {
-      chip.style.backgroundColor = "transparent";
-      chip.style.backdropFilter = "none";
-      chip.style.webkitBackdropFilter = "none";
+      chip.setCssStyles({
+        backgroundColor: "transparent",
+        backdropFilter: "none",
+        webkitBackdropFilter: "none"
+      });
     }
     if (!isUpper)
-      chip.style.textTransform = "none";
+      chip.setCssStyles({ textTransform: "none" });
     let labelText = name;
     const rawIcon = conf.dividerIcon ? conf.dividerIcon.trim() : "";
     if (rawIcon) {
@@ -3161,10 +3176,12 @@ var DividerManager = class {
         obsidian6.setIcon(iconWrap, rawIcon);
         const svg = iconWrap.querySelector("svg");
         if (svg) {
-          svg.style.width = "14px";
-          svg.style.height = "14px";
-          svg.style.stroke = color;
-          svg.style.strokeWidth = "2.5px";
+          svg.setCssStyles({
+            width: "14px",
+            height: "14px",
+            stroke: color,
+            strokeWidth: "2.5px"
+          });
         }
       } else {
         labelText = `${rawIcon} ${name}`;
@@ -3213,7 +3230,7 @@ var DividerManager = class {
   syncDividers() {
     if (this.plugin.isSyncingDividers)
       return;
-    const container = document.querySelector(".nav-files-container");
+    const container = activeDocument.querySelector(".nav-files-container");
     if (!container)
       return;
     this.plugin.isSyncingDividers = true;
@@ -3292,6 +3309,15 @@ var DividerManager = class {
       this.plugin.isSyncingDividers = false;
     }
   }
+  /**
+   * Remove all divider nodes from the explorer.
+   */
+  clean() {
+    const container = activeDocument.querySelector(".nav-files-container");
+    if (container) {
+      container.querySelectorAll(".cf-interactive-divider").forEach((el) => el.remove());
+    }
+  }
   // ─── Helpers ────────────────────────────────────────────────────────
   /**
    * Find the DOM element that should CONTAIN the divider.
@@ -3352,7 +3378,7 @@ var ColorfulFoldersPlugin = class extends obsidian7.Plugin {
         return;
       this.dividerManager.syncDividers();
     }, 50, true);
-    this.uiStyleTag = document.createElement("style");
+    this.uiStyleTag = activeDocument.createElement("style");
     this.uiStyleTag.id = "colorful-folders-ui-style";
     this.uiStyleTag.textContent = `
             /* Premium Sliders styling */
@@ -3380,10 +3406,8 @@ var ColorfulFoldersPlugin = class extends obsidian7.Plugin {
                 transform: scale(1.2);
             }
         `;
-    document.head.appendChild(this.uiStyleTag);
-    this.styleTag = document.createElement("style");
-    this.styleTag.id = "colorful-folders-styles";
-    document.head.appendChild(this.styleTag);
+    activeDocument.head.appendChild(this.uiStyleTag);
+    this.initializeStyles();
     this.registerCustomIcons();
     this.registerEvents();
     this.registerCommands();
@@ -3392,6 +3416,11 @@ var ColorfulFoldersPlugin = class extends obsidian7.Plugin {
       this.generateStyles();
       this.initDividerObserver();
     });
+  }
+  initializeStyles() {
+    this.styleTag = activeDocument.createElement("style");
+    this.styleTag.id = "colorful-folders-styles";
+    activeDocument.head.appendChild(this.styleTag);
   }
   onunload() {
     if (this.styleTag)
@@ -3402,7 +3431,11 @@ var ColorfulFoldersPlugin = class extends obsidian7.Plugin {
       this.dividerObserver.disconnect();
     if (this.styleObserver)
       this.styleObserver.disconnect();
-    document.querySelectorAll(".cf-has-divider").forEach((el) => el.classList.remove("cf-has-divider"));
+    this.cleanDividers();
+  }
+  cleanDividers() {
+    activeDocument.querySelectorAll(".cf-has-divider").forEach((el) => el.classList.remove("cf-has-divider"));
+    this.dividerManager.clean();
   }
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
@@ -3597,52 +3630,56 @@ var ColorfulFoldersPlugin = class extends obsidian7.Plugin {
     return style;
   }
   getEffectiveStyle(target) {
-    const isDark = document.body.classList.contains("theme-dark");
-    const brightnessAmount = (isDark ? this.settings.darkModeBrightness : this.settings.lightModeBrightness) / 100;
-    const palette = PALETTES[this.settings.palette] || PALETTES["Muted Dark Mode"];
-    let path = target.path;
-    let segments = path.split("/").filter((s) => s.length > 0);
-    let depth = target instanceof obsidian7.TFolder ? segments.length - 1 : segments.length - 1;
-    let customStyle = this.getStyle(path);
-    let inheritedStyle = null;
-    let parent = target.parent;
-    while (parent && !parent.isRoot()) {
-      const pStyle = this.getStyle(parent.path);
-      if (pStyle && (pStyle.applyToSubfolders || target instanceof obsidian7.TFile && pStyle.applyToFiles)) {
-        inheritedStyle = pStyle;
-        break;
+    try {
+      const isDark = activeDocument.body.classList.contains("theme-dark");
+      const brightnessAmount = (isDark ? this.settings.darkModeBrightness : this.settings.lightModeBrightness) / 100;
+      const palette = PALETTES[this.settings.palette] || PALETTES["Muted Dark Mode"];
+      let path = target.path;
+      let segments = path.split("/").filter((s) => s.length > 0);
+      let depth = target instanceof obsidian7.TFolder ? segments.length - 1 : segments.length - 1;
+      let customStyle = this.getStyle(path);
+      let inheritedStyle = null;
+      let parent = target.parent;
+      while (parent && !parent.isRoot()) {
+        const pStyle = this.getStyle(parent.path);
+        if (pStyle && (pStyle.applyToSubfolders || target instanceof obsidian7.TFile && pStyle.applyToFiles)) {
+          inheritedStyle = pStyle;
+          break;
+        }
+        parent = parent.parent;
       }
-      parent = parent.parent;
+      const activeStyle = customStyle || inheritedStyle;
+      const colorOrigin = activeStyle && activeStyle.hex ? activeStyle.hex : null;
+      let color;
+      if (colorOrigin) {
+        const cp = parseCustomPalette(colorOrigin);
+        const rgb = hexToRgbObj(colorOrigin);
+        color = cp ? cp[0] : { rgb: `${rgb.r}, ${rgb.g}, ${rgb.b}`, hex: colorOrigin };
+      } else {
+        const h = hashString(path);
+        color = palette[h % palette.length];
+      }
+      let effText = customStyle && customStyle.textColor ? customStyle.textColor : inheritedStyle ? inheritedStyle.textColor : null;
+      if (!effText) {
+        const adjust = isDark ? Math.max(brightnessAmount, 0) : brightnessAmount;
+        effText = isDark && adjust === 0 ? color.hex : `rgb(${adjustBrightnessRgb(color.rgb, adjust)})`;
+      }
+      const effIconColor = customStyle && customStyle.iconColor ? customStyle.iconColor : inheritedStyle ? inheritedStyle.iconColor : color.hex;
+      const autoIcon = getAutoIconData(target.name, this.settings, target instanceof obsidian7.TFile);
+      return {
+        hex: anyToHex(color.hex),
+        textColor: effText ? anyToHex(effText) : "",
+        iconColor: anyToHex(effIconColor),
+        iconId: customStyle && customStyle.iconId ? customStyle.iconId : this.settings.autoIcons && autoIcon ? this.settings.wideAutoIcons ? autoIcon.lucide : autoIcon.emoji : "",
+        opacity: customStyle && customStyle.opacity !== void 0 ? customStyle.opacity : depth === 0 ? this.settings.rootOpacity : this.settings.subfolderOpacity,
+        isBold: customStyle && customStyle.isBold !== void 0 ? !!customStyle.isBold : inheritedStyle ? !!inheritedStyle.isBold : true,
+        isItalic: customStyle && customStyle.isItalic !== void 0 ? !!customStyle.isItalic : inheritedStyle ? !!customStyle.isItalic : false,
+        applyToSubfolders: customStyle ? !!customStyle.applyToSubfolders : false,
+        applyToFiles: customStyle ? !!customStyle.applyToFiles : false
+      };
+    } catch (e) {
+      return { hex: "#ffffff", textColor: "#000000", iconColor: "#000000", iconId: "", opacity: 1, isBold: true, isItalic: false, applyToSubfolders: false, applyToFiles: false };
     }
-    const activeStyle = customStyle || inheritedStyle;
-    const colorOrigin = activeStyle && activeStyle.hex ? activeStyle.hex : null;
-    let color;
-    if (colorOrigin) {
-      const cp = parseCustomPalette(colorOrigin);
-      const rgb = hexToRgbObj(colorOrigin);
-      color = cp ? cp[0] : { rgb: `${rgb.r}, ${rgb.g}, ${rgb.b}`, hex: colorOrigin };
-    } else {
-      const h = hashString(path);
-      color = palette[h % palette.length];
-    }
-    let effText = customStyle && customStyle.textColor ? customStyle.textColor : inheritedStyle ? inheritedStyle.textColor : null;
-    if (!effText) {
-      const adjust = isDark ? Math.max(brightnessAmount, 0) : brightnessAmount;
-      effText = isDark && adjust === 0 ? color.hex : `rgb(${adjustBrightnessRgb(color.rgb, adjust)})`;
-    }
-    const effIconColor = customStyle && customStyle.iconColor ? customStyle.iconColor : inheritedStyle ? inheritedStyle.iconColor : color.hex;
-    const autoIcon = getAutoIconData(target.name, this.settings, target instanceof obsidian7.TFile);
-    return {
-      hex: anyToHex(color.hex),
-      textColor: effText ? anyToHex(effText) : "",
-      iconColor: anyToHex(effIconColor),
-      iconId: customStyle && customStyle.iconId ? customStyle.iconId : this.settings.autoIcons && autoIcon ? this.settings.wideAutoIcons ? autoIcon.lucide : autoIcon.emoji : "",
-      opacity: customStyle && customStyle.opacity !== void 0 ? customStyle.opacity : depth === 0 ? this.settings.rootOpacity : this.settings.subfolderOpacity,
-      isBold: customStyle && customStyle.isBold !== void 0 ? !!customStyle.isBold : inheritedStyle ? !!inheritedStyle.isBold : true,
-      isItalic: customStyle && customStyle.isItalic !== void 0 ? !!customStyle.isItalic : inheritedStyle ? !!inheritedStyle.isItalic : false,
-      applyToSubfolders: customStyle ? !!customStyle.applyToSubfolders : false,
-      applyToFiles: customStyle ? !!customStyle.applyToFiles : false
-    };
   }
   generateStyles() {
     const generator = new StyleGenerator(this);
@@ -3652,7 +3689,7 @@ var ColorfulFoldersPlugin = class extends obsidian7.Plugin {
     if (this.dividerObserver) {
       this.dividerObserver.disconnect();
     }
-    const container = document.querySelector(".nav-files-container");
+    const container = activeDocument.querySelector(".nav-files-container");
     if (!container)
       return;
     container.addEventListener("scroll", () => {
@@ -3717,19 +3754,11 @@ var ColorfulFoldersPlugin = class extends obsidian7.Plugin {
     }
   }
   initStyleObserver() {
-    this.styleObserver = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        if (mutation.type === "attributes" && mutation.attributeName === "class") {
-          const target = mutation.target;
-          const hasDark = target.classList.contains("theme-dark");
-          const hasLight = target.classList.contains("theme-light");
-          if (hasDark || hasLight) {
-            this.generateStylesDebounced();
-            break;
-          }
-        }
-      }
+    if (this.styleObserver)
+      this.styleObserver.disconnect();
+    this.styleObserver = new MutationObserver(() => {
+      this.generateStylesDebounced();
     });
-    this.styleObserver.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    this.styleObserver.observe(activeDocument.body, { attributes: true, attributeFilter: ["class"] });
   }
 };

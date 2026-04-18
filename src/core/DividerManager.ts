@@ -21,7 +21,7 @@ export class DividerManager {
         const dividerThickness = this.plugin.settings.dividerThickness || 1.5;
         const globalLineStyle = this.plugin.settings.dividerLineStyle || 'solid';
 
-        const div = document.createElement('div');
+        const div = activeDocument.createElement('div');
         div.className = 'cf-interactive-divider';
         div.dataset.dividerTarget = path;
         
@@ -39,23 +39,34 @@ export class DividerManager {
 
         // ── Bridge (flex row: line — chip — line) ───────────────────────
         const bridge = div.createDiv({ cls: 'cf-divider-bridge' });
-        bridge.style.cssText = 'display:flex;align-items:center;width:100%;gap:8px';
+        bridge.setCssStyles({
+            display: 'flex',
+            alignItems: 'center',
+            width: '100%',
+            gap: '8px'
+        });
 
         const makeLine = (side: 'left' | 'right') => {
             const line = bridge.createDiv({ cls: `cf-divider-line cf-divider-line-${side}` });
-            line.style.flexGrow = '1';
-            line.style.height = `${dividerThickness}px`;
+            line.setCssStyles({
+                flexGrow: '1',
+                height: `${dividerThickness}px`
+            });
 
             const gradDir = side === 'left' ? 'right' : 'left';
             if (lineStyle === 'solid') {
-                line.style.background = `linear-gradient(to ${gradDir}, transparent, ${color})`;
+                line.setCssStyles({ background: `linear-gradient(to ${gradDir}, transparent, ${color})` });
             } else {
                 const thick = (lineStyle === 'dotted' || lineStyle === 'dashed') ? dividerThickness + 1 : dividerThickness;
-                line.style.borderBottom = `${thick}px ${lineStyle} ${color}`;
-                line.style.opacity = '0.5';
+                line.setCssStyles({
+                    borderBottom: `${thick}px ${lineStyle} ${color}`,
+                    opacity: '0.5'
+                });
                 const mask = `linear-gradient(to ${gradDir}, transparent, black)`;
-                (line.style as any).maskImage = mask;
-                (line.style as any).webkitMaskImage = mask;
+                line.setCssStyles({
+                    maskImage: mask,
+                    webkitMaskImage: mask
+                } as any);
             }
             return line;
         };
@@ -64,23 +75,27 @@ export class DividerManager {
 
         // ── Chip (pill label) ───────────────────────────────────────────
         const chip = bridge.createDiv({ cls: 'cf-divider-chip' });
-        chip.style.color = color;
+        chip.setCssStyles({ color: color });
 
         if (this.plugin.settings.dividerPillMode !== false) {
             if (useGlass) {
-                chip.style.backgroundColor = 'rgba(var(--mono-rgb-100), 0.04)';
-                chip.style.backdropFilter = 'blur(16px)';
-                (chip.style as any).webkitBackdropFilter = 'blur(16px)';
+                chip.setCssStyles({
+                    backgroundColor: 'rgba(var(--mono-rgb-100), 0.04)',
+                    backdropFilter: 'blur(16px)',
+                    webkitBackdropFilter: 'blur(16px)'
+                } as any);
             } else {
-                chip.style.backgroundColor = 'var(--background-secondary-alt)';
+                chip.setCssStyles({ backgroundColor: 'var(--background-secondary-alt)' });
             }
         } else {
-            chip.style.backgroundColor = 'transparent';
-            chip.style.backdropFilter = 'none';
-            (chip.style as any).webkitBackdropFilter = 'none';
+            chip.setCssStyles({
+                backgroundColor: 'transparent',
+                backdropFilter: 'none',
+                webkitBackdropFilter: 'none'
+            } as any);
         }
 
-        if (!isUpper) chip.style.textTransform = 'none';
+        if (!isUpper) chip.setCssStyles({ textTransform: 'none' });
 
         // Icon (Lucide or emoji)
         let labelText = name;
@@ -95,10 +110,12 @@ export class DividerManager {
                 obsidian.setIcon(iconWrap, rawIcon);
                 const svg = iconWrap.querySelector('svg');
                 if (svg) {
-                    svg.style.width = '14px';
-                    svg.style.height = '14px';
-                    svg.style.stroke = color;
-                    svg.style.strokeWidth = '2.5px';
+                    svg.setCssStyles({
+                        width: '14px',
+                        height: '14px',
+                        stroke: color,
+                        strokeWidth: '2.5px'
+                    });
                 }
             } else {
                 // Treat as emoji — prepend to label
@@ -161,7 +178,7 @@ export class DividerManager {
     syncDividers() {
         if (this.plugin.isSyncingDividers) return;
 
-        const container = document.querySelector('.nav-files-container');
+        const container = activeDocument.querySelector('.nav-files-container');
         if (!container) return;
 
         this.plugin.isSyncingDividers = true;
@@ -254,6 +271,16 @@ export class DividerManager {
             }
         } finally {
             this.plugin.isSyncingDividers = false;
+        }
+    }
+
+    /**
+     * Remove all divider nodes from the explorer.
+     */
+    clean() {
+        const container = activeDocument.querySelector('.nav-files-container');
+        if (container) {
+            container.querySelectorAll('.cf-interactive-divider').forEach(el => el.remove());
         }
     }
 

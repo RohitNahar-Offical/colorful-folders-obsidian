@@ -35,7 +35,7 @@ export class StyleGenerator {
 
 
     isDarkMode() {
-        return (document.body.classList.contains('theme-dark'));
+        return (activeDocument.body.classList.contains('theme-dark'));
     }
 
     getStyle(path: string): FolderStyle | null {
@@ -329,7 +329,7 @@ export class StyleGenerator {
                                    svgStr = encodeURIComponent(this.settings.customIcons[iconId]);
                                    this.iconCache.set(iconId, svgStr);
                                 } else {
-                                   const tempEl = document.createElement('div');
+                                   const tempEl = activeDocument.createElement('div');
                                    obsidian.setIcon(tempEl, iconId);
                                    if (!tempEl.querySelector('svg') && !iconId.startsWith('lucide-')) {
                                        obsidian.setIcon(tempEl, `lucide-${iconId}`);
@@ -589,7 +589,7 @@ export class StyleGenerator {
                                svgStr = encodeURIComponent(this.settings.customIcons[activeStyle.iconId]);
                                this.iconCache.set(activeStyle.iconId, svgStr);
                            } else {
-                               const tempEl = document.createElement('div');
+                               const tempEl = activeDocument.createElement('div');
                                const iconId = activeStyle.iconId;
                                obsidian.setIcon(tempEl, iconId);
                                if (!tempEl.querySelector('svg') && !iconId.startsWith('lucide-')) {
@@ -634,7 +634,7 @@ export class StyleGenerator {
                 } else if (autoLucideId) {
                     let svgStr = this.iconCache.get(autoLucideId);
                         if (!svgStr) {
-                            const tempEl = document.createElement('div');
+                            const tempEl = activeDocument.createElement('div');
                             obsidian.setIcon(tempEl, autoLucideId);
                             const svgEl = tempEl.querySelector('svg');
                             if (svgEl) {

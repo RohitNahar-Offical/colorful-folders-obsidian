@@ -55,7 +55,7 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
             this.dividerManager.syncDividers();
         }, 50, true);
 
-        this.uiStyleTag = document.createElement('style');
+        this.uiStyleTag = activeDocument.createElement('style');
         this.uiStyleTag.id = 'colorful-folders-ui-style';
         this.uiStyleTag.textContent = `
             /* Premium Sliders styling */
@@ -83,14 +83,9 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
                 transform: scale(1.2);
             }
         `;
-        document.head.appendChild(this.uiStyleTag);
+        activeDocument.head.appendChild(this.uiStyleTag);
 
-        this.styleTag = document.createElement('style');
-        this.styleTag.id = 'colorful-folders-styles';
-        document.head.appendChild(this.styleTag);
-
-
-
+        this.initializeStyles();
 
         this.registerCustomIcons();
         this.registerEvents();
@@ -103,13 +98,24 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
         });
     }
 
+    initializeStyles() {
+        this.styleTag = activeDocument.createElement('style');
+        this.styleTag.id = 'colorful-folders-styles';
+        activeDocument.head.appendChild(this.styleTag);
+    }
+
     onunload() {
         if (this.styleTag) this.styleTag.remove();
         if (this.uiStyleTag) this.uiStyleTag.remove();
         if (this.dividerObserver) this.dividerObserver.disconnect();
         if (this.styleObserver) this.styleObserver.disconnect();
 
-        document.querySelectorAll('.cf-has-divider').forEach(el => el.classList.remove('cf-has-divider'));
+        this.cleanDividers();
+    }
+
+    cleanDividers() {
+        activeDocument.querySelectorAll('.cf-has-divider').forEach(el => el.classList.remove('cf-has-divider'));
+        this.dividerManager.clean();
     }
 
     async loadSettings() {
@@ -349,63 +355,67 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
     }
 
     getEffectiveStyle(target: obsidian.TAbstractFile): EffectiveStyle {
-        const isDark = document.body.classList.contains('theme-dark');
-        const brightnessAmount = (isDark ? this.settings.darkModeBrightness : this.settings.lightModeBrightness) / 100;
-        const palette = PALETTES[this.settings.palette] || PALETTES["Muted Dark Mode"];
-        
-        let path = target.path;
-        let segments = path.split('/').filter(s => s.length > 0);
-        let depth = target instanceof obsidian.TFolder ? segments.length - 1 : segments.length - 1;
+        try {
+            const isDark = activeDocument.body.classList.contains('theme-dark');
+            const brightnessAmount = (isDark ? this.settings.darkModeBrightness : this.settings.lightModeBrightness) / 100;
+            const palette = PALETTES[this.settings.palette] || PALETTES["Muted Dark Mode"];
+            
+            let path = target.path;
+            let segments = path.split('/').filter(s => s.length > 0);
+            let depth = target instanceof obsidian.TFolder ? segments.length - 1 : segments.length - 1;
 
-        // Start with physical direct style
-        let customStyle = this.getStyle(path);
-        let inheritedStyle: FolderStyle | null = null;
-        
-        // Climb parents to find inheritance
-        let parent = target.parent;
-        while (parent && !parent.isRoot()) {
-            const pStyle = this.getStyle(parent.path);
-            if (pStyle && (pStyle.applyToSubfolders || (target instanceof obsidian.TFile && pStyle.applyToFiles))) {
-                inheritedStyle = pStyle;
-                break; 
+            // Start with physical direct style
+            let customStyle = this.getStyle(path);
+            let inheritedStyle: FolderStyle | null = null;
+            
+            // Climb parents to find inheritance
+            let parent = target.parent;
+            while (parent && !parent.isRoot()) {
+                const pStyle = this.getStyle(parent.path);
+                if (pStyle && (pStyle.applyToSubfolders || (target instanceof obsidian.TFile && pStyle.applyToFiles))) {
+                    inheritedStyle = pStyle;
+                    break; 
+                }
+                parent = parent.parent;
             }
-            parent = parent.parent;
+
+            const activeStyle = customStyle || inheritedStyle;
+            const colorOrigin = (activeStyle && activeStyle.hex) ? activeStyle.hex : null;
+            
+
+            let color: {rgb: string, hex: string};
+            if (colorOrigin) {
+                const cp = parseCustomPalette(colorOrigin);
+                const rgb = hexToRgbObj(colorOrigin);
+                color = cp ? cp[0] : { rgb: `${rgb.r}, ${rgb.g}, ${rgb.b}`, hex: colorOrigin };
+            } else {
+                const h = hashString(path);
+                color = palette[h % palette.length];
+            }
+
+            let effText = (customStyle && customStyle.textColor) ? customStyle.textColor : (inheritedStyle ? inheritedStyle.textColor : null);
+            if (!effText) {
+                const adjust = isDark ? Math.max(brightnessAmount, 0) : brightnessAmount;
+                effText = (isDark && adjust === 0) ? color.hex : `rgb(${adjustBrightnessRgb(color.rgb, adjust)})`;
+            }
+
+            const effIconColor = (customStyle && customStyle.iconColor) ? customStyle.iconColor : (inheritedStyle ? inheritedStyle.iconColor : color.hex);
+            const autoIcon = getAutoIconData(target.name, this.settings, target instanceof obsidian.TFile);
+            
+            return {
+                hex: anyToHex(color.hex),
+                textColor: effText ? anyToHex(effText) : "",
+                iconColor: anyToHex(effIconColor),
+                iconId: (customStyle && customStyle.iconId) ? customStyle.iconId : (this.settings.autoIcons && autoIcon ? (this.settings.wideAutoIcons ? autoIcon.lucide : autoIcon.emoji) : ""),
+                opacity: (customStyle && customStyle.opacity !== undefined) ? customStyle.opacity : (depth === 0 ? this.settings.rootOpacity : this.settings.subfolderOpacity),
+                isBold: (customStyle && customStyle.isBold !== undefined) ? !!customStyle.isBold : (inheritedStyle ? !!inheritedStyle.isBold : true),
+                isItalic: (customStyle && customStyle.isItalic !== undefined) ? !!customStyle.isItalic : (inheritedStyle ? !!customStyle.isItalic : false),
+                applyToSubfolders: customStyle ? !!customStyle.applyToSubfolders : false,
+                applyToFiles: customStyle ? !!customStyle.applyToFiles : false
+            };
+        } catch (e) {
+            return { hex: "#ffffff", textColor: "#000000", iconColor: "#000000", iconId: "", opacity: 1, isBold: true, isItalic: false, applyToSubfolders: false, applyToFiles: false };
         }
-
-        const activeStyle = customStyle || inheritedStyle;
-        const colorOrigin = (activeStyle && activeStyle.hex) ? activeStyle.hex : null;
-        
-
-        let color: {rgb: string, hex: string};
-        if (colorOrigin) {
-            const cp = parseCustomPalette(colorOrigin);
-            const rgb = hexToRgbObj(colorOrigin);
-            color = cp ? cp[0] : { rgb: `${rgb.r}, ${rgb.g}, ${rgb.b}`, hex: colorOrigin };
-        } else {
-            const h = hashString(path);
-            color = palette[h % palette.length];
-        }
-
-        let effText = (customStyle && customStyle.textColor) ? customStyle.textColor : (inheritedStyle ? inheritedStyle.textColor : null);
-        if (!effText) {
-            const adjust = isDark ? Math.max(brightnessAmount, 0) : brightnessAmount;
-            effText = (isDark && adjust === 0) ? color.hex : `rgb(${adjustBrightnessRgb(color.rgb, adjust)})`;
-        }
-
-        const effIconColor = (customStyle && customStyle.iconColor) ? customStyle.iconColor : (inheritedStyle ? inheritedStyle.iconColor : color.hex);
-        const autoIcon = getAutoIconData(target.name, this.settings, target instanceof obsidian.TFile);
-        
-        return {
-            hex: anyToHex(color.hex),
-            textColor: effText ? anyToHex(effText) : "",
-            iconColor: anyToHex(effIconColor),
-            iconId: (customStyle && customStyle.iconId) ? customStyle.iconId : (this.settings.autoIcons && autoIcon ? (this.settings.wideAutoIcons ? autoIcon.lucide : autoIcon.emoji) : ""),
-            opacity: (customStyle && customStyle.opacity !== undefined) ? customStyle.opacity : (depth === 0 ? this.settings.rootOpacity : this.settings.subfolderOpacity),
-            isBold: (customStyle && customStyle.isBold !== undefined) ? !!customStyle.isBold : (inheritedStyle ? !!inheritedStyle.isBold : true),
-            isItalic: (customStyle && customStyle.isItalic !== undefined) ? !!customStyle.isItalic : (inheritedStyle ? !!inheritedStyle.isItalic : false),
-            applyToSubfolders: customStyle ? !!customStyle.applyToSubfolders : false,
-            applyToFiles: customStyle ? !!customStyle.applyToFiles : false
-        };
     }
 
 
@@ -422,7 +432,7 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
             this.dividerObserver.disconnect();
         }
 
-        const container = document.querySelector('.nav-files-container');
+        const container = activeDocument.querySelector('.nav-files-container');
         if (!container) return;
 
         // Detect scrolling to suppress sync bursts
@@ -493,21 +503,10 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
     }
 
     initStyleObserver() {
-        this.styleObserver = new MutationObserver((mutations) => {
-            for (const mutation of mutations) {
-                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-                    const target = mutation.target as HTMLElement;
-                    const hasDark = target.classList.contains('theme-dark');
-                    const hasLight = target.classList.contains('theme-light');
-                    
-
-                    if (hasDark || hasLight) {
-                        this.generateStylesDebounced();
-                        break;
-                    }
-                }
-            }
+        if (this.styleObserver) this.styleObserver.disconnect();
+        this.styleObserver = new MutationObserver(() => {
+            this.generateStylesDebounced();
         });
-        this.styleObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+        this.styleObserver.observe(activeDocument.body, { attributes: true, attributeFilter: ['class'] });
     }
 }
