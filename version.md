@@ -4,7 +4,7 @@ Keep track of the evolution of the Colorful Folders plugin. Each update brings b
 
 ---
 
-## 🚀 Version 4.0.7 - The "Major Feature Debut" Release
+## 🚀 4.0.7 - The "Major Feature Debut" Release
 This milestone release marks the official launch of modern organizational tools, introducing section dividers and a smart icon engine to the production branch.
 
 ### 🛠️ 5. Maintenance & Stability

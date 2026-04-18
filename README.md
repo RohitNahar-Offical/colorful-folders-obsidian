@@ -4,8 +4,8 @@
 
 ---
 
-## 🚀 Latest Version: 4.0.7 - The "Major Feature Debut" Release
-Version 4.0.7 marks the official launch of modern organizational tools, introducing section dividers and a smart icon engine to the production branch.
+## 🚀 Latest: 4.0.7 - The "Major Feature Debut" Release
+4.0.7 marks the official launch of modern organizational tools, introducing section dividers and a smart icon engine to the production branch.
 
 ### ➕ 1. New: Section Dividers
 For the first time, you can now add visual dividers to group your folders and files with high-end glassmorphic styling.
