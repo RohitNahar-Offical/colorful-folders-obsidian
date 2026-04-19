@@ -3207,7 +3207,7 @@ var StyleGenerator = class {
                     border-radius: 40px !important;
                     width: fit-content !important;
                     max-width: 85% !important;
-                    gap: 6px !important;
+                    gap: 8px !important;
                     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
                     ${this.settings.dividerPillMode ? `
                         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
