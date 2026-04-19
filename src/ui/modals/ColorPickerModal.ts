@@ -7,7 +7,7 @@ plugin: IColorfulFoldersPlugin;
 item: obsidian.TAbstractFile;
 isFolder: boolean;
 focusSection: string | null;
-style: EffectiveStyle & FolderStyle;
+folderStyle: EffectiveStyle & FolderStyle;
 activeTab: string;
 _headerIconWrap: HTMLElement;
 _tabBtns: Record<string, HTMLElement>;
@@ -32,25 +32,27 @@ _prevIconSize: number;
             hex: "#eb6f92", textColor: "", iconColor: "", isBold: this.isFolder, isItalic: false,
             opacity: 1.0, applyToSubfolders: false, applyToFiles: false, iconId: ""
         };
-        const existing = (this.plugin.getStyle(this.item.path) || {}) as FolderStyle;
+        const existing = (this.plugin.getStyle(this.item.path) || {});
         
         // Merge: effective provides the "live" fallback, existing provides the user's explicit overrides
-        this.style = { ...effective, ...existing } as EffectiveStyle & FolderStyle;
+        this.folderStyle = { ...effective, ...existing };
         // Ensure some defaults
-        if (this.style.isBold === undefined && this.isFolder) this.style.isBold = true;
-        if (this.style.opacity === undefined) this.style.opacity = 1.0;
-        this.activeTab = (this.focusSection === 'icon' || (this as any).activeTab === 'icon') ? 'icon' : 'appearance';
+        if (this.folderStyle.isBold === undefined && this.isFolder) this.folderStyle.isBold = true;
+        if (this.folderStyle.opacity === undefined) this.folderStyle.opacity = 1.0;
+        this.activeTab = (this.focusSection === 'icon') ? 'icon' : 'appearance';
     }
 
     onOpen() {
         const { contentEl, modalEl } = this;
         contentEl.empty();
-        modalEl.style.maxWidth = "580px";
-        modalEl.style.width = "95vw";
+        modalEl.setCssStyles({
+            maxWidth: "580px",
+            width: "95vw"
+        });
 
         // ── HEADER ──────────────────────────────────────────────────────────
         const header = contentEl.createDiv({ cls: "cf-modal-header" });
-        Object.assign(header.style, {
+        header.setCssStyles({
             display: "flex", alignItems: "center", gap: "12px",
             padding: "18px 20px 12px", borderBottom: "1px solid var(--background-modifier-border)",
             marginBottom: "0"
@@ -60,22 +62,29 @@ _prevIconSize: number;
         const headerIconSize = Math.round(36 * (iconScale > 1.0 ? iconScale : 1.0)); // Adjust container if needed
 
         const iconWrap = header.createDiv();
-        Object.assign(iconWrap.style, {
+        iconWrap.setCssStyles({
             width: `${headerIconSize}px`, height: `${headerIconSize}px`, borderRadius: "8px",
             display: "flex", alignItems: "center", justifyContent: "center",
-            backgroundColor: this.style.hex, flexShrink: "0"
+            backgroundColor: this.folderStyle.hex, flexShrink: "0"
         });
-        obsidian.setIcon(iconWrap, this.style.iconId || (this.isFolder ? "folder" : "file"));
-        iconWrap.querySelector("svg") && (iconWrap.querySelector("svg").style.color = this.style.iconColor || this.style.textColor || "#fff");
-        if (iconWrap.querySelector("svg")) {
-            Object.assign(iconWrap.querySelector("svg").style, { width: `${headerIconW}px`, height: `${headerIconW}px` });
+        obsidian.setIcon(iconWrap, this.folderStyle.iconId || (this.isFolder ? "folder" : "file"));
+        const headerSvg = iconWrap.querySelector("svg") as unknown as HTMLElement | null;
+        if (headerSvg) {
+            headerSvg.setCssStyles({
+                color: this.folderStyle.iconColor || this.folderStyle.textColor || "#fff",
+                width: `${headerIconW}px`, height: `${headerIconW}px`
+            });
         }
 
         const titleWrap = header.createDiv();
-        titleWrap.createEl("div", { text: this.item.name, cls: "cf-modal-title" }).style.cssText =
-            "font-size:1.1em;font-weight:700;color:var(--text-normal);line-height:1.2";
-        titleWrap.createEl("div", { text: `Custom ${this.isFolder ? "Folder" : "File"} Style` }).style.cssText =
-            "font-size:0.78em;color:var(--text-muted);margin-top:2px";
+        const mTitle = titleWrap.createEl("div", { text: this.item.name, cls: "cf-modal-title" });
+        mTitle.setCssStyles({
+            fontSize: "1.1em", fontWeight: "700", color: "var(--text-normal)", lineHeight: "1.2"
+        });
+        const mSub = titleWrap.createEl("div", { text: `Custom ${this.isFolder ? "folder" : "file"} style` });
+        mSub.setCssStyles({
+            fontSize: "0.78em", color: "var(--text-muted)", marginTop: "2px"
+        });
 
         // store refs for live preview
         this._headerIconWrap = iconWrap;
@@ -89,20 +98,20 @@ _prevIconSize: number;
         ];
 
         const tabBar = contentEl.createDiv({ cls: "cf-tab-bar" });
-        Object.assign(tabBar.style, {
+        tabBar.setCssStyles({
             display: "flex", gap: "2px", padding: "8px 16px 0",
             borderBottom: "1px solid var(--background-modifier-border)"
         });
 
         const body = contentEl.createDiv({ cls: "cf-tab-body" });
-        Object.assign(body.style, { padding: "16px 20px 8px", overflowY: "auto", maxHeight: "60vh" });
+        body.setCssStyles({ padding: "16px 20px 8px", overflowY: "auto", maxHeight: "60vh" });
 
-        const tabPanels = {};
-        const tabBtns = {};
+        const tabPanels: Record<string, HTMLElement> = {};
+        const tabBtns: Record<string, HTMLElement> = {};
 
         tabs.forEach(t => {
             const btn = tabBar.createEl("button", { cls: "cf-tab-btn" });
-            Object.assign(btn.style, {
+            btn.setCssStyles({
                 background: "none", border: "none", padding: "7px 13px",
                 borderRadius: "6px 6px 0 0", cursor: "pointer", fontSize: "0.82em",
                 fontWeight: "600", display: "flex", alignItems: "center", gap: "6px",
@@ -111,11 +120,12 @@ _prevIconSize: number;
             });
             const btnIcon = btn.createSpan();
             obsidian.setIcon(btnIcon, t.icon);
-            btnIcon.querySelector("svg") && Object.assign(btnIcon.querySelector("svg").style, { width: "13px", height: "13px" });
+            const biSvg = btnIcon.querySelector("svg") as unknown as HTMLElement | null;
+            if (biSvg) biSvg.setCssStyles({ width: "13px", height: "13px" });
             btn.createSpan({ text: t.label });
 
             const panel = body.createDiv({ cls: "cf-tab-panel" });
-            panel.style.display = "none";
+            panel.setCssStyles({ display: "none" });
             tabPanels[t.id] = panel;
             tabBtns[t.id] = btn;
 
@@ -130,22 +140,22 @@ _prevIconSize: number;
 
         // Live mini-preview bar
         const prev = ap.createDiv({ cls: "cf-preview-bar" });
-        Object.assign(prev.style, {
+        prev.setCssStyles({
             display: "flex", alignItems: "center", gap: "10px",
             padding: "10px 14px", borderRadius: "8px", marginBottom: "14px",
             backgroundColor: "var(--background-secondary)", border: "1px solid var(--background-modifier-border)"
         });
         const prevIconWrap = prev.createDiv();
-        Object.assign(prevIconWrap.style, {
+        prevIconWrap.setCssStyles({
             width: "28px", height: "28px", borderRadius: "6px", flexShrink: "0",
-            backgroundColor: this.style.hex, display: "flex", alignItems: "center", justifyContent: "center"
+            backgroundColor: this.folderStyle.hex, display: "flex", alignItems: "center", justifyContent: "center"
         });
-        obsidian.setIcon(prevIconWrap, this.style.iconId || (this.isFolder ? "folder" : "file"));
+        obsidian.setIcon(prevIconWrap, this.folderStyle.iconId || (this.isFolder ? "folder" : "file"));
         const prevLabel = prev.createDiv({ text: this.item.name });
-        Object.assign(prevLabel.style, {
-            fontWeight: this.style.isBold ? "700" : "400",
-            fontStyle: this.style.isItalic ? "italic" : "normal",
-            color: this.style.textColor || "var(--text-normal)", fontSize: "0.9em"
+        prevLabel.setCssStyles({
+            fontWeight: this.folderStyle.isBold ? "700" : "400",
+            fontStyle: this.folderStyle.isItalic ? "italic" : "normal",
+            color: this.folderStyle.textColor || "var(--text-normal)", fontSize: "0.9em"
         });
         this._prevIconWrap = prevIconWrap;
         this._prevLabel = prevLabel;
@@ -155,129 +165,133 @@ _prevIconSize: number;
             const previewIconW = Math.round(16 * iconScale);
             const headerIconW = Math.round(18 * iconScale);
 
-            const effectiveIconColor = this.style.iconColor || this.style.hex || "#fff";
+            const effectiveIconColor = this.folderStyle.iconColor || this.folderStyle.hex || "#fff";
             // Update header icon
-            this._headerIconWrap.style.backgroundColor = this.style.hex;
-            this._headerIconWrap.innerHTML = "";
-            obsidian.setIcon(this._headerIconWrap, this.style.iconId || (this.isFolder ? "folder" : "file"));
-            const hsvg = this._headerIconWrap.querySelector("svg");
-            if (hsvg) Object.assign(hsvg.style, { color: effectiveIconColor, width: `${headerIconW}px`, height: `${headerIconW}px` });
+            this._headerIconWrap.setCssStyles({ backgroundColor: this.folderStyle.hex });
+            this._headerIconWrap.empty();
+            obsidian.setIcon(this._headerIconWrap, this.folderStyle.iconId || (this.isFolder ? "folder" : "file"));
+            const hsvg = this._headerIconWrap.querySelector("svg") as unknown as HTMLElement | null;
+            if (hsvg) hsvg.setCssStyles({ color: effectiveIconColor, width: `${headerIconW}px`, height: `${headerIconW}px` });
             // Update preview bar
-            this._prevIconWrap.style.backgroundColor = this.style.hex;
-            this._prevIconWrap.innerHTML = "";
-            obsidian.setIcon(this._prevIconWrap, this.style.iconId || (this.isFolder ? "folder" : "file"));
-            const prevSvg = this._prevIconWrap.querySelector("svg");
-            if (prevSvg) Object.assign(prevSvg.style, { color: effectiveIconColor, width: `${previewIconW}px`, height: `${previewIconW}px` });
-            this._prevLabel.style.fontWeight = this.style.isBold ? "700" : "400";
-            this._prevLabel.style.fontStyle = this.style.isItalic ? "italic" : "normal";
-            this._prevLabel.style.color = this.style.textColor || "var(--text-normal)";
+            this._prevIconWrap.setCssStyles({ backgroundColor: this.folderStyle.hex });
+            this._prevIconWrap.empty();
+            obsidian.setIcon(this._prevIconWrap, this.folderStyle.iconId || (this.isFolder ? "folder" : "file"));
+            const prevSvg = this._prevIconWrap.querySelector("svg") as unknown as HTMLElement | null;
+            if (prevSvg) prevSvg.setCssStyles({ color: effectiveIconColor, width: `${previewIconW}px`, height: `${previewIconW}px` });
+            this._prevLabel.setCssStyles({
+                fontWeight: this.folderStyle.isBold ? "700" : "400",
+                fontStyle: this.folderStyle.isItalic ? "italic" : "normal",
+                color: this.folderStyle.textColor || "var(--text-normal)"
+            });
         };
         this._updatePreview = updatePreview;
 
         // ── SECTION: Background Color ──
         const bgSection = ap.createDiv({ cls: 'cf-picker-section' });
         const isBgFocus = this.focusSection === 'background';
-        Object.assign(bgSection.style, {
+        bgSection.setCssStyles({
             padding: "10px", borderRadius: "8px", 
             border: isBgFocus ? "1px solid var(--interactive-accent)" : "1px solid var(--background-modifier-border)",
             backgroundColor: isBgFocus ? "rgba(var(--interactive-accent-rgb), 0.05)" : "rgba(var(--mono-rgb-100), 0.03)", 
             marginBottom: "12px",
             transition: "all 0.5s ease"
         });
-        if (isBgFocus) bgSection.style.boxShadow = "0 0 15px rgba(var(--interactive-accent-rgb), 0.15)";
+        if (isBgFocus) bgSection.setCssStyles({ boxShadow: "0 0 15px rgba(var(--interactive-accent-rgb), 0.15)" });
 
         const bgHeader = bgSection.createDiv();
-        Object.assign(bgHeader.style, { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" });
+        bgHeader.setCssStyles({ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" });
         const bgLabel = bgHeader.createDiv();
-        bgLabel.style.cssText = 'font-size: 0.85em; font-weight: 700; color: var(--text-normal); opacity: 0.9;';
+        bgLabel.setCssStyles({ fontSize: "0.85em", fontWeight: "700", color: "var(--text-normal)", opacity: "0.9" });
         bgLabel.textContent = 'Background styling';
 
         const applyBgBtn = bgHeader.createEl("button", { text: "Apply" });
-        Object.assign(applyBgBtn.style, {
+        applyBgBtn.setCssStyles({
             padding: "2px 8px", borderRadius: "4px", fontSize: "0.7em", fontWeight: "600",
             cursor: "pointer", border: "1px solid var(--interactive-accent)",
             background: "var(--interactive-accent)", color: "var(--text-on-accent)"
         });
         applyBgBtn.onclick = async () => {
             const path = this.item.path;
-            const existing = (this.plugin.getStyle(path) || {}) as FolderStyle;
-            existing.hex = this.style.hex;
-            existing.opacity = this.style.opacity;
-            if (this.style.applyToSubfolders !== undefined) existing.applyToSubfolders = this.style.applyToSubfolders;
-            if (this.style.applyToFiles !== undefined) existing.applyToFiles = this.style.applyToFiles;
+            const existing = (this.plugin.getStyle(path) || {});
+            existing.hex = this.folderStyle.hex;
+            existing.opacity = this.folderStyle.opacity;
+            if (this.folderStyle.applyToSubfolders !== undefined) existing.applyToSubfolders = this.folderStyle.applyToSubfolders;
+            if (this.folderStyle.applyToFiles !== undefined) existing.applyToFiles = this.folderStyle.applyToFiles;
             this.plugin.settings.customFolderColors[path] = existing;
             await this.plugin.saveSettings();
+            await this.plugin.generateStyles();
             this.close();
         };
 
         const bgPickerContainer = bgSection.createDiv();
-        createVisualColorPicker(bgPickerContainer, this.style.hex, (hex, alpha) => {
-            this.style.hex = hex;
-            this.style.opacity = alpha;
+        createVisualColorPicker(bgPickerContainer, this.folderStyle.hex, (hex, alpha) => {
+            this.folderStyle.hex = hex;
+            this.folderStyle.opacity = alpha;
             updatePreview();
-        }, { showAlpha: true, initialAlpha: this.style.opacity || 1.0 });
+        }, { showAlpha: true, initialAlpha: this.folderStyle.opacity || 1.0 });
 
         // ── SECTION: Text Color ──
         const txtSection = ap.createDiv({ cls: 'cf-picker-section' });
         const isColorFocus = this.focusSection === 'color';
-        Object.assign(txtSection.style, {
+        txtSection.setCssStyles({
             padding: "10px", borderRadius: "8px", 
             border: isColorFocus ? "1px solid var(--interactive-accent)" : "1px solid var(--background-modifier-border)",
             backgroundColor: isColorFocus ? "rgba(var(--interactive-accent-rgb), 0.05)" : "rgba(var(--mono-rgb-100), 0.03)", 
             marginBottom: "12px",
             transition: "all 0.5s ease"
         });
-        if (isColorFocus) txtSection.style.boxShadow = "0 0 15px rgba(var(--interactive-accent-rgb), 0.15)";
+        if (isColorFocus) txtSection.setCssStyles({ boxShadow: "0 0 15px rgba(var(--interactive-accent-rgb), 0.15)" });
 
         const txtHeader = txtSection.createDiv();
-        Object.assign(txtHeader.style, { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" });
+        txtHeader.setCssStyles({ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" });
         const txtLabel = txtHeader.createDiv();
-        txtLabel.style.cssText = 'font-size: 0.85em; font-weight: 700; color: var(--text-normal); opacity: 0.9;';
+        txtLabel.setCssStyles({ fontSize: "0.85em", fontWeight: "700", color: "var(--text-normal)", opacity: "0.9" });
         txtLabel.textContent = 'Text styling';
 
         const txtActionsRow = txtHeader.createDiv();
-        Object.assign(txtActionsRow.style, { display: "flex", gap: "6px" });
+        txtActionsRow.setCssStyles({ display: "flex", gap: "6px" });
 
         const resetTxtBtn = txtActionsRow.createEl("button", { text: "Reset" });
-        Object.assign(resetTxtBtn.style, { padding: "2px 6px", borderRadius: "4px", fontSize: "0.7em", border: "1px solid var(--background-modifier-border)", background: "none", color: "var(--text-muted)", cursor: "pointer" });
+        resetTxtBtn.setCssStyles({ padding: "2px 6px", borderRadius: "4px", fontSize: "0.7em", border: "1px solid var(--background-modifier-border)", background: "none", color: "var(--text-muted)", cursor: "pointer" });
         
         const applyTxtBtn = txtActionsRow.createEl("button", { text: "Apply" });
-        Object.assign(applyTxtBtn.style, {
+        applyTxtBtn.setCssStyles({
             padding: "2px 8px", borderRadius: "4px", fontSize: "0.7em", fontWeight: "600",
             cursor: "pointer", border: "1px solid var(--interactive-accent)",
             background: "var(--interactive-accent)", color: "var(--text-on-accent)"
         });
         applyTxtBtn.onclick = async () => {
             const path = this.item.path;
-            const existing = (this.plugin.getStyle(path) || {}) as FolderStyle;
-            existing.textColor = this.style.textColor;
-            existing.isBold = this.style.isBold;
-            existing.isItalic = this.style.isItalic;
-            if (this.style.applyToSubfolders !== undefined) existing.applyToSubfolders = this.style.applyToSubfolders;
-            if (this.style.applyToFiles !== undefined) existing.applyToFiles = this.style.applyToFiles;
+            const existing = (this.plugin.getStyle(path) || {});
+            existing.textColor = this.folderStyle.textColor;
+            existing.isBold = this.folderStyle.isBold;
+            existing.isItalic = this.folderStyle.isItalic;
+            if (this.folderStyle.applyToSubfolders !== undefined) existing.applyToSubfolders = this.folderStyle.applyToSubfolders;
+            if (this.folderStyle.applyToFiles !== undefined) existing.applyToFiles = this.folderStyle.applyToFiles;
             this.plugin.settings.customFolderColors[path] = existing;
             await this.plugin.saveSettings();
+            await this.plugin.generateStyles();
             this.close();
         };
 
         const textPickerContainer = txtSection.createDiv();
-        const textPicker = createVisualColorPicker(textPickerContainer, this.style.textColor || '#ffffff', (hex) => {
-            this.style.textColor = hex;
+        const textPicker = createVisualColorPicker(textPickerContainer, this.folderStyle.textColor || '#ffffff', (hex) => {
+            this.folderStyle.textColor = hex;
             updatePreview();
         }, { showAlpha: false });
-        resetTxtBtn.onclick = () => { this.style.textColor = ''; textPicker.setHex('#ffffff'); updatePreview(); };
+        resetTxtBtn.onclick = () => { this.folderStyle.textColor = ''; textPicker.setHex('#ffffff'); updatePreview(); };
 
         // Inline Typography
         const typoRow = txtSection.createDiv();
-        Object.assign(typoRow.style, { display: "flex", gap: "10px", marginTop: "8px" });
-        const buildToggle = (lbl, key) => {
+        typoRow.setCssStyles({ display: "flex", gap: "10px", marginTop: "8px" });
+        const buildToggle = (lbl: string, key: 'isBold' | 'isItalic') => {
             const wrap = typoRow.createDiv();
-            Object.assign(wrap.style, { display: "flex", alignItems: "center", gap: "4px" });
+            wrap.setCssStyles({ display: "flex", alignItems: "center", gap: "4px" });
             const chk = wrap.createEl("input", { type: "checkbox" });
-            chk.checked = !!this.style[key];
+            chk.checked = !!this.folderStyle[key];
             const span = wrap.createEl("span", { text: lbl });
-            span.style.fontSize = "0.75em";
-            chk.onchange = () => { this.style[key] = chk.checked; updatePreview(); };
+            span.setCssStyles({ fontSize: "0.75em" });
+            chk.onchange = () => { (this.folderStyle as unknown)[key] = chk.checked; updatePreview(); };
         };
         buildToggle("Bold", "isBold");
         buildToggle("Italic", "isItalic");
@@ -292,100 +306,103 @@ _prevIconSize: number;
         // Current icon display
         // ── SECTION: Icon Color ──
         const icColorSection = ic.createDiv();
-        Object.assign(icColorSection.style, {
+        icColorSection.setCssStyles({
             padding: "10px", borderRadius: "8px", border: "1px solid var(--background-modifier-border)",
             backgroundColor: "rgba(var(--mono-rgb-100), 0.03)", marginBottom: "12px"
         });
 
         const icColorHeader = icColorSection.createDiv();
-        Object.assign(icColorHeader.style, { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" });
+        icColorHeader.setCssStyles({ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" });
         const icColorLabel = icColorHeader.createDiv();
-        icColorLabel.style.cssText = 'font-size: 0.85em; font-weight: 700; color: var(--text-normal); opacity: 0.9;';
+        icColorLabel.setCssStyles({ fontSize: "0.85em", fontWeight: "700", color: "var(--text-normal)", opacity: "0.9" });
         icColorLabel.textContent = 'Icon styling';
 
         const icColorActions = icColorHeader.createDiv();
-        Object.assign(icColorActions.style, { display: "flex", gap: "6px" });
+        icColorActions.setCssStyles({ display: "flex", gap: "6px" });
         const resetIcBtn = icColorActions.createEl("button", { text: "Reset" });
-        Object.assign(resetIcBtn.style, { padding: "2px 6px", borderRadius: "4px", fontSize: "0.7em", border: "1px solid var(--background-modifier-border)", background: "none", color: "var(--text-muted)", cursor: "pointer" });
+        resetIcBtn.setCssStyles({ padding: "2px 6px", borderRadius: "4px", fontSize: "0.7em", border: "1px solid var(--background-modifier-border)", background: "none", color: "var(--text-muted)", cursor: "pointer" });
         
         const applyIcBtn = icColorActions.createEl("button", { text: "Apply" });
-        Object.assign(applyIcBtn.style, {
+        applyIcBtn.setCssStyles({
             padding: "2px 8px", borderRadius: "4px", fontSize: "0.7em", fontWeight: "600",
             cursor: "pointer", border: "1px solid var(--interactive-accent)",
             background: "var(--interactive-accent)", color: "var(--text-on-accent)"
         });
         applyIcBtn.onclick = async () => {
             const path = this.item.path;
-            const existing = (this.plugin.getStyle(path) || {}) as FolderStyle;
-            existing.iconId = this.style.iconId;
-            existing.iconColor = this.style.iconColor;
-            if (this.style.applyToSubfolders !== undefined) existing.applyToSubfolders = this.style.applyToSubfolders;
-            if (this.style.applyToFiles !== undefined) existing.applyToFiles = this.style.applyToFiles;
+            const existing = (this.plugin.getStyle(path) || {});
+            existing.iconId = this.folderStyle.iconId;
+            existing.iconColor = this.folderStyle.iconColor;
+            if (this.folderStyle.applyToSubfolders !== undefined) existing.applyToSubfolders = this.folderStyle.applyToSubfolders;
+            if (this.folderStyle.applyToFiles !== undefined) existing.applyToFiles = this.folderStyle.applyToFiles;
             this.plugin.settings.customFolderColors[path] = existing;
             await this.plugin.saveSettings();
+            await this.plugin.generateStyles();
             this.close();
         };
 
         const icColorPickerContainer = icColorSection.createDiv();
-        const icColorPicker = createVisualColorPicker(icColorPickerContainer, this.style.iconColor || this.style.hex || '#eb6f92', (hex) => {
-            this.style.iconColor = hex;
+        const icColorPicker = createVisualColorPicker(icColorPickerContainer, this.folderStyle.iconColor || this.folderStyle.hex || '#eb6f92', (hex) => {
+            this.folderStyle.iconColor = hex;
             updatePreview();
         }, { showAlpha: false });
-        resetIcBtn.onclick = () => { this.style.iconColor = ''; icColorPicker.setHex(this.style.hex || '#eb6f92'); updatePreview(); };
+        resetIcBtn.onclick = () => { this.folderStyle.iconColor = ''; icColorPicker.setHex(this.folderStyle.hex || '#eb6f92'); updatePreview(); };
 
         // ── SECTION: Current Icon Box ──
         const curIconRow = ic.createDiv();
-        Object.assign(curIconRow.style, {
+        curIconRow.setCssStyles({
             display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px",
             padding: "8px 10px", borderRadius: "8px", border: "1px solid var(--background-modifier-border)",
             backgroundColor: "var(--background-secondary)", marginBottom: "12px"
         });
         const curIconBox = curIconRow.createDiv();
-        Object.assign(curIconBox.style, {
+        curIconBox.setCssStyles({
             width: "36px", height: "36px", borderRadius: "8px", background: "var(--interactive-accent)",
             display: "flex", alignItems: "center", justifyContent: "center", flexShrink: "0"
         });
-        this._refreshIconSelection(this.style.iconId, curIconBox);
+        this._refreshIconSelection(this.folderStyle.iconId, curIconBox);
 
         const curIconHeader = curIconRow.createDiv();
-        Object.assign(curIconHeader.style, { display: "flex", alignItems: "center", justifyContent: "space-between", flex: "1", minWidth: "150px" });
+        curIconHeader.setCssStyles({ display: "flex", alignItems: "center", justifyContent: "space-between", flex: "1", minWidth: "150px" });
         
         const curIconInfo = curIconHeader.createDiv();
-        curIconInfo.createEl("div", { text: "Current Icon" }).style.cssText = "font-size:0.75em;color:var(--text-muted);margin-bottom:0px";
-        this._curIconNameEl = curIconInfo.createEl("div", { text: this.style.iconId || (this.isFolder ? "folder" : "file") });
-        this._curIconNameEl.style.cssText = "font-size:0.85em;font-weight:600;color:var(--text-normal)";
+        const ciLabel = curIconInfo.createEl("div", { text: "Current icon" });
+        ciLabel.setCssStyles({ fontSize: "0.75em", color: "var(--text-muted)", marginBottom: "0px" });
+        this._curIconNameEl = curIconInfo.createEl("div", { text: this.folderStyle.iconId || (this.isFolder ? "folder" : "file") });
+        this._curIconNameEl.setCssStyles({ fontSize: "0.85em", fontWeight: "600", color: "var(--text-normal)" });
         this._curIconBox = curIconBox;
 
-        const applyIconBtn = curIconHeader.createEl("button", { text: "Apply Icon Only" });
-        Object.assign(applyIconBtn.style, {
+        const applyIconBtn = curIconHeader.createEl("button", { text: "Apply icon only" });
+        applyIconBtn.setCssStyles({
             padding: "3px 10px", borderRadius: "5px", fontSize: "0.75em", fontWeight: "600",
             cursor: "pointer", border: "1px solid var(--interactive-accent)",
             background: "var(--interactive-accent)", color: "var(--text-on-accent)"
         });
         applyIconBtn.onclick = async () => {
             const path = this.item.path;
-            const existing = (this.plugin.getStyle(path) || {}) as FolderStyle;
-            existing.iconId = this.style.iconId;
-            existing.iconColor = this.style.iconColor;
+            const existing = (this.plugin.getStyle(path) || {});
+            existing.iconId = this.folderStyle.iconId;
+            existing.iconColor = this.folderStyle.iconColor;
             // Respect inheritance toggles if they were changed
-            if (this.style.applyToSubfolders !== undefined) existing.applyToSubfolders = this.style.applyToSubfolders;
-            if (this.style.applyToFiles !== undefined) existing.applyToFiles = this.style.applyToFiles;
+            if (this.folderStyle.applyToSubfolders !== undefined) existing.applyToSubfolders = this.folderStyle.applyToSubfolders;
+            if (this.folderStyle.applyToFiles !== undefined) existing.applyToFiles = this.folderStyle.applyToFiles;
 
             this.plugin.settings.customFolderColors[path] = existing;
             await this.plugin.saveSettings();
+            await this.plugin.generateStyles();
             new obsidian.Notice(`Icon updated for ${this.item.name}`);
             this.close();
         };
 
         // Search & Filter Row
         const searchRow = ic.createDiv();
-        Object.assign(searchRow.style, { display: "flex", gap: "8px", marginBottom: "12px", alignItems: "center" });
+        searchRow.setCssStyles({ display: "flex", gap: "8px", marginBottom: "12px", alignItems: "center" });
         
         const searchInputWrap = searchRow.createDiv();
-        Object.assign(searchInputWrap.style, { position: "relative", flex: "1" });
+        searchInputWrap.setCssStyles({ position: "relative", flex: "1" });
         
         const searchInput = searchInputWrap.createEl("input", { type: "text" });
-        Object.assign(searchInput.style, {
+        searchInput.setCssStyles({
             width: "100%", padding: "7px 12px 7px 34px", borderRadius: "7px",
             border: "1px solid var(--background-modifier-border)",
             backgroundColor: "var(--background-secondary)", color: "var(--text-normal)",
@@ -394,13 +411,13 @@ _prevIconSize: number;
         searchInput.placeholder = "Search icons…";
         
         const searchIcon = searchInputWrap.createDiv();
-        Object.assign(searchIcon.style, {
+        searchIcon.setCssStyles({
             position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)",
             pointerEvents: "none", color: "var(--text-muted)"
         });
         obsidian.setIcon(searchIcon, "search");
-        const ssvg = searchIcon.querySelector("svg");
-        if (ssvg) Object.assign(ssvg.style, { width: "14px", height: "14px" });
+        const ssvg = searchIcon.querySelector("svg") as unknown as HTMLElement | null;
+        if (ssvg) ssvg.setCssStyles({ width: "14px", height: "14px" });
 
         // Pack Filter Dropdown
         const customIds = Object.keys(this.plugin.settings.customIcons);
@@ -412,7 +429,7 @@ _prevIconSize: number;
         });
 
         const filterSelect = searchRow.createEl("select");
-        Object.assign(filterSelect.style, {
+        filterSelect.setCssStyles({
             padding: "6px 10px", borderRadius: "6px", border: "1px solid var(--background-modifier-border)",
             backgroundColor: "var(--background-secondary)", color: "var(--text-normal)", fontSize: "0.85em"
         });
@@ -424,7 +441,7 @@ _prevIconSize: number;
 
         // Icon grid
         const iconGrid = ic.createDiv({ cls: "cf-icon-grid" });
-        Object.assign(iconGrid.style, {
+        iconGrid.setCssStyles({
             display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(44px, 1fr))",
             gap: "4px", maxHeight: "280px", overflowY: "auto",
             border: "1px solid var(--background-modifier-border)",
@@ -440,7 +457,7 @@ _prevIconSize: number;
         const allIconsSet = new Set([...customIds, ...lucideIcons]);
         const allIcons = Array.from(allIconsSet);
 
-        const renderIcons = (search, packFilter = "all") => {
+        const renderIcons = (search: string, packFilter: string = "all") => {
             iconGrid.empty();
             let filtered = allIcons;
             
@@ -469,40 +486,42 @@ _prevIconSize: number;
                 const cellSize = Math.round(44 * (iconScale > 1.0 ? iconScale : 1.0));
 
                 const cell = iconGrid.createDiv({ cls: "cf-icon-cell" });
-                Object.assign(cell.style, {
+                cell.setCssStyles({
                     width: `${cellSize}px`, height: `${cellSize}px`, borderRadius: "7px",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     cursor: "pointer", transition: "all 0.12s ease",
-                    backgroundColor: this.style.iconId === id ? "var(--interactive-accent)" : "transparent",
-                    border: "2px solid " + (this.style.iconId === id ? "var(--interactive-accent)" : "transparent")
+                    backgroundColor: this.folderStyle.iconId === id ? "var(--interactive-accent)" : "transparent",
+                    border: "2px solid " + (this.folderStyle.iconId === id ? "var(--interactive-accent)" : "transparent")
                 });
                 obsidian.setIcon(cell, id);
-                const cellSvg = cell.querySelector("svg");
+                const cellSvg = cell.querySelector("svg") as unknown as HTMLElement | null;
                 if (cellSvg) {
                     cellSvg.removeAttribute('width');
                     cellSvg.removeAttribute('height');
-                    Object.assign(cellSvg.style, {
+                    cellSvg.setCssStyles({
                         width: `${gridIconW}px`, height: `${gridIconW}px`,
-                        color: this.style.iconId === id ? "#fff" : "var(--text-normal)"
+                        color: this.folderStyle.iconId === id ? "#fff" : "var(--text-normal)"
                     });
                 }
                 cell.title = id;
                 cell.onmouseenter = () => {
-                    if (this.style.iconId !== id) cell.style.backgroundColor = "var(--background-modifier-hover)";
+                    if (this.folderStyle.iconId !== id) cell.setCssStyles({ backgroundColor: "var(--background-modifier-hover)" });
                 };
                 cell.onmouseleave = () => {
-                    if (this.style.iconId !== id) cell.style.backgroundColor = "transparent";
+                    if (this.folderStyle.iconId !== id) cell.setCssStyles({ backgroundColor: "transparent" });
                 };
                 cell.onclick = () => {
-                    this.style.iconId = id;
+                    this.folderStyle.iconId = id;
                     this._refreshIconSelection(id, curIconBox);
                     if (this._updatePreview) this._updatePreview();
                     renderIcons(searchInput.value, filterSelect.value);
                 };
             });
             if (filtered.length === 0) {
-                iconGrid.createEl("div", { text: "No icons found" }).style.cssText =
-                    "padding:20px;text-align:center;color:var(--text-muted);font-size:0.85em;grid-column:1/-1";
+                const emptyMsg = iconGrid.createEl("div", { text: "No icons found" });
+                emptyMsg.setCssStyles({
+                    padding: "20px", textAlign: "center", color: "var(--text-muted)", fontSize: "0.85em", gridColumn: "1/-1"
+                });
             }
         };
         renderIcons("", "all");
@@ -512,20 +531,21 @@ _prevIconSize: number;
         // ── INHERITANCE TAB ─────────────────────────────────────────────────
         if (this.isFolder && tabPanels["inherit"]) {
             const inh = tabPanels["inherit"];
-            new obsidian.Setting(inh).setHeading().setName("Inheritance Options");
-            new obsidian.Setting(inh).setName("Apply to Subfolders")
+            new obsidian.Setting(inh).setHeading().setName("Inheritance options");
+            new obsidian.Setting(inh).setName("Apply to subfolders")
                 .setDesc("Force nested folders to inherit this style.")
-                .addToggle(t => t.setValue(this.style.applyToSubfolders || false).onChange(v => this.style.applyToSubfolders = v));
-            new obsidian.Setting(inh).setName("Apply to Files")
+                .addToggle(t => t.setValue(this.folderStyle.applyToSubfolders || false).onChange(v => this.folderStyle.applyToSubfolders = v));
+            new obsidian.Setting(inh).setName("Apply to files")
                 .setDesc("Force files inside this folder to inherit this style.")
-                .addToggle(t => t.setValue(this.style.applyToFiles || false).onChange(v => this.style.applyToFiles = v));
+                .addToggle(t => t.setValue(this.folderStyle.applyToFiles || false).onChange(v => this.folderStyle.applyToFiles = v));
         }
 
         const pr = tabPanels["presets"];
-        pr.createEl("h4", { text: "Saved Presets", cls: "cf-section-title" }).style.cssText = "font-size:0.85em;margin-bottom:10px;opacity:0.8";
+        const prTitle = pr.createEl("h4", { text: "Saved presets", cls: "cf-section-title" });
+        prTitle.setCssStyles({ fontSize: "0.85em", marginBottom: "10px", opacity: "0.8" });
 
         const presetList = pr.createDiv({ cls: "cf-preset-list" });
-        Object.assign(presetList.style, {
+        presetList.setCssStyles({
             display: "flex", flexDirection: "column", gap: "6px", marginBottom: "16px",
             maxHeight: "200px", overflowY: "auto", padding: "4px"
         });
@@ -534,38 +554,38 @@ _prevIconSize: number;
         const presetNames = Object.keys(presets);
 
         if (presetNames.length === 0) {
-            presetList.createEl("div", { text: "No presets saved yet.", cls: "cf-empty-state" })
-                .style.cssText = "font-size:0.8em;color:var(--text-muted);text-align:center;padding:20px";
+            const emptyPresets = presetList.createEl("div", { text: "No presets saved yet.", cls: "cf-empty-state" });
+            emptyPresets.setCssStyles({ fontSize: "0.8em", color: "var(--text-muted)", textAlign: "center", padding: "20px" });
         } else {
             presetNames.forEach(name => {
                 const pData = presets[name];
                 const item = presetList.createDiv({ cls: "cf-preset-item" });
-                Object.assign(item.style, {
+                item.setCssStyles({
                     display: "flex", alignItems: "center", gap: "10px", padding: "8px 12px",
                     borderRadius: "8px", border: "1px solid var(--background-modifier-border)",
                     backgroundColor: "var(--background-secondary-alt)", transition: "all 0.1s ease"
                 });
 
                 const colorPrev = item.createDiv();
-                Object.assign(colorPrev.style, {
+                colorPrev.setCssStyles({
                     width: "20px", height: "20px", borderRadius: "4px", backgroundColor: pData.hex || "#eb6f92", flexShrink: "0"
                 });
 
                 const nameLabel = item.createDiv({ text: name });
-                Object.assign(nameLabel.style, { flex: "1", fontSize: "0.85em", fontWeight: "600", color: "var(--text-normal)" });
+                nameLabel.setCssStyles({ flex: "1", fontSize: "0.85em", fontWeight: "600", color: "var(--text-normal)" });
 
                 const applyBtn = item.createEl("button", { text: "Apply" });
-                Object.assign(applyBtn.style, { padding: "2px 8px", fontSize: "0.75em", borderRadius: "4px", cursor: "pointer" });
+                applyBtn.setCssStyles({ padding: "2px 8px", fontSize: "0.75em", borderRadius: "4px", cursor: "pointer" });
                 applyBtn.onclick = () => {
-                    this.style = { ...pData } as EffectiveStyle & FolderStyle;
+                    this.folderStyle = { ...pData } as EffectiveStyle & FolderStyle;
                     this.onOpen();
                 };
 
                 const delBtn = item.createEl("button", { cls: "clickable-icon" });
-                Object.assign(delBtn.style, { padding: "4px", display: "flex", alignItems: "center", justifyContent: "center" });
+                delBtn.setCssStyles({ padding: "4px", display: "flex", alignItems: "center", justifyContent: "center" });
                 obsidian.setIcon(delBtn, "trash-2");
-                const delSvg = delBtn.querySelector("svg");
-                if (delSvg) Object.assign(delSvg.style, { width: "14px", height: "14px", color: "var(--text-error)" });
+                const delSvg = delBtn.querySelector("svg") as unknown as HTMLElement | null;
+                if (delSvg) delSvg.setCssStyles({ width: "14px", height: "14px", color: "var(--text-error)" });
                 delBtn.onclick = async (e) => {
                     e.stopPropagation();
                     delete this.plugin.settings.presets[name];
@@ -577,28 +597,29 @@ _prevIconSize: number;
         }
 
         const saveSection = pr.createDiv();
-        Object.assign(saveSection.style, {
+        saveSection.setCssStyles({
             marginTop: "12px", padding: "12px", borderRadius: "8px",
             border: "1px dashed var(--background-modifier-border)",
             backgroundColor: "rgba(var(--mono-rgb-100), 0.02)"
         });
-        saveSection.createEl("div", { text: "Save Current Style" }).style.cssText = "font-size:0.75em;font-weight:700;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase";
+        const saveTitle = saveSection.createEl("div", { text: "Save current style" });
+        saveTitle.setCssStyles({ fontSize: "0.75em", fontWeight: "700", color: "var(--text-muted)", marginBottom: "8px", textTransform: "uppercase" });
         
         const saveRow = saveSection.createDiv();
-        Object.assign(saveRow.style, { display: "flex", gap: "8px" });
+        saveRow.setCssStyles({ display: "flex", gap: "8px" });
         
         const newPresetInput = saveRow.createEl("input", { type: "text" });
         newPresetInput.placeholder = "Preset name...";
-        Object.assign(newPresetInput.style, { flex: "1", fontSize: "0.85em", padding: "6px 10px", borderRadius: "6px", border: "1px solid var(--background-modifier-border)", background: "var(--background-primary)" });
+        newPresetInput.setCssStyles({ flex: "1", fontSize: "0.85em", padding: "6px 10px", borderRadius: "6px", border: "1px solid var(--background-modifier-border)", background: "var(--background-primary)" });
         
-        const savePresetBtn = saveRow.createEl("button", { text: "Save Style" });
-        Object.assign(savePresetBtn.style, { padding: "6px 12px", fontSize: "0.8em", fontWeight: "600", color: "var(--text-on-accent)", background: "var(--interactive-accent)", borderRadius: "6px", border: "none", cursor: "pointer" });
+        const savePresetBtn = saveRow.createEl("button", { text: "Save style" });
+        savePresetBtn.setCssStyles({ padding: "6px 12px", fontSize: "0.8em", fontWeight: "600", color: "var(--text-on-accent)", background: "var(--interactive-accent)", borderRadius: "6px", border: "none", cursor: "pointer" });
         
         savePresetBtn.onclick = async () => {
             const name = newPresetInput.value.trim();
             if (!name) return;
             if (!this.plugin.settings.presets) this.plugin.settings.presets = {};
-            this.plugin.settings.presets[name] = { ...this.style };
+            this.plugin.settings.presets[name] = { ...this.folderStyle };
             await this.plugin.saveSettings();
             new obsidian.Notice(`Saved preset: ${name}`);
             this.onOpen();
@@ -606,14 +627,14 @@ _prevIconSize: number;
 
         // ── FOOTER ─────────────────────────────────────────────────────────
         const footer = contentEl.createDiv({ cls: "cf-modal-footer" });
-        Object.assign(footer.style, {
+        footer.setCssStyles({
             display: "flex", justifyContent: "space-between", alignItems: "center",
             padding: "10px 20px 16px", borderTop: "1px solid var(--background-modifier-border)",
             marginTop: "4px", gap: "8px"
         });
         const clearBtn = footer.createEl("button");
-        clearBtn.setText("Clear Style");
-        Object.assign(clearBtn.style, {
+        clearBtn.setText("Clear style");
+        clearBtn.setCssStyles({
             padding: "7px 14px", borderRadius: "6px", cursor: "pointer", fontSize: "0.85em",
             border: "1px solid var(--background-modifier-border)",
             background: "var(--background-primary)", color: "var(--text-muted)"
@@ -621,19 +642,21 @@ _prevIconSize: number;
         clearBtn.onclick = async () => {
             delete this.plugin.settings.customFolderColors[this.item.path];
             await this.plugin.saveSettings();
+            this.plugin.generateStyles();
             new obsidian.Notice(`Cleared styling for ${this.item.name}`);
             this.close();
         };
         const saveBtn = footer.createEl("button");
-        saveBtn.setText("Save Style");
-        Object.assign(saveBtn.style, {
+        saveBtn.setText("Save style");
+        saveBtn.setCssStyles({
             padding: "7px 18px", borderRadius: "6px", cursor: "pointer", fontSize: "0.85em",
             fontWeight: "600", background: "var(--interactive-accent)",
             color: "var(--text-on-accent)", border: "none"
         });
         saveBtn.onclick = async () => {
-            this.plugin.settings.customFolderColors[this.item.path] = this.style;
+            this.plugin.settings.customFolderColors[this.item.path] = this.folderStyle;
             await this.plugin.saveSettings();
+            this.plugin.generateStyles();
             new obsidian.Notice(`Updated styling for ${this.item.name}`);
             this.close();
         };
@@ -647,24 +670,26 @@ _prevIconSize: number;
         const btns = tabBtns || this._tabBtns;
         const panels = tabPanels || this._tabPanels;
         if (!btns || !panels) return;
-        (Object.entries(btns) as [string, HTMLElement][]).forEach(([k, btn]) => {
+        Object.entries(btns).forEach(([k, btn]) => {
             const active = k === id;
-            btn.style.color = active ? "var(--interactive-accent)" : "var(--text-muted)";
-            btn.style.borderBottom = active ? "2px solid var(--interactive-accent)" : "2px solid transparent";
-            btn.style.backgroundColor = active ? "var(--background-modifier-hover)" : "transparent";
+            btn.setCssStyles({
+                color: active ? "var(--interactive-accent)" : "var(--text-muted)",
+                borderBottom: active ? "2px solid var(--interactive-accent)" : "2px solid transparent",
+                backgroundColor: active ? "var(--background-modifier-hover)" : "transparent"
+            });
         });
-        (Object.entries(panels) as [string, HTMLElement][]).forEach(([k, p]) => { p.style.display = k === id ? "block" : "none"; });
+        Object.entries(panels).forEach(([k, p]) => { p.setCssStyles({ display: k === id ? "block" : "none" }); });
     }
 
-    _refreshIconSelection(id, curIconBox) {
-        curIconBox.innerHTML = "";
+    _refreshIconSelection(id: string, curIconBox: HTMLElement) {
+        curIconBox.empty();
         obsidian.setIcon(curIconBox, id || (this.isFolder ? "folder" : "file"));
-        const s = curIconBox.querySelector("svg");
-        if (s) Object.assign(s.style, { width: "22px", height: "22px", color: "#fff" });
+        const s = curIconBox.querySelector("svg") as unknown as HTMLElement | null;
+        if (s) s.setCssStyles({ width: "22px", height: "22px", color: "#fff" });
         if (this._curIconNameEl) this._curIconNameEl.setText(id || (this.isFolder ? "folder" : "file"));
     }
 
     onClose() {
         this.contentEl.empty();
     }
-}
+}

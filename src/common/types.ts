@@ -1,4 +1,4 @@
-import { TAbstractFile, TFolder, TFile, App } from 'obsidian';
+import { TAbstractFile, App, Debouncer, MenuItem, Menu } from 'obsidian';
 
 export interface FolderStyle {
     hex?: string;
@@ -100,14 +100,20 @@ export interface IColorfulFoldersPlugin {
     styleTag: HTMLStyleElement;
     uiStyleTag: HTMLStyleElement;
     isSyncingDividers: boolean;
-    processDividersDebounced: any;
+    processDividersDebounced: Debouncer<[], void>;
     saveSettings(): Promise<void>;
     registerCustomIcons(): void;
     cleanUnusedStyles(): Promise<void>;
-    dividerManager: any;
+    dividerManager: {
+        syncDividers(): void;
+        clean(): void;
+    };
     getStyle(path: string): FolderStyle | null;
     getEffectiveStyle(target: TAbstractFile): EffectiveStyle;
     generateStyles(): void;
     initDividerObserver(): void;
     processDividers(): void;
+}
+export interface MenuItemWithSubmenu extends MenuItem {
+    setSubmenu(): Menu;
 }

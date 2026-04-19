@@ -1,6 +1,7 @@
 import * as obsidian from 'obsidian';
 import { IColorfulFoldersPlugin } from '../common/types';
 import { DEFAULT_SETTINGS } from '../common/constants';
+import { ConfirmModal } from './modals/ConfirmModal';
 
 
 export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
@@ -8,7 +9,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
     activeTab: string;
 
     constructor(app: obsidian.App, plugin: IColorfulFoldersPlugin) {
-        super(app, (plugin as any));
+        super(app, plugin as unknown as obsidian.Plugin);
         this.plugin = plugin;
         this.activeTab = "gen";
     }
@@ -31,9 +32,10 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         const iconPanel = rootEl.createDiv();
         const sysPanel = rootEl.createDiv();
         
-        intPanel.style.display = "none";
-        iconPanel.style.display = "none";
-        sysPanel.style.display = "none";
+        generalPanel.setCssStyles({ display: 'block' });
+        intPanel.setCssStyles({ display: 'none' });
+        iconPanel.setCssStyles({ display: 'none' });
+        sysPanel.setCssStyles({ display: 'none' });
 
         const btnGen = tabBar.createEl("button", { text: "General", cls: 'cf-tab-btn' });
         const btnInt = tabBar.createEl("button", { text: "Integrations", cls: 'cf-tab-btn' });
@@ -49,10 +51,10 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         const setTab = (t: string) => {
             this.activeTab = t;
-            generalPanel.style.display = (t === "gen" ? "block" : "none");
-            intPanel.style.display = (t === "int" ? "block" : "none");
-            iconPanel.style.display = (t === "icon" ? "block" : "none");
-            sysPanel.style.display = (t === "sys" ? "block" : "none");
+            generalPanel.setCssStyles({ display: (t === "gen" ? "block" : "none") });
+            intPanel.setCssStyles({ display: (t === "int" ? "block" : "none") });
+            iconPanel.setCssStyles({ display: (t === "icon" ? "block" : "none") });
+            sysPanel.setCssStyles({ display: (t === "sys" ? "block" : "none") });
             
             btnGen.toggleClass('is-active', t === "gen");
             btnInt.toggleClass('is-active', t === "int");
@@ -72,7 +74,8 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         const makeCard = (parent: HTMLElement, icon: string, title: string) => {
             const card = parent.createDiv('cf-settings-card');
             const h = card.createDiv('cf-card-header');
-            h.innerHTML = `<span class="icon">${icon}</span> ${title}`;
+            h.createSpan({ text: icon, cls: 'icon' });
+            h.appendText(' ' + title);
             return card;
         };
 
@@ -106,24 +109,26 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         const customIconCard = makeCard(iconPanel, "📦", "Custom Icon Management");
         
         const iconDesc = customIconCard.createEl("p", { text: "Add individual SVG icons or import bulk packs from the internet. All custom icons added here will appear in the icon selection grid when styling a folder or file." });
-        Object.assign(iconDesc.style, { fontSize: "0.85em", color: "var(--text-muted)", marginBottom: "20px", lineHeight: "1.4" });
+        iconDesc.setCssStyles({ fontSize: "0.85em", color: "var(--text-muted)", marginBottom: "20px", lineHeight: "1.4" });
 
-        customIconCard.createEl("div", { text: "Pro Tip: Custom IDs should be unique. Avoid starting them with 'lucide-' unless you intend to override a built-in Obsidian icon." }).style.cssText = "font-size:0.8em; color:var(--text-accent); margin-bottom:15px; font-style:italic;";
+        const tip = customIconCard.createEl("div", { text: "Pro Tip: Custom IDs should be unique. Avoid starting them with 'lucide-' unless you intend to override a built-in Obsidian icon." });
+        tip.setCssStyles({ fontSize: "0.8em", color: "var(--text-accent)", marginBottom: "15px", fontStyle: "italic" });
 
         const manualWrap = customIconCard.createDiv();
-        Object.assign(manualWrap.style, {
+        manualWrap.setCssStyles({
             padding: "16px", background: "var(--background-secondary-alt)", borderRadius: "10px",
             border: "1px solid var(--background-modifier-border)", marginBottom: "20px"
         });
         
-        manualWrap.createEl("div", { text: "Add Single Icon" }).style.cssText = "font-weight:700;margin-bottom:10px;font-size:0.9em";
+        const manualTitle = manualWrap.createEl("div", { text: "Add single icon" });
+        manualTitle.setCssStyles({ fontWeight: "700", marginBottom: "10px", fontSize: "0.9em" });
         const manualRow = manualWrap.createDiv();
-        Object.assign(manualRow.style, { display: "flex", gap: "8px", flexWrap: "wrap" });
-        const idInp = manualRow.createEl("input", { placeholder: "Icon ID (e.g. cloud-logo)" }) as HTMLInputElement;
-        const svgInp = manualRow.createEl("input", { placeholder: "SVG Code (<svg...)" }) as HTMLInputElement;
-        idInp.style.flex = "1"; svgInp.style.flex = "3";
+        manualRow.setCssStyles({ display: "flex", gap: "8px", flexWrap: "wrap" });
+        const idInp = manualRow.createEl("input", { placeholder: "Icon ID (e.g. cloud-logo)" });
+        const svgInp = manualRow.createEl("input", { placeholder: "SVG code (<svg...)" });
+        idInp.setCssStyles({ flex: "1" }); svgInp.setCssStyles({ flex: "3" });
         
-        const addBtn = manualRow.createEl("button", { text: "Add Icon", cls: "mod-cta" });
+        const addBtn = manualRow.createEl("button", { text: "Add icon", cls: "mod-cta" });
         addBtn.onclick = async () => {
             const id = idInp.value.trim();
             const svg = svgInp.value.trim();
@@ -144,7 +149,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .addText(text => {
                 text.setPlaceholder("https://example.com/icons.json");
                 const impBtn = customIconCard.createEl("button", { text: "Import" });
-                Object.assign(impBtn.style, { marginLeft: "8px" });
+                impBtn.setCssStyles({ marginLeft: "8px" });
                 impBtn.onclick = async () => {
                     const url = text.getValue().trim();
                     if (!url) return;
@@ -176,25 +181,27 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             });
 
             const content = row.createDiv();
-            Object.assign(content.style, { flex: "1" });
+            content.setCssStyles({ flex: "1" });
             
-            content.createEl("div", { text: p.name }).style.fontWeight = "600";
-            content.createEl("div", { text: p.desc }).style.fontSize = "0.8em";
+            const pName = content.createEl("div", { text: p.name });
+            pName.setCssStyles({ fontWeight: "600" });
+            const pDesc = content.createEl("div", { text: p.desc });
+            pDesc.setCssStyles({ fontSize: "0.8em" });
             
-            const link = content.createEl("a", { text: "View Source", href: p.url });
-            Object.assign(link.style, { 
+            const link = content.createEl("a", { text: "View source", href: p.url });
+            link.setCssStyles({ 
                 fontSize: "0.7em", color: "var(--text-accent)", marginTop: "4px", display: "inline-block" 
             });
 
             const btnGroup = row.createDiv();
-            Object.assign(btnGroup.style, { display: "flex", gap: "8px" });
+            btnGroup.setCssStyles({ display: "flex", gap: "8px" });
 
             const downloadBtn = btnGroup.createEl("button", { text: "Download" });
-            Object.assign(downloadBtn.style, { minWidth: "80px" });
+            downloadBtn.setCssStyles({ minWidth: "80px" });
             downloadBtn.onclick = () => this.importUrl(p.url);
 
             const removeBtn = btnGroup.createEl("button", { text: "Remove" });
-            Object.assign(removeBtn.style, { minWidth: "80px", color: "var(--text-error)" });
+            removeBtn.setCssStyles({ minWidth: "80px", color: "var(--text-error)" });
             removeBtn.onclick = async () => {
                 const prefix = p.prefix + "-";
                 let count = 0;
@@ -215,14 +222,21 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         const lib = libCard.createDiv("cf-icon-grid");
         const customIconList = Object.entries(this.plugin.settings.customIcons);
         if (customIconList.length === 0) {
-            libCard.createEl("div", { text: "No custom icons found." }).style.cssText = "color:var(--text-muted);font-style:italic;padding:10px";
+            const emptyMsg = libCard.createEl("div", { text: "No custom icons found." });
+            emptyMsg.setCssStyles({ color: "var(--text-muted)", fontStyle: "italic", padding: "10px" });
         } else {
             customIconList.forEach(([id, svg]) => {
                 const item = lib.createDiv("cf-icon-item");
                 item.setAttribute("aria-label", id);
-                item.innerHTML = svg as string;
-                const sv = item.querySelector("svg"); 
-                if (sv) Object.assign(sv.style, { width: "24px", height: "24px" });
+                
+                // Safe SVG injection
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(svg, 'image/svg+xml');
+                const svgEl = doc.querySelector('svg');
+                if (svgEl) {
+                    svgEl.setCssStyles({ width: "24px", height: "24px" });
+                    item.appendChild(this.containerEl.ownerDocument.importNode(svgEl, true));
+                }
                 
                 const del = item.createEl("button", { text: "×", cls: "cf-btn-remove" });
                 del.onclick = async (e) => {
@@ -252,20 +266,19 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .setButtonText('Clear Icon Library')
                 .setWarning()
                 .onClick(async () => {
-                    if (confirm("Are you sure you want to delete ALL custom icons?")) {
+                    new ConfirmModal(this.app, "Clear icon library", "Are you sure you want to delete ALL custom icons?", async () => {
                         this.plugin.settings.customIcons = {};
                         this.plugin.registerCustomIcons();
                         await this.plugin.saveSettings();
                         this.plugin.generateStyles();
                         new obsidian.Notice("Icon library cleared.");
                         this.display();
-                    }
+                    }).open();
                 }));
 
         const manImportCard = makeCard(iconPanel, "📥", "Manual Icon Pack Import");
         const packDesc = manImportCard.createEl('p', { text: 'You can manually paste the JSON content of an icon pack below to import it.' });
-        packDesc.style.fontSize = "0.85em";
-        packDesc.style.color = "var(--text-muted)";
+        packDesc.setCssStyles({ fontSize: "0.85em", color: "var(--text-muted)" });
 
         let manualJson = "";
         new obsidian.Setting(manImportCard)
@@ -273,10 +286,10 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .addTextArea(text => {
                 text.setPlaceholder('{"prefix": "my-icons", "icons": {...}}')
                     .onChange(value => { manualJson = value; });
-                text.inputEl.style.width = "100%";
-                text.inputEl.style.height = "150px";
-                text.inputEl.style.fontFamily = "var(--font-monospace)";
-                text.inputEl.style.background = "var(--background-secondary)";
+                text.inputEl.setCssStyles({
+                    width: "100%", height: "150px", fontFamily: "var(--font-monospace)",
+                    background: "var(--background-secondary)"
+                });
             });
         
         new obsidian.Setting(manImportCard)
@@ -303,13 +316,14 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         const containerEl = generalPanel;
 
         const infoBlock = generalPanel.createDiv('cf-info-block');
-        infoBlock.innerHTML = `
-            <div class="cf-info-icon">💡</div>
-            <div class="cf-info-content">
-                <h4>Context Menu Overrides</h4>
-                <p>Right-click any folder or file in the explorer and click <strong>"Set Custom Style"</strong> to assign specific unique colors or icons!</p>
-            </div>
-        `;
+        const infoIcon = infoBlock.createDiv('cf-info-icon');
+        infoIcon.setText('💡');
+        const infoContent = infoBlock.createDiv('cf-info-content');
+        const infoTitle = infoContent.createEl('h4', { text: 'Context menu overrides' });
+        const infoText = infoContent.createEl('p');
+        infoText.appendText('Right-click any folder or file in the explorer and click ');
+        infoText.createEl('strong', { text: '"Set custom style"' });
+        infoText.appendText(' to assign specific unique colors or icons!');
 
         const genCard = makeCard(generalPanel, "🎨", "Global Visual Palette");
 
@@ -523,19 +537,25 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     }));
 
 
-            const rulesDesc = autoCard.createEl("div");
-            Object.assign(rulesDesc.style, {
+            const rulesDesc = autoCard.createDiv();
+            rulesDesc.setCssStyles({
                 fontSize: "0.8em", color: "var(--text-muted)", marginBottom: "12px",
                 padding: "10px", background: "var(--background-secondary-alt)", borderRadius: "6px",
                 borderLeft: "3px solid var(--interactive-accent)", lineHeight: "1.4"
             });
-            rulesDesc.innerHTML = `
-                <strong>How to use Priority Rules:</strong><br>
-                Define rules to automatically assign icons based on folder/file names.<br><br>
-                <strong>Simplified Format:</strong> <code>Pattern = IconID @Priority</code><br>
-                <strong>Example:</strong> <code>Projects = rocket @200</code><br>
-                <strong>Example:</strong> <code>Journal = 📅 @150</code>
-            `;
+            const rulesTitle = rulesDesc.createEl('strong', { text: 'How to use priority rules:' });
+            rulesDesc.createEl('br');
+            rulesDesc.appendText('Define rules to automatically assign icons based on folder/file names.');
+            rulesDesc.createEl('br');
+            rulesDesc.createEl('br');
+            rulesDesc.createEl('strong', { text: 'Simplified format: ' });
+            rulesDesc.createEl('code', { text: 'Pattern = IconID @Priority' });
+            rulesDesc.createEl('br');
+            rulesDesc.createEl('strong', { text: 'Example: ' });
+            rulesDesc.createEl('code', { text: 'Projects = rocket @200' });
+            rulesDesc.createEl('br');
+            rulesDesc.createEl('strong', { text: 'Example: ' });
+            rulesDesc.createEl('code', { text: 'Journal = 📅 @150' });
 
             new obsidian.Setting(autoCard)
                 .setName('Priority Rules')
@@ -547,7 +567,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                             this.plugin.settings.customIconRules = value;
                             await this.plugin.saveSettings();
                         });
-                    Object.assign(text.inputEl.style, {
+                    text.inputEl.setCssStyles({
                         width: "100%", height: "120px", background: "var(--background-secondary)",
                         border: "1px solid var(--background-modifier-border-focus)",
                         color: "var(--text-normal)", fontFamily: "var(--font-monospace)",
@@ -770,14 +790,14 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .setButtonText('Reset Styling')
                 .setWarning()
                 .onClick(async () => {
-                    if (confirm("Are you sure you want to delete all custom styling and presets? This cannot be undone.")) {
+                    new ConfirmModal(this.app, "Reset styles & presets", "Are you sure you want to delete all custom styling and presets? This cannot be undone.", async () => {
                         this.plugin.settings.customFolderColors = {};
                         this.plugin.settings.presets = {};
                         await this.plugin.saveSettings();
                         this.plugin.generateStyles();
                         new obsidian.Notice("Styles and presets have been reset.");
                         this.display();
-                    }
+                    }).open();
                 }));
 
         new obsidian.Setting(dbCard)
@@ -787,27 +807,28 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .setButtonText('Hard Reset Everything')
                 .setWarning()
                 .onClick(async () => {
-                    if (confirm("Are you sure you want to restore all settings to default? This will wipe ALL your customization!")) {
+                    new ConfirmModal(this.app, "Factory reset", "Are you sure you want to restore all settings to default? This will wipe ALL your customization!", async () => {
                         this.plugin.settings = Object.assign({}, DEFAULT_SETTINGS);
                         await this.plugin.saveSettings();
                         this.plugin.generateStyles();
                         this.plugin.dividerManager.syncDividers();
                         new obsidian.Notice("All settings have been restored to defaults.");
                         this.display();
-                    }
+                    }).open();
                 }));
 
 
     }
 
-    async processIconData(data: any) {
+    async processIconData(data: Record<string, unknown>) {
         let count = 0;
-        if (data.icons && (data.prefix || data.info)) {
-            const prefix = data.prefix || "cf";
-            const commonW = data.width || 24;
-            const commonH = data.height || 24;
+        const icons = data.icons as Record<string, { width?: number; height?: number; left?: number; top?: number; body?: string }> | undefined;
+        if (icons && (data.prefix || data.info)) {
+            const prefix = (data.prefix as string) || "cf";
+            const commonW = (data.width as number) || 24;
+            const commonH = (data.height as number) || 24;
             
-            const processIcon = (name: string, iconData: any) => {
+            const processIcon = (name: string, iconData: { width?: number; height?: number; left?: number; top?: number; body?: string }) => {
                 const id = `${prefix}-${name}`;
                 const w = iconData.width || commonW;
                 const h = iconData.height || commonH;
@@ -821,14 +842,15 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 return true;
             };
 
-            for (const [name, iconData] of Object.entries(data.icons)) {
+            for (const [name, iconData] of Object.entries(icons)) {
                 if (processIcon(name, iconData)) count++;
             }
 
-            if (data.aliases) {
-                for (const [aliasName, aliasData] of Object.entries<any>(data.aliases)) {
+            const aliases = data.aliases as Record<string, { parent: string; width?: number; height?: number; left?: number; top?: number; body?: string }> | undefined;
+            if (aliases) {
+                for (const [aliasName, aliasData] of Object.entries(aliases)) {
                     const targetName = aliasData.parent;
-                    const targetData = (data.icons as any)[targetName];
+                    const targetData = icons[targetName];
                     if (targetData) {
                         const merged = { ...targetData, ...aliasData };
                         if (processIcon(aliasName, merged)) count++;
@@ -852,8 +874,8 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
     async importUrl(url: string) {
         if (!url) return;
         try {
-            const res = await fetch(url);
-            const data = await res.json();
+            const res = await obsidian.requestUrl({ url });
+            const data = res.json as Record<string, unknown>;
             const count = await this.processIconData(data);
             new obsidian.Notice(`Successfully imported ${count} icons!`);
             this.display();

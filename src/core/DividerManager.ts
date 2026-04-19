@@ -1,5 +1,5 @@
 import * as obsidian from 'obsidian';
-import { IColorfulFoldersPlugin } from '../common/types';
+import { IColorfulFoldersPlugin, FolderStyle } from '../common/types';
 import { DividerModal } from '../ui/modals/DividerModal';
 import { safeEscape } from '../common/utils';
 
@@ -17,7 +17,7 @@ export class DividerManager {
 
     // ─── Divider Node Factory ───────────────────────────────────────────
 
-    private buildDividerNode(path: string, conf: any): HTMLElement {
+    private buildDividerNode(path: string, conf: FolderStyle): HTMLElement {
         const dividerThickness = this.plugin.settings.dividerThickness || 1.5;
         const globalLineStyle = this.plugin.settings.dividerLineStyle || 'solid';
 
@@ -26,7 +26,7 @@ export class DividerManager {
         div.dataset.dividerTarget = path;
         
         // Resolve per-divider config with fallbacks
-        const name = conf.dividerText || 'SECTION';
+        const name = conf.dividerText || 'Section';
         const color = conf.dividerColor || 'var(--interactive-accent)';
         const isUpper = conf.dividerUpper !== false;
         const alignment = conf.dividerAlignment || 'center';
@@ -66,7 +66,7 @@ export class DividerManager {
                 line.setCssStyles({
                     maskImage: mask,
                     webkitMaskImage: mask
-                } as any);
+                });
             }
             return line;
         };
@@ -75,15 +75,24 @@ export class DividerManager {
 
         // ── Chip (pill label) ───────────────────────────────────────────
         const chip = bridge.createDiv({ cls: 'cf-divider-chip' });
-        chip.setCssStyles({ color: color });
+        // Use CSS variables for dynamic properties to comply with Obsidian guidelines
+        chip.setCssProps({
+            '--cf-divider-color': color,
+            '--cf-divider-font-size': isUpper ? '10px' : '12px',
+            '--cf-divider-text-transform': isUpper ? 'uppercase' : 'none',
+            '--cf-divider-letter-spacing': isUpper ? '1px' : 'normal'
+        });
 
         if (this.plugin.settings.dividerPillMode !== false) {
+            chip.setCssStyles({
+                padding: '2px 10px',
+                borderRadius: '10px'
+            });
             if (useGlass) {
                 chip.setCssStyles({
                     backgroundColor: 'rgba(var(--mono-rgb-100), 0.04)',
-                    backdropFilter: 'blur(16px)',
-                    webkitBackdropFilter: 'blur(16px)'
-                } as any);
+                    backdropFilter: 'blur(16px)'
+                });
             } else {
                 chip.setCssStyles({ backgroundColor: 'var(--background-secondary-alt)' });
             }
@@ -91,24 +100,20 @@ export class DividerManager {
             chip.setCssStyles({
                 backgroundColor: 'transparent',
                 backdropFilter: 'none',
-                webkitBackdropFilter: 'none'
-            } as any);
+                padding: '0'
+            });
         }
 
-        if (!isUpper) chip.setCssStyles({ textTransform: 'none' });
-
         // Icon (Lucide or emoji)
-        let labelText = name;
+        let labelText = isUpper ? name.toUpperCase() : name;
         const rawIcon = conf.dividerIcon ? conf.dividerIcon.trim() : '';
         if (rawIcon) {
-            const iconIds: string[] = (obsidian as any).getIconIds
-                ? (obsidian as any).getIconIds()
-                : [];
+            const iconIds: string[] = (obsidian as { getIconIds?: () => string[] }).getIconIds?.() || [];
             const isLucide = iconIds.includes(`lucide-${rawIcon}`) || iconIds.includes(rawIcon);
             if (isLucide) {
                 const iconWrap = chip.createSpan({ cls: 'cf-divider-icon' });
                 obsidian.setIcon(iconWrap, rawIcon);
-                const svg = iconWrap.querySelector('svg');
+                const svg = iconWrap.querySelector('svg') as unknown as HTMLElement | null;
                 if (svg) {
                     svg.setCssStyles({
                         width: '14px',
@@ -123,7 +128,7 @@ export class DividerManager {
             }
         }
 
-        chip.createSpan({ text: labelText });
+        chip.createSpan({ text: labelText, cls: 'cf-divider-label' });
 
         if (alignment === 'center' || alignment === 'left') makeLine('right');
 
@@ -133,7 +138,7 @@ export class DividerManager {
             const menu = new obsidian.Menu();
 
             menu.addItem((item) => {
-                item.setTitle('Edit Divider')
+                item.setTitle('Edit divider')
                     .setIcon('settings-2')
                     .onClick(() => {
                         const file = this.app.vault.getAbstractFileByPath(path);
@@ -142,15 +147,15 @@ export class DividerManager {
             });
 
             menu.addItem((item) => {
-                item.setTitle('Remove Divider')
+                item.setTitle('Remove divider')
                     .setIcon('trash-2')
                     .setWarning(true)
                     .onClick(async () => {
                         if (path === 'cf-global-files-separator') {
                             this.plugin.settings.showFileDivider = false;
                         } else {
-                            const style = this.plugin.settings.customFolderColors[path] as any;
-                            if (style) {
+                            const style = this.plugin.settings.customFolderColors[path];
+                            if (style && typeof style === 'object') {
                                 style.hasDivider = false;
                                 delete style.dividerText;
                                 delete style.dividerColor;
@@ -162,7 +167,7 @@ export class DividerManager {
                             }
                         }
                         await this.plugin.saveSettings();
-                        await this.plugin.generateStyles();
+                        this.plugin.generateStyles();
                         this.syncDividers();
                     });
             });
@@ -185,14 +190,14 @@ export class DividerManager {
 
         try {
             // ── Step 1: Collect desired dividers ────────────────────────
-            const desired = new Map<string, { conf: any; isGlobal: boolean }>();
+            const desired = new Map<string, { conf: FolderStyle; isGlobal: boolean }>();
 
             // Per-folder dividers
             const colors = this.plugin.settings.customFolderColors;
             if (colors) {
                 for (const path in colors) {
                     const conf = colors[path];
-                    if (typeof conf === 'object' && conf && (conf as any).hasDivider) {
+                    if (typeof conf === 'object' && conf && conf.hasDivider) {
                         desired.set(path, { conf, isGlobal: false });
                     }
                 }
@@ -204,9 +209,9 @@ export class DividerManager {
                 let seenFolder = false;
                 let hasFileAfterFolder = false;
                 for (const node of rootChildren) {
-                    if ((node as Element).classList.contains('nav-folder')) {
+                    if ((node).classList.contains('nav-folder')) {
                         seenFolder = true;
-                    } else if (seenFolder && (node as Element).classList.contains('nav-file')) {
+                    } else if (seenFolder && (node).classList.contains('nav-file')) {
                         hasFileAfterFolder = true;
                         break;
                     }

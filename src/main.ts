@@ -4,7 +4,8 @@ import {
     FolderStyle, 
     EffectiveStyle, 
     AutoIconData,
-    IColorfulFoldersPlugin
+    IColorfulFoldersPlugin,
+    MenuItemWithSubmenu
 } from './common/types';
 import { 
     DEFAULT_SETTINGS, 
@@ -33,12 +34,12 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
     uiStyleTag: HTMLStyleElement;
     iconCache: Map<string, string> = new Map();
     heatmapCache: Map<string, number> | null = null;
-    generateStylesDebounced: Function;
+    generateStylesDebounced: obsidian.Debouncer<[], void>;
     dividerObserver: MutationObserver | null = null;
     styleObserver: MutationObserver | null = null;
     dividerManager: DividerManager;
     isSyncingDividers: boolean = false;
-    processDividersDebounced: any;
+    processDividersDebounced: obsidian.Debouncer<[], void>;
 
     async onload() {
         await this.loadSettings();
@@ -139,13 +140,13 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
             this.app.workspace.on('file-menu', (menu, file) => {
                 if (!(file instanceof obsidian.TAbstractFile)) return;
                 const isFolder = file instanceof obsidian.TFolder;
-                const label = isFolder ? 'Folder' : 'File';
+                const label = isFolder ? 'folder' : 'file';
 
                 menu.addItem((item) => {
-                    item.setTitle(`Set Custom ${label} Style`)
+                    item.setTitle(`Set custom ${label} style`)
                         .setIcon('palette');
 
-                    const submenu = (item as any).setSubmenu ? (item as any).setSubmenu() : item;
+                    const submenu = (item as MenuItemWithSubmenu).setSubmenu ? (item as MenuItemWithSubmenu).setSubmenu() : item;
 
                     submenu.addItem((sub: obsidian.MenuItem) => {
                         sub.setTitle('Open full settings')
@@ -194,14 +195,12 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
                 });
                 
                 menu.addSeparator();
-
-                const style = this.settings.customFolderColors[file.path] as any;
-
-                const hasDivider = style && style.hasDivider;
+                const style = this.settings.customFolderColors[file.path];
+                const hasDivider = style && typeof style === 'object' && style.hasDivider;
                 
-                if (hasDivider) {
+                if (style && typeof style === 'object' && style.hasDivider) {
                     menu.addItem((item) => {
-                        item.setTitle("Edit Divider")
+                        item.setTitle("Edit divider")
                             .setIcon('settings-2')
                             .onClick(() => {
                                 new DividerModal(this.app, this, file).open();
@@ -209,29 +208,31 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
                     });
                     
                     menu.addItem((remove) => {
-                        remove.setTitle("Remove Divider")
+                        remove.setTitle("Remove divider")
                             .setIcon('trash-2')
                             .setWarning(true)
                             .onClick(async () => {
-                                const style = this.settings.customFolderColors[file.path] as any;
-                                style.hasDivider = false;
-                                delete style.dividerText;
-                                delete style.dividerColor;
-                                delete style.dividerIcon;
-                                delete style.dividerAlignment;
-                                delete style.dividerLineStyle;
-                                delete style.dividerUpper;
-                                delete style.dividerGlass;
+                                const styleObj = this.settings.customFolderColors[file.path];
+                                if (styleObj && typeof styleObj === 'object') {
+                                    styleObj.hasDivider = false;
+                                    delete styleObj.dividerText;
+                                    delete styleObj.dividerColor;
+                                    delete styleObj.dividerIcon;
+                                    delete styleObj.dividerAlignment;
+                                    delete styleObj.dividerLineStyle;
+                                    delete styleObj.dividerUpper;
+                                    delete styleObj.dividerGlass;
+                                }
                                 
                                 await this.saveSettings();
-                                await this.generateStyles();
+                                this.generateStyles();
                                 this.dividerManager.syncDividers();
                                 new obsidian.Notice(`Removed divider for: ${file.name}`);
                             });
                     });
                 } else {
                     menu.addItem((item) => {
-                        item.setTitle("Add Custom Divider")
+                        item.setTitle("Add custom divider")
                             .setIcon('separator-horizontal')
                             .onClick(() => {
                                 new DividerModal(this.app, this, file).open();
@@ -278,7 +279,7 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
     registerCommands() {
         this.addCommand({
             id: 'open-color-picker',
-            name: 'Open Color Picker for Current File',
+            name: 'Open color picker for current file',
             checkCallback: (checking: boolean) => {
                 const file = this.app.workspace.getActiveFile();
                 if (file) {
@@ -291,13 +292,13 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
 
         this.addCommand({
             id: 'clear-current-style',
-            name: 'Clear Style for Current File',
+            name: 'Clear style for current file',
             checkCallback: (checking: boolean) => {
                 const file = this.app.workspace.getActiveFile();
                 if (file && this.settings.customFolderColors[file.path]) {
                     if (!checking) {
                         delete this.settings.customFolderColors[file.path];
-                        this.saveSettings();
+                        void this.saveSettings();
                         new obsidian.Notice(`Cleared style for ${file.name}`);
                     }
                     return true;
@@ -308,7 +309,7 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
 
         this.addCommand({
             id: 'add-divider-current',
-            name: 'Add/Edit Divider for Current File',
+            name: 'Add/edit divider for current file',
             checkCallback: (checking: boolean) => {
                 const file = this.app.workspace.getActiveFile();
                 if (file) {
@@ -324,7 +325,7 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
 
         this.addCommand({
             id: 'remove-divider-current',
-            name: 'Remove Divider for Current File',
+            name: 'Remove divider for current file',
             checkCallback: (checking: boolean) => {
                 const file = this.app.workspace.getActiveFile();
                 if (file) {
@@ -332,7 +333,7 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
                     if (style && style.hasDivider) {
                         if (!checking) {
                             style.hasDivider = false;
-                            this.saveSettings();
+                            void this.saveSettings();
                             this.generateStyles();
                             this.dividerManager.syncDividers();
                             new obsidian.Notice(`Removed divider for ${file.name}`);
@@ -351,7 +352,7 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
         const style = this.settings.customFolderColors[path];
         if (!style) return null;
         if (typeof style === 'string') return { hex: style };
-        return style as FolderStyle;
+        return style;
     }
 
     getEffectiveStyle(target: obsidian.TAbstractFile): EffectiveStyle {
@@ -425,7 +426,7 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
     }
 
     private isScrolling = false;
-    private scrollTimeout: any;
+    private scrollTimeout: number | null = null;
 
     initDividerObserver() {
         if (this.dividerObserver) {
@@ -438,8 +439,8 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
         // Detect scrolling to suppress sync bursts
         container.addEventListener('scroll', () => {
             this.isScrolling = true;
-            clearTimeout(this.scrollTimeout);
-            this.scrollTimeout = setTimeout(() => {
+            activeWindow.clearTimeout(this.scrollTimeout);
+            this.scrollTimeout = window.setTimeout(() => {
                 this.isScrolling = false;
                 this.processDividers();
             }, 100);

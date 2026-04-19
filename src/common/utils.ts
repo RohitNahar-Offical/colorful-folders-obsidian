@@ -140,7 +140,7 @@ export function getAutoIconData(name: string, settings: ColorfulFoldersSettings,
     matches.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
     if (settings.iconDebugMode && matches.length > 0) {
-        console.log(`Colorful Folders [Debug]: Match for "${name}" ->`, matches[0]);
+        console.debug(`Colorful Folders [Debug]: Match for "${name}" ->`, matches[0]);
     }
 
     if (matches.length > 0) {

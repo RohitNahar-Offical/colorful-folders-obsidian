@@ -9,6 +9,7 @@ var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
@@ -30,6 +31,10 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+var __publicField = (obj, key, value) => {
+  __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
+  return value;
+};
 
 // src/main.ts
 var main_exports = {};
@@ -362,7 +367,7 @@ function getAutoIconData(name, settings, isFile = false) {
   const matches = categories.filter((cat) => cat.rex.test(lName));
   matches.sort((a, b) => (b.priority || 0) - (a.priority || 0));
   if (settings.iconDebugMode && matches.length > 0) {
-    console.log(`Colorful Folders [Debug]: Match for "${name}" ->`, matches[0]);
+    console.debug(`Colorful Folders [Debug]: Match for "${name}" ->`, matches[0]);
   }
   if (matches.length > 0) {
     const match = { ...matches[0] };
@@ -408,92 +413,53 @@ function createVisualColorPicker(container, initialHex, onChange, opts = {}) {
   const initRgb = hexToRgbObj(initialHex || "#eb6f92");
   let hsv = rgbToHsv(initRgb.r, initRgb.g, initRgb.b);
   const wrap = container.createDiv({ cls: "cf-vcp" });
-  wrap.style.cssText = `
-        display: flex; flex-direction: row; gap: 12px;
-        padding: 8px; border-radius: 10px;
-        background: var(--background-secondary);
-        border: 1px solid var(--background-modifier-border);
-        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-        align-items: stretch;
-    `;
   const board = wrap.createDiv({ cls: "cf-vcp-board" });
-  board.style.cssText = `
-        position: relative; width: 140px; height: 100px;
-        border-radius: 6px; cursor: crosshair; overflow: hidden;
-        background-color: hsl(${hsv.h}, 100%, 50%);
-        touch-action: none; user-select: none; flex-shrink: 0;
-    `;
-  const gradWhite = board.createDiv();
-  gradWhite.style.cssText = `
-        position: absolute; inset: 0; border-radius: 10px;
-        background: linear-gradient(to right, #ffffff, transparent);
-    `;
-  const gradBlack = board.createDiv();
-  gradBlack.style.cssText = `
-        position: absolute; inset: 0; border-radius: 10px;
-        background: linear-gradient(to bottom, transparent, #000000);
-    `;
+  board.setCssStyles({
+    backgroundColor: `hsl(${hsv.h}, 100%, 50%)`
+  });
+  board.createDiv({ cls: "cf-vcp-board-grad-white" });
+  board.createDiv({ cls: "cf-vcp-board-grad-black" });
   const thumb = board.createDiv({ cls: "cf-vcp-thumb" });
-  thumb.style.cssText = `
-        position: absolute; width: 18px; height: 18px; border-radius: 50%;
-        border: 3px solid #fff; box-shadow: 0 0 0 1.5px rgba(0,0,0,0.25), 0 2px 8px rgba(0,0,0,0.3);
-        transform: translate(-50%, -50%); pointer-events: none;
-        transition: box-shadow 0.15s ease;
-        z-index: 2;
-    `;
   const rightCol = wrap.createDiv();
-  Object.assign(rightCol.style, { display: "flex", flexDirection: "column", gap: "6px", flex: "1", justifyContent: "center" });
+  rightCol.setCssStyles({ display: "flex", flexDirection: "column", gap: "6px", flex: "1", justifyContent: "center" });
   const slidersRow = rightCol.createDiv();
-  slidersRow.style.cssText = "display: flex; flex-direction: column; gap: 4px;";
+  slidersRow.setCssStyles({ display: "flex", flexDirection: "column", gap: "4px" });
   const previewRow = rightCol.createDiv();
-  previewRow.style.cssText = "display: flex; align-items: center; gap: 6px;";
+  previewRow.setCssStyles({ display: "flex", alignItems: "center", gap: "6px" });
   const previewDot = previewRow.createDiv();
-  previewDot.style.cssText = `
-        width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0;
-        border: 1px solid var(--background-modifier-border);
-    `;
+  previewDot.setCssStyles({
+    width: "24px",
+    height: "24px",
+    borderRadius: "6px",
+    flexShrink: "0",
+    border: "1px solid var(--background-modifier-border)"
+  });
   const hexInput = previewRow.createEl("input", { type: "text" });
-  hexInput.style.cssText = `
-        flex: 1; font-family: monospace; font-size: 0.75em;
-        padding: 3px 6px; border-radius: 4px; border: 1px solid var(--background-modifier-border);
-        background: var(--background-primary); color: var(--text-normal);
-        outline: none; font-weight: 600;
-    `;
+  hexInput.setCssStyles({
+    flex: "1",
+    fontFamily: "monospace",
+    fontSize: "0.75em",
+    padding: "3px 6px",
+    borderRadius: "4px",
+    border: "1px solid var(--background-modifier-border)",
+    background: "var(--background-primary)",
+    color: "var(--text-normal)",
+    outline: "none",
+    fontWeight: "600"
+  });
   hexInput.maxLength = 7;
   const buildSlider = (label, min, max, value, gradient, onInput) => {
     const row = slidersRow.createDiv();
-    row.style.cssText = "display: flex; align-items: center; gap: 8px;";
+    row.setCssStyles({ display: "flex", alignItems: "center", gap: "8px" });
     const lbl = row.createEl("span", { text: label });
-    lbl.style.cssText = "font-size: 0.7em; font-weight: 700; color: var(--text-muted); width: 12px; text-transform: uppercase; letter-spacing: 1px;";
-    const slider = row.createEl("input", { type: "range" });
+    lbl.setCssStyles({ fontSize: "0.7em", fontWeight: "700", color: "var(--text-muted)", width: "12px", textTransform: "uppercase", letterSpacing: "1px" });
+    const slider = row.createEl("input", { type: "range", cls: "cf-vcp-slider" });
     slider.min = min.toString();
     slider.max = max.toString();
     slider.value = value.toString();
-    slider.style.cssText = `
-            flex: 1; -webkit-appearance: none; appearance: none;
-            height: 10px; border-radius: 5px; outline: none; cursor: pointer;
-            background: ${gradient};
-            border: 1px solid rgba(0,0,0,0.12);
-        `;
-    const thumbCss = `
-            input[type="range"].cf-vcp-slider::-webkit-slider-thumb {
-                -webkit-appearance: none; appearance: none;
-                width: 20px; height: 20px; border-radius: 50%;
-                background: #fff; border: 2.5px solid rgba(0,0,0,0.2);
-                box-shadow: 0 1px 6px rgba(0,0,0,0.25);
-                cursor: grab; transition: transform 0.1s ease;
-            }
-            input[type="range"].cf-vcp-slider::-webkit-slider-thumb:active {
-                transform: scale(1.2); cursor: grabbing;
-            }
-        `;
-    if (!document.querySelector("#cf-vcp-slider-style")) {
-      const styleTag = document.createElement("style");
-      styleTag.id = "cf-vcp-slider-style";
-      styleTag.textContent = thumbCss;
-      document.head.appendChild(styleTag);
-    }
-    slider.classList.add("cf-vcp-slider");
+    slider.setCssStyles({
+      background: gradient
+    });
     slider.addEventListener("input", () => onInput(parseInt(slider.value)));
     return slider;
   };
@@ -513,16 +479,22 @@ function createVisualColorPicker(container, initialHex, onChange, opts = {}) {
   function syncFromHSV() {
     const rgb = hsvToRgb(hsv.h, hsv.s, hsv.v);
     const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
-    board.style.backgroundColor = `hsl(${hsv.h}, 100%, 50%)`;
+    board.setCssStyles({ backgroundColor: `hsl(${hsv.h}, 100%, 50%)` });
     const bw = board.offsetWidth || 140;
     const bh = board.offsetHeight || 100;
-    thumb.style.left = `${hsv.s / 100 * bw}px`;
-    thumb.style.top = `${(1 - hsv.v / 100) * bh}px`;
-    previewDot.style.backgroundColor = hex;
-    previewDot.style.opacity = currentAlpha.toString();
+    thumb.setCssStyles({
+      left: `${hsv.s / 100 * bw}px`,
+      top: `${(1 - hsv.v / 100) * bh}px`
+    });
+    previewDot.setCssStyles({
+      backgroundColor: hex,
+      opacity: currentAlpha.toString()
+    });
     hexInput.value = hex;
     if (alphaSlider) {
-      alphaSlider.style.background = `linear-gradient(to right, transparent, ${hex}), repeating-conic-gradient(#ccc 0% 25%, #fff 0% 50%) 50% / 12px 12px`;
+      alphaSlider.setCssStyles({
+        background: `linear-gradient(to right, transparent, ${hex}), repeating-conic-gradient(#ccc 0% 25%, #fff 0% 50%) 50% / 12px 12px`
+      });
     }
     onChange(hex, currentAlpha);
   }
@@ -534,8 +506,8 @@ function createVisualColorPicker(container, initialHex, onChange, opts = {}) {
   }
   function handleBoardPointer(e) {
     const rect = board.getBoundingClientRect();
-    let x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
-    let y = Math.max(0, Math.min(e.clientY - rect.top, rect.height));
+    const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+    const y = Math.max(0, Math.min(e.clientY - rect.top, rect.height));
     hsv.s = Math.round(x / rect.width * 100);
     hsv.v = Math.round((1 - y / rect.height) * 100);
     syncFromHSV();
@@ -544,7 +516,9 @@ function createVisualColorPicker(container, initialHex, onChange, opts = {}) {
     e.preventDefault();
     board.setPointerCapture(e.pointerId);
     handleBoardPointer(e);
-    thumb.style.boxShadow = "0 0 0 1.5px rgba(0,0,0,0.25), 0 2px 12px rgba(0,0,0,0.4), 0 0 0 4px rgba(255,255,255,0.2)";
+    thumb.setCssStyles({
+      boxShadow: "0 0 0 1.5px rgba(0,0,0,0.25), 0 2px 12px rgba(0,0,0,0.4), 0 0 0 4px rgba(255,255,255,0.2)"
+    });
   });
   board.addEventListener("pointermove", (e) => {
     if (board.hasPointerCapture(e.pointerId))
@@ -552,7 +526,9 @@ function createVisualColorPicker(container, initialHex, onChange, opts = {}) {
   });
   board.addEventListener("pointerup", (e) => {
     board.releasePointerCapture(e.pointerId);
-    thumb.style.boxShadow = "0 0 0 1.5px rgba(0,0,0,0.25), 0 2px 8px rgba(0,0,0,0.3)";
+    thumb.setCssStyles({
+      boxShadow: "0 0 0 1.5px rgba(0,0,0,0.25), 0 2px 8px rgba(0,0,0,0.3)"
+    });
   });
   hexInput.addEventListener("input", () => {
     let val = hexInput.value.trim();
@@ -580,6 +556,22 @@ function createVisualColorPicker(container, initialHex, onChange, opts = {}) {
 var ColorPickerModal = class extends obsidian.Modal {
   constructor(app, plugin, item, focusSection = null) {
     super(app);
+    __publicField(this, "plugin");
+    __publicField(this, "item");
+    __publicField(this, "isFolder");
+    __publicField(this, "focusSection");
+    __publicField(this, "folderStyle");
+    __publicField(this, "activeTab");
+    __publicField(this, "_headerIconWrap");
+    __publicField(this, "_tabBtns");
+    __publicField(this, "_tabPanels");
+    __publicField(this, "_prevIconWrap");
+    __publicField(this, "_prevLabel");
+    __publicField(this, "_updatePreview");
+    __publicField(this, "_curIconNameEl");
+    __publicField(this, "_curIconBox");
+    __publicField(this, "_headerIconSize");
+    __publicField(this, "_prevIconSize");
     this.plugin = plugin;
     this.item = item;
     this.isFolder = item instanceof obsidian.TFolder;
@@ -596,20 +588,22 @@ var ColorPickerModal = class extends obsidian.Modal {
       iconId: ""
     };
     const existing = this.plugin.getStyle(this.item.path) || {};
-    this.style = { ...effective, ...existing };
-    if (this.style.isBold === void 0 && this.isFolder)
-      this.style.isBold = true;
-    if (this.style.opacity === void 0)
-      this.style.opacity = 1;
-    this.activeTab = this.focusSection === "icon" || this.activeTab === "icon" ? "icon" : "appearance";
+    this.folderStyle = { ...effective, ...existing };
+    if (this.folderStyle.isBold === void 0 && this.isFolder)
+      this.folderStyle.isBold = true;
+    if (this.folderStyle.opacity === void 0)
+      this.folderStyle.opacity = 1;
+    this.activeTab = this.focusSection === "icon" ? "icon" : "appearance";
   }
   onOpen() {
     const { contentEl, modalEl } = this;
     contentEl.empty();
-    modalEl.style.maxWidth = "580px";
-    modalEl.style.width = "95vw";
+    modalEl.setCssStyles({
+      maxWidth: "580px",
+      width: "95vw"
+    });
     const header = contentEl.createDiv({ cls: "cf-modal-header" });
-    Object.assign(header.style, {
+    header.setCssStyles({
       display: "flex",
       alignItems: "center",
       gap: "12px",
@@ -621,24 +615,39 @@ var ColorPickerModal = class extends obsidian.Modal {
     const headerIconW = Math.round(18 * iconScale);
     const headerIconSize = Math.round(36 * (iconScale > 1 ? iconScale : 1));
     const iconWrap = header.createDiv();
-    Object.assign(iconWrap.style, {
+    iconWrap.setCssStyles({
       width: `${headerIconSize}px`,
       height: `${headerIconSize}px`,
       borderRadius: "8px",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: this.style.hex,
+      backgroundColor: this.folderStyle.hex,
       flexShrink: "0"
     });
-    obsidian.setIcon(iconWrap, this.style.iconId || (this.isFolder ? "folder" : "file"));
-    iconWrap.querySelector("svg") && (iconWrap.querySelector("svg").style.color = this.style.iconColor || this.style.textColor || "#fff");
-    if (iconWrap.querySelector("svg")) {
-      Object.assign(iconWrap.querySelector("svg").style, { width: `${headerIconW}px`, height: `${headerIconW}px` });
+    obsidian.setIcon(iconWrap, this.folderStyle.iconId || (this.isFolder ? "folder" : "file"));
+    const headerSvg = iconWrap.querySelector("svg");
+    if (headerSvg) {
+      headerSvg.setCssStyles({
+        color: this.folderStyle.iconColor || this.folderStyle.textColor || "#fff",
+        width: `${headerIconW}px`,
+        height: `${headerIconW}px`
+      });
     }
     const titleWrap = header.createDiv();
-    titleWrap.createEl("div", { text: this.item.name, cls: "cf-modal-title" }).style.cssText = "font-size:1.1em;font-weight:700;color:var(--text-normal);line-height:1.2";
-    titleWrap.createEl("div", { text: `Custom ${this.isFolder ? "Folder" : "File"} Style` }).style.cssText = "font-size:0.78em;color:var(--text-muted);margin-top:2px";
+    const mTitle = titleWrap.createEl("div", { text: this.item.name, cls: "cf-modal-title" });
+    mTitle.setCssStyles({
+      fontSize: "1.1em",
+      fontWeight: "700",
+      color: "var(--text-normal)",
+      lineHeight: "1.2"
+    });
+    const mSub = titleWrap.createEl("div", { text: `Custom ${this.isFolder ? "folder" : "file"} style` });
+    mSub.setCssStyles({
+      fontSize: "0.78em",
+      color: "var(--text-muted)",
+      marginTop: "2px"
+    });
     this._headerIconWrap = iconWrap;
     const tabs = [
       { id: "appearance", label: "Appearance", icon: "palette" },
@@ -647,19 +656,19 @@ var ColorPickerModal = class extends obsidian.Modal {
       { id: "presets", label: "Presets", icon: "layers" }
     ];
     const tabBar = contentEl.createDiv({ cls: "cf-tab-bar" });
-    Object.assign(tabBar.style, {
+    tabBar.setCssStyles({
       display: "flex",
       gap: "2px",
       padding: "8px 16px 0",
       borderBottom: "1px solid var(--background-modifier-border)"
     });
     const body = contentEl.createDiv({ cls: "cf-tab-body" });
-    Object.assign(body.style, { padding: "16px 20px 8px", overflowY: "auto", maxHeight: "60vh" });
+    body.setCssStyles({ padding: "16px 20px 8px", overflowY: "auto", maxHeight: "60vh" });
     const tabPanels = {};
     const tabBtns = {};
     tabs.forEach((t) => {
       const btn = tabBar.createEl("button", { cls: "cf-tab-btn" });
-      Object.assign(btn.style, {
+      btn.setCssStyles({
         background: "none",
         border: "none",
         padding: "7px 13px",
@@ -676,10 +685,12 @@ var ColorPickerModal = class extends obsidian.Modal {
       });
       const btnIcon = btn.createSpan();
       obsidian.setIcon(btnIcon, t.icon);
-      btnIcon.querySelector("svg") && Object.assign(btnIcon.querySelector("svg").style, { width: "13px", height: "13px" });
+      const biSvg = btnIcon.querySelector("svg");
+      if (biSvg)
+        biSvg.setCssStyles({ width: "13px", height: "13px" });
       btn.createSpan({ text: t.label });
       const panel = body.createDiv({ cls: "cf-tab-panel" });
-      panel.style.display = "none";
+      panel.setCssStyles({ display: "none" });
       tabPanels[t.id] = panel;
       tabBtns[t.id] = btn;
       btn.onclick = () => this._switchTab(t.id, tabBtns, tabPanels);
@@ -688,7 +699,7 @@ var ColorPickerModal = class extends obsidian.Modal {
     this._tabPanels = tabPanels;
     const ap = tabPanels["appearance"];
     const prev = ap.createDiv({ cls: "cf-preview-bar" });
-    Object.assign(prev.style, {
+    prev.setCssStyles({
       display: "flex",
       alignItems: "center",
       gap: "10px",
@@ -699,22 +710,22 @@ var ColorPickerModal = class extends obsidian.Modal {
       border: "1px solid var(--background-modifier-border)"
     });
     const prevIconWrap = prev.createDiv();
-    Object.assign(prevIconWrap.style, {
+    prevIconWrap.setCssStyles({
       width: "28px",
       height: "28px",
       borderRadius: "6px",
       flexShrink: "0",
-      backgroundColor: this.style.hex,
+      backgroundColor: this.folderStyle.hex,
       display: "flex",
       alignItems: "center",
       justifyContent: "center"
     });
-    obsidian.setIcon(prevIconWrap, this.style.iconId || (this.isFolder ? "folder" : "file"));
+    obsidian.setIcon(prevIconWrap, this.folderStyle.iconId || (this.isFolder ? "folder" : "file"));
     const prevLabel = prev.createDiv({ text: this.item.name });
-    Object.assign(prevLabel.style, {
-      fontWeight: this.style.isBold ? "700" : "400",
-      fontStyle: this.style.isItalic ? "italic" : "normal",
-      color: this.style.textColor || "var(--text-normal)",
+    prevLabel.setCssStyles({
+      fontWeight: this.folderStyle.isBold ? "700" : "400",
+      fontStyle: this.folderStyle.isItalic ? "italic" : "normal",
+      color: this.folderStyle.textColor || "var(--text-normal)",
       fontSize: "0.9em"
     });
     this._prevIconWrap = prevIconWrap;
@@ -723,27 +734,29 @@ var ColorPickerModal = class extends obsidian.Modal {
       const iconScale2 = this.plugin.settings.iconScale || 1;
       const previewIconW = Math.round(16 * iconScale2);
       const headerIconW2 = Math.round(18 * iconScale2);
-      const effectiveIconColor = this.style.iconColor || this.style.hex || "#fff";
-      this._headerIconWrap.style.backgroundColor = this.style.hex;
-      this._headerIconWrap.innerHTML = "";
-      obsidian.setIcon(this._headerIconWrap, this.style.iconId || (this.isFolder ? "folder" : "file"));
+      const effectiveIconColor = this.folderStyle.iconColor || this.folderStyle.hex || "#fff";
+      this._headerIconWrap.setCssStyles({ backgroundColor: this.folderStyle.hex });
+      this._headerIconWrap.empty();
+      obsidian.setIcon(this._headerIconWrap, this.folderStyle.iconId || (this.isFolder ? "folder" : "file"));
       const hsvg = this._headerIconWrap.querySelector("svg");
       if (hsvg)
-        Object.assign(hsvg.style, { color: effectiveIconColor, width: `${headerIconW2}px`, height: `${headerIconW2}px` });
-      this._prevIconWrap.style.backgroundColor = this.style.hex;
-      this._prevIconWrap.innerHTML = "";
-      obsidian.setIcon(this._prevIconWrap, this.style.iconId || (this.isFolder ? "folder" : "file"));
+        hsvg.setCssStyles({ color: effectiveIconColor, width: `${headerIconW2}px`, height: `${headerIconW2}px` });
+      this._prevIconWrap.setCssStyles({ backgroundColor: this.folderStyle.hex });
+      this._prevIconWrap.empty();
+      obsidian.setIcon(this._prevIconWrap, this.folderStyle.iconId || (this.isFolder ? "folder" : "file"));
       const prevSvg = this._prevIconWrap.querySelector("svg");
       if (prevSvg)
-        Object.assign(prevSvg.style, { color: effectiveIconColor, width: `${previewIconW}px`, height: `${previewIconW}px` });
-      this._prevLabel.style.fontWeight = this.style.isBold ? "700" : "400";
-      this._prevLabel.style.fontStyle = this.style.isItalic ? "italic" : "normal";
-      this._prevLabel.style.color = this.style.textColor || "var(--text-normal)";
+        prevSvg.setCssStyles({ color: effectiveIconColor, width: `${previewIconW}px`, height: `${previewIconW}px` });
+      this._prevLabel.setCssStyles({
+        fontWeight: this.folderStyle.isBold ? "700" : "400",
+        fontStyle: this.folderStyle.isItalic ? "italic" : "normal",
+        color: this.folderStyle.textColor || "var(--text-normal)"
+      });
     };
     this._updatePreview = updatePreview;
     const bgSection = ap.createDiv({ cls: "cf-picker-section" });
     const isBgFocus = this.focusSection === "background";
-    Object.assign(bgSection.style, {
+    bgSection.setCssStyles({
       padding: "10px",
       borderRadius: "8px",
       border: isBgFocus ? "1px solid var(--interactive-accent)" : "1px solid var(--background-modifier-border)",
@@ -752,14 +765,14 @@ var ColorPickerModal = class extends obsidian.Modal {
       transition: "all 0.5s ease"
     });
     if (isBgFocus)
-      bgSection.style.boxShadow = "0 0 15px rgba(var(--interactive-accent-rgb), 0.15)";
+      bgSection.setCssStyles({ boxShadow: "0 0 15px rgba(var(--interactive-accent-rgb), 0.15)" });
     const bgHeader = bgSection.createDiv();
-    Object.assign(bgHeader.style, { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" });
+    bgHeader.setCssStyles({ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" });
     const bgLabel = bgHeader.createDiv();
-    bgLabel.style.cssText = "font-size: 0.85em; font-weight: 700; color: var(--text-normal); opacity: 0.9;";
+    bgLabel.setCssStyles({ fontSize: "0.85em", fontWeight: "700", color: "var(--text-normal)", opacity: "0.9" });
     bgLabel.textContent = "Background styling";
     const applyBgBtn = bgHeader.createEl("button", { text: "Apply" });
-    Object.assign(applyBgBtn.style, {
+    applyBgBtn.setCssStyles({
       padding: "2px 8px",
       borderRadius: "4px",
       fontSize: "0.7em",
@@ -772,25 +785,26 @@ var ColorPickerModal = class extends obsidian.Modal {
     applyBgBtn.onclick = async () => {
       const path = this.item.path;
       const existing = this.plugin.getStyle(path) || {};
-      existing.hex = this.style.hex;
-      existing.opacity = this.style.opacity;
-      if (this.style.applyToSubfolders !== void 0)
-        existing.applyToSubfolders = this.style.applyToSubfolders;
-      if (this.style.applyToFiles !== void 0)
-        existing.applyToFiles = this.style.applyToFiles;
+      existing.hex = this.folderStyle.hex;
+      existing.opacity = this.folderStyle.opacity;
+      if (this.folderStyle.applyToSubfolders !== void 0)
+        existing.applyToSubfolders = this.folderStyle.applyToSubfolders;
+      if (this.folderStyle.applyToFiles !== void 0)
+        existing.applyToFiles = this.folderStyle.applyToFiles;
       this.plugin.settings.customFolderColors[path] = existing;
       await this.plugin.saveSettings();
+      await this.plugin.generateStyles();
       this.close();
     };
     const bgPickerContainer = bgSection.createDiv();
-    createVisualColorPicker(bgPickerContainer, this.style.hex, (hex, alpha) => {
-      this.style.hex = hex;
-      this.style.opacity = alpha;
+    createVisualColorPicker(bgPickerContainer, this.folderStyle.hex, (hex, alpha) => {
+      this.folderStyle.hex = hex;
+      this.folderStyle.opacity = alpha;
       updatePreview();
-    }, { showAlpha: true, initialAlpha: this.style.opacity || 1 });
+    }, { showAlpha: true, initialAlpha: this.folderStyle.opacity || 1 });
     const txtSection = ap.createDiv({ cls: "cf-picker-section" });
     const isColorFocus = this.focusSection === "color";
-    Object.assign(txtSection.style, {
+    txtSection.setCssStyles({
       padding: "10px",
       borderRadius: "8px",
       border: isColorFocus ? "1px solid var(--interactive-accent)" : "1px solid var(--background-modifier-border)",
@@ -799,18 +813,18 @@ var ColorPickerModal = class extends obsidian.Modal {
       transition: "all 0.5s ease"
     });
     if (isColorFocus)
-      txtSection.style.boxShadow = "0 0 15px rgba(var(--interactive-accent-rgb), 0.15)";
+      txtSection.setCssStyles({ boxShadow: "0 0 15px rgba(var(--interactive-accent-rgb), 0.15)" });
     const txtHeader = txtSection.createDiv();
-    Object.assign(txtHeader.style, { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" });
+    txtHeader.setCssStyles({ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" });
     const txtLabel = txtHeader.createDiv();
-    txtLabel.style.cssText = "font-size: 0.85em; font-weight: 700; color: var(--text-normal); opacity: 0.9;";
+    txtLabel.setCssStyles({ fontSize: "0.85em", fontWeight: "700", color: "var(--text-normal)", opacity: "0.9" });
     txtLabel.textContent = "Text styling";
     const txtActionsRow = txtHeader.createDiv();
-    Object.assign(txtActionsRow.style, { display: "flex", gap: "6px" });
+    txtActionsRow.setCssStyles({ display: "flex", gap: "6px" });
     const resetTxtBtn = txtActionsRow.createEl("button", { text: "Reset" });
-    Object.assign(resetTxtBtn.style, { padding: "2px 6px", borderRadius: "4px", fontSize: "0.7em", border: "1px solid var(--background-modifier-border)", background: "none", color: "var(--text-muted)", cursor: "pointer" });
+    resetTxtBtn.setCssStyles({ padding: "2px 6px", borderRadius: "4px", fontSize: "0.7em", border: "1px solid var(--background-modifier-border)", background: "none", color: "var(--text-muted)", cursor: "pointer" });
     const applyTxtBtn = txtActionsRow.createEl("button", { text: "Apply" });
-    Object.assign(applyTxtBtn.style, {
+    applyTxtBtn.setCssStyles({
       padding: "2px 8px",
       borderRadius: "4px",
       fontSize: "0.7em",
@@ -823,38 +837,39 @@ var ColorPickerModal = class extends obsidian.Modal {
     applyTxtBtn.onclick = async () => {
       const path = this.item.path;
       const existing = this.plugin.getStyle(path) || {};
-      existing.textColor = this.style.textColor;
-      existing.isBold = this.style.isBold;
-      existing.isItalic = this.style.isItalic;
-      if (this.style.applyToSubfolders !== void 0)
-        existing.applyToSubfolders = this.style.applyToSubfolders;
-      if (this.style.applyToFiles !== void 0)
-        existing.applyToFiles = this.style.applyToFiles;
+      existing.textColor = this.folderStyle.textColor;
+      existing.isBold = this.folderStyle.isBold;
+      existing.isItalic = this.folderStyle.isItalic;
+      if (this.folderStyle.applyToSubfolders !== void 0)
+        existing.applyToSubfolders = this.folderStyle.applyToSubfolders;
+      if (this.folderStyle.applyToFiles !== void 0)
+        existing.applyToFiles = this.folderStyle.applyToFiles;
       this.plugin.settings.customFolderColors[path] = existing;
       await this.plugin.saveSettings();
+      await this.plugin.generateStyles();
       this.close();
     };
     const textPickerContainer = txtSection.createDiv();
-    const textPicker = createVisualColorPicker(textPickerContainer, this.style.textColor || "#ffffff", (hex) => {
-      this.style.textColor = hex;
+    const textPicker = createVisualColorPicker(textPickerContainer, this.folderStyle.textColor || "#ffffff", (hex) => {
+      this.folderStyle.textColor = hex;
       updatePreview();
     }, { showAlpha: false });
     resetTxtBtn.onclick = () => {
-      this.style.textColor = "";
+      this.folderStyle.textColor = "";
       textPicker.setHex("#ffffff");
       updatePreview();
     };
     const typoRow = txtSection.createDiv();
-    Object.assign(typoRow.style, { display: "flex", gap: "10px", marginTop: "8px" });
+    typoRow.setCssStyles({ display: "flex", gap: "10px", marginTop: "8px" });
     const buildToggle = (lbl, key) => {
       const wrap = typoRow.createDiv();
-      Object.assign(wrap.style, { display: "flex", alignItems: "center", gap: "4px" });
+      wrap.setCssStyles({ display: "flex", alignItems: "center", gap: "4px" });
       const chk = wrap.createEl("input", { type: "checkbox" });
-      chk.checked = !!this.style[key];
+      chk.checked = !!this.folderStyle[key];
       const span = wrap.createEl("span", { text: lbl });
-      span.style.fontSize = "0.75em";
+      span.setCssStyles({ fontSize: "0.75em" });
       chk.onchange = () => {
-        this.style[key] = chk.checked;
+        this.folderStyle[key] = chk.checked;
         updatePreview();
       };
     };
@@ -862,7 +877,7 @@ var ColorPickerModal = class extends obsidian.Modal {
     buildToggle("Italic", "isItalic");
     const ic = tabPanels["icon"];
     const icColorSection = ic.createDiv();
-    Object.assign(icColorSection.style, {
+    icColorSection.setCssStyles({
       padding: "10px",
       borderRadius: "8px",
       border: "1px solid var(--background-modifier-border)",
@@ -870,16 +885,16 @@ var ColorPickerModal = class extends obsidian.Modal {
       marginBottom: "12px"
     });
     const icColorHeader = icColorSection.createDiv();
-    Object.assign(icColorHeader.style, { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" });
+    icColorHeader.setCssStyles({ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" });
     const icColorLabel = icColorHeader.createDiv();
-    icColorLabel.style.cssText = "font-size: 0.85em; font-weight: 700; color: var(--text-normal); opacity: 0.9;";
+    icColorLabel.setCssStyles({ fontSize: "0.85em", fontWeight: "700", color: "var(--text-normal)", opacity: "0.9" });
     icColorLabel.textContent = "Icon styling";
     const icColorActions = icColorHeader.createDiv();
-    Object.assign(icColorActions.style, { display: "flex", gap: "6px" });
+    icColorActions.setCssStyles({ display: "flex", gap: "6px" });
     const resetIcBtn = icColorActions.createEl("button", { text: "Reset" });
-    Object.assign(resetIcBtn.style, { padding: "2px 6px", borderRadius: "4px", fontSize: "0.7em", border: "1px solid var(--background-modifier-border)", background: "none", color: "var(--text-muted)", cursor: "pointer" });
+    resetIcBtn.setCssStyles({ padding: "2px 6px", borderRadius: "4px", fontSize: "0.7em", border: "1px solid var(--background-modifier-border)", background: "none", color: "var(--text-muted)", cursor: "pointer" });
     const applyIcBtn = icColorActions.createEl("button", { text: "Apply" });
-    Object.assign(applyIcBtn.style, {
+    applyIcBtn.setCssStyles({
       padding: "2px 8px",
       borderRadius: "4px",
       fontSize: "0.7em",
@@ -892,28 +907,29 @@ var ColorPickerModal = class extends obsidian.Modal {
     applyIcBtn.onclick = async () => {
       const path = this.item.path;
       const existing = this.plugin.getStyle(path) || {};
-      existing.iconId = this.style.iconId;
-      existing.iconColor = this.style.iconColor;
-      if (this.style.applyToSubfolders !== void 0)
-        existing.applyToSubfolders = this.style.applyToSubfolders;
-      if (this.style.applyToFiles !== void 0)
-        existing.applyToFiles = this.style.applyToFiles;
+      existing.iconId = this.folderStyle.iconId;
+      existing.iconColor = this.folderStyle.iconColor;
+      if (this.folderStyle.applyToSubfolders !== void 0)
+        existing.applyToSubfolders = this.folderStyle.applyToSubfolders;
+      if (this.folderStyle.applyToFiles !== void 0)
+        existing.applyToFiles = this.folderStyle.applyToFiles;
       this.plugin.settings.customFolderColors[path] = existing;
       await this.plugin.saveSettings();
+      await this.plugin.generateStyles();
       this.close();
     };
     const icColorPickerContainer = icColorSection.createDiv();
-    const icColorPicker = createVisualColorPicker(icColorPickerContainer, this.style.iconColor || this.style.hex || "#eb6f92", (hex) => {
-      this.style.iconColor = hex;
+    const icColorPicker = createVisualColorPicker(icColorPickerContainer, this.folderStyle.iconColor || this.folderStyle.hex || "#eb6f92", (hex) => {
+      this.folderStyle.iconColor = hex;
       updatePreview();
     }, { showAlpha: false });
     resetIcBtn.onclick = () => {
-      this.style.iconColor = "";
-      icColorPicker.setHex(this.style.hex || "#eb6f92");
+      this.folderStyle.iconColor = "";
+      icColorPicker.setHex(this.folderStyle.hex || "#eb6f92");
       updatePreview();
     };
     const curIconRow = ic.createDiv();
-    Object.assign(curIconRow.style, {
+    curIconRow.setCssStyles({
       display: "flex",
       flexWrap: "wrap",
       alignItems: "center",
@@ -925,7 +941,7 @@ var ColorPickerModal = class extends obsidian.Modal {
       marginBottom: "12px"
     });
     const curIconBox = curIconRow.createDiv();
-    Object.assign(curIconBox.style, {
+    curIconBox.setCssStyles({
       width: "36px",
       height: "36px",
       borderRadius: "8px",
@@ -935,16 +951,17 @@ var ColorPickerModal = class extends obsidian.Modal {
       justifyContent: "center",
       flexShrink: "0"
     });
-    this._refreshIconSelection(this.style.iconId, curIconBox);
+    this._refreshIconSelection(this.folderStyle.iconId, curIconBox);
     const curIconHeader = curIconRow.createDiv();
-    Object.assign(curIconHeader.style, { display: "flex", alignItems: "center", justifyContent: "space-between", flex: "1", minWidth: "150px" });
+    curIconHeader.setCssStyles({ display: "flex", alignItems: "center", justifyContent: "space-between", flex: "1", minWidth: "150px" });
     const curIconInfo = curIconHeader.createDiv();
-    curIconInfo.createEl("div", { text: "Current Icon" }).style.cssText = "font-size:0.75em;color:var(--text-muted);margin-bottom:0px";
-    this._curIconNameEl = curIconInfo.createEl("div", { text: this.style.iconId || (this.isFolder ? "folder" : "file") });
-    this._curIconNameEl.style.cssText = "font-size:0.85em;font-weight:600;color:var(--text-normal)";
+    const ciLabel = curIconInfo.createEl("div", { text: "Current icon" });
+    ciLabel.setCssStyles({ fontSize: "0.75em", color: "var(--text-muted)", marginBottom: "0px" });
+    this._curIconNameEl = curIconInfo.createEl("div", { text: this.folderStyle.iconId || (this.isFolder ? "folder" : "file") });
+    this._curIconNameEl.setCssStyles({ fontSize: "0.85em", fontWeight: "600", color: "var(--text-normal)" });
     this._curIconBox = curIconBox;
-    const applyIconBtn = curIconHeader.createEl("button", { text: "Apply Icon Only" });
-    Object.assign(applyIconBtn.style, {
+    const applyIconBtn = curIconHeader.createEl("button", { text: "Apply icon only" });
+    applyIconBtn.setCssStyles({
       padding: "3px 10px",
       borderRadius: "5px",
       fontSize: "0.75em",
@@ -957,23 +974,24 @@ var ColorPickerModal = class extends obsidian.Modal {
     applyIconBtn.onclick = async () => {
       const path = this.item.path;
       const existing = this.plugin.getStyle(path) || {};
-      existing.iconId = this.style.iconId;
-      existing.iconColor = this.style.iconColor;
-      if (this.style.applyToSubfolders !== void 0)
-        existing.applyToSubfolders = this.style.applyToSubfolders;
-      if (this.style.applyToFiles !== void 0)
-        existing.applyToFiles = this.style.applyToFiles;
+      existing.iconId = this.folderStyle.iconId;
+      existing.iconColor = this.folderStyle.iconColor;
+      if (this.folderStyle.applyToSubfolders !== void 0)
+        existing.applyToSubfolders = this.folderStyle.applyToSubfolders;
+      if (this.folderStyle.applyToFiles !== void 0)
+        existing.applyToFiles = this.folderStyle.applyToFiles;
       this.plugin.settings.customFolderColors[path] = existing;
       await this.plugin.saveSettings();
+      await this.plugin.generateStyles();
       new obsidian.Notice(`Icon updated for ${this.item.name}`);
       this.close();
     };
     const searchRow = ic.createDiv();
-    Object.assign(searchRow.style, { display: "flex", gap: "8px", marginBottom: "12px", alignItems: "center" });
+    searchRow.setCssStyles({ display: "flex", gap: "8px", marginBottom: "12px", alignItems: "center" });
     const searchInputWrap = searchRow.createDiv();
-    Object.assign(searchInputWrap.style, { position: "relative", flex: "1" });
+    searchInputWrap.setCssStyles({ position: "relative", flex: "1" });
     const searchInput = searchInputWrap.createEl("input", { type: "text" });
-    Object.assign(searchInput.style, {
+    searchInput.setCssStyles({
       width: "100%",
       padding: "7px 12px 7px 34px",
       borderRadius: "7px",
@@ -985,7 +1003,7 @@ var ColorPickerModal = class extends obsidian.Modal {
     });
     searchInput.placeholder = "Search icons\u2026";
     const searchIcon = searchInputWrap.createDiv();
-    Object.assign(searchIcon.style, {
+    searchIcon.setCssStyles({
       position: "absolute",
       left: "10px",
       top: "50%",
@@ -996,7 +1014,7 @@ var ColorPickerModal = class extends obsidian.Modal {
     obsidian.setIcon(searchIcon, "search");
     const ssvg = searchIcon.querySelector("svg");
     if (ssvg)
-      Object.assign(ssvg.style, { width: "14px", height: "14px" });
+      ssvg.setCssStyles({ width: "14px", height: "14px" });
     const customIds = Object.keys(this.plugin.settings.customIcons);
     const prefixes = /* @__PURE__ */ new Set(["all", "lucide"]);
     customIds.forEach((id) => {
@@ -1007,7 +1025,7 @@ var ColorPickerModal = class extends obsidian.Modal {
         prefixes.add("custom");
     });
     const filterSelect = searchRow.createEl("select");
-    Object.assign(filterSelect.style, {
+    filterSelect.setCssStyles({
       padding: "6px 10px",
       borderRadius: "6px",
       border: "1px solid var(--background-modifier-border)",
@@ -1021,7 +1039,7 @@ var ColorPickerModal = class extends obsidian.Modal {
         opt.selected = true;
     });
     const iconGrid = ic.createDiv({ cls: "cf-icon-grid" });
-    Object.assign(iconGrid.style, {
+    iconGrid.setCssStyles({
       display: "grid",
       gridTemplateColumns: "repeat(auto-fill, minmax(44px, 1fr))",
       gap: "4px",
@@ -1057,7 +1075,7 @@ var ColorPickerModal = class extends obsidian.Modal {
         const gridIconW = Math.round(24 * iconScale2);
         const cellSize = Math.round(44 * (iconScale2 > 1 ? iconScale2 : 1));
         const cell = iconGrid.createDiv({ cls: "cf-icon-cell" });
-        Object.assign(cell.style, {
+        cell.setCssStyles({
           width: `${cellSize}px`,
           height: `${cellSize}px`,
           borderRadius: "7px",
@@ -1066,31 +1084,31 @@ var ColorPickerModal = class extends obsidian.Modal {
           justifyContent: "center",
           cursor: "pointer",
           transition: "all 0.12s ease",
-          backgroundColor: this.style.iconId === id ? "var(--interactive-accent)" : "transparent",
-          border: "2px solid " + (this.style.iconId === id ? "var(--interactive-accent)" : "transparent")
+          backgroundColor: this.folderStyle.iconId === id ? "var(--interactive-accent)" : "transparent",
+          border: "2px solid " + (this.folderStyle.iconId === id ? "var(--interactive-accent)" : "transparent")
         });
         obsidian.setIcon(cell, id);
         const cellSvg = cell.querySelector("svg");
         if (cellSvg) {
           cellSvg.removeAttribute("width");
           cellSvg.removeAttribute("height");
-          Object.assign(cellSvg.style, {
+          cellSvg.setCssStyles({
             width: `${gridIconW}px`,
             height: `${gridIconW}px`,
-            color: this.style.iconId === id ? "#fff" : "var(--text-normal)"
+            color: this.folderStyle.iconId === id ? "#fff" : "var(--text-normal)"
           });
         }
         cell.title = id;
         cell.onmouseenter = () => {
-          if (this.style.iconId !== id)
-            cell.style.backgroundColor = "var(--background-modifier-hover)";
+          if (this.folderStyle.iconId !== id)
+            cell.setCssStyles({ backgroundColor: "var(--background-modifier-hover)" });
         };
         cell.onmouseleave = () => {
-          if (this.style.iconId !== id)
-            cell.style.backgroundColor = "transparent";
+          if (this.folderStyle.iconId !== id)
+            cell.setCssStyles({ backgroundColor: "transparent" });
         };
         cell.onclick = () => {
-          this.style.iconId = id;
+          this.folderStyle.iconId = id;
           this._refreshIconSelection(id, curIconBox);
           if (this._updatePreview)
             this._updatePreview();
@@ -1098,7 +1116,14 @@ var ColorPickerModal = class extends obsidian.Modal {
         };
       });
       if (filtered.length === 0) {
-        iconGrid.createEl("div", { text: "No icons found" }).style.cssText = "padding:20px;text-align:center;color:var(--text-muted);font-size:0.85em;grid-column:1/-1";
+        const emptyMsg = iconGrid.createEl("div", { text: "No icons found" });
+        emptyMsg.setCssStyles({
+          padding: "20px",
+          textAlign: "center",
+          color: "var(--text-muted)",
+          fontSize: "0.85em",
+          gridColumn: "1/-1"
+        });
       }
     };
     renderIcons("", "all");
@@ -1106,14 +1131,15 @@ var ColorPickerModal = class extends obsidian.Modal {
     filterSelect.onchange = () => renderIcons(searchInput.value, filterSelect.value);
     if (this.isFolder && tabPanels["inherit"]) {
       const inh = tabPanels["inherit"];
-      new obsidian.Setting(inh).setHeading().setName("Inheritance Options");
-      new obsidian.Setting(inh).setName("Apply to Subfolders").setDesc("Force nested folders to inherit this style.").addToggle((t) => t.setValue(this.style.applyToSubfolders || false).onChange((v) => this.style.applyToSubfolders = v));
-      new obsidian.Setting(inh).setName("Apply to Files").setDesc("Force files inside this folder to inherit this style.").addToggle((t) => t.setValue(this.style.applyToFiles || false).onChange((v) => this.style.applyToFiles = v));
+      new obsidian.Setting(inh).setHeading().setName("Inheritance options");
+      new obsidian.Setting(inh).setName("Apply to subfolders").setDesc("Force nested folders to inherit this style.").addToggle((t) => t.setValue(this.folderStyle.applyToSubfolders || false).onChange((v) => this.folderStyle.applyToSubfolders = v));
+      new obsidian.Setting(inh).setName("Apply to files").setDesc("Force files inside this folder to inherit this style.").addToggle((t) => t.setValue(this.folderStyle.applyToFiles || false).onChange((v) => this.folderStyle.applyToFiles = v));
     }
     const pr = tabPanels["presets"];
-    pr.createEl("h4", { text: "Saved Presets", cls: "cf-section-title" }).style.cssText = "font-size:0.85em;margin-bottom:10px;opacity:0.8";
+    const prTitle = pr.createEl("h4", { text: "Saved presets", cls: "cf-section-title" });
+    prTitle.setCssStyles({ fontSize: "0.85em", marginBottom: "10px", opacity: "0.8" });
     const presetList = pr.createDiv({ cls: "cf-preset-list" });
-    Object.assign(presetList.style, {
+    presetList.setCssStyles({
       display: "flex",
       flexDirection: "column",
       gap: "6px",
@@ -1125,12 +1151,13 @@ var ColorPickerModal = class extends obsidian.Modal {
     const presets = this.plugin.settings.presets || {};
     const presetNames = Object.keys(presets);
     if (presetNames.length === 0) {
-      presetList.createEl("div", { text: "No presets saved yet.", cls: "cf-empty-state" }).style.cssText = "font-size:0.8em;color:var(--text-muted);text-align:center;padding:20px";
+      const emptyPresets = presetList.createEl("div", { text: "No presets saved yet.", cls: "cf-empty-state" });
+      emptyPresets.setCssStyles({ fontSize: "0.8em", color: "var(--text-muted)", textAlign: "center", padding: "20px" });
     } else {
       presetNames.forEach((name) => {
         const pData = presets[name];
         const item = presetList.createDiv({ cls: "cf-preset-item" });
-        Object.assign(item.style, {
+        item.setCssStyles({
           display: "flex",
           alignItems: "center",
           gap: "10px",
@@ -1141,7 +1168,7 @@ var ColorPickerModal = class extends obsidian.Modal {
           transition: "all 0.1s ease"
         });
         const colorPrev = item.createDiv();
-        Object.assign(colorPrev.style, {
+        colorPrev.setCssStyles({
           width: "20px",
           height: "20px",
           borderRadius: "4px",
@@ -1149,19 +1176,19 @@ var ColorPickerModal = class extends obsidian.Modal {
           flexShrink: "0"
         });
         const nameLabel = item.createDiv({ text: name });
-        Object.assign(nameLabel.style, { flex: "1", fontSize: "0.85em", fontWeight: "600", color: "var(--text-normal)" });
+        nameLabel.setCssStyles({ flex: "1", fontSize: "0.85em", fontWeight: "600", color: "var(--text-normal)" });
         const applyBtn = item.createEl("button", { text: "Apply" });
-        Object.assign(applyBtn.style, { padding: "2px 8px", fontSize: "0.75em", borderRadius: "4px", cursor: "pointer" });
+        applyBtn.setCssStyles({ padding: "2px 8px", fontSize: "0.75em", borderRadius: "4px", cursor: "pointer" });
         applyBtn.onclick = () => {
-          this.style = { ...pData };
+          this.folderStyle = { ...pData };
           this.onOpen();
         };
         const delBtn = item.createEl("button", { cls: "clickable-icon" });
-        Object.assign(delBtn.style, { padding: "4px", display: "flex", alignItems: "center", justifyContent: "center" });
+        delBtn.setCssStyles({ padding: "4px", display: "flex", alignItems: "center", justifyContent: "center" });
         obsidian.setIcon(delBtn, "trash-2");
         const delSvg = delBtn.querySelector("svg");
         if (delSvg)
-          Object.assign(delSvg.style, { width: "14px", height: "14px", color: "var(--text-error)" });
+          delSvg.setCssStyles({ width: "14px", height: "14px", color: "var(--text-error)" });
         delBtn.onclick = async (e) => {
           e.stopPropagation();
           delete this.plugin.settings.presets[name];
@@ -1172,34 +1199,35 @@ var ColorPickerModal = class extends obsidian.Modal {
       });
     }
     const saveSection = pr.createDiv();
-    Object.assign(saveSection.style, {
+    saveSection.setCssStyles({
       marginTop: "12px",
       padding: "12px",
       borderRadius: "8px",
       border: "1px dashed var(--background-modifier-border)",
       backgroundColor: "rgba(var(--mono-rgb-100), 0.02)"
     });
-    saveSection.createEl("div", { text: "Save Current Style" }).style.cssText = "font-size:0.75em;font-weight:700;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase";
+    const saveTitle = saveSection.createEl("div", { text: "Save current style" });
+    saveTitle.setCssStyles({ fontSize: "0.75em", fontWeight: "700", color: "var(--text-muted)", marginBottom: "8px", textTransform: "uppercase" });
     const saveRow = saveSection.createDiv();
-    Object.assign(saveRow.style, { display: "flex", gap: "8px" });
+    saveRow.setCssStyles({ display: "flex", gap: "8px" });
     const newPresetInput = saveRow.createEl("input", { type: "text" });
     newPresetInput.placeholder = "Preset name...";
-    Object.assign(newPresetInput.style, { flex: "1", fontSize: "0.85em", padding: "6px 10px", borderRadius: "6px", border: "1px solid var(--background-modifier-border)", background: "var(--background-primary)" });
-    const savePresetBtn = saveRow.createEl("button", { text: "Save Style" });
-    Object.assign(savePresetBtn.style, { padding: "6px 12px", fontSize: "0.8em", fontWeight: "600", color: "var(--text-on-accent)", background: "var(--interactive-accent)", borderRadius: "6px", border: "none", cursor: "pointer" });
+    newPresetInput.setCssStyles({ flex: "1", fontSize: "0.85em", padding: "6px 10px", borderRadius: "6px", border: "1px solid var(--background-modifier-border)", background: "var(--background-primary)" });
+    const savePresetBtn = saveRow.createEl("button", { text: "Save style" });
+    savePresetBtn.setCssStyles({ padding: "6px 12px", fontSize: "0.8em", fontWeight: "600", color: "var(--text-on-accent)", background: "var(--interactive-accent)", borderRadius: "6px", border: "none", cursor: "pointer" });
     savePresetBtn.onclick = async () => {
       const name = newPresetInput.value.trim();
       if (!name)
         return;
       if (!this.plugin.settings.presets)
         this.plugin.settings.presets = {};
-      this.plugin.settings.presets[name] = { ...this.style };
+      this.plugin.settings.presets[name] = { ...this.folderStyle };
       await this.plugin.saveSettings();
       new obsidian.Notice(`Saved preset: ${name}`);
       this.onOpen();
     };
     const footer = contentEl.createDiv({ cls: "cf-modal-footer" });
-    Object.assign(footer.style, {
+    footer.setCssStyles({
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
@@ -1209,8 +1237,8 @@ var ColorPickerModal = class extends obsidian.Modal {
       gap: "8px"
     });
     const clearBtn = footer.createEl("button");
-    clearBtn.setText("Clear Style");
-    Object.assign(clearBtn.style, {
+    clearBtn.setText("Clear style");
+    clearBtn.setCssStyles({
       padding: "7px 14px",
       borderRadius: "6px",
       cursor: "pointer",
@@ -1222,12 +1250,13 @@ var ColorPickerModal = class extends obsidian.Modal {
     clearBtn.onclick = async () => {
       delete this.plugin.settings.customFolderColors[this.item.path];
       await this.plugin.saveSettings();
+      this.plugin.generateStyles();
       new obsidian.Notice(`Cleared styling for ${this.item.name}`);
       this.close();
     };
     const saveBtn = footer.createEl("button");
-    saveBtn.setText("Save Style");
-    Object.assign(saveBtn.style, {
+    saveBtn.setText("Save style");
+    saveBtn.setCssStyles({
       padding: "7px 18px",
       borderRadius: "6px",
       cursor: "pointer",
@@ -1238,8 +1267,9 @@ var ColorPickerModal = class extends obsidian.Modal {
       border: "none"
     });
     saveBtn.onclick = async () => {
-      this.plugin.settings.customFolderColors[this.item.path] = this.style;
+      this.plugin.settings.customFolderColors[this.item.path] = this.folderStyle;
       await this.plugin.saveSettings();
+      this.plugin.generateStyles();
       new obsidian.Notice(`Updated styling for ${this.item.name}`);
       this.close();
     };
@@ -1253,20 +1283,22 @@ var ColorPickerModal = class extends obsidian.Modal {
       return;
     Object.entries(btns).forEach(([k, btn]) => {
       const active = k === id;
-      btn.style.color = active ? "var(--interactive-accent)" : "var(--text-muted)";
-      btn.style.borderBottom = active ? "2px solid var(--interactive-accent)" : "2px solid transparent";
-      btn.style.backgroundColor = active ? "var(--background-modifier-hover)" : "transparent";
+      btn.setCssStyles({
+        color: active ? "var(--interactive-accent)" : "var(--text-muted)",
+        borderBottom: active ? "2px solid var(--interactive-accent)" : "2px solid transparent",
+        backgroundColor: active ? "var(--background-modifier-hover)" : "transparent"
+      });
     });
     Object.entries(panels).forEach(([k, p]) => {
-      p.style.display = k === id ? "block" : "none";
+      p.setCssStyles({ display: k === id ? "block" : "none" });
     });
   }
   _refreshIconSelection(id, curIconBox) {
-    curIconBox.innerHTML = "";
+    curIconBox.empty();
     obsidian.setIcon(curIconBox, id || (this.isFolder ? "folder" : "file"));
     const s = curIconBox.querySelector("svg");
     if (s)
-      Object.assign(s.style, { width: "22px", height: "22px", color: "#fff" });
+      s.setCssStyles({ width: "22px", height: "22px", color: "#fff" });
     if (this._curIconNameEl)
       this._curIconNameEl.setText(id || (this.isFolder ? "folder" : "file"));
   }
@@ -1283,6 +1315,9 @@ var obsidian2 = __toESM(require("obsidian"));
 var IconPickerModal = class extends obsidian2.Modal {
   constructor(app, plugin, currentIconId, onSelect) {
     super(app);
+    __publicField(this, "plugin");
+    __publicField(this, "onSelect");
+    __publicField(this, "currentIconId");
     this.plugin = plugin;
     this.currentIconId = currentIconId;
     this.onSelect = onSelect;
@@ -1290,24 +1325,27 @@ var IconPickerModal = class extends obsidian2.Modal {
   onOpen() {
     const { contentEl, modalEl } = this;
     contentEl.empty();
-    modalEl.style.maxWidth = "520px";
-    modalEl.style.width = "90vw";
-    modalEl.style.borderRadius = "12px";
+    modalEl.setCssStyles({
+      maxWidth: "520px",
+      width: "90vw",
+      borderRadius: "12px"
+    });
     const header = contentEl.createDiv({ cls: "cf-modal-header" });
-    Object.assign(header.style, {
+    header.setCssStyles({
       padding: "20px 24px 10px",
       borderBottom: "1px solid var(--background-modifier-border)",
       marginBottom: "12px"
     });
-    header.createEl("h2", { text: "Select Icon", cls: "cf-modal-title" }).style.margin = "0";
+    const h2 = header.createEl("h2", { text: "Select icon", cls: "cf-modal-title" });
+    h2.setCssStyles({ margin: "0" });
     const body = contentEl.createDiv();
-    body.style.padding = "0 24px 20px";
+    body.setCssStyles({ padding: "0 24px 20px" });
     const searchRow = body.createDiv();
-    Object.assign(searchRow.style, { display: "flex", gap: "8px", marginBottom: "16px", alignItems: "center" });
+    searchRow.setCssStyles({ display: "flex", gap: "8px", marginBottom: "16px", alignItems: "center" });
     const searchInputWrap = searchRow.createDiv();
-    Object.assign(searchInputWrap.style, { position: "relative", flex: "1" });
+    searchInputWrap.setCssStyles({ position: "relative", flex: "1" });
     const searchInput = searchInputWrap.createEl("input", { type: "text" });
-    Object.assign(searchInput.style, {
+    searchInput.setCssStyles({
       width: "100%",
       padding: "8px 12px 8px 36px",
       borderRadius: "8px",
@@ -1319,7 +1357,7 @@ var IconPickerModal = class extends obsidian2.Modal {
     });
     searchInput.placeholder = "Search icons...";
     const searchIcon = searchInputWrap.createDiv();
-    Object.assign(searchIcon.style, {
+    searchIcon.setCssStyles({
       position: "absolute",
       left: "12px",
       top: "50%",
@@ -1330,7 +1368,7 @@ var IconPickerModal = class extends obsidian2.Modal {
     obsidian2.setIcon(searchIcon, "search");
     const ssvg = searchIcon.querySelector("svg");
     if (ssvg)
-      Object.assign(ssvg.style, { width: "16px", height: "16px" });
+      ssvg.setCssStyles({ width: "16px", height: "16px" });
     const customIds = Object.keys(this.plugin.settings.customIcons);
     const prefixes = /* @__PURE__ */ new Set(["all", "lucide"]);
     customIds.forEach((id) => {
@@ -1341,7 +1379,7 @@ var IconPickerModal = class extends obsidian2.Modal {
         prefixes.add("custom");
     });
     const filterSelect = searchRow.createEl("select");
-    Object.assign(filterSelect.style, {
+    filterSelect.setCssStyles({
       padding: "7px 12px",
       borderRadius: "8px",
       border: "1px solid var(--background-modifier-border)",
@@ -1350,12 +1388,12 @@ var IconPickerModal = class extends obsidian2.Modal {
       fontSize: "0.9em"
     });
     Array.from(prefixes).sort().forEach((p) => {
-      const opt = filterSelect.createEl("option", { text: p === "all" ? "All Packs" : p.toUpperCase(), value: p });
+      const opt = filterSelect.createEl("option", { text: p === "all" ? "All packs" : p.toUpperCase(), value: p });
       if (p === "all")
         opt.selected = true;
     });
     const iconGrid = body.createDiv({ cls: "cf-icon-grid" });
-    Object.assign(iconGrid.style, {
+    iconGrid.setCssStyles({
       display: "grid",
       gridTemplateColumns: "repeat(auto-fill, minmax(48px, 1fr))",
       gap: "6px",
@@ -1389,7 +1427,7 @@ var IconPickerModal = class extends obsidian2.Modal {
       filtered.slice(0, 1e3).forEach((id) => {
         const isSelected = this.currentIconId === id;
         const cell = iconGrid.createDiv({ cls: "cf-icon-cell" });
-        Object.assign(cell.style, {
+        cell.setCssStyles({
           width: "48px",
           height: "48px",
           borderRadius: "8px",
@@ -1403,7 +1441,7 @@ var IconPickerModal = class extends obsidian2.Modal {
         obsidian2.setIcon(cell, id);
         const cellSvg = cell.querySelector("svg");
         if (cellSvg) {
-          Object.assign(cellSvg.style, {
+          cellSvg.setCssStyles({
             width: "24px",
             height: "24px",
             color: isSelected ? "white" : "var(--text-normal)"
@@ -1416,15 +1454,22 @@ var IconPickerModal = class extends obsidian2.Modal {
         };
         cell.onmouseenter = () => {
           if (!isSelected)
-            cell.style.backgroundColor = "var(--background-modifier-hover)";
+            cell.setCssStyles({ backgroundColor: "var(--background-modifier-hover)" });
         };
         cell.onmouseleave = () => {
           if (!isSelected)
-            cell.style.backgroundColor = "transparent";
+            cell.setCssStyles({ backgroundColor: "transparent" });
         };
       });
       if (filtered.length === 0) {
-        iconGrid.createEl("div", { text: "No icons found", cls: "cf-no-icons" }).style.cssText = "padding:40px;text-align:center;color:var(--text-muted);font-size:0.9em;grid-column:1/-1";
+        const emptyMsg = iconGrid.createEl("div", { text: "No icons found", cls: "cf-no-icons" });
+        emptyMsg.setCssStyles({
+          padding: "40px",
+          textAlign: "center",
+          color: "var(--text-muted)",
+          fontSize: "0.9em",
+          gridColumn: "1/-1"
+        });
       }
     };
     renderIcons("", "all");
@@ -1442,12 +1487,24 @@ var DividerModal = class extends obsidian3.Modal {
   constructor(app, plugin, item) {
     var _a;
     super(app);
-    this.isSaved = false;
+    __publicField(this, "plugin");
+    __publicField(this, "item");
+    __publicField(this, "path");
+    __publicField(this, "config");
+    __publicField(this, "originalStyle");
+    __publicField(this, "isSaved", false);
+    __publicField(this, "_headerIconWrap");
+    __publicField(this, "_previewIconEl");
     this.plugin = plugin;
     this.item = item;
     this.path = item.path;
     this.originalStyle = (_a = this.plugin.settings.customFolderColors) == null ? void 0 : _a[this.path];
-    const existingStyle = this.originalStyle || {};
+    let existingStyle = {};
+    if (typeof this.originalStyle === "string") {
+      existingStyle = { hex: this.originalStyle };
+    } else if (this.originalStyle) {
+      existingStyle = this.originalStyle;
+    }
     const folderStyle = this.plugin.getStyle(this.path);
     const defaultColor = (folderStyle == null ? void 0 : folderStyle.hex) || "var(--interactive-accent)";
     this.config = {
@@ -1463,11 +1520,13 @@ var DividerModal = class extends obsidian3.Modal {
   onOpen() {
     const { contentEl, modalEl } = this;
     contentEl.empty();
-    modalEl.style.maxWidth = "440px";
-    modalEl.style.borderRadius = "14px";
-    modalEl.style.boxShadow = "0 10px 40px rgba(0,0,0,0.3)";
+    modalEl.setCssStyles({
+      maxWidth: "440px",
+      borderRadius: "14px",
+      boxShadow: "0 10px 40px rgba(0,0,0,0.3)"
+    });
     const header = contentEl.createDiv({ cls: "cf-modal-header" });
-    Object.assign(header.style, {
+    header.setCssStyles({
       display: "flex",
       alignItems: "center",
       gap: "14px",
@@ -1476,7 +1535,7 @@ var DividerModal = class extends obsidian3.Modal {
       marginBottom: "0"
     });
     const iconContainer = header.createDiv();
-    Object.assign(iconContainer.style, {
+    iconContainer.setCssStyles({
       width: "42px",
       height: "42px",
       borderRadius: "10px",
@@ -1492,20 +1551,44 @@ var DividerModal = class extends obsidian3.Modal {
     this._previewIconEl = iconContainer.createDiv();
     this._refreshHeaderIcon();
     const titleWrap = header.createDiv();
-    titleWrap.createEl("div", { text: "Section Divider", cls: "cf-modal-title" }).style.cssText = "font-size:1.2em;font-weight:700;color:var(--text-normal);line-height:1.2";
-    titleWrap.createEl("div", { text: `Organizing: ${this.item.name}` }).style.cssText = "font-size:0.8em;color:var(--text-muted);margin-top:2px;opacity:0.8";
+    const mTitle = titleWrap.createEl("div", { text: "Section divider", cls: "cf-modal-title" });
+    mTitle.setCssStyles({
+      fontSize: "1.2em",
+      fontWeight: "700",
+      color: "var(--text-normal)",
+      lineHeight: "1.2"
+    });
+    const mSub = titleWrap.createEl("div", { text: `Organizing: ${this.item.name}` });
+    mSub.setCssStyles({
+      fontSize: "0.8em",
+      color: "var(--text-muted)",
+      marginTop: "2px",
+      opacity: "0.8"
+    });
     const body = contentEl.createDiv();
-    body.style.padding = "20px 24px";
-    body.style.maxHeight = "60vh";
-    body.style.overflowY = "auto";
+    body.setCssStyles({
+      padding: "20px 24px",
+      maxHeight: "60vh",
+      overflowY: "auto"
+    });
     const addSection = (title) => {
       const s = body.createDiv();
-      s.createEl("h4", { text: title }).style.cssText = "font-size: 0.75em; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin: 0 0 12px 0; opacity: 0.6;";
+      const h4 = s.createEl("h4", { text: title });
+      h4.setCssStyles({
+        fontSize: "0.75em",
+        textTransform: "uppercase",
+        letterSpacing: "0.1em",
+        color: "var(--text-muted)",
+        margin: "0 0 12px 0",
+        opacity: "0.6"
+      });
       const c = s.createDiv();
-      c.style.display = "flex";
-      c.style.flexDirection = "column";
-      c.style.gap = "8px";
-      c.style.marginBottom = "24px";
+      c.setCssStyles({
+        display: "flex",
+        flexDirection: "column",
+        gap: "8px",
+        marginBottom: "24px"
+      });
       return c;
     };
     const textSect = addSection("Label & Appearance");
@@ -1517,12 +1600,14 @@ var DividerModal = class extends obsidian3.Modal {
       text.setValue(this.config.color);
       const input = text.inputEl;
       input.type = "color";
-      input.style.width = "40px";
-      input.style.height = "30px";
-      input.style.padding = "0";
+      input.setCssStyles({
+        width: "40px",
+        height: "30px",
+        padding: "0"
+      });
       input.onchange = () => {
         this.config.color = text.getValue();
-        this._headerIconWrap.style.backgroundColor = this.config.color;
+        this._headerIconWrap.setCssStyles({ backgroundColor: this.config.color });
         this._refreshHeaderIcon();
         this._liveSync();
       };
@@ -1545,15 +1630,23 @@ var DividerModal = class extends obsidian3.Modal {
       });
       const browseBtn = (_a = text.inputEl.parentElement) == null ? void 0 : _a.createDiv({ cls: "cf-icon-browse-btn" });
       if (browseBtn) {
-        browseBtn.style.cssText = "display:flex;align-items:center;justify-content:center;padding:6px;cursor:pointer;opacity:0.6;transition:opacity 0.2s;margin-left:4px";
+        browseBtn.setCssStyles({
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "6px",
+          cursor: "pointer",
+          opacity: "0.6",
+          transition: "opacity 0.2s",
+          marginLeft: "4px"
+        });
         obsidian3.setIcon(browseBtn, "search");
         const bsvg = browseBtn.querySelector("svg");
         if (bsvg) {
-          bsvg.style.width = "18px";
-          bsvg.style.height = "18px";
+          bsvg.setCssStyles({ width: "18px", height: "18px" });
         }
-        browseBtn.onmouseenter = () => browseBtn.style.opacity = "1";
-        browseBtn.onmouseleave = () => browseBtn.style.opacity = "0.6";
+        browseBtn.onmouseenter = () => browseBtn.setCssStyles({ opacity: "1" });
+        browseBtn.onmouseleave = () => browseBtn.setCssStyles({ opacity: "0.6" });
         browseBtn.onclick = () => {
           new IconPickerModal(this.app, this.plugin, this.config.icon, (selectedId) => {
             this.config.icon = selectedId;
@@ -1573,7 +1666,7 @@ var DividerModal = class extends obsidian3.Modal {
       this._liveSync();
     }));
     const footer = contentEl.createDiv({ cls: "cf-modal-footer" });
-    Object.assign(footer.style, {
+    footer.setCssStyles({
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
@@ -1584,8 +1677,8 @@ var DividerModal = class extends obsidian3.Modal {
       borderBottomRightRadius: "14px"
     });
     const leftGroup = footer.createDiv();
-    const removeBtn = leftGroup.createEl("button", { text: "Remove Divider" });
-    Object.assign(removeBtn.style, {
+    const removeBtn = leftGroup.createEl("button", { text: "Remove divider" });
+    removeBtn.setCssStyles({
       color: "var(--text-error)",
       background: "transparent",
       border: "1px solid var(--background-modifier-border)",
@@ -1595,46 +1688,56 @@ var DividerModal = class extends obsidian3.Modal {
       cursor: "pointer",
       transition: "all 0.2s ease"
     });
-    removeBtn.onmouseenter = () => removeBtn.style.backgroundColor = "rgba(var(--text-error-rgb), 0.05)";
-    removeBtn.onmouseleave = () => removeBtn.style.backgroundColor = "transparent";
+    removeBtn.onmouseenter = () => removeBtn.setCssStyles({ backgroundColor: "rgba(var(--text-error-rgb), 0.05)" });
+    removeBtn.onmouseleave = () => removeBtn.setCssStyles({ backgroundColor: "transparent" });
     removeBtn.onclick = async () => {
       this.isSaved = true;
-      const style = this.plugin.settings.customFolderColors[this.path] || {};
-      style.hasDivider = false;
-      delete style.dividerText;
-      delete style.dividerColor;
-      delete style.dividerIcon;
-      delete style.dividerAlignment;
-      delete style.dividerLineStyle;
-      delete style.dividerUpper;
-      delete style.dividerGlass;
+      const style = this.plugin.settings.customFolderColors[this.path];
+      let styleObj = {};
+      if (typeof style === "string")
+        styleObj = { hex: style };
+      else if (style)
+        styleObj = style;
+      styleObj.hasDivider = false;
+      delete styleObj.dividerText;
+      delete styleObj.dividerColor;
+      delete styleObj.dividerIcon;
+      delete styleObj.dividerAlignment;
+      delete styleObj.dividerLineStyle;
+      delete styleObj.dividerUpper;
+      delete styleObj.dividerGlass;
+      this.plugin.settings.customFolderColors[this.path] = styleObj;
       await this.plugin.saveSettings();
-      await this.plugin.generateStyles();
+      this.plugin.generateStyles();
       this.plugin.dividerManager.syncDividers();
       this.close();
     };
     const rightGroup = footer.createDiv();
-    rightGroup.style.display = "flex";
-    rightGroup.style.gap = "10px";
+    rightGroup.setCssStyles({ display: "flex", gap: "10px" });
     const cancelBtn = rightGroup.createEl("button", { text: "Cancel" });
-    cancelBtn.style.padding = "6px 16px";
+    cancelBtn.setCssStyles({ padding: "6px 16px" });
     cancelBtn.onclick = () => this.close();
-    const saveBtn = rightGroup.createEl("button", { text: "Add / Update", cls: "mod-cta" });
-    saveBtn.style.padding = "6px 20px";
+    const saveBtn = rightGroup.createEl("button", { text: "Add / update", cls: "mod-cta" });
+    saveBtn.setCssStyles({ padding: "6px 20px" });
     saveBtn.onclick = async () => {
       this.isSaved = true;
-      const style = this.plugin.settings.customFolderColors[this.path] || {};
-      style.dividerText = this.config.name;
-      style.dividerColor = this.config.color;
-      style.dividerAlignment = this.config.alignment;
-      style.dividerLineStyle = this.config.lineStyle;
-      style.dividerUpper = this.config.isUpper;
-      style.dividerGlass = this.config.useGlass;
-      style.dividerIcon = this.config.icon;
-      style.hasDivider = true;
-      this.plugin.settings.customFolderColors[this.path] = style;
+      const style = this.plugin.settings.customFolderColors[this.path];
+      let styleObj = {};
+      if (typeof style === "string")
+        styleObj = { hex: style };
+      else if (style)
+        styleObj = style;
+      styleObj.dividerText = this.config.name;
+      styleObj.dividerColor = this.config.color;
+      styleObj.dividerAlignment = this.config.alignment;
+      styleObj.dividerLineStyle = this.config.lineStyle;
+      styleObj.dividerUpper = this.config.isUpper;
+      styleObj.dividerGlass = this.config.useGlass;
+      styleObj.dividerIcon = this.config.icon;
+      styleObj.hasDivider = true;
+      this.plugin.settings.customFolderColors[this.path] = styleObj;
       await this.plugin.saveSettings();
-      await this.plugin.generateStyles();
+      this.plugin.generateStyles();
       this.plugin.dividerManager.syncDividers();
       this.close();
     };
@@ -1663,10 +1766,10 @@ var DividerModal = class extends obsidian3.Modal {
     obsidian3.setIcon(this._previewIconEl, iconId);
     const svg = this._previewIconEl.querySelector("svg");
     if (svg) {
-      Object.assign(svg.style, { width: "20px", height: "20px", color: "white" });
+      svg.setCssStyles({ width: "20px", height: "20px", color: "white" });
     } else {
       this._previewIconEl.setText(this.config.icon);
-      this._previewIconEl.style.fontSize = "1.2em";
+      this._previewIconEl.setCssStyles({ fontSize: "1.2em" });
     }
   }
   onClose() {
@@ -1684,9 +1787,42 @@ var DividerModal = class extends obsidian3.Modal {
 
 // src/ui/SettingTab.ts
 var obsidian4 = __toESM(require("obsidian"));
+
+// src/ui/modals/ConfirmModal.ts
+var import_obsidian = require("obsidian");
+var ConfirmModal = class extends import_obsidian.Modal {
+  constructor(app, title, message, onConfirm) {
+    super(app);
+    __publicField(this, "onConfirm");
+    __publicField(this, "message");
+    __publicField(this, "title");
+    this.title = title;
+    this.message = message;
+    this.onConfirm = onConfirm;
+  }
+  onOpen() {
+    const { contentEl } = this;
+    contentEl.createEl("h2", { text: this.title });
+    contentEl.createEl("p", { text: this.message });
+    new import_obsidian.Setting(contentEl).addButton((btn) => btn.setButtonText("Confirm").setWarning().onClick(async () => {
+      await this.onConfirm();
+      this.close();
+    })).addButton((btn) => btn.setButtonText("Cancel").onClick(() => {
+      this.close();
+    }));
+  }
+  onClose() {
+    const { contentEl } = this;
+    contentEl.empty();
+  }
+};
+
+// src/ui/SettingTab.ts
 var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
+    __publicField(this, "plugin");
+    __publicField(this, "activeTab");
     this.plugin = plugin;
     this.activeTab = "gen";
   }
@@ -1702,9 +1838,10 @@ var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
     const intPanel = rootEl.createDiv();
     const iconPanel = rootEl.createDiv();
     const sysPanel = rootEl.createDiv();
-    intPanel.style.display = "none";
-    iconPanel.style.display = "none";
-    sysPanel.style.display = "none";
+    generalPanel.setCssStyles({ display: "block" });
+    intPanel.setCssStyles({ display: "none" });
+    iconPanel.setCssStyles({ display: "none" });
+    sysPanel.setCssStyles({ display: "none" });
     const btnGen = tabBar.createEl("button", { text: "General", cls: "cf-tab-btn" });
     const btnInt = tabBar.createEl("button", { text: "Integrations", cls: "cf-tab-btn" });
     const btnIcon = tabBar.createEl("button", { text: "Icon Packs", cls: "cf-tab-btn" });
@@ -1729,10 +1866,10 @@ var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
     };
     const setTab = (t) => {
       this.activeTab = t;
-      generalPanel.style.display = t === "gen" ? "block" : "none";
-      intPanel.style.display = t === "int" ? "block" : "none";
-      iconPanel.style.display = t === "icon" ? "block" : "none";
-      sysPanel.style.display = t === "sys" ? "block" : "none";
+      generalPanel.setCssStyles({ display: t === "gen" ? "block" : "none" });
+      intPanel.setCssStyles({ display: t === "int" ? "block" : "none" });
+      iconPanel.setCssStyles({ display: t === "icon" ? "block" : "none" });
+      sysPanel.setCssStyles({ display: t === "sys" ? "block" : "none" });
       btnGen.toggleClass("is-active", t === "gen");
       btnInt.toggleClass("is-active", t === "int");
       btnIcon.toggleClass("is-active", t === "icon");
@@ -1747,7 +1884,8 @@ var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
     const makeCard = (parent, icon, title) => {
       const card = parent.createDiv("cf-settings-card");
       const h = card.createDiv("cf-card-header");
-      h.innerHTML = `<span class="icon">${icon}</span> ${title}`;
+      h.createSpan({ text: icon, cls: "icon" });
+      h.appendText(" " + title);
       return card;
     };
     const intCard = makeCard(intPanel, "\u{1F517}", "Notebook Navigator");
@@ -1761,24 +1899,26 @@ var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
     }));
     const customIconCard = makeCard(iconPanel, "\u{1F4E6}", "Custom Icon Management");
     const iconDesc = customIconCard.createEl("p", { text: "Add individual SVG icons or import bulk packs from the internet. All custom icons added here will appear in the icon selection grid when styling a folder or file." });
-    Object.assign(iconDesc.style, { fontSize: "0.85em", color: "var(--text-muted)", marginBottom: "20px", lineHeight: "1.4" });
-    customIconCard.createEl("div", { text: "Pro Tip: Custom IDs should be unique. Avoid starting them with 'lucide-' unless you intend to override a built-in Obsidian icon." }).style.cssText = "font-size:0.8em; color:var(--text-accent); margin-bottom:15px; font-style:italic;";
+    iconDesc.setCssStyles({ fontSize: "0.85em", color: "var(--text-muted)", marginBottom: "20px", lineHeight: "1.4" });
+    const tip = customIconCard.createEl("div", { text: "Pro Tip: Custom IDs should be unique. Avoid starting them with 'lucide-' unless you intend to override a built-in Obsidian icon." });
+    tip.setCssStyles({ fontSize: "0.8em", color: "var(--text-accent)", marginBottom: "15px", fontStyle: "italic" });
     const manualWrap = customIconCard.createDiv();
-    Object.assign(manualWrap.style, {
+    manualWrap.setCssStyles({
       padding: "16px",
       background: "var(--background-secondary-alt)",
       borderRadius: "10px",
       border: "1px solid var(--background-modifier-border)",
       marginBottom: "20px"
     });
-    manualWrap.createEl("div", { text: "Add Single Icon" }).style.cssText = "font-weight:700;margin-bottom:10px;font-size:0.9em";
+    const manualTitle = manualWrap.createEl("div", { text: "Add single icon" });
+    manualTitle.setCssStyles({ fontWeight: "700", marginBottom: "10px", fontSize: "0.9em" });
     const manualRow = manualWrap.createDiv();
-    Object.assign(manualRow.style, { display: "flex", gap: "8px", flexWrap: "wrap" });
+    manualRow.setCssStyles({ display: "flex", gap: "8px", flexWrap: "wrap" });
     const idInp = manualRow.createEl("input", { placeholder: "Icon ID (e.g. cloud-logo)" });
-    const svgInp = manualRow.createEl("input", { placeholder: "SVG Code (<svg...)" });
-    idInp.style.flex = "1";
-    svgInp.style.flex = "3";
-    const addBtn = manualRow.createEl("button", { text: "Add Icon", cls: "mod-cta" });
+    const svgInp = manualRow.createEl("input", { placeholder: "SVG code (<svg...)" });
+    idInp.setCssStyles({ flex: "1" });
+    svgInp.setCssStyles({ flex: "3" });
+    const addBtn = manualRow.createEl("button", { text: "Add icon", cls: "mod-cta" });
     addBtn.onclick = async () => {
       const id = idInp.value.trim();
       const svg = svgInp.value.trim();
@@ -1795,7 +1935,7 @@ var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
     new obsidian4.Setting(customIconCard).setName("Bulk Import from URL").setDesc("Enter a URL to a JSON icon pack { 'id': '<svg...>' }").addText((text) => {
       text.setPlaceholder("https://example.com/icons.json");
       const impBtn = customIconCard.createEl("button", { text: "Import" });
-      Object.assign(impBtn.style, { marginLeft: "8px" });
+      impBtn.setCssStyles({ marginLeft: "8px" });
       impBtn.onclick = async () => {
         const url = text.getValue().trim();
         if (!url)
@@ -1827,23 +1967,25 @@ var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
         gap: "20px"
       });
       const content = row.createDiv();
-      Object.assign(content.style, { flex: "1" });
-      content.createEl("div", { text: p.name }).style.fontWeight = "600";
-      content.createEl("div", { text: p.desc }).style.fontSize = "0.8em";
-      const link = content.createEl("a", { text: "View Source", href: p.url });
-      Object.assign(link.style, {
+      content.setCssStyles({ flex: "1" });
+      const pName = content.createEl("div", { text: p.name });
+      pName.setCssStyles({ fontWeight: "600" });
+      const pDesc = content.createEl("div", { text: p.desc });
+      pDesc.setCssStyles({ fontSize: "0.8em" });
+      const link = content.createEl("a", { text: "View source", href: p.url });
+      link.setCssStyles({
         fontSize: "0.7em",
         color: "var(--text-accent)",
         marginTop: "4px",
         display: "inline-block"
       });
       const btnGroup = row.createDiv();
-      Object.assign(btnGroup.style, { display: "flex", gap: "8px" });
+      btnGroup.setCssStyles({ display: "flex", gap: "8px" });
       const downloadBtn = btnGroup.createEl("button", { text: "Download" });
-      Object.assign(downloadBtn.style, { minWidth: "80px" });
+      downloadBtn.setCssStyles({ minWidth: "80px" });
       downloadBtn.onclick = () => this.importUrl(p.url);
       const removeBtn = btnGroup.createEl("button", { text: "Remove" });
-      Object.assign(removeBtn.style, { minWidth: "80px", color: "var(--text-error)" });
+      removeBtn.setCssStyles({ minWidth: "80px", color: "var(--text-error)" });
       removeBtn.onclick = async () => {
         const prefix = p.prefix + "-";
         let count = 0;
@@ -1863,15 +2005,19 @@ var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
     const lib = libCard.createDiv("cf-icon-grid");
     const customIconList = Object.entries(this.plugin.settings.customIcons);
     if (customIconList.length === 0) {
-      libCard.createEl("div", { text: "No custom icons found." }).style.cssText = "color:var(--text-muted);font-style:italic;padding:10px";
+      const emptyMsg = libCard.createEl("div", { text: "No custom icons found." });
+      emptyMsg.setCssStyles({ color: "var(--text-muted)", fontStyle: "italic", padding: "10px" });
     } else {
       customIconList.forEach(([id, svg]) => {
         const item = lib.createDiv("cf-icon-item");
         item.setAttribute("aria-label", id);
-        item.innerHTML = svg;
-        const sv = item.querySelector("svg");
-        if (sv)
-          Object.assign(sv.style, { width: "24px", height: "24px" });
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(svg, "image/svg+xml");
+        const svgEl = doc.querySelector("svg");
+        if (svgEl) {
+          svgEl.setCssStyles({ width: "24px", height: "24px" });
+          item.appendChild(this.containerEl.ownerDocument.importNode(svgEl, true));
+        }
         const del = item.createEl("button", { text: "\xD7", cls: "cf-btn-remove" });
         del.onclick = async (e) => {
           e.stopPropagation();
@@ -1887,28 +2033,29 @@ var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
       new obsidian4.Notice("All custom icons re-registered.");
     }));
     new obsidian4.Setting(maintCard).setName("Clear Icon Library").setDesc("Permanently deletes all imported icon packs.").addButton((btn) => btn.setButtonText("Clear Icon Library").setWarning().onClick(async () => {
-      if (confirm("Are you sure you want to delete ALL custom icons?")) {
+      new ConfirmModal(this.app, "Clear icon library", "Are you sure you want to delete ALL custom icons?", async () => {
         this.plugin.settings.customIcons = {};
         this.plugin.registerCustomIcons();
         await this.plugin.saveSettings();
         this.plugin.generateStyles();
         new obsidian4.Notice("Icon library cleared.");
         this.display();
-      }
+      }).open();
     }));
     const manImportCard = makeCard(iconPanel, "\u{1F4E5}", "Manual Icon Pack Import");
     const packDesc = manImportCard.createEl("p", { text: "You can manually paste the JSON content of an icon pack below to import it." });
-    packDesc.style.fontSize = "0.85em";
-    packDesc.style.color = "var(--text-muted)";
+    packDesc.setCssStyles({ fontSize: "0.85em", color: "var(--text-muted)" });
     let manualJson = "";
     new obsidian4.Setting(manImportCard).setName("Icon Pack JSON").addTextArea((text) => {
       text.setPlaceholder('{"prefix": "my-icons", "icons": {...}}').onChange((value) => {
         manualJson = value;
       });
-      text.inputEl.style.width = "100%";
-      text.inputEl.style.height = "150px";
-      text.inputEl.style.fontFamily = "var(--font-monospace)";
-      text.inputEl.style.background = "var(--background-secondary)";
+      text.inputEl.setCssStyles({
+        width: "100%",
+        height: "150px",
+        fontFamily: "var(--font-monospace)",
+        background: "var(--background-secondary)"
+      });
     });
     new obsidian4.Setting(manImportCard).addButton((btn) => btn.setButtonText("Import Manual JSON").setCta().onClick(async () => {
       if (!manualJson.trim())
@@ -1925,13 +2072,14 @@ var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
     }));
     const containerEl = generalPanel;
     const infoBlock = generalPanel.createDiv("cf-info-block");
-    infoBlock.innerHTML = `
-            <div class="cf-info-icon">\u{1F4A1}</div>
-            <div class="cf-info-content">
-                <h4>Context Menu Overrides</h4>
-                <p>Right-click any folder or file in the explorer and click <strong>"Set Custom Style"</strong> to assign specific unique colors or icons!</p>
-            </div>
-        `;
+    const infoIcon = infoBlock.createDiv("cf-info-icon");
+    infoIcon.setText("\u{1F4A1}");
+    const infoContent = infoBlock.createDiv("cf-info-content");
+    const infoTitle = infoContent.createEl("h4", { text: "Context menu overrides" });
+    const infoText = infoContent.createEl("p");
+    infoText.appendText("Right-click any folder or file in the explorer and click ");
+    infoText.createEl("strong", { text: '"Set custom style"' });
+    infoText.appendText(" to assign specific unique colors or icons!");
     const genCard = makeCard(generalPanel, "\u{1F3A8}", "Global Visual Palette");
     new obsidian4.Setting(genCard).setName("Color Palette Theme").setDesc('Select a curated color scheme for your vault. Choose "Custom" to enter your own hex codes below.').addDropdown((drop) => drop.addOption("Vibrant Rainbow", "Vibrant Rainbow").addOption("Muted Dark Mode", "Muted Dark Mode").addOption("Pastel Dreams", "Pastel Dreams").addOption("Neon Cyberpunk", "Neon Cyberpunk").addOption("Custom", "Custom Palette").setValue(this.plugin.settings.palette).onChange(async (value) => {
       this.plugin.settings.palette = value;
@@ -2023,8 +2171,8 @@ var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
         await this.plugin.saveSettings();
         this.plugin.generateStyles();
       }));
-      const rulesDesc = autoCard.createEl("div");
-      Object.assign(rulesDesc.style, {
+      const rulesDesc = autoCard.createDiv();
+      rulesDesc.setCssStyles({
         fontSize: "0.8em",
         color: "var(--text-muted)",
         marginBottom: "12px",
@@ -2034,19 +2182,25 @@ var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
         borderLeft: "3px solid var(--interactive-accent)",
         lineHeight: "1.4"
       });
-      rulesDesc.innerHTML = `
-                <strong>How to use Priority Rules:</strong><br>
-                Define rules to automatically assign icons based on folder/file names.<br><br>
-                <strong>Simplified Format:</strong> <code>Pattern = IconID @Priority</code><br>
-                <strong>Example:</strong> <code>Projects = rocket @200</code><br>
-                <strong>Example:</strong> <code>Journal = \u{1F4C5} @150</code>
-            `;
+      const rulesTitle = rulesDesc.createEl("strong", { text: "How to use priority rules:" });
+      rulesDesc.createEl("br");
+      rulesDesc.appendText("Define rules to automatically assign icons based on folder/file names.");
+      rulesDesc.createEl("br");
+      rulesDesc.createEl("br");
+      rulesDesc.createEl("strong", { text: "Simplified format: " });
+      rulesDesc.createEl("code", { text: "Pattern = IconID @Priority" });
+      rulesDesc.createEl("br");
+      rulesDesc.createEl("strong", { text: "Example: " });
+      rulesDesc.createEl("code", { text: "Projects = rocket @200" });
+      rulesDesc.createEl("br");
+      rulesDesc.createEl("strong", { text: "Example: " });
+      rulesDesc.createEl("code", { text: "Journal = \u{1F4C5} @150" });
       new obsidian4.Setting(autoCard).setName("Priority Rules").setDesc("Customize matching logic with simple patterns.").addTextArea((text) => {
         text.setPlaceholder("Work = briefcase @200\nDaily = \u{1F4C5} @150").setValue(this.plugin.settings.customIconRules || "").onChange(async (value) => {
           this.plugin.settings.customIconRules = value;
           await this.plugin.saveSettings();
         });
-        Object.assign(text.inputEl.style, {
+        text.inputEl.setCssStyles({
           width: "100%",
           height: "120px",
           background: "var(--background-secondary)",
@@ -2149,29 +2303,30 @@ var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
       this.display();
     }));
     new obsidian4.Setting(dbCard).setName("Reset Styles & Presets").setDesc("DANGER: This will permanently remove all custom colors, icons, and individual folder styles. Presets are also cleared.").addButton((btn) => btn.setButtonText("Reset Styling").setWarning().onClick(async () => {
-      if (confirm("Are you sure you want to delete all custom styling and presets? This cannot be undone.")) {
+      new ConfirmModal(this.app, "Reset styles & presets", "Are you sure you want to delete all custom styling and presets? This cannot be undone.", async () => {
         this.plugin.settings.customFolderColors = {};
         this.plugin.settings.presets = {};
         await this.plugin.saveSettings();
         this.plugin.generateStyles();
         new obsidian4.Notice("Styles and presets have been reset.");
         this.display();
-      }
+      }).open();
     }));
     new obsidian4.Setting(dbCard).setName("Factory Reset").setDesc("CRITICAL: This will reset EVERY setting in the plugin to its original default state, including opacities, toggles, and all custom data.").addButton((btn) => btn.setButtonText("Hard Reset Everything").setWarning().onClick(async () => {
-      if (confirm("Are you sure you want to restore all settings to default? This will wipe ALL your customization!")) {
+      new ConfirmModal(this.app, "Factory reset", "Are you sure you want to restore all settings to default? This will wipe ALL your customization!", async () => {
         this.plugin.settings = Object.assign({}, DEFAULT_SETTINGS);
         await this.plugin.saveSettings();
         this.plugin.generateStyles();
         this.plugin.dividerManager.syncDividers();
         new obsidian4.Notice("All settings have been restored to defaults.");
         this.display();
-      }
+      }).open();
     }));
   }
   async processIconData(data) {
     let count = 0;
-    if (data.icons && (data.prefix || data.info)) {
+    const icons = data.icons;
+    if (icons && (data.prefix || data.info)) {
       const prefix = data.prefix || "cf";
       const commonW = data.width || 24;
       const commonH = data.height || 24;
@@ -2188,14 +2343,15 @@ var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
         this.plugin.settings.customIcons[id] = svg;
         return true;
       };
-      for (const [name, iconData] of Object.entries(data.icons)) {
+      for (const [name, iconData] of Object.entries(icons)) {
         if (processIcon(name, iconData))
           count++;
       }
-      if (data.aliases) {
-        for (const [aliasName, aliasData] of Object.entries(data.aliases)) {
+      const aliases = data.aliases;
+      if (aliases) {
+        for (const [aliasName, aliasData] of Object.entries(aliases)) {
           const targetName = aliasData.parent;
-          const targetData = data.icons[targetName];
+          const targetData = icons[targetName];
           if (targetData) {
             const merged = { ...targetData, ...aliasData };
             if (processIcon(aliasName, merged))
@@ -2219,8 +2375,8 @@ var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
     if (!url)
       return;
     try {
-      const res = await fetch(url);
-      const data = await res.json();
+      const res = await obsidian4.requestUrl({ url });
+      const data = res.json;
       const count = await this.processIconData(data);
       new obsidian4.Notice(`Successfully imported ${count} icons!`);
       this.display();
@@ -2235,6 +2391,10 @@ var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
 var obsidian5 = __toESM(require("obsidian"));
 var StyleGenerator = class {
   constructor(plugin) {
+    __publicField(this, "plugin");
+    __publicField(this, "settings");
+    __publicField(this, "app");
+    __publicField(this, "iconCache");
     this.plugin = plugin;
     this.settings = plugin.settings;
     this.app = plugin.app;
@@ -2486,9 +2646,6 @@ var StyleGenerator = class {
                             border-radius: 4px;
                         }
                     `;
-          let isEmoji = false;
-          let autoIconContent = "";
-          let autoLucideId = null;
           if (iconId) {
             const isCustomEmoji = !((_a = obsidian5.getIconIds) == null ? void 0 : _a().includes(`lucide-${iconId}`)) && !((_b = obsidian5.getIconIds) == null ? void 0 : _b().includes(iconId)) && !(this.settings.customIcons && this.settings.customIcons[iconId]);
             if (isCustomEmoji) {
@@ -2968,7 +3125,7 @@ var StyleGenerator = class {
         validIndex++;
       }
     };
-    if (this.settings.showFileDivider || Object.values(this.settings.customFolderColors).some((v) => v.hasDivider)) {
+    if (this.settings.showFileDivider || Object.values(this.settings.customFolderColors).some((v) => typeof v === "object" && v !== null && v.hasDivider)) {
       const spacing = this.settings.dividerSpacing || 16;
       const dividerHeight = spacing * 2 + 20;
       css += `
@@ -3097,17 +3254,20 @@ var StyleGenerator = class {
 var obsidian6 = __toESM(require("obsidian"));
 var DividerManager = class {
   constructor(plugin) {
+    __publicField(this, "plugin");
+    __publicField(this, "app");
     this.plugin = plugin;
     this.app = plugin.app;
   }
   // ─── Divider Node Factory ───────────────────────────────────────────
   buildDividerNode(path, conf) {
+    var _a;
     const dividerThickness = this.plugin.settings.dividerThickness || 1.5;
     const globalLineStyle = this.plugin.settings.dividerLineStyle || "solid";
     const div = activeDocument.createElement("div");
     div.className = "cf-interactive-divider";
     div.dataset.dividerTarget = path;
-    const name = conf.dividerText || "SECTION";
+    const name = conf.dividerText || "Section";
     const color = conf.dividerColor || "var(--interactive-accent)";
     const isUpper = conf.dividerUpper !== false;
     const alignment = conf.dividerAlignment || "center";
@@ -3146,13 +3306,21 @@ var DividerManager = class {
     if (alignment === "center" || alignment === "right")
       makeLine("left");
     const chip = bridge.createDiv({ cls: "cf-divider-chip" });
-    chip.setCssStyles({ color });
+    chip.setCssProps({
+      "--cf-divider-color": color,
+      "--cf-divider-font-size": isUpper ? "10px" : "12px",
+      "--cf-divider-text-transform": isUpper ? "uppercase" : "none",
+      "--cf-divider-letter-spacing": isUpper ? "1px" : "normal"
+    });
     if (this.plugin.settings.dividerPillMode !== false) {
+      chip.setCssStyles({
+        padding: "2px 10px",
+        borderRadius: "10px"
+      });
       if (useGlass) {
         chip.setCssStyles({
           backgroundColor: "rgba(var(--mono-rgb-100), 0.04)",
-          backdropFilter: "blur(16px)",
-          webkitBackdropFilter: "blur(16px)"
+          backdropFilter: "blur(16px)"
         });
       } else {
         chip.setCssStyles({ backgroundColor: "var(--background-secondary-alt)" });
@@ -3161,15 +3329,13 @@ var DividerManager = class {
       chip.setCssStyles({
         backgroundColor: "transparent",
         backdropFilter: "none",
-        webkitBackdropFilter: "none"
+        padding: "0"
       });
     }
-    if (!isUpper)
-      chip.setCssStyles({ textTransform: "none" });
-    let labelText = name;
+    let labelText = isUpper ? name.toUpperCase() : name;
     const rawIcon = conf.dividerIcon ? conf.dividerIcon.trim() : "";
     if (rawIcon) {
-      const iconIds = obsidian6.getIconIds ? obsidian6.getIconIds() : [];
+      const iconIds = ((_a = obsidian6.getIconIds) == null ? void 0 : _a()) || [];
       const isLucide = iconIds.includes(`lucide-${rawIcon}`) || iconIds.includes(rawIcon);
       if (isLucide) {
         const iconWrap = chip.createSpan({ cls: "cf-divider-icon" });
@@ -3187,26 +3353,26 @@ var DividerManager = class {
         labelText = `${rawIcon} ${name}`;
       }
     }
-    chip.createSpan({ text: labelText });
+    chip.createSpan({ text: labelText, cls: "cf-divider-label" });
     if (alignment === "center" || alignment === "left")
       makeLine("right");
     div.oncontextmenu = (e) => {
       e.preventDefault();
       const menu = new obsidian6.Menu();
       menu.addItem((item) => {
-        item.setTitle("Edit Divider").setIcon("settings-2").onClick(() => {
+        item.setTitle("Edit divider").setIcon("settings-2").onClick(() => {
           const file = this.app.vault.getAbstractFileByPath(path);
           if (file)
             new DividerModal(this.app, this.plugin, file).open();
         });
       });
       menu.addItem((item) => {
-        item.setTitle("Remove Divider").setIcon("trash-2").setWarning(true).onClick(async () => {
+        item.setTitle("Remove divider").setIcon("trash-2").setWarning(true).onClick(async () => {
           if (path === "cf-global-files-separator") {
             this.plugin.settings.showFileDivider = false;
           } else {
             const style = this.plugin.settings.customFolderColors[path];
-            if (style) {
+            if (style && typeof style === "object") {
               style.hasDivider = false;
               delete style.dividerText;
               delete style.dividerColor;
@@ -3218,7 +3384,7 @@ var DividerManager = class {
             }
           }
           await this.plugin.saveSettings();
-          await this.plugin.generateStyles();
+          this.plugin.generateStyles();
           this.syncDividers();
         });
       });
@@ -3358,12 +3524,19 @@ var DividerManager = class {
 var ColorfulFoldersPlugin = class extends obsidian7.Plugin {
   constructor() {
     super(...arguments);
-    this.iconCache = /* @__PURE__ */ new Map();
-    this.heatmapCache = null;
-    this.dividerObserver = null;
-    this.styleObserver = null;
-    this.isSyncingDividers = false;
-    this.isScrolling = false;
+    __publicField(this, "settings");
+    __publicField(this, "styleTag");
+    __publicField(this, "uiStyleTag");
+    __publicField(this, "iconCache", /* @__PURE__ */ new Map());
+    __publicField(this, "heatmapCache", null);
+    __publicField(this, "generateStylesDebounced");
+    __publicField(this, "dividerObserver", null);
+    __publicField(this, "styleObserver", null);
+    __publicField(this, "dividerManager");
+    __publicField(this, "isSyncingDividers", false);
+    __publicField(this, "processDividersDebounced");
+    __publicField(this, "isScrolling", false);
+    __publicField(this, "scrollTimeout", null);
   }
   async onload() {
     await this.loadSettings();
@@ -3456,9 +3629,9 @@ var ColorfulFoldersPlugin = class extends obsidian7.Plugin {
         if (!(file instanceof obsidian7.TAbstractFile))
           return;
         const isFolder = file instanceof obsidian7.TFolder;
-        const label = isFolder ? "Folder" : "File";
+        const label = isFolder ? "folder" : "file";
         menu.addItem((item) => {
-          item.setTitle(`Set Custom ${label} Style`).setIcon("palette");
+          item.setTitle(`Set custom ${label} style`).setIcon("palette");
           const submenu = item.setSubmenu ? item.setSubmenu() : item;
           submenu.addItem((sub) => {
             sub.setTitle("Open full settings").setIcon("settings").onClick(() => {
@@ -3493,33 +3666,35 @@ var ColorfulFoldersPlugin = class extends obsidian7.Plugin {
         });
         menu.addSeparator();
         const style = this.settings.customFolderColors[file.path];
-        const hasDivider = style && style.hasDivider;
-        if (hasDivider) {
+        const hasDivider = style && typeof style === "object" && style.hasDivider;
+        if (style && typeof style === "object" && style.hasDivider) {
           menu.addItem((item) => {
-            item.setTitle("Edit Divider").setIcon("settings-2").onClick(() => {
+            item.setTitle("Edit divider").setIcon("settings-2").onClick(() => {
               new DividerModal(this.app, this, file).open();
             });
           });
           menu.addItem((remove) => {
-            remove.setTitle("Remove Divider").setIcon("trash-2").setWarning(true).onClick(async () => {
-              const style2 = this.settings.customFolderColors[file.path];
-              style2.hasDivider = false;
-              delete style2.dividerText;
-              delete style2.dividerColor;
-              delete style2.dividerIcon;
-              delete style2.dividerAlignment;
-              delete style2.dividerLineStyle;
-              delete style2.dividerUpper;
-              delete style2.dividerGlass;
+            remove.setTitle("Remove divider").setIcon("trash-2").setWarning(true).onClick(async () => {
+              const styleObj = this.settings.customFolderColors[file.path];
+              if (styleObj && typeof styleObj === "object") {
+                styleObj.hasDivider = false;
+                delete styleObj.dividerText;
+                delete styleObj.dividerColor;
+                delete styleObj.dividerIcon;
+                delete styleObj.dividerAlignment;
+                delete styleObj.dividerLineStyle;
+                delete styleObj.dividerUpper;
+                delete styleObj.dividerGlass;
+              }
               await this.saveSettings();
-              await this.generateStyles();
+              this.generateStyles();
               this.dividerManager.syncDividers();
               new obsidian7.Notice(`Removed divider for: ${file.name}`);
             });
           });
         } else {
           menu.addItem((item) => {
-            item.setTitle("Add Custom Divider").setIcon("separator-horizontal").onClick(() => {
+            item.setTitle("Add custom divider").setIcon("separator-horizontal").onClick(() => {
               new DividerModal(this.app, this, file).open();
             });
           });
@@ -3558,7 +3733,7 @@ var ColorfulFoldersPlugin = class extends obsidian7.Plugin {
   registerCommands() {
     this.addCommand({
       id: "open-color-picker",
-      name: "Open Color Picker for Current File",
+      name: "Open color picker for current file",
       checkCallback: (checking) => {
         const file = this.app.workspace.getActiveFile();
         if (file) {
@@ -3571,13 +3746,13 @@ var ColorfulFoldersPlugin = class extends obsidian7.Plugin {
     });
     this.addCommand({
       id: "clear-current-style",
-      name: "Clear Style for Current File",
+      name: "Clear style for current file",
       checkCallback: (checking) => {
         const file = this.app.workspace.getActiveFile();
         if (file && this.settings.customFolderColors[file.path]) {
           if (!checking) {
             delete this.settings.customFolderColors[file.path];
-            this.saveSettings();
+            void this.saveSettings();
             new obsidian7.Notice(`Cleared style for ${file.name}`);
           }
           return true;
@@ -3587,7 +3762,7 @@ var ColorfulFoldersPlugin = class extends obsidian7.Plugin {
     });
     this.addCommand({
       id: "add-divider-current",
-      name: "Add/Edit Divider for Current File",
+      name: "Add/edit divider for current file",
       checkCallback: (checking) => {
         const file = this.app.workspace.getActiveFile();
         if (file) {
@@ -3601,7 +3776,7 @@ var ColorfulFoldersPlugin = class extends obsidian7.Plugin {
     });
     this.addCommand({
       id: "remove-divider-current",
-      name: "Remove Divider for Current File",
+      name: "Remove divider for current file",
       checkCallback: (checking) => {
         const file = this.app.workspace.getActiveFile();
         if (file) {
@@ -3609,7 +3784,7 @@ var ColorfulFoldersPlugin = class extends obsidian7.Plugin {
           if (style && style.hasDivider) {
             if (!checking) {
               style.hasDivider = false;
-              this.saveSettings();
+              void this.saveSettings();
               this.generateStyles();
               this.dividerManager.syncDividers();
               new obsidian7.Notice(`Removed divider for ${file.name}`);
@@ -3694,8 +3869,8 @@ var ColorfulFoldersPlugin = class extends obsidian7.Plugin {
       return;
     container.addEventListener("scroll", () => {
       this.isScrolling = true;
-      clearTimeout(this.scrollTimeout);
-      this.scrollTimeout = setTimeout(() => {
+      activeWindow.clearTimeout(this.scrollTimeout);
+      this.scrollTimeout = window.setTimeout(() => {
         this.isScrolling = false;
         this.processDividers();
       }, 100);

@@ -305,3 +305,44 @@
 .cf-icon-item:hover .cf-btn-remove {
     opacity: 1;
 }
+
+/* Interactive Dividers */
+.cf-interactive-divider {
+    padding: 10px 0;
+    cursor: default;
+}
+
+.cf-divider-bridge {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 8px;
+}
+
+.cf-divider-line {
+    flex-grow: 1;
+}
+
+.cf-divider-chip {
+    display: flex !important;
+    align-items: center !important;
+    color: var(--cf-divider-color) !important;
+    font-size: var(--cf-divider-font-size) !important;
+    font-weight: 700 !important;
+    text-transform: var(--cf-divider-text-transform) !important;
+    letter-spacing: var(--cf-divider-letter-spacing) !important;
+    white-space: nowrap !important;
+}
+
+.cf-divider-icon {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.cf-divider-icon svg {
+    width: 14px !important;
+    height: 14px !important;
+    stroke: var(--cf-divider-color) !important;
+    stroke-width: 2.5px !important;
+}

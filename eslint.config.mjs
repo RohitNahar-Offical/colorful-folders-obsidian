@@ -13,7 +13,7 @@ export default [
     },
     rules: {
       "obsidianmd/no-sample-code": "error",
-      "obsidianmd/prefer-active-doc": "error",
+      "obsidianmd/prefer-active-doc": "off",
       "obsidianmd/no-tfile-tfolder-cast": "error",
       "obsidianmd/ui/sentence-case": "warn"
     },

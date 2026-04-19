@@ -4,7 +4,7 @@
     "inlineSourceMap": true,
     "inlineSources": true,
     "module": "ESNext",
-    "target": "ES6",
+    "target": "ESNext",
     "allowJs": true,
     "noImplicitAny": false,
     "moduleResolution": "node",
@@ -13,10 +13,14 @@
     "strictNullChecks": false,
     "lib": [
       "DOM",
-      "ES5",
-      "ES6",
-      "ES7"
-    ]
+      "ESNext"
+    ],
+    "types": [
+      "node",
+      "obsidian"
+    ],
+    "skipLibCheck": true,
+    "esModuleInterop": true
   },
   "include": [
     "**/*.ts"
