@@ -332,6 +332,13 @@
     text-transform: var(--cf-divider-text-transform) !important;
     letter-spacing: var(--cf-divider-letter-spacing) !important;
     white-space: nowrap !important;
+    gap: 6px !important;
+}
+
+.cf-divider-emoji-icon {
+    display: flex !important;
+    align-items: center !important;
+    font-size: 1.2em !important;
 }
 
 .cf-divider-icon {

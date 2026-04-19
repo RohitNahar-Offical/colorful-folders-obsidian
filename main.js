@@ -146,7 +146,8 @@ var DEFAULT_SETTINGS = {
   dividerSpacing: 16,
   dividerLineStyle: "solid",
   separatorColor: "var(--text-muted)",
-  dividerPillMode: true
+  dividerPillMode: true,
+  dividerIconPosition: "left"
 };
 var AUTO_ICON_CATEGORIES = [
   // --- Core categories ---
@@ -1529,7 +1530,8 @@ var DividerModal = class extends obsidian3.Modal {
       lineStyle: existingStyle.dividerLineStyle || "global",
       icon: existingStyle.dividerIcon || "",
       isUpper: existingStyle.dividerUpper !== void 0 ? existingStyle.dividerUpper : true,
-      useGlass: existingStyle.dividerGlass !== void 0 ? existingStyle.dividerGlass : true
+      useGlass: existingStyle.dividerGlass !== void 0 ? existingStyle.dividerGlass : true,
+      iconPosition: existingStyle.dividerIconPosition || "left"
     };
   }
   onOpen() {
@@ -1672,6 +1674,10 @@ var DividerModal = class extends obsidian3.Modal {
         };
       }
     });
+    new obsidian3.Setting(designSect).setName("Icon position").addDropdown((d) => d.addOption("left", "Left").addOption("right", "Right").addOption("both", "Both").setValue(this.config.iconPosition).onChange((v) => {
+      this.config.iconPosition = v;
+      this._liveSync();
+    }));
     new obsidian3.Setting(designSect).setName("Line style").addDropdown((d) => d.addOption("global", "Global default").addOption("solid", "Solid").addOption("dashed", "Dashed").addOption("dotted", "Dotted").addOption("none", "None").setValue(this.config.lineStyle).onChange((v) => {
       this.config.lineStyle = v;
       this._liveSync();
@@ -1721,6 +1727,7 @@ var DividerModal = class extends obsidian3.Modal {
       delete styleObj.dividerLineStyle;
       delete styleObj.dividerUpper;
       delete styleObj.dividerGlass;
+      delete styleObj.dividerIconPosition;
       this.plugin.settings.customFolderColors[this.path] = styleObj;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
@@ -1749,6 +1756,7 @@ var DividerModal = class extends obsidian3.Modal {
       styleObj.dividerUpper = this.config.isUpper;
       styleObj.dividerGlass = this.config.useGlass;
       styleObj.dividerIcon = this.config.icon;
+      styleObj.dividerIconPosition = this.config.iconPosition;
       styleObj.hasDivider = true;
       this.plugin.settings.customFolderColors[this.path] = styleObj;
       await this.plugin.saveSettings();
@@ -1768,6 +1776,7 @@ var DividerModal = class extends obsidian3.Modal {
       dividerUpper: this.config.isUpper,
       dividerGlass: this.config.useGlass,
       dividerIcon: this.config.icon,
+      dividerIconPosition: this.config.iconPosition,
       hasDivider: true
     };
     this.plugin.settings.customFolderColors[this.path] = tempStyle;
@@ -3198,6 +3207,7 @@ var StyleGenerator = class {
                     border-radius: 40px !important;
                     width: fit-content !important;
                     max-width: 85% !important;
+                    gap: 6px !important;
                     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
                     ${this.settings.dividerPillMode ? `
                         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -3208,6 +3218,12 @@ var StyleGenerator = class {
                         background: transparent !important;
                     `}
                     z-index: 6 !important;
+                }
+
+                .cf-divider-emoji-icon {
+                    display: flex !important;
+                    align-items: center !important;
+                    font-size: 1.2em !important;
                 }
                 
                 .cf-interactive-divider.is-collapsed .cf-divider-chip {
@@ -3284,6 +3300,7 @@ var DividerManager = class {
     const alignment = conf.dividerAlignment || "center";
     const useGlass = conf.dividerGlass !== void 0 ? conf.dividerGlass : this.plugin.settings.glassmorphism;
     const lineStyle = conf.dividerLineStyle && conf.dividerLineStyle !== "global" ? conf.dividerLineStyle : globalLineStyle;
+    const iconPosition = conf.dividerIconPosition || "left";
     const bridge = div.createDiv({ cls: "cf-divider-bridge" });
     bridge.setCssStyles({
       display: "flex",
@@ -3344,11 +3361,12 @@ var DividerManager = class {
         padding: "0"
       });
     }
-    let labelText = isUpper ? name.toUpperCase() : name;
     const rawIcon = conf.dividerIcon ? conf.dividerIcon.trim() : "";
-    if (rawIcon) {
-      const iconIds = ((_a = obsidian6.getIconIds) == null ? void 0 : _a()) || [];
-      const isLucide = iconIds.includes(`lucide-${rawIcon}`) || iconIds.includes(rawIcon);
+    const iconIds = ((_a = obsidian6.getIconIds) == null ? void 0 : _a()) || [];
+    const isLucide = iconIds.includes(`lucide-${rawIcon}`) || iconIds.includes(rawIcon);
+    const addIcon2 = () => {
+      if (!rawIcon)
+        return;
       if (isLucide) {
         const iconWrap = chip.createSpan({ cls: "cf-divider-icon" });
         obsidian6.setIcon(iconWrap, rawIcon);
@@ -3362,10 +3380,16 @@ var DividerManager = class {
           });
         }
       } else {
-        labelText = `${rawIcon} ${name}`;
+        chip.createSpan({ text: rawIcon, cls: "cf-divider-emoji-icon" });
       }
+    };
+    if (iconPosition === "left" || iconPosition === "both") {
+      addIcon2();
     }
-    chip.createSpan({ text: labelText, cls: "cf-divider-label" });
+    chip.createSpan({ text: isUpper ? name.toUpperCase() : name, cls: "cf-divider-label" });
+    if (iconPosition === "right" || iconPosition === "both") {
+      addIcon2();
+    }
     if (alignment === "center" || alignment === "left")
       makeLine("right");
     div.oncontextmenu = (e) => {

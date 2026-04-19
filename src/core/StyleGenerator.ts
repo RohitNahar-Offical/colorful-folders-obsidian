@@ -881,6 +881,7 @@ export class StyleGenerator {
                     border-radius: 40px !important;
                     width: fit-content !important;
                     max-width: 85% !important;
+                    gap: 6px !important;
                     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
                     ${this.settings.dividerPillMode ? `
                         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -891,6 +892,12 @@ export class StyleGenerator {
                         background: transparent !important;
                     `}
                     z-index: 6 !important;
+                }
+
+                .cf-divider-emoji-icon {
+                    display: flex !important;
+                    align-items: center !important;
+                    font-size: 1.2em !important;
                 }
                 
                 .cf-interactive-divider.is-collapsed .cf-divider-chip {

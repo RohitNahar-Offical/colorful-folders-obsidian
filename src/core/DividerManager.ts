@@ -37,6 +37,7 @@ export class DividerManager {
         const lineStyle = conf.dividerLineStyle && conf.dividerLineStyle !== 'global'
             ? conf.dividerLineStyle
             : globalLineStyle;
+        const iconPosition = conf.dividerIconPosition || 'left';
 
         // ── Bridge (flex row: line — chip — line) ───────────────────────
         const bridge = div.createDiv({ cls: 'cf-divider-bridge' });
@@ -107,11 +108,12 @@ export class DividerManager {
         }
 
         // Icon (Lucide or emoji)
-        let labelText = isUpper ? name.toUpperCase() : name;
         const rawIcon = conf.dividerIcon ? conf.dividerIcon.trim() : '';
-        if (rawIcon) {
-            const iconIds: string[] = (obsidian as { getIconIds?: () => string[] }).getIconIds?.() || [];
-            const isLucide = iconIds.includes(`lucide-${rawIcon}`) || iconIds.includes(rawIcon);
+        const iconIds: string[] = (obsidian as { getIconIds?: () => string[] }).getIconIds?.() || [];
+        const isLucide = iconIds.includes(`lucide-${rawIcon}`) || iconIds.includes(rawIcon);
+
+        const addIcon = () => {
+            if (!rawIcon) return;
             if (isLucide) {
                 const iconWrap = chip.createSpan({ cls: 'cf-divider-icon' });
                 obsidian.setIcon(iconWrap, rawIcon);
@@ -125,12 +127,19 @@ export class DividerManager {
                     });
                 }
             } else {
-                // Treat as emoji — prepend to label
-                labelText = `${rawIcon} ${name}`;
+                chip.createSpan({ text: rawIcon, cls: 'cf-divider-emoji-icon' });
             }
+        };
+
+        if (iconPosition === 'left' || iconPosition === 'both') {
+            addIcon();
         }
 
-        chip.createSpan({ text: labelText, cls: 'cf-divider-label' });
+        chip.createSpan({ text: isUpper ? name.toUpperCase() : name, cls: 'cf-divider-label' });
+
+        if (iconPosition === 'right' || iconPosition === 'both') {
+            addIcon();
+        }
 
         if (alignment === 'center' || alignment === 'left') makeLine('right');
 

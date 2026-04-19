@@ -105,6 +105,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     dividerLineStyle: "solid",
     separatorColor: "var(--text-muted)",
     dividerPillMode: true,
+    dividerIconPosition: "left",
 };
 
 export const AUTO_ICON_CATEGORIES: AutoIconData[] = [

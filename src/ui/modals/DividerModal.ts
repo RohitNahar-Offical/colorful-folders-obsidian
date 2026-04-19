@@ -14,6 +14,7 @@ export class DividerModal extends obsidian.Modal {
         icon: string;
         isUpper: boolean;
         useGlass: boolean;
+        iconPosition: 'left' | 'right' | 'both';
     };
     originalStyle: FolderStyle | string | undefined;
     isSaved = false;
@@ -45,7 +46,8 @@ export class DividerModal extends obsidian.Modal {
             lineStyle: existingStyle.dividerLineStyle || "global",
             icon: existingStyle.dividerIcon || "",
             isUpper: existingStyle.dividerUpper !== undefined ? existingStyle.dividerUpper : true,
-            useGlass: existingStyle.dividerGlass !== undefined ? existingStyle.dividerGlass : true
+            useGlass: existingStyle.dividerGlass !== undefined ? existingStyle.dividerGlass : true,
+            iconPosition: existingStyle.dividerIconPosition || "left"
         };
     }
 
@@ -201,6 +203,18 @@ export class DividerModal extends obsidian.Modal {
             });
 
         new obsidian.Setting(designSect)
+            .setName("Icon position")
+            .addDropdown(d => d
+                .addOption("left", "Left")
+                .addOption("right", "Right")
+                .addOption("both", "Both")
+                .setValue(this.config.iconPosition)
+                .onChange(v => {
+                    this.config.iconPosition = v as 'left' | 'right' | 'both';
+                    this._liveSync();
+                }));
+
+        new obsidian.Setting(designSect)
             .setName("Line style")
             .addDropdown(d => d
                 .addOption("global", "Global default")
@@ -254,6 +268,7 @@ export class DividerModal extends obsidian.Modal {
             delete styleObj.dividerLineStyle;
             delete styleObj.dividerUpper;
             delete styleObj.dividerGlass;
+            delete styleObj.dividerIconPosition;
 
             this.plugin.settings.customFolderColors[this.path] = styleObj;
             await this.plugin.saveSettings();
@@ -285,6 +300,7 @@ export class DividerModal extends obsidian.Modal {
             styleObj.dividerUpper = this.config.isUpper;
             styleObj.dividerGlass = this.config.useGlass;
             styleObj.dividerIcon = this.config.icon;
+            styleObj.dividerIconPosition = this.config.iconPosition;
             styleObj.hasDivider = true;
 
             this.plugin.settings.customFolderColors[this.path] = styleObj;
@@ -306,6 +322,7 @@ export class DividerModal extends obsidian.Modal {
             dividerUpper: this.config.isUpper,
             dividerGlass: this.config.useGlass,
             dividerIcon: this.config.icon,
+            dividerIconPosition: this.config.iconPosition,
             hasDivider: true
         };
         this.plugin.settings.customFolderColors[this.path] = tempStyle;

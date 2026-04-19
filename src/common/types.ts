@@ -17,6 +17,7 @@ export interface FolderStyle {
     dividerIcon?: string;
     dividerUpper?: boolean;
     dividerGlass?: boolean;
+    dividerIconPosition?: 'left' | 'right' | 'both';
     hasDivider?: boolean;
 }
 
@@ -61,6 +62,7 @@ export interface ColorfulFoldersSettings {
     dividerLineStyle: string;
     separatorColor: string;
     dividerPillMode: boolean;
+    dividerIconPosition: string;
     cycleOffset: number;
 }
 
