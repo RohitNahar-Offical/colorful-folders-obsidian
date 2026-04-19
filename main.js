@@ -3201,13 +3201,13 @@ var StyleGenerator = class {
                     padding: ${this.settings.dividerPillMode ? "6px 20px" : "2px 6px"} !important;
                     font-size: var(--cf-divider-font-size, 10.5px) !important;
                     font-weight: var(--cf-divider-font-weight, 800) !important;
-                    letter-spacing: var(--cf-divider-letter-spacing, 0.18em) !important;
+                    letter-spacing: var(--cf-divider-letter-spacing, 0.15em) !important;
                     text-transform: var(--cf-divider-text-transform, uppercase) !important;
                     white-space: nowrap !important;
                     border-radius: 40px !important;
                     width: fit-content !important;
                     max-width: 85% !important;
-                    gap: 8px !important;
+                    gap: 0 !important;
                     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
                     ${this.settings.dividerPillMode ? `
                         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -3223,7 +3223,22 @@ var StyleGenerator = class {
                 .cf-divider-emoji-icon {
                     display: flex !important;
                     align-items: center !important;
+                    justify-content: center !important;
+                    width: 24px !important;
                     font-size: 1.2em !important;
+                }
+
+                .cf-divider-icon {
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    width: 24px !important;
+                }
+
+                .cf-divider-label {
+                    display: block !important;
+                    margin: 0 12px !important;
+                    transform: translateX(0.075em) !important;
                 }
                 
                 .cf-interactive-divider.is-collapsed .cf-divider-chip {
@@ -3241,13 +3256,7 @@ var StyleGenerator = class {
                     transform: rotate(-90deg);
                 }
                 
-                .cf-divider-icon {
-                    display: flex !important;
-                    align-items: center !important;
-                    margin-right: 10px !important;
-                    opacity: 0.9 !important;
-                    font-size: 1.2em;
-                }
+
                 
                 .cf-divider-bridge {
                     display: flex !important;
@@ -3339,12 +3348,12 @@ var DividerManager = class {
       "--cf-divider-font-size": isUpper ? "10px" : "12px",
       "--cf-divider-font-weight": isUpper ? "800" : "600",
       "--cf-divider-text-transform": isUpper ? "uppercase" : "none",
-      "--cf-divider-letter-spacing": isUpper ? "1px" : "normal"
+      "--cf-divider-letter-spacing": isUpper ? "0.15em" : "normal"
     });
     if (this.plugin.settings.dividerPillMode !== false) {
       chip.setCssStyles({
-        padding: "2px 10px",
-        borderRadius: "10px"
+        padding: "6px 16px",
+        borderRadius: "40px"
       });
       if (useGlass) {
         chip.setCssStyles({

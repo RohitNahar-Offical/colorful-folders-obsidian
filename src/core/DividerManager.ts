@@ -83,13 +83,13 @@ export class DividerManager {
             '--cf-divider-font-size': isUpper ? '10px' : '12px',
             '--cf-divider-font-weight': isUpper ? '800' : '600',
             '--cf-divider-text-transform': isUpper ? 'uppercase' : 'none',
-            '--cf-divider-letter-spacing': isUpper ? '1px' : 'normal'
+            '--cf-divider-letter-spacing': isUpper ? '0.15em' : 'normal'
         });
 
         if (this.plugin.settings.dividerPillMode !== false) {
             chip.setCssStyles({
-                padding: '2px 10px',
-                borderRadius: '10px'
+                padding: '6px 16px',
+                borderRadius: '40px'
             });
             if (useGlass) {
                 chip.setCssStyles({

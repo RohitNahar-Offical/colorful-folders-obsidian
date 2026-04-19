@@ -332,19 +332,28 @@
     text-transform: var(--cf-divider-text-transform) !important;
     letter-spacing: var(--cf-divider-letter-spacing) !important;
     white-space: nowrap !important;
-    gap: 8px !important;
+    gap: 0 !important;
+}
+
+.cf-divider-label {
+    display: block !important;
+    margin: 0 12px !important;
+    transform: translateX(0.075em) !important;
 }
 
 .cf-divider-emoji-icon {
     display: flex !important;
     align-items: center !important;
     font-size: 1.2em !important;
+    width: 24px !important;
+    justify-content: center !important;
 }
 
 .cf-divider-icon {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    width: 24px !important;
 }
 
 .cf-divider-icon svg {
