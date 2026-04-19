@@ -18,6 +18,7 @@ export interface FolderStyle {
     dividerUpper?: boolean;
     dividerGlass?: boolean;
     dividerIconPosition?: 'left' | 'right' | 'both';
+    dividerPillMode?: 'global' | 'on' | 'off';
     hasDivider?: boolean;
 }
 

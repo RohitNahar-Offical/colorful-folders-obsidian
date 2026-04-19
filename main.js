@@ -1531,7 +1531,8 @@ var DividerModal = class extends obsidian3.Modal {
       icon: existingStyle.dividerIcon || "",
       isUpper: existingStyle.dividerUpper !== void 0 ? existingStyle.dividerUpper : true,
       useGlass: existingStyle.dividerGlass !== void 0 ? existingStyle.dividerGlass : true,
-      iconPosition: existingStyle.dividerIconPosition || "left"
+      iconPosition: existingStyle.dividerIconPosition || "left",
+      pillMode: existingStyle.dividerPillMode === "off" ? "off" : "on"
     };
   }
   onOpen() {
@@ -1678,6 +1679,10 @@ var DividerModal = class extends obsidian3.Modal {
       this.config.iconPosition = v;
       this._liveSync();
     }));
+    new obsidian3.Setting(designSect).setName("Pill mode").setDesc("Force the capsule shape or hide it for this divider.").addDropdown((d) => d.addOption("on", "On").addOption("off", "Off").setValue(this.config.pillMode).onChange((v) => {
+      this.config.pillMode = v;
+      this._liveSync();
+    }));
     new obsidian3.Setting(designSect).setName("Line style").addDropdown((d) => d.addOption("global", "Global default").addOption("solid", "Solid").addOption("dashed", "Dashed").addOption("dotted", "Dotted").addOption("none", "None").setValue(this.config.lineStyle).onChange((v) => {
       this.config.lineStyle = v;
       this._liveSync();
@@ -1757,6 +1762,7 @@ var DividerModal = class extends obsidian3.Modal {
       styleObj.dividerGlass = this.config.useGlass;
       styleObj.dividerIcon = this.config.icon;
       styleObj.dividerIconPosition = this.config.iconPosition;
+      styleObj.dividerPillMode = this.config.pillMode;
       styleObj.hasDivider = true;
       this.plugin.settings.customFolderColors[this.path] = styleObj;
       await this.plugin.saveSettings();
@@ -1777,6 +1783,7 @@ var DividerModal = class extends obsidian3.Modal {
       dividerGlass: this.config.useGlass,
       dividerIcon: this.config.icon,
       dividerIconPosition: this.config.iconPosition,
+      dividerPillMode: this.config.pillMode,
       hasDivider: true
     };
     this.plugin.settings.customFolderColors[this.path] = tempStyle;
@@ -3211,11 +3218,11 @@ var StyleGenerator = class {
                     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
                     ${this.settings.dividerPillMode ? `
                         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-                        border: 1px solid rgba(var(--mono-rgb-100), 0.15) !important;
+                        border: 1px solid rgba(var(--mono-rgb-100), 0.15);
                     ` : `
-                        box-shadow: none !important;
-                        border: none !important;
-                        background: transparent !important;
+                        box-shadow: none;
+                        border: none;
+                        background: transparent;
                     `}
                     z-index: 6 !important;
                 }
@@ -3310,6 +3317,7 @@ var DividerManager = class {
     const useGlass = conf.dividerGlass !== void 0 ? conf.dividerGlass : this.plugin.settings.glassmorphism;
     const lineStyle = conf.dividerLineStyle && conf.dividerLineStyle !== "global" ? conf.dividerLineStyle : globalLineStyle;
     const iconPosition = conf.dividerIconPosition || "left";
+    const pillMode = conf.dividerPillMode ? conf.dividerPillMode === "on" : this.plugin.settings.dividerPillMode !== false;
     const bridge = div.createDiv({ cls: "cf-divider-bridge" });
     bridge.setCssStyles({
       display: "flex",
@@ -3350,7 +3358,7 @@ var DividerManager = class {
       "--cf-divider-text-transform": isUpper ? "uppercase" : "none",
       "--cf-divider-letter-spacing": isUpper ? "0.15em" : "normal"
     });
-    if (this.plugin.settings.dividerPillMode !== false) {
+    if (pillMode) {
       chip.setCssStyles({
         padding: "6px 16px",
         borderRadius: "40px"
@@ -3358,15 +3366,23 @@ var DividerManager = class {
       if (useGlass) {
         chip.setCssStyles({
           backgroundColor: "rgba(var(--mono-rgb-100), 0.04)",
-          backdropFilter: "blur(16px)"
+          backdropFilter: "blur(16px)",
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+          border: "1px solid rgba(var(--mono-rgb-100), 0.15)"
         });
       } else {
-        chip.setCssStyles({ backgroundColor: "var(--background-secondary-alt)" });
+        chip.setCssStyles({
+          backgroundColor: "var(--background-secondary-alt)",
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+          border: "1px solid rgba(var(--mono-rgb-100), 0.15)"
+        });
       }
     } else {
       chip.setCssStyles({
         backgroundColor: "transparent",
         backdropFilter: "none",
+        boxShadow: "none",
+        border: "none",
         padding: "0"
       });
     }

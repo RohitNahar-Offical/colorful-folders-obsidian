@@ -885,11 +885,11 @@ export class StyleGenerator {
                     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
                     ${this.settings.dividerPillMode ? `
                         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-                        border: 1px solid rgba(var(--mono-rgb-100), 0.15) !important;
+                        border: 1px solid rgba(var(--mono-rgb-100), 0.15);
                     ` : `
-                        box-shadow: none !important;
-                        border: none !important;
-                        background: transparent !important;
+                        box-shadow: none;
+                        border: none;
+                        background: transparent;
                     `}
                     z-index: 6 !important;
                 }

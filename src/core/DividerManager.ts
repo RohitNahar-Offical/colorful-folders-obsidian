@@ -38,6 +38,9 @@ export class DividerManager {
             ? conf.dividerLineStyle
             : globalLineStyle;
         const iconPosition = conf.dividerIconPosition || 'left';
+        const pillMode = conf.dividerPillMode 
+            ? (conf.dividerPillMode === 'on') 
+            : (this.plugin.settings.dividerPillMode !== false);
 
         // ── Bridge (flex row: line — chip — line) ───────────────────────
         const bridge = div.createDiv({ cls: 'cf-divider-bridge' });
@@ -86,7 +89,7 @@ export class DividerManager {
             '--cf-divider-letter-spacing': isUpper ? '0.15em' : 'normal'
         });
 
-        if (this.plugin.settings.dividerPillMode !== false) {
+        if (pillMode) {
             chip.setCssStyles({
                 padding: '6px 16px',
                 borderRadius: '40px'
@@ -94,15 +97,23 @@ export class DividerManager {
             if (useGlass) {
                 chip.setCssStyles({
                     backgroundColor: 'rgba(var(--mono-rgb-100), 0.04)',
-                    backdropFilter: 'blur(16px)'
+                    backdropFilter: 'blur(16px)',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                    border: '1px solid rgba(var(--mono-rgb-100), 0.15)'
                 });
             } else {
-                chip.setCssStyles({ backgroundColor: 'var(--background-secondary-alt)' });
+                chip.setCssStyles({ 
+                    backgroundColor: 'var(--background-secondary-alt)',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                    border: '1px solid rgba(var(--mono-rgb-100), 0.15)'
+                });
             }
         } else {
             chip.setCssStyles({
                 backgroundColor: 'transparent',
                 backdropFilter: 'none',
+                boxShadow: 'none',
+                border: 'none',
                 padding: '0'
             });
         }
