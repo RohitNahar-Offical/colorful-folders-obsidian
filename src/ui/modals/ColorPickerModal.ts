@@ -219,7 +219,7 @@ _prevIconSize: number;
             if (this.folderStyle.applyToFiles !== undefined) existing.applyToFiles = this.folderStyle.applyToFiles;
             this.plugin.settings.customFolderColors[path] = existing;
             await this.plugin.saveSettings();
-            await this.plugin.generateStyles();
+            this.plugin.generateStyles();
             this.close();
         };
 
@@ -270,7 +270,7 @@ _prevIconSize: number;
             if (this.folderStyle.applyToFiles !== undefined) existing.applyToFiles = this.folderStyle.applyToFiles;
             this.plugin.settings.customFolderColors[path] = existing;
             await this.plugin.saveSettings();
-            await this.plugin.generateStyles();
+            this.plugin.generateStyles();
             this.close();
         };
 
@@ -337,7 +337,7 @@ _prevIconSize: number;
             if (this.folderStyle.applyToFiles !== undefined) existing.applyToFiles = this.folderStyle.applyToFiles;
             this.plugin.settings.customFolderColors[path] = existing;
             await this.plugin.saveSettings();
-            await this.plugin.generateStyles();
+            this.plugin.generateStyles();
             this.close();
         };
 
@@ -389,7 +389,7 @@ _prevIconSize: number;
 
             this.plugin.settings.customFolderColors[path] = existing;
             await this.plugin.saveSettings();
-            await this.plugin.generateStyles();
+            this.plugin.generateStyles();
             new obsidian.Notice(`Icon updated for ${this.item.name}`);
             this.close();
         };

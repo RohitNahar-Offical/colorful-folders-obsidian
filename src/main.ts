@@ -3,19 +3,15 @@ import {
     ColorfulFoldersSettings, 
     FolderStyle, 
     EffectiveStyle, 
-    AutoIconData,
     IColorfulFoldersPlugin,
     MenuItemWithSubmenu
 } from './common/types';
 import { 
     DEFAULT_SETTINGS, 
-    PALETTES, 
-    CF_FOLDER_CLOSED, 
-    CF_FOLDER_OPEN 
+    PALETTES 
 } from './common/constants';
 import { 
     getAutoIconData, 
-    safeEscape, 
     adjustBrightnessRgb, 
     hexToRgbObj,
     anyToHex,
@@ -120,7 +116,7 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
     }
 
     async loadSettings() {
-        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData() as Partial<ColorfulFoldersSettings>);
     }
 
     async saveSettings() {
@@ -146,7 +142,7 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
                     item.setTitle(`Set custom ${label} style`)
                         .setIcon('palette');
 
-                    const submenu = (item as MenuItemWithSubmenu).setSubmenu ? (item as MenuItemWithSubmenu).setSubmenu() : item;
+                    const submenu = (item as MenuItemWithSubmenu).setSubmenu ? (item as MenuItemWithSubmenu).setSubmenu() : (item as unknown as obsidian.Menu);
 
                     submenu.addItem((sub: obsidian.MenuItem) => {
                         sub.setTitle('Open full settings')
@@ -196,7 +192,6 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
                 
                 menu.addSeparator();
                 const style = this.settings.customFolderColors[file.path];
-                const hasDivider = style && typeof style === 'object' && style.hasDivider;
                 
                 if (style && typeof style === 'object' && style.hasDivider) {
                     menu.addItem((item) => {
@@ -254,7 +249,7 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
             this.heatmapCache = null;
             this.generateStylesDebounced();
         }));
-        this.registerEvent(this.app.vault.on('rename', (file, oldPath) => {
+        this.registerEvent(this.app.vault.on('rename', async (file, oldPath) => {
             this.heatmapCache = null;
             if (this.settings.customFolderColors[oldPath]) {
                 const style = this.settings.customFolderColors[oldPath];
@@ -269,7 +264,7 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
                         delete this.settings.customFolderColors[key];
                     }
                 }
-                this.saveSettings();
+                await this.saveSettings();
             } else {
                 this.generateStylesDebounced();
             }
@@ -414,7 +409,7 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
                 applyToSubfolders: customStyle ? !!customStyle.applyToSubfolders : false,
                 applyToFiles: customStyle ? !!customStyle.applyToFiles : false
             };
-        } catch (e) {
+        } catch {
             return { hex: "#ffffff", textColor: "#000000", iconColor: "#000000", iconId: "", opacity: 1, isBold: true, isItalic: false, applyToSubfolders: false, applyToFiles: false };
         }
     }

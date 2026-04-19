@@ -1,4 +1,4 @@
-import { ColorfulFoldersSettings, AutoIconData, FolderStyle } from './types';
+import { ColorfulFoldersSettings, AutoIconData } from './types';
 import { AUTO_ICON_CATEGORIES } from './constants';
 
 export function hashString(str: string): number {
@@ -19,12 +19,12 @@ export function hsvToRgb(h: number, s: number, v: number) {
     const t = (v / 100) * (1 - (1 - f) * s / 100);
     const vv = v / 100;
     switch (i % 6) {
-        case 0: r = vv, g = t, b = p; break;
-        case 1: r = q, g = vv, b = p; break;
-        case 2: r = p, g = vv, b = t; break;
-        case 3: r = p, g = q, b = vv; break;
-        case 4: r = t, g = p, b = vv; break;
-        case 5: r = vv, g = p, b = q; break;
+        case 0: r = vv; g = t; b = p; break;
+        case 1: r = q; g = vv; b = p; break;
+        case 2: r = p; g = vv; b = t; break;
+        case 3: r = p; g = q; b = vv; break;
+        case 4: r = t; g = p; b = vv; break;
+        case 5: r = vv; g = p; b = q; break;
     }
     return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
 }

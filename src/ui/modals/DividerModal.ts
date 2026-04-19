@@ -110,13 +110,13 @@ export class DividerModal extends obsidian.Modal {
             return c;
         };
 
-        const textSect = addSection("Label & Appearance");
+        const textSect = addSection("Label & appearance");
         
         new obsidian.Setting(textSect)
-            .setName("Label Text")
+            .setName("Label text")
             .setDesc("The display name for this section.")
             .addText(text => text
-                .setPlaceholder("e.g. ASSETS")
+                .setPlaceholder("E.g. Assets")
                 .setValue(this.config.name)
                 .onChange(v => {
                     this.config.name = v;
@@ -124,7 +124,7 @@ export class DividerModal extends obsidian.Modal {
                 }));
 
         new obsidian.Setting(textSect)
-            .setName("Custom Color")
+            .setName("Custom color")
             .setDesc("Pick a color for the label and line.")
             .addText(text => {
                 text.setValue(this.config.color);
@@ -164,13 +164,13 @@ export class DividerModal extends obsidian.Modal {
                     this._liveSync();
                 }));
 
-        const designSect = addSection("Design & Effects");
+        const designSect = addSection("Design & effects");
 
         new obsidian.Setting(designSect)
-            .setName("Divider Icon")
-            .setDesc("ID from Lucide (e.g. briefcase) or any emoji.")
+            .setName("Divider icon")
+            .setDesc("ID from lucide (e.g. Briefcase) or any emoji.")
             .addText(text => {
-                text.setPlaceholder("e.g. briefcase")
+                text.setPlaceholder("E.g. Briefcase")
                     .setValue(this.config.icon)
                     .onChange(v => {
                         this.config.icon = v;
@@ -200,9 +200,9 @@ export class DividerModal extends obsidian.Modal {
             });
 
         new obsidian.Setting(designSect)
-            .setName("Line Style")
+            .setName("Line style")
             .addDropdown(d => d
-                .addOption("global", "Global Default")
+                .addOption("global", "Global default")
                 .addOption("solid", "Solid")
                 .addOption("dashed", "Dashed")
                 .addOption("dotted", "Dotted")
@@ -214,7 +214,7 @@ export class DividerModal extends obsidian.Modal {
                 }));
 
         new obsidian.Setting(designSect)
-            .setName("Modern Glassmorphism")
+            .setName("Modern glassmorphism")
             .setDesc("Use a frosted-glass background for the pill.")
             .addToggle(t => t
                 .setValue(this.config.useGlass)

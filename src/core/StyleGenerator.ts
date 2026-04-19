@@ -27,7 +27,7 @@ export class StyleGenerator {
                 .replace(/\bwidth="[^"]*"/g, 'width="100%"')
                 .replace(/\bheight="[^"]*"/g, 'height="100%"');
             return encodeURIComponent(normalized);
-        } catch (e) {
+        } catch {
             return svgStr;
         }
     }
@@ -184,9 +184,10 @@ export class StyleGenerator {
             `;
         }
 
-        const countCache = new Map();
-        const countItems = (folderItem: obsidian.TFolder) => {
-            if (countCache.has(folderItem.path)) return countCache.get(folderItem.path);
+        const countCache = new Map<string, { files: number, folders: number }>();
+        const countItems = (folderItem: obsidian.TFolder): { files: number, folders: number } => {
+            const cached = countCache.get(folderItem.path);
+            if (cached) return cached;
             let files = 0;
             let folders = 0;
             if (folderItem.children) {
@@ -418,11 +419,8 @@ export class StyleGenerator {
                 const finalTintOp = Math.max(this.settings.tintOpacity, minOp);
                 const bgTint = outlineOnly ? "transparent" : `rgba(${passedColor.rgb}, ${finalTintOp})`;
 
-                let titleAnim = '';
                 if (this.settings.animateActivePath) {
-                    if (animStyle === "breathe") titleAnim = `animation: cf-breathe-glow ${animDur}s infinite ease-in-out;`;
-                    else if (animStyle === "neon") titleAnim = `animation: cf-neon-flicker ${animDur}s infinite alternate;`;
-                    else if (animStyle === "shimmer") titleAnim = `animation: cf-shimmer-glow ${animDur}s infinite linear;`;
+                    // Animation logic handled by animationProp below if needed
                 }
 
                 css += `
@@ -491,7 +489,6 @@ export class StyleGenerator {
                 const safePath = safeEscape(child.path);
 
                 let bg, text;
-                const isCustom = !!activeStyle;
                 const isCustomColor = !!(activeStyle && activeStyle.hex);
                 const op = isCustomColor && activeStyle?.opacity !== undefined ? activeStyle.opacity : (depth === 0 ? rootOp : subOp);
 
@@ -554,7 +551,7 @@ export class StyleGenerator {
                 const autoIcon = this.settings.autoIcons ? getAutoIconData(child.name, this.settings) : null;
                 let isEmoji = false;
                 let autoIconContent = "";
-                let autoLucideId = null;
+                let autoLucideId: string | null = null;
 
                 if (autoIcon) {
                     if (this.settings.wideAutoIcons) {
