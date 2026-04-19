@@ -1,6 +1,7 @@
 import * as obsidian from 'obsidian';
 import { IColorfulFoldersPlugin, FolderStyle } from '../common/types';
 import { DividerModal } from '../ui/modals/DividerModal';
+import { HoverMessageModal } from '../ui/modals/HoverMessageModal';
 import { safeEscape } from '../common/utils';
 
 /**
@@ -169,6 +170,28 @@ export class DividerManager {
             });
 
             menu.addItem((item) => {
+                item.setTitle(conf.dividerDescription ? 'Edit hover message' : 'Add hover message')
+                    .setIcon('message-square')
+                    .onClick(() => {
+                        new HoverMessageModal(this.app, this.plugin, path, conf.dividerDescription || "", async (newDesc) => {
+                            const style = this.plugin.settings.customFolderColors[path];
+                            if (typeof style === 'object') {
+                                style.dividerDescription = newDesc;
+                            } else {
+                                this.plugin.settings.customFolderColors[path] = {
+                                    hex: style || '',
+                                    dividerDescription: newDesc,
+                                    hasDivider: true
+                                };
+                            }
+                            await this.plugin.saveSettings();
+                            this.plugin.generateStyles();
+                            this.syncDividers();
+                        }).open();
+                    });
+            });
+
+            menu.addItem((item) => {
                 item.setTitle('Remove divider')
                     .setIcon('trash-2')
                     .setWarning(true)
@@ -186,6 +209,9 @@ export class DividerManager {
                                 delete style.dividerLineStyle;
                                 delete style.dividerUpper;
                                 delete style.dividerGlass;
+                                delete style.dividerIconPosition;
+                                delete style.dividerPillMode;
+                                delete style.dividerDescription;
                             }
                         }
                         await this.plugin.saveSettings();
@@ -196,6 +222,87 @@ export class DividerManager {
 
             menu.showAtMouseEvent(e);
         };
+
+        // ── Hover Message (Premium Markdown Popover) ──────────────────
+        if (conf.dividerDescription && conf.dividerDescription.trim()) {
+            chip.addClass('cf-has-description');
+            
+            let popover: HTMLElement | null = null;
+            let timeout: number | null = null;
+
+            const showPopover = async () => {
+                if (popover) return;
+                
+                popover = activeDocument.body.createDiv({ cls: 'cf-premium-popover' });
+                const content = popover.createDiv({ cls: 'cf-popover-content' });
+                
+                // Render Markdown
+                await obsidian.MarkdownRenderer.render(
+                    this.plugin.app,
+                    conf.dividerDescription || "",
+                    content,
+                    path,
+                    this.plugin as unknown as obsidian.Component
+                );
+
+                // --- Activate Links & Tags ---
+                content.querySelectorAll('.internal-link').forEach((link: HTMLElement) => {
+                    link.onclick = (e: MouseEvent) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const dest = link.getAttribute('data-href');
+                        if (dest) {
+                            this.app.workspace.openLinkText(dest, path, e.ctrlKey || e.metaKey);
+                            if (popover) { popover.remove(); popover = null; }
+                        }
+                    };
+                });
+
+                content.querySelectorAll('.tag').forEach((tag: HTMLElement) => {
+                    tag.onclick = (e: MouseEvent) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const tagText = tag.innerText;
+                        // Trigger search for the tag
+                        (this.app as any).internalPlugins.getPluginById('global-search').instance.openGlobalSearch(tagText);
+                        if (popover) { popover.remove(); popover = null; }
+                    };
+                });
+
+                // Position popover
+                const rect = chip.getBoundingClientRect();
+                popover.style.left = `${rect.left + rect.width / 2}px`;
+                popover.style.top = `${rect.top - 12}px`; // Increased gap slightly for the bridge
+                
+                // Keep open on popover hover (The Bridge)
+                popover.onmouseenter = () => {
+                    if (timeout) { 
+                        activeWindow.clearTimeout(timeout); 
+                        timeout = null; 
+                    }
+                };
+                popover.onmouseleave = () => hidePopover();
+            };
+
+            const hidePopover = () => {
+                if (timeout) activeWindow.clearTimeout(timeout);
+                timeout = activeWindow.setTimeout(() => {
+                    if (popover) {
+                        popover.remove();
+                        popover = null;
+                    }
+                }, 150); // Slightly longer delay for easier "bridging"
+            };
+
+            chip.onmouseenter = () => {
+                if (timeout) activeWindow.clearTimeout(timeout);
+                timeout = activeWindow.setTimeout(() => {
+                    void showPopover();
+                }, 250); // Faster trigger
+            };
+            
+            chip.onmouseleave = () => hidePopover();
+        }
 
         return div;
     }

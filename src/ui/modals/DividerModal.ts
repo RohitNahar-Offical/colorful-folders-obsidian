@@ -1,6 +1,7 @@
 import * as obsidian from 'obsidian';
 import { FolderStyle, IColorfulFoldersPlugin } from '../../common/types';
 import { IconPickerModal } from './IconPickerModal';
+import { HoverMessageModal } from './HoverMessageModal';
 
 export class DividerModal extends obsidian.Modal {
     plugin: IColorfulFoldersPlugin;
@@ -15,7 +16,8 @@ export class DividerModal extends obsidian.Modal {
         isUpper: boolean;
         useGlass: boolean;
         iconPosition: 'left' | 'right' | 'both';
-        pillMode: 'global' | 'on' | 'off';
+        pillMode: 'on' | 'off';
+        description: string;
     };
     originalStyle: FolderStyle | string | undefined;
     isSaved = false;
@@ -49,7 +51,8 @@ export class DividerModal extends obsidian.Modal {
             isUpper: existingStyle.dividerUpper !== undefined ? existingStyle.dividerUpper : true,
             useGlass: existingStyle.dividerGlass !== undefined ? existingStyle.dividerGlass : true,
             iconPosition: existingStyle.dividerIconPosition || "left",
-            pillMode: existingStyle.dividerPillMode === 'off' ? 'off' : 'on'
+            pillMode: existingStyle.dividerPillMode === 'off' ? 'off' : 'on',
+            description: existingStyle.dividerDescription || ""
         };
     }
 
@@ -169,9 +172,9 @@ export class DividerModal extends obsidian.Modal {
                     this._liveSync();
                 }));
 
-        const designSect = addSection("Design & effects");
+        const iconSect = addSection("Icon settings");
 
-        new obsidian.Setting(designSect)
+        new obsidian.Setting(iconSect)
             .setName("Divider icon")
             .setDesc("ID from lucide (e.g. Briefcase) or any emoji.")
             .addText(text => {
@@ -204,7 +207,7 @@ export class DividerModal extends obsidian.Modal {
                 }
             });
 
-        new obsidian.Setting(designSect)
+        new obsidian.Setting(iconSect)
             .setName("Icon position")
             .addDropdown(d => d
                 .addOption("left", "Left")
@@ -216,7 +219,9 @@ export class DividerModal extends obsidian.Modal {
                     this._liveSync();
                 }));
 
-        new obsidian.Setting(designSect)
+        const styleSect = addSection("Style & shape");
+
+        new obsidian.Setting(styleSect)
             .setName("Pill mode")
             .setDesc("Force the capsule shape or hide it for this divider.")
             .addDropdown(d => d
@@ -228,7 +233,7 @@ export class DividerModal extends obsidian.Modal {
                     this._liveSync();
                 }));
 
-        new obsidian.Setting(designSect)
+        new obsidian.Setting(styleSect)
             .setName("Line style")
             .addDropdown(d => d
                 .addOption("global", "Global default")
@@ -242,7 +247,7 @@ export class DividerModal extends obsidian.Modal {
                     this._liveSync();
                 }));
 
-        new obsidian.Setting(designSect)
+        new obsidian.Setting(styleSect)
             .setName("Modern glassmorphism")
             .setDesc("Use a frosted-glass background for the pill.")
             .addToggle(t => t
@@ -250,6 +255,22 @@ export class DividerModal extends obsidian.Modal {
                 .onChange(v => {
                     this.config.useGlass = v;
                     this._liveSync();
+                }));
+
+        const interactiveSect = addSection("Interactive features");
+
+        new obsidian.Setting(interactiveSect)
+            .setName("Hover message")
+            .setDesc("A premium popover with Markdown support (links, tags, etc).")
+            .addButton(btn => btn
+                .setButtonText(this.config.description ? "Edit Detailed Message" : "Add Hover Message")
+                .setCta()
+                .onClick(() => {
+                    new HoverMessageModal(this.app, this.plugin, this.path, this.config.description, (newVal) => {
+                        this.config.description = newVal;
+                        btn.setButtonText(newVal ? "Edit Detailed Message" : "Add Hover Message");
+                        this._liveSync();
+                    }).open();
                 }));
 
         const footer = contentEl.createDiv({ cls: "cf-modal-footer" });
@@ -316,6 +337,7 @@ export class DividerModal extends obsidian.Modal {
             styleObj.dividerIcon = this.config.icon;
             styleObj.dividerIconPosition = this.config.iconPosition;
             styleObj.dividerPillMode = this.config.pillMode;
+            styleObj.dividerDescription = this.config.description;
             styleObj.hasDivider = true;
 
             this.plugin.settings.customFolderColors[this.path] = styleObj;
@@ -339,6 +361,7 @@ export class DividerModal extends obsidian.Modal {
             dividerIcon: this.config.icon,
             dividerIconPosition: this.config.iconPosition,
             dividerPillMode: this.config.pillMode,
+            dividerDescription: this.config.description,
             hasDivider: true
         };
         this.plugin.settings.customFolderColors[this.path] = tempStyle;

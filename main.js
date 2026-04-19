@@ -42,7 +42,7 @@ __export(main_exports, {
   default: () => ColorfulFoldersPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var obsidian7 = __toESM(require("obsidian"));
+var obsidian8 = __toESM(require("obsidian"));
 
 // src/common/constants.ts
 var CF_FOLDER_CLOSED = encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><path d="M2 10h20"/></svg>');
@@ -1322,7 +1322,7 @@ var ColorPickerModal = class extends obsidian.Modal {
 };
 
 // src/ui/modals/DividerModal.ts
-var obsidian3 = __toESM(require("obsidian"));
+var obsidian4 = __toESM(require("obsidian"));
 
 // src/ui/modals/IconPickerModal.ts
 var obsidian2 = __toESM(require("obsidian"));
@@ -1497,8 +1497,249 @@ var IconPickerModal = class extends obsidian2.Modal {
   }
 };
 
+// src/ui/modals/HoverMessageModal.ts
+var obsidian3 = __toESM(require("obsidian"));
+var HoverMessageModal = class extends obsidian3.Modal {
+  constructor(app, plugin, path, description, onSave) {
+    super(app);
+    __publicField(this, "plugin");
+    __publicField(this, "path");
+    __publicField(this, "description");
+    __publicField(this, "onSave");
+    __publicField(this, "previewEl");
+    // Suggester State
+    __publicField(this, "suggestEl", null);
+    __publicField(this, "suggestItems", []);
+    __publicField(this, "selectedIndex", 0);
+    __publicField(this, "suggestType", null);
+    __publicField(this, "suggestStart", -1);
+    this.plugin = plugin;
+    this.path = path;
+    this.description = description;
+    this.onSave = onSave;
+  }
+  async onOpen() {
+    const { contentEl, modalEl } = this;
+    contentEl.empty();
+    modalEl.setCssStyles({
+      maxWidth: "600px",
+      width: "90vw",
+      borderRadius: "14px",
+      boxShadow: "0 10px 40px rgba(0,0,0,0.4)"
+    });
+    const header = contentEl.createDiv({ cls: "cf-modal-header" });
+    header.setCssStyles({
+      display: "flex",
+      flexDirection: "column",
+      gap: "4px",
+      padding: "24px 24px 16px 24px",
+      borderBottom: "1px solid var(--background-modifier-border)"
+    });
+    header.createEl("h2", { text: "Edit Hover Message", cls: "cf-modal-title" }).setCssStyles({ margin: "0", fontSize: "1.4em" });
+    header.createEl("p", { text: "Add context, links, or tags that appear when you hover over this divider." }).setCssStyles({ margin: "0", opacity: "0.6", fontSize: "0.9em" });
+    const body = contentEl.createDiv();
+    body.setCssStyles({ padding: "20px 24px", display: "flex", flexDirection: "column", gap: "20px" });
+    const editorWrapper = body.createDiv();
+    editorWrapper.createEl("label", { text: "Markdown Editor" }).setCssStyles({ display: "block", marginBottom: "8px", fontWeight: "600", fontSize: "0.85em", textTransform: "uppercase", letterSpacing: "0.05em", opacity: "0.8" });
+    const textArea = editorWrapper.createEl("textarea");
+    textArea.value = this.description;
+    textArea.placeholder = "Write something beautiful... \n\nTips:\n- Use [[links]] to jump to notes\n- Use #tags to categorize\n- Use **bold** or *italic*";
+    textArea.setCssStyles({
+      width: "100%",
+      height: "180px",
+      borderRadius: "8px",
+      padding: "12px",
+      backgroundColor: "var(--background-primary)",
+      border: "1px solid var(--background-modifier-border)",
+      fontSize: "1em",
+      lineHeight: "1.5",
+      resize: "vertical",
+      fontFamily: "var(--font-monospace)"
+    });
+    const previewWrapper = body.createDiv();
+    previewWrapper.createEl("label", { text: "Live Preview" }).setCssStyles({ display: "block", marginBottom: "8px", fontWeight: "600", fontSize: "0.85em", textTransform: "uppercase", letterSpacing: "0.05em", opacity: "0.8" });
+    this.previewEl = previewWrapper.createDiv({ cls: "cf-premium-popover" });
+    this.previewEl.setCssStyles({
+      position: "relative",
+      transform: "none",
+      width: "100%",
+      maxWidth: "none",
+      animation: "none",
+      display: "block",
+      marginBottom: "10px"
+    });
+    const previewContent = this.previewEl.createDiv({ cls: "cf-popover-content" });
+    const updatePreview = async (val) => {
+      previewContent.empty();
+      if (!val.trim()) {
+        previewContent.createEl("i", { text: "No message set. Hover popover will be hidden." }).setCssStyles({ opacity: "0.5" });
+        return;
+      }
+      await obsidian3.MarkdownRenderer.render(this.app, val, previewContent, this.path, this.plugin);
+    };
+    const closeSuggest = () => {
+      if (this.suggestEl) {
+        this.suggestEl.remove();
+        this.suggestEl = null;
+      }
+      this.suggestType = null;
+      this.suggestStart = -1;
+    };
+    const renderSuggest = () => {
+      if (!this.suggestEl) {
+        this.suggestEl = activeDocument.body.createDiv({ cls: "suggestion-container" });
+        const suggestSub = this.suggestEl.createDiv({ cls: "suggestion" });
+        this.suggestItems.forEach((item, index) => {
+          const el = suggestSub.createDiv({ cls: "suggestion-item" + (index === this.selectedIndex ? " is-selected" : "") });
+          el.createDiv({ cls: "suggestion-content", text: item });
+          el.onclick = () => selectItem(index);
+        });
+        const rect = textArea.getBoundingClientRect();
+        this.suggestEl.setCssStyles({
+          position: "fixed",
+          left: `${rect.left + 20}px`,
+          top: `${rect.top + 40}px`,
+          zIndex: "20000"
+        });
+      } else {
+        const suggestSub = this.suggestEl.querySelector(".suggestion");
+        if (suggestSub) {
+          suggestSub.empty();
+          this.suggestItems.forEach((item, index) => {
+            const el = suggestSub.createDiv({ cls: "suggestion-item" + (index === this.selectedIndex ? " is-selected" : "") });
+            el.createDiv({ cls: "suggestion-content", text: item });
+            el.onclick = () => selectItem(index);
+          });
+        }
+      }
+    };
+    const selectItem = (index) => {
+      const item = this.suggestItems[index];
+      const before = textArea.value.substring(0, this.suggestStart);
+      const after = textArea.value.substring(textArea.selectionStart);
+      let inserted = item;
+      if (this.suggestType === "link")
+        inserted = item + "]]";
+      textArea.value = before + inserted + after;
+      textArea.focus();
+      const newPos = before.length + inserted.length;
+      textArea.setSelectionRange(newPos, newPos);
+      this.description = textArea.value;
+      void updatePreview(this.description);
+      closeSuggest();
+    };
+    textArea.onkeydown = (e) => {
+      if (this.suggestType) {
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          this.selectedIndex = (this.selectedIndex + 1) % this.suggestItems.length;
+          renderSuggest();
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          this.selectedIndex = (this.selectedIndex - 1 + this.suggestItems.length) % this.suggestItems.length;
+          renderSuggest();
+        } else if (e.key === "Enter" || e.key === "Tab") {
+          e.preventDefault();
+          selectItem(this.selectedIndex);
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          closeSuggest();
+        }
+      }
+    };
+    textArea.oninput = (e) => {
+      const val = textArea.value;
+      const pos = textArea.selectionStart;
+      this.description = val;
+      void updatePreview(val);
+      const lastTwo = val.substring(pos - 2, pos);
+      const lastOne = val.substring(pos - 1, pos);
+      if (lastTwo === "[[") {
+        this.suggestType = "link";
+        this.suggestStart = pos;
+        this.suggestItems = this.app.vault.getMarkdownFiles().map((f) => f.basename).slice(0, 10);
+        this.selectedIndex = 0;
+        renderSuggest();
+      } else if (lastOne === "#") {
+        this.suggestType = "tag";
+        this.suggestStart = pos;
+        const tags = this.app.metadataCache.getTags();
+        this.suggestItems = Object.keys(tags).map((t) => t.substring(1)).slice(0, 10);
+        this.selectedIndex = 0;
+        renderSuggest();
+      } else if (this.suggestType) {
+        const query = val.substring(this.suggestStart, pos).toLowerCase();
+        if (query.includes(" ") || query.includes("\n")) {
+          closeSuggest();
+        } else {
+          let all = [];
+          if (this.suggestType === "link") {
+            all = this.app.vault.getMarkdownFiles().map((f) => f.basename);
+          } else {
+            const tags = this.app.metadataCache.getTags();
+            all = Object.keys(tags).map((t) => t.substring(1));
+          }
+          this.suggestItems = all.filter((item) => item.toLowerCase().includes(query)).slice(0, 10);
+          if (this.suggestItems.length === 0)
+            closeSuggest();
+          else
+            renderSuggest();
+        }
+      }
+    };
+    textArea.onblur = () => {
+      activeWindow.setTimeout(() => closeSuggest(), 200);
+    };
+    const footer = contentEl.createDiv();
+    footer.setCssStyles({
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "flex-end",
+      gap: "12px",
+      padding: "16px 24px",
+      borderTop: "1px solid var(--background-modifier-border)",
+      background: "var(--background-secondary-alt)",
+      borderBottomLeftRadius: "14px",
+      borderBottomRightRadius: "14px"
+    });
+    const cancelBtn = footer.createEl("button", { text: "Cancel" });
+    cancelBtn.setCssStyles({
+      background: "transparent",
+      border: "none",
+      padding: "8px 16px",
+      cursor: "pointer",
+      opacity: "0.7"
+    });
+    cancelBtn.onclick = () => {
+      closeSuggest();
+      this.close();
+    };
+    const saveBtn = footer.createEl("button", { text: "Save Message" });
+    saveBtn.setCssStyles({
+      backgroundColor: "var(--interactive-accent)",
+      color: "var(--text-on-accent)",
+      padding: "8px 24px",
+      borderRadius: "8px",
+      border: "none",
+      fontWeight: "600",
+      cursor: "pointer"
+    });
+    saveBtn.onclick = () => {
+      this.onSave(this.description);
+      closeSuggest();
+      this.close();
+    };
+    void updatePreview(this.description);
+  }
+  onClose() {
+    if (this.suggestEl) {
+      this.suggestEl.remove();
+    }
+  }
+};
+
 // src/ui/modals/DividerModal.ts
-var DividerModal = class extends obsidian3.Modal {
+var DividerModal = class extends obsidian4.Modal {
   // eslint-disable-next-line obsidianmd/prefer-active-doc
   constructor(app, plugin, item) {
     var _a;
@@ -1532,7 +1773,8 @@ var DividerModal = class extends obsidian3.Modal {
       isUpper: existingStyle.dividerUpper !== void 0 ? existingStyle.dividerUpper : true,
       useGlass: existingStyle.dividerGlass !== void 0 ? existingStyle.dividerGlass : true,
       iconPosition: existingStyle.dividerIconPosition || "left",
-      pillMode: existingStyle.dividerPillMode === "off" ? "off" : "on"
+      pillMode: existingStyle.dividerPillMode === "off" ? "off" : "on",
+      description: existingStyle.dividerDescription || ""
     };
   }
   onOpen() {
@@ -1610,11 +1852,11 @@ var DividerModal = class extends obsidian3.Modal {
       return c;
     };
     const textSect = addSection("Label & appearance");
-    new obsidian3.Setting(textSect).setName("Label text").setDesc("The display name for this section.").addText((text) => text.setPlaceholder("E.g. Assets").setValue(this.config.name).onChange((v) => {
+    new obsidian4.Setting(textSect).setName("Label text").setDesc("The display name for this section.").addText((text) => text.setPlaceholder("E.g. Assets").setValue(this.config.name).onChange((v) => {
       this.config.name = v;
       this._liveSync();
     }));
-    new obsidian3.Setting(textSect).setName("Custom color").setDesc("Pick a color for the label and line.").addText((text) => {
+    new obsidian4.Setting(textSect).setName("Custom color").setDesc("Pick a color for the label and line.").addText((text) => {
       text.setValue(this.config.color);
       const input = text.inputEl;
       input.type = "color";
@@ -1630,16 +1872,16 @@ var DividerModal = class extends obsidian3.Modal {
         this._liveSync();
       };
     });
-    new obsidian3.Setting(textSect).setName("Alignment").addDropdown((d) => d.addOption("left", "Left").addOption("center", "Center").addOption("right", "Right").setValue(this.config.alignment).onChange((v) => {
+    new obsidian4.Setting(textSect).setName("Alignment").addDropdown((d) => d.addOption("left", "Left").addOption("center", "Center").addOption("right", "Right").setValue(this.config.alignment).onChange((v) => {
       this.config.alignment = v;
       this._liveSync();
     }));
-    new obsidian3.Setting(textSect).setName("Uppercase").addToggle((t) => t.setValue(this.config.isUpper).onChange((v) => {
+    new obsidian4.Setting(textSect).setName("Uppercase").addToggle((t) => t.setValue(this.config.isUpper).onChange((v) => {
       this.config.isUpper = v;
       this._liveSync();
     }));
-    const designSect = addSection("Design & effects");
-    new obsidian3.Setting(designSect).setName("Divider icon").setDesc("ID from lucide (e.g. Briefcase) or any emoji.").addText((text) => {
+    const iconSect = addSection("Icon settings");
+    new obsidian4.Setting(iconSect).setName("Divider icon").setDesc("ID from lucide (e.g. Briefcase) or any emoji.").addText((text) => {
       var _a;
       text.setPlaceholder("E.g. Briefcase").setValue(this.config.icon).onChange((v) => {
         this.config.icon = v;
@@ -1658,7 +1900,7 @@ var DividerModal = class extends obsidian3.Modal {
           transition: "opacity 0.2s",
           marginLeft: "4px"
         });
-        obsidian3.setIcon(browseBtn, "search");
+        obsidian4.setIcon(browseBtn, "search");
         const bsvg = browseBtn.querySelector("svg");
         if (bsvg) {
           bsvg.setCssStyles({ width: "18px", height: "18px" });
@@ -1675,21 +1917,30 @@ var DividerModal = class extends obsidian3.Modal {
         };
       }
     });
-    new obsidian3.Setting(designSect).setName("Icon position").addDropdown((d) => d.addOption("left", "Left").addOption("right", "Right").addOption("both", "Both").setValue(this.config.iconPosition).onChange((v) => {
+    new obsidian4.Setting(iconSect).setName("Icon position").addDropdown((d) => d.addOption("left", "Left").addOption("right", "Right").addOption("both", "Both").setValue(this.config.iconPosition).onChange((v) => {
       this.config.iconPosition = v;
       this._liveSync();
     }));
-    new obsidian3.Setting(designSect).setName("Pill mode").setDesc("Force the capsule shape or hide it for this divider.").addDropdown((d) => d.addOption("on", "On").addOption("off", "Off").setValue(this.config.pillMode).onChange((v) => {
+    const styleSect = addSection("Style & shape");
+    new obsidian4.Setting(styleSect).setName("Pill mode").setDesc("Force the capsule shape or hide it for this divider.").addDropdown((d) => d.addOption("on", "On").addOption("off", "Off").setValue(this.config.pillMode).onChange((v) => {
       this.config.pillMode = v;
       this._liveSync();
     }));
-    new obsidian3.Setting(designSect).setName("Line style").addDropdown((d) => d.addOption("global", "Global default").addOption("solid", "Solid").addOption("dashed", "Dashed").addOption("dotted", "Dotted").addOption("none", "None").setValue(this.config.lineStyle).onChange((v) => {
+    new obsidian4.Setting(styleSect).setName("Line style").addDropdown((d) => d.addOption("global", "Global default").addOption("solid", "Solid").addOption("dashed", "Dashed").addOption("dotted", "Dotted").addOption("none", "None").setValue(this.config.lineStyle).onChange((v) => {
       this.config.lineStyle = v;
       this._liveSync();
     }));
-    new obsidian3.Setting(designSect).setName("Modern glassmorphism").setDesc("Use a frosted-glass background for the pill.").addToggle((t) => t.setValue(this.config.useGlass).onChange((v) => {
+    new obsidian4.Setting(styleSect).setName("Modern glassmorphism").setDesc("Use a frosted-glass background for the pill.").addToggle((t) => t.setValue(this.config.useGlass).onChange((v) => {
       this.config.useGlass = v;
       this._liveSync();
+    }));
+    const interactiveSect = addSection("Interactive features");
+    new obsidian4.Setting(interactiveSect).setName("Hover message").setDesc("A premium popover with Markdown support (links, tags, etc).").addButton((btn) => btn.setButtonText(this.config.description ? "Edit Detailed Message" : "Add Hover Message").setCta().onClick(() => {
+      new HoverMessageModal(this.app, this.plugin, this.path, this.config.description, (newVal) => {
+        this.config.description = newVal;
+        btn.setButtonText(newVal ? "Edit Detailed Message" : "Add Hover Message");
+        this._liveSync();
+      }).open();
     }));
     const footer = contentEl.createDiv({ cls: "cf-modal-footer" });
     footer.setCssStyles({
@@ -1763,6 +2014,7 @@ var DividerModal = class extends obsidian3.Modal {
       styleObj.dividerIcon = this.config.icon;
       styleObj.dividerIconPosition = this.config.iconPosition;
       styleObj.dividerPillMode = this.config.pillMode;
+      styleObj.dividerDescription = this.config.description;
       styleObj.hasDivider = true;
       this.plugin.settings.customFolderColors[this.path] = styleObj;
       await this.plugin.saveSettings();
@@ -1784,6 +2036,7 @@ var DividerModal = class extends obsidian3.Modal {
       dividerIcon: this.config.icon,
       dividerIconPosition: this.config.iconPosition,
       dividerPillMode: this.config.pillMode,
+      dividerDescription: this.config.description,
       hasDivider: true
     };
     this.plugin.settings.customFolderColors[this.path] = tempStyle;
@@ -1794,7 +2047,7 @@ var DividerModal = class extends obsidian3.Modal {
       return;
     this._previewIconEl.empty();
     const iconId = this.config.icon || "separator-horizontal";
-    obsidian3.setIcon(this._previewIconEl, iconId);
+    obsidian4.setIcon(this._previewIconEl, iconId);
     const svg = this._previewIconEl.querySelector("svg");
     if (svg) {
       svg.setCssStyles({ width: "20px", height: "20px", color: "white" });
@@ -1817,7 +2070,7 @@ var DividerModal = class extends obsidian3.Modal {
 };
 
 // src/ui/SettingTab.ts
-var obsidian4 = __toESM(require("obsidian"));
+var obsidian5 = __toESM(require("obsidian"));
 
 // src/ui/modals/ConfirmModal.ts
 var import_obsidian = require("obsidian");
@@ -1850,7 +2103,7 @@ var ConfirmModal = class extends import_obsidian.Modal {
 };
 
 // src/ui/SettingTab.ts
-var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
+var ColorfulFoldersSettingTab = class extends obsidian5.PluginSettingTab {
   // eslint-disable-next-line obsidianmd/prefer-active-doc
   constructor(app, plugin) {
     super(app, plugin);
@@ -1922,11 +2175,11 @@ var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
       return card;
     };
     const intCard = makeCard(intPanel, "\u{1F517}", "Notebook navigator");
-    new obsidian4.Setting(intCard).setName("Enable notebook navigator support").setDesc("Allows colorful folders to safely style the icons and text of notebook navigator items.").addToggle((toggle) => toggle.setValue(this.plugin.settings.notebookNavigatorSupport).onChange(async (value) => {
+    new obsidian5.Setting(intCard).setName("Enable notebook navigator support").setDesc("Allows colorful folders to safely style the icons and text of notebook navigator items.").addToggle((toggle) => toggle.setValue(this.plugin.settings.notebookNavigatorSupport).onChange(async (value) => {
       this.plugin.settings.notebookNavigatorSupport = value;
       await this.plugin.saveSettings();
     }));
-    new obsidian4.Setting(intCard).setName("Apply background colors to files").setDesc("Injects the faint background block and left border to file cards. Disable this to keep the cards strictly native.").addToggle((toggle) => toggle.setValue(this.plugin.settings.notebookNavigatorFileBackground).onChange(async (value) => {
+    new obsidian5.Setting(intCard).setName("Apply background colors to files").setDesc("Injects the faint background block and left border to file cards. Disable this to keep the cards strictly native.").addToggle((toggle) => toggle.setValue(this.plugin.settings.notebookNavigatorFileBackground).onChange(async (value) => {
       this.plugin.settings.notebookNavigatorFileBackground = value;
       await this.plugin.saveSettings();
     }));
@@ -1956,16 +2209,16 @@ var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
       const id = idInp.value.trim();
       const svg = svgInp.value.trim();
       if (!id || !svg.startsWith("<svg")) {
-        new obsidian4.Notice("Please provide a valid ID and SVG code.");
+        new obsidian5.Notice("Please provide a valid ID and SVG code.");
         return;
       }
       this.plugin.settings.customIcons[id] = svg;
       this.plugin.registerCustomIcons();
       await this.plugin.saveSettings();
       this.display();
-      new obsidian4.Notice(`Icon '${id}' registered!`);
+      new obsidian5.Notice(`Icon '${id}' registered!`);
     };
-    new obsidian4.Setting(customIconCard).setName("Bulk import from URL").setDesc("Enter a URL to a JSON icon pack { 'id': '<svg...>' }").addText((text) => {
+    new obsidian5.Setting(customIconCard).setName("Bulk import from URL").setDesc("Enter a URL to a JSON icon pack { 'id': '<svg...>' }").addText((text) => {
       text.setPlaceholder("https://example.com/icons.json");
       const impBtn = customIconCard.createEl("button", { text: "Import" });
       impBtn.setCssStyles({ marginLeft: "8px" });
@@ -2030,7 +2283,7 @@ var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
         }
         this.plugin.registerCustomIcons();
         await this.plugin.saveSettings();
-        new obsidian4.Notice(`Removed ${count} icons from ${p.name}.`);
+        new obsidian5.Notice(`Removed ${count} icons from ${p.name}.`);
         this.display();
       };
     });
@@ -2061,17 +2314,17 @@ var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
       });
     }
     const maintCard = makeCard(sysPanel, "\u{1F527}", "Icon maintenance");
-    new obsidian4.Setting(maintCard).setName("Register all icons").setDesc("Ensures all icons in your library are properly loaded into Obsidian.").addButton((btn) => btn.setButtonText("Re-register icons").onClick(async () => {
+    new obsidian5.Setting(maintCard).setName("Register all icons").setDesc("Ensures all icons in your library are properly loaded into Obsidian.").addButton((btn) => btn.setButtonText("Re-register icons").onClick(async () => {
       this.plugin.registerCustomIcons();
-      new obsidian4.Notice("All custom icons re-registered.");
+      new obsidian5.Notice("All custom icons re-registered.");
     }));
-    new obsidian4.Setting(maintCard).setName("Clear icon library").setDesc("Permanently deletes all imported icon packs.").addButton((btn) => btn.setButtonText("Clear icon library").setWarning().onClick(async () => {
+    new obsidian5.Setting(maintCard).setName("Clear icon library").setDesc("Permanently deletes all imported icon packs.").addButton((btn) => btn.setButtonText("Clear icon library").setWarning().onClick(async () => {
       new ConfirmModal(this.app, "Clear icon library", "Are you sure you want to delete ALL custom icons?", async () => {
         this.plugin.settings.customIcons = {};
         this.plugin.registerCustomIcons();
         await this.plugin.saveSettings();
         this.plugin.generateStyles();
-        new obsidian4.Notice("Icon library cleared.");
+        new obsidian5.Notice("Icon library cleared.");
         this.display();
       }).open();
     }));
@@ -2079,7 +2332,7 @@ var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
     const packDesc = manImportCard.createEl("p", { text: "You can manually paste the JSON content of an icon pack below to import it." });
     packDesc.setCssStyles({ fontSize: "0.85em", color: "var(--text-muted)" });
     let manualJson = "";
-    new obsidian4.Setting(manImportCard).setName("Icon pack JSON").addTextArea((text) => {
+    new obsidian5.Setting(manImportCard).setName("Icon pack JSON").addTextArea((text) => {
       text.setPlaceholder('{"prefix": "my-icons", "icons": {...}}').onChange((value) => {
         manualJson = value;
       });
@@ -2090,16 +2343,16 @@ var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
         background: "var(--background-secondary)"
       });
     });
-    new obsidian4.Setting(manImportCard).addButton((btn) => btn.setButtonText("Import manual JSON").setCta().onClick(async () => {
+    new obsidian5.Setting(manImportCard).addButton((btn) => btn.setButtonText("Import manual JSON").setCta().onClick(async () => {
       if (!manualJson.trim())
         return;
       try {
         const data = JSON.parse(manualJson);
         await this.processIconData(data);
-        new obsidian4.Notice("Manual icon pack imported!");
+        new obsidian5.Notice("Manual icon pack imported!");
         this.display();
       } catch (e) {
-        new obsidian4.Notice("Invalid JSON format.");
+        new obsidian5.Notice("Invalid JSON format.");
         console.error("Colorful Folders: Manual Import failed", e);
       }
     }));
@@ -2113,92 +2366,92 @@ var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
     infoText.createEl("strong", { text: '"set custom style"' });
     infoText.appendText(" to assign specific unique colors or icons!");
     const genCard = makeCard(generalPanel, "\u{1F3A8}", "Global visual palette");
-    new obsidian4.Setting(genCard).setName("Color palette theme").setDesc('Select a curated color scheme for your vault. Choose "custom" to enter your own hex codes below.').addDropdown((drop) => drop.addOption("Vibrant rainbow", "Vibrant rainbow").addOption("Muted dark mode", "Muted dark mode").addOption("Pastel dreams", "Pastel dreams").addOption("Neon cyberpunk", "Neon cyberpunk").addOption("Custom", "Custom palette").setValue(this.plugin.settings.palette).onChange(async (value) => {
+    new obsidian5.Setting(genCard).setName("Color palette theme").setDesc('Select a curated color scheme for your vault. Choose "custom" to enter your own hex codes below.').addDropdown((drop) => drop.addOption("Vibrant rainbow", "Vibrant rainbow").addOption("Muted dark mode", "Muted dark mode").addOption("Pastel dreams", "Pastel dreams").addOption("Neon cyberpunk", "Neon cyberpunk").addOption("Custom", "Custom palette").setValue(this.plugin.settings.palette).onChange(async (value) => {
       this.plugin.settings.palette = value;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
-    new obsidian4.Setting(genCard).setName("Custom colors (hex)").setDesc("Comma-separated list of hex colors.").addText((text) => text.setPlaceholder("#Ff0000, #00ff00").setValue(this.plugin.settings.customPalette).onChange(async (value) => {
+    new obsidian5.Setting(genCard).setName("Custom colors (hex)").setDesc("Comma-separated list of hex colors.").addText((text) => text.setPlaceholder("#Ff0000, #00ff00").setValue(this.plugin.settings.customPalette).onChange(async (value) => {
       this.plugin.settings.customPalette = value;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
-    new obsidian4.Setting(genCard).setName("Folder exclusion list").setDesc("Comma-separated list of folder names to ignore. Note: Folder names are case-insensitive.").addText((text) => text.setPlaceholder("Templates, Attachments, .git").setValue(this.plugin.settings.exclusionList || "").onChange(async (value) => {
+    new obsidian5.Setting(genCard).setName("Folder exclusion list").setDesc("Comma-separated list of folder names to ignore. Note: Folder names are case-insensitive.").addText((text) => text.setPlaceholder("Templates, Attachments, .git").setValue(this.plugin.settings.exclusionList || "").onChange(async (value) => {
       this.plugin.settings.exclusionList = value;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
-    new obsidian4.Setting(genCard).setName("Color generation mode").setDesc("Cycle assigns colors sequentially. Monochromatic uses depth-based shading. Heatmap colors folders based on the most recently modified file inside.").addDropdown((drop) => drop.addOption("cycle", "Rainbow cycle").addOption("monochromatic", "Monochromatic depth").addOption("heatmap", "Activity heatmap").setValue(this.plugin.settings.colorMode).onChange(async (value) => {
+    new obsidian5.Setting(genCard).setName("Color generation mode").setDesc("Cycle assigns colors sequentially. Monochromatic uses depth-based shading. Heatmap colors folders based on the most recently modified file inside.").addDropdown((drop) => drop.addOption("cycle", "Rainbow cycle").addOption("monochromatic", "Monochromatic depth").addOption("heatmap", "Activity heatmap").setValue(this.plugin.settings.colorMode).onChange(async (value) => {
       this.plugin.settings.colorMode = value;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
     if (this.plugin.settings.colorMode === "cycle") {
-      new obsidian4.Setting(genCard).setName("Rainbow cycle offset").setDesc("Shift the starting color index for the rainbow cycle.").addSlider((slider) => slider.setLimits(0, 20, 1).setValue(this.plugin.settings.cycleOffset || 0).setDynamicTooltip().onChange(async (value) => {
+      new obsidian5.Setting(genCard).setName("Rainbow cycle offset").setDesc("Shift the starting color index for the rainbow cycle.").addSlider((slider) => slider.setLimits(0, 20, 1).setValue(this.plugin.settings.cycleOffset || 0).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.cycleOffset = value;
         await this.plugin.saveSettings();
         this.plugin.generateStyles();
       }));
     }
-    new obsidian4.Setting(genCard).setName("Root folder appearance").setDesc("Solid uses vivid backgrounds for root folders. Translucent provides a softer, glowing look.").addDropdown((drop) => drop.addOption("solid", "Solid vivid color").addOption("translucent", "Translucent glow").setValue(this.plugin.settings.rootStyle).onChange(async (value) => {
+    new obsidian5.Setting(genCard).setName("Root folder appearance").setDesc("Solid uses vivid backgrounds for root folders. Translucent provides a softer, glowing look.").addDropdown((drop) => drop.addOption("solid", "Solid vivid color").addOption("translucent", "Translucent glow").setValue(this.plugin.settings.rootStyle).onChange(async (value) => {
       this.plugin.settings.rootStyle = value;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
-    new obsidian4.Setting(genCard).setName("Focus mode").setDesc("Dims inactive root folders when you are working deep inside a project path.").addToggle((toggle) => toggle.setValue(this.plugin.settings.focusMode).onChange(async (value) => {
+    new obsidian5.Setting(genCard).setName("Focus mode").setDesc("Dims inactive root folders when you are working deep inside a project path.").addToggle((toggle) => toggle.setValue(this.plugin.settings.focusMode).onChange(async (value) => {
       this.plugin.settings.focusMode = value;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
-    new obsidian4.Setting(genCard).setName("Glassmorphism blur").setDesc("Adds an iOS-style backdrop blur to folder backgrounds. Best with semi-translucent themes.").addToggle((toggle) => toggle.setValue(this.plugin.settings.glassmorphism).onChange(async (value) => {
+    new obsidian5.Setting(genCard).setName("Glassmorphism blur").setDesc("Adds an iOS-style backdrop blur to folder backgrounds. Best with semi-translucent themes.").addToggle((toggle) => toggle.setValue(this.plugin.settings.glassmorphism).onChange(async (value) => {
       this.plugin.settings.glassmorphism = value;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
     const visCard = makeCard(generalPanel, "\u{1F441}\uFE0F", "Appearance & visibility");
-    new obsidian4.Setting(visCard).setName("Light mode brightness (%)").addSlider((slider) => slider.setLimits(-100, 100, 1).setValue(this.plugin.settings.lightModeBrightness || 0).onChange(async (value) => {
+    new obsidian5.Setting(visCard).setName("Light mode brightness (%)").addSlider((slider) => slider.setLimits(-100, 100, 1).setValue(this.plugin.settings.lightModeBrightness || 0).onChange(async (value) => {
       this.plugin.settings.lightModeBrightness = value;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
-    new obsidian4.Setting(visCard).setName("Dark mode brightness (%)").addSlider((slider) => slider.setLimits(-100, 100, 1).setValue(this.plugin.settings.darkModeBrightness || 0).onChange(async (value) => {
+    new obsidian5.Setting(visCard).setName("Dark mode brightness (%)").addSlider((slider) => slider.setLimits(-100, 100, 1).setValue(this.plugin.settings.darkModeBrightness || 0).onChange(async (value) => {
       this.plugin.settings.darkModeBrightness = value;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
-    new obsidian4.Setting(visCard).setName("Outline only mode").addToggle((toggle) => toggle.setValue(this.plugin.settings.outlineOnly).onChange(async (value) => {
+    new obsidian5.Setting(visCard).setName("Outline only mode").addToggle((toggle) => toggle.setValue(this.plugin.settings.outlineOnly).onChange(async (value) => {
       this.plugin.settings.outlineOnly = value;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
-    new obsidian4.Setting(visCard).setName("Auto-color files (backgrounds)").setDesc("Automatically apply background tints to files to match their parent folder.").addToggle((toggle) => toggle.setValue(this.plugin.settings.autoColorFiles).onChange(async (value) => {
+    new obsidian5.Setting(visCard).setName("Auto-color files (backgrounds)").setDesc("Automatically apply background tints to files to match their parent folder.").addToggle((toggle) => toggle.setValue(this.plugin.settings.autoColorFiles).onChange(async (value) => {
       this.plugin.settings.autoColorFiles = value;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
-    new obsidian4.Setting(visCard).setName("Global icon scaling").setDesc("Multiplies the size of all folder and file icons (default 1.0). Range: 0.5 to 2.5.").addSlider((slider) => slider.setLimits(0.5, 2.5, 0.1).setValue(this.plugin.settings.iconScale || 1).setDynamicTooltip().onChange(async (value) => {
+    new obsidian5.Setting(visCard).setName("Global icon scaling").setDesc("Multiplies the size of all folder and file icons (default 1.0). Range: 0.5 to 2.5.").addSlider((slider) => slider.setLimits(0.5, 2.5, 0.1).setValue(this.plugin.settings.iconScale || 1).setDynamicTooltip().onChange(async (value) => {
       this.plugin.settings.iconScale = value;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
-    new obsidian4.Setting(visCard).setName("Icon debug mode").setDesc("Logs icon matching logic to the developer console. Useful if auto-icons are not appearing as expected.").addToggle((toggle) => toggle.setValue(this.plugin.settings.iconDebugMode).onChange(async (value) => {
+    new obsidian5.Setting(visCard).setName("Icon debug mode").setDesc("Logs icon matching logic to the developer console. Useful if auto-icons are not appearing as expected.").addToggle((toggle) => toggle.setValue(this.plugin.settings.iconDebugMode).onChange(async (value) => {
       this.plugin.settings.iconDebugMode = value;
       await this.plugin.saveSettings();
     }));
     const autoCard = makeCard(iconPanel, "\u{1F916}", "Automation engine");
-    new obsidian4.Setting(autoCard).setName("Enable automatic icons").addToggle((toggle) => toggle.setValue(this.plugin.settings.autoIcons).onChange(async (value) => {
+    new obsidian5.Setting(autoCard).setName("Enable automatic icons").addToggle((toggle) => toggle.setValue(this.plugin.settings.autoIcons).onChange(async (value) => {
       this.plugin.settings.autoIcons = value;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
       this.display();
     }));
     if (this.plugin.settings.autoIcons) {
-      new obsidian4.Setting(autoCard).setName("Wide icon rendering (lucide svgs)").addToggle((toggle) => toggle.setValue(this.plugin.settings.wideAutoIcons).onChange(async (value) => {
+      new obsidian5.Setting(autoCard).setName("Wide icon rendering (lucide svgs)").addToggle((toggle) => toggle.setValue(this.plugin.settings.wideAutoIcons).onChange(async (value) => {
         this.plugin.settings.wideAutoIcons = value;
         await this.plugin.saveSettings();
         this.plugin.generateStyles();
       }));
-      new obsidian4.Setting(autoCard).setName("Icon variety mode").setDesc("Assigns different icons to items within the same category for better visual distinction.").addToggle((toggle) => toggle.setValue(this.plugin.settings.autoIconVariety).onChange(async (value) => {
+      new obsidian5.Setting(autoCard).setName("Icon variety mode").setDesc("Assigns different icons to items within the same category for better visual distinction.").addToggle((toggle) => toggle.setValue(this.plugin.settings.autoIconVariety).onChange(async (value) => {
         this.plugin.settings.autoIconVariety = value;
         await this.plugin.saveSettings();
         this.plugin.generateStyles();
@@ -2227,7 +2480,7 @@ var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
       rulesDesc.createEl("br");
       rulesDesc.createEl("strong", { text: "Example: " });
       rulesDesc.createEl("code", { text: "Journal = \u{1F4C5} @150" });
-      new obsidian4.Setting(autoCard).setName("Priority rules").setDesc("Customize matching logic with simple patterns.").addTextArea((text) => {
+      new obsidian5.Setting(autoCard).setName("Priority rules").setDesc("Customize matching logic with simple patterns.").addTextArea((text) => {
         text.setPlaceholder("Work = briefcase @200\ndaily = \u{1F4C5} @150").setValue(this.plugin.settings.customIconRules || "").onChange(async (value) => {
           this.plugin.settings.customIconRules = value;
           await this.plugin.saveSettings();
@@ -2246,111 +2499,111 @@ var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
       });
     }
     const divCard = makeCard(generalPanel, "\u2796", "Dividers & sections");
-    new obsidian4.Setting(divCard).setName("Modern pill design").setDesc('When enabled, dividers use the rounded "pill" background and border. When disabled, only text and lines are shown.').addToggle((toggle) => toggle.setValue(this.plugin.settings.dividerPillMode !== false).onChange(async (value) => {
+    new obsidian5.Setting(divCard).setName("Modern pill design").setDesc('When enabled, dividers use the rounded "pill" background and border. When disabled, only text and lines are shown.').addToggle((toggle) => toggle.setValue(this.plugin.settings.dividerPillMode !== false).onChange(async (value) => {
       this.plugin.settings.dividerPillMode = value;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
-    new obsidian4.Setting(divCard).setName("Vertical spacing").setDesc("Adjust the empty space above and below dividers.").addSlider((slider) => slider.setLimits(4, 40, 2).setValue(this.plugin.settings.dividerSpacing || 16).setDynamicTooltip().onChange(async (value) => {
+    new obsidian5.Setting(divCard).setName("Vertical spacing").setDesc("Adjust the empty space above and below dividers.").addSlider((slider) => slider.setLimits(4, 40, 2).setValue(this.plugin.settings.dividerSpacing || 16).setDynamicTooltip().onChange(async (value) => {
       this.plugin.settings.dividerSpacing = value;
       await this.plugin.saveSettings();
       this.plugin.dividerManager.syncDividers();
     }));
-    new obsidian4.Setting(divCard).setName("Line thickness").addSlider((slider) => slider.setLimits(1, 10, 0.5).setValue(this.plugin.settings.dividerThickness || 1.5).setDynamicTooltip().onChange(async (value) => {
+    new obsidian5.Setting(divCard).setName("Line thickness").addSlider((slider) => slider.setLimits(1, 10, 0.5).setValue(this.plugin.settings.dividerThickness || 1.5).setDynamicTooltip().onChange(async (value) => {
       this.plugin.settings.dividerThickness = value;
       await this.plugin.saveSettings();
       this.plugin.dividerManager.syncDividers();
     }));
-    new obsidian4.Setting(divCard).setName("Default line style").addDropdown((drop) => drop.addOption("solid", "Solid").addOption("dashed", "Dashed").addOption("dotted", "Dotted").setValue(this.plugin.settings.dividerLineStyle || "solid").onChange(async (value) => {
+    new obsidian5.Setting(divCard).setName("Default line style").addDropdown((drop) => drop.addOption("solid", "Solid").addOption("dashed", "Dashed").addOption("dotted", "Dotted").setValue(this.plugin.settings.dividerLineStyle || "solid").onChange(async (value) => {
       this.plugin.settings.dividerLineStyle = value;
       await this.plugin.saveSettings();
       this.plugin.dividerManager.syncDividers();
     }));
     const typeCard = makeCard(generalPanel, "Aa", "Path & typography");
-    new obsidian4.Setting(typeCard).setName("Show item counters").setDesc("Displays recursive folder and file counts next to folder names.").addToggle((toggle) => toggle.setValue(this.plugin.settings.showItemCounters).onChange(async (value) => {
+    new obsidian5.Setting(typeCard).setName("Show item counters").setDesc("Displays recursive folder and file counts next to folder names.").addToggle((toggle) => toggle.setValue(this.plugin.settings.showItemCounters).onChange(async (value) => {
       this.plugin.settings.showItemCounters = value;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
-    new obsidian4.Setting(typeCard).setName("Active file glow").setDesc("Highlights the path to the currently active document with a connecting line.").addToggle((toggle) => toggle.setValue(this.plugin.settings.activeGlow).onChange(async (value) => {
+    new obsidian5.Setting(typeCard).setName("Active file glow").setDesc("Highlights the path to the currently active document with a connecting line.").addToggle((toggle) => toggle.setValue(this.plugin.settings.activeGlow).onChange(async (value) => {
       this.plugin.settings.activeGlow = value;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
-    new obsidian4.Setting(typeCard).setName("Animate active path").addToggle((toggle) => toggle.setValue(this.plugin.settings.animateActivePath).onChange(async (value) => {
+    new obsidian5.Setting(typeCard).setName("Animate active path").addToggle((toggle) => toggle.setValue(this.plugin.settings.animateActivePath).onChange(async (value) => {
       this.plugin.settings.animateActivePath = value;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
       this.display();
     }));
     if (this.plugin.settings.animateActivePath) {
-      new obsidian4.Setting(typeCard).setName("Animation style").addDropdown((drop) => drop.addOption("pulse", "Soft pulse").addOption("neon", "Neon flicker").addOption("shimmer", "Color shimmer").setValue(this.plugin.settings.activeAnimationStyle || "shimmer").onChange(async (value) => {
+      new obsidian5.Setting(typeCard).setName("Animation style").addDropdown((drop) => drop.addOption("pulse", "Soft pulse").addOption("neon", "Neon flicker").addOption("shimmer", "Color shimmer").setValue(this.plugin.settings.activeAnimationStyle || "shimmer").onChange(async (value) => {
         this.plugin.settings.activeAnimationStyle = value;
         await this.plugin.saveSettings();
         this.plugin.generateStyles();
       }));
-      new obsidian4.Setting(typeCard).setName("Active animation duration").setDesc("Adjust how fast the shimmer or pulse effects run (seconds).").addSlider((slider) => slider.setLimits(1, 10, 0.5).setValue(this.plugin.settings.activeAnimationDuration || 4).setDynamicTooltip().onChange(async (value) => {
+      new obsidian5.Setting(typeCard).setName("Active animation duration").setDesc("Adjust how fast the shimmer or pulse effects run (seconds).").addSlider((slider) => slider.setLimits(1, 10, 0.5).setValue(this.plugin.settings.activeAnimationDuration || 4).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.activeAnimationDuration = value;
         await this.plugin.saveSettings();
         this.plugin.generateStyles();
       }));
     }
-    new obsidian4.Setting(typeCard).setName("Rainbow root text").setDesc("Applies a vivid rainbow-text horizontal gradient to all top-level folders.").addToggle((toggle) => toggle.setValue(this.plugin.settings.rainbowRootText).onChange(async (value) => {
+    new obsidian5.Setting(typeCard).setName("Rainbow root text").setDesc("Applies a vivid rainbow-text horizontal gradient to all top-level folders.").addToggle((toggle) => toggle.setValue(this.plugin.settings.rainbowRootText).onChange(async (value) => {
       this.plugin.settings.rainbowRootText = value;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
       this.display();
     }));
     if (this.plugin.settings.rainbowRootText) {
-      new obsidian4.Setting(typeCard).setName("Transparent root background").setDesc("Keeps the root text effect but removes the solid/translucent background box.").addToggle((toggle) => toggle.setValue(this.plugin.settings.rainbowRootBgTransparent).onChange(async (value) => {
+      new obsidian5.Setting(typeCard).setName("Transparent root background").setDesc("Keeps the root text effect but removes the solid/translucent background box.").addToggle((toggle) => toggle.setValue(this.plugin.settings.rainbowRootBgTransparent).onChange(async (value) => {
         this.plugin.settings.rainbowRootBgTransparent = value;
         await this.plugin.saveSettings();
         this.plugin.generateStyles();
       }));
     }
     const tuneCard = makeCard(generalPanel, "\u{1F39B}\uFE0F", "Advanced tuning");
-    new obsidian4.Setting(tuneCard).setName("Root opacity (%)").setDesc("Transparency of top-level folders in file explorer.").addSlider((slider) => slider.setLimits(1, 100, 1).setValue(this.plugin.settings.rootOpacity * 100).setDynamicTooltip().onChange(async (value) => {
+    new obsidian5.Setting(tuneCard).setName("Root opacity (%)").setDesc("Transparency of top-level folders in file explorer.").addSlider((slider) => slider.setLimits(1, 100, 1).setValue(this.plugin.settings.rootOpacity * 100).setDynamicTooltip().onChange(async (value) => {
       this.plugin.settings.rootOpacity = parseFloat((value / 100).toFixed(3));
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
-    new obsidian4.Setting(tuneCard).setName("Subfolder opacity (%)").setDesc("Transparency of nested subfolders.").addSlider((slider) => slider.setLimits(1, 100, 1).setValue(this.plugin.settings.subfolderOpacity * 100).setDynamicTooltip().onChange(async (value) => {
+    new obsidian5.Setting(tuneCard).setName("Subfolder opacity (%)").setDesc("Transparency of nested subfolders.").addSlider((slider) => slider.setLimits(1, 100, 1).setValue(this.plugin.settings.subfolderOpacity * 100).setDynamicTooltip().onChange(async (value) => {
       this.plugin.settings.subfolderOpacity = parseFloat((value / 100).toFixed(3));
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
-    new obsidian4.Setting(tuneCard).setName("Opened folder backing tint (%)").setDesc("Controls how highly tinted the background content space becomes when you open a directory.").addSlider((slider) => slider.setLimits(0, 50, 0.1).setValue(this.plugin.settings.tintOpacity * 100).setDynamicTooltip().onChange(async (value) => {
+    new obsidian5.Setting(tuneCard).setName("Opened folder backing tint (%)").setDesc("Controls how highly tinted the background content space becomes when you open a directory.").addSlider((slider) => slider.setLimits(0, 50, 0.1).setValue(this.plugin.settings.tintOpacity * 100).setDynamicTooltip().onChange(async (value) => {
       this.plugin.settings.tintOpacity = parseFloat((value / 100).toFixed(3));
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
-    new obsidian4.Setting(tuneCard).setName("Root tint opacity (%)").setDesc("Independent control for the background strength of top-level folders (default 6%).").addSlider((slider) => slider.setLimits(0, 100, 1).setValue((this.plugin.settings.rootTintOpacity !== void 0 ? this.plugin.settings.rootTintOpacity : 0.06) * 100).setDynamicTooltip().onChange(async (value) => {
+    new obsidian5.Setting(tuneCard).setName("Root tint opacity (%)").setDesc("Independent control for the background strength of top-level folders (default 6%).").addSlider((slider) => slider.setLimits(0, 100, 1).setValue((this.plugin.settings.rootTintOpacity !== void 0 ? this.plugin.settings.rootTintOpacity : 0.06) * 100).setDynamicTooltip().onChange(async (value) => {
       this.plugin.settings.rootTintOpacity = parseFloat((value / 100).toFixed(3));
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
     const dbCard = makeCard(sysPanel, "\u{1F5C4}\uFE0F", "Database management");
-    new obsidian4.Setting(dbCard).setName("Clean unused styles").setDesc("Scans your configuration and removes style entries for folders or files that no longer exist in your vault.").addButton((btn) => btn.setButtonText("Clean up stale data").onClick(async () => {
+    new obsidian5.Setting(dbCard).setName("Clean unused styles").setDesc("Scans your configuration and removes style entries for folders or files that no longer exist in your vault.").addButton((btn) => btn.setButtonText("Clean up stale data").onClick(async () => {
       await this.plugin.cleanUnusedStyles();
       this.display();
     }));
-    new obsidian4.Setting(dbCard).setName("Reset styles & presets").setDesc("Danger: This will permanently remove all custom colors, icons, and individual folder styles. Presets are also cleared.").addButton((btn) => btn.setButtonText("Reset styling").setWarning().onClick(async () => {
+    new obsidian5.Setting(dbCard).setName("Reset styles & presets").setDesc("Danger: This will permanently remove all custom colors, icons, and individual folder styles. Presets are also cleared.").addButton((btn) => btn.setButtonText("Reset styling").setWarning().onClick(async () => {
       new ConfirmModal(this.app, "Reset styles & presets", "Are you sure you want to delete all custom styling and presets? This cannot be undone.", async () => {
         this.plugin.settings.customFolderColors = {};
         this.plugin.settings.presets = {};
         await this.plugin.saveSettings();
         this.plugin.generateStyles();
-        new obsidian4.Notice("Styles and presets have been reset.");
+        new obsidian5.Notice("Styles and presets have been reset.");
         this.display();
       }).open();
     }));
-    new obsidian4.Setting(dbCard).setName("Factory reset").setDesc("Critical: This will reset every setting in the plugin to its original default state, including opacities, toggles, and all custom data.").addButton((btn) => btn.setButtonText("Hard reset everything").setWarning().onClick(async () => {
+    new obsidian5.Setting(dbCard).setName("Factory reset").setDesc("Critical: This will reset every setting in the plugin to its original default state, including opacities, toggles, and all custom data.").addButton((btn) => btn.setButtonText("Hard reset everything").setWarning().onClick(async () => {
       new ConfirmModal(this.app, "Factory reset", "Are you sure you want to restore all settings to default? This will wipe ALL your customization!", async () => {
         this.plugin.settings = Object.assign({}, DEFAULT_SETTINGS);
         await this.plugin.saveSettings();
         this.plugin.generateStyles();
         this.plugin.dividerManager.syncDividers();
-        new obsidian4.Notice("All settings have been restored to defaults.");
+        new obsidian5.Notice("All settings have been restored to defaults.");
         this.display();
       }).open();
     }));
@@ -2407,20 +2660,20 @@ var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
     if (!url)
       return;
     try {
-      const res = await obsidian4.requestUrl({ url });
+      const res = await obsidian5.requestUrl({ url });
       const data = res.json;
       const count = await this.processIconData(data);
-      new obsidian4.Notice(`Successfully imported ${count} icons!`);
+      new obsidian5.Notice(`Successfully imported ${count} icons!`);
       this.display();
     } catch (e) {
-      new obsidian4.Notice("Import failed. See console for details.");
+      new obsidian5.Notice("Import failed. See console for details.");
       console.error("Colorful Folders: Import error", e);
     }
   }
 };
 
 // src/core/StyleGenerator.ts
-var obsidian5 = __toESM(require("obsidian"));
+var obsidian6 = __toESM(require("obsidian"));
 var StyleGenerator = class {
   // eslint-disable-next-line obsidianmd/prefer-active-doc
   constructor(plugin) {
@@ -2589,9 +2842,9 @@ var StyleGenerator = class {
       let folders = 0;
       if (folderItem.children) {
         for (const c of folderItem.children) {
-          if (c instanceof obsidian5.TFile) {
+          if (c instanceof obsidian6.TFile) {
             files++;
-          } else if (c instanceof obsidian5.TFolder) {
+          } else if (c instanceof obsidian6.TFolder) {
             folders++;
             const sub = countItems(c);
             files += sub.files;
@@ -2605,8 +2858,8 @@ var StyleGenerator = class {
     };
     const traverse = (folder, depth, rootIndex = 0, passedColor = null, inheritedStyle = null) => {
       var _a, _b, _c, _d;
-      const copyFolders = folder.children.filter((c) => c instanceof obsidian5.TFolder).sort((a, b) => a.name.localeCompare(b.name));
-      const copyFiles = folder.children.filter((c) => c instanceof obsidian5.TFile).sort((a, b) => a.name.localeCompare(b.name));
+      const copyFolders = folder.children.filter((c) => c instanceof obsidian6.TFolder).sort((a, b) => a.name.localeCompare(b.name));
+      const copyFiles = folder.children.filter((c) => c instanceof obsidian6.TFile).sort((a, b) => a.name.localeCompare(b.name));
       const glassCss = this.settings.glassmorphism ? `backdrop-filter: blur(8px) saturate(120%); -webkit-backdrop-filter: blur(8px) saturate(120%);` : "";
       const animStyle = this.settings.activeAnimationStyle || "breathe";
       const animDur = this.settings.activeAnimationDuration || 4;
@@ -2681,7 +2934,7 @@ var StyleGenerator = class {
                         }
                     `;
           if (iconId) {
-            const isCustomEmoji = !((_a = obsidian5.getIconIds) == null ? void 0 : _a().includes(`lucide-${iconId}`)) && !((_b = obsidian5.getIconIds) == null ? void 0 : _b().includes(iconId)) && !(this.settings.customIcons && this.settings.customIcons[iconId]);
+            const isCustomEmoji = !((_a = obsidian6.getIconIds) == null ? void 0 : _a().includes(`lucide-${iconId}`)) && !((_b = obsidian6.getIconIds) == null ? void 0 : _b().includes(iconId)) && !(this.settings.customIcons && this.settings.customIcons[iconId]);
             if (isCustomEmoji) {
               css += `
                                 body .nav-file-title[data-path="${safePath}"] .nav-file-title-content::before,
@@ -2701,9 +2954,9 @@ var StyleGenerator = class {
                   this.iconCache.set(iconId, svgStr);
                 } else {
                   const tempEl = activeDocument.createElement("div");
-                  obsidian5.setIcon(tempEl, iconId);
+                  obsidian6.setIcon(tempEl, iconId);
                   if (!tempEl.querySelector("svg") && !iconId.startsWith("lucide-")) {
-                    obsidian5.setIcon(tempEl, `lucide-${iconId}`);
+                    obsidian6.setIcon(tempEl, `lucide-${iconId}`);
                   }
                   const svgEl = tempEl.querySelector("svg");
                   if (svgEl) {
@@ -2913,7 +3166,7 @@ var StyleGenerator = class {
           }
         }
         if (activeStyle && activeStyle.iconId) {
-          const isCustomEmoji = !((_c = obsidian5.getIconIds) == null ? void 0 : _c().includes(`lucide-${activeStyle.iconId}`)) && !((_d = obsidian5.getIconIds) == null ? void 0 : _d().includes(activeStyle.iconId)) && !this.settings.customIcons[activeStyle.iconId];
+          const isCustomEmoji = !((_c = obsidian6.getIconIds) == null ? void 0 : _c().includes(`lucide-${activeStyle.iconId}`)) && !((_d = obsidian6.getIconIds) == null ? void 0 : _d().includes(activeStyle.iconId)) && !this.settings.customIcons[activeStyle.iconId];
           if (isCustomEmoji) {
             css += `
                             body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
@@ -2934,9 +3187,9 @@ var StyleGenerator = class {
               } else {
                 const tempEl = activeDocument.createElement("div");
                 const iconId = activeStyle.iconId;
-                obsidian5.setIcon(tempEl, iconId);
+                obsidian6.setIcon(tempEl, iconId);
                 if (!tempEl.querySelector("svg") && !iconId.startsWith("lucide-")) {
-                  obsidian5.setIcon(tempEl, `lucide-${iconId}`);
+                  obsidian6.setIcon(tempEl, `lucide-${iconId}`);
                 }
                 const svgEl = tempEl.querySelector("svg");
                 if (svgEl) {
@@ -2977,7 +3230,7 @@ var StyleGenerator = class {
           let svgStr = this.iconCache.get(autoLucideId);
           if (!svgStr) {
             const tempEl = activeDocument.createElement("div");
-            obsidian5.setIcon(tempEl, autoLucideId);
+            obsidian6.setIcon(tempEl, autoLucideId);
             const svgEl = tempEl.querySelector("svg");
             if (svgEl) {
               svgEl.setAttribute("width", "100%");
@@ -3293,7 +3546,7 @@ var StyleGenerator = class {
 };
 
 // src/core/DividerManager.ts
-var obsidian6 = __toESM(require("obsidian"));
+var obsidian7 = __toESM(require("obsidian"));
 var DividerManager = class {
   // eslint-disable-next-line obsidianmd/prefer-active-doc
   constructor(plugin) {
@@ -3387,14 +3640,14 @@ var DividerManager = class {
       });
     }
     const rawIcon = conf.dividerIcon ? conf.dividerIcon.trim() : "";
-    const iconIds = ((_a = obsidian6.getIconIds) == null ? void 0 : _a()) || [];
+    const iconIds = ((_a = obsidian7.getIconIds) == null ? void 0 : _a()) || [];
     const isLucide = iconIds.includes(`lucide-${rawIcon}`) || iconIds.includes(rawIcon);
     const addIcon2 = () => {
       if (!rawIcon)
         return;
       if (isLucide) {
         const iconWrap = chip.createSpan({ cls: "cf-divider-icon" });
-        obsidian6.setIcon(iconWrap, rawIcon);
+        obsidian7.setIcon(iconWrap, rawIcon);
         const svg = iconWrap.querySelector("svg");
         if (svg) {
           svg.setCssStyles({
@@ -3419,12 +3672,31 @@ var DividerManager = class {
       makeLine("right");
     div.oncontextmenu = (e) => {
       e.preventDefault();
-      const menu = new obsidian6.Menu();
+      const menu = new obsidian7.Menu();
       menu.addItem((item) => {
         item.setTitle("Edit divider").setIcon("settings-2").onClick(() => {
           const file = this.app.vault.getAbstractFileByPath(path);
           if (file)
             new DividerModal(this.app, this.plugin, file).open();
+        });
+      });
+      menu.addItem((item) => {
+        item.setTitle(conf.dividerDescription ? "Edit hover message" : "Add hover message").setIcon("message-square").onClick(() => {
+          new HoverMessageModal(this.app, this.plugin, path, conf.dividerDescription || "", async (newDesc) => {
+            const style = this.plugin.settings.customFolderColors[path];
+            if (typeof style === "object") {
+              style.dividerDescription = newDesc;
+            } else {
+              this.plugin.settings.customFolderColors[path] = {
+                hex: style || "",
+                dividerDescription: newDesc,
+                hasDivider: true
+              };
+            }
+            await this.plugin.saveSettings();
+            this.plugin.generateStyles();
+            this.syncDividers();
+          }).open();
         });
       });
       menu.addItem((item) => {
@@ -3442,6 +3714,9 @@ var DividerManager = class {
               delete style.dividerLineStyle;
               delete style.dividerUpper;
               delete style.dividerGlass;
+              delete style.dividerIconPosition;
+              delete style.dividerPillMode;
+              delete style.dividerDescription;
             }
           }
           await this.plugin.saveSettings();
@@ -3451,6 +3726,78 @@ var DividerManager = class {
       });
       menu.showAtMouseEvent(e);
     };
+    if (conf.dividerDescription && conf.dividerDescription.trim()) {
+      chip.addClass("cf-has-description");
+      let popover = null;
+      let timeout = null;
+      const showPopover = async () => {
+        if (popover)
+          return;
+        popover = activeDocument.body.createDiv({ cls: "cf-premium-popover" });
+        const content = popover.createDiv({ cls: "cf-popover-content" });
+        await obsidian7.MarkdownRenderer.render(
+          this.plugin.app,
+          conf.dividerDescription || "",
+          content,
+          path,
+          this.plugin
+        );
+        content.querySelectorAll(".internal-link").forEach((link) => {
+          link.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const dest = link.getAttribute("data-href");
+            if (dest) {
+              this.app.workspace.openLinkText(dest, path, e.ctrlKey || e.metaKey);
+              if (popover) {
+                popover.remove();
+                popover = null;
+              }
+            }
+          };
+        });
+        content.querySelectorAll(".tag").forEach((tag) => {
+          tag.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const tagText = tag.innerText;
+            this.app.internalPlugins.getPluginById("global-search").instance.openGlobalSearch(tagText);
+            if (popover) {
+              popover.remove();
+              popover = null;
+            }
+          };
+        });
+        const rect = chip.getBoundingClientRect();
+        popover.style.left = `${rect.left + rect.width / 2}px`;
+        popover.style.top = `${rect.top - 12}px`;
+        popover.onmouseenter = () => {
+          if (timeout) {
+            activeWindow.clearTimeout(timeout);
+            timeout = null;
+          }
+        };
+        popover.onmouseleave = () => hidePopover();
+      };
+      const hidePopover = () => {
+        if (timeout)
+          activeWindow.clearTimeout(timeout);
+        timeout = activeWindow.setTimeout(() => {
+          if (popover) {
+            popover.remove();
+            popover = null;
+          }
+        }, 150);
+      };
+      chip.onmouseenter = () => {
+        if (timeout)
+          activeWindow.clearTimeout(timeout);
+        timeout = activeWindow.setTimeout(() => {
+          void showPopover();
+        }, 250);
+      };
+      chip.onmouseleave = () => hidePopover();
+    }
     return div;
   }
   // ─── Core Reconciliation ────────────────────────────────────────────
@@ -3582,7 +3929,7 @@ var DividerManager = class {
 };
 
 // src/main.ts
-var ColorfulFoldersPlugin = class extends obsidian7.Plugin {
+var ColorfulFoldersPlugin = class extends obsidian8.Plugin {
   constructor() {
     super(...arguments);
     __publicField(this, "settings");
@@ -3603,11 +3950,11 @@ var ColorfulFoldersPlugin = class extends obsidian7.Plugin {
     await this.loadSettings();
     this.dividerManager = new DividerManager(this);
     this.addSettingTab(new ColorfulFoldersSettingTab(this.app, this));
-    this.generateStylesDebounced = obsidian7.debounce(() => {
+    this.generateStylesDebounced = obsidian8.debounce(() => {
       this.generateStyles();
       this.initDividerObserver();
     }, 300, true);
-    this.processDividersDebounced = obsidian7.debounce(() => {
+    this.processDividersDebounced = obsidian8.debounce(() => {
       if (this.isSyncingDividers)
         return;
       this.dividerManager.syncDividers();
@@ -3681,15 +4028,15 @@ var ColorfulFoldersPlugin = class extends obsidian7.Plugin {
   }
   registerCustomIcons() {
     for (const [id, svg] of Object.entries(this.settings.customIcons)) {
-      obsidian7.addIcon(id, svg);
+      obsidian8.addIcon(id, svg);
     }
   }
   registerEvents() {
     this.registerEvent(
       this.app.workspace.on("file-menu", (menu, file) => {
-        if (!(file instanceof obsidian7.TAbstractFile))
+        if (!(file instanceof obsidian8.TAbstractFile))
           return;
-        const isFolder = file instanceof obsidian7.TFolder;
+        const isFolder = file instanceof obsidian8.TFolder;
         const label = isFolder ? "folder" : "file";
         menu.addItem((item) => {
           item.setTitle(`Set custom ${label} style`).setIcon("palette");
@@ -3720,7 +4067,7 @@ var ColorfulFoldersPlugin = class extends obsidian7.Plugin {
               sub.setTitle("Clear style").setIcon("eraser").onClick(async () => {
                 delete this.settings.customFolderColors[file.path];
                 await this.saveSettings();
-                new obsidian7.Notice(`Cleared style for ${file.name}`);
+                new obsidian8.Notice(`Cleared style for ${file.name}`);
               });
             });
           }
@@ -3749,7 +4096,7 @@ var ColorfulFoldersPlugin = class extends obsidian7.Plugin {
               await this.saveSettings();
               this.generateStyles();
               this.dividerManager.syncDividers();
-              new obsidian7.Notice(`Removed divider for: ${file.name}`);
+              new obsidian8.Notice(`Removed divider for: ${file.name}`);
             });
           });
         } else {
@@ -3813,7 +4160,7 @@ var ColorfulFoldersPlugin = class extends obsidian7.Plugin {
           if (!checking) {
             delete this.settings.customFolderColors[file.path];
             void this.saveSettings();
-            new obsidian7.Notice(`Cleared style for ${file.name}`);
+            new obsidian8.Notice(`Cleared style for ${file.name}`);
           }
           return true;
         }
@@ -3847,7 +4194,7 @@ var ColorfulFoldersPlugin = class extends obsidian7.Plugin {
               void this.saveSettings();
               this.generateStyles();
               this.dividerManager.syncDividers();
-              new obsidian7.Notice(`Removed divider for ${file.name}`);
+              new obsidian8.Notice(`Removed divider for ${file.name}`);
             }
             return true;
           }
@@ -3871,13 +4218,13 @@ var ColorfulFoldersPlugin = class extends obsidian7.Plugin {
       const palette = PALETTES[this.settings.palette] || PALETTES["Muted Dark Mode"];
       let path = target.path;
       let segments = path.split("/").filter((s) => s.length > 0);
-      let depth = target instanceof obsidian7.TFolder ? segments.length - 1 : segments.length - 1;
+      let depth = target instanceof obsidian8.TFolder ? segments.length - 1 : segments.length - 1;
       let customStyle = this.getStyle(path);
       let inheritedStyle = null;
       let parent = target.parent;
       while (parent && !parent.isRoot()) {
         const pStyle = this.getStyle(parent.path);
-        if (pStyle && (pStyle.applyToSubfolders || target instanceof obsidian7.TFile && pStyle.applyToFiles)) {
+        if (pStyle && (pStyle.applyToSubfolders || target instanceof obsidian8.TFile && pStyle.applyToFiles)) {
           inheritedStyle = pStyle;
           break;
         }
@@ -3900,7 +4247,7 @@ var ColorfulFoldersPlugin = class extends obsidian7.Plugin {
         effText = isDark && adjust === 0 ? color.hex : `rgb(${adjustBrightnessRgb(color.rgb, adjust)})`;
       }
       const effIconColor = customStyle && customStyle.iconColor ? customStyle.iconColor : inheritedStyle ? inheritedStyle.iconColor : color.hex;
-      const autoIcon = getAutoIconData(target.name, this.settings, target instanceof obsidian7.TFile);
+      const autoIcon = getAutoIconData(target.name, this.settings, target instanceof obsidian8.TFile);
       return {
         hex: anyToHex(color.hex),
         textColor: effText ? anyToHex(effText) : "",
@@ -3983,9 +4330,9 @@ var ColorfulFoldersPlugin = class extends obsidian7.Plugin {
     }
     if (count > 0) {
       await this.saveSettings();
-      new obsidian7.Notice(`Cleaned up ${count} stale style entries.`);
+      new obsidian8.Notice(`Cleaned up ${count} stale style entries.`);
     } else {
-      new obsidian7.Notice("No stale style entries found. Your configuration is clean!");
+      new obsidian8.Notice("No stale style entries found. Your configuration is clean!");
     }
   }
   initStyleObserver() {

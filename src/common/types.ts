@@ -19,6 +19,7 @@ export interface FolderStyle {
     dividerGlass?: boolean;
     dividerIconPosition?: 'left' | 'right' | 'both';
     dividerPillMode?: 'global' | 'on' | 'off';
+    dividerDescription?: string;
     hasDivider?: boolean;
 }
 
