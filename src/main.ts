@@ -435,7 +435,7 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
         container.addEventListener('scroll', () => {
             this.isScrolling = true;
             activeWindow.clearTimeout(this.scrollTimeout);
-            this.scrollTimeout = window.setTimeout(() => {
+            this.scrollTimeout = activeWindow.setTimeout(() => {
                 this.isScrolling = false;
                 this.processDividers();
             }, 100);

@@ -6,6 +6,7 @@ export class IconPickerModal extends obsidian.Modal {
     onSelect: (iconId: string) => void;
     currentIconId: string;
 
+    // eslint-disable-next-line obsidianmd/prefer-active-doc
     constructor(app: obsidian.App, plugin: IColorfulFoldersPlugin, currentIconId: string, onSelect: (iconId: string) => void) {
         super(app);
         this.plugin = plugin;

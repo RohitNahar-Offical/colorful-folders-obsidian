@@ -9,6 +9,7 @@ export class StyleGenerator {
     app: obsidian.App;
     iconCache: Map<string, string>;
 
+    // eslint-disable-next-line obsidianmd/prefer-active-doc
     constructor(plugin: IColorfulFoldersPlugin) {
         this.plugin = plugin;
         this.settings = plugin.settings;
@@ -872,10 +873,10 @@ export class StyleGenerator {
                     display: flex !important;
                     align-items: center !important;
                     padding: ${this.settings.dividerPillMode ? '6px 20px' : '2px 6px'} !important;
-                    font-size: 10.5px !important;
-                    font-weight: 800 !important;
-                    letter-spacing: 0.18em !important;
-                    text-transform: uppercase !important;
+                    font-size: var(--cf-divider-font-size, 10.5px) !important;
+                    font-weight: var(--cf-divider-font-weight, 800) !important;
+                    letter-spacing: var(--cf-divider-letter-spacing, 0.18em) !important;
+                    text-transform: var(--cf-divider-text-transform, uppercase) !important;
                     white-space: nowrap !important;
                     border-radius: 40px !important;
                     width: fit-content !important;

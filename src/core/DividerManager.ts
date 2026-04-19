@@ -10,6 +10,7 @@ export class DividerManager {
     plugin: IColorfulFoldersPlugin;
     app: obsidian.App;
 
+    // eslint-disable-next-line obsidianmd/prefer-active-doc
     constructor(plugin: IColorfulFoldersPlugin) {
         this.plugin = plugin;
         this.app = plugin.app;
@@ -79,6 +80,7 @@ export class DividerManager {
         chip.setCssProps({
             '--cf-divider-color': color,
             '--cf-divider-font-size': isUpper ? '10px' : '12px',
+            '--cf-divider-font-weight': isUpper ? '800' : '600',
             '--cf-divider-text-transform': isUpper ? 'uppercase' : 'none',
             '--cf-divider-letter-spacing': isUpper ? '1px' : 'normal'
         });

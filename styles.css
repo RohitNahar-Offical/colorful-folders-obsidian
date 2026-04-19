@@ -328,7 +328,7 @@
     align-items: center !important;
     color: var(--cf-divider-color) !important;
     font-size: var(--cf-divider-font-size) !important;
-    font-weight: 700 !important;
+    font-weight: var(--cf-divider-font-weight, 700) !important;
     text-transform: var(--cf-divider-text-transform) !important;
     letter-spacing: var(--cf-divider-letter-spacing) !important;
     white-space: nowrap !important;

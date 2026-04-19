@@ -20,6 +20,7 @@ export class DividerModal extends obsidian.Modal {
     _headerIconWrap!: HTMLElement;
     _previewIconEl!: HTMLElement;
 
+    // eslint-disable-next-line obsidianmd/prefer-active-doc
     constructor(app: obsidian.App, plugin: IColorfulFoldersPlugin, item: obsidian.TAbstractFile) {
         super(app);
         this.plugin = plugin;

@@ -8,6 +8,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
     plugin: IColorfulFoldersPlugin;
     activeTab: string;
 
+    // eslint-disable-next-line obsidianmd/prefer-active-doc
     constructor(app: obsidian.App, plugin: IColorfulFoldersPlugin) {
         super(app, plugin as unknown as obsidian.Plugin);
         this.plugin = plugin;

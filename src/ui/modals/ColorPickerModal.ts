@@ -20,6 +20,7 @@ _curIconBox: HTMLElement;
 _headerIconSize: number;
 _prevIconSize: number;
 
+    // eslint-disable-next-line obsidianmd/prefer-active-doc
     constructor(app: obsidian.App, plugin: IColorfulFoldersPlugin, item: obsidian.TAbstractFile, focusSection: string | null = null) {
         super(app);
         this.plugin = plugin;

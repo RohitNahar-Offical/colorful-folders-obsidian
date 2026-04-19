@@ -566,6 +566,7 @@ function createVisualColorPicker(container, initialHex, onChange, opts = {}) {
 
 // src/ui/modals/ColorPickerModal.ts
 var ColorPickerModal = class extends obsidian.Modal {
+  // eslint-disable-next-line obsidianmd/prefer-active-doc
   constructor(app, plugin, item, focusSection = null) {
     super(app);
     __publicField(this, "plugin");
@@ -1325,6 +1326,7 @@ var obsidian3 = __toESM(require("obsidian"));
 // src/ui/modals/IconPickerModal.ts
 var obsidian2 = __toESM(require("obsidian"));
 var IconPickerModal = class extends obsidian2.Modal {
+  // eslint-disable-next-line obsidianmd/prefer-active-doc
   constructor(app, plugin, currentIconId, onSelect) {
     super(app);
     __publicField(this, "plugin");
@@ -1496,6 +1498,7 @@ var IconPickerModal = class extends obsidian2.Modal {
 
 // src/ui/modals/DividerModal.ts
 var DividerModal = class extends obsidian3.Modal {
+  // eslint-disable-next-line obsidianmd/prefer-active-doc
   constructor(app, plugin, item) {
     var _a;
     super(app);
@@ -1803,6 +1806,7 @@ var obsidian4 = __toESM(require("obsidian"));
 // src/ui/modals/ConfirmModal.ts
 var import_obsidian = require("obsidian");
 var ConfirmModal = class extends import_obsidian.Modal {
+  // eslint-disable-next-line obsidianmd/prefer-active-doc
   constructor(app, title, message, onConfirm) {
     super(app);
     __publicField(this, "onConfirm");
@@ -1831,6 +1835,7 @@ var ConfirmModal = class extends import_obsidian.Modal {
 
 // src/ui/SettingTab.ts
 var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
+  // eslint-disable-next-line obsidianmd/prefer-active-doc
   constructor(app, plugin) {
     super(app, plugin);
     __publicField(this, "plugin");
@@ -2401,6 +2406,7 @@ var ColorfulFoldersSettingTab = class extends obsidian4.PluginSettingTab {
 // src/core/StyleGenerator.ts
 var obsidian5 = __toESM(require("obsidian"));
 var StyleGenerator = class {
+  // eslint-disable-next-line obsidianmd/prefer-active-doc
   constructor(plugin) {
     __publicField(this, "plugin");
     __publicField(this, "settings");
@@ -3184,10 +3190,10 @@ var StyleGenerator = class {
                     display: flex !important;
                     align-items: center !important;
                     padding: ${this.settings.dividerPillMode ? "6px 20px" : "2px 6px"} !important;
-                    font-size: 10.5px !important;
-                    font-weight: 800 !important;
-                    letter-spacing: 0.18em !important;
-                    text-transform: uppercase !important;
+                    font-size: var(--cf-divider-font-size, 10.5px) !important;
+                    font-weight: var(--cf-divider-font-weight, 800) !important;
+                    letter-spacing: var(--cf-divider-letter-spacing, 0.18em) !important;
+                    text-transform: var(--cf-divider-text-transform, uppercase) !important;
                     white-space: nowrap !important;
                     border-radius: 40px !important;
                     width: fit-content !important;
@@ -3257,6 +3263,7 @@ var StyleGenerator = class {
 // src/core/DividerManager.ts
 var obsidian6 = __toESM(require("obsidian"));
 var DividerManager = class {
+  // eslint-disable-next-line obsidianmd/prefer-active-doc
   constructor(plugin) {
     __publicField(this, "plugin");
     __publicField(this, "app");
@@ -3313,6 +3320,7 @@ var DividerManager = class {
     chip.setCssProps({
       "--cf-divider-color": color,
       "--cf-divider-font-size": isUpper ? "10px" : "12px",
+      "--cf-divider-font-weight": isUpper ? "800" : "600",
       "--cf-divider-text-transform": isUpper ? "uppercase" : "none",
       "--cf-divider-letter-spacing": isUpper ? "1px" : "normal"
     });
@@ -3873,7 +3881,7 @@ var ColorfulFoldersPlugin = class extends obsidian7.Plugin {
     container.addEventListener("scroll", () => {
       this.isScrolling = true;
       activeWindow.clearTimeout(this.scrollTimeout);
-      this.scrollTimeout = window.setTimeout(() => {
+      this.scrollTimeout = activeWindow.setTimeout(() => {
         this.isScrolling = false;
         this.processDividers();
       }, 100);
