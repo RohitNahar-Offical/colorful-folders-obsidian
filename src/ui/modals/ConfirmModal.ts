@@ -1,12 +1,11 @@
-import { App, Modal, Setting } from 'obsidian';
+import * as obsidian from 'obsidian';
 
-export class ConfirmModal extends Modal {
+export class ConfirmModal extends obsidian.Modal {
     private onConfirm: () => void | Promise<void>;
     private message: string;
     private title: string;
 
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Constructor is incorrectly flagged by this rule
-    constructor(app: App, title: string, message: string, onConfirm: () => void | Promise<void>) {
+    constructor(app: obsidian.App, title: string, message: string, onConfirm: () => void | Promise<void>) {
         super(app);
         this.title = title;
         this.message = message;
@@ -18,7 +17,7 @@ export class ConfirmModal extends Modal {
         contentEl.createEl('h2', { text: this.title });
         contentEl.createEl('p', { text: this.message });
 
-        new Setting(contentEl)
+        new obsidian.Setting(contentEl)
             .addButton(btn => btn
                 .setButtonText('Confirm')
                 .setWarning()

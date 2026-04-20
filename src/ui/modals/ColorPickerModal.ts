@@ -20,7 +20,6 @@ _curIconBox: HTMLElement;
 _headerIconSize: number;
 _prevIconSize: number;
 
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Constructor is incorrectly flagged by this rule
     constructor(app: obsidian.App, plugin: IColorfulFoldersPlugin, item: obsidian.TAbstractFile, focusSection: string | null = null) {
         super(app);
         this.plugin = plugin;
@@ -435,7 +434,7 @@ _prevIconSize: number;
             backgroundColor: "var(--background-secondary)", color: "var(--text-normal)", fontSize: "0.85em"
         });
         Array.from(prefixes).sort().forEach(p => {
-            const opt = filterSelect.createEl("option", { text: p === 'all' ? 'All Packs' : p.toUpperCase(), value: p });
+            const opt = filterSelect.createEl("option", { text: p === 'all' ? 'All packs' : p.toUpperCase(), value: p });
             if (p === 'all') opt.selected = true;
         });
 

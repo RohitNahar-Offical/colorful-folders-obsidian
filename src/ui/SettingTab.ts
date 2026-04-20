@@ -8,7 +8,6 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
     plugin: IColorfulFoldersPlugin;
     activeTab: string;
 
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Constructor is incorrectly flagged by this rule
     constructor(app: obsidian.App, plugin: IColorfulFoldersPlugin) {
         super(app, plugin as unknown as obsidian.Plugin);
         this.plugin = plugin;
@@ -114,7 +113,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         const iconDesc = customIconCard.createEl("p", { text: "Add individual SVG icons or import bulk packs from the internet. All custom icons added here will appear in the icon selection grid when styling a folder or file." });
         iconDesc.setCssStyles({ fontSize: "0.85em", color: "var(--text-muted)", marginBottom: "20px", lineHeight: "1.4" });
 
-        const tip = customIconCard.createEl("div", { text: "Pro tip: custom IDs should be unique. Avoid starting them with 'lucide-' unless you intend to override a built-in Obsidian icon." });
+        const tip = customIconCard.createEl("div", { text: "Pro tip: custom ids should be unique. Avoid starting them with 'lucide-' unless you intend to override a built-in Obsidian icon." });
         tip.setCssStyles({ fontSize: "0.8em", color: "var(--text-accent)", marginBottom: "15px", fontStyle: "italic" });
 
         const manualWrap = customIconCard.createDiv();

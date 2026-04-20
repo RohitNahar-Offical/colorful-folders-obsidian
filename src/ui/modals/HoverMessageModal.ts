@@ -15,7 +15,6 @@ export class HoverMessageModal extends obsidian.Modal {
     suggestType: 'link' | 'tag' | null = null;
     suggestStart = -1;
 
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Constructor is incorrectly flagged by this rule
     constructor(app: obsidian.App, plugin: IColorfulFoldersPlugin, path: string, description: string, onSave: (val: string) => void) {
         super(app);
         this.plugin = plugin;
@@ -53,7 +52,7 @@ export class HoverMessageModal extends obsidian.Modal {
         
         const textArea = editorWrapper.createEl("textarea");
         textArea.value = this.description;
-        textArea.placeholder = "Write something beautiful... \n\nTips:\n- Use [[links]] to jump to notes\n- Use #tags to categorize\n- Use **bold** or *italic*";
+        textArea.placeholder = "Write something beautiful... \n\nTips:\n- Use [[links]] to jump to notes\n- use #tags to categorize\n- use **bold** or *italic*";
         textArea.setCssStyles({
             width: "100%", height: "180px", borderRadius: "8px", padding: "12px",
             backgroundColor: "var(--background-primary)", border: "1px solid var(--background-modifier-border)",

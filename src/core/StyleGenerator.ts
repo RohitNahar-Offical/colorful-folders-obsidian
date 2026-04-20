@@ -10,7 +10,6 @@ export class StyleGenerator {
     app: obsidian.App;
     iconCache: Map<string, string>;
 
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Constructor is incorrectly flagged by this rule
     constructor(plugin: IColorfulFoldersPlugin) {
         this.plugin = plugin;
         this.settings = plugin.settings;

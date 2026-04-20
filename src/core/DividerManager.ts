@@ -20,7 +20,6 @@ export class DividerManager {
     app: obsidian.App;
     static activePopover: HTMLElement | null = null;
 
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Constructor is incorrectly flagged when using activeDocument in methods
     constructor(plugin: IColorfulFoldersPlugin) {
         this.plugin = plugin;
         this.app = plugin.app;

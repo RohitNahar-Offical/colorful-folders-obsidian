@@ -6,7 +6,6 @@ export class IconPickerModal extends obsidian.Modal {
     onSelect: (iconId: string) => void | Promise<void>;
     currentIconId: string;
 
-    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Constructor is incorrectly flagged by this rule
     constructor(app: obsidian.App, plugin: IColorfulFoldersPlugin, currentIconId: string, onSelect: (iconId: string) => void | Promise<void>) {
         super(app);
         this.plugin = plugin;
