@@ -15,6 +15,7 @@ export class HoverMessageModal extends obsidian.Modal {
     suggestType: 'link' | 'tag' | null = null;
     suggestStart = -1;
 
+    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Constructor is incorrectly flagged by this rule
     constructor(app: obsidian.App, plugin: IColorfulFoldersPlugin, path: string, description: string, onSave: (val: string) => void) {
         super(app);
         this.plugin = plugin;
@@ -23,7 +24,7 @@ export class HoverMessageModal extends obsidian.Modal {
         this.onSave = onSave;
     }
 
-    async onOpen() {
+    onOpen() {
         const { contentEl, modalEl } = this;
         contentEl.empty();
         
@@ -40,7 +41,7 @@ export class HoverMessageModal extends obsidian.Modal {
             display: "flex", flexDirection: "column", gap: "4px",
             padding: "24px 24px 16px 24px", borderBottom: "1px solid var(--background-modifier-border)"
         });
-        header.createEl("h2", { text: "Edit Hover Message", cls: "cf-modal-title" }).setCssStyles({ margin: "0", fontSize: "1.4em" });
+        header.createEl("h2", { text: "Edit hover message", cls: "cf-modal-title" }).setCssStyles({ margin: "0", fontSize: "1.4em" });
         header.createEl("p", { text: "Add context, links, or tags that appear when you hover over this divider." }).setCssStyles({ margin: "0", opacity: "0.6", fontSize: "0.9em" });
 
         const body = contentEl.createDiv();
@@ -48,7 +49,7 @@ export class HoverMessageModal extends obsidian.Modal {
 
         // Editor Section
         const editorWrapper = body.createDiv();
-        editorWrapper.createEl("label", { text: "Markdown Editor" }).setCssStyles({ display: "block", marginBottom: "8px", fontWeight: "600", fontSize: "0.85em", textTransform: "uppercase", letterSpacing: "0.05em", opacity: "0.8" });
+        editorWrapper.createEl("label", { text: "Markdown editor" }).setCssStyles({ display: "block", marginBottom: "8px", fontWeight: "600", fontSize: "0.85em", textTransform: "uppercase", letterSpacing: "0.05em", opacity: "0.8" });
         
         const textArea = editorWrapper.createEl("textarea");
         textArea.value = this.description;
@@ -61,7 +62,7 @@ export class HoverMessageModal extends obsidian.Modal {
 
         // Preview Section
         const previewWrapper = body.createDiv();
-        previewWrapper.createEl("label", { text: "Live Preview" }).setCssStyles({ display: "block", marginBottom: "8px", fontWeight: "600", fontSize: "0.85em", textTransform: "uppercase", letterSpacing: "0.05em", opacity: "0.8" });
+        previewWrapper.createEl("label", { text: "Live preview" }).setCssStyles({ display: "block", marginBottom: "8px", fontWeight: "600", fontSize: "0.85em", textTransform: "uppercase", letterSpacing: "0.05em", opacity: "0.8" });
         
         this.previewEl = previewWrapper.createDiv({ cls: "cf-premium-popover" });
         this.previewEl.setCssStyles({
@@ -224,7 +225,7 @@ export class HoverMessageModal extends obsidian.Modal {
             this.close();
         };
 
-        const saveBtn = footer.createEl("button", { text: "Save Message" });
+        const saveBtn = footer.createEl("button", { text: "Save message" });
         saveBtn.setCssStyles({
             backgroundColor: "var(--interactive-accent)", color: "var(--text-on-accent)",
             padding: "8px 24px", borderRadius: "8px", border: "none", fontWeight: "600", cursor: "pointer"

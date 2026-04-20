@@ -15,6 +15,7 @@ export interface FolderStyle {
     dividerAlignment?: string;
     dividerLineStyle?: string;
     dividerIcon?: string;
+    dividerIconColor?: string;
     dividerUpper?: boolean;
     dividerGlass?: boolean;
     dividerIconPosition?: 'left' | 'right' | 'both';

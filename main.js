@@ -567,7 +567,7 @@ function createVisualColorPicker(container, initialHex, onChange, opts = {}) {
 
 // src/ui/modals/ColorPickerModal.ts
 var ColorPickerModal = class extends obsidian.Modal {
-  // eslint-disable-next-line obsidianmd/prefer-active-doc
+  // eslint-disable-next-line obsidianmd/prefer-active-doc -- Constructor is incorrectly flagged by this rule
   constructor(app, plugin, item, focusSection = null) {
     super(app);
     __publicField(this, "plugin");
@@ -1311,8 +1311,10 @@ var ColorPickerModal = class extends obsidian.Modal {
     curIconBox.empty();
     obsidian.setIcon(curIconBox, id || (this.isFolder ? "folder" : "file"));
     const s = curIconBox.querySelector("svg");
-    if (s)
-      s.setCssStyles({ width: "22px", height: "22px", color: "#fff" });
+    if (s) {
+      const effectiveIconColor = this.folderStyle.iconColor || this.folderStyle.hex || "#fff";
+      s.setCssStyles({ width: "22px", height: "22px", color: effectiveIconColor });
+    }
     if (this._curIconNameEl)
       this._curIconNameEl.setText(id || (this.isFolder ? "folder" : "file"));
   }
@@ -1327,7 +1329,7 @@ var obsidian4 = __toESM(require("obsidian"));
 // src/ui/modals/IconPickerModal.ts
 var obsidian2 = __toESM(require("obsidian"));
 var IconPickerModal = class extends obsidian2.Modal {
-  // eslint-disable-next-line obsidianmd/prefer-active-doc
+  // eslint-disable-next-line obsidianmd/prefer-active-doc -- Constructor is incorrectly flagged by this rule
   constructor(app, plugin, currentIconId, onSelect) {
     super(app);
     __publicField(this, "plugin");
@@ -1463,8 +1465,8 @@ var IconPickerModal = class extends obsidian2.Modal {
           });
         }
         cell.title = id;
-        cell.onclick = () => {
-          this.onSelect(id);
+        cell.onclick = async () => {
+          await this.onSelect(id);
           this.close();
         };
         cell.onmouseenter = () => {
@@ -1500,6 +1502,7 @@ var IconPickerModal = class extends obsidian2.Modal {
 // src/ui/modals/HoverMessageModal.ts
 var obsidian3 = __toESM(require("obsidian"));
 var HoverMessageModal = class extends obsidian3.Modal {
+  // eslint-disable-next-line obsidianmd/prefer-active-doc -- Constructor is incorrectly flagged by this rule
   constructor(app, plugin, path, description, onSave) {
     super(app);
     __publicField(this, "plugin");
@@ -1518,7 +1521,7 @@ var HoverMessageModal = class extends obsidian3.Modal {
     this.description = description;
     this.onSave = onSave;
   }
-  async onOpen() {
+  onOpen() {
     const { contentEl, modalEl } = this;
     contentEl.empty();
     modalEl.setCssStyles({
@@ -1535,12 +1538,12 @@ var HoverMessageModal = class extends obsidian3.Modal {
       padding: "24px 24px 16px 24px",
       borderBottom: "1px solid var(--background-modifier-border)"
     });
-    header.createEl("h2", { text: "Edit Hover Message", cls: "cf-modal-title" }).setCssStyles({ margin: "0", fontSize: "1.4em" });
+    header.createEl("h2", { text: "Edit hover message", cls: "cf-modal-title" }).setCssStyles({ margin: "0", fontSize: "1.4em" });
     header.createEl("p", { text: "Add context, links, or tags that appear when you hover over this divider." }).setCssStyles({ margin: "0", opacity: "0.6", fontSize: "0.9em" });
     const body = contentEl.createDiv();
     body.setCssStyles({ padding: "20px 24px", display: "flex", flexDirection: "column", gap: "20px" });
     const editorWrapper = body.createDiv();
-    editorWrapper.createEl("label", { text: "Markdown Editor" }).setCssStyles({ display: "block", marginBottom: "8px", fontWeight: "600", fontSize: "0.85em", textTransform: "uppercase", letterSpacing: "0.05em", opacity: "0.8" });
+    editorWrapper.createEl("label", { text: "Markdown editor" }).setCssStyles({ display: "block", marginBottom: "8px", fontWeight: "600", fontSize: "0.85em", textTransform: "uppercase", letterSpacing: "0.05em", opacity: "0.8" });
     const textArea = editorWrapper.createEl("textarea");
     textArea.value = this.description;
     textArea.placeholder = "Write something beautiful... \n\nTips:\n- Use [[links]] to jump to notes\n- Use #tags to categorize\n- Use **bold** or *italic*";
@@ -1557,7 +1560,7 @@ var HoverMessageModal = class extends obsidian3.Modal {
       fontFamily: "var(--font-monospace)"
     });
     const previewWrapper = body.createDiv();
-    previewWrapper.createEl("label", { text: "Live Preview" }).setCssStyles({ display: "block", marginBottom: "8px", fontWeight: "600", fontSize: "0.85em", textTransform: "uppercase", letterSpacing: "0.05em", opacity: "0.8" });
+    previewWrapper.createEl("label", { text: "Live preview" }).setCssStyles({ display: "block", marginBottom: "8px", fontWeight: "600", fontSize: "0.85em", textTransform: "uppercase", letterSpacing: "0.05em", opacity: "0.8" });
     this.previewEl = previewWrapper.createDiv({ cls: "cf-premium-popover" });
     this.previewEl.setCssStyles({
       position: "relative",
@@ -1714,7 +1717,7 @@ var HoverMessageModal = class extends obsidian3.Modal {
       closeSuggest();
       this.close();
     };
-    const saveBtn = footer.createEl("button", { text: "Save Message" });
+    const saveBtn = footer.createEl("button", { text: "Save message" });
     saveBtn.setCssStyles({
       backgroundColor: "var(--interactive-accent)",
       color: "var(--text-on-accent)",
@@ -1740,7 +1743,7 @@ var HoverMessageModal = class extends obsidian3.Modal {
 
 // src/ui/modals/DividerModal.ts
 var DividerModal = class extends obsidian4.Modal {
-  // eslint-disable-next-line obsidianmd/prefer-active-doc
+  // eslint-disable-next-line obsidianmd/prefer-active-doc -- Constructor is incorrectly flagged by this rule
   constructor(app, plugin, item) {
     var _a;
     super(app);
@@ -1762,14 +1765,16 @@ var DividerModal = class extends obsidian4.Modal {
     } else if (this.originalStyle) {
       existingStyle = this.originalStyle;
     }
-    const folderStyle = this.plugin.getStyle(this.path);
-    const defaultColor = (folderStyle == null ? void 0 : folderStyle.hex) || "var(--interactive-accent)";
+    const eff = this.plugin.getEffectiveStyle(item);
+    const defaultColor = eff.hex;
+    const defaultIconColor = eff.iconColor || "#ffffff";
     this.config = {
       name: existingStyle.dividerText || item.name,
       color: existingStyle.dividerColor || defaultColor,
       alignment: existingStyle.dividerAlignment || "center",
       lineStyle: existingStyle.dividerLineStyle || "global",
       icon: existingStyle.dividerIcon || "",
+      iconColor: existingStyle.dividerIconColor || defaultIconColor,
       isUpper: existingStyle.dividerUpper !== void 0 ? existingStyle.dividerUpper : true,
       useGlass: existingStyle.dividerGlass !== void 0 ? existingStyle.dividerGlass : true,
       iconPosition: existingStyle.dividerIconPosition || "left",
@@ -1856,22 +1861,24 @@ var DividerModal = class extends obsidian4.Modal {
       this.config.name = v;
       this._liveSync();
     }));
-    new obsidian4.Setting(textSect).setName("Custom color").setDesc("Pick a color for the label and line.").addText((text) => {
-      text.setValue(this.config.color);
-      const input = text.inputEl;
-      input.type = "color";
-      input.setCssStyles({
-        width: "40px",
-        height: "30px",
-        padding: "0"
-      });
-      input.onchange = () => {
-        this.config.color = text.getValue();
-        this._headerIconWrap.setCssStyles({ backgroundColor: this.config.color });
-        this._refreshHeaderIcon();
-        this._liveSync();
-      };
-    });
+    const colorSect = addSection("Divider color");
+    const cpCont = colorSect.createDiv();
+    cpCont.setCssStyles({ marginTop: "8px" });
+    createVisualColorPicker(cpCont, this.config.color, (hex) => {
+      this.config.color = hex;
+      this._headerIconWrap.setCssStyles({ backgroundColor: hex });
+      this._refreshHeaderIcon();
+      this._liveSync();
+    }, { showAlpha: false });
+    const icColorSect = addSection("Icon color");
+    const icCpCont = icColorSect.createDiv();
+    icCpCont.setCssStyles({ marginTop: "8px" });
+    const currentIconColor = this.config.iconColor || "#ffffff";
+    createVisualColorPicker(icCpCont, currentIconColor, (hex) => {
+      this.config.iconColor = hex;
+      this._refreshHeaderIcon();
+      this._liveSync();
+    }, { showAlpha: false });
     new obsidian4.Setting(textSect).setName("Alignment").addDropdown((d) => d.addOption("left", "Left").addOption("center", "Center").addOption("right", "Right").setValue(this.config.alignment).onChange((v) => {
       this.config.alignment = v;
       this._liveSync();
@@ -1935,10 +1942,10 @@ var DividerModal = class extends obsidian4.Modal {
       this._liveSync();
     }));
     const interactiveSect = addSection("Interactive features");
-    new obsidian4.Setting(interactiveSect).setName("Hover message").setDesc("A premium popover with Markdown support (links, tags, etc).").addButton((btn) => btn.setButtonText(this.config.description ? "Edit Detailed Message" : "Add Hover Message").setCta().onClick(() => {
+    new obsidian4.Setting(interactiveSect).setName("Hover message").setDesc("A premium popover with Markdown support (links, tags, etc).").addButton((btn) => btn.setButtonText(this.config.description ? "Edit detailed message" : "Add hover message").setCta().onClick(() => {
       new HoverMessageModal(this.app, this.plugin, this.path, this.config.description, (newVal) => {
         this.config.description = newVal;
-        btn.setButtonText(newVal ? "Edit Detailed Message" : "Add Hover Message");
+        btn.setButtonText(newVal ? "Edit detailed message" : "Add hover message");
         this._liveSync();
       }).open();
     }));
@@ -1979,11 +1986,14 @@ var DividerModal = class extends obsidian4.Modal {
       delete styleObj.dividerText;
       delete styleObj.dividerColor;
       delete styleObj.dividerIcon;
+      delete styleObj.dividerIconColor;
       delete styleObj.dividerAlignment;
       delete styleObj.dividerLineStyle;
       delete styleObj.dividerUpper;
       delete styleObj.dividerGlass;
       delete styleObj.dividerIconPosition;
+      delete styleObj.dividerPillMode;
+      delete styleObj.dividerDescription;
       this.plugin.settings.customFolderColors[this.path] = styleObj;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
@@ -2012,6 +2022,7 @@ var DividerModal = class extends obsidian4.Modal {
       styleObj.dividerUpper = this.config.isUpper;
       styleObj.dividerGlass = this.config.useGlass;
       styleObj.dividerIcon = this.config.icon;
+      styleObj.dividerIconColor = this.config.iconColor;
       styleObj.dividerIconPosition = this.config.iconPosition;
       styleObj.dividerPillMode = this.config.pillMode;
       styleObj.dividerDescription = this.config.description;
@@ -2034,6 +2045,7 @@ var DividerModal = class extends obsidian4.Modal {
       dividerUpper: this.config.isUpper,
       dividerGlass: this.config.useGlass,
       dividerIcon: this.config.icon,
+      dividerIconColor: this.config.iconColor,
       dividerIconPosition: this.config.iconPosition,
       dividerPillMode: this.config.pillMode,
       dividerDescription: this.config.description,
@@ -2050,7 +2062,8 @@ var DividerModal = class extends obsidian4.Modal {
     obsidian4.setIcon(this._previewIconEl, iconId);
     const svg = this._previewIconEl.querySelector("svg");
     if (svg) {
-      svg.setCssStyles({ width: "20px", height: "20px", color: "white" });
+      const icColor = this.config.iconColor || "#ffffff";
+      svg.setCssStyles({ width: "20px", height: "20px", color: icColor });
     } else {
       this._previewIconEl.setText(this.config.icon);
       this._previewIconEl.setCssStyles({ fontSize: "1.2em" });
@@ -2075,7 +2088,7 @@ var obsidian5 = __toESM(require("obsidian"));
 // src/ui/modals/ConfirmModal.ts
 var import_obsidian = require("obsidian");
 var ConfirmModal = class extends import_obsidian.Modal {
-  // eslint-disable-next-line obsidianmd/prefer-active-doc
+  // eslint-disable-next-line obsidianmd/prefer-active-doc -- Constructor is incorrectly flagged by this rule
   constructor(app, title, message, onConfirm) {
     super(app);
     __publicField(this, "onConfirm");
@@ -2104,7 +2117,7 @@ var ConfirmModal = class extends import_obsidian.Modal {
 
 // src/ui/SettingTab.ts
 var ColorfulFoldersSettingTab = class extends obsidian5.PluginSettingTab {
-  // eslint-disable-next-line obsidianmd/prefer-active-doc
+  // eslint-disable-next-line obsidianmd/prefer-active-doc -- Constructor is incorrectly flagged by this rule
   constructor(app, plugin) {
     super(app, plugin);
     __publicField(this, "plugin");
@@ -2178,15 +2191,17 @@ var ColorfulFoldersSettingTab = class extends obsidian5.PluginSettingTab {
     new obsidian5.Setting(intCard).setName("Enable notebook navigator support").setDesc("Allows colorful folders to safely style the icons and text of notebook navigator items.").addToggle((toggle) => toggle.setValue(this.plugin.settings.notebookNavigatorSupport).onChange(async (value) => {
       this.plugin.settings.notebookNavigatorSupport = value;
       await this.plugin.saveSettings();
+      this.plugin.generateStyles();
     }));
     new obsidian5.Setting(intCard).setName("Apply background colors to files").setDesc("Injects the faint background block and left border to file cards. Disable this to keep the cards strictly native.").addToggle((toggle) => toggle.setValue(this.plugin.settings.notebookNavigatorFileBackground).onChange(async (value) => {
       this.plugin.settings.notebookNavigatorFileBackground = value;
       await this.plugin.saveSettings();
+      this.plugin.generateStyles();
     }));
     const customIconCard = makeCard(iconPanel, "\u{1F4E6}", "Custom icon management");
     const iconDesc = customIconCard.createEl("p", { text: "Add individual SVG icons or import bulk packs from the internet. All custom icons added here will appear in the icon selection grid when styling a folder or file." });
     iconDesc.setCssStyles({ fontSize: "0.85em", color: "var(--text-muted)", marginBottom: "20px", lineHeight: "1.4" });
-    const tip = customIconCard.createEl("div", { text: "Pro tip: Custom ids should be unique. Avoid starting them with 'lucide-' unless you intend to override a built-in Obsidian icon." });
+    const tip = customIconCard.createEl("div", { text: "Pro tip: custom IDs should be unique. Avoid starting them with 'lucide-' unless you intend to override a built-in Obsidian icon." });
     tip.setCssStyles({ fontSize: "0.8em", color: "var(--text-accent)", marginBottom: "15px", fontStyle: "italic" });
     const manualWrap = customIconCard.createDiv();
     manualWrap.setCssStyles({
@@ -2314,11 +2329,11 @@ var ColorfulFoldersSettingTab = class extends obsidian5.PluginSettingTab {
       });
     }
     const maintCard = makeCard(sysPanel, "\u{1F527}", "Icon maintenance");
-    new obsidian5.Setting(maintCard).setName("Register all icons").setDesc("Ensures all icons in your library are properly loaded into Obsidian.").addButton((btn) => btn.setButtonText("Re-register icons").onClick(async () => {
+    new obsidian5.Setting(maintCard).setName("Register all icons").setDesc("Ensures all icons in your library are properly loaded into Obsidian.").addButton((btn) => btn.setButtonText("Re-register icons").onClick(() => {
       this.plugin.registerCustomIcons();
       new obsidian5.Notice("All custom icons re-registered.");
     }));
-    new obsidian5.Setting(maintCard).setName("Clear icon library").setDesc("Permanently deletes all imported icon packs.").addButton((btn) => btn.setButtonText("Clear icon library").setWarning().onClick(async () => {
+    new obsidian5.Setting(maintCard).setName("Clear icon library").setDesc("Permanently deletes all imported icon packs.").addButton((btn) => btn.setButtonText("Clear icon library").setWarning().onClick(() => {
       new ConfirmModal(this.app, "Clear icon library", "Are you sure you want to delete ALL custom icons?", async () => {
         this.plugin.settings.customIcons = {};
         this.plugin.registerCustomIcons();
@@ -2587,7 +2602,7 @@ var ColorfulFoldersSettingTab = class extends obsidian5.PluginSettingTab {
       await this.plugin.cleanUnusedStyles();
       this.display();
     }));
-    new obsidian5.Setting(dbCard).setName("Reset styles & presets").setDesc("Danger: This will permanently remove all custom colors, icons, and individual folder styles. Presets are also cleared.").addButton((btn) => btn.setButtonText("Reset styling").setWarning().onClick(async () => {
+    new obsidian5.Setting(dbCard).setName("Reset styles & presets").setDesc("Danger: This will permanently remove all custom colors, icons, and individual folder styles. Presets are also cleared.").addButton((btn) => btn.setButtonText("Reset styling").setWarning().onClick(() => {
       new ConfirmModal(this.app, "Reset styles & presets", "Are you sure you want to delete all custom styling and presets? This cannot be undone.", async () => {
         this.plugin.settings.customFolderColors = {};
         this.plugin.settings.presets = {};
@@ -2597,7 +2612,7 @@ var ColorfulFoldersSettingTab = class extends obsidian5.PluginSettingTab {
         this.display();
       }).open();
     }));
-    new obsidian5.Setting(dbCard).setName("Factory reset").setDesc("Critical: This will reset every setting in the plugin to its original default state, including opacities, toggles, and all custom data.").addButton((btn) => btn.setButtonText("Hard reset everything").setWarning().onClick(async () => {
+    new obsidian5.Setting(dbCard).setName("Factory reset").setDesc("Critical: This will reset every setting in the plugin to its original default state, including opacities, toggles, and all custom data.").addButton((btn) => btn.setButtonText("Hard reset everything").setWarning().onClick(() => {
       new ConfirmModal(this.app, "Factory reset", "Are you sure you want to restore all settings to default? This will wipe ALL your customization!", async () => {
         this.plugin.settings = Object.assign({}, DEFAULT_SETTINGS);
         await this.plugin.saveSettings();
@@ -2674,8 +2689,46 @@ var ColorfulFoldersSettingTab = class extends obsidian5.PluginSettingTab {
 
 // src/core/StyleGenerator.ts
 var obsidian6 = __toESM(require("obsidian"));
+
+// src/integrations/NotebookNavigator.ts
+var NN_SELECTORS = {
+  CONTAINERS: ".nn-navigation-pane-content, .nn-virtual-container",
+  NAV_ITEM: ".nn-navitem",
+  FILE_ITEM: ".nn-file",
+  NAV_NAME: ".nn-navitem-name",
+  NAV_ICON: ".nn-navitem-icon",
+  FILE_NAME: ".nn-file-name",
+  FILE_ICON: ".nn-file-icon"
+};
+var NotebookNavigatorIntegration = class {
+  static isSupported(settings) {
+    return !!settings.notebookNavigatorSupport;
+  }
+  static showFileBg(settings) {
+    return !!(settings.notebookNavigatorSupport && settings.notebookNavigatorFileBackground);
+  }
+  /**
+   * Returns the base selector for NN items (folders/nav items).
+   */
+  static getNavBase(settings) {
+    return this.isSupported(settings) ? NN_SELECTORS.NAV_ITEM : ".cf-disabled-nn";
+  }
+  /**
+   * Returns a scoped selector that ONLY matches if inside an NN container.
+   */
+  static getScopedNavSelector(path) {
+    const safePath = path.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    return `.notebook-navigator ${NN_SELECTORS.NAV_ITEM}[data-path="${safePath}"]`;
+  }
+  static getScopedFileSelector(path) {
+    const safePath = path.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    return `.notebook-navigator ${NN_SELECTORS.FILE_ITEM}[data-path="${safePath}"]`;
+  }
+};
+
+// src/core/StyleGenerator.ts
 var StyleGenerator = class {
-  // eslint-disable-next-line obsidianmd/prefer-active-doc
+  // eslint-disable-next-line obsidianmd/prefer-active-doc -- Constructor is incorrectly flagged by this rule
   constructor(plugin) {
     __publicField(this, "plugin");
     __publicField(this, "settings");
@@ -2702,7 +2755,12 @@ var StyleGenerator = class {
     return activeDocument.body.classList.contains("theme-dark");
   }
   getStyle(path) {
-    return this.settings.customFolderColors[path] || null;
+    const style = this.settings.customFolderColors[path];
+    if (!style)
+      return null;
+    if (typeof style === "string")
+      return { hex: style };
+    return style;
   }
   generateCss() {
     let css = "";
@@ -2745,8 +2803,8 @@ var StyleGenerator = class {
     const tintOp = this.settings.tintOpacity;
     const outlineOnly = this.settings.outlineOnly;
     const cycleOff = this.settings.cycleOffset || 0;
-    const nnText = this.settings.notebookNavigatorSupport ? ".nn-navitem-name" : ".cf-disabled-nn";
-    const nnFileBg = this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground ? ".nn-navitem" : ".cf-disabled-nn";
+    const nnActive = NotebookNavigatorIntegration.isSupported(this.settings);
+    const nnFileBgActive = NotebookNavigatorIntegration.showFileBg(this.settings);
     let heatmapData = /* @__PURE__ */ new Map();
     if (this.settings.colorMode === "heatmap") {
       if (this.plugin.heatmapCache && this.plugin.heatmapCache.size > 0) {
@@ -2865,10 +2923,11 @@ var StyleGenerator = class {
       const animDur = this.settings.activeAnimationDuration || 4;
       const rootTintOp = this.settings.rootOpacity !== void 0 ? this.settings.rootOpacity : 0.06;
       let validIndex = 0;
-      if (passedColor || this.settings.autoColorFiles || this.settings.autoIcons) {
+      if (passedColor || this.settings.autoColorFiles || this.settings.autoIcons || this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground) {
         let fileIndex = 0;
         for (const child of copyFiles) {
           const safePath = safeEscape(child.path);
+          const nameHash = hashString(child.name);
           let color;
           let fileStyle = this.getStyle(child.path);
           const iconColor = (fileStyle == null ? void 0 : fileStyle.iconColor) || (inheritedStyle == null ? void 0 : inheritedStyle.applyToFiles) && inheritedStyle.iconColor || null;
@@ -2881,22 +2940,22 @@ var StyleGenerator = class {
           } else if (this.settings.colorMode === "heatmap") {
             const mtime = child.stat.mtime;
             color = getHeatmapColor(mtime);
-          } else if (this.settings.autoColorFiles) {
+          } else if (this.settings.autoColorFiles || this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground) {
             const hObj = (inheritedStyle == null ? void 0 : inheritedStyle.hex) ? hexToRgbObj(inheritedStyle.hex) : null;
             if (hObj) {
-              const offset = (fileIndex % 5 - 2) * 5;
+              const offset = (nameHash % 5 - 2) * 5;
               const r = Math.max(0, Math.min(255, hObj.r + offset));
               const g = Math.max(0, Math.min(255, hObj.g + offset));
               const b = Math.max(0, Math.min(255, hObj.b + offset));
               color = { rgb: `${r}, ${g}, ${b}`, hex: inheritedStyle.hex };
             } else {
-              color = currentPalette[(validIndex + fileIndex + cycleOff) % currentPalette.length];
+              color = currentPalette[(validIndex + nameHash + cycleOff) % currentPalette.length];
             }
           } else {
             color = passedColor || { rgb: "var(--text-normal-rgb)", hex: "var(--text-normal)" };
           }
           const isCustomColor = !!(fileStyle && fileStyle.hex);
-          const shouldColorFile = isCustomColor || inheritedStyle && inheritedStyle.applyToFiles || this.settings.autoColorFiles;
+          const shouldColorFile = isCustomColor || inheritedStyle && inheritedStyle.applyToFiles || this.settings.autoColorFiles || this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground;
           const activeStyle = fileStyle || (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle : null);
           const textColor = (fileStyle == null ? void 0 : fileStyle.textColor) || ((inheritedStyle == null ? void 0 : inheritedStyle.applyToFiles) ? inheritedStyle.textColor : null);
           const op = (fileStyle == null ? void 0 : fileStyle.opacity) !== void 0 ? fileStyle.opacity : isCustomColor && (activeStyle == null ? void 0 : activeStyle.opacity) !== void 0 ? activeStyle.opacity : 1;
@@ -2919,33 +2978,60 @@ var StyleGenerator = class {
           const isBold = (fileStyle == null ? void 0 : fileStyle.isBold) !== void 0 ? fileStyle.isBold : (inheritedStyle == null ? void 0 : inheritedStyle.applyToFiles) ? inheritedStyle.isBold : false;
           const isItalic = (fileStyle == null ? void 0 : fileStyle.isItalic) !== void 0 ? fileStyle.isItalic : (inheritedStyle == null ? void 0 : inheritedStyle.applyToFiles) ? inheritedStyle.isItalic : false;
           css += `
-                        .nav-files-container .nav-file-title[data-path="${safePath}"],
-                        .nav-files-container .tree-item-self[data-path="${safePath}"],
-                        ${nnFileBg} [data-path="${safePath}"] {
-                            ${shouldColorFile ? `
-                                background-color: rgba(${color.rgb}, ${isDark ? "0.1" : "0.15"}) !important;
-                                border-left: 2px solid rgba(${color.rgb}, 0.4) !important;
-                            ` : ""}
-                            opacity: ${isCustomColor ? op : 1} !important;
-                            color: ${text} !important;
-                            font-weight: ${isBold ? "bold" : "normal"} !important;
-                            font-style: ${isItalic ? "italic" : "normal"} !important;
-                            border-radius: 4px;
-                        }
-                    `;
+                            .nav-files-container .nav-file-title[data-path="${safePath}"],
+                            .nav-files-container .tree-item-self[data-path="${safePath}"] {
+                                ${shouldColorFile ? `
+                                    background-color: rgba(${color.rgb}, ${isDark ? "0.1" : "0.15"}) !important;
+                                    border-left: 2px solid rgba(${color.rgb}, 0.4) !important;
+                                ` : ""}
+                                opacity: ${isCustomColor ? op : 1} !important;
+                                color: ${text} !important;
+                                font-weight: ${isBold ? "bold" : "normal"} !important;
+                                font-style: ${isItalic ? "italic" : "normal"} !important;
+                                border-radius: 4px;
+                            }
+                        `;
+          if (nnFileBgActive) {
+            css += `
+                                ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} {
+                                    ${shouldColorFile ? `
+                                        background-color: rgba(${color.rgb}, ${isDark ? "0.1" : "0.15"}) !important;
+                                        border-left: 2px solid rgba(${color.rgb}, 0.4) !important;
+                                    ` : ""}
+                                    opacity: ${isCustomColor ? op : 1} !important;
+                                    color: ${text} !important;
+                                    font-weight: ${isBold ? "bold" : "normal"} !important;
+                                    font-style: ${isItalic ? "italic" : "normal"} !important;
+                                    border-radius: 4px;
+                                }
+                                ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NN_SELECTORS.FILE_NAME} {
+                                    color: ${text} !important;
+                                    font-weight: ${isBold ? "bold" : "normal"} !important;
+                                    font-style: ${isItalic ? "italic" : "normal"} !important;
+                                }
+                            `;
+          }
           if (iconId) {
             const isCustomEmoji = !((_a = obsidian6.getIconIds) == null ? void 0 : _a().includes(`lucide-${iconId}`)) && !((_b = obsidian6.getIconIds) == null ? void 0 : _b().includes(iconId)) && !(this.settings.customIcons && this.settings.customIcons[iconId]);
             if (isCustomEmoji) {
               css += `
                                 body .nav-file-title[data-path="${safePath}"] .nav-file-title-content::before,
-                                body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before,
-                                ${nnText} [data-path="${safePath}"] .nn-navitem-name::before {
+                                body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
                                     content: "${iconId} " !important;
                                 }
-                                ${nnText} [data-path="${safePath}"] .nn-navitem-icon {
-                                    display: none !important;
-                                }
                             `;
+              if (nnActive || nnFileBgActive) {
+                css += `
+                                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_NAME}::before,
+                                    ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NN_SELECTORS.FILE_NAME}::before {
+                                        content: "${iconId} " !important;
+                                    }
+                                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_ICON},
+                                    ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NN_SELECTORS.FILE_ICON} {
+                                        display: none !important;
+                                    }
+                                `;
+              }
             } else {
               let svgStr = this.iconCache.get(iconId);
               if (!svgStr) {
@@ -2971,8 +3057,7 @@ var StyleGenerator = class {
               if (svgStr) {
                 css += `
                                     body .nav-file-title[data-path="${safePath}"] .nav-file-title-content::before,
-                                    body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before,
-                                    ${nnText} [data-path="${safePath}"] .nn-navitem-name::before {
+                                    body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
                                         content: '' !important;
                                         display: inline-block !important;
                                         width: ${effFileIconW}px !important;
@@ -2986,17 +3071,36 @@ var StyleGenerator = class {
                                         vertical-align: middle !important;
                                         opacity: 0.85 !important;
                                     }
-                                    ${nnText} [data-path="${safePath}"] .nn-navitem-icon {
-                                        display: none !important;
-                                    }
                                 `;
+                if (nnActive || nnFileBgActive) {
+                  css += `
+                                        ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_NAME}::before,
+                                        ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NN_SELECTORS.FILE_NAME}::before {
+                                            content: '' !important;
+                                            display: inline-block !important;
+                                            width: ${effFileIconW}px !important;
+                                            height: ${effFileIconW}px !important;
+                                            background-color: ${iconColor ? iconColor : color.hex} !important;
+                                            -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${svgStr}') !important;
+                                            -webkit-mask-repeat: no-repeat !important;
+                                            -webkit-mask-position: center !important;
+                                            -webkit-mask-size: contain !important;
+                                            margin-right: 6px !important;
+                                            vertical-align: middle !important;
+                                            opacity: 0.85 !important;
+                                        }
+                                        ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_ICON},
+                                        ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NN_SELECTORS.FILE_ICON} {
+                                            display: none !important;
+                                        }
+                                    `;
+                }
               }
             }
           } else if (this.settings.autoIcons) {
             css += `
                             body .nav-file-title[data-path="${safePath}"] .nav-file-title-content::before,
-                            body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before,
-                            ${nnText} [data-path="${safePath}"] .nn-navitem-name::before {
+                            body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
                                 content: '' !important;
                                 display: inline-block !important;
                                 width: ${effFileIconW}px !important;
@@ -3010,10 +3114,30 @@ var StyleGenerator = class {
                                 vertical-align: middle !important;
                                 opacity: 0.85 !important;
                             }
-                            ${nnText} [data-path="${safePath}"] .nn-navitem-icon {
-                                display: none !important;
-                            }
                         `;
+            if (nnActive || nnFileBgActive) {
+              css += `
+                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_NAME}::before,
+                                ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NN_SELECTORS.FILE_NAME}::before {
+                                    content: '' !important;
+                                    display: inline-block !important;
+                                    width: ${effFileIconW}px !important;
+                                    height: ${effFileIconW}px !important;
+                                    background-color: ${iconColor ? iconColor : color.hex} !important;
+                                    -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${encodeURIComponent(CF_FILE_TEXT_ICON)}') !important;
+                                    -webkit-mask-repeat: no-repeat !important;
+                                    -webkit-mask-position: center !important;
+                                    -webkit-mask-size: contain !important;
+                                    margin-right: 6px !important;
+                                    vertical-align: middle !important;
+                                    opacity: 0.85 !important;
+                                }
+                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_ICON},
+                                ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NN_SELECTORS.FILE_ICON} {
+                                    display: none !important;
+                                }
+                            `;
+            }
           }
           if (this.settings.activeGlow) {
             let fileActiveAnim = "";
@@ -3170,14 +3294,20 @@ var StyleGenerator = class {
           if (isCustomEmoji) {
             css += `
                             body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
-                            body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before,
-                            ${nnText} [data-path="${safePath}"] .nn-navitem-name::before {
+                            body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
                                 content: "${activeStyle.iconId} " !important;
                             }
-                            ${nnText} [data-path="${safePath}"] .nn-navitem-icon {
-                                display: none !important;
-                            }
                         `;
+            if (nnActive) {
+              css += `
+                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_NAME}::before {
+                                    content: "${activeStyle.iconId} " !important;
+                                }
+                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_ICON} {
+                                    display: none !important;
+                                }
+                            `;
+            }
           } else {
             let svgStr = this.iconCache.get(activeStyle.iconId);
             if (!svgStr) {
@@ -3205,8 +3335,7 @@ var StyleGenerator = class {
               svgStr = this.normalizeSvg(svgStr);
               css += `
                                 body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
-                                body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before,
-                                ${nnText} [data-path="${safePath}"] .nn-navitem-name::before {
+                                body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
                                     content: '' !important;
                                     display: inline-block !important;
                                     width: ${folderIconW}px !important;
@@ -3220,10 +3349,28 @@ var StyleGenerator = class {
                                     vertical-align: middle !important;
                                     opacity: 0.85 !important;
                                 }
-                                ${nnText} [data-path="${safePath}"] .nn-navitem-icon {
-                                    display: none !important;
-                                }
                             `;
+              if (nnActive) {
+                css += `
+                                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_NAME}::before {
+                                        content: '' !important;
+                                        display: inline-block !important;
+                                        width: ${folderIconW}px !important;
+                                        height: ${folderIconW}px !important;
+                                        background-color: ${activeStyle && activeStyle.iconColor ? activeStyle.iconColor : color.hex} !important;
+                                        -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${svgStr}') !important;
+                                        -webkit-mask-repeat: no-repeat !important;
+                                        -webkit-mask-position: center !important;
+                                        -webkit-mask-size: contain !important;
+                                        margin-right: 6px !important;
+                                        vertical-align: middle !important;
+                                        opacity: 0.85 !important;
+                                    }
+                                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_ICON} {
+                                        display: none !important;
+                                    }
+                                `;
+              }
             }
           }
         } else if (autoLucideId) {
@@ -3243,8 +3390,7 @@ var StyleGenerator = class {
           if (svgStr) {
             css += `
                             body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
-                            body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before,
-                            ${nnText} [data-path="${safePath}"] .nn-navitem-name::before {
+                            body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
                                 content: '' !important;
                                 display: inline-block !important;
                                 width: ${effFolderIconW}px !important;
@@ -3258,23 +3404,47 @@ var StyleGenerator = class {
                                 vertical-align: middle !important;
                                 opacity: ${wideOpacity} !important;
                             }
-
-                            ${nnText} [data-path="${safePath}"] .nn-navitem-icon {
-                                display: none !important;
-                            }
                         `;
+            if (nnActive) {
+              css += `
+                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_NAME}::before {
+                                    content: '' !important;
+                                    display: inline-block !important;
+                                    width: ${effFolderIconW}px !important;
+                                    height: ${effFolderIconW}px !important;
+                                    background-color: ${activeStyle && activeStyle.iconColor ? activeStyle.iconColor : color.hex} !important;
+                                    -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${svgStr}') !important;
+                                    -webkit-mask-repeat: no-repeat !important;
+                                    -webkit-mask-position: center !important;
+                                    -webkit-mask-size: contain !important;
+                                    margin-right: 6px !important;
+                                    vertical-align: middle !important;
+                                    opacity: ${wideOpacity} !important;
+                                }
+
+                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_ICON} {
+                                    display: none !important;
+                                }
+                            `;
+            }
           }
         } else if (isEmoji) {
           css += `
                         body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
-                        body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before,
-                        ${nnText} [data-path="${safePath}"] .nn-navitem-name::before {
+                        body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
                             content: ${autoIconContent} !important;
                         }
-                        ${nnText} [data-path="${safePath}"] .nn-navitem-icon {
-                            display: none !important;
-                        }
                     `;
+          if (nnActive) {
+            css += `
+                            ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_NAME}::before {
+                                content: ${autoIconContent} !important;
+                            }
+                            ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_ICON} {
+                                display: none !important;
+                            }
+                        `;
+          }
         } else if (this.settings.autoIcons) {
           css += `
                         body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
@@ -3283,7 +3453,7 @@ var StyleGenerator = class {
                             display: inline-block !important;
                             width: ${folderIconW}px !important;
                             height: ${folderIconW}px !important;
-                            background-color: ${text} !important;
+                            background-color: ${(activeStyle == null ? void 0 : activeStyle.iconColor) || text} !important;
                             -webkit-mask-repeat: no-repeat !important;
                             -webkit-mask-position: center !important;
                             margin-right: 6px !important;
@@ -3314,14 +3484,19 @@ var StyleGenerator = class {
                         ${glassCss}
                         transition: background-color 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
                     }
-                    ${nnText} [data-path="${safePath}"] {
+                `;
+        if (nnActive) {
+          css += `
+                        ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} {
                         background-color: ${bg} !important;
                         border-radius: 4px !important;
                         ${glassCss}
                         ${tintOp > 0 ? `background-blend-mode: overlay;` : ""}
                         transition: background-color 0.2s ease, filter 0.2s ease !important;
                     }
-
+                `;
+        }
+        css += `
                     .nav-folder-title[data-path="${safePath}"] + .nav-folder-content {
                         ${tintOp > 0 ? `background-color: rgba(${color.rgb}, ${tintOp}) !important;` : ""}
                         border-left: 2px solid rgba(${color.rgb}, 0.25) !important;
@@ -3329,7 +3504,6 @@ var StyleGenerator = class {
                         padding-left: 4px;
                         transition: border-left-color 0.2s ease;
                     }
-
 
                     body .nav-folder:has(.is-active) > .nav-folder-title[data-path="${safePath}"],
                     body .tree-item:has(.is-active) > .tree-item-self[data-path="${safePath}"] {
@@ -3350,23 +3524,38 @@ var StyleGenerator = class {
                         border-left-width: 2px !important;
                     }
 
-
                     body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content,
-                    body .tree-item-self[data-path="${safePath}"] .tree-item-inner,
-                    ${nnText} [data-path="${safePath}"] .nn-navitem-name {
+                    body .tree-item-self[data-path="${safePath}"] .tree-item-inner {
                         ${textCss}
                     }
+                `;
+        if (nnActive) {
+          css += `
+                        ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_NAME} {
+                            ${textCss}
+                        }
+                    `;
+        }
+        css += `
                     body .nav-folder-title[data-path="${safePath}"] .nav-folder-collapse-indicator svg,
                     body .tree-item-self[data-path="${safePath}"] .tree-item-collapse-indicator svg {
                         color: ${(activeStyle == null ? void 0 : activeStyle.iconColor) || color.hex} !important;
                     }
+
                     body:not(.is-mobile) .nav-folder-title[data-path="${safePath}"]:hover,
-                    body:not(.is-mobile) .tree-item-self[data-path="${safePath}"]:hover,
-                    body:not(.is-mobile) .notebook-navigator [data-path="${safePath}"]:hover {
+                    body:not(.is-mobile) .tree-item-self[data-path="${safePath}"]:hover {
                         filter: brightness(1.2);
                         ${this.settings.glassmorphism ? "backdrop-filter: blur(12px) saturate(150%);" : ""}
                     }
                 `;
+        if (nnActive) {
+          css += `
+                        body:not(.is-mobile) .notebook-navigator [data-path="${safePath}"]:hover {
+                            filter: brightness(1.2);
+                            ${this.settings.glassmorphism ? "backdrop-filter: blur(12px) saturate(150%);" : ""}
+                        }
+                    `;
+        }
         if (this.settings.showItemCounters) {
           const counts = countItems(child);
           const totalWidth = 80;
@@ -3547,8 +3736,8 @@ var StyleGenerator = class {
 
 // src/core/DividerManager.ts
 var obsidian7 = __toESM(require("obsidian"));
-var DividerManager = class {
-  // eslint-disable-next-line obsidianmd/prefer-active-doc
+var _DividerManager = class {
+  // eslint-disable-next-line obsidianmd/prefer-active-doc -- Constructor is incorrectly flagged when using activeDocument in methods
   constructor(plugin) {
     __publicField(this, "plugin");
     __publicField(this, "app");
@@ -3653,7 +3842,7 @@ var DividerManager = class {
           svg.setCssStyles({
             width: "14px",
             height: "14px",
-            stroke: color,
+            stroke: conf.dividerIconColor || color,
             strokeWidth: "2.5px"
           });
         }
@@ -3682,20 +3871,22 @@ var DividerManager = class {
       });
       menu.addItem((item) => {
         item.setTitle(conf.dividerDescription ? "Edit hover message" : "Add hover message").setIcon("message-square").onClick(() => {
-          new HoverMessageModal(this.app, this.plugin, path, conf.dividerDescription || "", async (newDesc) => {
-            const style = this.plugin.settings.customFolderColors[path];
-            if (typeof style === "object") {
-              style.dividerDescription = newDesc;
-            } else {
-              this.plugin.settings.customFolderColors[path] = {
-                hex: style || "",
-                dividerDescription: newDesc,
-                hasDivider: true
-              };
-            }
-            await this.plugin.saveSettings();
-            this.plugin.generateStyles();
-            this.syncDividers();
+          new HoverMessageModal(this.app, this.plugin, path, conf.dividerDescription || "", (newDesc) => {
+            void (async () => {
+              const style = this.plugin.settings.customFolderColors[path];
+              if (typeof style === "object") {
+                style.dividerDescription = newDesc;
+              } else {
+                this.plugin.settings.customFolderColors[path] = {
+                  hex: style || "",
+                  dividerDescription: newDesc,
+                  hasDivider: true
+                };
+              }
+              await this.plugin.saveSettings();
+              this.plugin.generateStyles();
+              this.syncDividers();
+            })();
           }).open();
         });
       });
@@ -3733,7 +3924,12 @@ var DividerManager = class {
       const showPopover = async () => {
         if (popover)
           return;
+        if (_DividerManager.activePopover) {
+          _DividerManager.activePopover.remove();
+          _DividerManager.activePopover = null;
+        }
         popover = activeDocument.body.createDiv({ cls: "cf-premium-popover" });
+        _DividerManager.activePopover = popover;
         const content = popover.createDiv({ cls: "cf-popover-content" });
         await obsidian7.MarkdownRenderer.render(
           this.plugin.app,
@@ -3748,10 +3944,11 @@ var DividerManager = class {
             e.stopPropagation();
             const dest = link.getAttribute("data-href");
             if (dest) {
-              this.app.workspace.openLinkText(dest, path, e.ctrlKey || e.metaKey);
+              void this.app.workspace.openLinkText(dest, path, e.ctrlKey || e.metaKey);
               if (popover) {
                 popover.remove();
                 popover = null;
+                _DividerManager.activePopover = null;
               }
             }
           };
@@ -3761,16 +3958,38 @@ var DividerManager = class {
             e.preventDefault();
             e.stopPropagation();
             const tagText = tag.innerText;
-            this.app.internalPlugins.getPluginById("global-search").instance.openGlobalSearch(tagText);
+            const internalPlugins = this.app.internalPlugins;
+            const searchPlugin = internalPlugins == null ? void 0 : internalPlugins.getPluginById("global-search");
+            if (searchPlugin && searchPlugin.instance) {
+              searchPlugin.instance.openGlobalSearch(tagText);
+            }
             if (popover) {
               popover.remove();
               popover = null;
+              _DividerManager.activePopover = null;
             }
           };
         });
         const rect = chip.getBoundingClientRect();
-        popover.style.left = `${rect.left + rect.width / 2}px`;
-        popover.style.top = `${rect.top - 12}px`;
+        const popWidth = popover.offsetWidth;
+        const popHeight = popover.offsetHeight;
+        const spaceAbove = rect.top;
+        const needsFlip = spaceAbove < popHeight + 40;
+        if (needsFlip) {
+          popover.addClass("is-below");
+          popover.style.top = `${rect.bottom + 12}px`;
+        } else {
+          popover.style.top = `${rect.top - 12}px`;
+        }
+        let targetLeft = rect.left + rect.width / 2;
+        const minPadding = 20;
+        if (targetLeft + popWidth / 2 > activeWindow.innerWidth - minPadding) {
+          targetLeft = activeWindow.innerWidth - popWidth / 2 - minPadding;
+        }
+        if (targetLeft - popWidth / 2 < minPadding) {
+          targetLeft = popWidth / 2 + minPadding;
+        }
+        popover.style.left = `${targetLeft}px`;
         popover.onmouseenter = () => {
           if (timeout) {
             activeWindow.clearTimeout(timeout);
@@ -3784,6 +4003,8 @@ var DividerManager = class {
           activeWindow.clearTimeout(timeout);
         timeout = activeWindow.setTimeout(() => {
           if (popover) {
+            if (_DividerManager.activePopover === popover)
+              _DividerManager.activePopover = null;
             popover.remove();
             popover = null;
           }
@@ -3804,10 +4025,19 @@ var DividerManager = class {
   syncDividers() {
     if (this.plugin.isSyncingDividers)
       return;
-    const container = activeDocument.querySelector(".nav-files-container");
-    if (!container)
+    const containers = activeDocument.querySelectorAll(`.nav-files-container, ${NN_SELECTORS.CONTAINERS}`);
+    if (containers.length === 0)
       return;
     this.plugin.isSyncingDividers = true;
+    try {
+      containers.forEach((container) => {
+        this.syncContainer(container);
+      });
+    } finally {
+      this.plugin.isSyncingDividers = false;
+    }
+  }
+  syncContainer(container) {
     try {
       const desired = /* @__PURE__ */ new Map();
       const colors = this.plugin.settings.customFolderColors;
@@ -3879,18 +4109,21 @@ var DividerManager = class {
           el.remove();
         }
       }
-    } finally {
-      this.plugin.isSyncingDividers = false;
+    } catch (e) {
+      console.error("Colorful Folders: Failed to sync dividers for container", e);
     }
   }
   /**
    * Remove all divider nodes from the explorer.
    */
   clean() {
-    const container = activeDocument.querySelector(".nav-files-container");
-    if (container) {
-      container.querySelectorAll(".cf-interactive-divider").forEach((el) => el.remove());
+    if (_DividerManager.activePopover) {
+      _DividerManager.activePopover.remove();
+      _DividerManager.activePopover = null;
     }
+    activeDocument.querySelectorAll(`.nav-files-container, ${NN_SELECTORS.CONTAINERS}`).forEach((container) => {
+      container.querySelectorAll(".cf-interactive-divider").forEach((el) => el.remove());
+    });
   }
   // ─── Helpers ────────────────────────────────────────────────────────
   /**
@@ -3915,11 +4148,11 @@ var DividerManager = class {
     }
     const safePath = safeEscape(path);
     const titleEl = container.querySelector(
-      `.nav-folder-title[data-path="${safePath}"], .nav-file-title[data-path="${safePath}"]`
+      `.nav-folder-title[data-path="${safePath}"], .nav-file-title[data-path="${safePath}"], ${NN_SELECTORS.NAV_ITEM}[data-path="${safePath}"], ${NN_SELECTORS.FILE_ITEM}[data-path="${safePath}"]`
     );
     if (!titleEl)
       return null;
-    const wrapper = titleEl.closest(".nav-folder, .nav-file");
+    const wrapper = titleEl.closest(`.nav-folder, .nav-file, ${NN_SELECTORS.NAV_ITEM}, ${NN_SELECTORS.FILE_ITEM}`);
     if (!wrapper)
       return null;
     if (wrapper.classList.contains("nav-file-ghost") || wrapper.classList.contains("nav-folder-ghost"))
@@ -3927,6 +4160,8 @@ var DividerManager = class {
     return wrapper;
   }
 };
+var DividerManager = _DividerManager;
+__publicField(DividerManager, "activePopover", null);
 
 // src/main.ts
 var ColorfulFoldersPlugin = class extends obsidian8.Plugin {
@@ -4047,7 +4282,7 @@ var ColorfulFoldersPlugin = class extends obsidian8.Plugin {
             });
           });
           submenu.addItem((sub) => {
-            sub.setTitle("Change icon").setIcon("smile").onClick(() => {
+            sub.setTitle("Change icon / color").setIcon("palette").onClick(() => {
               new ColorPickerModal(this.app, this, file, "icon").open();
             });
           });
@@ -4101,7 +4336,7 @@ var ColorfulFoldersPlugin = class extends obsidian8.Plugin {
           });
         } else {
           menu.addItem((item) => {
-            item.setTitle("Add custom divider").setIcon("separator-horizontal").onClick(() => {
+            item.setTitle("Add divider").setIcon("separator-horizontal").onClick(() => {
               new DividerModal(this.app, this, file).open();
             });
           });
@@ -4271,17 +4506,19 @@ var ColorfulFoldersPlugin = class extends obsidian8.Plugin {
     if (this.dividerObserver) {
       this.dividerObserver.disconnect();
     }
-    const container = activeDocument.querySelector(".nav-files-container");
-    if (!container)
+    const containers = activeDocument.querySelectorAll(`.nav-files-container, ${NN_SELECTORS.CONTAINERS}`);
+    if (containers.length === 0)
       return;
-    container.addEventListener("scroll", () => {
-      this.isScrolling = true;
-      activeWindow.clearTimeout(this.scrollTimeout);
-      this.scrollTimeout = activeWindow.setTimeout(() => {
-        this.isScrolling = false;
-        this.processDividers();
-      }, 100);
-    }, { passive: true });
+    containers.forEach((container) => {
+      container.addEventListener("scroll", () => {
+        this.isScrolling = true;
+        activeWindow.clearTimeout(this.scrollTimeout);
+        this.scrollTimeout = activeWindow.setTimeout(() => {
+          this.isScrolling = false;
+          this.processDividers();
+        }, 100);
+      }, { passive: true });
+    });
     this.dividerObserver = new MutationObserver((mutations) => {
       if (this.isSyncingDividers || this.isScrolling)
         return;
@@ -4310,7 +4547,10 @@ var ColorfulFoldersPlugin = class extends obsidian8.Plugin {
         this.processDividers();
       }
     });
-    this.dividerObserver.observe(container, { childList: true, subtree: true });
+    containers.forEach((container) => {
+      var _a;
+      (_a = this.dividerObserver) == null ? void 0 : _a.observe(container, { childList: true, subtree: true });
+    });
   }
   processDividers() {
     if (this.isSyncingDividers || this.isScrolling)

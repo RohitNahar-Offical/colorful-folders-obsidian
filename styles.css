@@ -434,7 +434,144 @@
     100% { transform: translate(-50%, -100%) translateY(-4px); }
 }
 
+/* --- Smart Adaptive Positioning (Below) --- */
+.cf-premium-popover.is-below {
+    transform: translate(-50%, 0);
+    animation: 
+        cf-popover-appear-below 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15) forwards,
+        cf-popover-float-below 4s ease-in-out infinite alternate 0.3s;
+}
+
+@keyframes cf-popover-appear-below {
+    0% {
+        opacity: 0;
+        margin-top: -15px;
+        transform: translate(-50%, 0) scale(0.92);
+    }
+    100% {
+        opacity: 1;
+        margin-top: 0;
+        transform: translate(-50%, 0) scale(1);
+    }
+}
+
+@keyframes cf-popover-float-below {
+    0% { transform: translate(-50%, 0) translateY(0); }
+    100% { transform: translate(-50%, 0) translateY(4px); }
+}
+
 /* Reverting native tooltip styling to default to avoid affecting other plugins */
 body > .tooltip {
     /* Obsidian defaults or keep it clean */
 }
+
+/* ── MODERN COLOR PICKER (VCP) ───────────────────────────────────────── */
+.cf-vcp {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    padding: 4px;
+}
+
+.cf-vcp-board {
+    width: 140px;
+    height: 100px;
+    border-radius: 8px;
+    position: relative;
+    cursor: crosshair;
+    overflow: hidden;
+    flex-shrink: 0;
+    border: 1px solid var(--cf-card-border);
+}
+
+.cf-vcp-board-grad-white {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(to right, #fff, transparent);
+}
+
+.cf-vcp-board-grad-black {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(to top, #000, transparent);
+}
+
+.cf-vcp-thumb {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1.5px rgba(0,0,0,0.25), 0 2px 8px rgba(0,0,0,0.3);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 5;
+}
+
+.cf-vcp-slider {
+    -webkit-appearance: none;
+    height: 8px !important;
+    border-radius: 4px;
+    outline: none;
+    cursor: pointer;
+    margin: 0;
+    width: 100%;
+}
+
+.cf-vcp-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--cf-card-border);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    cursor: pointer;
+}
+
+/* ── MODAL TAB UI ────────────────────────────────────────────────────── */
+.cf-modal-header {
+    background-color: var(--background-secondary-alt);
+}
+
+.cf-tab-btn {
+    position: relative;
+}
+
+.cf-tab-btn span {
+    z-index: 1;
+}
+
+.cf-tab-panel {
+    animation: cf-fade-in 0.2s ease;
+}
+
+@keyframes cf-fade-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Icon Grid in Modal */
+.cf-icon-grid {
+    scrollbar-width: thin;
+    scrollbar-color: var(--background-modifier-border) transparent;
+}
+
+.cf-icon-grid::-webkit-scrollbar {
+    width: 5px;
+}
+
+.cf-icon-grid::-webkit-scrollbar-thumb {
+    background: var(--background-modifier-border);
+    border-radius: 10px;
+}
+
+.cf-icon-cell:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.cf-picker-section {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+

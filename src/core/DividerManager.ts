@@ -3,6 +3,14 @@ import { IColorfulFoldersPlugin, FolderStyle } from '../common/types';
 import { DividerModal } from '../ui/modals/DividerModal';
 import { HoverMessageModal } from '../ui/modals/HoverMessageModal';
 import { safeEscape } from '../common/utils';
+import { NN_SELECTORS } from '../integrations/NotebookNavigator';
+
+interface InternalPlugins {
+    getPluginById(id: string): { instance: { openGlobalSearch(q: string): void } } | null;
+}
+interface ObsidianApp extends obsidian.App {
+    internalPlugins: InternalPlugins;
+}
 
 /**
  * DividerManager — Complete rewrite for stability.
@@ -10,8 +18,9 @@ import { safeEscape } from '../common/utils';
 export class DividerManager {
     plugin: IColorfulFoldersPlugin;
     app: obsidian.App;
+    static activePopover: HTMLElement | null = null;
 
-    // eslint-disable-next-line obsidianmd/prefer-active-doc
+    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Constructor is incorrectly flagged when using activeDocument in methods
     constructor(plugin: IColorfulFoldersPlugin) {
         this.plugin = plugin;
         this.app = plugin.app;
@@ -134,7 +143,7 @@ export class DividerManager {
                     svg.setCssStyles({
                         width: '14px',
                         height: '14px',
-                        stroke: color,
+                        stroke: conf.dividerIconColor || color,
                         strokeWidth: '2.5px'
                     });
                 }
@@ -173,20 +182,22 @@ export class DividerManager {
                 item.setTitle(conf.dividerDescription ? 'Edit hover message' : 'Add hover message')
                     .setIcon('message-square')
                     .onClick(() => {
-                        new HoverMessageModal(this.app, this.plugin, path, conf.dividerDescription || "", async (newDesc) => {
-                            const style = this.plugin.settings.customFolderColors[path];
-                            if (typeof style === 'object') {
-                                style.dividerDescription = newDesc;
-                            } else {
-                                this.plugin.settings.customFolderColors[path] = {
-                                    hex: style || '',
-                                    dividerDescription: newDesc,
-                                    hasDivider: true
-                                };
-                            }
-                            await this.plugin.saveSettings();
-                            this.plugin.generateStyles();
-                            this.syncDividers();
+                        new HoverMessageModal(this.app, this.plugin, path, conf.dividerDescription || "", (newDesc) => {
+                            void (async () => {
+                                const style = this.plugin.settings.customFolderColors[path];
+                                if (typeof style === 'object') {
+                                    style.dividerDescription = newDesc;
+                                } else {
+                                    this.plugin.settings.customFolderColors[path] = {
+                                        hex: style || '',
+                                        dividerDescription: newDesc,
+                                        hasDivider: true
+                                    };
+                                }
+                                await this.plugin.saveSettings();
+                                this.plugin.generateStyles();
+                                this.syncDividers();
+                            })();
                         }).open();
                     });
             });
@@ -233,7 +244,14 @@ export class DividerManager {
             const showPopover = async () => {
                 if (popover) return;
                 
+                // Kill any existing global popover first
+                if (DividerManager.activePopover) {
+                    DividerManager.activePopover.remove();
+                    DividerManager.activePopover = null;
+                }
+                
                 popover = activeDocument.body.createDiv({ cls: 'cf-premium-popover' });
+                DividerManager.activePopover = popover;
                 const content = popover.createDiv({ cls: 'cf-popover-content' });
                 
                 // Render Markdown
@@ -252,8 +270,8 @@ export class DividerManager {
                         e.stopPropagation();
                         const dest = link.getAttribute('data-href');
                         if (dest) {
-                            this.app.workspace.openLinkText(dest, path, e.ctrlKey || e.metaKey);
-                            if (popover) { popover.remove(); popover = null; }
+                            void this.app.workspace.openLinkText(dest, path, e.ctrlKey || e.metaKey);
+                            if (popover) { popover.remove(); popover = null; DividerManager.activePopover = null; }
                         }
                     };
                 });
@@ -263,16 +281,46 @@ export class DividerManager {
                         e.preventDefault();
                         e.stopPropagation();
                         const tagText = tag.innerText;
-                        // Trigger search for the tag
-                        (this.app as any).internalPlugins.getPluginById('global-search').instance.openGlobalSearch(tagText);
-                        if (popover) { popover.remove(); popover = null; }
+                        // Trigger search for the tag (Safe access to internal plugin)
+                        const internalPlugins = (this.app as ObsidianApp).internalPlugins;
+                        const searchPlugin = internalPlugins?.getPluginById('global-search');
+                        if (searchPlugin && searchPlugin.instance) {
+                            searchPlugin.instance.openGlobalSearch(tagText);
+                        }
+                        if (popover) { popover.remove(); popover = null; DividerManager.activePopover = null; }
                     };
                 });
 
                 // Position popover
                 const rect = chip.getBoundingClientRect();
-                popover.style.left = `${rect.left + rect.width / 2}px`;
-                popover.style.top = `${rect.top - 12}px`; // Increased gap slightly for the bridge
+                const popWidth = popover.offsetWidth;
+                const popHeight = popover.offsetHeight;
+                
+                // Smart Adaptive Vertical Positioning
+                const spaceAbove = rect.top;
+                const needsFlip = spaceAbove < (popHeight + 40);
+                
+                if (needsFlip) {
+                    popover.addClass('is-below');
+                    popover.style.top = `${rect.bottom + 12}px`;
+                } else {
+                    popover.style.top = `${rect.top - 12}px`;
+                }
+
+                // Smart Adaptive Horizontal Positioning
+                let targetLeft = rect.left + rect.width / 2;
+                const minPadding = 20;
+                
+                // Ensure doesn't go off right
+                if (targetLeft + popWidth / 2 > activeWindow.innerWidth - minPadding) {
+                    targetLeft = activeWindow.innerWidth - popWidth / 2 - minPadding;
+                }
+                // Ensure doesn't go off left
+                if (targetLeft - popWidth / 2 < minPadding) {
+                    targetLeft = popWidth / 2 + minPadding;
+                }
+                
+                popover.style.left = `${targetLeft}px`;
                 
                 // Keep open on popover hover (The Bridge)
                 popover.onmouseenter = () => {
@@ -288,6 +336,7 @@ export class DividerManager {
                 if (timeout) activeWindow.clearTimeout(timeout);
                 timeout = activeWindow.setTimeout(() => {
                     if (popover) {
+                        if (DividerManager.activePopover === popover) DividerManager.activePopover = null;
                         popover.remove();
                         popover = null;
                     }
@@ -312,11 +361,21 @@ export class DividerManager {
     syncDividers() {
         if (this.plugin.isSyncingDividers) return;
 
-        const container = activeDocument.querySelector('.nav-files-container');
-        if (!container) return;
+        const containers = activeDocument.querySelectorAll(`.nav-files-container, ${NN_SELECTORS.CONTAINERS}`);
+        if (containers.length === 0) return;
 
         this.plugin.isSyncingDividers = true;
 
+        try {
+            containers.forEach(container => {
+                this.syncContainer(container);
+            });
+        } finally {
+            this.plugin.isSyncingDividers = false;
+        }
+    }
+
+    private syncContainer(container: Element) {
         try {
             // ── Step 1: Collect desired dividers ────────────────────────
             const desired = new Map<string, { conf: FolderStyle; isGlobal: boolean }>();
@@ -403,8 +462,8 @@ export class DividerManager {
                     el.remove();
                 }
             }
-        } finally {
-            this.plugin.isSyncingDividers = false;
+        } catch (e) {
+            console.error("Colorful Folders: Failed to sync dividers for container", e);
         }
     }
 
@@ -412,10 +471,13 @@ export class DividerManager {
      * Remove all divider nodes from the explorer.
      */
     clean() {
-        const container = activeDocument.querySelector('.nav-files-container');
-        if (container) {
-            container.querySelectorAll('.cf-interactive-divider').forEach(el => el.remove());
+        if (DividerManager.activePopover) {
+            DividerManager.activePopover.remove();
+            DividerManager.activePopover = null;
         }
+        activeDocument.querySelectorAll(`.nav-files-container, ${NN_SELECTORS.CONTAINERS}`).forEach(container => {
+            container.querySelectorAll('.cf-interactive-divider').forEach(el => el.remove());
+        });
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────
@@ -446,11 +508,11 @@ export class DividerManager {
 
         const safePath = safeEscape(path);
         const titleEl = container.querySelector(
-            `.nav-folder-title[data-path="${safePath}"], .nav-file-title[data-path="${safePath}"]`
+            `.nav-folder-title[data-path="${safePath}"], .nav-file-title[data-path="${safePath}"], ${NN_SELECTORS.NAV_ITEM}[data-path="${safePath}"], ${NN_SELECTORS.FILE_ITEM}[data-path="${safePath}"]`
         );
         if (!titleEl) return null;
 
-        const wrapper = titleEl.closest('.nav-folder, .nav-file');
+        const wrapper = titleEl.closest(`.nav-folder, .nav-file, ${NN_SELECTORS.NAV_ITEM}, ${NN_SELECTORS.FILE_ITEM}`);
         if (!wrapper) return null;
         if (wrapper.classList.contains('nav-file-ghost') || wrapper.classList.contains('nav-folder-ghost')) return null;
 

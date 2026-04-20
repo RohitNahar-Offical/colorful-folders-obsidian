@@ -8,7 +8,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
     plugin: IColorfulFoldersPlugin;
     activeTab: string;
 
-    // eslint-disable-next-line obsidianmd/prefer-active-doc
+    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Constructor is incorrectly flagged by this rule
     constructor(app: obsidian.App, plugin: IColorfulFoldersPlugin) {
         super(app, plugin as unknown as obsidian.Plugin);
         this.plugin = plugin;
@@ -92,6 +92,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.notebookNavigatorSupport = value;
                     await this.plugin.saveSettings();
+                    this.plugin.generateStyles();
                 }));
 
         new obsidian.Setting(intCard)
@@ -102,6 +103,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.notebookNavigatorFileBackground = value;
                     await this.plugin.saveSettings();
+                    this.plugin.generateStyles();
                 }));
 
         // ──────────────────────────────────────────────────────────────────────
@@ -112,7 +114,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         const iconDesc = customIconCard.createEl("p", { text: "Add individual SVG icons or import bulk packs from the internet. All custom icons added here will appear in the icon selection grid when styling a folder or file." });
         iconDesc.setCssStyles({ fontSize: "0.85em", color: "var(--text-muted)", marginBottom: "20px", lineHeight: "1.4" });
 
-        const tip = customIconCard.createEl("div", { text: "Pro tip: Custom ids should be unique. Avoid starting them with 'lucide-' unless you intend to override a built-in Obsidian icon." });
+        const tip = customIconCard.createEl("div", { text: "Pro tip: custom IDs should be unique. Avoid starting them with 'lucide-' unless you intend to override a built-in Obsidian icon." });
         tip.setCssStyles({ fontSize: "0.8em", color: "var(--text-accent)", marginBottom: "15px", fontStyle: "italic" });
 
         const manualWrap = customIconCard.createDiv();
@@ -255,7 +257,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .setDesc('Ensures all icons in your library are properly loaded into Obsidian.')
             .addButton(btn => btn
                 .setButtonText('Re-register icons')
-                .onClick(async () => {
+                .onClick(() => {
                     this.plugin.registerCustomIcons();
                     new obsidian.Notice("All custom icons re-registered.");
                 }));
@@ -266,7 +268,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .addButton(btn => btn
                 .setButtonText('Clear icon library')
                 .setWarning()
-                .onClick(async () => {
+                .onClick(() => {
                     new ConfirmModal(this.app, "Clear icon library", "Are you sure you want to delete ALL custom icons?", async () => {
                         this.plugin.settings.customIcons = {};
                         this.plugin.registerCustomIcons();
@@ -789,7 +791,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .addButton(btn => btn
                 .setButtonText('Reset styling')
                 .setWarning()
-                .onClick(async () => {
+                .onClick(() => {
                     new ConfirmModal(this.app, "Reset styles & presets", "Are you sure you want to delete all custom styling and presets? This cannot be undone.", async () => {
                         this.plugin.settings.customFolderColors = {};
                         this.plugin.settings.presets = {};
@@ -806,7 +808,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .addButton(btn => btn
                 .setButtonText('Hard reset everything')
                 .setWarning()
-                .onClick(async () => {
+                .onClick(() => {
                     new ConfirmModal(this.app, "Factory reset", "Are you sure you want to restore all settings to default? This will wipe ALL your customization!", async () => {
                         this.plugin.settings = Object.assign({}, DEFAULT_SETTINGS);
                         await this.plugin.saveSettings();

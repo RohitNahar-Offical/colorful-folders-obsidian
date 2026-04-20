@@ -3,11 +3,11 @@ import { IColorfulFoldersPlugin } from '../../common/types';
 
 export class IconPickerModal extends obsidian.Modal {
     plugin: IColorfulFoldersPlugin;
-    onSelect: (iconId: string) => void;
+    onSelect: (iconId: string) => void | Promise<void>;
     currentIconId: string;
 
-    // eslint-disable-next-line obsidianmd/prefer-active-doc
-    constructor(app: obsidian.App, plugin: IColorfulFoldersPlugin, currentIconId: string, onSelect: (iconId: string) => void) {
+    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Constructor is incorrectly flagged by this rule
+    constructor(app: obsidian.App, plugin: IColorfulFoldersPlugin, currentIconId: string, onSelect: (iconId: string) => void | Promise<void>) {
         super(app);
         this.plugin = plugin;
         this.currentIconId = currentIconId;
@@ -135,8 +135,8 @@ export class IconPickerModal extends obsidian.Modal {
                 }
                 
                 cell.title = id;
-                cell.onclick = () => {
-                    this.onSelect(id);
+                cell.onclick = async () => {
+                    await this.onSelect(id);
                     this.close();
                 };
                 

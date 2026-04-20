@@ -2,6 +2,7 @@ import * as obsidian from 'obsidian';
 import { FolderStyle, IColorfulFoldersPlugin } from '../../common/types';
 import { IconPickerModal } from './IconPickerModal';
 import { HoverMessageModal } from './HoverMessageModal';
+import { createVisualColorPicker } from '../components/ColorPicker';
 
 export class DividerModal extends obsidian.Modal {
     plugin: IColorfulFoldersPlugin;
@@ -13,6 +14,7 @@ export class DividerModal extends obsidian.Modal {
         alignment: string;
         lineStyle: string;
         icon: string;
+        iconColor: string;
         isUpper: boolean;
         useGlass: boolean;
         iconPosition: 'left' | 'right' | 'both';
@@ -24,7 +26,7 @@ export class DividerModal extends obsidian.Modal {
     _headerIconWrap!: HTMLElement;
     _previewIconEl!: HTMLElement;
 
-    // eslint-disable-next-line obsidianmd/prefer-active-doc
+    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Constructor is incorrectly flagged by this rule
     constructor(app: obsidian.App, plugin: IColorfulFoldersPlugin, item: obsidian.TAbstractFile) {
         super(app);
         this.plugin = plugin;
@@ -39,8 +41,9 @@ export class DividerModal extends obsidian.Modal {
             existingStyle = this.originalStyle;
         }
 
-        const folderStyle = this.plugin.getStyle(this.path);
-        const defaultColor = folderStyle?.hex || "var(--interactive-accent)";
+        const eff = this.plugin.getEffectiveStyle(item);
+        const defaultColor = eff.hex;
+        const defaultIconColor = eff.iconColor || "#ffffff";
         
         this.config = {
             name: existingStyle.dividerText || item.name,
@@ -48,6 +51,7 @@ export class DividerModal extends obsidian.Modal {
             alignment: existingStyle.dividerAlignment || "center",
             lineStyle: existingStyle.dividerLineStyle || "global",
             icon: existingStyle.dividerIcon || "",
+            iconColor: existingStyle.dividerIconColor || defaultIconColor,
             isUpper: existingStyle.dividerUpper !== undefined ? existingStyle.dividerUpper : true,
             useGlass: existingStyle.dividerGlass !== undefined ? existingStyle.dividerGlass : true,
             iconPosition: existingStyle.dividerIconPosition || "left",
@@ -131,25 +135,27 @@ export class DividerModal extends obsidian.Modal {
                     this._liveSync();
                 }));
 
-        new obsidian.Setting(textSect)
-            .setName("Custom color")
-            .setDesc("Pick a color for the label and line.")
-            .addText(text => {
-                text.setValue(this.config.color);
-                const input = text.inputEl;
-                input.type = "color";
-                input.setCssStyles({
-                    width: "40px",
-                    height: "30px",
-                    padding: "0"
-                });
-                input.onchange = () => {
-                    this.config.color = text.getValue();
-                    this._headerIconWrap.setCssStyles({ backgroundColor: this.config.color });
-                    this._refreshHeaderIcon();
-                    this._liveSync();
-                };
-            });
+        const colorSect = addSection("Divider color");
+        const cpCont = colorSect.createDiv();
+        cpCont.setCssStyles({ marginTop: "8px" });
+        createVisualColorPicker(cpCont, this.config.color, (hex) => {
+            this.config.color = hex;
+            this._headerIconWrap.setCssStyles({ backgroundColor: hex });
+            this._refreshHeaderIcon();
+            this._liveSync();
+        }, { showAlpha: false });
+
+        const icColorSect = addSection("Icon color");
+        const icCpCont = icColorSect.createDiv();
+        icCpCont.setCssStyles({ marginTop: "8px" });
+        
+        // Use a default for divider icon color if not set
+        const currentIconColor = this.config.iconColor || "#ffffff";
+        createVisualColorPicker(icCpCont, currentIconColor, (hex) => {
+            this.config.iconColor = hex;
+            this._refreshHeaderIcon();
+            this._liveSync();
+        }, { showAlpha: false });
 
         new obsidian.Setting(textSect)
             .setName("Alignment")
@@ -263,12 +269,12 @@ export class DividerModal extends obsidian.Modal {
             .setName("Hover message")
             .setDesc("A premium popover with Markdown support (links, tags, etc).")
             .addButton(btn => btn
-                .setButtonText(this.config.description ? "Edit Detailed Message" : "Add Hover Message")
+                .setButtonText(this.config.description ? "Edit detailed message" : "Add hover message")
                 .setCta()
                 .onClick(() => {
                     new HoverMessageModal(this.app, this.plugin, this.path, this.config.description, (newVal) => {
                         this.config.description = newVal;
-                        btn.setButtonText(newVal ? "Edit Detailed Message" : "Add Hover Message");
+                        btn.setButtonText(newVal ? "Edit detailed message" : "Add hover message");
                         this._liveSync();
                     }).open();
                 }));
@@ -299,11 +305,14 @@ export class DividerModal extends obsidian.Modal {
             delete styleObj.dividerText;
             delete styleObj.dividerColor;
             delete styleObj.dividerIcon;
+            delete styleObj.dividerIconColor;
             delete styleObj.dividerAlignment;
             delete styleObj.dividerLineStyle;
             delete styleObj.dividerUpper;
             delete styleObj.dividerGlass;
             delete styleObj.dividerIconPosition;
+            delete styleObj.dividerPillMode;
+            delete styleObj.dividerDescription;
 
             this.plugin.settings.customFolderColors[this.path] = styleObj;
             await this.plugin.saveSettings();
@@ -335,6 +344,7 @@ export class DividerModal extends obsidian.Modal {
             styleObj.dividerUpper = this.config.isUpper;
             styleObj.dividerGlass = this.config.useGlass;
             styleObj.dividerIcon = this.config.icon;
+            styleObj.dividerIconColor = this.config.iconColor;
             styleObj.dividerIconPosition = this.config.iconPosition;
             styleObj.dividerPillMode = this.config.pillMode;
             styleObj.dividerDescription = this.config.description;
@@ -359,6 +369,7 @@ export class DividerModal extends obsidian.Modal {
             dividerUpper: this.config.isUpper,
             dividerGlass: this.config.useGlass,
             dividerIcon: this.config.icon,
+            dividerIconColor: this.config.iconColor,
             dividerIconPosition: this.config.iconPosition,
             dividerPillMode: this.config.pillMode,
             dividerDescription: this.config.description,
@@ -375,7 +386,8 @@ export class DividerModal extends obsidian.Modal {
         obsidian.setIcon(this._previewIconEl, iconId);
         const svg = this._previewIconEl.querySelector("svg") as unknown as HTMLElement | null;
         if (svg) {
-            svg.setCssStyles({ width: "20px", height: "20px", color: "white" });
+            const icColor = this.config.iconColor || "#ffffff";
+            svg.setCssStyles({ width: "20px", height: "20px", color: icColor });
         } else {
             this._previewIconEl.setText(this.config.icon);
             this._previewIconEl.setCssStyles({ fontSize: "1.2em" });

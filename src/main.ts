@@ -23,6 +23,7 @@ import { DividerModal } from './ui/modals/DividerModal';
 import { ColorfulFoldersSettingTab } from './ui/SettingTab';
 import { StyleGenerator } from './core/StyleGenerator';
 import { DividerManager } from './core/DividerManager';
+import { NN_SELECTORS } from './integrations/NotebookNavigator';
 
 export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IColorfulFoldersPlugin {
     settings: ColorfulFoldersSettings;
@@ -153,8 +154,8 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
                     });
 
                     submenu.addItem((sub: obsidian.MenuItem) => {
-                        sub.setTitle('Change icon')
-                            .setIcon('smile')
+                        sub.setTitle('Change icon / color')
+                            .setIcon('palette')
                             .onClick(() => {
                                 new ColorPickerModal(this.app, this, file, 'icon').open();
                             });
@@ -227,7 +228,7 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
                     });
                 } else {
                     menu.addItem((item) => {
-                        item.setTitle("Add custom divider")
+                        item.setTitle("Add divider")
                             .setIcon('separator-horizontal')
                             .onClick(() => {
                                 new DividerModal(this.app, this, file).open();
@@ -428,18 +429,20 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
             this.dividerObserver.disconnect();
         }
 
-        const container = activeDocument.querySelector('.nav-files-container');
-        if (!container) return;
+        const containers = activeDocument.querySelectorAll(`.nav-files-container, ${NN_SELECTORS.CONTAINERS}`);
+        if (containers.length === 0) return;
 
-        // Detect scrolling to suppress sync bursts
-        container.addEventListener('scroll', () => {
-            this.isScrolling = true;
-            activeWindow.clearTimeout(this.scrollTimeout);
-            this.scrollTimeout = activeWindow.setTimeout(() => {
-                this.isScrolling = false;
-                this.processDividers();
-            }, 100);
-        }, { passive: true });
+        containers.forEach(container => {
+            // Detect scrolling to suppress sync bursts
+            container.addEventListener('scroll', () => {
+                this.isScrolling = true;
+                activeWindow.clearTimeout(this.scrollTimeout);
+                this.scrollTimeout = activeWindow.setTimeout(() => {
+                    this.isScrolling = false;
+                    this.processDividers();
+                }, 100);
+            }, { passive: true });
+        });
 
         this.dividerObserver = new MutationObserver((mutations) => {
             if (this.isSyncingDividers || this.isScrolling) return;
@@ -470,7 +473,9 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
             }
         });
 
-        this.dividerObserver.observe(container, { childList: true, subtree: true });
+        containers.forEach(container => {
+            this.dividerObserver?.observe(container, { childList: true, subtree: true });
+        });
     }
 
     processDividers() {

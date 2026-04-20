@@ -20,7 +20,7 @@ _curIconBox: HTMLElement;
 _headerIconSize: number;
 _prevIconSize: number;
 
-    // eslint-disable-next-line obsidianmd/prefer-active-doc
+    // eslint-disable-next-line obsidianmd/prefer-active-doc -- Constructor is incorrectly flagged by this rule
     constructor(app: obsidian.App, plugin: IColorfulFoldersPlugin, item: obsidian.TAbstractFile, focusSection: string | null = null) {
         super(app);
         this.plugin = plugin;
@@ -686,7 +686,10 @@ _prevIconSize: number;
         curIconBox.empty();
         obsidian.setIcon(curIconBox, id || (this.isFolder ? "folder" : "file"));
         const s = curIconBox.querySelector("svg") as unknown as HTMLElement | null;
-        if (s) s.setCssStyles({ width: "22px", height: "22px", color: "#fff" });
+        if (s) {
+            const effectiveIconColor = this.folderStyle.iconColor || this.folderStyle.hex || "#fff";
+            s.setCssStyles({ width: "22px", height: "22px", color: effectiveIconColor });
+        }
         if (this._curIconNameEl) this._curIconNameEl.setText(id || (this.isFolder ? "folder" : "file"));
     }
 
