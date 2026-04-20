@@ -575,3 +575,31 @@ body > .tooltip {
     box-shadow: 0 2px 8px rgba(0,0,0,0.03);
 }
 
+/* ── SUGGESTER UI ────────────────────────────────────────────────────── */
+.cf-suggestion-container {
+    background: var(--background-floating);
+    border: 1px solid var(--background-modifier-border-focus);
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    min-width: 200px;
+}
+
+.cf-suggestion-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 0.9em;
+    color: var(--text-muted);
+    transition: all 0.1s ease;
+}
+
+.cf-suggestion-item:hover, .cf-suggestion-item.is-selected {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.cf-suggestion-content {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

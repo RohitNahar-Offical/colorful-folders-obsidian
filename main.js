@@ -1590,11 +1590,11 @@ var HoverMessageModal = class extends obsidian3.Modal {
     };
     const renderSuggest = () => {
       if (!this.suggestEl) {
-        this.suggestEl = activeDocument.body.createDiv({ cls: "suggestion-container" });
-        const suggestSub = this.suggestEl.createDiv({ cls: "suggestion" });
+        this.suggestEl = activeDocument.body.createDiv({ cls: "cf-suggestion-container" });
+        const suggestSub = this.suggestEl.createDiv({ cls: "cf-suggestion" });
         this.suggestItems.forEach((item, index) => {
-          const el = suggestSub.createDiv({ cls: "suggestion-item" + (index === this.selectedIndex ? " is-selected" : "") });
-          el.createDiv({ cls: "suggestion-content", text: item });
+          const el = suggestSub.createDiv({ cls: "cf-suggestion-item" + (index === this.selectedIndex ? " is-selected" : "") });
+          el.createDiv({ cls: "cf-suggestion-content", text: item });
           el.onclick = () => selectItem(index);
         });
         const rect = textArea.getBoundingClientRect();
@@ -1605,12 +1605,12 @@ var HoverMessageModal = class extends obsidian3.Modal {
           zIndex: "20000"
         });
       } else {
-        const suggestSub = this.suggestEl.querySelector(".suggestion");
+        const suggestSub = this.suggestEl.querySelector(".cf-suggestion");
         if (suggestSub) {
           suggestSub.empty();
           this.suggestItems.forEach((item, index) => {
-            const el = suggestSub.createDiv({ cls: "suggestion-item" + (index === this.selectedIndex ? " is-selected" : "") });
-            el.createDiv({ cls: "suggestion-content", text: item });
+            const el = suggestSub.createDiv({ cls: "cf-suggestion-item" + (index === this.selectedIndex ? " is-selected" : "") });
+            el.createDiv({ cls: "cf-suggestion-content", text: item });
             el.onclick = () => selectItem(index);
           });
         }
@@ -1650,27 +1650,29 @@ var HoverMessageModal = class extends obsidian3.Modal {
         }
       }
     };
-    textArea.oninput = (e) => {
+    textArea.oninput = () => {
       const val = textArea.value;
       const pos = textArea.selectionStart;
       this.description = val;
       void updatePreview(val);
+      if (this.suggestType) {
+        const triggerIntact = this.suggestType === "link" ? this.suggestStart >= 2 && val.substring(this.suggestStart - 2, this.suggestStart) === "[[" : this.suggestStart >= 1 && val.substring(this.suggestStart - 1, this.suggestStart) === "#";
+        if (pos < this.suggestStart || !triggerIntact) {
+          closeSuggest();
+        }
+      }
       const lastTwo = val.substring(pos - 2, pos);
       const lastOne = val.substring(pos - 1, pos);
       if (lastTwo === "[[") {
         this.suggestType = "link";
         this.suggestStart = pos;
-        this.suggestItems = this.app.vault.getMarkdownFiles().map((f) => f.basename).slice(0, 10);
         this.selectedIndex = 0;
-        renderSuggest();
-      } else if (lastOne === "#") {
+      } else if (lastOne === "#" && !this.suggestType) {
         this.suggestType = "tag";
         this.suggestStart = pos;
-        const tags = this.app.metadataCache.getTags();
-        this.suggestItems = Object.keys(tags).map((t) => t.substring(1)).slice(0, 10);
         this.selectedIndex = 0;
-        renderSuggest();
-      } else if (this.suggestType) {
+      }
+      if (this.suggestType) {
         const query = val.substring(this.suggestStart, pos).toLowerCase();
         if (query.includes(" ") || query.includes("\n")) {
           closeSuggest();
@@ -1680,7 +1682,7 @@ var HoverMessageModal = class extends obsidian3.Modal {
             all = this.app.vault.getMarkdownFiles().map((f) => f.basename);
           } else {
             const tags = this.app.metadataCache.getTags();
-            all = Object.keys(tags).map((t) => t.substring(1));
+            all = Object.keys(tags).map((t) => t.startsWith("#") ? t.substring(1) : t);
           }
           this.suggestItems = all.filter((item) => item.toLowerCase().includes(query)).slice(0, 10);
           if (this.suggestItems.length === 0)
