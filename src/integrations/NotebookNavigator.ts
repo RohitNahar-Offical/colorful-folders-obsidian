@@ -122,16 +122,20 @@ export class NotebookNavigatorIntegration {
 
         const tryRegister = () => {
             attempts++;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-            const plugins = (plugin.app as any).plugins as { getPlugin(id: string): any };
-            if (!plugins) return false;
             
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            const nnInstance = plugins.getPlugin('notebook-navigator');
+            interface InternalApp extends obsidian.App {
+                plugins: {
+                    getPlugin(id: string): Record<string, unknown> | null;
+                };
+            }
+
+            const app = plugin.app as InternalApp;
+            if (!app.plugins) return false;
+            
+            const nnInstance = app.plugins.getPlugin('notebook-navigator');
             if (!nnInstance) return false;
 
             // Some plugins expose API under .api
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             const nnPlugin = (nnInstance.api || nnInstance) as NNPlugin;
 
             // Check if API methods exist
