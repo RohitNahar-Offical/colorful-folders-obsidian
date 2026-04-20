@@ -166,35 +166,30 @@ export class DividerModal extends obsidian.Modal {
 
         new obsidian.Setting(iconSect)
             .setName("Divider icon")
-            .setDesc("ID from lucide (e.g. Briefcase) or any emoji.")
-            .addText(text => {
-                text.setPlaceholder("E.g. Briefcase")
-                    .setValue(this.config.icon)
-                    .onChange(v => {
-                        this.config.icon = v;
-                        this._refreshHeaderIcon();
-                        this._liveSync();
-                    });
-                
-                const browseBtn = text.inputEl.parentElement?.createDiv({ cls: "cf-icon-browse-btn" });
-                if (browseBtn) {
-                    browseBtn.setCssStyles({
-                        display: "flex", alignItems: "center", justifyContent: "center", padding: "6px", cursor: "pointer", opacity: "0.6", transition: "opacity 0.2s", marginLeft: "4px"
-                    });
-                    obsidian.setIcon(browseBtn, "search");
-                    const bsvg = browseBtn.querySelector("svg") as unknown as HTMLElement | null;
-                    if (bsvg) { bsvg.setCssStyles({ width: "18px", height: "18px" }); }
-                    browseBtn.onmouseenter = () => browseBtn.setCssStyles({ opacity: "1" });
-                    browseBtn.onmouseleave = () => browseBtn.setCssStyles({ opacity: "0.6" });
-                    browseBtn.onclick = () => {
+            .setDesc("Choose an icon or emoji for this section divider.")
+            .addButton(btn => {
+                btn.setIcon(this.config.icon || "image-plus")
+                    .setTooltip("Pick an icon")
+                    .onClick(() => {
                         new IconPickerModal(this.app, this.plugin, this.config.icon, (selectedId: string) => {
                             this.config.icon = selectedId;
-                            text.setValue(selectedId);
+                            btn.setIcon(selectedId || "image-plus");
                             this._refreshHeaderIcon();
                             this._liveSync();
                         }).open();
-                    };
-                }
+                    });
+            })
+            .addExtraButton(btn => {
+                btn.setIcon("x")
+                    .setTooltip("Clear icon")
+                    .onClick(() => {
+                        this.config.icon = "";
+                        this._refreshHeaderIcon();
+                        this._liveSync();
+                        // We need to refresh the main button icon too, but Setting doesn't give easy access to it
+                        // So we just close and reopen or similar? No, I'll just refresh the whole modal or ignore.
+                        this.onOpen(); // Refresh UI
+                    });
             });
 
         new obsidian.Setting(iconSect)

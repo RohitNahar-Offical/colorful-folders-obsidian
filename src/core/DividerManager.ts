@@ -378,6 +378,7 @@ export class DividerManager {
     }
 
     private syncContainer(container: Element) {
+        if (!NotebookNavigatorIntegration.shouldRenderDividers(container, this.plugin.settings)) return;
         try {
             // ── Step 1: Collect desired dividers ────────────────────────
             const desired = new Map<string, { conf: FolderStyle; isGlobal: boolean }>();
@@ -399,9 +400,9 @@ export class DividerManager {
                 let seenFolder = false;
                 let hasFileAfterFolder = false;
                 for (const node of rootChildren) {
-                    if ((node).classList.contains('nav-folder')) {
+                    if (NotebookNavigatorIntegration.isFolder(node)) {
                         seenFolder = true;
-                    } else if (seenFolder && (node).classList.contains('nav-file')) {
+                    } else if (seenFolder && NotebookNavigatorIntegration.isFile(node)) {
                         hasFileAfterFolder = true;
                         break;
                     }
@@ -447,7 +448,7 @@ export class DividerManager {
                 }
 
                 const existing = existingByPath.get(path);
-
+                
                 if (existing) {
                     // Re-build and replace to ensure fresh config is applied (name, color, etc.)
                     const newNode = this.buildDividerNode(path, conf);
@@ -501,9 +502,9 @@ export class DividerManager {
                 if (node.classList.contains('cf-interactive-divider')) continue;
                 if (node.classList.contains('nav-file-ghost') || node.classList.contains('nav-folder-ghost')) continue;
 
-                if (node.classList.contains('nav-folder')) {
+                if (NotebookNavigatorIntegration.isFolder(node)) {
                     seenFolder = true;
-                } else if (seenFolder && node.classList.contains('nav-file')) {
+                } else if (seenFolder && NotebookNavigatorIntegration.isFile(node)) {
                     return node as HTMLElement;
                 }
             }

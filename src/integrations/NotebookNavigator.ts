@@ -1,4 +1,11 @@
-import { ColorfulFoldersSettings } from '../common/types';
+import * as obsidian from 'obsidian';
+import { ColorfulFoldersSettings, IColorfulFoldersPlugin } from '../common/types';
+import { MenuHelper } from '../ui/MenuHelper';
+
+interface NNPlugin {
+    registerFileMenu?: (cb: (menu: obsidian.Menu, file: obsidian.TAbstractFile) => void) => void;
+    registerFolderMenu?: (cb: (menu: obsidian.Menu, folder: obsidian.TAbstractFile) => void) => void;
+}
 
 /**
  * Notebook Navigator Integration
@@ -74,5 +81,91 @@ export class NotebookNavigatorIntegration {
 
     static getFileIconSelector(): string {
         return NN_SELECTORS.FILE_ICON;
+    }
+
+    /**
+     * Checks if a container is a Notebook Navigator container.
+     */
+    static isNNContainer(container: Element): boolean {
+        return container.classList.contains('nn-navigation-pane-content') || 
+               container.classList.contains('nn-virtual-container');
+    }
+
+    /**
+     * Returns true if dividers should be rendered for the given container.
+     */
+    static shouldRenderDividers(container: Element, settings: ColorfulFoldersSettings): boolean {
+        if (this.isNNContainer(container)) {
+            return !!(settings.notebookNavigatorSupport && settings.notebookNavigatorDividerSupport);
+        }
+        return true; // Native explorer always supported
+    }
+
+    /**
+     * Identifies if a DOM node is a folder/nav-item.
+     */
+    static isFolder(el: Element): boolean {
+        return el.classList.contains('nav-folder') || el.classList.contains('nn-navitem');
+    }
+
+    /**
+     * Identifies if a DOM node is a file-item.
+     */
+    static isFile(el: Element): boolean {
+        return el.classList.contains('nav-file') || el.classList.contains('nn-file');
+    }
+
+    static registerMenuExtensions(plugin: IColorfulFoldersPlugin) {
+        let attempts = 0;
+        const maxAttempts = 5;
+        const interval = 2000; // 2 seconds
+
+        const tryRegister = () => {
+            attempts++;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+            const plugins = (plugin.app as any).plugins as { getPlugin(id: string): any };
+            if (!plugins) return false;
+            
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            const nnInstance = plugins.getPlugin('notebook-navigator');
+            if (!nnInstance) return false;
+
+            // Some plugins expose API under .api
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            const nnPlugin = (nnInstance.api || nnInstance) as NNPlugin;
+
+            // Check if API methods exist
+            if (typeof nnPlugin.registerFileMenu !== 'function' || typeof nnPlugin.registerFolderMenu !== 'function') {
+                return false;
+            }
+
+            // Register with NN's public menu API
+            nnPlugin.registerFileMenu((menu: obsidian.Menu, file: obsidian.TAbstractFile) => {
+                MenuHelper.addContextMenuItems(menu, file, plugin);
+            });
+
+            nnPlugin.registerFolderMenu((menu: obsidian.Menu, folder: obsidian.TAbstractFile) => {
+                MenuHelper.addContextMenuItems(menu, folder, plugin);
+            });
+
+            return true;
+        };
+
+        // Fallback: Listen for contextmenu globally in case API registration fails
+        plugin.registerEvent(
+            plugin.app.workspace.on('file-menu', (_menu, _file) => {
+                // If it's already being handled by standard Obsidian menu, MenuHelper already ran.
+                // But if we're here, we can double check if it's an NN item.
+            })
+        );
+
+        // Initial attempt
+        if (!tryRegister()) {
+            const timer = activeWindow.setInterval(() => {
+                if (tryRegister() || attempts >= maxAttempts) {
+                    activeWindow.clearInterval(timer);
+                }
+            }, interval);
+        }
     }
 }

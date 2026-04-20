@@ -1092,6 +1092,57 @@ export class StyleGenerator {
                 .nav-folder:has(> .cf-interactive-divider) > .nav-folder-children {
                     border-left: none !important; /* Optionally remove the top-level border that hits the divider */
                 }
+
+                /* Premium Smart Suggester (Glassmorphism) */
+                .cf-suggestion-container {
+                    background: rgba(25, 25, 25, 0.75) !important;
+                    backdrop-filter: blur(24px) saturate(180%) !important;
+                    -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+                    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+                    border-radius: 12px !important;
+                    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5) !important;
+                    overflow: hidden !important;
+                    min-width: 280px !important;
+                    animation: cf-suggestion-reveal 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+
+                @keyframes cf-suggestion-reveal {
+                    from { opacity: 0; transform: translateY(8px) scale(0.98); }
+                    to { opacity: 1; transform: translateY(0) scale(1); }
+                }
+
+                .cf-suggestion {
+                    display: flex !important;
+                    flex-direction: column !important;
+                    padding: 6px !important;
+                }
+
+                .cf-suggestion-item {
+                    display: flex !important;
+                    align-items: center !important;
+                    padding: 10px 14px !important;
+                    border-radius: 8px !important;
+                    cursor: pointer !important;
+                    color: var(--text-normal) !important;
+                    font-size: 0.9em !important;
+                    transition: all 0.2s ease !important;
+                    gap: 10px !important;
+                }
+
+                .cf-suggestion-item:hover {
+                    background: rgba(255, 255, 255, 0.08) !important;
+                }
+
+                .cf-suggestion-item.is-selected {
+                    background: var(--interactive-accent) !important;
+                    color: white !important;
+                    box-shadow: 0 4px 12px rgba(var(--interactive-accent-rgb), 0.3) !important;
+                }
+
+                .cf-suggestion-content {
+                    flex: 1 !important;
+                    font-weight: 500 !important;
+                }
             `;
         }
 

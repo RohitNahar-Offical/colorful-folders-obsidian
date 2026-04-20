@@ -1,4 +1,4 @@
-import { TAbstractFile, App, Debouncer, MenuItem, Menu } from 'obsidian';
+import { TAbstractFile, App, Debouncer, MenuItem, Menu, EventRef } from 'obsidian';
 
 export interface FolderStyle {
     hex?: string;
@@ -118,6 +118,7 @@ export interface IColorfulFoldersPlugin {
     generateStyles(): void;
     initDividerObserver(): void;
     processDividers(): void;
+    registerEvent(event: EventRef): void;
 }
 export interface MenuItemWithSubmenu extends MenuItem {
     setSubmenu(): Menu;

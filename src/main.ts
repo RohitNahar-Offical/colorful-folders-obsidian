@@ -3,8 +3,7 @@ import {
     ColorfulFoldersSettings, 
     FolderStyle, 
     EffectiveStyle, 
-    IColorfulFoldersPlugin,
-    MenuItemWithSubmenu
+    IColorfulFoldersPlugin
 } from './common/types';
 import { 
     DEFAULT_SETTINGS, 
@@ -25,6 +24,8 @@ import { StyleGenerator } from './core/StyleGenerator';
 import { DividerManager } from './core/DividerManager';
 import { NotebookNavigatorIntegration } from './integrations/NotebookNavigator';
 
+import { MenuHelper } from './ui/MenuHelper';
+
 export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IColorfulFoldersPlugin {
     settings: ColorfulFoldersSettings;
     styleTag: HTMLStyleElement;
@@ -41,6 +42,13 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
     async onload() {
         await this.loadSettings();
         this.dividerManager = new DividerManager(this);
+        this.initDividerObserver();
+
+        // Register Notebook Navigator extensions
+        this.app.workspace.onLayoutReady(() => {
+            NotebookNavigatorIntegration.registerMenuExtensions(this);
+        });
+
         this.addSettingTab(new ColorfulFoldersSettingTab(this.app, this));
 
         this.generateStylesDebounced = obsidian.debounce(() => {
@@ -135,106 +143,7 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
     registerEvents() {
         this.registerEvent(
             this.app.workspace.on('file-menu', (menu, file) => {
-                if (!(file instanceof obsidian.TAbstractFile)) return;
-                const isFolder = file instanceof obsidian.TFolder;
-                const label = isFolder ? 'folder' : 'file';
-
-                menu.addItem((item) => {
-                    item.setTitle(`Set custom ${label} style`)
-                        .setIcon('palette');
-
-                    const submenu = (item as MenuItemWithSubmenu).setSubmenu ? (item as MenuItemWithSubmenu).setSubmenu() : (item as unknown as obsidian.Menu);
-
-                    submenu.addItem((sub: obsidian.MenuItem) => {
-                        sub.setTitle('Open full settings')
-                            .setIcon('settings')
-                            .onClick(() => {
-                                new ColorPickerModal(this.app, this, file).open();
-                            });
-                    });
-
-                    submenu.addItem((sub: obsidian.MenuItem) => {
-                        sub.setTitle('Change icon / color')
-                            .setIcon('palette')
-                            .onClick(() => {
-                                new ColorPickerModal(this.app, this, file, 'icon').open();
-                            });
-                    });
-
-                    submenu.addItem((sub: obsidian.MenuItem) => {
-                        sub.setTitle('Change color')
-                            .setIcon('pipette')
-                            .onClick(() => {
-                                new ColorPickerModal(this.app, this, file, 'color').open();
-                            });
-                    });
-
-                    submenu.addItem((sub: obsidian.MenuItem) => {
-                        sub.setTitle('Change background')
-                            .setIcon('paint-bucket')
-                            .onClick(() => {
-                                new ColorPickerModal(this.app, this, file, 'background').open();
-                            });
-                    });
-
-                    const existing = this.settings.customFolderColors[file.path];
-                    if (existing) {
-                        submenu.addItem((sub: obsidian.MenuItem) => {
-                            sub.setTitle('Clear style')
-                                .setIcon('eraser')
-                                .onClick(async () => {
-                                    delete this.settings.customFolderColors[file.path];
-                                    await this.saveSettings();
-                                    new obsidian.Notice(`Cleared style for ${file.name}`);
-                                });
-                        });
-                    }
-                });
-                
-                menu.addSeparator();
-                const style = this.settings.customFolderColors[file.path];
-                
-                if (style && typeof style === 'object' && style.hasDivider) {
-                    menu.addItem((item) => {
-                        item.setTitle("Edit divider")
-                            .setIcon('settings-2')
-                            .onClick(() => {
-                                new DividerModal(this.app, this, file).open();
-                            });
-                    });
-                    
-                    menu.addItem((remove) => {
-                        remove.setTitle("Remove divider")
-                            .setIcon('trash-2')
-                            .setWarning(true)
-                            .onClick(async () => {
-                                const styleObj = this.settings.customFolderColors[file.path];
-                                if (styleObj && typeof styleObj === 'object') {
-                                    styleObj.hasDivider = false;
-                                    delete styleObj.dividerText;
-                                    delete styleObj.dividerColor;
-                                    delete styleObj.dividerIcon;
-                                    delete styleObj.dividerAlignment;
-                                    delete styleObj.dividerLineStyle;
-                                    delete styleObj.dividerUpper;
-                                    delete styleObj.dividerGlass;
-                                }
-                                
-                                await this.saveSettings();
-                                this.generateStyles();
-                                this.dividerManager.syncDividers();
-                                new obsidian.Notice(`Removed divider for: ${file.name}`);
-                            });
-                    });
-                } else {
-                    menu.addItem((item) => {
-                        item.setTitle("Add divider")
-                            .setIcon('separator-horizontal')
-                            .onClick(() => {
-                                new DividerModal(this.app, this, file).open();
-                            });
-                    });
-                }
+                MenuHelper.addContextMenuItems(menu, file, this);
             })
         );
 
