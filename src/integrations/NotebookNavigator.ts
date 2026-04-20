@@ -24,6 +24,23 @@ export class NotebookNavigatorIntegration {
     }
 
     /**
+     * Returns the extra containers (NN navigation pane, etc.) that should be observed.
+     */
+    static getExtraContainers(doc: Document): NodeListOf<Element> {
+        return doc.querySelectorAll(NN_SELECTORS.CONTAINERS);
+    }
+
+    /**
+     * Finds a specific item (folder or file) in the NN DOM by its path.
+     */
+    static findItemInDOM(container: Element, path: string): HTMLElement | null {
+        const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        return container.querySelector(
+            `${NN_SELECTORS.NAV_ITEM}[data-path="${safePath}"], ${NN_SELECTORS.FILE_ITEM}[data-path="${safePath}"]`
+        );
+    }
+
+    /**
      * Returns the base selector for NN items (folders/nav items).
      */
     static getNavBase(settings: ColorfulFoldersSettings): string {
@@ -41,5 +58,21 @@ export class NotebookNavigatorIntegration {
     static getScopedFileSelector(path: string): string {
         const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
         return `.notebook-navigator ${NN_SELECTORS.FILE_ITEM}[data-path="${safePath}"]`;
+    }
+
+    static getNavNameSelector(): string {
+        return NN_SELECTORS.NAV_NAME;
+    }
+
+    static getFileNameSelector(): string {
+        return NN_SELECTORS.FILE_NAME;
+    }
+
+    static getNavIconSelector(): string {
+        return NN_SELECTORS.NAV_ICON;
+    }
+
+    static getFileIconSelector(): string {
+        return NN_SELECTORS.FILE_ICON;
     }
 }

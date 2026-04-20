@@ -23,7 +23,7 @@ import { DividerModal } from './ui/modals/DividerModal';
 import { ColorfulFoldersSettingTab } from './ui/SettingTab';
 import { StyleGenerator } from './core/StyleGenerator';
 import { DividerManager } from './core/DividerManager';
-import { NN_SELECTORS } from './integrations/NotebookNavigator';
+import { NotebookNavigatorIntegration } from './integrations/NotebookNavigator';
 
 export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IColorfulFoldersPlugin {
     settings: ColorfulFoldersSettings;
@@ -429,10 +429,13 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
             this.dividerObserver.disconnect();
         }
 
-        const containers = activeDocument.querySelectorAll(`.nav-files-container, ${NN_SELECTORS.CONTAINERS}`);
-        if (containers.length === 0) return;
+        const containers = Array.from(activeDocument.querySelectorAll('.nav-files-container'));
+        const extraContainers = Array.from(NotebookNavigatorIntegration.getExtraContainers(activeDocument));
+        const allContainers = [...containers, ...extraContainers];
 
-        containers.forEach(container => {
+        if (allContainers.length === 0) return;
+
+        allContainers.forEach(container => {
             // Detect scrolling to suppress sync bursts
             container.addEventListener('scroll', () => {
                 this.isScrolling = true;

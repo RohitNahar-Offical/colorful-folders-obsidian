@@ -3,7 +3,7 @@ import { IColorfulFoldersPlugin, FolderStyle } from '../common/types';
 import { DividerModal } from '../ui/modals/DividerModal';
 import { HoverMessageModal } from '../ui/modals/HoverMessageModal';
 import { safeEscape } from '../common/utils';
-import { NN_SELECTORS } from '../integrations/NotebookNavigator';
+import { NotebookNavigatorIntegration } from '../integrations/NotebookNavigator';
 
 interface InternalPlugins {
     getPluginById(id: string): { instance: { openGlobalSearch(q: string): void } } | null;
@@ -361,13 +361,16 @@ export class DividerManager {
     syncDividers() {
         if (this.plugin.isSyncingDividers) return;
 
-        const containers = activeDocument.querySelectorAll(`.nav-files-container, ${NN_SELECTORS.CONTAINERS}`);
-        if (containers.length === 0) return;
+        const containers = Array.from(activeDocument.querySelectorAll('.nav-files-container'));
+        const extraContainers = Array.from(NotebookNavigatorIntegration.getExtraContainers(activeDocument));
+        const allContainers = [...containers, ...extraContainers];
+
+        if (allContainers.length === 0) return;
 
         this.plugin.isSyncingDividers = true;
 
         try {
-            containers.forEach(container => {
+            allContainers.forEach(container => {
                 this.syncContainer(container);
             });
         } finally {
@@ -475,7 +478,9 @@ export class DividerManager {
             DividerManager.activePopover.remove();
             DividerManager.activePopover = null;
         }
-        activeDocument.querySelectorAll(`.nav-files-container, ${NN_SELECTORS.CONTAINERS}`).forEach(container => {
+        const containers = Array.from(activeDocument.querySelectorAll('.nav-files-container'));
+        const extraContainers = Array.from(NotebookNavigatorIntegration.getExtraContainers(activeDocument));
+        [...containers, ...extraContainers].forEach(container => {
             container.querySelectorAll('.cf-interactive-divider').forEach(el => el.remove());
         });
     }
@@ -507,12 +512,12 @@ export class DividerManager {
         }
 
         const safePath = safeEscape(path);
-        const titleEl = container.querySelector(
-            `.nav-folder-title[data-path="${safePath}"], .nav-file-title[data-path="${safePath}"], ${NN_SELECTORS.NAV_ITEM}[data-path="${safePath}"], ${NN_SELECTORS.FILE_ITEM}[data-path="${safePath}"]`
-        );
+        const titleEl = container.querySelector(`.nav-folder-title[data-path="${safePath}"], .nav-file-title[data-path="${safePath}"]`) ||
+                        NotebookNavigatorIntegration.findItemInDOM(container, path);
+        
         if (!titleEl) return null;
 
-        const wrapper = titleEl.closest(`.nav-folder, .nav-file, ${NN_SELECTORS.NAV_ITEM}, ${NN_SELECTORS.FILE_ITEM}`);
+        const wrapper = titleEl.closest(`.nav-folder, .nav-file, .nn-navitem, .nn-file`);
         if (!wrapper) return null;
         if (wrapper.classList.contains('nav-file-ghost') || wrapper.classList.contains('nav-folder-ghost')) return null;
 

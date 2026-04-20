@@ -2,7 +2,7 @@ import { ColorfulFoldersSettings, FolderStyle, IColorfulFoldersPlugin } from '..
 import { PALETTES, CF_FOLDER_CLOSED, CF_FOLDER_OPEN } from '../common/constants';
 import { hexToRgbObj, adjustBrightnessRgb, getAutoIconData, safeEscape, parseCustomPalette, hashString } from '../common/utils';
 import * as obsidian from 'obsidian';
-import { NotebookNavigatorIntegration, NN_SELECTORS } from '../integrations/NotebookNavigator';
+import { NotebookNavigatorIntegration } from '../integrations/NotebookNavigator';
 
 export class StyleGenerator {
     plugin: IColorfulFoldersPlugin;
@@ -320,7 +320,7 @@ export class StyleGenerator {
                                     font-style: ${isItalic ? 'italic' : 'normal'} !important;
                                     border-radius: 4px;
                                 }
-                                ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NN_SELECTORS.FILE_NAME} {
+                                ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileNameSelector()} {
                                     color: ${text} !important;
                                     font-weight: ${isBold ? 'bold' : 'normal'} !important;
                                     font-style: ${isItalic ? 'italic' : 'normal'} !important;
@@ -345,12 +345,12 @@ export class StyleGenerator {
                             
                             if (nnActive || nnFileBgActive) {
                                 css += `
-                                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_NAME}::before,
-                                    ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NN_SELECTORS.FILE_NAME}::before {
+                                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before,
+                                    ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileNameSelector()}::before {
                                         content: "${iconId} " !important;
                                     }
-                                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_ICON},
-                                    ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NN_SELECTORS.FILE_ICON} {
+                                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()},
+                                    ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileIconSelector()} {
                                         display: none !important;
                                     }
                                 `;
@@ -396,8 +396,8 @@ export class StyleGenerator {
                                 `;
                                 if (nnActive || nnFileBgActive) {
                                     css += `
-                                        ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_NAME}::before,
-                                        ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NN_SELECTORS.FILE_NAME}::before {
+                                        ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before,
+                                        ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileNameSelector()}::before {
                                             content: '' !important;
                                             display: inline-block !important;
                                             width: ${effFileIconW}px !important;
@@ -411,8 +411,8 @@ export class StyleGenerator {
                                             vertical-align: middle !important;
                                             opacity: 0.85 !important;
                                         }
-                                        ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_ICON},
-                                        ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NN_SELECTORS.FILE_ICON} {
+                                        ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()},
+                                        ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileIconSelector()} {
                                             display: none !important;
                                         }
                                     `;
@@ -439,8 +439,8 @@ export class StyleGenerator {
                         `;
                         if (nnActive || nnFileBgActive) {
                             css += `
-                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_NAME}::before,
-                                ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NN_SELECTORS.FILE_NAME}::before {
+                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before,
+                                ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileNameSelector()}::before {
                                     content: '' !important;
                                     display: inline-block !important;
                                     width: ${effFileIconW}px !important;
@@ -454,8 +454,8 @@ export class StyleGenerator {
                                     vertical-align: middle !important;
                                     opacity: 0.85 !important;
                                 }
-                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_ICON},
-                                ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NN_SELECTORS.FILE_ICON} {
+                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()},
+                                ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileIconSelector()} {
                                     display: none !important;
                                 }
                             `;
@@ -647,10 +647,10 @@ export class StyleGenerator {
                         `;
                         if (nnActive) {
                             css += `
-                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_NAME}::before {
+                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before {
                                     content: "${activeStyle.iconId} " !important;
                                 }
-                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_ICON} {
+                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()} {
                                     display: none !important;
                                 }
                             `;
@@ -700,7 +700,7 @@ export class StyleGenerator {
                             `;
                             if (nnActive) {
                                 css += `
-                                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_NAME}::before {
+                                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before {
                                         content: '' !important;
                                         display: inline-block !important;
                                         width: ${folderIconW}px !important;
@@ -714,7 +714,7 @@ export class StyleGenerator {
                                         vertical-align: middle !important;
                                         opacity: 0.85 !important;
                                     }
-                                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_ICON} {
+                                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()} {
                                         display: none !important;
                                     }
                                 `;
@@ -755,7 +755,7 @@ export class StyleGenerator {
                         `;
                         if (nnActive) {
                             css += `
-                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_NAME}::before {
+                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before {
                                     content: '' !important;
                                     display: inline-block !important;
                                     width: ${effFolderIconW}px !important;
@@ -770,7 +770,7 @@ export class StyleGenerator {
                                     opacity: ${wideOpacity} !important;
                                 }
 
-                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_ICON} {
+                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()} {
                                     display: none !important;
                                 }
                             `;
@@ -785,10 +785,10 @@ export class StyleGenerator {
                     `;
                     if (nnActive) {
                         css += `
-                            ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_NAME}::before {
+                            ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before {
                                 content: ${autoIconContent} !important;
                             }
-                            ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_ICON} {
+                            ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()} {
                                 display: none !important;
                             }
                         `;
@@ -886,7 +886,7 @@ export class StyleGenerator {
 
                 if (nnActive) {
                     css += `
-                        ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_NAME} {
+                        ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()} {
                             ${textCss}
                         }
                     `;

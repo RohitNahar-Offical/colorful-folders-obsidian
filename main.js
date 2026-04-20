@@ -1769,14 +1769,12 @@ var DividerModal = class extends obsidian4.Modal {
     }
     const eff = this.plugin.getEffectiveStyle(item);
     const defaultColor = eff.hex;
-    const defaultIconColor = eff.iconColor || "#ffffff";
     this.config = {
       name: existingStyle.dividerText || item.name,
       color: existingStyle.dividerColor || defaultColor,
       alignment: existingStyle.dividerAlignment || "center",
       lineStyle: existingStyle.dividerLineStyle || "global",
       icon: existingStyle.dividerIcon || "",
-      iconColor: existingStyle.dividerIconColor || defaultIconColor,
       isUpper: existingStyle.dividerUpper !== void 0 ? existingStyle.dividerUpper : true,
       useGlass: existingStyle.dividerGlass !== void 0 ? existingStyle.dividerGlass : true,
       iconPosition: existingStyle.dividerIconPosition || "left",
@@ -1869,15 +1867,6 @@ var DividerModal = class extends obsidian4.Modal {
     createVisualColorPicker(cpCont, this.config.color, (hex) => {
       this.config.color = hex;
       this._headerIconWrap.setCssStyles({ backgroundColor: hex });
-      this._refreshHeaderIcon();
-      this._liveSync();
-    }, { showAlpha: false });
-    const icColorSect = addSection("Icon color");
-    const icCpCont = icColorSect.createDiv();
-    icCpCont.setCssStyles({ marginTop: "8px" });
-    const currentIconColor = this.config.iconColor || "#ffffff";
-    createVisualColorPicker(icCpCont, currentIconColor, (hex) => {
-      this.config.iconColor = hex;
       this._refreshHeaderIcon();
       this._liveSync();
     }, { showAlpha: false });
@@ -2024,7 +2013,7 @@ var DividerModal = class extends obsidian4.Modal {
       styleObj.dividerUpper = this.config.isUpper;
       styleObj.dividerGlass = this.config.useGlass;
       styleObj.dividerIcon = this.config.icon;
-      styleObj.dividerIconColor = this.config.iconColor;
+      delete styleObj.dividerIconColor;
       styleObj.dividerIconPosition = this.config.iconPosition;
       styleObj.dividerPillMode = this.config.pillMode;
       styleObj.dividerDescription = this.config.description;
@@ -2047,12 +2036,12 @@ var DividerModal = class extends obsidian4.Modal {
       dividerUpper: this.config.isUpper,
       dividerGlass: this.config.useGlass,
       dividerIcon: this.config.icon,
-      dividerIconColor: this.config.iconColor,
       dividerIconPosition: this.config.iconPosition,
       dividerPillMode: this.config.pillMode,
       dividerDescription: this.config.description,
       hasDivider: true
     };
+    delete tempStyle.dividerIconColor;
     this.plugin.settings.customFolderColors[this.path] = tempStyle;
     this.plugin.dividerManager.syncDividers();
   }
@@ -2064,8 +2053,7 @@ var DividerModal = class extends obsidian4.Modal {
     obsidian4.setIcon(this._previewIconEl, iconId);
     const svg = this._previewIconEl.querySelector("svg");
     if (svg) {
-      const icColor = this.config.iconColor || "#ffffff";
-      svg.setCssStyles({ width: "20px", height: "20px", color: icColor });
+      svg.setCssStyles({ width: "20px", height: "20px", color: this.config.color });
     } else {
       this._previewIconEl.setText(this.config.icon);
       this._previewIconEl.setCssStyles({ fontSize: "1.2em" });
@@ -2710,6 +2698,21 @@ var NotebookNavigatorIntegration = class {
     return !!(settings.notebookNavigatorSupport && settings.notebookNavigatorFileBackground);
   }
   /**
+   * Returns the extra containers (NN navigation pane, etc.) that should be observed.
+   */
+  static getExtraContainers(doc) {
+    return doc.querySelectorAll(NN_SELECTORS.CONTAINERS);
+  }
+  /**
+   * Finds a specific item (folder or file) in the NN DOM by its path.
+   */
+  static findItemInDOM(container, path) {
+    const safePath = path.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    return container.querySelector(
+      `${NN_SELECTORS.NAV_ITEM}[data-path="${safePath}"], ${NN_SELECTORS.FILE_ITEM}[data-path="${safePath}"]`
+    );
+  }
+  /**
    * Returns the base selector for NN items (folders/nav items).
    */
   static getNavBase(settings) {
@@ -2725,6 +2728,18 @@ var NotebookNavigatorIntegration = class {
   static getScopedFileSelector(path) {
     const safePath = path.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
     return `.notebook-navigator ${NN_SELECTORS.FILE_ITEM}[data-path="${safePath}"]`;
+  }
+  static getNavNameSelector() {
+    return NN_SELECTORS.NAV_NAME;
+  }
+  static getFileNameSelector() {
+    return NN_SELECTORS.FILE_NAME;
+  }
+  static getNavIconSelector() {
+    return NN_SELECTORS.NAV_ICON;
+  }
+  static getFileIconSelector() {
+    return NN_SELECTORS.FILE_ICON;
   }
 };
 
@@ -3006,7 +3021,7 @@ var StyleGenerator = class {
                                     font-style: ${isItalic ? "italic" : "normal"} !important;
                                     border-radius: 4px;
                                 }
-                                ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NN_SELECTORS.FILE_NAME} {
+                                ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileNameSelector()} {
                                     color: ${text} !important;
                                     font-weight: ${isBold ? "bold" : "normal"} !important;
                                     font-style: ${isItalic ? "italic" : "normal"} !important;
@@ -3024,12 +3039,12 @@ var StyleGenerator = class {
                             `;
               if (nnActive || nnFileBgActive) {
                 css += `
-                                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_NAME}::before,
-                                    ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NN_SELECTORS.FILE_NAME}::before {
+                                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before,
+                                    ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileNameSelector()}::before {
                                         content: "${iconId} " !important;
                                     }
-                                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_ICON},
-                                    ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NN_SELECTORS.FILE_ICON} {
+                                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()},
+                                    ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileIconSelector()} {
                                         display: none !important;
                                     }
                                 `;
@@ -3076,8 +3091,8 @@ var StyleGenerator = class {
                                 `;
                 if (nnActive || nnFileBgActive) {
                   css += `
-                                        ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_NAME}::before,
-                                        ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NN_SELECTORS.FILE_NAME}::before {
+                                        ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before,
+                                        ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileNameSelector()}::before {
                                             content: '' !important;
                                             display: inline-block !important;
                                             width: ${effFileIconW}px !important;
@@ -3091,8 +3106,8 @@ var StyleGenerator = class {
                                             vertical-align: middle !important;
                                             opacity: 0.85 !important;
                                         }
-                                        ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_ICON},
-                                        ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NN_SELECTORS.FILE_ICON} {
+                                        ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()},
+                                        ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileIconSelector()} {
                                             display: none !important;
                                         }
                                     `;
@@ -3119,8 +3134,8 @@ var StyleGenerator = class {
                         `;
             if (nnActive || nnFileBgActive) {
               css += `
-                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_NAME}::before,
-                                ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NN_SELECTORS.FILE_NAME}::before {
+                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before,
+                                ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileNameSelector()}::before {
                                     content: '' !important;
                                     display: inline-block !important;
                                     width: ${effFileIconW}px !important;
@@ -3134,8 +3149,8 @@ var StyleGenerator = class {
                                     vertical-align: middle !important;
                                     opacity: 0.85 !important;
                                 }
-                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_ICON},
-                                ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NN_SELECTORS.FILE_ICON} {
+                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()},
+                                ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileIconSelector()} {
                                     display: none !important;
                                 }
                             `;
@@ -3302,10 +3317,10 @@ var StyleGenerator = class {
                         `;
             if (nnActive) {
               css += `
-                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_NAME}::before {
+                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before {
                                     content: "${activeStyle.iconId} " !important;
                                 }
-                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_ICON} {
+                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()} {
                                     display: none !important;
                                 }
                             `;
@@ -3354,7 +3369,7 @@ var StyleGenerator = class {
                             `;
               if (nnActive) {
                 css += `
-                                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_NAME}::before {
+                                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before {
                                         content: '' !important;
                                         display: inline-block !important;
                                         width: ${folderIconW}px !important;
@@ -3368,7 +3383,7 @@ var StyleGenerator = class {
                                         vertical-align: middle !important;
                                         opacity: 0.85 !important;
                                     }
-                                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_ICON} {
+                                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()} {
                                         display: none !important;
                                     }
                                 `;
@@ -3409,7 +3424,7 @@ var StyleGenerator = class {
                         `;
             if (nnActive) {
               css += `
-                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_NAME}::before {
+                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before {
                                     content: '' !important;
                                     display: inline-block !important;
                                     width: ${effFolderIconW}px !important;
@@ -3424,7 +3439,7 @@ var StyleGenerator = class {
                                     opacity: ${wideOpacity} !important;
                                 }
 
-                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_ICON} {
+                                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()} {
                                     display: none !important;
                                 }
                             `;
@@ -3439,10 +3454,10 @@ var StyleGenerator = class {
                     `;
           if (nnActive) {
             css += `
-                            ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_NAME}::before {
+                            ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before {
                                 content: ${autoIconContent} !important;
                             }
-                            ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_ICON} {
+                            ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()} {
                                 display: none !important;
                             }
                         `;
@@ -3533,7 +3548,7 @@ var StyleGenerator = class {
                 `;
         if (nnActive) {
           css += `
-                        ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NN_SELECTORS.NAV_NAME} {
+                        ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()} {
                             ${textCss}
                         }
                     `;
@@ -4027,12 +4042,14 @@ var _DividerManager = class {
   syncDividers() {
     if (this.plugin.isSyncingDividers)
       return;
-    const containers = activeDocument.querySelectorAll(`.nav-files-container, ${NN_SELECTORS.CONTAINERS}`);
-    if (containers.length === 0)
+    const containers = Array.from(activeDocument.querySelectorAll(".nav-files-container"));
+    const extraContainers = Array.from(NotebookNavigatorIntegration.getExtraContainers(activeDocument));
+    const allContainers = [...containers, ...extraContainers];
+    if (allContainers.length === 0)
       return;
     this.plugin.isSyncingDividers = true;
     try {
-      containers.forEach((container) => {
+      allContainers.forEach((container) => {
         this.syncContainer(container);
       });
     } finally {
@@ -4123,7 +4140,9 @@ var _DividerManager = class {
       _DividerManager.activePopover.remove();
       _DividerManager.activePopover = null;
     }
-    activeDocument.querySelectorAll(`.nav-files-container, ${NN_SELECTORS.CONTAINERS}`).forEach((container) => {
+    const containers = Array.from(activeDocument.querySelectorAll(".nav-files-container"));
+    const extraContainers = Array.from(NotebookNavigatorIntegration.getExtraContainers(activeDocument));
+    [...containers, ...extraContainers].forEach((container) => {
       container.querySelectorAll(".cf-interactive-divider").forEach((el) => el.remove());
     });
   }
@@ -4149,12 +4168,10 @@ var _DividerManager = class {
       return null;
     }
     const safePath = safeEscape(path);
-    const titleEl = container.querySelector(
-      `.nav-folder-title[data-path="${safePath}"], .nav-file-title[data-path="${safePath}"], ${NN_SELECTORS.NAV_ITEM}[data-path="${safePath}"], ${NN_SELECTORS.FILE_ITEM}[data-path="${safePath}"]`
-    );
+    const titleEl = container.querySelector(`.nav-folder-title[data-path="${safePath}"], .nav-file-title[data-path="${safePath}"]`) || NotebookNavigatorIntegration.findItemInDOM(container, path);
     if (!titleEl)
       return null;
-    const wrapper = titleEl.closest(`.nav-folder, .nav-file, ${NN_SELECTORS.NAV_ITEM}, ${NN_SELECTORS.FILE_ITEM}`);
+    const wrapper = titleEl.closest(`.nav-folder, .nav-file, .nn-navitem, .nn-file`);
     if (!wrapper)
       return null;
     if (wrapper.classList.contains("nav-file-ghost") || wrapper.classList.contains("nav-folder-ghost"))
@@ -4508,10 +4525,12 @@ var ColorfulFoldersPlugin = class extends obsidian8.Plugin {
     if (this.dividerObserver) {
       this.dividerObserver.disconnect();
     }
-    const containers = activeDocument.querySelectorAll(`.nav-files-container, ${NN_SELECTORS.CONTAINERS}`);
-    if (containers.length === 0)
+    const containers = Array.from(activeDocument.querySelectorAll(".nav-files-container"));
+    const extraContainers = Array.from(NotebookNavigatorIntegration.getExtraContainers(activeDocument));
+    const allContainers = [...containers, ...extraContainers];
+    if (allContainers.length === 0)
       return;
-    containers.forEach((container) => {
+    allContainers.forEach((container) => {
       container.addEventListener("scroll", () => {
         this.isScrolling = true;
         activeWindow.clearTimeout(this.scrollTimeout);

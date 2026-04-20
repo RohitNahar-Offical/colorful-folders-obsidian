@@ -14,7 +14,6 @@ export class DividerModal extends obsidian.Modal {
         alignment: string;
         lineStyle: string;
         icon: string;
-        iconColor: string;
         isUpper: boolean;
         useGlass: boolean;
         iconPosition: 'left' | 'right' | 'both';
@@ -43,7 +42,6 @@ export class DividerModal extends obsidian.Modal {
 
         const eff = this.plugin.getEffectiveStyle(item);
         const defaultColor = eff.hex;
-        const defaultIconColor = eff.iconColor || "#ffffff";
         
         this.config = {
             name: existingStyle.dividerText || item.name,
@@ -51,7 +49,6 @@ export class DividerModal extends obsidian.Modal {
             alignment: existingStyle.dividerAlignment || "center",
             lineStyle: existingStyle.dividerLineStyle || "global",
             icon: existingStyle.dividerIcon || "",
-            iconColor: existingStyle.dividerIconColor || defaultIconColor,
             isUpper: existingStyle.dividerUpper !== undefined ? existingStyle.dividerUpper : true,
             useGlass: existingStyle.dividerGlass !== undefined ? existingStyle.dividerGlass : true,
             iconPosition: existingStyle.dividerIconPosition || "left",
@@ -141,18 +138,6 @@ export class DividerModal extends obsidian.Modal {
         createVisualColorPicker(cpCont, this.config.color, (hex) => {
             this.config.color = hex;
             this._headerIconWrap.setCssStyles({ backgroundColor: hex });
-            this._refreshHeaderIcon();
-            this._liveSync();
-        }, { showAlpha: false });
-
-        const icColorSect = addSection("Icon color");
-        const icCpCont = icColorSect.createDiv();
-        icCpCont.setCssStyles({ marginTop: "8px" });
-        
-        // Use a default for divider icon color if not set
-        const currentIconColor = this.config.iconColor || "#ffffff";
-        createVisualColorPicker(icCpCont, currentIconColor, (hex) => {
-            this.config.iconColor = hex;
             this._refreshHeaderIcon();
             this._liveSync();
         }, { showAlpha: false });
@@ -344,7 +329,7 @@ export class DividerModal extends obsidian.Modal {
             styleObj.dividerUpper = this.config.isUpper;
             styleObj.dividerGlass = this.config.useGlass;
             styleObj.dividerIcon = this.config.icon;
-            styleObj.dividerIconColor = this.config.iconColor;
+            delete styleObj.dividerIconColor;
             styleObj.dividerIconPosition = this.config.iconPosition;
             styleObj.dividerPillMode = this.config.pillMode;
             styleObj.dividerDescription = this.config.description;
@@ -369,12 +354,12 @@ export class DividerModal extends obsidian.Modal {
             dividerUpper: this.config.isUpper,
             dividerGlass: this.config.useGlass,
             dividerIcon: this.config.icon,
-            dividerIconColor: this.config.iconColor,
             dividerIconPosition: this.config.iconPosition,
             dividerPillMode: this.config.pillMode,
             dividerDescription: this.config.description,
             hasDivider: true
         };
+        delete tempStyle.dividerIconColor;
         this.plugin.settings.customFolderColors[this.path] = tempStyle;
         this.plugin.dividerManager.syncDividers();
     }
@@ -386,8 +371,7 @@ export class DividerModal extends obsidian.Modal {
         obsidian.setIcon(this._previewIconEl, iconId);
         const svg = this._previewIconEl.querySelector("svg") as unknown as HTMLElement | null;
         if (svg) {
-            const icColor = this.config.iconColor || "#ffffff";
-            svg.setCssStyles({ width: "20px", height: "20px", color: icColor });
+            svg.setCssStyles({ width: "20px", height: "20px", color: this.config.color });
         } else {
             this._previewIconEl.setText(this.config.icon);
             this._previewIconEl.setCssStyles({ fontSize: "1.2em" });
