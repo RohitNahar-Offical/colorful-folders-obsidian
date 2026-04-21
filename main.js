@@ -2759,7 +2759,7 @@ var ColorfulFoldersSettingTab = class extends obsidian7.PluginSettingTab {
         fontSize: "0.85em",
         opacity: "0.8"
       });
-      stealthTip.setText("\u{1F4A1} Tip: You can also use the 'Toggle stealth mode' command (Default: Ctrl+Shift+Q). This can be customized in Obsidian's hotkey settings.");
+      stealthTip.setText("\u{1F4A1} Tip: You can also use the 'Toggle stealth mode' command (e.g., Ctrl+Shift+Q). This can be customized in Obsidian's hotkey settings.");
       const hiddenListContainer = stealthCard.createDiv({ cls: "cf-hidden-list-container" });
       hiddenListContainer.setCssStyles({ marginTop: "20px" });
       hiddenListContainer.createEl("h4", { text: "Hidden items" }).setCssStyles({ marginBottom: "10px", fontSize: "0.9em", opacity: "0.8" });
