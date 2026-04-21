@@ -224,11 +224,34 @@ _prevIconSize: number;
         };
 
         const bgPickerContainer = bgSection.createDiv();
-        createVisualColorPicker(bgPickerContainer, this.folderStyle.hex, (hex, alpha) => {
+        createVisualColorPicker(bgPickerContainer, this.folderStyle.hex, (hex) => {
             this.folderStyle.hex = hex;
-            this.folderStyle.opacity = alpha;
             updatePreview();
-        }, { showAlpha: true, initialAlpha: this.folderStyle.opacity || 1.0 });
+        }, { showAlpha: false });
+
+        // ── Standalone Opacity Slider (fully independent from color) ──
+        const opRow = bgSection.createDiv();
+        opRow.setCssStyles({
+            display: 'flex', alignItems: 'center', gap: '10px',
+            marginTop: '10px', padding: '8px 4px'
+        });
+        const opLabel = opRow.createEl('span', { text: 'Background opacity' });
+        opLabel.setCssStyles({ fontSize: '0.78em', fontWeight: '700', color: 'var(--text-muted)', whiteSpace: 'nowrap' });
+
+        const opSlider = opRow.createEl('input', { type: 'range' });
+        opSlider.min = '0'; opSlider.max = '100';
+        opSlider.value = String(Math.round((this.folderStyle.opacity ?? 1.0) * 100));
+        opSlider.setCssStyles({ flex: '1', cursor: 'pointer' });
+
+        const opValLabel = opRow.createEl('span');
+        opValLabel.setCssStyles({ fontSize: '0.78em', fontWeight: '700', color: 'var(--text-normal)', minWidth: '34px', textAlign: 'right' });
+        opValLabel.textContent = `${opSlider.value}%`;
+
+        opSlider.addEventListener('input', () => {
+            this.folderStyle.opacity = parseInt(opSlider.value) / 100;
+            opValLabel.textContent = `${opSlider.value}%`;
+            updatePreview();
+        });
 
         // ── SECTION: Text Color ──
         const txtSection = ap.createDiv({ cls: 'cf-picker-section' });

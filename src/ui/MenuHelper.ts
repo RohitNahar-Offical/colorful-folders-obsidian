@@ -1,5 +1,5 @@
 import * as obsidian from 'obsidian';
-import { IColorfulFoldersPlugin } from '../common/types';
+import { IColorfulFoldersPlugin, MenuItemWithSubmenu } from '../common/types';
 import { ColorPickerModal } from './modals/ColorPickerModal';
 import { DividerModal } from './modals/DividerModal';
 
@@ -53,42 +53,50 @@ export class MenuHelper {
 
         menu.addSeparator();
 
-        // ── Step 2: Styling (Flattened - No Submenu for NN compatibility) ──
-        menu.addItem((sub: obsidian.MenuItem) => {
-            sub.setTitle('Change icon / color')
-                .setIcon('palette')
-                .onClick(() => {
-                    new ColorPickerModal(plugin.app, plugin, file, 'icon').open();
-                });
-        });
+        // ── Step 2: Styling (Grouped in Submenu) ──
+        menu.addItem((item: obsidian.MenuItem) => {
+            item.setTitle('Set custom style')
+                .setIcon('palette');
+            
+            const subMenu = (item as MenuItemWithSubmenu).setSubmenu();
 
-        menu.addItem((sub: obsidian.MenuItem) => {
-            sub.setTitle('Change color')
-                .setIcon('pipette')
-                .onClick(() => {
-                    new ColorPickerModal(plugin.app, plugin, file, 'color').open();
-                });
-        });
-
-        menu.addItem((sub: obsidian.MenuItem) => {
-            sub.setTitle('Change background')
-                .setIcon('paint-bucket')
-                .onClick(() => {
-                    new ColorPickerModal(plugin.app, plugin, file, 'background').open();
-                });
-        });
-
-        const existing = plugin.settings.customFolderColors[file.path];
-        if (existing) {
-            menu.addItem((sub: obsidian.MenuItem) => {
-                sub.setTitle('Clear style')
-                    .setIcon('eraser')
-                    .onClick(async () => {
-                        delete plugin.settings.customFolderColors[file.path];
-                        await plugin.saveSettings();
-                        new obsidian.Notice(`Cleared style for ${file.name}`);
+            subMenu.addItem((sub: obsidian.MenuItem) => {
+                sub.setTitle('Change icon / color')
+                    .setIcon('palette')
+                    .onClick(() => {
+                        new ColorPickerModal(plugin.app, plugin, file, 'icon').open();
                     });
             });
-        }
+
+            subMenu.addItem((sub: obsidian.MenuItem) => {
+                sub.setTitle('Change color')
+                    .setIcon('pipette')
+                    .onClick(() => {
+                        new ColorPickerModal(plugin.app, plugin, file, 'color').open();
+                    });
+            });
+
+            subMenu.addItem((sub: obsidian.MenuItem) => {
+                sub.setTitle('Change background')
+                    .setIcon('paint-bucket')
+                    .onClick(() => {
+                        new ColorPickerModal(plugin.app, plugin, file, 'background').open();
+                    });
+            });
+
+            const existing = plugin.settings.customFolderColors[file.path];
+            if (existing) {
+                subMenu.addSeparator();
+                subMenu.addItem((sub: obsidian.MenuItem) => {
+                    sub.setTitle('Clear style')
+                        .setIcon('eraser')
+                        .onClick(async () => {
+                            delete plugin.settings.customFolderColors[file.path];
+                            await plugin.saveSettings();
+                            new obsidian.Notice(`Cleared style for ${file.name}`);
+                        });
+                });
+            }
+        });
     }
 }

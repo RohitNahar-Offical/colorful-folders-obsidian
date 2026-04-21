@@ -67,6 +67,8 @@ export interface ColorfulFoldersSettings {
     dividerPillMode: boolean;
     dividerIconPosition: string;
     cycleOffset: number;
+    fileBackgroundOpacity: number;
+    notebookNavigatorOutlineOnly: boolean;
 }
 
 

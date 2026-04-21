@@ -106,6 +106,8 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     separatorColor: "var(--text-muted)",
     dividerPillMode: true,
     dividerIconPosition: "left",
+    fileBackgroundOpacity: 0.1,
+    notebookNavigatorOutlineOnly: false,
 };
 
 export const AUTO_ICON_CATEGORIES: AutoIconData[] = [

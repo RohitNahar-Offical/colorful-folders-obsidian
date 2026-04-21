@@ -105,6 +105,17 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     this.plugin.generateStyles();
                 }));
 
+        new obsidian.Setting(intCard)
+            .setName('Outline only mode (Navigator)')
+            .setDesc('Removes solid backgrounds from Notebook Navigator items, showing only the left accent border.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.notebookNavigatorOutlineOnly)
+                .onChange(async (value) => {
+                    this.plugin.settings.notebookNavigatorOutlineOnly = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStyles();
+                }));
+
         // ──────────────────────────────────────────────────────────────────────
         // ── ICON PACKS PANEL ──────────────────────────────────────────────────
         // ──────────────────────────────────────────────────────────────────────
@@ -766,6 +777,19 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .setDynamicTooltip()
                 .onChange(async (value) => {
                     this.plugin.settings.rootTintOpacity = parseFloat((value / 100).toFixed(3));
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStyles();
+                }));
+
+        new obsidian.Setting(tuneCard)
+            .setName('File background opacity (%)')
+            .setDesc('Global transparency for all auto-colored files (default 10%).')
+            .addSlider(slider => slider
+                .setLimits(0, 100, 1)
+                .setValue((this.plugin.settings.fileBackgroundOpacity !== undefined ? this.plugin.settings.fileBackgroundOpacity : 0.1) * 100)
+                .setDynamicTooltip()
+                .onChange(async (value) => {
+                    this.plugin.settings.fileBackgroundOpacity = parseFloat((value / 100).toFixed(3));
                     await this.plugin.saveSettings();
                     this.plugin.generateStyles();
                 }));

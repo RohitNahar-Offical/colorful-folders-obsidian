@@ -94,10 +94,10 @@ export class StyleGenerator {
             .filter((s: string) => s.length > 0);
 
         const rootBgStyle = this.settings.rootStyle;
-        const rootOp = this.settings.rootOpacity;
         const subOp = this.settings.subfolderOpacity;
         const tintOp = this.settings.tintOpacity;
         const outlineOnly = this.settings.outlineOnly;
+        const nnOutlineOnly = this.settings.notebookNavigatorOutlineOnly;
         const cycleOff = this.settings.cycleOffset || 0;
 
 
@@ -223,7 +223,7 @@ export class StyleGenerator {
             const glassCss = this.settings.glassmorphism ? `backdrop-filter: blur(8px) saturate(120%); -webkit-backdrop-filter: blur(8px) saturate(120%);` : '';
             const animStyle = this.settings.activeAnimationStyle || "breathe";
             const animDur = this.settings.activeAnimationDuration || 4.0;
-            const rootTintOp = this.settings.rootOpacity !== undefined ? this.settings.rootOpacity : 0.06;
+            const rootTintOp = this.settings.rootTintOpacity !== undefined ? this.settings.rootTintOpacity : 0.06;
 
 
             let validIndex = 0;
@@ -264,7 +264,9 @@ export class StyleGenerator {
                     }
 
                     const isCustomColor = !!(fileStyle && fileStyle.hex);
-                    const shouldColorFile = isCustomColor || (inheritedStyle && inheritedStyle.applyToFiles) || this.settings.autoColorFiles || (this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground);
+                    const isCustomOrInherited = isCustomColor || (inheritedStyle && inheritedStyle.applyToFiles);
+                    const shouldColorNative = isCustomOrInherited || this.settings.autoColorFiles;
+                    const shouldColorNN = isCustomOrInherited || (this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground);
 
                     const activeStyle = fileStyle || (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle : null);
                     const textColor = fileStyle?.textColor || (inheritedStyle?.applyToFiles ? inheritedStyle.textColor : null);
@@ -273,33 +275,36 @@ export class StyleGenerator {
                     const autoIconFile = (this.settings.autoIcons && !fileStyle?.iconId && !(inheritedStyle?.applyToFiles && inheritedStyle?.iconId)) ? getAutoIconData(child.name, this.settings, true) : null;
                     const iconId = fileStyle?.iconId || (inheritedStyle?.applyToFiles ? inheritedStyle.iconId : null) || (autoIconFile ? (this.settings.wideAutoIcons ? autoIconFile.lucide : autoIconFile.emoji) : "");
 
-                    let text;
-                    if (textColor) {
-                        text = textColor;
-                    } else if (shouldColorFile || passedColor) {
-                        if (isDark) {
-                            const fileBright = Math.max(brightnessAmount, 0.15);
-                            text = `rgb(${adjustBrightnessRgb(color.rgb, fileBright)})`;
-                        } else {
-                            const fileBright = brightnessAmount === 0 ? -0.6 : brightnessAmount;
-                            text = `rgb(${adjustBrightnessRgb(color.rgb, fileBright)})`;
+                    const calculateTextColor = (shouldColor: boolean) => {
+                        if (textColor) return textColor;
+                        if (shouldColor || passedColor) {
+                            if (isDark) {
+                                const fileBright = Math.max(brightnessAmount, 0.15);
+                                return `rgb(${adjustBrightnessRgb(color.rgb, fileBright)})`;
+                            } else {
+                                const fileBright = brightnessAmount === 0 ? -0.6 : brightnessAmount;
+                                return `rgb(${adjustBrightnessRgb(color.rgb, fileBright)})`;
+                            }
                         }
-                    } else {
-                        text = "var(--text-normal)";
-                    }
+                        return "var(--text-normal)";
+                    };
+
+                    const textNative = calculateTextColor(shouldColorNative);
+                    const textNN = calculateTextColor(shouldColorNN);
 
                     const isBold = fileStyle?.isBold !== undefined ? fileStyle.isBold : (inheritedStyle?.applyToFiles ? inheritedStyle.isBold : false);
                     const isItalic = fileStyle?.isItalic !== undefined ? fileStyle.isItalic : (inheritedStyle?.applyToFiles ? inheritedStyle.isItalic : false);
 
+                        const fileBgAlpha = isCustomColor ? op : (this.settings.fileBackgroundOpacity !== undefined ? this.settings.fileBackgroundOpacity : (isDark ? 0.1 : 0.15));
                         css += `
-                            .nav-files-container .nav-file-title[data-path="${safePath}"],
-                            .nav-files-container .tree-item-self[data-path="${safePath}"] {
-                                ${shouldColorFile ? `
-                                    background-color: rgba(${color.rgb}, ${isDark ? '0.1' : '0.15'}) !important;
+                            .nav-files-container .nav-file-title[data-path="${safePath}"]:not(.nn-file),
+                            .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) {
+                                ${shouldColorNative ? `
+                                    background-color: rgba(${color.rgb}, ${fileBgAlpha}) !important;
                                     border-left: 2px solid rgba(${color.rgb}, 0.4) !important;
                                 ` : ''}
-                                opacity: ${isCustomColor ? op : 1.0} !important;
-                                color: ${text} !important;
+                                opacity: 1.0 !important;
+                                color: ${textNative} !important;
                                 font-weight: ${isBold ? 'bold' : 'normal'} !important;
                                 font-style: ${isItalic ? 'italic' : 'normal'} !important;
                                 border-radius: 4px;
@@ -309,18 +314,18 @@ export class StyleGenerator {
                         if (nnFileBgActive) {
                             css += `
                                 ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} {
-                                    ${shouldColorFile ? `
-                                        background-color: rgba(${color.rgb}, ${isDark ? '0.1' : '0.15'}) !important;
+                                    ${shouldColorNN ? `
+                                        background-color: rgba(${color.rgb}, ${fileBgAlpha}) !important;
                                         border-left: 2px solid rgba(${color.rgb}, 0.4) !important;
                                     ` : ''}
-                                    opacity: ${isCustomColor ? op : 1.0} !important;
-                                    color: ${text} !important;
+                                    opacity: 1.0 !important;
+                                    color: ${textNN} !important;
                                     font-weight: ${isBold ? 'bold' : 'normal'} !important;
                                     font-style: ${isItalic ? 'italic' : 'normal'} !important;
                                     border-radius: 4px;
                                 }
                                 ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileNameSelector()} {
-                                    color: ${text} !important;
+                                    color: ${textNN} !important;
                                     font-weight: ${isBold ? 'bold' : 'normal'} !important;
                                     font-style: ${isItalic ? 'italic' : 'normal'} !important;
                                 }
@@ -559,45 +564,60 @@ export class StyleGenerator {
 
                 const safePath = safeEscape(child.path);
 
-                let bg, text;
-                const isCustomColor = !!(activeStyle && activeStyle.hex);
-                const op = isCustomColor && activeStyle?.opacity !== undefined ? activeStyle.opacity : (depth === 0 ? rootOp : subOp);
-
                 const contrastColor = isDark ? "#ffffff" : "#111111";
+                const isCustomColor = !!(activeStyle && activeStyle.hex);
+                const op = (activeStyle && activeStyle.opacity !== undefined) ? activeStyle.opacity : (depth === 0 ? rootTintOp : subOp);
+                let bg, text;
 
-                if (depth === 0) {
-                    if (this.settings.rainbowRootText && this.settings.rainbowRootBgTransparent && !isCustomColor) {
-                        bg = "transparent";
-                        text = color.hex;
-                    } else if (rootBgStyle === "solid") {
-                        bg = outlineOnly ? "transparent" : color.hex;
-                        text = outlineOnly ? color.hex : contrastColor;
+                const getStyles = (useOutline: boolean) => {
+                    let b: string, t: string;
+                    if (depth === 0) {
+                        if (this.settings.rainbowRootText && this.settings.rainbowRootBgTransparent && !isCustomColor) {
+                            b = "transparent";
+                            t = color.hex;
+                        } else if (rootBgStyle === "solid") {
+                            b = useOutline ? "transparent" : color.hex;
+                            t = useOutline ? color.hex : contrastColor;
+                        } else {
+                            b = useOutline ? "transparent" : `rgba(${color.rgb}, ${op})`;
+                            const rootAdjust = isDark ? Math.max(brightnessAmount, 0) : (brightnessAmount === 0 ? -0.7 : brightnessAmount);
+                            t = (isDark && rootAdjust === 0) ? color.hex : `rgb(${adjustBrightnessRgb(color.rgb, rootAdjust)})`;
+                        }
                     } else {
-                        // Translucent mode: use rootTintOp as background alpha
-                        bg = outlineOnly ? "transparent" : `rgba(${color.rgb}, ${rootTintOp})`;
-                        const rootAdjust = isDark ? Math.max(brightnessAmount, 0) : (brightnessAmount === 0 ? -0.7 : brightnessAmount);
-                        text = (isDark && rootAdjust === 0) ? color.hex : `rgb(${adjustBrightnessRgb(color.rgb, rootAdjust)})`;
+                        b = useOutline ? "transparent" : `rgba(${color.rgb}, ${op})`;
+                        const subAdjust = isDark ? Math.max(brightnessAmount, 0) : (brightnessAmount === 0 ? -0.5 : brightnessAmount);
+                        t = (isDark && subAdjust === 0) ? color.hex : `rgb(${adjustBrightnessRgb(color.rgb, subAdjust)})`;
                     }
-                } else {
-                    bg = outlineOnly ? "transparent" : `rgba(${color.rgb}, ${op})`;
-                    const subAdjust = isDark ? Math.max(brightnessAmount, 0) : (brightnessAmount === 0 ? -0.5 : brightnessAmount);
-                    text = (isDark && subAdjust === 0) ? color.hex : `rgb(${adjustBrightnessRgb(color.rgb, subAdjust)})`;
-                }
 
+                    const effectiveTextColor = customStyle?.textColor || inheritedStyle?.textColor;
+                    if (effectiveTextColor) {
+                        t = effectiveTextColor;
+                    } else if (isCustomColor || inheritedStyle?.hex) {
+                        const customAdjust = isDark ? Math.max(brightnessAmount, 0) : (brightnessAmount === 0 ? -0.5 : brightnessAmount);
+                        t = (rootBgStyle === "solid" && depth === 0 && !useOutline) ? contrastColor : ((isDark && customAdjust === 0) ? color.hex : `rgb(${adjustBrightnessRgb(color.rgb, customAdjust)})`);
+                    }
+                    return { b, t };
+                };
 
-                const effectiveTextColor = customStyle?.textColor || inheritedStyle?.textColor;
-                if (effectiveTextColor) {
-                    text = effectiveTextColor;
-                } else if (isCustomColor || inheritedStyle?.hex) {
-                    const customAdjust = isDark ? Math.max(brightnessAmount, 0) : (brightnessAmount === 0 ? -0.5 : brightnessAmount);
-                    text = (rootBgStyle === "solid" && depth === 0 && !outlineOnly) ? contrastColor : ((isDark && customAdjust === 0) ? color.hex : `rgb(${adjustBrightnessRgb(color.rgb, customAdjust)})`);
-                }
+                const nativeS = getStyles(outlineOnly);
+                const nnS = getStyles(nnOutlineOnly);
+
+                bg = nativeS.b;
+                text = nativeS.t;
+                const bgNN = nnS.b;
+                const textNN = nnS.t;
 
                 const isBold = customStyle?.isBold !== undefined ? customStyle.isBold : (inheritedStyle?.isBold !== undefined ? inheritedStyle.isBold : true);
                 const isItalic = customStyle?.isItalic !== undefined ? customStyle.isItalic : (inheritedStyle?.isItalic !== undefined ? inheritedStyle.isItalic : false);
 
                 let textCss = `
                     color: ${text} !important;
+                    font-weight: ${isBold ? 'bold' : 'normal'} !important;
+                    font-style: ${isItalic ? 'italic' : 'normal'} !important;
+                `;
+
+                let textCssNN = `
+                    color: ${textNN} !important;
                     font-weight: ${isBold ? 'bold' : 'normal'} !important;
                     font-style: ${isItalic ? 'italic' : 'normal'} !important;
                 `;
@@ -824,8 +844,8 @@ export class StyleGenerator {
                 }
 
                 css += `
-                    .nav-files-container .nav-folder-title[data-path="${safePath}"],
-                    .nav-files-container .tree-item-self[data-path="${safePath}"] {
+                    .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem),
+                    .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-navitem):not(.nn-file) {
                         background-color: ${bg} !important;
                         opacity: 1.0 !important;
                         border-radius: 6px;
@@ -836,7 +856,7 @@ export class StyleGenerator {
                 if (nnActive) {
                     css += `
                         ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} {
-                        background-color: ${bg} !important;
+                        background-color: ${bgNN} !important;
                         border-radius: 4px !important;
                         ${glassCss}
                         ${tintOp > 0 ? `background-blend-mode: overlay;` : ''}
@@ -877,8 +897,8 @@ export class StyleGenerator {
                         border-left-width: 2px !important;
                     }
 
-                    body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content,
-                    body .tree-item-self[data-path="${safePath}"] .tree-item-inner {
+                    body .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content,
+                    body .tree-item-self[data-path="${safePath}"]:not(.nn-navitem):not(.nn-file) .tree-item-inner {
                         ${textCss}
                     }
                 `;
@@ -886,7 +906,7 @@ export class StyleGenerator {
                 if (nnActive) {
                     css += `
                         ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()} {
-                            ${textCss}
+                            ${textCssNN}
                         }
                     `;
                 }

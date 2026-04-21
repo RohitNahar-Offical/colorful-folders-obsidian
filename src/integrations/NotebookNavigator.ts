@@ -96,7 +96,7 @@ export class NotebookNavigatorIntegration {
      */
     static shouldRenderDividers(container: Element, settings: ColorfulFoldersSettings): boolean {
         if (this.isNNContainer(container)) {
-            return !!(settings.notebookNavigatorSupport && settings.notebookNavigatorDividerSupport);
+            return false;
         }
         return true; // Native explorer always supported
     }

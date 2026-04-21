@@ -264,63 +264,186 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
         try {
             const isDark = activeDocument.body.classList.contains('theme-dark');
             const brightnessAmount = (isDark ? this.settings.darkModeBrightness : this.settings.lightModeBrightness) / 100;
-            const palette = PALETTES[this.settings.palette] || PALETTES["Muted Dark Mode"];
-            
-            let path = target.path;
-            let segments = path.split('/').filter(s => s.length > 0);
-            let depth = target instanceof obsidian.TFolder ? segments.length - 1 : segments.length - 1;
+            const cycleOff = this.settings.cycleOffset || 0;
 
-            // Start with physical direct style
+            // Build palette (same logic as StyleGenerator)
+            let palette = PALETTES[this.settings.palette] || PALETTES['Muted Dark Mode'];
+            if (this.settings.palette === 'Custom') {
+                const custom = parseCustomPalette(this.settings.customPalette);
+                if (custom) palette = custom;
+            }
+            if (!isDark) {
+                palette = palette.map(c => {
+                    const darker = adjustBrightnessRgb(c.rgb, -0.15);
+                    const p = darker.split(',').map(s => parseInt(s.trim()));
+                    const hex = '#' + ((1 << 24) + (p[0] << 16) + (p[1] << 8) + p[2]).toString(16).slice(1);
+                    return { rgb: darker, hex };
+                });
+            }
+
+            const isFile = target instanceof obsidian.TFile;
+            const path = target.path;
+
+            // Direct custom style check
             let customStyle = this.getStyle(path);
+
+            // Climb parents for inherited style
             let inheritedStyle: FolderStyle | null = null;
-            
-            // Climb parents to find inheritance
             let parent = target.parent;
             while (parent && !parent.isRoot()) {
                 const pStyle = this.getStyle(parent.path);
-                if (pStyle && (pStyle.applyToSubfolders || (target instanceof obsidian.TFile && pStyle.applyToFiles))) {
+                if (pStyle && (pStyle.applyToSubfolders || (isFile && pStyle.applyToFiles))) {
                     inheritedStyle = pStyle;
-                    break; 
+                    break;
                 }
                 parent = parent.parent;
             }
 
-            const activeStyle = customStyle || inheritedStyle;
-            const colorOrigin = (activeStyle && activeStyle.hex) ? activeStyle.hex : null;
-            
+            // --- Compute positional index (simulating StyleGenerator's validIndex) ---
+            // depth: how many levels below root
+            const segments = path.split('/').filter(s => s.length > 0);
+            const depth = isFile ? segments.length - 1 : segments.length - 1;
 
-            let color: {rgb: string, hex: string};
-            if (colorOrigin) {
-                const cp = parseCustomPalette(colorOrigin);
-                const rgb = hexToRgbObj(colorOrigin);
-                color = cp ? cp[0] : { rgb: `${rgb.r}, ${rgb.g}, ${rgb.b}`, hex: colorOrigin };
+            const excludeFolders = (this.settings.exclusionList || "").toLowerCase().split(',').map(s => s.trim()).filter(s => s.length > 0);
+
+            // Get sorted siblings to find validIndex (ACCOUNTING FOR EXCLUSIONS)
+            const parentFolder = target.parent;
+            let validIndex = 0;
+            if (parentFolder) {
+                const siblings = parentFolder.children
+                    .filter((c): c is obsidian.TFolder => c instanceof obsidian.TFolder)
+                    .filter(c => !excludeFolders.includes(c.name.toLowerCase()))
+                    .sort((a, b) => a.name.localeCompare(b.name));
+                
+                if (!isFile) {
+                    validIndex = siblings.findIndex(s => s.path === path);
+                    if (validIndex < 0) validIndex = 0;
+                } else {
+                    // For files, validIndex is 0 at the start of StyleGenerator's traverse
+                    validIndex = 0;
+                }
+            }
+
+            // Get rootIndex: position of the ancestor at depth 0 (ACCOUNTING FOR EXCLUSIONS)
+            let rootIndex = 0;
+            if (depth > 0) {
+                const rootFolder = this.app.vault.getRoot();
+                const rootSegment = segments[0];
+                const rootSiblings = rootFolder.children
+                    .filter((c): c is obsidian.TFolder => c instanceof obsidian.TFolder)
+                    .filter(c => !excludeFolders.includes(c.name.toLowerCase()))
+                    .sort((a, b) => a.name.localeCompare(b.name));
+                rootIndex = rootSiblings.findIndex(s => s.name === rootSegment);
+                if (rootIndex < 0) rootIndex = 0;
+            }
+
+            // --- Helper: Calculate a folder's color based on its position ---
+            const getFolderColor = (vIdx: number, d: number, rIdx: number, itemPath: string) => {
+                if (this.settings.colorMode === 'heatmap') {
+                    const heatmapCache = this.heatmapCache || new Map<string, number>();
+                    const mtime = heatmapCache.get(itemPath) || 0;
+                    const diffDays = mtime ? (Date.now() - mtime) / (1000 * 60 * 60 * 24) : Infinity;
+                    if (diffDays <= 1) return palette[0];
+                    if (diffDays <= 3) return palette[Math.min(2, palette.length - 1)];
+                    if (diffDays <= 7) return palette[Math.min(7, palette.length - 1)];
+                    if (diffDays <= 15) return palette[Math.min(4, palette.length - 1)];
+                    if (diffDays <= 30) return palette[Math.min(10, palette.length - 1)];
+                    return palette[palette.length - 1];
+                } else if (this.settings.colorMode === 'monochromatic') {
+                    if (d === 0) return palette[vIdx % palette.length];
+                    return palette[rIdx % palette.length];
+                } else {
+                    return palette[(vIdx + d + rIdx + cycleOff) % palette.length];
+                }
+            };
+
+            // --- Compute live color ---
+            let color: { rgb: string; hex: string };
+
+            if (customStyle && customStyle.hex) {
+                const cp = parseCustomPalette(customStyle.hex);
+                const rgb = hexToRgbObj(customStyle.hex);
+                color = cp ? cp[0] : { rgb: `${rgb.r}, ${rgb.g}, ${rgb.b}`, hex: customStyle.hex };
+            } else if (inheritedStyle && inheritedStyle.hex) {
+                const cp = parseCustomPalette(inheritedStyle.hex);
+                const rgb = hexToRgbObj(inheritedStyle.hex);
+                color = cp ? cp[0] : { rgb: `${rgb.r}, ${rgb.g}, ${rgb.b}`, hex: inheritedStyle.hex };
+            } else if (isFile) {
+                const parentColor = parentFolder && !parentFolder.isRoot() ? getFolderColor(0, depth - 1, rootIndex, parentFolder.path) : null;
+                const isNNActive = this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground;
+                
+                if (inheritedStyle && inheritedStyle.applyToFiles && parentColor) {
+                    const hObj = hexToRgbObj(inheritedStyle.hex || parentColor.hex);
+                    const nameHash = hashString(target.name);
+                    const offset = ((nameHash % 5) - 2) * 5;
+                    color = {
+                        rgb: `${Math.max(0, Math.min(255, hObj.r + offset))}, ${Math.max(0, Math.min(255, hObj.g + offset))}, ${Math.max(0, Math.min(255, hObj.b + offset))}`,
+                        hex: inheritedStyle.hex || parentColor.hex
+                    };
+                } else if (this.settings.autoColorFiles || isNNActive) {
+                    const nameHash = hashString(target.name);
+                    color = palette[(validIndex + nameHash + cycleOff) % palette.length];
+                } else {
+                    color = parentColor || { rgb: "var(--text-normal-rgb)", hex: "var(--text-normal)" };
+                }
             } else {
-                const h = hashString(path);
-                color = palette[h % palette.length];
+                color = getFolderColor(validIndex, depth, rootIndex, path);
             }
 
-            let effText = (customStyle && customStyle.textColor) ? customStyle.textColor : (inheritedStyle ? inheritedStyle.textColor : null);
+            // --- Compute live opacity ---
+            let effOpacity: number;
+            if (customStyle && customStyle.opacity !== undefined) {
+                effOpacity = customStyle.opacity;
+            } else if (isFile) {
+                const isAutoOn = this.settings.autoColorFiles || (this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground);
+                if (isAutoOn || (inheritedStyle && inheritedStyle.applyToFiles)) {
+                    effOpacity = this.settings.fileBackgroundOpacity !== undefined ? this.settings.fileBackgroundOpacity : (isDark ? 0.1 : 0.15);
+                } else {
+                    effOpacity = 0.0;
+                }
+            } else if (depth === 0) {
+                if (this.settings.rootStyle === 'solid') {
+                    effOpacity = 1.0;
+                } else {
+                    effOpacity = this.settings.rootTintOpacity !== undefined ? this.settings.rootTintOpacity : 0.06;
+                }
+            } else {
+                effOpacity = this.settings.subfolderOpacity !== undefined ? this.settings.subfolderOpacity : 0.4;
+            }
+
+            // Text color
+            let effText = (customStyle && customStyle.textColor) ? customStyle.textColor
+                : (inheritedStyle ? inheritedStyle.textColor : null);
             if (!effText) {
-                const adjust = isDark ? Math.max(brightnessAmount, 0) : brightnessAmount;
-                effText = (isDark && adjust === 0) ? color.hex : `rgb(${adjustBrightnessRgb(color.rgb, adjust)})`;
+                const contrastColor = isDark ? "#ffffff" : "#111111";
+                if (depth === 0 && this.settings.rootStyle === 'solid' && !this.settings.outlineOnly && !isFile) {
+                    effText = contrastColor;
+                } else {
+                    const adjust = isDark ? Math.max(brightnessAmount, 0) : (brightnessAmount === 0 ? -0.5 : brightnessAmount);
+                    effText = (isDark && adjust === 0) ? color.hex : `rgb(${adjustBrightnessRgb(color.rgb, adjust)})`;
+                }
             }
 
-            const effIconColor = (customStyle && customStyle.iconColor) ? customStyle.iconColor : (inheritedStyle ? inheritedStyle.iconColor : color.hex);
-            const autoIcon = getAutoIconData(target.name, this.settings, target instanceof obsidian.TFile);
-            
+            const effIconColor = (customStyle && customStyle.iconColor) ? customStyle.iconColor
+                : (inheritedStyle ? inheritedStyle.iconColor : color.hex);
+            const autoIcon = getAutoIconData(target.name, this.settings, isFile);
+
             return {
                 hex: anyToHex(color.hex),
-                textColor: effText ? anyToHex(effText) : "",
-                iconColor: anyToHex(effIconColor),
-                iconId: (customStyle && customStyle.iconId) ? customStyle.iconId : (this.settings.autoIcons && autoIcon ? (this.settings.wideAutoIcons ? autoIcon.lucide : autoIcon.emoji) : ""),
-                opacity: (customStyle && customStyle.opacity !== undefined) ? customStyle.opacity : (depth === 0 ? this.settings.rootOpacity : this.settings.subfolderOpacity),
-                isBold: (customStyle && customStyle.isBold !== undefined) ? !!customStyle.isBold : (inheritedStyle ? !!inheritedStyle.isBold : true),
-                isItalic: (customStyle && customStyle.isItalic !== undefined) ? !!customStyle.isItalic : (inheritedStyle ? !!customStyle.isItalic : false),
+                textColor: effText ? anyToHex(effText) : '',
+                iconColor: anyToHex(effIconColor || color.hex),
+                iconId: (customStyle && customStyle.iconId) ? customStyle.iconId
+                    : (this.settings.autoIcons && autoIcon ? (this.settings.wideAutoIcons ? autoIcon.lucide : autoIcon.emoji) : ''),
+                opacity: effOpacity,
+                isBold: (customStyle && customStyle.isBold !== undefined) ? !!customStyle.isBold
+                    : (inheritedStyle ? !!inheritedStyle.isBold : true),
+                isItalic: (customStyle && customStyle.isItalic !== undefined) ? !!customStyle.isItalic
+                    : (inheritedStyle ? !!inheritedStyle.isItalic : false),
                 applyToSubfolders: customStyle ? !!customStyle.applyToSubfolders : false,
                 applyToFiles: customStyle ? !!customStyle.applyToFiles : false
             };
         } catch {
-            return { hex: "#ffffff", textColor: "#000000", iconColor: "#000000", iconId: "", opacity: 1, isBold: true, isItalic: false, applyToSubfolders: false, applyToFiles: false };
+            return { hex: '#ffffff', textColor: '#000000', iconColor: '#000000', iconId: '', opacity: 1, isBold: true, isItalic: false, applyToSubfolders: false, applyToFiles: false };
         }
     }
 
