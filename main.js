@@ -1568,7 +1568,7 @@ var HoverMessageModal = class extends obsidian3.Modal {
     editorWrapper.createEl("label", { text: "Markdown editor" }).setCssStyles({ display: "block", marginBottom: "8px", fontWeight: "600", fontSize: "0.85em", textTransform: "uppercase", letterSpacing: "0.05em", opacity: "0.8" });
     const textArea = editorWrapper.createEl("textarea");
     textArea.value = this.description;
-    textArea.placeholder = "Write something beautiful... \n\nTips:\n- Use [[links]] to jump to notes\n- Use #tags to categorize\n- Use **bold** or *italic*";
+    textArea.placeholder = "Write something beautiful... \n\nTips:\n- Use [[links]] to jump to notes\n- use #tags to categorize\n- use **bold** or *italic*";
     textArea.setCssStyles({
       width: "100%",
       height: "180px",
@@ -2381,7 +2381,7 @@ var ColorfulFoldersSettingTab = class extends obsidian6.PluginSettingTab {
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
-    new obsidian6.Setting(genCard).setName("Custom colors (hex)").setDesc("Comma-separated list of hex colors.").addText((text) => text.setPlaceholder("#ff0000, #00ff00").setValue(this.plugin.settings.customPalette).onChange(async (value) => {
+    new obsidian6.Setting(genCard).setName("Custom colors (hex)").setDesc("Comma-separated list of hex colors.").addText((text) => text.setPlaceholder("#Ff0000, #00ff00").setValue(this.plugin.settings.customPalette).onChange(async (value) => {
       this.plugin.settings.customPalette = value;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();

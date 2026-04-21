@@ -359,7 +359,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .setName('Custom colors (hex)')
             .setDesc('Comma-separated list of hex colors.')
             .addText(text => text
-                .setPlaceholder('#ff0000, #00ff00')
+                .setPlaceholder('#Ff0000, #00ff00')
                 .setValue(this.plugin.settings.customPalette)
                 .onChange(async (value) => {
                     this.plugin.settings.customPalette = value;
