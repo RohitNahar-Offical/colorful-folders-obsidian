@@ -174,10 +174,11 @@ export class DividerManager {
                         strokeWidth: '2.5px'
                     });
                     // Force color on all internal paths to override hardcoded SVG colors
-                    svg.querySelectorAll('path, circle, rect, ellipse, polyline, polygon').forEach((child: SVGElement) => {
-                        if (child instanceof SVGElement) {
-                            child.style.stroke = finalColor;
-                            child.style.fill = finalColor;
+                    svg.querySelectorAll('path, circle, rect, ellipse, polyline, polygon').forEach((child) => {
+                        const svgChild = child as SVGElement;
+                        if (svgChild.style) {
+                            svgChild.style.stroke = finalColor;
+                            svgChild.style.fill = finalColor;
                         }
                     });
                 }
