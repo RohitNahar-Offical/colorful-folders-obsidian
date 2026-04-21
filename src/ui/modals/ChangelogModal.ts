@@ -1,0 +1,46 @@
+import * as obsidian from 'obsidian';
+
+export class ChangelogModal extends obsidian.Modal {
+    content: string;
+
+    constructor(app: obsidian.App, content: string) {
+        super(app);
+        this.content = content;
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+        contentEl.empty();
+        contentEl.addClass("cf-changelog-modal");
+        
+        // Premium styling
+        contentEl.setCssStyles({
+            padding: "30px",
+            maxWidth: "700px"
+        });
+
+        const header = contentEl.createDiv({ cls: "cf-changelog-header" });
+        header.setCssStyles({
+            marginBottom: "20px",
+            borderBottom: "1px solid var(--background-modifier-border)",
+            paddingBottom: "10px"
+        });
+        header.createEl("h2", { text: "What's New in Colorful Folders" });
+
+        const body = contentEl.createDiv({ cls: "cf-changelog-body" });
+        obsidian.MarkdownRenderer.renderMarkdown(this.content, body, "", null as any);
+
+        const footer = contentEl.createDiv({ cls: "cf-changelog-footer" });
+        footer.setCssStyles({
+            marginTop: "30px",
+            textAlign: "right"
+        });
+        const closeBtn = footer.createEl("button", { text: "Got it!", cls: "mod-cta" });
+        closeBtn.onclick = () => this.close();
+    }
+
+    onClose() {
+        const { contentEl } = this;
+        contentEl.empty();
+    }
+}

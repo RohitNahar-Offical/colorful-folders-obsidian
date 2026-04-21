@@ -112,6 +112,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     isVaultLocked: false,
     showHiddenItems: false,
     showRibbonIcon: true,
+    lastVersion: ""
 };
 
 export const AUTO_ICON_CATEGORIES: AutoIconData[] = [

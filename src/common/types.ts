@@ -74,6 +74,7 @@ export interface ColorfulFoldersSettings {
     isVaultLocked?: boolean;
     showHiddenItems: boolean;
     showRibbonIcon: boolean;
+    lastVersion: string;
 }
 
 

@@ -21,6 +21,7 @@ import { ColorPickerModal } from './ui/modals/ColorPickerModal';
 import { DividerModal } from './ui/modals/DividerModal';
 import { ColorfulFoldersSettingTab } from './ui/SettingTab';
 import { PasswordModal } from './ui/modals/PasswordModal';
+import { ChangelogModal } from './ui/modals/ChangelogModal';
 import { StyleGenerator } from './core/StyleGenerator';
 import { DividerManager } from './core/DividerManager';
 import { NotebookNavigatorIntegration } from './integrations/NotebookNavigator';
@@ -114,9 +115,28 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
         // Initial stealth mode state
         activeDocument.body.classList.toggle('cf-show-hidden', this.settings.showHiddenItems);
 
-        this.app.workspace.onLayoutReady(() => {
+        this.app.workspace.onLayoutReady(async () => {
             this.generateStyles();
             this.initDividerObserver();
+
+            // Check for version update and show changelog
+            const currentVersion = this.manifest.version;
+            if (this.settings.lastVersion !== currentVersion) {
+                this.settings.lastVersion = currentVersion;
+                await this.saveSettings();
+
+                // Show changelog for 4.1.0
+                try {
+                    const adapter = this.app.vault.adapter;
+                    const changelogPath = `${this.app.vault.configDir}/plugins/colorful-folders/Version/VERSION_4_1_0.md`;
+                    if (await adapter.exists(changelogPath)) {
+                        const content = await adapter.read(changelogPath);
+                        new ChangelogModal(this.app, content).open();
+                    }
+                } catch (err) {
+                    console.error("Colorful Folders: Failed to show changelog", err);
+                }
+            }
         });
     }
 
