@@ -20,6 +20,7 @@ import {
 import { ColorPickerModal } from './ui/modals/ColorPickerModal';
 import { DividerModal } from './ui/modals/DividerModal';
 import { ColorfulFoldersSettingTab } from './ui/SettingTab';
+import { PasswordModal } from './ui/modals/PasswordModal';
 import { StyleGenerator } from './core/StyleGenerator';
 import { DividerManager } from './core/DividerManager';
 import { NotebookNavigatorIntegration } from './integrations/NotebookNavigator';
@@ -38,6 +39,7 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
     dividerManager: DividerManager;
     isSyncingDividers: boolean = false;
     processDividersDebounced: obsidian.Debouncer<[], void>;
+    ribbonEl: HTMLElement | null = null;
 
     async onload() {
         await this.loadSettings();
@@ -60,6 +62,8 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
             if (this.isSyncingDividers) return;
             this.dividerManager.syncDividers();
         }, 50, true);
+
+        this.refreshRibbon();
 
         this.uiStyleTag = activeDocument.createElement('style');
         this.uiStyleTag.id = 'colorful-folders-ui-style';
@@ -88,6 +92,15 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
             .colorful-folders-config .setting-item-control input[type="range"]:active::-webkit-slider-thumb {
                 transform: scale(1.2);
             }
+            @keyframes cf-shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-5px); }
+                75% { transform: translateX(5px); }
+            }
+            .is-invalid {
+                border-color: var(--text-error) !important;
+                animation: cf-shake 0.2s ease-in-out 0s 2 !important;
+            }
         `;
         activeDocument.head.appendChild(this.uiStyleTag);
 
@@ -97,6 +110,9 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
         this.registerEvents();
         this.registerCommands();
         this.initStyleObserver();
+        
+        // Initial stealth mode state
+        activeDocument.body.classList.toggle('cf-show-hidden', this.settings.showHiddenItems);
 
         this.app.workspace.onLayoutReady(() => {
             this.generateStyles();
@@ -249,7 +265,49 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
                 return false;
             }
         });
+        this.addCommand({
+            id: 'toggle-stealth-mode',
+            name: 'Toggle stealth mode',
+            callback: () => {
+                void this.toggleStealthMode();
+            }
+        });
+    }
 
+    async toggleStealthMode() {
+        const applyToggle = async () => {
+            this.settings.showHiddenItems = !this.settings.showHiddenItems;
+            await this.saveSettings();
+            this.generateStyles();
+            new obsidian.Notice(`Stealth mode: ${this.settings.showHiddenItems ? 'Ghost' : 'Hidden'}`);
+        };
+
+        if (this.settings.vaultPassword && this.settings.isVaultLocked) {
+            new PasswordModal(this.app, "Unlock stealth mode", async (pass) => {
+                if (pass === this.settings.vaultPassword) {
+                    this.settings.isVaultLocked = false;
+                    await applyToggle();
+                    return true;
+                } else {
+                    new obsidian.Notice("Incorrect password!");
+                    return false;
+                }
+            }).open();
+        } else {
+            await applyToggle();
+        }
+    }
+
+    refreshRibbon() {
+        if (this.ribbonEl) {
+            this.ribbonEl.remove();
+            this.ribbonEl = null;
+        }
+        if (this.settings.showRibbonIcon) {
+            this.ribbonEl = this.addRibbonIcon('eye-off', 'Toggle stealth mode', () => {
+                void this.toggleStealthMode();
+            });
+        }
     }
 
 
@@ -449,8 +507,10 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
 
 
     generateStyles() {
-        const generator = new StyleGenerator(this);
-        this.styleTag.textContent = generator.generateCss();
+        if (this.styleTag) {
+            this.styleTag.textContent = new StyleGenerator(this).generateCss();
+            activeDocument.body.classList.toggle('cf-show-hidden', this.settings.showHiddenItems);
+        }
     }
 
     private isScrolling = false;

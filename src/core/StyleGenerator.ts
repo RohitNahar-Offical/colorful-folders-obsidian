@@ -1167,6 +1167,64 @@ export class StyleGenerator {
         }
 
         traverse(root, 0);
+
+        css += this.generateStealthCss();
         return css;
+    }
+
+    generateStealthCss(): string {
+        let stealthCss = "";
+        const styles = this.settings.customFolderColors;
+        
+        for (const path in styles) {
+            const style = styles[path];
+            if (typeof style === 'object' && style.isHidden) {
+                const safePath = safeEscape(path);
+                
+                // Native Obsidian File Explorer
+                stealthCss += `
+                    body:not(.cf-show-hidden) .nav-folder:has(> .nav-folder-title[data-path="${safePath}"]),
+                    body:not(.cf-show-hidden) .nav-file:has(> .nav-file-title[data-path="${safePath}"]),
+                    body:not(.cf-show-hidden) .tree-item:has(> .tree-item-self[data-path="${safePath}"]) {
+                        display: none !important;
+                    }
+
+                    body.cf-show-hidden .nav-folder:has(> .nav-folder-title[data-path="${safePath}"]),
+                    body.cf-show-hidden .nav-file:has(> .nav-file-title[data-path="${safePath}"]),
+                    body.cf-show-hidden .tree-item:has(> .tree-item-self[data-path="${safePath}"]) {
+                        opacity: 0.3 !important;
+                        filter: grayscale(1) blur(0.5px) !important;
+                        transition: opacity 0.3s ease, filter 0.3s ease !important;
+                    }
+                    
+                    body.cf-show-hidden .nav-folder:has(> .nav-folder-title[data-path="${safePath}"]):hover,
+                    body.cf-show-hidden .nav-file:has(> .nav-file-title[data-path="${safePath}"]):hover,
+                    body.cf-show-hidden .tree-item:has(> .tree-item-self[data-path="${safePath}"]):hover {
+                        opacity: 0.8 !important;
+                        filter: grayscale(0.5) blur(0px) !important;
+                    }
+                `;
+
+                // Notebook Navigator Integration
+                if (this.settings.notebookNavigatorSupport) {
+                    const nnSelector = NotebookNavigatorIntegration.getScopedNavSelector(path);
+                    const nnFileSelector = NotebookNavigatorIntegration.getScopedFileSelector(path);
+                    
+                    stealthCss += `
+                        body:not(.cf-show-hidden) ${nnSelector},
+                        body:not(.cf-show-hidden) ${nnFileSelector} {
+                            display: none !important;
+                        }
+
+                        body.cf-show-hidden ${nnSelector},
+                        body.cf-show-hidden ${nnFileSelector} {
+                            opacity: 0.3 !important;
+                            filter: grayscale(1) blur(0.5px) !important;
+                        }
+                    `;
+                }
+            }
+        }
+        return stealthCss;
     }
 }

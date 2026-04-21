@@ -1,4 +1,24 @@
-# Version 4.0.1 Divider Update and File/Folder Hidder     
+# Version 4.2.0 - The "Privacy & Stealth" Update
+## 🛡️ 4.2.0 - Premium Visual Security
+This update introduces a robust, password-protected stealth system for your Obsidian vault.
+
+### 🕵️ 1. Stealth Engine
+- **Visual Privacy**: Hide any file or folder from the sidebar with a single click.
+- **Ghost Mode**: Toggle semi-transparent viewing of hidden items with a sleek blur effect.
+- **Password Protection**: Secure your privacy settings with a custom, high-security Password Modal featuring shake animations for invalid attempts.
+
+### ⌨️ 2. Rapid Access
+- **Ribbon Toggle**: Instant Stealth/Ghost mode toggle via the sidebar ribbon icon.
+- **Hotkeys**: Default recommended shortcut **Ctrl+Shift+Q** (customizable) for rapid privacy control.
+- **Command Palette**: Full integration with Obsidian's command palette.
+
+### ⚙️ 3. Privacy Management
+- **Centralized Dashboard**: Manage all hidden items from a dedicated "Privacy & Stealth" card in settings.
+- **Unhide Table**: Quickly restore visibility to multiple items at once.
+- **Forgot Password**: Built-in recovery hint for secure manual resets.
+
+---
+
 ## 💎 4.1.0 - The "Premium Organization" Release
 This major release introduces the high-end Hover Message system and fully restores integration with external explorer plugins.
 

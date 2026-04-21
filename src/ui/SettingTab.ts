@@ -1,6 +1,7 @@
 import * as obsidian from 'obsidian';
 import { IColorfulFoldersPlugin } from '../common/types';
 import { DEFAULT_SETTINGS } from '../common/constants';
+import { PasswordModal } from './modals/PasswordModal';
 import { ConfirmModal } from './modals/ConfirmModal';
 
 
@@ -795,6 +796,137 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 }));
 
 
+
+
+        const stealthCard = makeCard(sysPanel, "🔏", "Privacy & stealth");
+        const isLocked = !!(this.plugin.settings.vaultPassword && this.plugin.settings.isVaultLocked);
+
+        if (this.plugin.settings.vaultPassword) {
+            new obsidian.Setting(stealthCard)
+                .setName(isLocked ? "Vault is locked" : "Vault is unlocked")
+                .setDesc(isLocked ? "Unlock to manage hidden items and privacy settings." : "Privacy settings are currently accessible.")
+                .addButton(btn => {
+                    if (isLocked) {
+                        btn.setButtonText("Unlock")
+                            .setCta()
+                            .onClick(() => {
+                                new PasswordModal(this.app, "Unlock privacy", async (pass) => {
+                                    if (pass === this.plugin.settings.vaultPassword) {
+                                        this.plugin.settings.isVaultLocked = false;
+                                        await this.plugin.saveSettings();
+                                        new obsidian.Notice("Vault unlocked.");
+                                        this.display();
+                                        return true;
+                                    } else {
+                                        new obsidian.Notice("Incorrect password!");
+                                        return false;
+                                    }
+                                }).open();
+                            });
+                    } else {
+                        btn.setButtonText("Lock now")
+                            .onClick(async () => {
+                                this.plugin.settings.isVaultLocked = true;
+                                await this.plugin.saveSettings();
+                                new obsidian.Notice("Vault locked.");
+                                this.display();
+                            });
+                    }
+                });
+        }
+
+        if (isLocked) {
+            const lockedContainer = stealthCard.createDiv({ cls: 'cf-locked-container' });
+            lockedContainer.setCssStyles({
+                padding: "30px", textAlign: "center", background: "var(--background-secondary-alt)",
+                borderRadius: "8px", border: "1px dashed var(--background-modifier-border)",
+                marginTop: "15px"
+            });
+            lockedContainer.createEl("div", { text: "🔒", cls: "cf-lock-icon" }).setCssStyles({ fontSize: "2em", marginBottom: "10px" });
+            lockedContainer.createEl("div", { text: "Settings are protected" }).setCssStyles({ fontWeight: "bold", marginBottom: "4px" });
+            lockedContainer.createEl("div", { text: "Enter your password above to manage hidden folders." }).setCssStyles({ opacity: "0.5", fontSize: "0.85em" });
+        } else {
+            new obsidian.Setting(stealthCard)
+                .setName('Ghost mode')
+                .setDesc('Reveal hidden items with low opacity and blur. Note: items are still clickable in this mode.')
+                .addToggle(toggle => toggle
+                    .setValue(this.plugin.settings.showHiddenItems)
+                    .onChange(async (value) => {
+                        this.plugin.settings.showHiddenItems = value;
+                        await this.plugin.saveSettings();
+                        this.plugin.generateStyles();
+                    }));
+
+            new obsidian.Setting(stealthCard)
+                .setName('Vault password')
+                .setDesc('Set a password to lock the hidden items list and ghost mode. Leave empty to disable.')
+                .addText(text => {
+                    text.setPlaceholder('Enter password...')
+                        .setValue(this.plugin.settings.vaultPassword || "")
+                        .onChange(async (value) => {
+                            this.plugin.settings.vaultPassword = value;
+                            if (!value) this.plugin.settings.isVaultLocked = false;
+                            await this.plugin.saveSettings();
+                        });
+                    text.inputEl.type = "password";
+                });
+
+            new obsidian.Setting(stealthCard)
+                .setName('Show ribbon icon')
+                .setDesc('Add a quick-toggle icon to the Obsidian sidebar.')
+                .addToggle(toggle => toggle
+                    .setValue(this.plugin.settings.showRibbonIcon)
+                    .onChange(async (value) => {
+                        this.plugin.settings.showRibbonIcon = value;
+                        await this.plugin.saveSettings();
+                        this.plugin.refreshRibbon();
+                    }));
+
+            const stealthTip = stealthCard.createDiv({ cls: 'cf-settings-tip' });
+            stealthTip.setCssStyles({
+                marginTop: '15px', padding: '10px', background: 'var(--background-secondary-alt)',
+                borderRadius: '6px', borderLeft: '3px solid var(--interactive-accent)', fontSize: '0.85em', opacity: '0.8'
+            });
+            stealthTip.setText("💡 Tip: You can also use the 'Toggle stealth mode' command (e.g., Ctrl+Shift+Q). This can be customized in Obsidian's hotkey settings.");
+
+            const hiddenListContainer = stealthCard.createDiv({ cls: 'cf-hidden-list-container' });
+            hiddenListContainer.setCssStyles({ marginTop: "20px" });
+            hiddenListContainer.createEl("h4", { text: "Hidden items" }).setCssStyles({ marginBottom: "10px", fontSize: "0.9em", opacity: "0.8" });
+
+            const hiddenList = hiddenListContainer.createDiv({ cls: 'cf-hidden-items-list' });
+            hiddenList.setCssStyles({
+                padding: '12px', background: 'var(--background-secondary)',
+                borderRadius: '8px', border: '1px solid var(--background-modifier-border)',
+                maxHeight: "200px", overflowY: "auto"
+            });
+
+            const hiddenEntries = Object.entries(this.plugin.settings.customFolderColors)
+                .filter(([_, style]) => typeof style === 'object' && style.isHidden);
+
+            if (hiddenEntries.length === 0) {
+                hiddenList.createDiv({ text: "No items are currently hidden.", cls: "cf-empty-state" }).setCssStyles({ opacity: "0.4", fontSize: "0.85em", textAlign: "center" });
+            } else {
+                hiddenEntries.forEach(([path, style]) => {
+                    const row = hiddenList.createDiv({ cls: 'cf-hidden-row' });
+                    row.setCssStyles({
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        padding: '6px 0', borderBottom: "1px solid var(--background-modifier-border-soft)"
+                    });
+                    row.createDiv({ text: path }).setCssStyles({ fontSize: '0.85em', whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginRight: "10px" });
+                    
+                    const unhideBtn = row.createEl("button", { text: "Unhide" });
+                    unhideBtn.setCssStyles({ padding: "2px 8px", fontSize: "0.8em" });
+                    unhideBtn.onclick = async () => {
+                        if (typeof style === 'object') {
+                            style.isHidden = false;
+                            await this.plugin.saveSettings();
+                            this.plugin.generateStyles();
+                            this.display();
+                        }
+                    };
+                });
+            }
+        }
 
 
         const dbCard = makeCard(sysPanel, "🗄️", "Database management");

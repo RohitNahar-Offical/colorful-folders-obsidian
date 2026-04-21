@@ -108,6 +108,10 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     dividerIconPosition: "left",
     fileBackgroundOpacity: 0.1,
     notebookNavigatorOutlineOnly: false,
+    vaultPassword: "",
+    isVaultLocked: false,
+    showHiddenItems: false,
+    showRibbonIcon: true,
 };
 
 export const AUTO_ICON_CATEGORIES: AutoIconData[] = [

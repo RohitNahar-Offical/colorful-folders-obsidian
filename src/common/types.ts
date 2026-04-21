@@ -22,6 +22,7 @@ export interface FolderStyle {
     dividerPillMode?: 'global' | 'on' | 'off';
     dividerDescription?: string;
     hasDivider?: boolean;
+    isHidden?: boolean;
 }
 
 export interface ColorfulFoldersSettings {
@@ -69,6 +70,10 @@ export interface ColorfulFoldersSettings {
     cycleOffset: number;
     fileBackgroundOpacity: number;
     notebookNavigatorOutlineOnly: boolean;
+    vaultPassword?: string;
+    isVaultLocked?: boolean;
+    showHiddenItems: boolean;
+    showRibbonIcon: boolean;
 }
 
 
@@ -111,6 +116,7 @@ export interface IColorfulFoldersPlugin {
     saveSettings(): Promise<void>;
     registerCustomIcons(): void;
     cleanUnusedStyles(): Promise<void>;
+    refreshRibbon(): void;
     dividerManager: {
         syncDividers(): void;
         clean(): void;

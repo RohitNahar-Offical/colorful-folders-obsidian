@@ -50,6 +50,23 @@ export class MenuHelper {
                     });
             });
         }
+        
+        menu.addItem((item) => {
+            const isHidden = style && typeof style === 'object' && style.isHidden;
+            item.setTitle(isHidden ? "Unhide item" : "Hide item")
+                .setIcon(isHidden ? 'eye' : 'eye-off')
+                .onClick(async () => {
+                    let s = plugin.settings.customFolderColors[file.path];
+                    if (!s || typeof s === 'string') {
+                        s = { hex: typeof s === 'string' ? s : '' };
+                        plugin.settings.customFolderColors[file.path] = s;
+                    }
+                    s.isHidden = !s.isHidden;
+                    await plugin.saveSettings();
+                    plugin.generateStyles();
+                    new obsidian.Notice(`${s.isHidden ? 'Hidden' : 'Revealed'}: ${file.name}`);
+                });
+        });
 
         menu.addSeparator();
 
