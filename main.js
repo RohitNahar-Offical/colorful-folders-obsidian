@@ -2181,7 +2181,7 @@ var ColorfulFoldersSettingTab = class extends obsidian6.PluginSettingTab {
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
-    new obsidian6.Setting(intCard).setName("Outline only mode (Navigator)").setDesc("Removes solid backgrounds from Notebook Navigator items, showing only the left accent border.").addToggle((toggle) => toggle.setValue(this.plugin.settings.notebookNavigatorOutlineOnly).onChange(async (value) => {
+    new obsidian6.Setting(intCard).setName("Outline only mode (navigator)").setDesc("Removes solid backgrounds from notebook navigator items, showing only the left accent border.").addToggle((toggle) => toggle.setValue(this.plugin.settings.notebookNavigatorOutlineOnly).onChange(async (value) => {
       this.plugin.settings.notebookNavigatorOutlineOnly = value;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
