@@ -85,4 +85,16 @@ You can access all styling configurations by navigating to **Settings \> Colorfu
 
 -----
 
+---
+
+## 👨‍💻 Developer Documentation
+
+If you are a developer looking to understand the internal architecture, contribute features, or debug the styling engine, please refer to our comprehensive technical guides:
+
+*   **[Developer Master Guide](DEVELOPER.md)**: The entry point for all technical documentation.
+*   **[Internal Engine Architecture](docs/ARCHITECTURE.md)**: Deep dive into the rendering pipeline and logic flow.
+*   **[API Reference](docs/API_REFERENCE.md)**: Detailed class and method documentation.
+
+---
+
 **Developed with ❤️ by [ROHIT-NAHAR](https://github.com/RohitNahar-Offical)**
