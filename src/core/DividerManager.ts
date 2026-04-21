@@ -134,19 +134,55 @@ export class DividerManager {
 
         const addIcon = () => {
             if (!rawIcon) return;
-            if (isLucide) {
+
+            const iconColor = conf.dividerIconColor || color;
+
+            const isCustom = !!(this.plugin.settings.customIcons && this.plugin.settings.customIcons[rawIcon]);
+
+            if (isCustom) {
+                // Custom SVG Icon - Use masking strategy for consistency and to override hardcoded SVG styles
+                const svgStr = this.plugin.settings.customIcons[rawIcon];
+                const encoded = encodeURIComponent(svgStr);
+                const iconWrap = chip.createSpan({ cls: 'cf-divider-custom-icon' });
+                iconWrap.setCssStyles({
+                    display: 'inline-block',
+                    width: '14px',
+                    height: '14px',
+                    backgroundColor: iconColor,
+                    maskImage: `url('data:image/svg+xml;charset=utf-8,${encoded}')`,
+                    webkitMaskImage: `url('data:image/svg+xml;charset=utf-8,${encoded}')`,
+                    maskRepeat: 'no-repeat',
+                    webkitMaskRepeat: 'no-repeat',
+                    maskPosition: 'center',
+                    webkitMaskPosition: 'center',
+                    maskSize: 'contain',
+                    webkitMaskSize: 'contain',
+                    verticalAlign: 'middle',
+                    marginRight: '0px'
+                });
+            } else if (isLucide) {
                 const iconWrap = chip.createSpan({ cls: 'cf-divider-icon' });
                 obsidian.setIcon(iconWrap, rawIcon);
                 const svg = iconWrap.querySelector('svg') as unknown as HTMLElement | null;
                 if (svg) {
+                    const finalColor = iconColor;
                     svg.setCssStyles({
                         width: '14px',
                         height: '14px',
-                        stroke: conf.dividerIconColor || color,
+                        stroke: finalColor,
+                        fill: finalColor,
                         strokeWidth: '2.5px'
+                    });
+                    // Force color on all internal paths to override hardcoded SVG colors
+                    svg.querySelectorAll('path, circle, rect, ellipse, polyline, polygon').forEach((child: any) => {
+                        if (child.style) {
+                            child.style.stroke = finalColor;
+                            child.style.fill = finalColor;
+                        }
                     });
                 }
             } else {
+                // Emoji or unknown
                 chip.createSpan({ text: rawIcon, cls: 'cf-divider-emoji-icon' });
             }
         };
