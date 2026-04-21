@@ -4,6 +4,18 @@ Keep track of the evolution of the Colorful Folders plugin. Each update brings b
 
 ---
 
+## 📖 4.0.8 - The "Technical Transparency" Update
+This update introduces a massive, multi-volume developer documentation suite, making the plugin's internal engine fully transparent and maintainable.
+
+### 📚 1. Documentation Revamp
+- **Comprehensive Master Guide**: Created a high-level `DEVELOPER.md` as the central entry point.
+- **Architectural Deep-Dives**: Documented the rendering pipeline, logic flows, and DOM reconciliation with Mermaid diagrams.
+- **Internal Engine Audit**: Detailed documentation of the contrast engine, performance optimizations, and event lifecycles.
+- **Security & Sanitization**: Formal audit of SVG masking and path escaping logic to ensure vault safety.
+- **API Reference**: Full method-level documentation for all core classes.
+
+---
+
 ## 🚀 4.0.7 - The "Major Feature Debut" Release
 This milestone release marks the official launch of modern organizational tools, introducing section dividers and a smart icon engine to the production branch.
 
