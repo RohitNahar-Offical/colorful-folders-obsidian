@@ -4100,7 +4100,7 @@ var _DividerManager = class {
             strokeWidth: "2.5px"
           });
           svg.querySelectorAll("path, circle, rect, ellipse, polyline, polygon").forEach((child) => {
-            if (child.style) {
+            if (child instanceof SVGElement) {
               child.style.stroke = finalColor;
               child.style.fill = finalColor;
             }
