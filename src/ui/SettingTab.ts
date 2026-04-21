@@ -359,7 +359,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .setName('Custom colors (hex)')
             .setDesc('Comma-separated list of hex colors.')
             .addText(text => text
-                .setPlaceholder('#Ff0000, #00ff00')
+                .setPlaceholder('#ff0000, #00ff00')
                 .setValue(this.plugin.settings.customPalette)
                 .onChange(async (value) => {
                     this.plugin.settings.customPalette = value;
@@ -369,9 +369,9 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         new obsidian.Setting(genCard)
             .setName('Folder exclusion list')
-            .setDesc('Comma-separated list of folder names to ignore. Note: Folder names are case-insensitive.')
+            .setDesc('Comma-separated list of folder names to ignore. Note: folder names are case-insensitive.')
             .addText(text => text
-                .setPlaceholder('Templates, Attachments, .git')
+                .setPlaceholder('Templates, attachments, .git')
                 .setValue(this.plugin.settings.exclusionList || "")
                 .onChange(async (value) => {
                     this.plugin.settings.exclusionList = value;
@@ -810,7 +810,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         new obsidian.Setting(dbCard)
             .setName('Reset styles & presets')
-            .setDesc('Danger: This will permanently remove all custom colors, icons, and individual folder styles. Presets are also cleared.')
+            .setDesc('Danger: this will permanently remove all custom colors, icons, and individual folder styles. Presets are also cleared.')
             .addButton(btn => btn
                 .setButtonText('Reset styling')
                 .setWarning()
@@ -827,7 +827,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         new obsidian.Setting(dbCard)
             .setName('Factory reset')
-            .setDesc('Critical: This will reset every setting in the plugin to its original default state, including opacities, toggles, and all custom data.')
+            .setDesc('Critical: this will reset every setting in the plugin to its original default state, including opacities, toggles, and all custom data.')
             .addButton(btn => btn
                 .setButtonText('Hard reset everything')
                 .setWarning()
