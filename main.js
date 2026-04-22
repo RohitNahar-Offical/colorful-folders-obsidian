@@ -234,7 +234,7 @@ var AUTO_ICON_CATEGORIES = [
   { rex: /atlas|moc|map|index|directory|table-of-contents|toc/i, emoji: "\u{1F5FA}\uFE0F", lucide: "map", priority: 110, lucides: ["map", "list-tree", "network"] },
   { rex: /zettel|slipbox|card-index|permanent|fleeting/i, emoji: "\u{1F5C2}\uFE0F", lucide: "library", priority: 110, lucides: ["library", "layout-grid", "scroll-text"] },
   { rex: /canvas|whiteboard|draw|excalidraw/i, emoji: "\u{1F3A8}", lucide: "frame", priority: 110, lucides: ["frame", "shapes", "pencil-ruler"] },
-  { rex: /graph|link|relation|node|network/i, emoji: "\u{1F578}\uFE0F", lucide: "share-2", priority: 110, lucides: ["share-2", "git-branch", "hubot"] },
+  { rex: /graph|link|relation|node|network/i, emoji: "\u{1F578}\uFE0F", lucide: "share-2", priority: 110, lucides: ["share-2", "git-branch", "workflow"] },
   // --- Advanced Dev & Infrastructure ---
   { rex: /docker|k8s|kubernetes|container|pod/i, emoji: "\u{1F433}", lucide: "ship", priority: 95, lucides: ["ship", "container", "box"] },
   { rex: /aws|cloud|azure|gcp|lambda|serverless/i, emoji: "\u2601\uFE0F", lucide: "cloud-lightning", priority: 95, lucides: ["cloud-lightning", "flame", "hard-drive"] },
