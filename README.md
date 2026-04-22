@@ -5,8 +5,8 @@
 
 ---
 
-## 🚀 Latest: 4.1.0 - The "Premium Organization & Stealth" Release
-4.1.0 introduces the high-end Hover Message system and a robust, password-protected Stealth system.
+## 🚀 Latest: 4.1.1 - The "Folder Counter & Transparency" Fix
+4.1.1 resolves issues with folder item counters and restores the root transparency slider logic.
 
 ### 🕵️ 1. New: Stealth & Privacy Engine
 Hide any file or folder from the sidebar with a single click via the context menu. Includes a password-protected dashboard and "Ghost Mode" for semi-transparent viewing.
