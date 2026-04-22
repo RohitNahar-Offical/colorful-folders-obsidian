@@ -12,6 +12,8 @@ This major release introduces the high-end Hover Message system and a robust, pa
 ### ➕ 2. New: Premium Divider Hovers
 - **Markdown Support**: Dividers now support rich Markdown descriptions in a premium, glassmorphic floating popover.
 - **Smart Editor**: Includes a dedicated modal with real-time preview and **Smart Suggester** for internal links (`[[`) and tags (`#`).
+- **Native Shortcuts & Toolbar**: The editor now supports **Ctrl+C / V / X** natively, along with a formatting toolbar and hotkeys (**Ctrl+B, I, K**) for rapid Markdown editing.
+- **Improved Code Visibility**: Inline code and code blocks in popovers now feature distinct, high-contrast styling for better readability.
 - **Contextual Organization**: Use dividers not just as lines, but as "section intros" for your project folders.
 
 ### 🎨 3. Enhanced Divider Customization
@@ -27,5 +29,10 @@ This major release introduces the high-end Hover Message system and a robust, pa
 - **Fixed: Ghost White Icons**: Resolved a critical rendering issue where certain icons lost their details when colored.
 - **Fixed: Live Color Sync**: The icon picker now updates colors *instantly* without requiring a re-click.
 - **Fixed: Color Picker Jumps**: Standardized HSV synchronization logic to prevent the color thumb from jumping during adjustment.
-- **Fixed: SVG Integrity**: The normalization engine now intelligently preserves complex multi-path SVGs (like Remix or FontAwesome).
+- **Fixed: hubot Text Glitch**: Fixed a rendering bug where certain auto-icon matches would display the text "hubot" instead of an SVG icon by refining the Lucide variety list.
 - **Hardened: Explicit Reset**: Improved "OFF" states to ensure the vault returns to a perfectly clean native look when features are disabled.
+
+---
+
+### 🎥 Feature Showcase
+![Version 4.1.0 Highlights](5.mp4)
