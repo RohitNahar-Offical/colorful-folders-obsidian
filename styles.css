@@ -440,6 +440,36 @@
     font-size: 0.85em;
 }
 
+/* Premium Code Styling */
+.cf-popover-content code {
+    background-color: rgba(var(--mono-rgb-100), 0.08);
+    color: var(--text-accent);
+    padding: 0.15em 0.35em;
+    border-radius: 4px;
+    font-family: var(--font-monospace);
+    font-size: 0.9em;
+    border: 1px solid rgba(var(--mono-rgb-100), 0.12);
+    font-weight: 500;
+}
+
+.cf-popover-content pre {
+    background-color: var(--background-secondary-alt);
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--background-modifier-border);
+    overflow-x: auto;
+    margin: 12px 0;
+    box-shadow: inset 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.cf-popover-content pre code {
+    background-color: transparent !important;
+    padding: 0 !important;
+    border: none !important;
+    color: var(--text-normal) !important;
+    font-size: 0.85em !important;
+}
+
 @keyframes cf-popover-appear {
     0% {
         opacity: 0;

@@ -50,6 +50,13 @@ export class HoverMessageModal extends obsidian.Modal {
         const editorWrapper = body.createDiv();
         editorWrapper.createEl("label", { text: "Markdown editor" }).setCssStyles({ display: "block", marginBottom: "8px", fontWeight: "600", fontSize: "0.85em", textTransform: "uppercase", letterSpacing: "0.05em", opacity: "0.8" });
         
+        const toolbar = editorWrapper.createDiv({ cls: 'cf-editor-toolbar' });
+        toolbar.setCssStyles({
+            display: 'flex', gap: '4px', marginBottom: '8px',
+            padding: '4px 6px', backgroundColor: 'var(--background-secondary)',
+            borderRadius: '6px', border: '1px solid var(--background-modifier-border)'
+        });
+
         const textArea = editorWrapper.createEl("textarea");
         textArea.value = this.description;
         textArea.placeholder = "Write something beautiful... \n\nTips:\n- Use [[links]] to jump to notes\n- use #tags to categorize\n- use **bold** or *italic*";
@@ -58,6 +65,58 @@ export class HoverMessageModal extends obsidian.Modal {
             backgroundColor: "var(--background-primary)", border: "1px solid var(--background-modifier-border)",
             fontSize: "1em", lineHeight: "1.5", resize: "vertical", fontFamily: "var(--font-monospace)"
         });
+
+        const wrapText = (prefix: string, suffix: string, cursorOffset = 0) => {
+            const start = textArea.selectionStart;
+            const end = textArea.selectionEnd;
+            const selectedText = textArea.value.substring(start, end);
+            const before = textArea.value.substring(0, start);
+            const after = textArea.value.substring(end);
+            
+            textArea.value = before + prefix + selectedText + suffix + after;
+            
+            if (cursorOffset > 0) {
+                const newPos = start + cursorOffset;
+                textArea.setSelectionRange(newPos, newPos);
+            } else {
+                textArea.setSelectionRange(start + prefix.length, start + prefix.length + selectedText.length);
+            }
+            
+            this.description = textArea.value;
+            void updatePreview(this.description);
+            textArea.focus();
+        };
+
+        const addBtn = (icon: string, tooltip: string, onClick: () => void) => {
+            const btn = new obsidian.ButtonComponent(toolbar);
+            btn.setIcon(icon)
+               .setTooltip(tooltip)
+               .onClick(() => onClick());
+            
+            btn.buttonEl.setCssStyles({
+                background: 'transparent', border: 'none', cursor: 'pointer',
+                padding: '4px', borderRadius: '4px', color: 'var(--text-muted)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: 'none'
+            });
+            btn.buttonEl.onmouseenter = () => btn.buttonEl.setCssStyles({ backgroundColor: 'var(--background-modifier-hover)' });
+            btn.buttonEl.onmouseleave = () => btn.buttonEl.setCssStyles({ backgroundColor: 'transparent' });
+        };
+
+        addBtn('bold', 'Bold (Ctrl+B)', () => wrapText('**', '**'));
+        addBtn('italic', 'Italic (Ctrl+I)', () => wrapText('*', '*'));
+        addBtn('strikethrough', 'Strikethrough', () => wrapText('~~', '~~'));
+        addBtn('highlighter', 'Highlight', () => wrapText('==', '=='));
+        addBtn('code', 'Inline Code', () => wrapText('`', '`'));
+        addBtn('file-code-2', 'Code Block', () => wrapText('\n```\n', '\n```\n'));
+        addBtn('link', 'Link (Ctrl+K)', () => wrapText('[', ']()', 1 + (textArea.selectionEnd - textArea.selectionStart) + 2));
+
+        // Fix Native Clipboard (Unblock Obsidian's strict handlers)
+        const stopNative = (e: Event) => e.stopPropagation();
+        textArea.addEventListener('copy', stopNative);
+        textArea.addEventListener('cut', stopNative);
+        textArea.addEventListener('paste', stopNative);
+
 
         // Preview Section
         const previewWrapper = body.createDiv();
@@ -139,21 +198,39 @@ export class HoverMessageModal extends obsidian.Modal {
         };
 
         textArea.onkeydown = (e) => {
+            // Prevent Obsidian's global hotkey manager from swallowing native shortcuts (Ctrl+C/V/X/A)
+            e.stopPropagation();
+
             if (this.suggestType) {
                 if (e.key === "ArrowDown") {
                     e.preventDefault();
                     this.selectedIndex = (this.selectedIndex + 1) % this.suggestItems.length;
                     renderSuggest();
+                    return;
                 } else if (e.key === "ArrowUp") {
                     e.preventDefault();
                     this.selectedIndex = (this.selectedIndex - 1 + this.suggestItems.length) % this.suggestItems.length;
                     renderSuggest();
+                    return;
                 } else if (e.key === "Enter" || e.key === "Tab") {
                     e.preventDefault();
                     selectItem(this.selectedIndex);
+                    return;
                 } else if (e.key === "Escape") {
                     e.preventDefault();
                     closeSuggest();
+                    return;
+                }
+            }
+
+            // Markdown Formatting Shortcuts
+            if (e.ctrlKey || e.metaKey) {
+                const key = e.key.toLowerCase();
+                if (['b', 'i', 'k'].includes(key)) {
+                    e.preventDefault();
+                    if (key === 'b') wrapText('**', '**');
+                    else if (key === 'i') wrapText('*', '*');
+                    else if (key === 'k') wrapText('[', ']()', 1 + (textArea.selectionEnd - textArea.selectionStart) + 2);
                 }
             }
         };
