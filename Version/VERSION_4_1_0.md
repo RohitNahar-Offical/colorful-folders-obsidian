@@ -21,3 +21,10 @@ This major release introduces the high-end Hover Message system and a robust, pa
 ### 🔗 4. Notebook Navigator Restoration
 - **Full Compatibility**: Completely re-engineered the **Notebook Navigator** integration.
 - **Scoped Styling**: Specialized DOM selectors ensure NN items match the native Obsidian aesthetic.
+
+### 🚀 5. Engine Hardening & Bug Fixes
+- **Fixed: Ghost White Icons**: Resolved a critical rendering issue where certain icons lost their details when colored.
+- **Fixed: Live Color Sync**: The icon picker now updates colors *instantly* without requiring a re-click.
+- **Fixed: Color Picker Jumps**: Standardized HSV synchronization logic to prevent the color thumb from jumping during adjustment.
+- **Fixed: SVG Integrity**: The normalization engine now intelligently preserves complex multi-path SVGs (like Remix or FontAwesome).
+- **Hardened: Explicit Reset**: Improved "OFF" states to ensure the vault returns to a perfectly clean native look when features are disabled.
