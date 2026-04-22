@@ -2814,13 +2814,8 @@ var ColorfulFoldersSettingTab = class extends obsidian7.PluginSettingTab {
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
-    new obsidian7.Setting(tuneCard).setName("Opened folder backing tint (%)").setDesc("Controls how highly tinted the background content space becomes when you open a directory.").addSlider((slider) => slider.setLimits(0, 50, 0.1).setValue(this.plugin.settings.tintOpacity * 100).setDynamicTooltip().onChange(async (value) => {
+    new obsidian7.Setting(tuneCard).setName("Opened folder backing tint (%)").setDesc("Controls how highly tinted the background content space becomes when you open a directory.").addSlider((slider) => slider.setLimits(0, 100, 1).setValue(this.plugin.settings.tintOpacity * 100).setDynamicTooltip().onChange(async (value) => {
       this.plugin.settings.tintOpacity = parseFloat((value / 100).toFixed(3));
-      await this.plugin.saveSettings();
-      this.plugin.generateStyles();
-    }));
-    new obsidian7.Setting(tuneCard).setName("Root tint opacity (%)").setDesc("Independent control for the background strength of top-level folders (default 6%).").addSlider((slider) => slider.setLimits(0, 100, 1).setValue((this.plugin.settings.rootTintOpacity !== void 0 ? this.plugin.settings.rootTintOpacity : 0.06) * 100).setDynamicTooltip().onChange(async (value) => {
-      this.plugin.settings.rootTintOpacity = parseFloat((value / 100).toFixed(3));
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
@@ -3482,7 +3477,7 @@ var StyleGenerator = class {
       const glassCss = this.settings.glassmorphism ? `backdrop-filter: blur(8px) saturate(120%); -webkit-backdrop-filter: blur(8px) saturate(120%);` : "";
       const animStyle = this.settings.activeAnimationStyle || "breathe";
       const animDur = this.settings.activeAnimationDuration || 4;
-      const rootTintOp = this.settings.rootTintOpacity !== void 0 ? this.settings.rootTintOpacity : 0.06;
+      const rootOp = this.settings.rootOpacity !== void 0 ? this.settings.rootOpacity : 0.548;
       if (passedColor || this.settings.autoColorFiles || this.settings.autoIcons || this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground) {
         let fileIndex = 0;
         for (const child of copyFiles) {
@@ -3795,7 +3790,7 @@ var StyleGenerator = class {
         const safePath = safeEscape(child.path);
         const contrastColor = isDark ? "#ffffff" : "#111111";
         const isCustomColor = !!(activeStyle && activeStyle.hex);
-        const op = activeStyle && activeStyle.opacity !== void 0 ? activeStyle.opacity : depth === 0 ? rootTintOp : subOp;
+        const op = activeStyle && activeStyle.opacity !== void 0 ? activeStyle.opacity : depth === 0 ? rootOp : subOp;
         let bg, text;
         const getStyles = (useOutline) => {
           let b, t;
@@ -4106,28 +4101,33 @@ var StyleGenerator = class {
                         <g stroke="${color.hex}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(0, 3) scale(0.65)">
                             <path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/>
                         </g>
-                        <text x="21" y="15" fill="${color.hex}" font-family="var(--font-interface), sans-serif" font-size="11" font-weight="500">${counts.folders}</text>
+                        <text x="21" y="15" fill="${color.hex}" font-family="sans-serif" font-size="11" font-weight="500">${counts.folders}</text>
                         <g stroke="${color.hex}" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(42, 3) scale(0.65)">
                             <path d="M15.5 2H8.6c-.4 0-.8.2-1.1.5-.3.3-.5.7-.5 1.1v12.8c0 .4.2.8.5 1.1.3.3.7.5 1.1.5h9.8c.4 0 .8-.2 1.1-.5.3-.3.5-.7.5-1.1V7.5L15.5 2z"/>
                             <path d="M15 2v5h5"/>
                             <path d="M2 17.6V7.1c0-.4.2-.8.5-1.1.3-.3.7-.5 1.1-.5h3.3"/>
                             <path d="M13 22H3.6c-.4 0-.8-.2-1.1-.5-.3-.3-.5-.7-.5-1.1V10"/>
                         </g>
-                        <text x="60" y="15" fill="${color.hex}" font-family="var(--font-interface), sans-serif" font-size="11" font-weight="500">${counts.files}</text>
+                        <text x="60" y="15" fill="${color.hex}" font-family="sans-serif" font-size="11" font-weight="500">${counts.files}</text>
                     </svg>`;
-          const combinedIconUrl = `url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(combinedSvg)}")`;
+          const encodedSvg = encodeURIComponent(combinedSvg.replace(/>\s+</g, "><").replace(/(\r\n|\n|\r)/gm, ""));
+          const combinedIconUrl = `url("data:image/svg+xml,${encodedSvg}")`;
           css += `
                         body .nav-folder-title[data-path="${safePath}"]::after,
                         body .tree-item-self[data-path="${safePath}"]::after {
-                            content: ${combinedIconUrl} !important;
+                            content: "" !important;
+                            background-image: ${combinedIconUrl} !important;
+                            background-repeat: no-repeat !important;
+                            background-position: center right !important;
                             display: inline-flex !important;
                             align-items: center !important;
                             width: ${totalWidth}px !important;
+                            min-width: ${totalWidth}px !important;
                             height: 20px !important;
                             margin-left: auto !important;
-                            padding-right: 2px !important;
+                            flex-shrink: 0 !important;
                             pointer-events: none !important;
-                            opacity: 0.75 !important;
+                            opacity: 0.8 !important;
                         }
                     `;
         }
@@ -5550,7 +5550,7 @@ var ColorfulFoldersPlugin = class extends obsidian13.Plugin {
         if (this.settings.rootStyle === "solid") {
           effOpacity = 1;
         } else {
-          effOpacity = this.settings.rootTintOpacity !== void 0 ? this.settings.rootTintOpacity : 0.06;
+          effOpacity = this.settings.rootOpacity !== void 0 ? this.settings.rootOpacity : 0.548;
         }
       } else {
         effOpacity = this.settings.subfolderOpacity !== void 0 ? this.settings.subfolderOpacity : 0.4;

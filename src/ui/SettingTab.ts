@@ -772,7 +772,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .setName('Opened folder backing tint (%)')
             .setDesc('Controls how highly tinted the background content space becomes when you open a directory.')
             .addSlider(slider => slider
-                .setLimits(0, 50, 0.1)
+                .setLimits(0, 100, 1)
                 .setValue(this.plugin.settings.tintOpacity * 100)
                 .setDynamicTooltip()
                 .onChange(async (value) => {
@@ -781,18 +781,6 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     this.plugin.generateStyles();
                 }));
 
-        new obsidian.Setting(tuneCard)
-            .setName('Root tint opacity (%)')
-            .setDesc('Independent control for the background strength of top-level folders (default 6%).')
-            .addSlider(slider => slider
-                .setLimits(0, 100, 1)
-                .setValue((this.plugin.settings.rootTintOpacity !== undefined ? this.plugin.settings.rootTintOpacity : 0.06) * 100)
-                .setDynamicTooltip()
-                .onChange(async (value) => {
-                    this.plugin.settings.rootTintOpacity = parseFloat((value / 100).toFixed(3));
-                    await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
-                }));
 
         new obsidian.Setting(tuneCard)
             .setName('File background opacity (%)')

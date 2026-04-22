@@ -495,7 +495,7 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
                 if (this.settings.rootStyle === 'solid') {
                     effOpacity = 1.0;
                 } else {
-                    effOpacity = this.settings.rootTintOpacity !== undefined ? this.settings.rootTintOpacity : 0.06;
+                    effOpacity = this.settings.rootOpacity !== undefined ? this.settings.rootOpacity : 0.548;
                 }
             } else {
                 effOpacity = this.settings.subfolderOpacity !== undefined ? this.settings.subfolderOpacity : 0.4;
