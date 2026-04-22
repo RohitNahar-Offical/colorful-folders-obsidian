@@ -198,6 +198,11 @@ _addToRecentlyUsed: (iconId: string) => Promise<void>;
                     fontStyle: this.folderStyle.isItalic ? "italic" : "normal",
                     color: this.folderStyle.textColor || "var(--text-normal)"
                 });
+
+                // Hardening: Update the big icon box in the Icon tab if it's active
+                if (this._curIconBox) {
+                    this._refreshIconSelection(this.folderStyle.iconId, this._curIconBox);
+                }
             } catch (e) {
                 console.warn("Colorful Folders: Preview update failed", e);
             }

@@ -151,6 +151,37 @@ Reconciliation is debounced (usually 50-100ms) to prevent UI stuttering during r
 
 ---
 
-## 5. Third-Party Integrations
+---
+
+## 5. IconManager: The Double-Rendering Strategy
+
+The plugin uses a hybrid approach to ensure icons are both performant and indestructible.
+
+### CSS Masking (High Performance)
+*   **Used for**: Auto-Icons, Folder Open/Closed states.
+*   **Mechanism**: `-webkit-mask-image` in `StyleGenerator.ts`.
+*   **Benefit**: Hundreds of icons can be rendered with zero DOM overhead.
+
+### DOM Injection (Indestructible Overrides)
+*   **Used for**: Manual Icon Overrides (Visual Picker).
+*   **Mechanism**: `IconManager.ts` physically inserts a `<span>` and hides the native theme icon.
+*   **Benefit**: Bypass theme CSS conflicts and ensures the chosen icon is always visible.
+
+---
+
+---
+
+## 7. Stealth Mode: The Data Hider
+
+Colorful Folders includes a "Stealth Mode" (Data Hider) to protect sensitive vault sections without requiring complex encryption.
+
+### Security Model
+*   **Logic**: The plugin injects a global `.cf-stealth-active` class to the `<body>`.
+*   **Hiding**: CSS rules automatically collapse and hide any folders/files that are not explicitly authorized by the user during the session.
+*   **Persistence**: The vault lock state is managed in-memory to prevent leaking sensitivity after an Obsidian restart.
+
+---
+
+## 8. Third-Party Integrations
 
 We support **Notebook Navigator** by injecting specific selectors that target its custom list items (`.nn-navitem`). The logic is abstracted in `src/integrations/NotebookNavigator.ts` to ensure the core engine remains clean.

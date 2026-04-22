@@ -83,4 +83,26 @@ When `glassmorphism: true` is enabled, we apply:
 background-color: rgba(..., 0.4) !important;
 backdrop-filter: blur(10px) saturate(180%);
 ```
-*Tip: This works best with semi-translucent community themes.*
+*   **Glassmorphism Logic**: When `glassmorphism: true` is enabled, we apply `backdrop-filter: blur(10px) saturate(180%)`.
+
+---
+
+## 7. Color Picker UI Strategy
+
+The Color Picker component (`ColorPicker.ts`) follows a specific layout grid to maximize usability:
+
+1.  **Hue Board**: A 200x200 canvas using a linear gradient background.
+2.  **Alpha Slider**: Positioned below the board, uses a dynamic checkerboard background to visualize transparency levels.
+3.  **Coordinate Sync**: The selector thumb (a 12px white ring) uses absolute positioning with `transform: translate(-50%, -50%)` to ensure the center of the ring perfectly matches the color coordinate.
+
+---
+
+## 8. UI Copy Policy (Sentence Case)
+
+To maintain a native Obsidian feel, all UI text must follow **Sentence Case**:
+*   **Correct**: "Enable automatic icons"
+*   **Incorrect**: "Enable Automatic Icons" (Title Case)
+*   **Correct**: "Set a universal background color"
+*   **Incorrect**: "Set A Universal Background Color"
+
+The codebase is linted to enforce this policy on setting names, descriptions, and placeholders.

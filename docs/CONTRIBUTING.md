@@ -59,3 +59,13 @@ If a plugin has its own file explorer (like "Recent Files"):
 *   **Case Sensitivity**: Folder matching should always be case-insensitive where possible.
 *   **Path Escaping**: Always use `utils.safeEscape(path)` before putting a path into a CSS selector.
 *   **Aesthetics**: Follow the "Premium UI" guidelines. Use gradients, subtle shadows, and consistent padding.
+
+---
+
+## 6. Core Files Overview
+
+*   **`main.ts`**: Plugin entry point, event listeners, and high-level state management.
+*   **`src/core/StyleGenerator.ts`**: The recursive CSS engine for backgrounds and auto-icons.
+*   **`src/core/IconManager.ts`**: The central service for SVG normalization, colorization, and DOM-based icon injection.
+*   **`src/core/DividerManager.ts`**: Manages the injection and reconciliation of folder dividers.
+*   **`src/ui/modals/ColorPickerModal.ts`**: The primary interface for manual styling overrides.

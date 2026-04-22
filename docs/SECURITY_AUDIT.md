@@ -57,3 +57,22 @@ This ensures that the `[data-path="..."]` attribute remains a valid string liter
 
 While not a direct security issue, a "Denial of Service" via a massive vault is a risk.
 *   **Defense**: We use debounced traversals and a "lock" mechanism to ensure the plugin never consumes 100% of the CPU, even in vaults with 100k+ files.
+
+---
+
+## 6. Stealth Mode Privacy
+
+The "Stealth Mode" (Data Hider) is designed for visual privacy.
+
+### The Defense:
+*   **Password Storage**: Passwords are stored in the plugin's `data.json`. While they are not encrypted, they are used strictly for local session locking.
+*   **Session Management**: The `isVaultLocked` state is managed in-memory during a session. This ensures that even if someone extracts the `data.json`, they still need the password to unlock the UI during an active Obsidian session.
+*   **No Network Leakage**: The plugin never sends your vault structure or passwords to any external server.
+
+---
+
+## 7. UI Component Sanitization
+
+When rendering the "Icon Selection Grid" or "Recently Used Icons":
+*   **DOMParser**: We use the native `DOMParser` to convert SVG strings into actual DOM nodes.
+*   **Node Import**: We use `importNode` to safely move the parsed SVG elements into the document. This prevents any potentially malicious attributes from executing outside their intended scope.

@@ -88,3 +88,45 @@ If a folder isn't coloring correctly:
 3.  Inspect the element in DevTools.
 4.  Check if a more specific CSS rule from your theme is overriding ours (e.g., `#specific-id .nav-folder-title`).
 5.  Check the `z-index` of the `.nav-folder-children` tint; sometimes themes place it behind the explorer background.
+
+---
+
+## 7. HSV Color Picker Synchronization
+
+The color picker uses a standardized range system to ensure perfect alignment between the UI board and the resulting CSS.
+
+**Standard Ranges**:
+*   **Hue**: 0-360 degrees (Mapped directly to CSS `hsl()` for board background).
+*   **Saturation**: 0-100 (Mapped to horizontal `X` coordinate).
+*   **Value (Brightness)**: 0-100 (Mapped to vertical `Y` coordinate).
+
+When a Hex code is pasted, the `syncFromHex` function converts it to these integer ranges, allowing the UI thumb to snap to the exact pixel coordinate without rounding drift.
+
+---
+
+## 8. SVG Normalization & Cleaning
+
+To ensure icons are theme-resilient and correctly colored, the `IconManager.normalizeSvg` process performs the following:
+
+1.  **Background Removal**: Identifies elements (rects/paths) that cover >90% of the viewport and removes them to prevent "opaque boxes" behind icons.
+2.  **Attribute Hardening**: Detects if an icon is stroke-based (Feather/Lucide) or fill-based (Remix/FA) and injects the appropriate `fill: currentColor` or `stroke: currentColor` attributes.
+3.  **Path Preservation**: Unlike standard cleaners, we preserve white/black paths within the icon tree to maintain the "soul" of complex multi-part icons.
+4.  **Minification**: Strips newlines and redundant whitespace to minimize the size of the final injected CSS string.
+
+---
+
+## 9. Stealth Mode (Data Hider) Logic
+
+The Stealth Mode is a CSS-driven privacy layer.
+
+**The Workflow**:
+1.  **State Activation**: When the vault is "Locked", the plugin adds `.cf-stealth-active` to the `document.body`.
+2.  **CSS Filter**: A global CSS rule is injected:
+    ```css
+    .cf-stealth-active .nav-folder-title[data-path*="sensitive"],
+    .cf-stealth-active .nav-file-title[data-path*="sensitive"] {
+        display: none !important;
+    }
+    ```
+3.  **Dynamic Updates**: When the user enters the correct password, the class is removed, and `generateStyles()` is called to refresh the UI instantly.
+4.  **Ribbon Toggle**: The ribbon icon changes visually (Lock/Unlock) to indicate the current privacy state.

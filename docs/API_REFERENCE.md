@@ -21,6 +21,10 @@ This document provides a detailed technical reference for the public and interna
 *   **Purpose**: Hydrates Obsidian's internal icon registry with user-imported SVG packs.
 *   **Action**: Iterates `settings.customIcons` and calls `obsidian.addIcon()`.
 
+#### `toggleStealthMode(): void`
+*   **Purpose**: Switches the vault between "Protected" and "Stealth" states.
+*   **Logic**: Triggers the `PasswordModal` if a password is set, or initializes the first-time setup.
+
 ---
 
 ## 2. `StyleGenerator` (Static Engine)
@@ -60,10 +64,6 @@ This document provides a detailed technical reference for the public and interna
 *   **Purpose**: Generates contrasting text colors.
 *   **Formula**: `color * (1 + amount/100)`, clamped to `[0, 255]`.
 
-#### `getAutoIconData(name: string, settings: ColorfulFoldersSettings): {iconId, emoji}`
-*   **Purpose**: Logic for the "Auto-Icon" engine.
-*   **Logic**: Loops through categories and uses `hashString` if variety is enabled.
-
 ---
 
 ## 5. `NotebookNavigatorIntegration` (Third-Party)
@@ -71,3 +71,19 @@ This document provides a detailed technical reference for the public and interna
 #### `getExtraContainers(app: App): HTMLElement[]`
 *   **Purpose**: Finds the DOM nodes used by the Notebook Navigator plugin.
 *   **Return**: Elements matching `.nn-navitem` parents.
+
+---
+
+## 6. `IconManager` (Rendering Central)
+
+#### `getAutoIconData(name: string): AutoIconData | null`
+*   **Purpose**: Matches a filename against the global regex category system to suggest an icon.
+*   **Logic**: Uses weighted priority scoring to pick the best match.
+
+#### `normalizeSvg(svgStr: string): string`
+*   **Purpose**: Hardens raw SVG strings for use in CSS masks.
+*   **Action**: Strips backgrounds, removes hardcoded colors, and ensures `currentColor` bindings.
+
+#### `colorizeSvg(svgStr: string, color: string): string`
+*   **Purpose**: Dynamically tints an SVG by rewriting its path attributes.
+*   **Logic**: Intelligent attribute replacement that preserves complex path data while updating color.

@@ -80,3 +80,24 @@ We use the `backdrop-filter` CSS property to achieve the "Frosted Glass" look.
 
 *   **Sequential (Cycle)**: Uses the item's index in the folder list. This creates a "Rainbow" flow but can change if you add a new folder at the top.
 *   **Deterministic (File Hashing)**: For files, we use `hashString(filename) % palette.length`. This ensures that `Notes.md` always has the same color, no matter where it is moved.
+
+---
+
+## 6. Transparency Hardening & Explicit "OFF" State
+
+The plugin manages background opacity through a strict hierarchy to ensure visual consistency:
+
+### Transparency Hierarchy:
+1.  **Manual Override**: Defined via the modal opacity slider (Saved in `FolderStyle.opacity`).
+2.  **Global Fallback**: Defined in settings (`fileBackgroundOpacity`).
+3.  **Mode Default**: Dark mode defaults to `0.1`, Light mode to `0.15` if no settings exist.
+
+### The Explicit "OFF" Logic:
+When a user toggles Auto-Color Mode **OFF**, the rendering engine does not simply stop styling. Instead, it injects an explicit reset:
+```css
+.nav-file-title:not(.custom-styled) {
+    background-color: transparent !important;
+    border-left: none !important;
+}
+```
+This prevents "ghost colors" from themes or previous states from lingering, ensuring the vault returns to a perfectly clean, native Obsidian appearance instantly.

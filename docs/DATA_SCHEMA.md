@@ -14,6 +14,13 @@ Defined in `src/common/types.ts`. This interface represents the entire `data.jso
 | `customIcons` | `Record<string, string>` | Key = Icon ID. Value = Raw SVG string. |
 | `glassmorphism` | `boolean` | Enables backdrop-blur effects. |
 | `activeGlow` | `boolean` | Draws a line connecting the active file to the root. |
+| `globalBackgroundColor` | `string` | Fallback color for all items when Auto-Color is OFF. |
+| `vaultPassword` | `string` | Hashed password for the Stealth Mode (Data Hider). |
+| `isVaultLocked` | `boolean` | Session-based state of the Stealth Mode lock. |
+| `showRibbonIcon` | `boolean` | Controls visibility of the sidebar toggle button. |
+| `showFileDivider` | `boolean` | Enables the automatic 'Files' divider in folders. |
+| `dividerThickness` | `number` | Stroke width for all divider lines. |
+| `dividerSpacing` | `number` | Vertical padding around dividers. |
 
 ---
 
@@ -26,11 +33,19 @@ interface FolderStyle {
     hex?: string;              // Background color (hex)
     textColor?: string;        // Label color
     iconId?: string;           // Custom icon (lucide id or custom id)
+    iconColor?: string;        // Explicit icon tint override
+    opacity?: number;          // Background transparency (0-1)
+    isBold?: boolean;          // Label font-weight override
+    isItalic?: boolean;        // Label font-style override
     applyToSubfolders?: boolean; // Inheritance toggle for children
     applyToFiles?: boolean;      // Inheritance toggle for files
     hasDivider?: boolean;        // Whether this item has a divider above it
     dividerText?: string;        // Text shown in the divider chip
+    dividerColor?: string;       // Color of the divider line/chip
+    dividerAlignment?: string;   // 'left', 'center', or 'right'
+    dividerIcon?: string;        // Lucide/Custom icon ID for divider
     dividerDescription?: string; // Markdown content for the hover popover
+    isHidden?: boolean;          // Visibility toggle (Stealth Mode)
 }
 ```
 
