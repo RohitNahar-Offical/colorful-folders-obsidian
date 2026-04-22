@@ -5,20 +5,20 @@
 
 ---
 
-## 🚀 Latest: 4.0.7 - The "Major Feature Debut" Release
-4.0.7 marks the official launch of modern organizational tools, introducing section dividers and a smart icon engine to the production branch.
+## 🚀 Latest: 4.1.0 - The "Premium Organization & Stealth" Release
+4.1.0 introduces the high-end Hover Message system and a robust, password-protected Stealth system.
 
-### ➕ 1. New: Section Dividers
-For the first time, you can now add visual dividers to group your folders and files with high-end glassmorphic styling.
+### 🕵️ 1. New: Stealth & Privacy Engine
+Hide any file or folder from the sidebar with a single click via the context menu. Includes a password-protected dashboard and "Ghost Mode" for semi-transparent viewing.
 
-### 🤖 2. New: Smart Auto-Icon Engine
-A brand new system that detects folder names and assigns perfect icons automatically, featuring the new **Icon Variety Mode**.
+### ➕ 2. New: Premium Divider Hovers
+Dividers now support rich Markdown descriptions in a premium, glassmorphic floating popover with a dedicated smart editor.
 
-### 🎨 3. Premium Production UI
-Rebranded and standardized to an **18px baseline** for perfect visual harmony across all themes.
+### 🎨 3. Enhanced Divider Customization
+Added granular control for icon positioning (Left, Right, or Both) and refined vertical/horizontal centering for pixel-perfect layouts.
 
-### 🛠️ 4. Improved Visual Defaults
-Enhanced line patterns and auto-enabled Glassmorphism for an instant professional look.
+### 🔗 4. Notebook Navigator Restoration
+Completely re-engineered integration ensuring specialized DOM selectors match the native Obsidian aesthetic perfectly.
 
 > [!NOTE]
 > For a full list of technical changes and historical updates, see the [Version History](version.md).
@@ -52,9 +52,16 @@ Enhanced line patterns and auto-enabled Glassmorphism for an instant professiona
 
 ### 📐 Organization & Spacing
 
-  * **Section Dividers:** Add vertical visual dividers to group your files and folders. Choose from Solid, Dashed, or Dotted lines featuring premium, glassmorphic labels that blur the background.
+  * **Section Dividers:** Add vertical visual dividers to group your files and folders. Includes **Markdown Support** for rich descriptions in glassmorphic popovers and a dedicated smart editor. Choose from Solid, Dashed, or Dotted lines.
   * **Dynamic Item Counters:** Display recursive statistics showing the total count of folders and files contained within a directory, color-matched to their parent folder.
   * **Exclusion Lists:** Keep utility directories like `attachments` or `templates` looking standard and unaffected by plugin styling.
+
+### 🕵️ Stealth & Privacy Engine
+
+  * **Visual Privacy:** Hide any file or folder from the sidebar with a single click via the context menu.
+  * **Ghost Mode:** Toggle semi-transparent viewing of hidden items with a sleek blur effect.
+  * **Password Protection:** Secure your privacy settings with a custom Password Modal featuring shake animations for invalid attempts.
+  * **Management Dashboard:** A new "Privacy & stealth" card in settings to manage all hidden items and recovery options.
 
 ### ⚡ Performance & Animations
 

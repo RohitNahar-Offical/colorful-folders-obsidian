@@ -1,4 +1,5 @@
-# Version 4.1.0 - The "Premium Organization & Stealth" Release
+# Version History - Colorful Folders for Obsidian
+
 ## 💎 4.1.0 - High-End Management & Privacy
 This major release introduces the high-end Hover Message system and a robust, password-protected Stealth system.
 
@@ -7,12 +8,13 @@ This major release introduces the high-end Hover Message system and a robust, pa
 - **Ghost Mode**: Toggle semi-transparent viewing of hidden items with a sleek blur effect.
 - **Password Protection**: Secure your privacy settings with a custom Password Modal featuring shake animations for invalid attempts.
 - **Management Dashboard**: A new "Privacy & stealth" card in settings to manage all hidden items and recovery options.
-- **Rapid Access**: Use the sidebar ribbon icon or the **Ctrl+Shift+Q** shortcut (e.g.) to toggle stealth mode instantly.
+- **Rapid Access**: Use the sidebar ribbon icon or the **Ctrl+Shift+Q** shortcut to toggle stealth mode instantly.
 
 ### ➕ 2. New: Premium Divider Hovers
 - **Markdown Support**: Dividers now support rich Markdown descriptions in a premium, glassmorphic floating popover.
 - **Smart Editor**: Includes a dedicated modal with real-time preview and **Smart Suggester** for internal links (`[[`) and tags (`#`).
-- **Contextual Organization**: Use dividers not just as lines, but as "section intros" for your project folders.
+- **Native Shortcuts & Toolbar**: The editor supports **Ctrl+C / V / X**, a formatting toolbar, and hotkeys (**Ctrl+B, I, K**).
+- **Improved Code Visibility**: Inline code and code blocks in popovers feature distinct, high-contrast styling.
 
 ### 🎨 3. Enhanced Divider Customization
 - **Icon Positioning**: Added granular control for divider icon placement (Left, Right, or Both).
@@ -23,20 +25,23 @@ This major release introduces the high-end Hover Message system and a robust, pa
 - **Scoped Styling**: Specialized DOM selectors ensure NN items match the native Obsidian aesthetic.
 
 ---
-This major release introduces the high-end Hover Message system and fully restores integration with external explorer plugins.
 
-### ➕ 1. New: Premium Divider Hovers
-- **Markdown Support**: Dividers now support rich Markdown descriptions in a premium, glassmorphic floating popover.
-- **Smart Editor**: Includes a dedicated modal with real-time preview and **Smart Suggester** for internal links (`[[`) (`![[`) and tags (`#`).
-- **Contextual Organization**: Use dividers not just as lines, but as "section intros" for your project folders.
+## 🚀 4.0.7 - Major Feature Debut
+4.0.7 marks the official launch of modern organizational tools, introducing section dividers and a smart icon engine.
 
-### 🎨 2. Enhanced Divider Customization
-- **Icon Positioning**: Added granular control for divider icon placement. Icons can now be set to **Left**, **Right**, or **Both** sides of the pill.
-- **Improved Alignment**: Refined the vertical and horizontal centering logic for dividers to ensure pixel-perfect layout on high-DPI displays.
-
-### 🔗 3. Notebook Navigator Restoration
-- **Full Compatibility**: Completely re-engineered the **Notebook Navigator** integration.
-- **Glitch Fixes**: Resolved the severe rendering glitches and selector conflicts that had plagued the integration since version 4.0.6.
-- **Scoped Styling**: Introduced specialized DOM selectors to ensure NN items match the native Obsidian aesthetic perfectly.
+- **Section Dividers**: Add visual dividers with glassmorphic styling to group your folders.
+- **Smart Auto-Icon Engine**: Automatically detects folder names and assigns perfect icons.
+- **Premium Production UI**: Rebranded and standardized to an 18px baseline.
+- **Improved Visual Defaults**: Enhanced line patterns and auto-enabled Glassmorphism.
 
 ---
+
+## 🍱 4.0.6 - Icon Pack Update
+- **Standardized Icon Alignment**: Forced centering regardless of font size or theme.
+- **Improved Iconify Importer**: Added support for SVG offsets and alias preservation.
+- **New Built-in Icon Library**: Added 6 curated, local JSON icon packs.
+
+---
+
+> [!TIP]
+> For more details on older versions, see the files in the `Version/` directory.
