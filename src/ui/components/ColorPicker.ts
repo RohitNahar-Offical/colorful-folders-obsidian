@@ -10,7 +10,7 @@ export function createVisualColorPicker(
     const showAlpha = opts.showAlpha !== false;
     let currentAlpha = opts.initialAlpha !== undefined ? opts.initialAlpha : 1.0;
 
-    const initRgb = hexToRgbObj(initialHex || '#eb6f92');
+    const initRgb = hexToRgbObj(initialHex) || { r: 235, g: 111, b: 146 }; // Fallback to Rosé Pine pink
     let hsv = rgbToHsv(initRgb.r, initRgb.g, initRgb.b);
 
     const wrap = container.createDiv({ cls: 'cf-vcp' });
@@ -115,6 +115,7 @@ export function createVisualColorPicker(
 
     function syncFromHex(hex: string) {
         const rgb = hexToRgbObj(hex);
+        if (!rgb) return;
         hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
         hueSlider.value = hsv.h.toString();
         syncFromHSV();

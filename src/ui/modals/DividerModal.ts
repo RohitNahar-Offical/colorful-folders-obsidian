@@ -24,6 +24,7 @@ export class DividerModal extends obsidian.Modal {
     isSaved = false;
     _headerIconWrap!: HTMLElement;
     _previewIconEl!: HTMLElement;
+    private _liveSyncTimeout: number | null = null;
 
     constructor(app: obsidian.App, plugin: IColorfulFoldersPlugin, item: obsidian.TAbstractFile) {
         super(app);
@@ -338,24 +339,27 @@ export class DividerModal extends obsidian.Modal {
     }
 
     _liveSync() {
-        const style = this.plugin.getStyle(this.path) || {};
-        const tempStyle: FolderStyle = {
-            ...style,
-            dividerText: this.config.name,
-            dividerColor: this.config.color,
-            dividerAlignment: this.config.alignment,
-            dividerLineStyle: this.config.lineStyle,
-            dividerUpper: this.config.isUpper,
-            dividerGlass: this.config.useGlass,
-            dividerIcon: this.config.icon,
-            dividerIconPosition: this.config.iconPosition,
-            dividerPillMode: this.config.pillMode,
-            dividerDescription: this.config.description,
-            hasDivider: true
-        };
-        delete tempStyle.dividerIconColor;
-        this.plugin.settings.customFolderColors[this.path] = tempStyle;
-        this.plugin.dividerManager.syncDividers();
+        if (this._liveSyncTimeout) activeWindow.clearTimeout(this._liveSyncTimeout);
+        this._liveSyncTimeout = activeWindow.setTimeout(() => {
+            const style = this.plugin.getStyle(this.path) || {};
+            const tempStyle: FolderStyle = {
+                ...style,
+                dividerText: this.config.name,
+                dividerColor: this.config.color,
+                dividerAlignment: this.config.alignment,
+                dividerLineStyle: this.config.lineStyle,
+                dividerUpper: this.config.isUpper,
+                dividerGlass: this.config.useGlass,
+                dividerIcon: this.config.icon,
+                dividerIconPosition: this.config.iconPosition,
+                dividerPillMode: this.config.pillMode,
+                dividerDescription: this.config.description,
+                hasDivider: true
+            };
+            delete tempStyle.dividerIconColor;
+            this.plugin.settings.customFolderColors[this.path] = tempStyle;
+            this.plugin.dividerManager.syncDividers();
+        }, 50);
     }
 
     _refreshHeaderIcon() {

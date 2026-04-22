@@ -1,6 +1,6 @@
 import { ColorfulFoldersSettings, FolderStyle, IColorfulFoldersPlugin } from '../common/types';
 import { PALETTES, CF_FOLDER_CLOSED, CF_FOLDER_OPEN } from '../common/constants';
-import { hexToRgbObj, adjustBrightnessRgb, getAutoIconData, safeEscape, parseCustomPalette, hashString } from '../common/utils';
+import { hexToRgbObj, adjustBrightnessRgb, safeEscape, parseCustomPalette, hashString } from '../common/utils';
 import * as obsidian from 'obsidian';
 import { NotebookNavigatorIntegration } from '../integrations/NotebookNavigator';
 
@@ -8,30 +8,18 @@ export class StyleGenerator {
     plugin: IColorfulFoldersPlugin;
     settings: ColorfulFoldersSettings;
     app: obsidian.App;
-    iconCache: Map<string, string>;
 
     constructor(plugin: IColorfulFoldersPlugin) {
         this.plugin = plugin;
         this.settings = plugin.settings;
         this.app = plugin.app;
-        this.iconCache = plugin.iconCache || new Map<string, string>();
 
         if (!this.plugin.heatmapCache) {
             this.plugin.heatmapCache = new Map<string, number>();
         }
     }
 
-    normalizeSvg(svgStr: string): string {
-        try {
-            const decoded = decodeURIComponent(svgStr);
-            const normalized = decoded
-                .replace(/\bwidth="[^"]*"/g, 'width="100%"')
-                .replace(/\bheight="[^"]*"/g, 'height="100%"');
-            return encodeURIComponent(normalized);
-        } catch {
-            return svgStr;
-        }
-    }
+
 
 
 
@@ -49,10 +37,6 @@ export class StyleGenerator {
     generateCss(): string {
         let css = "";
 
-        if (this.iconCache.size > 2000) {
-            this.iconCache.clear();
-        }
-
         const root = this.app.vault.getRoot();
         if (!root) return css;
 
@@ -67,7 +51,6 @@ export class StyleGenerator {
 
         const wideScale = this.settings.wideAutoIcons ? 1.05 : 1.0;
         const effFileIconW = Math.round(fileIconW * wideScale);
-        const effFolderIconW = Math.round(folderIconW * wideScale);
         const wideOpacity = this.settings.wideAutoIcons ? "1.0" : "0.85";
 
         const CF_FILE_TEXT_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="${fileIconW}" height="${fileIconW}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; opacity: 0.85; vertical-align: middle;"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`;
@@ -161,6 +144,19 @@ export class StyleGenerator {
                     50% { background-position: 100% 50%; }
                     100% { background-position: 0% 50%; }
                 }
+
+                /* Global: Hide default icons when a custom icon is active */
+                .cf-icon-active::before {
+                    display: none !important;
+                    content: none !important;
+                    width: 0 !important;
+                    height: 0 !important;
+                }
+                .cf-icon-active > svg:not(.cf-icon-wrapper svg),
+                .cf-icon-active > .nav-folder-icon,
+                .cf-icon-active > .nav-file-icon {
+                    display: none !important;
+                }
             `;
         }
 
@@ -211,7 +207,7 @@ export class StyleGenerator {
             return res;
         };
 
-        const traverse = (folder: obsidian.TFolder, depth: number, rootIndex = 0, passedColor: { rgb: string, hex: string } | null = null, inheritedStyle: FolderStyle | null = null) => {
+        const traverse = (folder: obsidian.TFolder, depth: number, validIndex = 0, rootIndex = 0, passedColor: { rgb: string, hex: string } | null = null, inheritedStyle: FolderStyle | null = null) => {
             const copyFolders = folder.children
                 .filter((c): c is obsidian.TFolder => c instanceof obsidian.TFolder)
                 .sort((a, b) => a.name.localeCompare(b.name));
@@ -226,7 +222,6 @@ export class StyleGenerator {
             const rootTintOp = this.settings.rootTintOpacity !== undefined ? this.settings.rootTintOpacity : 0.06;
 
 
-            let validIndex = 0;
 
             if (passedColor || this.settings.autoColorFiles || this.settings.autoIcons || (this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground)) {
                 let fileIndex = 0;
@@ -260,19 +255,21 @@ export class StyleGenerator {
                             color = currentPalette[(validIndex + nameHash + cycleOff) % currentPalette.length];
                         }
                     } else {
-                        color = passedColor || { rgb: "var(--text-normal-rgb)", hex: "var(--text-normal)" };
+                        const gHex = this.settings.globalBackgroundColor || "";
+                        const gRgb = hexToRgbObj(gHex);
+                        color = passedColor || (gRgb ? { rgb: `${gRgb.r}, ${gRgb.g}, ${gRgb.b}`, hex: gHex } : { rgb: "var(--text-normal-rgb)", hex: "var(--text-normal)" });
                     }
 
                     const isCustomColor = !!(fileStyle && fileStyle.hex);
                     const isCustomOrInherited = isCustomColor || (inheritedStyle && inheritedStyle.applyToFiles);
-                    const shouldColorNative = isCustomOrInherited || this.settings.autoColorFiles;
+                    const shouldColorNative = isCustomOrInherited || this.settings.autoColorFiles || !!this.settings.globalBackgroundColor;
                     const shouldColorNN = isCustomOrInherited || (this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground);
 
                     const activeStyle = fileStyle || (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle : null);
                     const textColor = fileStyle?.textColor || (inheritedStyle?.applyToFiles ? inheritedStyle.textColor : null);
                     const op = fileStyle?.opacity !== undefined ? fileStyle.opacity : (isCustomColor && activeStyle?.opacity !== undefined ? activeStyle.opacity : 1.0);
 
-                    const autoIconFile = (this.settings.autoIcons && !fileStyle?.iconId && !(inheritedStyle?.applyToFiles && inheritedStyle?.iconId)) ? getAutoIconData(child.name, this.settings, true) : null;
+                    const autoIconFile = (this.settings.autoIcons && !fileStyle?.iconId && !(inheritedStyle?.applyToFiles && inheritedStyle?.iconId)) ? this.plugin.iconManager.getAutoIconData(child.name) : null;
                     const iconId = fileStyle?.iconId || (inheritedStyle?.applyToFiles ? inheritedStyle.iconId : null) || (autoIconFile ? (this.settings.wideAutoIcons ? autoIconFile.lucide : autoIconFile.emoji) : "");
 
                     const calculateTextColor = (shouldColor: boolean) => {
@@ -302,7 +299,10 @@ export class StyleGenerator {
                                 ${shouldColorNative ? `
                                     background-color: rgba(${color.rgb}, ${fileBgAlpha}) !important;
                                     border-left: 2px solid rgba(${color.rgb}, 0.4) !important;
-                                ` : ''}
+                                ` : `
+                                    background-color: transparent !important;
+                                    border-left: none !important;
+                                `}
                                 opacity: 1.0 !important;
                                 color: ${textNative} !important;
                                 font-weight: ${isBold ? 'bold' : 'normal'} !important;
@@ -344,6 +344,8 @@ export class StyleGenerator {
                                 body .nav-file-title[data-path="${safePath}"] .nav-file-title-content::before,
                                 body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
                                     content: "${iconId} " !important;
+                                    -webkit-mask-image: none !important;
+                                    background-image: none !important;
                                 }
                             `;
                             
@@ -360,54 +362,35 @@ export class StyleGenerator {
                                 `;
                             }
                         } else {
-                            let svgStr = this.iconCache.get(iconId);
-                            if (!svgStr) {
-                                if (this.settings.customIcons[iconId]) {
-                                    svgStr = encodeURIComponent(this.settings.customIcons[iconId]);
-                                    this.iconCache.set(iconId, svgStr);
-                                } else {
-                                    const tempEl = activeDocument.createElement('div');
-                                    obsidian.setIcon(tempEl, iconId);
-                                    if (!tempEl.querySelector('svg') && !iconId.startsWith('lucide-')) {
-                                        obsidian.setIcon(tempEl, `lucide-${iconId}`);
-                                    }
-                                    const svgEl = tempEl.querySelector('svg');
-                                    if (svgEl) {
-                                        svgEl.removeAttribute('width'); svgEl.removeAttribute('height');
-                                        svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-                                        svgStr = encodeURIComponent(svgEl.outerHTML);
-                                        this.iconCache.set(iconId, svgStr);
-                                    }
-                                }
-                            }
-                            if (svgStr) {
+                            // Custom/Selected Icon rendering is now handled by DOM Injection (IconManager)
+                            // But only if it's a manual override (activeStyle.iconId)
+                            const isManualCustom = !!(activeStyle && activeStyle.iconId);
+                            
+                            if (isManualCustom) {
                                 css += `
-                                    body .nav-file-title[data-path="${safePath}"] .nav-file-title-content::before,
-                                    body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
-                                        content: '' !important;
-                                        display: inline-block !important;
-                                        width: ${effFileIconW}px !important;
-                                        height: ${effFileIconW}px !important;
-                                        background-color: ${iconColor ? iconColor : color.hex} !important;
-                                        -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${svgStr}') !important;
-                                        -webkit-mask-repeat: no-repeat !important;
-                                        -webkit-mask-position: center !important;
-                                        -webkit-mask-size: contain !important;
-                                        margin-right: 6px !important;
-                                        vertical-align: middle !important;
-                                        opacity: 0.85 !important;
+                                    body [data-path="${safePath}"] .nav-file-title-content::before,
+                                    body [data-path="${safePath}"] .tree-item-inner::before,
+                                    body [data-path="${safePath}"].nav-file-title .nav-file-title-content::before,
+                                    body [data-path="${safePath}"].tree-item-self .tree-item-inner::before {
+                                        display: none !important;
+                                        content: none !important;
                                     }
                                 `;
-                                if (nnActive || nnFileBgActive) {
+                            } else {
+                                // Auto SVG icon (handled here via masking)
+                                const svgStr = this.plugin.iconManager.getIconSvg(iconId, true);
+                                if (svgStr) {
                                     css += `
-                                        ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before,
-                                        ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileNameSelector()}::before {
+                                        body [data-path="${safePath}"] .nav-file-title-content::before,
+                                        body [data-path="${safePath}"] .tree-item-inner::before,
+                                        body [data-path="${safePath}"].nav-file-title .nav-file-title-content::before,
+                                        body [data-path="${safePath}"].tree-item-self .tree-item-inner::before {
                                             content: '' !important;
                                             display: inline-block !important;
                                             width: ${effFileIconW}px !important;
                                             height: ${effFileIconW}px !important;
-                                            background-color: ${iconColor ? iconColor : color.hex} !important;
-                                            -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${svgStr}') !important;
+                                            background-color: ${iconColor || color.hex || textNative} !important;
+                                            -webkit-mask-image: url("data:image/svg+xml,${svgStr}") !important;
                                             -webkit-mask-repeat: no-repeat !important;
                                             -webkit-mask-position: center !important;
                                             -webkit-mask-size: contain !important;
@@ -415,24 +398,41 @@ export class StyleGenerator {
                                             vertical-align: middle !important;
                                             opacity: 0.85 !important;
                                         }
-                                        ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()},
-                                        ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileIconSelector()} {
-                                            display: none !important;
-                                        }
                                     `;
+                                    if (nnActive || nnFileBgActive) {
+                                        css += `
+                                            ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before,
+                                            ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileNameSelector()}::before {
+                                                content: '' !important;
+                                                display: inline-block !important;
+                                                width: ${effFileIconW}px !important;
+                                                height: ${effFileIconW}px !important;
+                                                background-color: ${iconColor || color.hex || textNN} !important;
+                                                -webkit-mask-image: url("data:image/svg+xml,${svgStr}") !important;
+                                                -webkit-mask-repeat: no-repeat !important;
+                                                -webkit-mask-position: center !important;
+                                                -webkit-mask-size: contain !important;
+                                                margin-right: 6px !important;
+                                                vertical-align: middle !important;
+                                                opacity: 0.85 !important;
+                                            }
+                                        `;
+                                    }
                                 }
                             }
                         }
                     } else if (this.settings.autoIcons) {
                         css += `
-                            body .nav-file-title[data-path="${safePath}"] .nav-file-title-content::before,
-                            body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
+                            body [data-path="${safePath}"] .nav-file-title-content::before,
+                            body [data-path="${safePath}"] .tree-item-inner::before,
+                            body [data-path="${safePath}"].nav-file-title .nav-file-title-content::before,
+                            body [data-path="${safePath}"].tree-item-self .tree-item-inner::before {
                                 content: '' !important;
                                 display: inline-block !important;
                                 width: ${effFileIconW}px !important;
                                 height: ${effFileIconW}px !important;
-                                background-color: ${iconColor ? iconColor : color.hex} !important;
-                                -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${encodeURIComponent(CF_FILE_TEXT_ICON)}') !important;
+                                    background-color: ${iconColor || color.hex || textNative} !important;
+                                    -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(decodeURIComponent(CF_FILE_TEXT_ICON))}") !important;
                                 -webkit-mask-repeat: no-repeat !important;
                                 -webkit-mask-position: center !important;
                                 -webkit-mask-size: contain !important;
@@ -449,8 +449,8 @@ export class StyleGenerator {
                                     display: inline-block !important;
                                     width: ${effFileIconW}px !important;
                                     height: ${effFileIconW}px !important;
-                                    background-color: ${iconColor ? iconColor : color.hex} !important;
-                                    -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${encodeURIComponent(CF_FILE_TEXT_ICON)}') !important;
+                                    background-color: ${iconColor || color.hex || textNN} !important;
+                                    -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(decodeURIComponent(CF_FILE_TEXT_ICON))}") !important;
                                     -webkit-mask-repeat: no-repeat !important;
                                     -webkit-mask-position: center !important;
                                     -webkit-mask-size: contain !important;
@@ -538,7 +538,7 @@ export class StyleGenerator {
             for (let i = 0; i < copyFolders.length; i++) {
                 const child = copyFolders[i];
                 if (excludeFolders.includes(child.name.toLowerCase())) {
-                    traverse(child, depth + 1, rootIndex, passedColor, inheritedStyle);
+                    traverse(child, depth + 1, i, (depth === 0 ? i : rootIndex), passedColor, inheritedStyle);
                     continue;
                 }
 
@@ -549,16 +549,16 @@ export class StyleGenerator {
                 if (customStyle && customStyle.hex) {
                     const customParsed = parseCustomPalette(customStyle.hex);
                     const cObj = hexToRgbObj(customStyle.hex);
-                    color = customParsed ? customParsed[0] : (cObj ? { rgb: `${cObj.r}, ${cObj.g}, ${cObj.b}`, hex: customStyle.hex } : currentPalette[(validIndex + depth + rootIndex) % currentPalette.length]);
+                    color = customParsed ? customParsed[0] : (cObj ? { rgb: `${cObj.r}, ${cObj.g}, ${cObj.b}`, hex: customStyle.hex } : currentPalette[(i + depth + rootIndex + cycleOff) % currentPalette.length]);
                 } else if (inheritedStyle && passedColor) {
                     color = passedColor;
                 } else if (this.settings.colorMode === "heatmap") {
                     const mtime = heatmapData.get(child.path) || 0;
                     color = getHeatmapColor(mtime);
                 } else if (this.settings.colorMode === "monochromatic") {
-                    color = depth === 0 ? currentPalette[validIndex % currentPalette.length] : passedColor;
+                    color = depth === 0 ? currentPalette[(i + cycleOff) % currentPalette.length] : passedColor;
                 } else {
-                    color = currentPalette[(validIndex + depth + rootIndex + cycleOff) % currentPalette.length];
+                    color = currentPalette[(i + depth + rootIndex + cycleOff) % currentPalette.length];
                 }
 
 
@@ -639,17 +639,18 @@ export class StyleGenerator {
                 }
 
 
-                const autoIcon = this.settings.autoIcons ? getAutoIconData(child.name, this.settings) : null;
-                let isEmoji = false;
+                let autoLucideId = "";
                 let autoIconContent = "";
-                let autoLucideId: string | null = null;
+                let isEmoji = false;
 
-                if (autoIcon) {
-                    if (this.settings.wideAutoIcons) {
-                        autoLucideId = autoIcon.lucide;
-                    } else {
-                        autoIconContent = `"${autoIcon.emoji} "`;
-                        isEmoji = true;
+                if (this.settings.autoIcons) {
+                    const data = this.plugin.iconManager.getAutoIconData(child.name);
+                    if (data) {
+                        if (data.lucide) autoLucideId = data.lucide;
+                        if (data.emoji) {
+                            autoIconContent = `'${data.emoji}'`;
+                            isEmoji = true;
+                        }
                     }
                 }
 
@@ -662,6 +663,8 @@ export class StyleGenerator {
                             body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
                             body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
                                 content: "${activeStyle.iconId} " !important;
+                                -webkit-mask-image: none !important;
+                                background-image: none !important;
                             }
                         `;
                         if (nnActive) {
@@ -675,57 +678,35 @@ export class StyleGenerator {
                             `;
                         }
                     } else {
-                        let svgStr = this.iconCache.get(activeStyle.iconId);
-                        if (!svgStr) {
-                            if (this.settings.customIcons[activeStyle.iconId]) {
-                                svgStr = encodeURIComponent(this.settings.customIcons[activeStyle.iconId]);
-                                this.iconCache.set(activeStyle.iconId, svgStr);
-                            } else {
-                                const tempEl = activeDocument.createElement('div');
-                                const iconId = activeStyle.iconId;
-                                obsidian.setIcon(tempEl, iconId);
-                                if (!tempEl.querySelector('svg') && !iconId.startsWith('lucide-')) {
-                                    obsidian.setIcon(tempEl, `lucide-${iconId}`);
-                                }
-                                const svgEl = tempEl.querySelector('svg');
-                                if (svgEl) {
-                                    svgEl.removeAttribute('width');
-                                    svgEl.removeAttribute('height');
-                                    svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-                                    svgStr = encodeURIComponent(svgEl.outerHTML);
-                                    this.iconCache.set(activeStyle.iconId, svgStr);
-                                }
-                            }
-                        }
-
-                        if (svgStr) {
-                            svgStr = this.normalizeSvg(svgStr);
+                        // Custom/Selected Icon rendering is now handled by DOM Injection (IconManager)
+                        // But only if it's a manual override (activeStyle.iconId)
+                        const isManualCustom = !!(activeStyle && activeStyle.iconId);
+                        
+                        if (isManualCustom) {
                             css += `
-                                body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
-                                body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
-                                    content: '' !important;
-                                    display: inline-block !important;
-                                    width: ${folderIconW}px !important;
-                                    height: ${folderIconW}px !important;
-                                    background-color: ${(activeStyle && activeStyle.iconColor) ? activeStyle.iconColor : color.hex} !important;
-                                    -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${svgStr}') !important;
-                                    -webkit-mask-repeat: no-repeat !important;
-                                    -webkit-mask-position: center !important;
-                                    -webkit-mask-size: contain !important;
-                                    margin-right: 6px !important;
-                                    vertical-align: middle !important;
-                                    opacity: 0.85 !important;
+                                body [data-path="${safePath}"] .nav-folder-title-content::before,
+                                body [data-path="${safePath}"] .tree-item-inner::before,
+                                body [data-path="${safePath}"].nav-folder-title .nav-folder-title-content::before,
+                                body [data-path="${safePath}"].tree-item-self .tree-item-inner::before {
+                                    display: none !important;
+                                    content: none !important;
                                 }
                             `;
-                            if (nnActive) {
+                        } else if (autoLucideId) {
+                            // Auto SVG icon (handled here via masking)
+                            const svgStr = this.plugin.iconManager.getIconSvg(autoLucideId, true);
+                            if (svgStr) {
                                 css += `
-                                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before {
+                                    body [data-path="${safePath}"] .nav-folder-title-content::before,
+                                    body [data-path="${safePath}"] .tree-item-inner::before,
+                                    body [data-path="${safePath}"].nav-folder-title .nav-folder-title-content::before,
+                                    body [data-path="${safePath}"].tree-item-self .tree-item-inner::before {
                                         content: '' !important;
                                         display: inline-block !important;
                                         width: ${folderIconW}px !important;
                                         height: ${folderIconW}px !important;
-                                        background-color: ${(activeStyle && activeStyle.iconColor) ? activeStyle.iconColor : color.hex} !important;
-                                        -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${svgStr}') !important;
+                                        background-color: ${text} !important;
+                                        -webkit-mask-image: url("data:image/svg+xml,${svgStr}") !important;
                                         -webkit-mask-repeat: no-repeat !important;
                                         -webkit-mask-position: center !important;
                                         -webkit-mask-size: contain !important;
@@ -733,43 +714,30 @@ export class StyleGenerator {
                                         vertical-align: middle !important;
                                         opacity: 0.85 !important;
                                     }
-                                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()} {
-                                        display: none !important;
-                                    }
                                 `;
                             }
                         }
                     }
                 } else if (autoLucideId) {
-                    let svgStr = this.iconCache.get(autoLucideId);
-                    if (!svgStr) {
-                        const tempEl = activeDocument.createElement('div');
-                        obsidian.setIcon(tempEl, autoLucideId);
-                        const svgEl = tempEl.querySelector('svg');
-                        if (svgEl) {
-                            svgEl.setAttribute('width', '100%');
-                            svgEl.setAttribute('height', '100%');
-                            svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-                            svgStr = encodeURIComponent(svgEl.outerHTML);
-                            this.iconCache.set(autoLucideId, svgStr);
-                        }
-                    }
+                    const svgStr = this.plugin.iconManager.getIconSvg(autoLucideId, true);
                     if (svgStr) {
                         css += `
-                            body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
-                            body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
+                            body [data-path="${safePath}"] .nav-folder-title-content::before,
+                            body [data-path="${safePath}"] .tree-item-inner::before,
+                            body [data-path="${safePath}"].nav-folder-title .nav-folder-title-content::before,
+                            body [data-path="${safePath}"].tree-item-self .tree-item-inner::before {
                                 content: '' !important;
                                 display: inline-block !important;
-                                width: ${effFolderIconW}px !important;
-                                height: ${effFolderIconW}px !important;
-                                background-color: ${(activeStyle && activeStyle.iconColor) ? activeStyle.iconColor : color.hex} !important;
-                                -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${svgStr}') !important;
+                                width: ${folderIconW}px !important;
+                                height: ${folderIconW}px !important;
+                                background-color: ${text} !important;
+                                -webkit-mask-image: url("data:image/svg+xml,${svgStr}") !important;
                                 -webkit-mask-repeat: no-repeat !important;
                                 -webkit-mask-position: center !important;
                                 -webkit-mask-size: contain !important;
                                 margin-right: 6px !important;
                                 vertical-align: middle !important;
-                                opacity: ${wideOpacity} !important;
+                                opacity: 0.85 !important;
                             }
                         `;
                         if (nnActive) {
@@ -777,10 +745,10 @@ export class StyleGenerator {
                                 ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before {
                                     content: '' !important;
                                     display: inline-block !important;
-                                    width: ${effFolderIconW}px !important;
-                                    height: ${effFolderIconW}px !important;
-                                    background-color: ${(activeStyle && activeStyle.iconColor) ? activeStyle.iconColor : color.hex} !important;
-                                    -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${svgStr}') !important;
+                                    width: ${folderIconW}px !important;
+                                    height: ${folderIconW}px !important;
+                                    background-color: ${textNN} !important;
+                                    -webkit-mask-image: url("data:image/svg+xml,${svgStr}") !important;
                                     -webkit-mask-repeat: no-repeat !important;
                                     -webkit-mask-position: center !important;
                                     -webkit-mask-size: contain !important;
@@ -820,26 +788,23 @@ export class StyleGenerator {
                             display: inline-block !important;
                             width: ${folderIconW}px !important;
                             height: ${folderIconW}px !important;
-                            background-color: ${activeStyle?.iconColor || text} !important;
+                            background-color: ${activeStyle?.iconColor || color.hex || text} !important;
                             -webkit-mask-repeat: no-repeat !important;
                             -webkit-mask-position: center !important;
                             margin-right: 6px !important;
                             vertical-align: middle !important;
                             opacity: 0.8 !important;
                         }
-                        
 
                         body .nav-folder.is-collapsed > .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
                         body .tree-item.is-collapsed > .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
-                             -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${CF_FOLDER_CLOSED}') !important;
+                             -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(decodeURIComponent(CF_FOLDER_CLOSED))}") !important;
                         }
-
 
                         body .nav-folder:not(.is-collapsed) > .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
                         body .tree-item:not(.is-collapsed) > .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
-                             -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${CF_FOLDER_OPEN}') !important;
+                             -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(decodeURIComponent(CF_FOLDER_OPEN))}") !important;
                         }
-
                     `;
                 }
 
@@ -951,7 +916,7 @@ export class StyleGenerator {
                         <text x="60" y="15" fill="${color.hex}" font-family="var(--font-interface), sans-serif" font-size="11" font-weight="500">${counts.files}</text>
                     </svg>`;
 
-                    const combinedIconUrl = `url('data:image/svg+xml;charset=utf-8,${encodeURIComponent(combinedSvg)}')`;
+                    const combinedIconUrl = `url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(combinedSvg)}")`;
 
                     css += `
                         body .nav-folder-title[data-path="${safePath}"]::after,
@@ -972,8 +937,7 @@ export class StyleGenerator {
 
 
                 const nextInherited = activeStyle?.applyToSubfolders ? activeStyle : inheritedStyle;
-                traverse(child, depth + 1, depth === 0 ? validIndex : rootIndex, color, nextInherited);
-                validIndex++;
+                traverse(child, depth + 1, i, (depth === 0 ? i : rootIndex), color, nextInherited);
             }
         };
 
@@ -1166,7 +1130,7 @@ export class StyleGenerator {
             `;
         }
 
-        traverse(root, 0);
+        traverse(root, 0, 0, 0);
 
         css += this.generateStealthCss();
         return css;

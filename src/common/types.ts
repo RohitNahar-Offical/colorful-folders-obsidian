@@ -38,6 +38,7 @@ export interface ColorfulFoldersSettings {
     tintOpacity: number;
     customFolderColors: Record<string, FolderStyle | string>;
     presets: Record<string, FolderStyle>;
+    recentlyUsedIcons?: string[];
     glassmorphism: boolean;
     focusMode: boolean;
     autoIcons: boolean;
@@ -75,6 +76,7 @@ export interface ColorfulFoldersSettings {
     showHiddenItems: boolean;
     showRibbonIcon: boolean;
     lastVersion: string;
+    globalBackgroundColor: string;
 }
 
 
@@ -110,6 +112,12 @@ export interface IColorfulFoldersPlugin {
     settings: ColorfulFoldersSettings;
     heatmapCache: Map<string, number> | null;
     iconCache: Map<string, string>;
+    iconManager: { 
+        refreshIcons(): void,
+        getIconSvg(iconId: string, shouldEncode?: boolean): string,
+        getAutoIconData(name: string): AutoIconData | null,
+        normalizeSvg(svgStr: string, shouldEncode?: boolean): string
+    };
     styleTag: HTMLStyleElement;
     uiStyleTag: HTMLStyleElement;
     isSyncingDividers: boolean;
@@ -125,10 +133,18 @@ export interface IColorfulFoldersPlugin {
     getStyle(path: string): FolderStyle | null;
     getEffectiveStyle(target: TAbstractFile): EffectiveStyle;
     generateStyles(): void;
+    refreshIcons(): void;
     initDividerObserver(): void;
     processDividers(): void;
     registerEvent(event: EventRef): void;
 }
+
+declare global {
+    interface HTMLElement {
+        setCssStyles(styles: Partial<CSSStyleDeclaration> | Record<string, string | number>): void;
+    }
+}
+
 export interface MenuItemWithSubmenu extends MenuItem {
     setSubmenu(): Menu;
 }

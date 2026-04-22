@@ -2,10 +2,12 @@ import * as obsidian from 'obsidian';
 
 export class ChangelogModal extends obsidian.Modal {
     content: string;
+    private renderComponent: obsidian.Component;
 
     constructor(app: obsidian.App, content: string) {
         super(app);
         this.content = content;
+        this.renderComponent = new obsidian.Component();
     }
 
     onOpen() {
@@ -25,10 +27,13 @@ export class ChangelogModal extends obsidian.Modal {
             borderBottom: "1px solid var(--background-modifier-border)",
             paddingBottom: "10px"
         });
-        header.createEl("h2", { text: "What's New in Colorful Folders" });
+        header.createEl("h2", { text: "What's new in colorful folders" });
 
         const body = contentEl.createDiv({ cls: "cf-changelog-body" });
-        obsidian.MarkdownRenderer.renderMarkdown(this.content, body, "", null as any);
+        this.renderComponent.load();
+        obsidian.MarkdownRenderer.render(this.app, this.content, body, "", this.renderComponent).catch(err => {
+            console.error("Failed to render changelog markdown", err);
+        });
 
         const footer = contentEl.createDiv({ cls: "cf-changelog-footer" });
         footer.setCssStyles({
@@ -40,6 +45,7 @@ export class ChangelogModal extends obsidian.Modal {
     }
 
     onClose() {
+        this.renderComponent.unload();
         const { contentEl } = this;
         contentEl.empty();
     }

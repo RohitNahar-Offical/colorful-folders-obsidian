@@ -394,6 +394,18 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     this.plugin.generateStyles();
                 }));
 
+        new obsidian.Setting(genCard)
+            .setName('Global default background')
+            .setDesc('Set a universal background color for all folders/files that do not have a custom style. Leave empty for theme-default (transparent).')
+            .addText(text => text
+                .setPlaceholder('#2A2a2a')
+                .setValue(this.plugin.settings.globalBackgroundColor || "")
+                .onChange(async (value) => {
+                    this.plugin.settings.globalBackgroundColor = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStyles();
+                }));
+
         if (this.plugin.settings.colorMode === 'cycle') {
             new obsidian.Setting(genCard)
                 .setName('Rainbow cycle offset')

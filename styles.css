@@ -228,6 +228,30 @@
 }
 
 /* Icon Rendering Stability */
+.cf-icon-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 6px;
+    vertical-align: middle;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    flex-shrink: 0;
+}
+
+.cf-icon-wrapper svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* Hide default icons when a CF icon is present */
+.nav-folder-title:has(.cf-icon-wrapper) .nav-folder-title-content::before,
+.tree-item-self:has(.cf-icon-wrapper) .tree-item-inner::before,
+.nn-navitem:has(.cf-icon-wrapper) .nn-navitem-icon,
+.nn-file:has(.cf-icon-wrapper) .nn-file-icon {
+    display: none !important;
+}
+
 [data-path] .nav-folder-title-content::before,
 [data-path] .nav-file-title-content::before,
 [data-path] .tree-item-inner::before,

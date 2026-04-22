@@ -27,11 +27,11 @@ export class DividerManager {
 
     // ─── Divider Node Factory ───────────────────────────────────────────
 
-    private buildDividerNode(path: string, conf: FolderStyle): HTMLElement {
+    private buildDividerNode(path: string, conf: FolderStyle, doc: Document): HTMLElement {
         const dividerThickness = this.plugin.settings.dividerThickness || 1.5;
         const globalLineStyle = this.plugin.settings.dividerLineStyle || 'solid';
 
-        const div = activeDocument.createElement('div');
+        const div = doc.createElement('div');
         div.className = 'cf-interactive-divider';
         div.dataset.dividerTarget = path;
         
@@ -142,15 +142,15 @@ export class DividerManager {
             if (isCustom) {
                 // Custom SVG Icon - Use masking strategy for consistency and to override hardcoded SVG styles
                 const svgStr = this.plugin.settings.customIcons[rawIcon];
-                const encoded = encodeURIComponent(svgStr);
+                const normalized = this.plugin.iconManager.normalizeSvg(svgStr);
                 const iconWrap = chip.createSpan({ cls: 'cf-divider-custom-icon' });
                 iconWrap.setCssStyles({
                     display: 'inline-block',
                     width: '14px',
                     height: '14px',
                     backgroundColor: iconColor,
-                    maskImage: `url('data:image/svg+xml;charset=utf-8,${encoded}')`,
-                    webkitMaskImage: `url('data:image/svg+xml;charset=utf-8,${encoded}')`,
+                    maskImage: `url("data:image/svg+xml,${normalized}")`,
+                    webkitMaskImage: `url("data:image/svg+xml,${normalized}")`,
                     maskRepeat: 'no-repeat',
                     webkitMaskRepeat: 'no-repeat',
                     maskPosition: 'center',
@@ -170,16 +170,15 @@ export class DividerManager {
                         width: '14px',
                         height: '14px',
                         stroke: finalColor,
-                        fill: finalColor,
+                        fill: 'none',
                         strokeWidth: '2.5px'
                     });
                     // Force color on all internal paths to override hardcoded SVG colors
                     svg.querySelectorAll('path, circle, rect, ellipse, polyline, polygon').forEach((child) => {
-                        const svgChild = child as SVGElement;
-                        if (svgChild.style) {
-                            svgChild.style.stroke = finalColor;
-                            svgChild.style.fill = finalColor;
-                        }
+                        (child as HTMLElement).setCssStyles({
+                            stroke: finalColor,
+                            fill: 'none'
+                        });
                     });
                 }
             } else {
@@ -380,8 +379,9 @@ export class DividerManager {
             };
 
             chip.onmouseenter = () => {
-                if (timeout) activeWindow.clearTimeout(timeout);
-                timeout = activeWindow.setTimeout(() => {
+                const win = doc.defaultView || activeWindow;
+                if (timeout) win.clearTimeout(timeout);
+                timeout = win.setTimeout(() => {
                     void showPopover();
                 }, 250); // Faster trigger
             };
@@ -397,9 +397,26 @@ export class DividerManager {
     syncDividers() {
         if (this.plugin.isSyncingDividers) return;
 
-        const containers = Array.from(activeDocument.querySelectorAll('.nav-files-container'));
-        const extraContainers = Array.from(NotebookNavigatorIntegration.getExtraContainers(activeDocument));
-        const allContainers = [...containers, ...extraContainers];
+        // Iterate over all windows to find file explorers
+        const explorers: HTMLElement[] = [];
+        this.app.workspace.iterateAllLeaves(leaf => {
+            const view = leaf.view as obsidian.View & { getViewType(): string; containerEl: HTMLElement };
+            if (view.getViewType() === 'file-explorer' || view.getViewType() === 'nav-files') {
+                const container = view.containerEl.querySelector('.nav-files-container');
+                if (container) explorers.push(container as HTMLElement);
+            }
+        });
+
+        // Also check Notebook Navigator extra containers in all open documents
+        const docs = new Set<Document>();
+        explorers.forEach(e => docs.add(e.ownerDocument));
+        docs.add(activeDocument); // Fallback
+        
+        const allContainers = [...explorers];
+        docs.forEach(doc => {
+            const extra = NotebookNavigatorIntegration.getExtraContainers(doc);
+            if (extra) extra.forEach(e => allContainers.push(e as HTMLElement));
+        });
 
         if (allContainers.length === 0) return;
 
@@ -488,10 +505,10 @@ export class DividerManager {
                 
                 if (existing) {
                     // Re-build and replace to ensure fresh config is applied (name, color, etc.)
-                    const newNode = this.buildDividerNode(path, conf);
+                    const newNode = this.buildDividerNode(path, conf, container.ownerDocument);
                     existing.replaceWith(newNode);
                 } else {
-                    const node = this.buildDividerNode(path, conf);
+                    const node = this.buildDividerNode(path, conf, container.ownerDocument);
                     targetEl.prepend(node);
                 }
 

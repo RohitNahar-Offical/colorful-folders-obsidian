@@ -19,6 +19,7 @@ _curIconNameEl: HTMLElement;
 _curIconBox: HTMLElement;
 _headerIconSize: number;
 _prevIconSize: number;
+_addToRecentlyUsed: (iconId: string) => Promise<void>;
 
     constructor(app: obsidian.App, plugin: IColorfulFoldersPlugin, item: obsidian.TAbstractFile, focusSection: string | null = null) {
         super(app);
@@ -36,6 +37,18 @@ _prevIconSize: number;
         
         // Merge: effective provides the "live" fallback, existing provides the user's explicit overrides
         this.folderStyle = { ...effective, ...existing };
+        
+        // --- HARDENING: Ensure hex colors are actually hex strings ---
+        if (!this.folderStyle.hex || typeof this.folderStyle.hex !== 'string' || !this.folderStyle.hex.startsWith('#')) {
+            this.folderStyle.hex = (effective && effective.hex && effective.hex.startsWith('#')) ? effective.hex : "#eb6f92";
+        }
+        if (this.folderStyle.iconColor && (typeof this.folderStyle.iconColor !== 'string' || !this.folderStyle.iconColor.startsWith('#'))) {
+            delete this.folderStyle.iconColor;
+        }
+        if (this.folderStyle.textColor && (typeof this.folderStyle.textColor !== 'string' || !this.folderStyle.textColor.startsWith('#'))) {
+            delete this.folderStyle.textColor;
+        }
+
         // Ensure some defaults
         if (this.folderStyle.isBold === undefined && this.isFolder) this.folderStyle.isBold = true;
         if (this.folderStyle.opacity === undefined) this.folderStyle.opacity = 1.0;
@@ -161,28 +174,33 @@ _prevIconSize: number;
         this._prevLabel = prevLabel;
 
         const updatePreview = () => {
-            const iconScale = this.plugin.settings.iconScale || 1.0;
-            const previewIconW = Math.round(16 * iconScale);
-            const headerIconW = Math.round(18 * iconScale);
+            if (!this._headerIconWrap || !this._prevIconWrap || !this._prevLabel) return;
+            try {
+                const iconScale = this.plugin.settings.iconScale || 1.0;
+                const previewIconW = Math.round(16 * iconScale);
+                const headerIconW = Math.round(18 * iconScale);
 
-            const effectiveIconColor = this.folderStyle.iconColor || this.folderStyle.hex || "#fff";
-            // Update header icon
-            this._headerIconWrap.setCssStyles({ backgroundColor: this.folderStyle.hex });
-            this._headerIconWrap.empty();
-            obsidian.setIcon(this._headerIconWrap, this.folderStyle.iconId || (this.isFolder ? "folder" : "file"));
-            const hsvg = this._headerIconWrap.querySelector("svg") as unknown as HTMLElement | null;
-            if (hsvg) hsvg.setCssStyles({ color: effectiveIconColor, width: `${headerIconW}px`, height: `${headerIconW}px` });
-            // Update preview bar
-            this._prevIconWrap.setCssStyles({ backgroundColor: this.folderStyle.hex });
-            this._prevIconWrap.empty();
-            obsidian.setIcon(this._prevIconWrap, this.folderStyle.iconId || (this.isFolder ? "folder" : "file"));
-            const prevSvg = this._prevIconWrap.querySelector("svg") as unknown as HTMLElement | null;
-            if (prevSvg) prevSvg.setCssStyles({ color: effectiveIconColor, width: `${previewIconW}px`, height: `${previewIconW}px` });
-            this._prevLabel.setCssStyles({
-                fontWeight: this.folderStyle.isBold ? "700" : "400",
-                fontStyle: this.folderStyle.isItalic ? "italic" : "normal",
-                color: this.folderStyle.textColor || "var(--text-normal)"
-            });
+                const effectiveIconColor = this.folderStyle.iconColor || this.folderStyle.hex || "#fff";
+                // Update header icon
+                this._headerIconWrap.setCssStyles({ backgroundColor: this.folderStyle.hex });
+                this._headerIconWrap.empty();
+                obsidian.setIcon(this._headerIconWrap, this.folderStyle.iconId || (this.isFolder ? "folder" : "file"));
+                const hsvg = this._headerIconWrap.querySelector("svg") as unknown as HTMLElement | null;
+                if (hsvg) hsvg.setCssStyles({ color: effectiveIconColor, width: `${headerIconW}px`, height: `${headerIconW}px` });
+                // Update preview bar
+                this._prevIconWrap.setCssStyles({ backgroundColor: this.folderStyle.hex });
+                this._prevIconWrap.empty();
+                obsidian.setIcon(this._prevIconWrap, this.folderStyle.iconId || (this.isFolder ? "folder" : "file"));
+                const prevSvg = this._prevIconWrap.querySelector("svg") as unknown as HTMLElement | null;
+                if (prevSvg) prevSvg.setCssStyles({ color: effectiveIconColor, width: `${previewIconW}px`, height: `${previewIconW}px` });
+                this._prevLabel.setCssStyles({
+                    fontWeight: this.folderStyle.isBold ? "700" : "400",
+                    fontStyle: this.folderStyle.isItalic ? "italic" : "normal",
+                    color: this.folderStyle.textColor || "var(--text-normal)"
+                });
+            } catch (e) {
+                console.warn("Colorful Folders: Preview update failed", e);
+            }
         };
         this._updatePreview = updatePreview;
 
@@ -406,7 +424,11 @@ _prevIconSize: number;
             const existing = (this.plugin.getStyle(path) || {});
             existing.iconId = this.folderStyle.iconId;
             existing.iconColor = this.folderStyle.iconColor;
-            // Respect inheritance toggles if they were changed
+            
+            // CLEAR background and text colors for "Icon Only" mode
+            existing.hex = "";
+            existing.textColor = "";
+
             if (this.folderStyle.applyToSubfolders !== undefined) existing.applyToSubfolders = this.folderStyle.applyToSubfolders;
             if (this.folderStyle.applyToFiles !== undefined) existing.applyToFiles = this.folderStyle.applyToFiles;
 
@@ -480,8 +502,77 @@ _prevIconSize: number;
         const allIconsSet = new Set([...customIds, ...lucideIcons]);
         const allIcons = Array.from(allIconsSet);
 
+        const createIconCell = (id: string, targetEl: HTMLElement) => {
+            const iconScale = this.plugin.settings.iconScale || 1.0;
+            const gridIconW = Math.round(24 * iconScale);
+            const cellSize = Math.round(44 * (iconScale > 1.0 ? iconScale : 1.0));
+
+            const cell = targetEl.createDiv({ cls: "cf-icon-cell" });
+            cell.setCssStyles({
+                width: `${cellSize}px`, height: `${cellSize}px`, borderRadius: "7px",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer", transition: "all 0.12s ease",
+                backgroundColor: this.folderStyle.iconId === id ? "var(--interactive-accent)" : "transparent",
+                border: "2px solid " + (this.folderStyle.iconId === id ? "var(--interactive-accent)" : "transparent")
+            });
+            obsidian.setIcon(cell, id);
+            const cellSvg = cell.querySelector("svg") as unknown as HTMLElement | null;
+            if (cellSvg) {
+                cellSvg.removeAttribute('width');
+                cellSvg.removeAttribute('height');
+                cellSvg.setCssStyles({
+                    width: `${gridIconW}px`, height: `${gridIconW}px`,
+                    color: this.folderStyle.iconId === id ? "#fff" : "var(--text-normal)"
+                });
+            }
+            cell.title = id;
+            cell.onmouseenter = () => {
+                if (this.folderStyle.iconId !== id) cell.setCssStyles({ backgroundColor: "var(--background-modifier-hover)" });
+            };
+            cell.onmouseleave = () => {
+                if (this.folderStyle.iconId !== id) cell.setCssStyles({ backgroundColor: "transparent" });
+            };
+            cell.onclick = () => {
+                this.folderStyle.iconId = id;
+                void this._addToRecentlyUsed(id);
+                this._refreshIconSelection(id, curIconBox);
+                if (this._updatePreview) this._updatePreview();
+                renderIcons(searchInput.value, filterSelect.value);
+            };
+        };
+
         const renderIcons = (search: string, packFilter: string = "all") => {
             iconGrid.empty();
+
+            // 0. Render Recently Used if no search/filter
+            if (!search && packFilter === "all" && this.plugin.settings.recentlyUsedIcons && this.plugin.settings.recentlyUsedIcons.length > 0) {
+                const recentHeader = iconGrid.createDiv();
+                recentHeader.setCssStyles({
+                    gridColumn: "1/-1", fontSize: "0.7em", fontWeight: "700",
+                    textTransform: "uppercase", color: "var(--text-accent)",
+                    padding: "4px 2px", borderBottom: "1px solid var(--background-modifier-border)",
+                    marginBottom: "4px", display: "flex", alignItems: "center", gap: "6px"
+                });
+                const recentIcon = recentHeader.createSpan();
+                obsidian.setIcon(recentIcon, "history");
+                const rsvg = recentIcon.querySelector("svg") as unknown as HTMLElement | null;
+                if (rsvg) rsvg.setCssStyles({ width: "12px", height: "12px" });
+                recentHeader.createSpan({ text: "Recently Used" });
+
+                this.plugin.settings.recentlyUsedIcons.forEach(id => {
+                    createIconCell(id, iconGrid);
+                });
+
+                const allHeader = iconGrid.createDiv();
+                allHeader.setCssStyles({
+                    gridColumn: "1/-1", fontSize: "0.7em", fontWeight: "700",
+                    textTransform: "uppercase", color: "var(--text-muted)",
+                    padding: "12px 2px 4px", borderBottom: "1px solid var(--background-modifier-border)",
+                    marginBottom: "4px"
+                });
+                allHeader.createDiv({ text: "All Icons" });
+            }
+
             let filtered = allIcons;
             
             // 1. Apply Pack Filter
@@ -504,41 +595,7 @@ _prevIconSize: number;
 
             // 3. Final display (Prioritized and capped)
             filtered.slice(0, 1000).forEach(id => {
-                const iconScale = this.plugin.settings.iconScale || 1.0;
-                const gridIconW = Math.round(24 * iconScale);
-                const cellSize = Math.round(44 * (iconScale > 1.0 ? iconScale : 1.0));
-
-                const cell = iconGrid.createDiv({ cls: "cf-icon-cell" });
-                cell.setCssStyles({
-                    width: `${cellSize}px`, height: `${cellSize}px`, borderRadius: "7px",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    cursor: "pointer", transition: "all 0.12s ease",
-                    backgroundColor: this.folderStyle.iconId === id ? "var(--interactive-accent)" : "transparent",
-                    border: "2px solid " + (this.folderStyle.iconId === id ? "var(--interactive-accent)" : "transparent")
-                });
-                obsidian.setIcon(cell, id);
-                const cellSvg = cell.querySelector("svg") as unknown as HTMLElement | null;
-                if (cellSvg) {
-                    cellSvg.removeAttribute('width');
-                    cellSvg.removeAttribute('height');
-                    cellSvg.setCssStyles({
-                        width: `${gridIconW}px`, height: `${gridIconW}px`,
-                        color: this.folderStyle.iconId === id ? "#fff" : "var(--text-normal)"
-                    });
-                }
-                cell.title = id;
-                cell.onmouseenter = () => {
-                    if (this.folderStyle.iconId !== id) cell.setCssStyles({ backgroundColor: "var(--background-modifier-hover)" });
-                };
-                cell.onmouseleave = () => {
-                    if (this.folderStyle.iconId !== id) cell.setCssStyles({ backgroundColor: "transparent" });
-                };
-                cell.onclick = () => {
-                    this.folderStyle.iconId = id;
-                    this._refreshIconSelection(id, curIconBox);
-                    if (this._updatePreview) this._updatePreview();
-                    renderIcons(searchInput.value, filterSelect.value);
-                };
+                createIconCell(id, iconGrid);
             });
             if (filtered.length === 0) {
                 const emptyMsg = iconGrid.createEl("div", { text: "No icons found" });
@@ -548,6 +605,20 @@ _prevIconSize: number;
             }
         };
         renderIcons("", "all");
+
+        this._addToRecentlyUsed = async (iconId: string) => {
+            if (!iconId) return;
+            if (!this.plugin.settings.recentlyUsedIcons) this.plugin.settings.recentlyUsedIcons = [];
+            let list = this.plugin.settings.recentlyUsedIcons;
+            // Remove if exists
+            list = list.filter(i => i !== iconId);
+            // Add to front
+            list.unshift(iconId);
+            // Cap at 12
+            this.plugin.settings.recentlyUsedIcons = list.slice(0, 12);
+            await this.plugin.saveSettings();
+        };
+
         searchInput.oninput = () => renderIcons(searchInput.value, filterSelect.value);
         filterSelect.onchange = () => renderIcons(searchInput.value, filterSelect.value);
 

@@ -42,7 +42,7 @@ __export(main_exports, {
   default: () => ColorfulFoldersPlugin
 });
 module.exports = __toCommonJS(main_exports);
-var obsidian12 = __toESM(require("obsidian"));
+var obsidian13 = __toESM(require("obsidian"));
 
 // src/common/constants.ts
 var CF_FOLDER_CLOSED = encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><path d="M2 10h20"/></svg>');
@@ -118,6 +118,7 @@ var DEFAULT_SETTINGS = {
   tintOpacity: 0.028,
   customFolderColors: {},
   presets: {},
+  recentlyUsedIcons: [],
   glassmorphism: false,
   focusMode: false,
   autoIcons: true,
@@ -154,7 +155,8 @@ var DEFAULT_SETTINGS = {
   isVaultLocked: false,
   showHiddenItems: false,
   showRibbonIcon: true,
-  lastVersion: ""
+  lastVersion: "",
+  globalBackgroundColor: ""
 };
 var AUTO_ICON_CATEGORIES = [
   // --- Core categories ---
@@ -227,117 +229,70 @@ var AUTO_ICON_CATEGORIES = [
   { rex: /photo-camera|shoot|capture/i, emoji: "\u{1F4F7}", lucide: "camera", priority: 80 },
   { rex: /clipboard|notes|tasks|checklist/i, emoji: "\u{1F4CB}", lucide: "clipboard-list", priority: 80 },
   { rex: /downloaded|software|apps|exe|pkg/i, emoji: "\u{1F4E6}", lucide: "box", priority: 80 },
-  { rex: /currency|crypto|bitcoin|ethereum/i, emoji: "\u{1FA99}", lucide: "coins", priority: 80 }
+  { rex: /currency|crypto|bitcoin|ethereum/i, emoji: "\u{1FA99}", lucide: "coins", priority: 80 },
+  // --- Knowledge Management & Obsidian Specialized ---
+  { rex: /atlas|moc|map|index|directory|table-of-contents|toc/i, emoji: "\u{1F5FA}\uFE0F", lucide: "map", priority: 110, lucides: ["map", "list-tree", "network"] },
+  { rex: /zettel|slipbox|card-index|permanent|fleeting/i, emoji: "\u{1F5C2}\uFE0F", lucide: "library", priority: 110, lucides: ["library", "layout-grid", "scroll-text"] },
+  { rex: /canvas|whiteboard|draw|excalidraw/i, emoji: "\u{1F3A8}", lucide: "frame", priority: 110, lucides: ["frame", "shapes", "pencil-ruler"] },
+  { rex: /graph|link|relation|node|network/i, emoji: "\u{1F578}\uFE0F", lucide: "share-2", priority: 110, lucides: ["share-2", "git-branch", "hubot"] },
+  // --- Advanced Dev & Infrastructure ---
+  { rex: /docker|k8s|kubernetes|container|pod/i, emoji: "\u{1F433}", lucide: "ship", priority: 95, lucides: ["ship", "container", "box"] },
+  { rex: /aws|cloud|azure|gcp|lambda|serverless/i, emoji: "\u2601\uFE0F", lucide: "cloud-lightning", priority: 95, lucides: ["cloud-lightning", "flame", "hard-drive"] },
+  { rex: /api|json|yaml|xml|graphql|rest/i, emoji: "\u{1F50C}", lucide: "plug", priority: 95, lucides: ["plug", "webhook", "bracket"] },
+  { rex: /security|hacker|exploit|firewall|pentest/i, emoji: "\u{1F575}\uFE0F", lucide: "shield-alert", priority: 95, lucides: ["shield-alert", "spy", "fingerprint"] },
+  { rex: /terminal|bash|shell|zsh|cli/i, emoji: "\u{1F41A}", lucide: "terminal", priority: 95 },
+  // --- Life & Household ---
+  { rex: /pet|dog|cat|animal|vet/i, emoji: "\u{1F43E}", lucide: "dog", priority: 85, emojis: ["\u{1F43E}", "\u{1F415}", "\u{1F408}", "\u{1F408}\u200D\u2B1B"], lucides: ["dog", "cat", "paw-print"] },
+  { rex: /garden|plant|flower|nature|eco/i, emoji: "\u{1F33B}", lucide: "flower-2", priority: 85, emojis: ["\u{1F33B}", "\u{1F337}", "\u{1F333}", "\u{1F331}"], lucides: ["flower-2", "tree-pine", "leaf"] },
+  { rex: /cook|recipe|meal|kitchen|food|diet/i, emoji: "\u{1F373}", lucide: "chef-hat", priority: 85, emojis: ["\u{1F373}", "\u{1F957}", "\u{1F958}", "\u{1F355}"], lucides: ["chef-hat", "utensils-cross", "soup"] },
+  { rex: /shop|grocery|buy|order|market/i, emoji: "\u{1F6CD}\uFE0F", lucide: "shopping-bag", priority: 85, emojis: ["\u{1F6CD}\uFE0F", "\u{1F6D2}", "\u{1F4E6}"], lucides: ["shopping-bag", "store", "tag"] },
+  { rex: /car|auto|vehicle|garage|drive/i, emoji: "\u{1F697}", lucide: "car-front", priority: 85, emojis: ["\u{1F697}", "\u{1F6B2}", "\u{1F3CD}\uFE0F"], lucides: ["car-front", "bike", "steering-wheel"] },
+  // --- Professional & Academic ---
+  { rex: /law|legal|court|justice|contract/i, emoji: "\u2696\uFE0F", lucide: "scale", priority: 95, lucides: ["scale", "gavel", "scroll"] },
+  { rex: /med|doctor|health|clinic|hospital|surgery/i, emoji: "\u{1F3E5}", lucide: "stethoscope", priority: 95, lucides: ["stethoscope", "pill", "heart-pulse"] },
+  { rex: /real-estate|property|house|rent|home/i, emoji: "\u{1F3E2}", lucide: "building-2", priority: 85, lucides: ["building-2", "home", "key-round"] },
+  { rex: /interview|meeting|call|zoom|teams|hangout/i, emoji: "\u{1F91D}", lucide: "video", priority: 90, lucides: ["video", "phone-call", "users"] },
+  // --- Entertainment & Social ---
+  { rex: /game|steam|play|console|gaming/i, emoji: "\u{1F3AE}", lucide: "gamepad-2", priority: 85, emojis: ["\u{1F3AE}", "\u{1F579}\uFE0F", "\u{1F3B2}"], lucides: ["gamepad-2", "dices", "sword"] },
+  { rex: /social|twitter|x|facebook|insta|reddit|discord/i, emoji: "\u{1F310}", lucide: "globe", priority: 85, emojis: ["\u{1F310}", "\u{1F4F1}", "\u{1F5E8}\uFE0F"], lucides: ["globe", "share", "at-sign"] },
+  { rex: /stream|twitch|netflix|disney|movie|film/i, emoji: "\u{1F3AC}", lucide: "clapperboard", priority: 85, emojis: ["\u{1F3AC}", "\u{1F37F}", "\u{1F4FA}"], lucides: ["clapperboard", "play", "film"] }
 ];
 
 // src/common/utils.ts
-function hashString(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash);
-}
-function hsvToRgb(h, s, v) {
-  let r = 0, g = 0, b = 0;
-  const i = Math.floor(h / 60);
-  const f = h / 60 - i;
-  const p = v / 100 * (1 - s / 100);
-  const q = v / 100 * (1 - f * s / 100);
-  const t = v / 100 * (1 - (1 - f) * s / 100);
-  const vv = v / 100;
-  switch (i % 6) {
-    case 0:
-      r = vv;
-      g = t;
-      b = p;
-      break;
-    case 1:
-      r = q;
-      g = vv;
-      b = p;
-      break;
-    case 2:
-      r = p;
-      g = vv;
-      b = t;
-      break;
-    case 3:
-      r = p;
-      g = q;
-      b = vv;
-      break;
-    case 4:
-      r = t;
-      g = p;
-      b = vv;
-      break;
-    case 5:
-      r = vv;
-      g = p;
-      b = q;
-      break;
-  }
-  return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
-}
-function rgbToHsv(r, g, b) {
-  let rr = r / 255, gg = g / 255, bb = b / 255;
-  let max = Math.max(rr, gg, bb), min = Math.min(rr, gg, bb);
-  let h = 0, s, v = max;
-  let d = max - min;
-  s = max === 0 ? 0 : d / max;
-  if (max !== min) {
-    switch (max) {
-      case rr:
-        h = (gg - bb) / d + (gg < bb ? 6 : 0);
-        break;
-      case gg:
-        h = (bb - rr) / d + 2;
-        break;
-      case bb:
-        h = (rr - gg) / d + 4;
-        break;
-    }
-    h /= 6;
-  }
-  return { h: Math.round(h * 360), s: Math.round(s * 100), v: Math.round(v * 100) };
-}
 function hexToRgbObj(hex) {
-  if (!hex)
-    return { r: 255, g: 255, b: 255 };
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!hex || typeof hex !== "string")
+    return null;
+  let cleanHex = hex.trim();
+  if (!cleanHex.startsWith("#") && /^[a-f\d]{3,6}$/i.test(cleanHex)) {
+    cleanHex = "#" + cleanHex;
+  }
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(cleanHex);
   return result ? {
     r: parseInt(result[1], 16),
     g: parseInt(result[2], 16),
     b: parseInt(result[3], 16)
-  } : { r: 255, g: 255, b: 255 };
+  } : null;
 }
-function rgbToHex(r, g, b) {
-  return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-}
-function anyToHex(colorStr) {
-  if (!colorStr)
-    return "#ffffff";
-  if (colorStr.startsWith("#"))
-    return colorStr;
-  if (colorStr.startsWith("rgb")) {
-    const m = colorStr.match(/\d+/g);
-    if (m && m.length >= 3) {
-      return rgbToHex(parseInt(m[0]), parseInt(m[1]), parseInt(m[2]));
+function anyToHex(color) {
+  if (!color)
+    return "#000000";
+  if (color.startsWith("#"))
+    return color;
+  if (color.startsWith("rgb")) {
+    const rgb = color.match(/\d+/g);
+    if (rgb && rgb.length >= 3) {
+      return "#" + ((1 << 24) + (parseInt(rgb[0]) << 16) + (parseInt(rgb[1]) << 8) + parseInt(rgb[2])).toString(16).slice(1);
     }
   }
-  return "#ffffff";
+  return "#000000";
 }
-function adjustBrightnessRgb(rgbStr, amount = 0) {
-  const parts = rgbStr.split(",").map((p) => parseInt(p.trim()));
-  if (parts.length !== 3)
-    return rgbStr;
-  const [r, g, b] = parts.map((c) => {
+function adjustBrightnessRgb(rgb, amount) {
+  const [r, g, b] = rgb.split(",").map((c) => {
+    const val = parseInt(c.trim());
     if (amount < 0) {
-      return Math.max(0, Math.round(c * (1 + amount)));
+      return Math.max(0, Math.round(val * (1 + amount)));
     } else {
-      return Math.min(255, Math.round(c + (255 - c) * amount));
+      return Math.min(255, Math.round(val + (255 - val) * amount));
     }
   });
   return `${r}, ${g}, ${b}`;
@@ -346,63 +301,6 @@ function safeEscape(path) {
   if (!path)
     return "";
   return path.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-}
-function getAutoIconData(name, settings, isFile = false) {
-  if (!settings.autoIcons)
-    return null;
-  let lName = name.toLowerCase();
-  if (isFile && lName.includes(".")) {
-    lName = lName.split(".").slice(0, -1).join(".");
-  }
-  let categories = [...AUTO_ICON_CATEGORIES].map((c) => ({ ...c, rex: new RegExp(c.rex, "i") }));
-  if (settings.customIconRules && settings.customIconRules.trim().length > 0) {
-    const rules = settings.customIconRules.split("\n");
-    for (const rule of rules) {
-      if (!rule.trim() || !rule.includes("="))
-        continue;
-      try {
-        const mainParts = rule.split("=").map((p) => p.trim());
-        if (mainParts.length < 2)
-          continue;
-        const pattern = mainParts[0];
-        let secondHalf = mainParts[1];
-        let priority = 1500;
-        if (secondHalf.includes("@")) {
-          const prioParts = secondHalf.split("@").map((p) => p.trim());
-          secondHalf = prioParts[0];
-          priority = parseInt(prioParts[1]) || 1500;
-        }
-        categories.push({
-          rex: new RegExp(pattern, "i"),
-          emoji: secondHalf,
-          lucide: secondHalf,
-          priority,
-          isCustom: true
-        });
-      } catch (e) {
-        console.error("Colorful Folders: Failed to parse custom icon rule", rule, e);
-      }
-    }
-  }
-  const matches = categories.filter((cat) => cat.rex.test(lName));
-  matches.sort((a, b) => (b.priority || 0) - (a.priority || 0));
-  if (settings.iconDebugMode && matches.length > 0) {
-    console.debug(`Colorful Folders [Debug]: Match for "${name}" ->`, matches[0]);
-  }
-  if (matches.length > 0) {
-    const match = { ...matches[0] };
-    if (settings.autoIconVariety) {
-      const h = hashString(name);
-      if (match.emojis && match.emojis.length > 0) {
-        match.emoji = match.emojis[h % match.emojis.length];
-      }
-      if (match.lucides && match.lucides.length > 0) {
-        match.lucide = match.lucides[h % match.lucides.length];
-      }
-    }
-    return match;
-  }
-  return null;
 }
 function parseCustomPalette(hexString) {
   if (!hexString)
@@ -422,6 +320,91 @@ function parseCustomPalette(hexString) {
   }
   return result.length > 0 ? result : null;
 }
+function rgbToHsv(r, g, b) {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0;
+  const v = max;
+  const d = max - min;
+  const s = max === 0 ? 0 : d / max;
+  if (max !== min) {
+    switch (max) {
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0);
+        break;
+      case g:
+        h = (b - r) / d + 2;
+        break;
+      case b:
+        h = (r - g) / d + 4;
+        break;
+    }
+    h /= 6;
+  }
+  return {
+    h: Math.round(h * 360),
+    s: Math.round(s * 100),
+    v: Math.round(v * 100)
+  };
+}
+function hsvToRgb(h, s, v) {
+  h /= 360;
+  s /= 100;
+  v /= 100;
+  let r = 0, g = 0, b = 0;
+  const i = Math.floor(h * 6);
+  const f = h * 6 - i;
+  const p = v * (1 - s);
+  const q = v * (1 - f * s);
+  const t = v * (1 - (1 - f) * s);
+  switch (i % 6) {
+    case 0:
+      r = v;
+      g = t;
+      b = p;
+      break;
+    case 1:
+      r = q;
+      g = v;
+      b = p;
+      break;
+    case 2:
+      r = p;
+      g = v;
+      b = t;
+      break;
+    case 3:
+      r = p;
+      g = q;
+      b = v;
+      break;
+    case 4:
+      r = t;
+      g = p;
+      b = v;
+      break;
+    case 5:
+      r = v;
+      g = p;
+      b = q;
+      break;
+  }
+  return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
+}
+function rgbToHex(r, g, b) {
+  return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
+function hashString(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
 
 // src/ui/modals/ColorPickerModal.ts
 var obsidian = __toESM(require("obsidian"));
@@ -430,7 +413,7 @@ var obsidian = __toESM(require("obsidian"));
 function createVisualColorPicker(container, initialHex, onChange, opts = {}) {
   const showAlpha = opts.showAlpha !== false;
   let currentAlpha = opts.initialAlpha !== void 0 ? opts.initialAlpha : 1;
-  const initRgb = hexToRgbObj(initialHex || "#eb6f92");
+  const initRgb = hexToRgbObj(initialHex) || { r: 235, g: 111, b: 146 };
   let hsv = rgbToHsv(initRgb.r, initRgb.g, initRgb.b);
   const wrap = container.createDiv({ cls: "cf-vcp" });
   const board = wrap.createDiv({ cls: "cf-vcp-board" });
@@ -520,6 +503,8 @@ function createVisualColorPicker(container, initialHex, onChange, opts = {}) {
   }
   function syncFromHex(hex) {
     const rgb = hexToRgbObj(hex);
+    if (!rgb)
+      return;
     hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
     hueSlider.value = hsv.h.toString();
     syncFromHSV();
@@ -592,6 +577,7 @@ var ColorPickerModal = class extends obsidian.Modal {
     __publicField(this, "_curIconBox");
     __publicField(this, "_headerIconSize");
     __publicField(this, "_prevIconSize");
+    __publicField(this, "_addToRecentlyUsed");
     this.plugin = plugin;
     this.item = item;
     this.isFolder = item instanceof obsidian.TFolder;
@@ -609,6 +595,15 @@ var ColorPickerModal = class extends obsidian.Modal {
     };
     const existing = this.plugin.getStyle(this.item.path) || {};
     this.folderStyle = { ...effective, ...existing };
+    if (!this.folderStyle.hex || typeof this.folderStyle.hex !== "string" || !this.folderStyle.hex.startsWith("#")) {
+      this.folderStyle.hex = effective && effective.hex && effective.hex.startsWith("#") ? effective.hex : "#eb6f92";
+    }
+    if (this.folderStyle.iconColor && (typeof this.folderStyle.iconColor !== "string" || !this.folderStyle.iconColor.startsWith("#"))) {
+      delete this.folderStyle.iconColor;
+    }
+    if (this.folderStyle.textColor && (typeof this.folderStyle.textColor !== "string" || !this.folderStyle.textColor.startsWith("#"))) {
+      delete this.folderStyle.textColor;
+    }
     if (this.folderStyle.isBold === void 0 && this.isFolder)
       this.folderStyle.isBold = true;
     if (this.folderStyle.opacity === void 0)
@@ -752,27 +747,33 @@ var ColorPickerModal = class extends obsidian.Modal {
     this._prevIconWrap = prevIconWrap;
     this._prevLabel = prevLabel;
     const updatePreview = () => {
-      const iconScale2 = this.plugin.settings.iconScale || 1;
-      const previewIconW = Math.round(16 * iconScale2);
-      const headerIconW2 = Math.round(18 * iconScale2);
-      const effectiveIconColor = this.folderStyle.iconColor || this.folderStyle.hex || "#fff";
-      this._headerIconWrap.setCssStyles({ backgroundColor: this.folderStyle.hex });
-      this._headerIconWrap.empty();
-      obsidian.setIcon(this._headerIconWrap, this.folderStyle.iconId || (this.isFolder ? "folder" : "file"));
-      const hsvg = this._headerIconWrap.querySelector("svg");
-      if (hsvg)
-        hsvg.setCssStyles({ color: effectiveIconColor, width: `${headerIconW2}px`, height: `${headerIconW2}px` });
-      this._prevIconWrap.setCssStyles({ backgroundColor: this.folderStyle.hex });
-      this._prevIconWrap.empty();
-      obsidian.setIcon(this._prevIconWrap, this.folderStyle.iconId || (this.isFolder ? "folder" : "file"));
-      const prevSvg = this._prevIconWrap.querySelector("svg");
-      if (prevSvg)
-        prevSvg.setCssStyles({ color: effectiveIconColor, width: `${previewIconW}px`, height: `${previewIconW}px` });
-      this._prevLabel.setCssStyles({
-        fontWeight: this.folderStyle.isBold ? "700" : "400",
-        fontStyle: this.folderStyle.isItalic ? "italic" : "normal",
-        color: this.folderStyle.textColor || "var(--text-normal)"
-      });
+      if (!this._headerIconWrap || !this._prevIconWrap || !this._prevLabel)
+        return;
+      try {
+        const iconScale2 = this.plugin.settings.iconScale || 1;
+        const previewIconW = Math.round(16 * iconScale2);
+        const headerIconW2 = Math.round(18 * iconScale2);
+        const effectiveIconColor = this.folderStyle.iconColor || this.folderStyle.hex || "#fff";
+        this._headerIconWrap.setCssStyles({ backgroundColor: this.folderStyle.hex });
+        this._headerIconWrap.empty();
+        obsidian.setIcon(this._headerIconWrap, this.folderStyle.iconId || (this.isFolder ? "folder" : "file"));
+        const hsvg = this._headerIconWrap.querySelector("svg");
+        if (hsvg)
+          hsvg.setCssStyles({ color: effectiveIconColor, width: `${headerIconW2}px`, height: `${headerIconW2}px` });
+        this._prevIconWrap.setCssStyles({ backgroundColor: this.folderStyle.hex });
+        this._prevIconWrap.empty();
+        obsidian.setIcon(this._prevIconWrap, this.folderStyle.iconId || (this.isFolder ? "folder" : "file"));
+        const prevSvg = this._prevIconWrap.querySelector("svg");
+        if (prevSvg)
+          prevSvg.setCssStyles({ color: effectiveIconColor, width: `${previewIconW}px`, height: `${previewIconW}px` });
+        this._prevLabel.setCssStyles({
+          fontWeight: this.folderStyle.isBold ? "700" : "400",
+          fontStyle: this.folderStyle.isItalic ? "italic" : "normal",
+          color: this.folderStyle.textColor || "var(--text-normal)"
+        });
+      } catch (e) {
+        console.warn("Colorful Folders: Preview update failed", e);
+      }
     };
     this._updatePreview = updatePreview;
     const bgSection = ap.createDiv({ cls: "cf-picker-section" });
@@ -1019,6 +1020,8 @@ var ColorPickerModal = class extends obsidian.Modal {
       const existing = this.plugin.getStyle(path) || {};
       existing.iconId = this.folderStyle.iconId;
       existing.iconColor = this.folderStyle.iconColor;
+      existing.hex = "";
+      existing.textColor = "";
       if (this.folderStyle.applyToSubfolders !== void 0)
         existing.applyToSubfolders = this.folderStyle.applyToSubfolders;
       if (this.folderStyle.applyToFiles !== void 0)
@@ -1095,8 +1098,91 @@ var ColorPickerModal = class extends obsidian.Modal {
     const lucideIcons = (obsidian.getIconIds ? obsidian.getIconIds() : []).filter((id) => id.startsWith("lucide-")).map((id) => id.replace("lucide-", ""));
     const allIconsSet = /* @__PURE__ */ new Set([...customIds, ...lucideIcons]);
     const allIcons = Array.from(allIconsSet);
+    const createIconCell = (id, targetEl) => {
+      const iconScale2 = this.plugin.settings.iconScale || 1;
+      const gridIconW = Math.round(24 * iconScale2);
+      const cellSize = Math.round(44 * (iconScale2 > 1 ? iconScale2 : 1));
+      const cell = targetEl.createDiv({ cls: "cf-icon-cell" });
+      cell.setCssStyles({
+        width: `${cellSize}px`,
+        height: `${cellSize}px`,
+        borderRadius: "7px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: "pointer",
+        transition: "all 0.12s ease",
+        backgroundColor: this.folderStyle.iconId === id ? "var(--interactive-accent)" : "transparent",
+        border: "2px solid " + (this.folderStyle.iconId === id ? "var(--interactive-accent)" : "transparent")
+      });
+      obsidian.setIcon(cell, id);
+      const cellSvg = cell.querySelector("svg");
+      if (cellSvg) {
+        cellSvg.removeAttribute("width");
+        cellSvg.removeAttribute("height");
+        cellSvg.setCssStyles({
+          width: `${gridIconW}px`,
+          height: `${gridIconW}px`,
+          color: this.folderStyle.iconId === id ? "#fff" : "var(--text-normal)"
+        });
+      }
+      cell.title = id;
+      cell.onmouseenter = () => {
+        if (this.folderStyle.iconId !== id)
+          cell.setCssStyles({ backgroundColor: "var(--background-modifier-hover)" });
+      };
+      cell.onmouseleave = () => {
+        if (this.folderStyle.iconId !== id)
+          cell.setCssStyles({ backgroundColor: "transparent" });
+      };
+      cell.onclick = () => {
+        this.folderStyle.iconId = id;
+        void this._addToRecentlyUsed(id);
+        this._refreshIconSelection(id, curIconBox);
+        if (this._updatePreview)
+          this._updatePreview();
+        renderIcons(searchInput.value, filterSelect.value);
+      };
+    };
     const renderIcons = (search, packFilter = "all") => {
       iconGrid.empty();
+      if (!search && packFilter === "all" && this.plugin.settings.recentlyUsedIcons && this.plugin.settings.recentlyUsedIcons.length > 0) {
+        const recentHeader = iconGrid.createDiv();
+        recentHeader.setCssStyles({
+          gridColumn: "1/-1",
+          fontSize: "0.7em",
+          fontWeight: "700",
+          textTransform: "uppercase",
+          color: "var(--text-accent)",
+          padding: "4px 2px",
+          borderBottom: "1px solid var(--background-modifier-border)",
+          marginBottom: "4px",
+          display: "flex",
+          alignItems: "center",
+          gap: "6px"
+        });
+        const recentIcon = recentHeader.createSpan();
+        obsidian.setIcon(recentIcon, "history");
+        const rsvg = recentIcon.querySelector("svg");
+        if (rsvg)
+          rsvg.setCssStyles({ width: "12px", height: "12px" });
+        recentHeader.createSpan({ text: "Recently Used" });
+        this.plugin.settings.recentlyUsedIcons.forEach((id) => {
+          createIconCell(id, iconGrid);
+        });
+        const allHeader = iconGrid.createDiv();
+        allHeader.setCssStyles({
+          gridColumn: "1/-1",
+          fontSize: "0.7em",
+          fontWeight: "700",
+          textTransform: "uppercase",
+          color: "var(--text-muted)",
+          padding: "12px 2px 4px",
+          borderBottom: "1px solid var(--background-modifier-border)",
+          marginBottom: "4px"
+        });
+        allHeader.createDiv({ text: "All Icons" });
+      }
       let filtered = allIcons;
       if (packFilter !== "all") {
         if (packFilter === "lucide") {
@@ -1114,49 +1200,7 @@ var ColorPickerModal = class extends obsidian.Modal {
         filtered = filtered.filter((id) => id.toLowerCase().includes(s));
       }
       filtered.slice(0, 1e3).forEach((id) => {
-        const iconScale2 = this.plugin.settings.iconScale || 1;
-        const gridIconW = Math.round(24 * iconScale2);
-        const cellSize = Math.round(44 * (iconScale2 > 1 ? iconScale2 : 1));
-        const cell = iconGrid.createDiv({ cls: "cf-icon-cell" });
-        cell.setCssStyles({
-          width: `${cellSize}px`,
-          height: `${cellSize}px`,
-          borderRadius: "7px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-          transition: "all 0.12s ease",
-          backgroundColor: this.folderStyle.iconId === id ? "var(--interactive-accent)" : "transparent",
-          border: "2px solid " + (this.folderStyle.iconId === id ? "var(--interactive-accent)" : "transparent")
-        });
-        obsidian.setIcon(cell, id);
-        const cellSvg = cell.querySelector("svg");
-        if (cellSvg) {
-          cellSvg.removeAttribute("width");
-          cellSvg.removeAttribute("height");
-          cellSvg.setCssStyles({
-            width: `${gridIconW}px`,
-            height: `${gridIconW}px`,
-            color: this.folderStyle.iconId === id ? "#fff" : "var(--text-normal)"
-          });
-        }
-        cell.title = id;
-        cell.onmouseenter = () => {
-          if (this.folderStyle.iconId !== id)
-            cell.setCssStyles({ backgroundColor: "var(--background-modifier-hover)" });
-        };
-        cell.onmouseleave = () => {
-          if (this.folderStyle.iconId !== id)
-            cell.setCssStyles({ backgroundColor: "transparent" });
-        };
-        cell.onclick = () => {
-          this.folderStyle.iconId = id;
-          this._refreshIconSelection(id, curIconBox);
-          if (this._updatePreview)
-            this._updatePreview();
-          renderIcons(searchInput.value, filterSelect.value);
-        };
+        createIconCell(id, iconGrid);
       });
       if (filtered.length === 0) {
         const emptyMsg = iconGrid.createEl("div", { text: "No icons found" });
@@ -1170,6 +1214,17 @@ var ColorPickerModal = class extends obsidian.Modal {
       }
     };
     renderIcons("", "all");
+    this._addToRecentlyUsed = async (iconId) => {
+      if (!iconId)
+        return;
+      if (!this.plugin.settings.recentlyUsedIcons)
+        this.plugin.settings.recentlyUsedIcons = [];
+      let list = this.plugin.settings.recentlyUsedIcons;
+      list = list.filter((i) => i !== iconId);
+      list.unshift(iconId);
+      this.plugin.settings.recentlyUsedIcons = list.slice(0, 12);
+      await this.plugin.saveSettings();
+    };
     searchInput.oninput = () => renderIcons(searchInput.value, filterSelect.value);
     filterSelect.onchange = () => renderIcons(searchInput.value, filterSelect.value);
     if (this.isFolder && tabPanels["inherit"]) {
@@ -1783,6 +1838,7 @@ var DividerModal = class extends obsidian4.Modal {
     __publicField(this, "isSaved", false);
     __publicField(this, "_headerIconWrap");
     __publicField(this, "_previewIconEl");
+    __publicField(this, "_liveSyncTimeout", null);
     this.plugin = plugin;
     this.item = item;
     this.path = item.path;
@@ -2033,24 +2089,28 @@ var DividerModal = class extends obsidian4.Modal {
     };
   }
   _liveSync() {
-    const style = this.plugin.getStyle(this.path) || {};
-    const tempStyle = {
-      ...style,
-      dividerText: this.config.name,
-      dividerColor: this.config.color,
-      dividerAlignment: this.config.alignment,
-      dividerLineStyle: this.config.lineStyle,
-      dividerUpper: this.config.isUpper,
-      dividerGlass: this.config.useGlass,
-      dividerIcon: this.config.icon,
-      dividerIconPosition: this.config.iconPosition,
-      dividerPillMode: this.config.pillMode,
-      dividerDescription: this.config.description,
-      hasDivider: true
-    };
-    delete tempStyle.dividerIconColor;
-    this.plugin.settings.customFolderColors[this.path] = tempStyle;
-    this.plugin.dividerManager.syncDividers();
+    if (this._liveSyncTimeout)
+      activeWindow.clearTimeout(this._liveSyncTimeout);
+    this._liveSyncTimeout = activeWindow.setTimeout(() => {
+      const style = this.plugin.getStyle(this.path) || {};
+      const tempStyle = {
+        ...style,
+        dividerText: this.config.name,
+        dividerColor: this.config.color,
+        dividerAlignment: this.config.alignment,
+        dividerLineStyle: this.config.lineStyle,
+        dividerUpper: this.config.isUpper,
+        dividerGlass: this.config.useGlass,
+        dividerIcon: this.config.icon,
+        dividerIconPosition: this.config.iconPosition,
+        dividerPillMode: this.config.pillMode,
+        dividerDescription: this.config.description,
+        hasDivider: true
+      };
+      delete tempStyle.dividerIconColor;
+      this.plugin.settings.customFolderColors[this.path] = tempStyle;
+      this.plugin.dividerManager.syncDividers();
+    }, 50);
   }
   _refreshHeaderIcon() {
     if (!this._previewIconEl)
@@ -2487,6 +2547,11 @@ var ColorfulFoldersSettingTab = class extends obsidian7.PluginSettingTab {
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
+    new obsidian7.Setting(genCard).setName("Global default background").setDesc("Set a universal background color for all folders/files that do not have a custom style. Leave empty for theme-default (transparent).").addText((text) => text.setPlaceholder("#2a2a2a").setValue(this.plugin.settings.globalBackgroundColor || "").onChange(async (value) => {
+      this.plugin.settings.globalBackgroundColor = value;
+      await this.plugin.saveSettings();
+      this.plugin.generateStyles();
+    }));
     if (this.plugin.settings.colorMode === "cycle") {
       new obsidian7.Setting(genCard).setName("Rainbow cycle offset").setDesc("Shift the starting color index for the rainbow cycle.").addSlider((slider) => slider.setLimits(0, 20, 1).setValue(this.plugin.settings.cycleOffset || 0).setDynamicTooltip().onChange(async (value) => {
         this.plugin.settings.cycleOffset = value;
@@ -2896,7 +2961,9 @@ var ChangelogModal = class extends obsidian8.Modal {
   constructor(app, content) {
     super(app);
     __publicField(this, "content");
+    __publicField(this, "renderComponent");
     this.content = content;
+    this.renderComponent = new obsidian8.Component();
   }
   onOpen() {
     const { contentEl } = this;
@@ -2912,9 +2979,12 @@ var ChangelogModal = class extends obsidian8.Modal {
       borderBottom: "1px solid var(--background-modifier-border)",
       paddingBottom: "10px"
     });
-    header.createEl("h2", { text: "What's New in Colorful Folders" });
+    header.createEl("h2", { text: "What's new in colorful folders" });
     const body = contentEl.createDiv({ cls: "cf-changelog-body" });
-    obsidian8.MarkdownRenderer.renderMarkdown(this.content, body, "", null);
+    this.renderComponent.load();
+    obsidian8.MarkdownRenderer.render(this.app, this.content, body, "", this.renderComponent).catch((err) => {
+      console.error("Failed to render changelog markdown", err);
+    });
     const footer = contentEl.createDiv({ cls: "cf-changelog-footer" });
     footer.setCssStyles({
       marginTop: "30px",
@@ -2924,6 +2994,7 @@ var ChangelogModal = class extends obsidian8.Modal {
     closeBtn.onclick = () => this.close();
   }
   onClose() {
+    this.renderComponent.unload();
     const { contentEl } = this;
     contentEl.empty();
   }
@@ -3149,22 +3220,11 @@ var StyleGenerator = class {
     __publicField(this, "plugin");
     __publicField(this, "settings");
     __publicField(this, "app");
-    __publicField(this, "iconCache");
     this.plugin = plugin;
     this.settings = plugin.settings;
     this.app = plugin.app;
-    this.iconCache = plugin.iconCache || /* @__PURE__ */ new Map();
     if (!this.plugin.heatmapCache) {
       this.plugin.heatmapCache = /* @__PURE__ */ new Map();
-    }
-  }
-  normalizeSvg(svgStr) {
-    try {
-      const decoded = decodeURIComponent(svgStr);
-      const normalized = decoded.replace(/\bwidth="[^"]*"/g, 'width="100%"').replace(/\bheight="[^"]*"/g, 'height="100%"');
-      return encodeURIComponent(normalized);
-    } catch (e) {
-      return svgStr;
     }
   }
   isDarkMode() {
@@ -3180,9 +3240,6 @@ var StyleGenerator = class {
   }
   generateCss() {
     let css = "";
-    if (this.iconCache.size > 2e3) {
-      this.iconCache.clear();
-    }
     const root = this.app.vault.getRoot();
     if (!root)
       return css;
@@ -3195,7 +3252,6 @@ var StyleGenerator = class {
     const folderIconW = Math.round(18 * iconScale);
     const wideScale = this.settings.wideAutoIcons ? 1.05 : 1;
     const effFileIconW = Math.round(fileIconW * wideScale);
-    const effFolderIconW = Math.round(folderIconW * wideScale);
     const wideOpacity = this.settings.wideAutoIcons ? "1.0" : "0.85";
     const CF_FILE_TEXT_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="${fileIconW}" height="${fileIconW}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; opacity: 0.85; vertical-align: middle;"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`;
     let currentPalette = PALETTES[this.settings.palette] || PALETTES["Muted Dark Mode"];
@@ -3283,6 +3339,19 @@ var StyleGenerator = class {
                     50% { background-position: 100% 50%; }
                     100% { background-position: 0% 50%; }
                 }
+
+                /* Global: Hide default icons when a custom icon is active */
+                .cf-icon-active::before {
+                    display: none !important;
+                    content: none !important;
+                    width: 0 !important;
+                    height: 0 !important;
+                }
+                .cf-icon-active > svg:not(.cf-icon-wrapper svg),
+                .cf-icon-active > .nav-folder-icon,
+                .cf-icon-active > .nav-file-icon {
+                    display: none !important;
+                }
             `;
     }
     if (this.settings.focusMode) {
@@ -3330,7 +3399,7 @@ var StyleGenerator = class {
       countCache.set(folderItem.path, res);
       return res;
     };
-    const traverse = (folder, depth, rootIndex = 0, passedColor = null, inheritedStyle = null) => {
+    const traverse = (folder, depth, validIndex = 0, rootIndex = 0, passedColor = null, inheritedStyle = null) => {
       var _a, _b, _c, _d;
       const copyFolders = folder.children.filter((c) => c instanceof obsidian10.TFolder).sort((a, b) => a.name.localeCompare(b.name));
       const copyFiles = folder.children.filter((c) => c instanceof obsidian10.TFile).sort((a, b) => a.name.localeCompare(b.name));
@@ -3338,7 +3407,6 @@ var StyleGenerator = class {
       const animStyle = this.settings.activeAnimationStyle || "breathe";
       const animDur = this.settings.activeAnimationDuration || 4;
       const rootTintOp = this.settings.rootTintOpacity !== void 0 ? this.settings.rootTintOpacity : 0.06;
-      let validIndex = 0;
       if (passedColor || this.settings.autoColorFiles || this.settings.autoIcons || this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground) {
         let fileIndex = 0;
         for (const child of copyFiles) {
@@ -3368,16 +3436,18 @@ var StyleGenerator = class {
               color = currentPalette[(validIndex + nameHash + cycleOff) % currentPalette.length];
             }
           } else {
-            color = passedColor || { rgb: "var(--text-normal-rgb)", hex: "var(--text-normal)" };
+            const gHex = this.settings.globalBackgroundColor || "";
+            const gRgb = hexToRgbObj(gHex);
+            color = passedColor || (gRgb ? { rgb: `${gRgb.r}, ${gRgb.g}, ${gRgb.b}`, hex: gHex } : { rgb: "var(--text-normal-rgb)", hex: "var(--text-normal)" });
           }
           const isCustomColor = !!(fileStyle && fileStyle.hex);
           const isCustomOrInherited = isCustomColor || inheritedStyle && inheritedStyle.applyToFiles;
-          const shouldColorNative = isCustomOrInherited || this.settings.autoColorFiles;
+          const shouldColorNative = isCustomOrInherited || this.settings.autoColorFiles || !!this.settings.globalBackgroundColor;
           const shouldColorNN = isCustomOrInherited || this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground;
           const activeStyle = fileStyle || (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle : null);
           const textColor = (fileStyle == null ? void 0 : fileStyle.textColor) || ((inheritedStyle == null ? void 0 : inheritedStyle.applyToFiles) ? inheritedStyle.textColor : null);
           const op = (fileStyle == null ? void 0 : fileStyle.opacity) !== void 0 ? fileStyle.opacity : isCustomColor && (activeStyle == null ? void 0 : activeStyle.opacity) !== void 0 ? activeStyle.opacity : 1;
-          const autoIconFile = this.settings.autoIcons && !(fileStyle == null ? void 0 : fileStyle.iconId) && !((inheritedStyle == null ? void 0 : inheritedStyle.applyToFiles) && (inheritedStyle == null ? void 0 : inheritedStyle.iconId)) ? getAutoIconData(child.name, this.settings, true) : null;
+          const autoIconFile = this.settings.autoIcons && !(fileStyle == null ? void 0 : fileStyle.iconId) && !((inheritedStyle == null ? void 0 : inheritedStyle.applyToFiles) && (inheritedStyle == null ? void 0 : inheritedStyle.iconId)) ? this.plugin.iconManager.getAutoIconData(child.name) : null;
           const iconId = (fileStyle == null ? void 0 : fileStyle.iconId) || ((inheritedStyle == null ? void 0 : inheritedStyle.applyToFiles) ? inheritedStyle.iconId : null) || (autoIconFile ? this.settings.wideAutoIcons ? autoIconFile.lucide : autoIconFile.emoji : "");
           const calculateTextColor = (shouldColor) => {
             if (textColor)
@@ -3404,7 +3474,10 @@ var StyleGenerator = class {
                                 ${shouldColorNative ? `
                                     background-color: rgba(${color.rgb}, ${fileBgAlpha}) !important;
                                     border-left: 2px solid rgba(${color.rgb}, 0.4) !important;
-                                ` : ""}
+                                ` : `
+                                    background-color: transparent !important;
+                                    border-left: none !important;
+                                `}
                                 opacity: 1.0 !important;
                                 color: ${textNative} !important;
                                 font-weight: ${isBold ? "bold" : "normal"} !important;
@@ -3439,6 +3512,8 @@ var StyleGenerator = class {
                                 body .nav-file-title[data-path="${safePath}"] .nav-file-title-content::before,
                                 body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
                                     content: "${iconId} " !important;
+                                    -webkit-mask-image: none !important;
+                                    background-image: none !important;
                                 }
                             `;
               if (nnActive || nnFileBgActive) {
@@ -3454,55 +3529,31 @@ var StyleGenerator = class {
                                 `;
               }
             } else {
-              let svgStr = this.iconCache.get(iconId);
-              if (!svgStr) {
-                if (this.settings.customIcons[iconId]) {
-                  svgStr = encodeURIComponent(this.settings.customIcons[iconId]);
-                  this.iconCache.set(iconId, svgStr);
-                } else {
-                  const tempEl = activeDocument.createElement("div");
-                  obsidian10.setIcon(tempEl, iconId);
-                  if (!tempEl.querySelector("svg") && !iconId.startsWith("lucide-")) {
-                    obsidian10.setIcon(tempEl, `lucide-${iconId}`);
-                  }
-                  const svgEl = tempEl.querySelector("svg");
-                  if (svgEl) {
-                    svgEl.removeAttribute("width");
-                    svgEl.removeAttribute("height");
-                    svgEl.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-                    svgStr = encodeURIComponent(svgEl.outerHTML);
-                    this.iconCache.set(iconId, svgStr);
-                  }
-                }
-              }
-              if (svgStr) {
+              const isManualCustom = !!(activeStyle && activeStyle.iconId);
+              if (isManualCustom) {
                 css += `
-                                    body .nav-file-title[data-path="${safePath}"] .nav-file-title-content::before,
-                                    body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
-                                        content: '' !important;
-                                        display: inline-block !important;
-                                        width: ${effFileIconW}px !important;
-                                        height: ${effFileIconW}px !important;
-                                        background-color: ${iconColor ? iconColor : color.hex} !important;
-                                        -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${svgStr}') !important;
-                                        -webkit-mask-repeat: no-repeat !important;
-                                        -webkit-mask-position: center !important;
-                                        -webkit-mask-size: contain !important;
-                                        margin-right: 6px !important;
-                                        vertical-align: middle !important;
-                                        opacity: 0.85 !important;
+                                    body [data-path="${safePath}"] .nav-file-title-content::before,
+                                    body [data-path="${safePath}"] .tree-item-inner::before,
+                                    body [data-path="${safePath}"].nav-file-title .nav-file-title-content::before,
+                                    body [data-path="${safePath}"].tree-item-self .tree-item-inner::before {
+                                        display: none !important;
+                                        content: none !important;
                                     }
                                 `;
-                if (nnActive || nnFileBgActive) {
+              } else {
+                const svgStr = this.plugin.iconManager.getIconSvg(iconId, true);
+                if (svgStr) {
                   css += `
-                                        ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before,
-                                        ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileNameSelector()}::before {
+                                        body [data-path="${safePath}"] .nav-file-title-content::before,
+                                        body [data-path="${safePath}"] .tree-item-inner::before,
+                                        body [data-path="${safePath}"].nav-file-title .nav-file-title-content::before,
+                                        body [data-path="${safePath}"].tree-item-self .tree-item-inner::before {
                                             content: '' !important;
                                             display: inline-block !important;
                                             width: ${effFileIconW}px !important;
                                             height: ${effFileIconW}px !important;
-                                            background-color: ${iconColor ? iconColor : color.hex} !important;
-                                            -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${svgStr}') !important;
+                                            background-color: ${iconColor || color.hex || textNative} !important;
+                                            -webkit-mask-image: url("data:image/svg+xml,${svgStr}") !important;
                                             -webkit-mask-repeat: no-repeat !important;
                                             -webkit-mask-position: center !important;
                                             -webkit-mask-size: contain !important;
@@ -3510,24 +3561,41 @@ var StyleGenerator = class {
                                             vertical-align: middle !important;
                                             opacity: 0.85 !important;
                                         }
-                                        ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()},
-                                        ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileIconSelector()} {
-                                            display: none !important;
-                                        }
                                     `;
+                  if (nnActive || nnFileBgActive) {
+                    css += `
+                                            ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before,
+                                            ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileNameSelector()}::before {
+                                                content: '' !important;
+                                                display: inline-block !important;
+                                                width: ${effFileIconW}px !important;
+                                                height: ${effFileIconW}px !important;
+                                                background-color: ${iconColor || color.hex || textNN} !important;
+                                                -webkit-mask-image: url("data:image/svg+xml,${svgStr}") !important;
+                                                -webkit-mask-repeat: no-repeat !important;
+                                                -webkit-mask-position: center !important;
+                                                -webkit-mask-size: contain !important;
+                                                margin-right: 6px !important;
+                                                vertical-align: middle !important;
+                                                opacity: 0.85 !important;
+                                            }
+                                        `;
+                  }
                 }
               }
             }
           } else if (this.settings.autoIcons) {
             css += `
-                            body .nav-file-title[data-path="${safePath}"] .nav-file-title-content::before,
-                            body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
+                            body [data-path="${safePath}"] .nav-file-title-content::before,
+                            body [data-path="${safePath}"] .tree-item-inner::before,
+                            body [data-path="${safePath}"].nav-file-title .nav-file-title-content::before,
+                            body [data-path="${safePath}"].tree-item-self .tree-item-inner::before {
                                 content: '' !important;
                                 display: inline-block !important;
                                 width: ${effFileIconW}px !important;
                                 height: ${effFileIconW}px !important;
-                                background-color: ${iconColor ? iconColor : color.hex} !important;
-                                -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${encodeURIComponent(CF_FILE_TEXT_ICON)}') !important;
+                                    background-color: ${iconColor || color.hex || textNative} !important;
+                                    -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(decodeURIComponent(CF_FILE_TEXT_ICON))}") !important;
                                 -webkit-mask-repeat: no-repeat !important;
                                 -webkit-mask-position: center !important;
                                 -webkit-mask-size: contain !important;
@@ -3544,8 +3612,8 @@ var StyleGenerator = class {
                                     display: inline-block !important;
                                     width: ${effFileIconW}px !important;
                                     height: ${effFileIconW}px !important;
-                                    background-color: ${iconColor ? iconColor : color.hex} !important;
-                                    -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${encodeURIComponent(CF_FILE_TEXT_ICON)}') !important;
+                                    background-color: ${iconColor || color.hex || textNN} !important;
+                                    -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(decodeURIComponent(CF_FILE_TEXT_ICON))}") !important;
                                     -webkit-mask-repeat: no-repeat !important;
                                     -webkit-mask-position: center !important;
                                     -webkit-mask-size: contain !important;
@@ -3628,7 +3696,7 @@ var StyleGenerator = class {
       for (let i = 0; i < copyFolders.length; i++) {
         const child = copyFolders[i];
         if (excludeFolders.includes(child.name.toLowerCase())) {
-          traverse(child, depth + 1, rootIndex, passedColor, inheritedStyle);
+          traverse(child, depth + 1, i, depth === 0 ? i : rootIndex, passedColor, inheritedStyle);
           continue;
         }
         let color;
@@ -3637,16 +3705,16 @@ var StyleGenerator = class {
         if (customStyle && customStyle.hex) {
           const customParsed = parseCustomPalette(customStyle.hex);
           const cObj = hexToRgbObj(customStyle.hex);
-          color = customParsed ? customParsed[0] : cObj ? { rgb: `${cObj.r}, ${cObj.g}, ${cObj.b}`, hex: customStyle.hex } : currentPalette[(validIndex + depth + rootIndex) % currentPalette.length];
+          color = customParsed ? customParsed[0] : cObj ? { rgb: `${cObj.r}, ${cObj.g}, ${cObj.b}`, hex: customStyle.hex } : currentPalette[(i + depth + rootIndex + cycleOff) % currentPalette.length];
         } else if (inheritedStyle && passedColor) {
           color = passedColor;
         } else if (this.settings.colorMode === "heatmap") {
           const mtime = heatmapData.get(child.path) || 0;
           color = getHeatmapColor(mtime);
         } else if (this.settings.colorMode === "monochromatic") {
-          color = depth === 0 ? currentPalette[validIndex % currentPalette.length] : passedColor;
+          color = depth === 0 ? currentPalette[(i + cycleOff) % currentPalette.length] : passedColor;
         } else {
-          color = currentPalette[(validIndex + depth + rootIndex + cycleOff) % currentPalette.length];
+          color = currentPalette[(i + depth + rootIndex + cycleOff) % currentPalette.length];
         }
         const safePath = safeEscape(child.path);
         const contrastColor = isDark ? "#ffffff" : "#111111";
@@ -3713,16 +3781,18 @@ var StyleGenerator = class {
                         filter: drop-shadow(0px 1px 1px rgba(0, 0, 0, ${shadowOp}));
                     `;
         }
-        const autoIcon = this.settings.autoIcons ? getAutoIconData(child.name, this.settings) : null;
-        let isEmoji = false;
+        let autoLucideId = "";
         let autoIconContent = "";
-        let autoLucideId = null;
-        if (autoIcon) {
-          if (this.settings.wideAutoIcons) {
-            autoLucideId = autoIcon.lucide;
-          } else {
-            autoIconContent = `"${autoIcon.emoji} "`;
-            isEmoji = true;
+        let isEmoji = false;
+        if (this.settings.autoIcons) {
+          const data = this.plugin.iconManager.getAutoIconData(child.name);
+          if (data) {
+            if (data.lucide)
+              autoLucideId = data.lucide;
+            if (data.emoji) {
+              autoIconContent = `'${data.emoji}'`;
+              isEmoji = true;
+            }
           }
         }
         if (activeStyle && activeStyle.iconId) {
@@ -3732,6 +3802,8 @@ var StyleGenerator = class {
                             body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
                             body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
                                 content: "${activeStyle.iconId} " !important;
+                                -webkit-mask-image: none !important;
+                                background-image: none !important;
                             }
                         `;
             if (nnActive) {
@@ -3745,56 +3817,31 @@ var StyleGenerator = class {
                             `;
             }
           } else {
-            let svgStr = this.iconCache.get(activeStyle.iconId);
-            if (!svgStr) {
-              if (this.settings.customIcons[activeStyle.iconId]) {
-                svgStr = encodeURIComponent(this.settings.customIcons[activeStyle.iconId]);
-                this.iconCache.set(activeStyle.iconId, svgStr);
-              } else {
-                const tempEl = activeDocument.createElement("div");
-                const iconId = activeStyle.iconId;
-                obsidian10.setIcon(tempEl, iconId);
-                if (!tempEl.querySelector("svg") && !iconId.startsWith("lucide-")) {
-                  obsidian10.setIcon(tempEl, `lucide-${iconId}`);
-                }
-                const svgEl = tempEl.querySelector("svg");
-                if (svgEl) {
-                  svgEl.removeAttribute("width");
-                  svgEl.removeAttribute("height");
-                  svgEl.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-                  svgStr = encodeURIComponent(svgEl.outerHTML);
-                  this.iconCache.set(activeStyle.iconId, svgStr);
-                }
-              }
-            }
-            if (svgStr) {
-              svgStr = this.normalizeSvg(svgStr);
+            const isManualCustom = !!(activeStyle && activeStyle.iconId);
+            if (isManualCustom) {
               css += `
-                                body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
-                                body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
-                                    content: '' !important;
-                                    display: inline-block !important;
-                                    width: ${folderIconW}px !important;
-                                    height: ${folderIconW}px !important;
-                                    background-color: ${activeStyle && activeStyle.iconColor ? activeStyle.iconColor : color.hex} !important;
-                                    -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${svgStr}') !important;
-                                    -webkit-mask-repeat: no-repeat !important;
-                                    -webkit-mask-position: center !important;
-                                    -webkit-mask-size: contain !important;
-                                    margin-right: 6px !important;
-                                    vertical-align: middle !important;
-                                    opacity: 0.85 !important;
+                                body [data-path="${safePath}"] .nav-folder-title-content::before,
+                                body [data-path="${safePath}"] .tree-item-inner::before,
+                                body [data-path="${safePath}"].nav-folder-title .nav-folder-title-content::before,
+                                body [data-path="${safePath}"].tree-item-self .tree-item-inner::before {
+                                    display: none !important;
+                                    content: none !important;
                                 }
                             `;
-              if (nnActive) {
+            } else if (autoLucideId) {
+              const svgStr = this.plugin.iconManager.getIconSvg(autoLucideId, true);
+              if (svgStr) {
                 css += `
-                                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before {
+                                    body [data-path="${safePath}"] .nav-folder-title-content::before,
+                                    body [data-path="${safePath}"] .tree-item-inner::before,
+                                    body [data-path="${safePath}"].nav-folder-title .nav-folder-title-content::before,
+                                    body [data-path="${safePath}"].tree-item-self .tree-item-inner::before {
                                         content: '' !important;
                                         display: inline-block !important;
                                         width: ${folderIconW}px !important;
                                         height: ${folderIconW}px !important;
-                                        background-color: ${activeStyle && activeStyle.iconColor ? activeStyle.iconColor : color.hex} !important;
-                                        -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${svgStr}') !important;
+                                        background-color: ${text} !important;
+                                        -webkit-mask-image: url("data:image/svg+xml,${svgStr}") !important;
                                         -webkit-mask-repeat: no-repeat !important;
                                         -webkit-mask-position: center !important;
                                         -webkit-mask-size: contain !important;
@@ -3802,43 +3849,30 @@ var StyleGenerator = class {
                                         vertical-align: middle !important;
                                         opacity: 0.85 !important;
                                     }
-                                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()} {
-                                        display: none !important;
-                                    }
                                 `;
               }
             }
           }
         } else if (autoLucideId) {
-          let svgStr = this.iconCache.get(autoLucideId);
-          if (!svgStr) {
-            const tempEl = activeDocument.createElement("div");
-            obsidian10.setIcon(tempEl, autoLucideId);
-            const svgEl = tempEl.querySelector("svg");
-            if (svgEl) {
-              svgEl.setAttribute("width", "100%");
-              svgEl.setAttribute("height", "100%");
-              svgEl.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-              svgStr = encodeURIComponent(svgEl.outerHTML);
-              this.iconCache.set(autoLucideId, svgStr);
-            }
-          }
+          const svgStr = this.plugin.iconManager.getIconSvg(autoLucideId, true);
           if (svgStr) {
             css += `
-                            body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
-                            body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
+                            body [data-path="${safePath}"] .nav-folder-title-content::before,
+                            body [data-path="${safePath}"] .tree-item-inner::before,
+                            body [data-path="${safePath}"].nav-folder-title .nav-folder-title-content::before,
+                            body [data-path="${safePath}"].tree-item-self .tree-item-inner::before {
                                 content: '' !important;
                                 display: inline-block !important;
-                                width: ${effFolderIconW}px !important;
-                                height: ${effFolderIconW}px !important;
-                                background-color: ${activeStyle && activeStyle.iconColor ? activeStyle.iconColor : color.hex} !important;
-                                -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${svgStr}') !important;
+                                width: ${folderIconW}px !important;
+                                height: ${folderIconW}px !important;
+                                background-color: ${text} !important;
+                                -webkit-mask-image: url("data:image/svg+xml,${svgStr}") !important;
                                 -webkit-mask-repeat: no-repeat !important;
                                 -webkit-mask-position: center !important;
                                 -webkit-mask-size: contain !important;
                                 margin-right: 6px !important;
                                 vertical-align: middle !important;
-                                opacity: ${wideOpacity} !important;
+                                opacity: 0.85 !important;
                             }
                         `;
             if (nnActive) {
@@ -3846,10 +3880,10 @@ var StyleGenerator = class {
                                 ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before {
                                     content: '' !important;
                                     display: inline-block !important;
-                                    width: ${effFolderIconW}px !important;
-                                    height: ${effFolderIconW}px !important;
-                                    background-color: ${activeStyle && activeStyle.iconColor ? activeStyle.iconColor : color.hex} !important;
-                                    -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${svgStr}') !important;
+                                    width: ${folderIconW}px !important;
+                                    height: ${folderIconW}px !important;
+                                    background-color: ${textNN} !important;
+                                    -webkit-mask-image: url("data:image/svg+xml,${svgStr}") !important;
                                     -webkit-mask-repeat: no-repeat !important;
                                     -webkit-mask-position: center !important;
                                     -webkit-mask-size: contain !important;
@@ -3889,26 +3923,23 @@ var StyleGenerator = class {
                             display: inline-block !important;
                             width: ${folderIconW}px !important;
                             height: ${folderIconW}px !important;
-                            background-color: ${(activeStyle == null ? void 0 : activeStyle.iconColor) || text} !important;
+                            background-color: ${(activeStyle == null ? void 0 : activeStyle.iconColor) || color.hex || text} !important;
                             -webkit-mask-repeat: no-repeat !important;
                             -webkit-mask-position: center !important;
                             margin-right: 6px !important;
                             vertical-align: middle !important;
                             opacity: 0.8 !important;
                         }
-                        
 
                         body .nav-folder.is-collapsed > .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
                         body .tree-item.is-collapsed > .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
-                             -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${CF_FOLDER_CLOSED}') !important;
+                             -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(decodeURIComponent(CF_FOLDER_CLOSED))}") !important;
                         }
-
 
                         body .nav-folder:not(.is-collapsed) > .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
                         body .tree-item:not(.is-collapsed) > .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
-                             -webkit-mask-image: url('data:image/svg+xml;charset=utf-8,${CF_FOLDER_OPEN}') !important;
+                             -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(decodeURIComponent(CF_FOLDER_OPEN))}") !important;
                         }
-
                     `;
         }
         css += `
@@ -4008,7 +4039,7 @@ var StyleGenerator = class {
                         </g>
                         <text x="60" y="15" fill="${color.hex}" font-family="var(--font-interface), sans-serif" font-size="11" font-weight="500">${counts.files}</text>
                     </svg>`;
-          const combinedIconUrl = `url('data:image/svg+xml;charset=utf-8,${encodeURIComponent(combinedSvg)}')`;
+          const combinedIconUrl = `url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(combinedSvg)}")`;
           css += `
                         body .nav-folder-title[data-path="${safePath}"]::after,
                         body .tree-item-self[data-path="${safePath}"]::after {
@@ -4025,8 +4056,7 @@ var StyleGenerator = class {
                     `;
         }
         const nextInherited = (activeStyle == null ? void 0 : activeStyle.applyToSubfolders) ? activeStyle : inheritedStyle;
-        traverse(child, depth + 1, depth === 0 ? validIndex : rootIndex, color, nextInherited);
-        validIndex++;
+        traverse(child, depth + 1, i, depth === 0 ? i : rootIndex, color, nextInherited);
       }
     };
     if (this.settings.showFileDivider || Object.values(this.settings.customFolderColors).some((v) => typeof v === "object" && v !== null && v.hasDivider)) {
@@ -4216,7 +4246,7 @@ var StyleGenerator = class {
                 }
             `;
     }
-    traverse(root, 0);
+    traverse(root, 0, 0, 0);
     css += this.generateStealthCss();
     return css;
   }
@@ -4281,11 +4311,11 @@ var _DividerManager = class {
     this.app = plugin.app;
   }
   // ─── Divider Node Factory ───────────────────────────────────────────
-  buildDividerNode(path, conf) {
+  buildDividerNode(path, conf, doc) {
     var _a;
     const dividerThickness = this.plugin.settings.dividerThickness || 1.5;
     const globalLineStyle = this.plugin.settings.dividerLineStyle || "solid";
-    const div = activeDocument.createElement("div");
+    const div = doc.createElement("div");
     div.className = "cf-interactive-divider";
     div.dataset.dividerTarget = path;
     const name = conf.dividerText || "Section";
@@ -4374,15 +4404,15 @@ var _DividerManager = class {
       const isCustom = !!(this.plugin.settings.customIcons && this.plugin.settings.customIcons[rawIcon]);
       if (isCustom) {
         const svgStr = this.plugin.settings.customIcons[rawIcon];
-        const encoded = encodeURIComponent(svgStr);
+        const normalized = this.plugin.iconManager.normalizeSvg(svgStr);
         const iconWrap = chip.createSpan({ cls: "cf-divider-custom-icon" });
         iconWrap.setCssStyles({
           display: "inline-block",
           width: "14px",
           height: "14px",
           backgroundColor: iconColor,
-          maskImage: `url('data:image/svg+xml;charset=utf-8,${encoded}')`,
-          webkitMaskImage: `url('data:image/svg+xml;charset=utf-8,${encoded}')`,
+          maskImage: `url("data:image/svg+xml,${normalized}")`,
+          webkitMaskImage: `url("data:image/svg+xml,${normalized}")`,
           maskRepeat: "no-repeat",
           webkitMaskRepeat: "no-repeat",
           maskPosition: "center",
@@ -4402,15 +4432,14 @@ var _DividerManager = class {
             width: "14px",
             height: "14px",
             stroke: finalColor,
-            fill: finalColor,
+            fill: "none",
             strokeWidth: "2.5px"
           });
           svg.querySelectorAll("path, circle, rect, ellipse, polyline, polygon").forEach((child) => {
-            const svgChild = child;
-            if (svgChild.style) {
-              svgChild.style.stroke = finalColor;
-              svgChild.style.fill = finalColor;
-            }
+            child.setCssStyles({
+              stroke: finalColor,
+              fill: "none"
+            });
           });
         }
       } else {
@@ -4578,9 +4607,10 @@ var _DividerManager = class {
         }, 150);
       };
       chip.onmouseenter = () => {
+        const win = doc.defaultView || activeWindow;
         if (timeout)
-          activeWindow.clearTimeout(timeout);
-        timeout = activeWindow.setTimeout(() => {
+          win.clearTimeout(timeout);
+        timeout = win.setTimeout(() => {
           void showPopover();
         }, 250);
       };
@@ -4592,9 +4622,24 @@ var _DividerManager = class {
   syncDividers() {
     if (this.plugin.isSyncingDividers)
       return;
-    const containers = Array.from(activeDocument.querySelectorAll(".nav-files-container"));
-    const extraContainers = Array.from(NotebookNavigatorIntegration.getExtraContainers(activeDocument));
-    const allContainers = [...containers, ...extraContainers];
+    const explorers = [];
+    this.app.workspace.iterateAllLeaves((leaf) => {
+      const view = leaf.view;
+      if (view.getViewType() === "file-explorer" || view.getViewType() === "nav-files") {
+        const container = view.containerEl.querySelector(".nav-files-container");
+        if (container)
+          explorers.push(container);
+      }
+    });
+    const docs = /* @__PURE__ */ new Set();
+    explorers.forEach((e) => docs.add(e.ownerDocument));
+    docs.add(activeDocument);
+    const allContainers = [...explorers];
+    docs.forEach((doc) => {
+      const extra = NotebookNavigatorIntegration.getExtraContainers(doc);
+      if (extra)
+        extra.forEach((e) => allContainers.push(e));
+    });
     if (allContainers.length === 0)
       return;
     this.plugin.isSyncingDividers = true;
@@ -4668,10 +4713,10 @@ var _DividerManager = class {
         }
         const existing = existingByPath.get(path);
         if (existing) {
-          const newNode = this.buildDividerNode(path, conf);
+          const newNode = this.buildDividerNode(path, conf, container.ownerDocument);
           existing.replaceWith(newNode);
         } else {
-          const node = this.buildDividerNode(path, conf);
+          const node = this.buildDividerNode(path, conf, container.ownerDocument);
           targetEl.prepend(node);
         }
       }
@@ -4734,11 +4779,291 @@ var _DividerManager = class {
 var DividerManager = _DividerManager;
 __publicField(DividerManager, "activePopover", null);
 
+// src/core/IconManager.ts
+var obsidian12 = __toESM(require("obsidian"));
+var IconManager = class {
+  constructor(plugin) {
+    __publicField(this, "plugin");
+    this.plugin = plugin;
+  }
+  /**
+   * Finds the best icon match for a given file/folder name.
+   */
+  getAutoIconData(name) {
+    const lName = name.toLowerCase();
+    const settings = this.plugin.settings;
+    const categories = [...AUTO_ICON_CATEGORIES];
+    if (settings.customIconRules) {
+      const rules = settings.customIconRules.split("\n").filter((r) => r.trim());
+      for (const rule of rules) {
+        try {
+          const mainParts = rule.split("=").map((p) => p.trim());
+          if (mainParts.length < 2)
+            continue;
+          const pattern = mainParts[0];
+          let secondHalf = mainParts[1];
+          let priority = 1500;
+          if (secondHalf.includes("@")) {
+            const prioParts = secondHalf.split("@").map((p) => p.trim());
+            secondHalf = prioParts[0];
+            priority = parseInt(prioParts[1]) || 1500;
+          }
+          categories.push({
+            rex: new RegExp(pattern, "i"),
+            emoji: secondHalf,
+            lucide: secondHalf,
+            priority,
+            isCustom: true
+          });
+        } catch (e) {
+          console.error("Colorful Folders: Failed to parse custom icon rule", rule, e);
+        }
+      }
+    }
+    const matches = categories.filter((cat) => cat.rex.test(lName));
+    matches.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+    if (settings.iconDebugMode && matches.length > 0) {
+      console.debug(`Colorful Folders [Debug]: Match for "${name}" ->`, matches[0]);
+    }
+    if (matches.length > 0) {
+      const match = { ...matches[0] };
+      if (settings.autoIconVariety) {
+        const h = hashString(name);
+        if (match.emojis && match.emojis.length > 0) {
+          match.emoji = match.emojis[h % match.emojis.length];
+        }
+        if (match.lucides && match.lucides.length > 0) {
+          match.lucide = match.lucides[h % match.lucides.length];
+        }
+      }
+      return match;
+    }
+    return null;
+  }
+  /**
+   * Gets a normalized SVG string, handling cache.
+   */
+  getIconSvg(iconId, shouldEncode = true) {
+    const cacheKey = `${iconId}-${shouldEncode ? "enc" : "raw"}`;
+    let cached = this.plugin.iconCache.get(cacheKey);
+    if (cached)
+      return cached;
+    let svgStr = "";
+    if (this.plugin.settings.customIcons[iconId]) {
+      svgStr = this.plugin.settings.customIcons[iconId];
+    } else {
+      const tempEl = activeDocument.createElement("div");
+      obsidian12.setIcon(tempEl, iconId);
+      if (!tempEl.querySelector("svg") && !iconId.startsWith("lucide-")) {
+        obsidian12.setIcon(tempEl, `lucide-${iconId}`);
+      }
+      const svgEl = tempEl.querySelector("svg");
+      if (svgEl) {
+        svgEl.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+        svgStr = svgEl.outerHTML;
+      }
+    }
+    if (svgStr) {
+      const normalized = this.normalizeSvg(svgStr, shouldEncode);
+      this.plugin.iconCache.set(cacheKey, normalized);
+      return normalized;
+    }
+    return "";
+  }
+  /**
+   * Scans the visible DOM and injects icons where needed.
+   */
+  refreshIcons() {
+    this.plugin.app.workspace.getLeavesOfType("file-explorer").forEach((leaf) => {
+      const container = leaf.view.containerEl;
+      const items = container.querySelectorAll(".nav-folder-title, .tree-item-self, .nn-navitem, .nn-file");
+      items.forEach((item) => {
+        const path = item.dataset.path;
+        if (!path)
+          return;
+        const style = this.plugin.getStyle(path);
+        if (style && style.iconId) {
+          this.injectIcon(item, style);
+        } else {
+          this.removeInjectedIcon(item);
+        }
+      });
+    });
+    const nnContainers = activeDocument.querySelectorAll(".nn-navigation-pane-content, .nn-virtual-container");
+    nnContainers.forEach((container) => {
+      const items = container.querySelectorAll(".nav-folder-title, .tree-item-self, .nn-navitem, .nn-file");
+      items.forEach((item) => {
+        const path = item.dataset.path;
+        if (!path)
+          return;
+        const style = this.plugin.getStyle(path);
+        if (style && style.iconId)
+          this.injectIcon(item, style);
+        else
+          this.removeInjectedIcon(item);
+      });
+    });
+  }
+  /**
+   * Injects a specific icon into an element.
+   */
+  injectIcon(el, style) {
+    if (!style.iconId)
+      return;
+    const svgStr = this.getIconSvg(style.iconId, false);
+    if (!svgStr) {
+      this.removeInjectedIcon(el);
+      return;
+    }
+    const doc = el.ownerDocument || activeDocument;
+    const content = el.querySelector(".nav-folder-title-content, .tree-item-inner, .nn-navitem-name, .nn-file-name");
+    if (content) {
+      content.addClass("cf-icon-active");
+      content.querySelectorAll(":scope > svg:not(.cf-icon-wrapper svg), :scope > .nav-folder-icon, :scope > .nav-file-icon").forEach((s) => {
+        s.setCssStyles({ display: "none" });
+      });
+    }
+    let wrapper = el.querySelector(".cf-icon-wrapper");
+    if (!wrapper) {
+      wrapper = doc.createElement("span");
+      wrapper.classList.add("cf-icon-wrapper");
+      wrapper.setCssStyles({
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        verticalAlign: "middle",
+        marginRight: "6px",
+        flexShrink: "0"
+      });
+      if (content)
+        content.prepend(wrapper);
+    }
+    const color = style.iconColor || style.hex || style.textColor || "var(--text-normal)";
+    const baseSize = 18;
+    const wideScale = this.plugin.settings.wideAutoIcons ? 1.05 : 1;
+    const size = Math.round(baseSize * (this.plugin.settings.iconScale || 1) * wideScale);
+    wrapper.style.width = `${size}px`;
+    wrapper.style.height = `${size}px`;
+    const coloredSvg = this.colorizeSvg(svgStr, color);
+    wrapper.empty();
+    const frag = doc.createRange().createContextualFragment(coloredSvg);
+    wrapper.appendChild(frag);
+  }
+  removeInjectedIcon(el) {
+    const wrapper = el.querySelector(".cf-icon-wrapper");
+    if (wrapper)
+      wrapper.remove();
+    const content = el.querySelector(".nav-folder-title-content, .tree-item-inner, .nn-navitem-name, .nn-file-name");
+    if (content) {
+      content.removeClass("cf-icon-active");
+      content.querySelectorAll(":scope > svg:not(.cf-icon-wrapper svg), :scope > .nav-folder-icon, :scope > .nav-file-icon").forEach((s) => {
+        s.setCssStyles({ display: "" });
+      });
+    }
+  }
+  /**
+   * Cleans and standardizes SVG strings.
+   */
+  normalizeSvg(svgStr, shouldEncode = true) {
+    var _a, _b;
+    try {
+      if (!svgStr)
+        return "";
+      let rawSvg = svgStr.includes("%") ? decodeURIComponent(svgStr) : svgStr;
+      rawSvg = rawSvg.replace(/<\?xml.*\?>/gi, "").replace(/<!--.*-->/gs, "").replace(/<script.*?>.*?<\/script>/gis, "").replace(/<metadata>.*<\/metadata>/gis, "").replace(/<defs>.*<\/defs>/gis, "");
+      if (!rawSvg.includes("<svg"))
+        return svgStr;
+      const parser = new DOMParser();
+      let doc = parser.parseFromString(rawSvg, "image/svg+xml");
+      if (doc.getElementsByTagName("parsererror").length > 0)
+        doc = parser.parseFromString(rawSvg, "text/html");
+      const svg = doc.querySelector("svg");
+      if (!svg)
+        return svgStr;
+      const sanitizeElement = (el) => {
+        const attrs = Array.from(el.attributes);
+        for (const attr of attrs) {
+          if (attr.name.toLowerCase().startsWith("on") || attr.value.toLowerCase().includes("javascript:")) {
+            el.removeAttribute(attr.name);
+          }
+        }
+        if (el.tagName.toLowerCase() === "script")
+          el.remove();
+      };
+      sanitizeElement(svg);
+      svg.querySelectorAll("*").forEach(sanitizeElement);
+      if (!svg.hasAttribute("xmlns"))
+        svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+      const vbAttr = svg.getAttribute("viewBox");
+      if (!vbAttr && (svg.hasAttribute("width") || svg.hasAttribute("height"))) {
+        const w = ((_a = svg.getAttribute("width")) == null ? void 0 : _a.replace("px", "")) || "24";
+        const h = ((_b = svg.getAttribute("height")) == null ? void 0 : _b.replace("px", "")) || "24";
+        svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+      }
+      svg.removeAttribute("width");
+      svg.removeAttribute("height");
+      svg.removeAttribute("style");
+      const vb = (svg.getAttribute("viewBox") || "0 0 24 24").split(/\s+|,/);
+      const vbW = parseFloat(vb[2]) || 24;
+      const vbH = parseFloat(vb[3]) || 24;
+      Array.from(svg.children).forEach((child) => {
+        const tagName = child.tagName.toLowerCase();
+        if (tagName === "rect" || tagName === "path" || tagName === "circle") {
+          let isBackground = false;
+          if (tagName === "rect") {
+            const w = parseFloat(child.getAttribute("width") || "0");
+            const h = parseFloat(child.getAttribute("height") || "0");
+            if (w >= vbW * 0.9 && h >= vbH * 0.9)
+              isBackground = true;
+          } else if (tagName === "path") {
+            const d = child.getAttribute("d") || "";
+            if (d.length < 100 && (d.includes("M0 0") || d.includes("M0,0")) && (d.includes(`${vbW}`) || d.includes("100%")))
+              isBackground = true;
+          }
+          if (isBackground)
+            child.remove();
+        }
+      });
+      const hasStroke = rawSvg.includes("stroke=") && !rawSvg.includes('stroke="none"');
+      const hasFill = rawSvg.includes("fill=") && !rawSvg.includes('fill="none"');
+      if (hasStroke && !hasFill) {
+        svg.setAttribute("fill", "none");
+        svg.setAttribute("stroke", "currentColor");
+      } else {
+        svg.setAttribute("fill", "currentColor");
+      }
+      const cleaned = svg.outerHTML.replace(/>\s+</g, "><").replace(/(\r\n|\n|\r)/gm, "");
+      return shouldEncode ? encodeURIComponent(cleaned) : cleaned;
+    } catch (e) {
+      return svgStr;
+    }
+  }
+  colorizeSvg(svgStr, color) {
+    try {
+      if (!svgStr || !color)
+        return svgStr;
+      const isStroke = svgStr.includes("stroke=") && !svgStr.includes('stroke="none"');
+      const isFill = svgStr.includes("fill=") && !svgStr.includes('fill="none"');
+      let cleaned = svgStr.replace(/fill="([^"]*)"/g, (m, c) => c === "none" ? m : "").replace(/stroke="([^"]*)"/g, (m, c) => c === "none" ? m : "");
+      cleaned = cleaned.replace(/\s+/g, " ");
+      if (isStroke && !isFill) {
+        return cleaned.replace("<svg", `<svg fill="none" stroke="${color}"`);
+      } else {
+        return cleaned.replace("<svg", `<svg fill="${color}"`);
+      }
+    } catch (e) {
+      console.error("Colorful Folders: colorizeSvg failed", e);
+      return svgStr;
+    }
+  }
+};
+
 // src/main.ts
-var ColorfulFoldersPlugin = class extends obsidian12.Plugin {
+var ColorfulFoldersPlugin = class extends obsidian13.Plugin {
   constructor() {
     super(...arguments);
     __publicField(this, "settings");
+    __publicField(this, "iconManager");
     __publicField(this, "styleTag");
     __publicField(this, "uiStyleTag");
     __publicField(this, "iconCache", /* @__PURE__ */ new Map());
@@ -4755,17 +5080,18 @@ var ColorfulFoldersPlugin = class extends obsidian12.Plugin {
   }
   async onload() {
     await this.loadSettings();
+    this.iconManager = new IconManager(this);
     this.dividerManager = new DividerManager(this);
     this.initDividerObserver();
     this.app.workspace.onLayoutReady(() => {
       NotebookNavigatorIntegration.registerMenuExtensions(this);
     });
     this.addSettingTab(new ColorfulFoldersSettingTab(this.app, this));
-    this.generateStylesDebounced = obsidian12.debounce(() => {
+    this.generateStylesDebounced = obsidian13.debounce(() => {
       this.generateStyles();
       this.initDividerObserver();
     }, 300, true);
-    this.processDividersDebounced = obsidian12.debounce(() => {
+    this.processDividersDebounced = obsidian13.debounce(() => {
       if (this.isSyncingDividers)
         return;
       this.dividerManager.syncDividers();
@@ -4865,7 +5191,7 @@ var ColorfulFoldersPlugin = class extends obsidian12.Plugin {
   }
   registerCustomIcons() {
     for (const [id, svg] of Object.entries(this.settings.customIcons)) {
-      obsidian12.addIcon(id, svg);
+      obsidian13.addIcon(id, svg);
     }
   }
   registerEvents() {
@@ -4926,7 +5252,7 @@ var ColorfulFoldersPlugin = class extends obsidian12.Plugin {
           if (!checking) {
             delete this.settings.customFolderColors[file.path];
             void this.saveSettings();
-            new obsidian12.Notice(`Cleared style for ${file.name}`);
+            new obsidian13.Notice(`Cleared style for ${file.name}`);
           }
           return true;
         }
@@ -4960,7 +5286,7 @@ var ColorfulFoldersPlugin = class extends obsidian12.Plugin {
               void this.saveSettings();
               this.generateStyles();
               this.dividerManager.syncDividers();
-              new obsidian12.Notice(`Removed divider for ${file.name}`);
+              new obsidian13.Notice(`Removed divider for ${file.name}`);
             }
             return true;
           }
@@ -4981,7 +5307,7 @@ var ColorfulFoldersPlugin = class extends obsidian12.Plugin {
       this.settings.showHiddenItems = !this.settings.showHiddenItems;
       await this.saveSettings();
       this.generateStyles();
-      new obsidian12.Notice(`Stealth mode: ${this.settings.showHiddenItems ? "Ghost" : "Hidden"}`);
+      new obsidian13.Notice(`Stealth mode: ${this.settings.showHiddenItems ? "Ghost" : "Hidden"}`);
     };
     if (this.settings.vaultPassword && this.settings.isVaultLocked) {
       new PasswordModal(this.app, "Unlock stealth mode", async (pass) => {
@@ -4990,7 +5316,7 @@ var ColorfulFoldersPlugin = class extends obsidian12.Plugin {
           await applyToggle();
           return true;
         } else {
-          new obsidian12.Notice("Incorrect password!");
+          new obsidian13.Notice("Incorrect password!");
           return false;
         }
       }).open();
@@ -5036,7 +5362,7 @@ var ColorfulFoldersPlugin = class extends obsidian12.Plugin {
           return { rgb: darker, hex };
         });
       }
-      const isFile = target instanceof obsidian12.TFile;
+      const isFile = target instanceof obsidian13.TFile;
       const path = target.path;
       let customStyle = this.getStyle(path);
       let inheritedStyle = null;
@@ -5055,20 +5381,28 @@ var ColorfulFoldersPlugin = class extends obsidian12.Plugin {
       const parentFolder = target.parent;
       let validIndex = 0;
       if (parentFolder) {
-        const siblings = parentFolder.children.filter((c) => c instanceof obsidian12.TFolder).filter((c) => !excludeFolders.includes(c.name.toLowerCase())).sort((a, b) => a.name.localeCompare(b.name));
+        const siblings = parentFolder.children.filter((c) => c instanceof obsidian13.TFolder).filter((c) => !excludeFolders.includes(c.name.toLowerCase())).sort((a, b) => a.name.localeCompare(b.name));
         if (!isFile) {
           validIndex = siblings.findIndex((s) => s.path === path);
           if (validIndex < 0)
             validIndex = 0;
         } else {
-          validIndex = 0;
+          const gp = parentFolder.parent;
+          if (gp) {
+            const parentSiblings = gp.children.filter((c) => c instanceof obsidian13.TFolder).filter((c) => !excludeFolders.includes(c.name.toLowerCase())).sort((a, b) => a.name.localeCompare(b.name));
+            validIndex = parentSiblings.findIndex((s) => s.path === parentFolder.path);
+            if (validIndex < 0)
+              validIndex = 0;
+          } else {
+            validIndex = 0;
+          }
         }
       }
       let rootIndex = 0;
       if (depth > 0) {
         const rootFolder = this.app.vault.getRoot();
         const rootSegment = segments[0];
-        const rootSiblings = rootFolder.children.filter((c) => c instanceof obsidian12.TFolder).filter((c) => !excludeFolders.includes(c.name.toLowerCase())).sort((a, b) => a.name.localeCompare(b.name));
+        const rootSiblings = rootFolder.children.filter((c) => c instanceof obsidian13.TFolder).filter((c) => !excludeFolders.includes(c.name.toLowerCase())).sort((a, b) => a.name.localeCompare(b.name));
         rootIndex = rootSiblings.findIndex((s) => s.name === rootSegment);
         if (rootIndex < 0)
           rootIndex = 0;
@@ -5156,7 +5490,7 @@ var ColorfulFoldersPlugin = class extends obsidian12.Plugin {
         }
       }
       const effIconColor = customStyle && customStyle.iconColor ? customStyle.iconColor : inheritedStyle ? inheritedStyle.iconColor : color.hex;
-      const autoIcon = getAutoIconData(target.name, this.settings, isFile);
+      const autoIcon = this.iconManager.getAutoIconData(target.name);
       return {
         hex: anyToHex(color.hex),
         textColor: effText ? anyToHex(effText) : "",
@@ -5176,22 +5510,46 @@ var ColorfulFoldersPlugin = class extends obsidian12.Plugin {
     if (this.styleTag) {
       this.styleTag.textContent = new StyleGenerator(this).generateCss();
       activeDocument.body.classList.toggle("cf-show-hidden", this.settings.showHiddenItems);
+      this.refreshIcons();
     }
+  }
+  refreshIcons() {
+    this.iconManager.refreshIcons();
   }
   initDividerObserver() {
     if (this.dividerObserver) {
       this.dividerObserver.disconnect();
     }
-    const containers = Array.from(activeDocument.querySelectorAll(".nav-files-container"));
-    const extraContainers = Array.from(NotebookNavigatorIntegration.getExtraContainers(activeDocument));
-    const allContainers = [...containers, ...extraContainers];
+    const explorers = [];
+    this.app.workspace.iterateAllLeaves((leaf) => {
+      const view = leaf.view;
+      if (view.getViewType() === "file-explorer" || view.getViewType() === "nav-files") {
+        const container = view.containerEl.querySelector(".nav-files-container");
+        if (container)
+          explorers.push(container);
+      }
+    });
+    const docs = /* @__PURE__ */ new Set();
+    explorers.forEach((e) => docs.add(e.ownerDocument));
+    docs.add(activeDocument);
+    const allContainers = [...explorers];
+    docs.forEach((doc) => {
+      const extra = NotebookNavigatorIntegration.getExtraContainers(doc);
+      if (extra)
+        extra.forEach((e) => allContainers.push(e));
+    });
     if (allContainers.length === 0)
       return;
     allContainers.forEach((container) => {
+      if (container.cfHasScrollListener)
+        return;
+      container.cfHasScrollListener = true;
+      const doc = container.ownerDocument;
+      const win = doc.defaultView || activeWindow;
       container.addEventListener("scroll", () => {
         this.isScrolling = true;
-        activeWindow.clearTimeout(this.scrollTimeout);
-        this.scrollTimeout = activeWindow.setTimeout(() => {
+        win.clearTimeout(this.scrollTimeout || void 0);
+        this.scrollTimeout = win.setTimeout(() => {
           this.isScrolling = false;
           this.processDividers();
         }, 100);
@@ -5202,10 +5560,19 @@ var ColorfulFoldersPlugin = class extends obsidian12.Plugin {
         return;
       let hasRelevantChange = false;
       for (const m of mutations) {
+        const target = m.target;
+        if (target.closest(".cf-icon-wrapper, .cf-interactive-divider"))
+          continue;
         if (m.type !== "childList")
           continue;
+        const isRelevantNode = (node) => {
+          if (node.nodeType !== Node.ELEMENT_NODE)
+            return false;
+          const el = node;
+          return !el.classList.contains("cf-interactive-divider") && !el.classList.contains("cf-icon-wrapper") && !el.closest(".cf-icon-wrapper");
+        };
         for (const node of Array.from(m.addedNodes)) {
-          if (node.nodeType === Node.ELEMENT_NODE && !node.classList.contains("cf-interactive-divider")) {
+          if (isRelevantNode(node)) {
             hasRelevantChange = true;
             break;
           }
@@ -5213,7 +5580,7 @@ var ColorfulFoldersPlugin = class extends obsidian12.Plugin {
         if (hasRelevantChange)
           break;
         for (const node of Array.from(m.removedNodes)) {
-          if (node.nodeType === Node.ELEMENT_NODE && !node.classList.contains("cf-interactive-divider")) {
+          if (isRelevantNode(node)) {
             hasRelevantChange = true;
             break;
           }
@@ -5223,9 +5590,10 @@ var ColorfulFoldersPlugin = class extends obsidian12.Plugin {
       }
       if (hasRelevantChange) {
         this.processDividers();
+        this.refreshIcons();
       }
     });
-    containers.forEach((container) => {
+    allContainers.forEach((container) => {
       var _a;
       (_a = this.dividerObserver) == null ? void 0 : _a.observe(container, { childList: true, subtree: true });
     });
@@ -5248,9 +5616,9 @@ var ColorfulFoldersPlugin = class extends obsidian12.Plugin {
     }
     if (count > 0) {
       await this.saveSettings();
-      new obsidian12.Notice(`Cleaned up ${count} stale style entries.`);
+      new obsidian13.Notice(`Cleaned up ${count} stale style entries.`);
     } else {
-      new obsidian12.Notice("No stale style entries found. Your configuration is clean!");
+      new obsidian13.Notice("No stale style entries found. Your configuration is clean!");
     }
   }
   initStyleObserver() {

@@ -75,6 +75,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     tintOpacity: 0.028,
     customFolderColors: {},
     presets: {},
+    recentlyUsedIcons: [],
     glassmorphism: false,
     focusMode: false,
     autoIcons: true,
@@ -112,7 +113,8 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     isVaultLocked: false,
     showHiddenItems: false,
     showRibbonIcon: true,
-    lastVersion: ""
+    lastVersion: "",
+    globalBackgroundColor: ""
 };
 
 export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
@@ -189,4 +191,35 @@ export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
     { rex: /clipboard|notes|tasks|checklist/i, emoji: "📋", lucide: "clipboard-list", priority: 80 },
     { rex: /downloaded|software|apps|exe|pkg/i, emoji: "📦", lucide: "box", priority: 80 },
     { rex: /currency|crypto|bitcoin|ethereum/i, emoji: "🪙", lucide: "coins", priority: 80 },
+
+    // --- Knowledge Management & Obsidian Specialized ---
+    { rex: /atlas|moc|map|index|directory|table-of-contents|toc/i, emoji: "🗺️", lucide: "map", priority: 110, lucides: ["map", "list-tree", "network"] },
+    { rex: /zettel|slipbox|card-index|permanent|fleeting/i, emoji: "🗂️", lucide: "library", priority: 110, lucides: ["library", "layout-grid", "scroll-text"] },
+    { rex: /canvas|whiteboard|draw|excalidraw/i, emoji: "🎨", lucide: "frame", priority: 110, lucides: ["frame", "shapes", "pencil-ruler"] },
+    { rex: /graph|link|relation|node|network/i, emoji: "🕸️", lucide: "share-2", priority: 110, lucides: ["share-2", "git-branch", "hubot"] },
+
+    // --- Advanced Dev & Infrastructure ---
+    { rex: /docker|k8s|kubernetes|container|pod/i, emoji: "🐳", lucide: "ship", priority: 95, lucides: ["ship", "container", "box"] },
+    { rex: /aws|cloud|azure|gcp|lambda|serverless/i, emoji: "☁️", lucide: "cloud-lightning", priority: 95, lucides: ["cloud-lightning", "flame", "hard-drive"] },
+    { rex: /api|json|yaml|xml|graphql|rest/i, emoji: "🔌", lucide: "plug", priority: 95, lucides: ["plug", "webhook", "bracket"] },
+    { rex: /security|hacker|exploit|firewall|pentest/i, emoji: "🕵️", lucide: "shield-alert", priority: 95, lucides: ["shield-alert", "spy", "fingerprint"] },
+    { rex: /terminal|bash|shell|zsh|cli/i, emoji: "🐚", lucide: "terminal", priority: 95 },
+
+    // --- Life & Household ---
+    { rex: /pet|dog|cat|animal|vet/i, emoji: "🐾", lucide: "dog", priority: 85, emojis: ["🐾", "🐕", "🐈", "🐈‍⬛"], lucides: ["dog", "cat", "paw-print"] },
+    { rex: /garden|plant|flower|nature|eco/i, emoji: "🌻", lucide: "flower-2", priority: 85, emojis: ["🌻", "🌷", "🌳", "🌱"], lucides: ["flower-2", "tree-pine", "leaf"] },
+    { rex: /cook|recipe|meal|kitchen|food|diet/i, emoji: "🍳", lucide: "chef-hat", priority: 85, emojis: ["🍳", "🥗", "🥘", "🍕"], lucides: ["chef-hat", "utensils-cross", "soup"] },
+    { rex: /shop|grocery|buy|order|market/i, emoji: "🛍️", lucide: "shopping-bag", priority: 85, emojis: ["🛍️", "🛒", "📦"], lucides: ["shopping-bag", "store", "tag"] },
+    { rex: /car|auto|vehicle|garage|drive/i, emoji: "🚗", lucide: "car-front", priority: 85, emojis: ["🚗", "🚲", "🏍️"], lucides: ["car-front", "bike", "steering-wheel"] },
+
+    // --- Professional & Academic ---
+    { rex: /law|legal|court|justice|contract/i, emoji: "⚖️", lucide: "scale", priority: 95, lucides: ["scale", "gavel", "scroll"] },
+    { rex: /med|doctor|health|clinic|hospital|surgery/i, emoji: "🏥", lucide: "stethoscope", priority: 95, lucides: ["stethoscope", "pill", "heart-pulse"] },
+    { rex: /real-estate|property|house|rent|home/i, emoji: "🏢", lucide: "building-2", priority: 85, lucides: ["building-2", "home", "key-round"] },
+    { rex: /interview|meeting|call|zoom|teams|hangout/i, emoji: "🤝", lucide: "video", priority: 90, lucides: ["video", "phone-call", "users"] },
+
+    // --- Entertainment & Social ---
+    { rex: /game|steam|play|console|gaming/i, emoji: "🎮", lucide: "gamepad-2", priority: 85, emojis: ["🎮", "🕹️", "🎲"], lucides: ["gamepad-2", "dices", "sword"] },
+    { rex: /social|twitter|x|facebook|insta|reddit|discord/i, emoji: "🌐", lucide: "globe", priority: 85, emojis: ["🌐", "📱", "🗨️"], lucides: ["globe", "share", "at-sign"] },
+    { rex: /stream|twitch|netflix|disney|movie|film/i, emoji: "🎬", lucide: "clapperboard", priority: 85, emojis: ["🎬", "🍿", "📺"], lucides: ["clapperboard", "play", "film"] },
 ];

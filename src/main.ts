@@ -10,7 +10,6 @@ import {
     PALETTES 
 } from './common/constants';
 import { 
-    getAutoIconData, 
     adjustBrightnessRgb, 
     hexToRgbObj,
     anyToHex,
@@ -27,9 +26,11 @@ import { DividerManager } from './core/DividerManager';
 import { NotebookNavigatorIntegration } from './integrations/NotebookNavigator';
 
 import { MenuHelper } from './ui/MenuHelper';
+import { IconManager } from './core/IconManager';
 
 export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IColorfulFoldersPlugin {
     settings: ColorfulFoldersSettings;
+    iconManager: IconManager;
     styleTag: HTMLStyleElement;
     uiStyleTag: HTMLStyleElement;
     iconCache: Map<string, string> = new Map();
@@ -44,6 +45,7 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
 
     async onload() {
         await this.loadSettings();
+        this.iconManager = new IconManager(this);
         this.dividerManager = new DividerManager(this);
         this.initDividerObserver();
 
@@ -397,8 +399,18 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
                     validIndex = siblings.findIndex(s => s.path === path);
                     if (validIndex < 0) validIndex = 0;
                 } else {
-                    // For files, validIndex is 0 at the start of StyleGenerator's traverse
-                    validIndex = 0;
+                    // For files, validIndex should be the index of the parent folder among its siblings
+                    const gp = parentFolder.parent;
+                    if (gp) {
+                        const parentSiblings = gp.children
+                            .filter((c): c is obsidian.TFolder => c instanceof obsidian.TFolder)
+                            .filter(c => !excludeFolders.includes(c.name.toLowerCase()))
+                            .sort((a, b) => a.name.localeCompare(b.name));
+                        validIndex = parentSiblings.findIndex(s => s.path === parentFolder.path);
+                        if (validIndex < 0) validIndex = 0;
+                    } else {
+                        validIndex = 0;
+                    }
                 }
             }
 
@@ -504,7 +516,7 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
 
             const effIconColor = (customStyle && customStyle.iconColor) ? customStyle.iconColor
                 : (inheritedStyle ? inheritedStyle.iconColor : color.hex);
-            const autoIcon = getAutoIconData(target.name, this.settings, isFile);
+            const autoIcon = this.iconManager.getAutoIconData(target.name);
 
             return {
                 hex: anyToHex(color.hex),
@@ -530,7 +542,12 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
         if (this.styleTag) {
             this.styleTag.textContent = new StyleGenerator(this).generateCss();
             activeDocument.body.classList.toggle('cf-show-hidden', this.settings.showHiddenItems);
+            this.refreshIcons();
         }
+    }
+
+    refreshIcons() {
+        this.iconManager.refreshIcons();
     }
 
     private isScrolling = false;
@@ -541,18 +558,39 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
             this.dividerObserver.disconnect();
         }
 
-        const containers = Array.from(activeDocument.querySelectorAll('.nav-files-container'));
-        const extraContainers = Array.from(NotebookNavigatorIntegration.getExtraContainers(activeDocument));
-        const allContainers = [...containers, ...extraContainers];
+        const explorers: HTMLElement[] = [];
+        this.app.workspace.iterateAllLeaves(leaf => {
+            const view = leaf.view as obsidian.View & { getViewType(): string; containerEl: HTMLElement };
+            if (view.getViewType() === 'file-explorer' || view.getViewType() === 'nav-files') {
+                const container = view.containerEl.querySelector('.nav-files-container');
+                if (container) explorers.push(container as HTMLElement);
+            }
+        });
+
+        const docs = new Set<Document>();
+        explorers.forEach(e => docs.add(e.ownerDocument));
+        docs.add(activeDocument);
+        
+        const allContainers = [...explorers];
+        docs.forEach(doc => {
+            const extra = NotebookNavigatorIntegration.getExtraContainers(doc);
+            if (extra) extra.forEach(e => allContainers.push(e as HTMLElement));
+        });
 
         if (allContainers.length === 0) return;
 
         allContainers.forEach(container => {
-            // Detect scrolling to suppress sync bursts
+            // Check if we already have a scroll listener (using a custom property to track)
+            if ((container as HTMLElement & { cfHasScrollListener?: boolean }).cfHasScrollListener) return;
+            (container as HTMLElement & { cfHasScrollListener?: boolean }).cfHasScrollListener = true;
+
+            const doc = container.ownerDocument;
+            const win = doc.defaultView || activeWindow;
+
             container.addEventListener('scroll', () => {
                 this.isScrolling = true;
-                activeWindow.clearTimeout(this.scrollTimeout);
-                this.scrollTimeout = activeWindow.setTimeout(() => {
+                win.clearTimeout(this.scrollTimeout || undefined);
+                this.scrollTimeout = win.setTimeout(() => {
                     this.isScrolling = false;
                     this.processDividers();
                 }, 100);
@@ -564,18 +602,29 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
 
             let hasRelevantChange = false;
             for (const m of mutations) {
+                // Ignore any changes inside our own icon wrappers or interactive dividers
+                const target = m.target as HTMLElement;
+                if (target.closest('.cf-icon-wrapper, .cf-interactive-divider')) continue;
+
                 if (m.type !== 'childList') continue;
+                
+                const isRelevantNode = (node: Node) => {
+                    if (node.nodeType !== Node.ELEMENT_NODE) return false;
+                    const el = node as HTMLElement;
+                    return !el.classList.contains('cf-interactive-divider') && 
+                           !el.classList.contains('cf-icon-wrapper') &&
+                           !el.closest('.cf-icon-wrapper');
+                };
+
                 for (const node of Array.from(m.addedNodes)) {
-                    if (node.nodeType === Node.ELEMENT_NODE &&
-                        !(node as HTMLElement).classList.contains('cf-interactive-divider')) {
+                    if (isRelevantNode(node)) {
                         hasRelevantChange = true;
                         break;
                     }
                 }
                 if (hasRelevantChange) break;
                 for (const node of Array.from(m.removedNodes)) {
-                    if (node.nodeType === Node.ELEMENT_NODE &&
-                        !(node as HTMLElement).classList.contains('cf-interactive-divider')) {
+                    if (isRelevantNode(node)) {
                         hasRelevantChange = true;
                         break;
                     }
@@ -585,10 +634,11 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
 
             if (hasRelevantChange) {
                 this.processDividers();
+                this.refreshIcons();
             }
         });
 
-        containers.forEach(container => {
+        allContainers.forEach(container => {
             this.dividerObserver?.observe(container, { childList: true, subtree: true });
         });
     }
