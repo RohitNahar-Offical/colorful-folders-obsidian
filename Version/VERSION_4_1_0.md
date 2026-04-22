@@ -23,6 +23,7 @@ This major release introduces the high-end Hover Message system and a robust, pa
 - **Scoped Styling**: Specialized DOM selectors ensure NN items match the native Obsidian aesthetic.
 
 ### 🚀 5. Engine Hardening & Bug Fixes
+- **Fixed: Double Icon Glitch**: Eliminated the redundant rendering where both native and custom icons appeared simultaneously by hardening the icon-swapping logic.
 - **Fixed: Ghost White Icons**: Resolved a critical rendering issue where certain icons lost their details when colored.
 - **Fixed: Live Color Sync**: The icon picker now updates colors *instantly* without requiring a re-click.
 - **Fixed: Color Picker Jumps**: Standardized HSV synchronization logic to prevent the color thumb from jumping during adjustment.
