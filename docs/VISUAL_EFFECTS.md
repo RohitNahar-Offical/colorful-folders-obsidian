@@ -75,15 +75,36 @@ We use the `backdrop-filter` CSS property to achieve the "Frosted Glass" look.
 *Note: We apply a fallback background color for older Electron versions that do not support backdrop-filter.*
 
 ---
+6.  **Mode Default**: Dark mode defaults to `0.1`, Light mode to `0.15` if no settings exist.
 
-## 5. Sequential vs. Deterministic Coloring
+---
+
+## 7. Section Dividers & Modern Pill Design
+
+Dividers provide structural separation between groups of folders or files.
+
+### The "Bridge" Layout:
+We use a flexbox "bridge" strategy to align the divider elements:
+1.  **Divider Lines**: Use `flex-grow: 1` to fill remaining space.
+2.  **Gap Control**: `dividerLinePadding` (8px by default) controls the white space between the lines and the central label.
+3.  **Line Styles**: Supports `solid`, `dashed`, `dotted`, and `double` strokes using CSS borders or linear gradients.
+
+### Modern Pill Design:
+The "Pill" design wraps the divider text/icon in a rounded background.
+-   **Color Inheritance**: By default, pills inherit the color of the parent folder at **15% opacity**.
+-   **Visual Picker**: Integrated rich visual color picker with **Alpha support** allows for precise RGBA overrides.
+-   **Glassmorphism Integration**: If enabled, pills use `backdrop-filter: blur(16px)` for a frosted effect.
+
+---
+
+## 8. Sequential vs. Deterministic Coloring
 
 *   **Sequential (Cycle)**: Uses the item's index in the folder list. This creates a "Rainbow" flow but can change if you add a new folder at the top.
 *   **Deterministic (File Hashing)**: For files, we use `hashString(filename) % palette.length`. This ensures that `Notes.md` always has the same color, no matter where it is moved.
 
 ---
 
-## 6. Transparency Hardening & Explicit "OFF" State
+## 9. Transparency Hardening & Explicit "OFF" State
 
 The plugin manages background opacity through a strict hierarchy to ensure visual consistency:
 

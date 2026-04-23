@@ -21,6 +21,12 @@ Defined in `src/common/types.ts`. This interface represents the entire `data.jso
 | `showFileDivider` | `boolean` | Enables the automatic 'Files' divider in folders. |
 | `dividerThickness` | `number` | Stroke width for all divider lines. |
 | `dividerSpacing` | `number` | Vertical padding around dividers. |
+| `dividerLinePadding` | `number` | Gap between divider lines and the central text/pill. |
+| `dividerPillMode` | `boolean` | Global toggle for the pill background design. |
+| `dividerPillColor` | `string` | Global default background color for divider pills. |
+| `dividerLineStyle` | `string` | Global line style (solid, dashed, dotted, double). |
+| `dividerUpper` | `boolean` | Global toggle for uppercase divider labels. |
+| `dividerIconPosition` | `string` | Global default icon placement (left, right, both). |
 
 ---
 
@@ -45,6 +51,12 @@ interface FolderStyle {
     dividerAlignment?: string;   // 'left', 'center', or 'right'
     dividerIcon?: string;        // Lucide/Custom icon ID for divider
     dividerDescription?: string; // Markdown content for the hover popover
+    dividerLineStyle?: string;   // 'solid', 'dashed', 'dotted', 'double', or 'global'
+    dividerUpper?: boolean;      // Case override
+    dividerGlass?: boolean;      // Backdrop blur toggle
+    dividerIconPosition?: string; // 'left', 'right', or 'both'
+    dividerPillMode?: string;    // 'on' or 'off'
+    dividerPillColor?: string;   // Custom RGBA background for the pill
     isHidden?: boolean;          // Visibility toggle (Stealth Mode)
 }
 ```

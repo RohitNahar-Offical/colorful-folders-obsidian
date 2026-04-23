@@ -50,13 +50,13 @@ This ensures that even if a user picks a very dark "Neon" color, the text remain
 
 ---
 
-## 4. Performance Optimization: The "Double Debounce"
+## 4. Performance Optimization: The "High-Speed Assembly"
+To handle vaults with 20,000+ files, we use a tiered optimization strategy:
 
-To handle vaults with 20,000+ files, we use a tiered debouncing strategy:
-
-1.  **UI Event Debouncer**: (50ms) Aggregates rapid events (like typing or folder expansion).
-2.  **Style Generation Lock**: A boolean flag (`isGenerating`) prevents multiple traversals from running concurrently.
-3.  **Recursive Pruning**: The `traverse` function skips folders listed in the `exclusionList` immediately, preventing unnecessary `getEffectiveStyle` calls for massive `.git` or `node_modules` folders.
+1.  **Array-Based CSS Assembly**: Instead of standard string concatenation (`css += ...`), which becomes exponentially slow in large loops, `StyleGenerator.ts` uses an array-based string builder (`cssRules: string[]`). All rules are pushed into the array and joined once via `cssRules.join('\n')` at the end of the traversal.
+2.  **UI Event Debouncer**: (50ms) Aggregates rapid events (like typing or folder expansion).
+3.  **Style Generation Lock**: A boolean flag (`isGenerating`) prevents multiple traversals from running concurrently.
+4.  **Recursive Pruning**: The `traverse` function skips folders listed in the `exclusionList` immediately, preventing unnecessary `getEffectiveStyle` calls for massive `.git` or `node_modules` folders.
 
 ---
 
