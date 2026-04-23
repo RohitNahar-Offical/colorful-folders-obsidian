@@ -267,7 +267,7 @@ export class DividerModal extends obsidian.Modal {
                             pColorBox.setCssStyles({ backgroundColor: v || 'transparent' });
                         });
                     
-                    pColorBox = text.inputEl.parentElement!.createDiv();
+                    pColorBox = text.inputEl.parentElement.createDiv();
                     pColorBox.setCssStyles({
                         width: '24px', height: '24px', borderRadius: '4px', border: '1px solid var(--background-modifier-border)',
                         marginLeft: '12px', backgroundColor: this.config.pillColor || 'transparent',

@@ -682,14 +682,15 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         });
                         
                         const current = parseColorToHexAlpha(this.plugin.settings.dividerPillColor);
-                        createVisualColorPicker(pickerWrap, current.hex, async (hex, alpha) => {
+                        createVisualColorPicker(pickerWrap, current.hex, (hex, alpha) => {
                             const rgba = hexAlphaToRgba(hex, alpha);
                             this.plugin.settings.dividerPillColor = rgba;
                             textComp.setValue(rgba);
                             colorBox.setCssStyles({ backgroundColor: rgba });
-                            await this.plugin.saveSettings();
-                            this.plugin.generateStyles();
-                            updatePreview();
+                            this.plugin.saveSettings().then(() => {
+                                this.plugin.generateStyles();
+                                updatePreview();
+                            }).catch(err => console.error("Failed to save settings from color picker:", err));
                         }, { showAlpha: true, initialAlpha: current.alpha });
                     });
             })
@@ -705,7 +706,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         colorBox.setCssStyles({ backgroundColor: value || 'transparent' });
                     });
                 
-                colorBox = text.inputEl.parentElement!.createDiv();
+                colorBox = text.inputEl.parentElement.createDiv();
                 colorBox.setCssStyles({
                     width: '24px', height: '24px', borderRadius: '4px', border: '1px solid var(--background-modifier-border)',
                     marginLeft: '12px', backgroundColor: this.plugin.settings.dividerPillColor || 'transparent',
