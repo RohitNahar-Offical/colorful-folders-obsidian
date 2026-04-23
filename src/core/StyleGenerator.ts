@@ -816,6 +816,12 @@ export class StyleGenerator {
                         border-radius: 6px;
                         ${glassCss}
                         transition: background-color 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
+                        
+                        /* Native Obsidian Tag Variables */
+                        --nav-tag-background: ${color.hex}15 !important;
+                        --nav-tag-color: ${color.hex} !important;
+                        --nav-tag-radius: 10px !important;
+                        --nav-tag-weight: 900 !important;
                     }
                 `);
                 if (nnActive) {
@@ -937,48 +943,56 @@ export class StyleGenerator {
                             opacity: 0.8 !important;
                         }
 
-                        /* Make right-side labels (tags, extensions, counts, etc.) look like color-matched pills */
-                        body [data-path="${safePath}"] .nav-file-tag,
-                        body [data-path="${safePath}"] .nav-folder-tag,
-                        body [data-path="${safePath}"] .tree-item-flair,
+                        /* Explicit Override for right-side labels */
+                        body .nav-folder-title[data-path="${safePath}"] .nav-file-tag,
+                        body .nav-folder-title[data-path="${safePath}"] .nav-folder-tag,
+                        body .nav-folder-title[data-path="${safePath}"] .nav-file-extension,
+                        body .tree-item-self[data-path="${safePath}"] .nav-file-tag,
+                        body .tree-item-self[data-path="${safePath}"] .nav-folder-tag,
+                        body .tree-item-self[data-path="${safePath}"] .tree-item-flair,
                         body [data-path="${safePath}"] .nav-file-note-count,
                         body [data-path="${safePath}"] .nav-folder-note-count,
                         body [data-path="${safePath}"] .tag-count,
                         body [data-path="${safePath}"] .nav-file-extension {
                             font-weight: 900 !important;
                             color: ${color.hex} !important;
-                            background-color: ${color.hex}15 !important;
-                            border: 1px solid ${color.hex}33 !important;
+                            background-color: ${color.hex}25 !important;
+                            border: 1px solid ${color.hex}44 !important;
                             border-radius: 10px !important;
-                            padding: 0 6px !important;
-                            font-size: 0.85em !important;
-                            line-height: 1.4 !important;
+                            padding: 2px 8px !important;
+                            font-size: 10px !important;
+                            line-height: 1.2 !important;
                             display: inline-flex !important;
                             align-items: center !important;
                             justify-content: center !important;
+                            margin-left: 4px !important;
                         }
                     `);
                 } else {
                     // Even if counters are off, make other labels bold if they exist
                     cssRules.push(`
-                        body [data-path="${safePath}"] .nav-file-tag,
-                        body [data-path="${safePath}"] .nav-folder-tag,
-                        body [data-path="${safePath}"] .tree-item-flair,
+                        body .nav-folder-title[data-path="${safePath}"] .nav-file-tag,
+                        body .nav-folder-title[data-path="${safePath}"] .nav-folder-tag,
+                        body .nav-folder-title[data-path="${safePath}"] .nav-file-extension,
+                        body .tree-item-self[data-path="${safePath}"] .nav-file-tag,
+                        body .tree-item-self[data-path="${safePath}"] .nav-folder-tag,
+                        body .tree-item-self[data-path="${safePath}"] .tree-item-flair,
                         body [data-path="${safePath}"] .nav-file-note-count,
                         body [data-path="${safePath}"] .nav-folder-note-count,
                         body [data-path="${safePath}"] .tag-count,
                         body [data-path="${safePath}"] .nav-file-extension {
                             font-weight: 900 !important;
                             color: ${color.hex} !important;
-                            background-color: ${color.hex}15 !important;
-                            border: 1px solid ${color.hex}33 !important;
+                            background-color: ${color.hex}25 !important;
+                            border: 1px solid ${color.hex}44 !important;
                             border-radius: 10px !important;
-                            padding: 0 6px !important;
-                            font-size: 0.85em !important;
-                            line-height: 1.4 !important;
+                            padding: 2px 8px !important;
+                            font-size: 10px !important;
+                            line-height: 1.2 !important;
                             display: inline-flex !important;
                             align-items: center !important;
                             justify-content: center !important;
+                            margin-left: 4px !important;
                         }
                     `);
                 }
