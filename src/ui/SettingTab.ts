@@ -983,6 +983,11 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                             if (!value) this.plugin.settings.isVaultLocked = false;
                             await this.plugin.saveSettings();
                         });
+                    
+                    // Immediately refresh UI when leaving the input so 'Lock' button appears
+                    text.inputEl.onblur = () => {
+                        this.display();
+                    };
                     text.inputEl.type = "password";
                 });
 

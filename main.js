@@ -3068,6 +3068,9 @@ var ColorfulFoldersSettingTab = class extends obsidian7.PluginSettingTab {
             this.plugin.settings.isVaultLocked = false;
           await this.plugin.saveSettings();
         });
+        text.inputEl.onblur = () => {
+          this.display();
+        };
         text.inputEl.type = "password";
       });
       new obsidian7.Setting(stealthCard).setName("Show ribbon icon").setDesc("Add a quick-toggle icon to the Obsidian sidebar.").addToggle((toggle) => toggle.setValue(this.plugin.settings.showRibbonIcon).onChange(async (value) => {
