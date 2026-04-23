@@ -5324,15 +5324,25 @@ var IconManager = class {
     try {
       if (!svgStr || !color)
         return svgStr;
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(svgStr, "image/svg+xml");
+      const svg = doc.querySelector("svg");
+      if (!svg)
+        return svgStr;
       const isStroke = svgStr.includes("stroke=") && !svgStr.includes('stroke="none"');
       const isFill = svgStr.includes("fill=") && !svgStr.includes('fill="none"');
-      let cleaned = svgStr.replace(/fill="([^"]*)"/g, (m, c) => c === "none" ? m : "").replace(/stroke="([^"]*)"/g, (m, c) => c === "none" ? m : "");
-      cleaned = cleaned.replace(/\s+/g, " ");
+      if (svg.getAttribute("fill") !== "none")
+        svg.removeAttribute("fill");
+      if (svg.getAttribute("stroke") !== "none")
+        svg.removeAttribute("stroke");
       if (isStroke && !isFill) {
-        return cleaned.replace("<svg", `<svg fill="none" stroke="${color}"`);
+        svg.setAttribute("fill", "none");
+        svg.setAttribute("stroke", color);
       } else {
-        return cleaned.replace("<svg", `<svg fill="${color}"`);
+        svg.setAttribute("fill", color);
       }
+      const serializer = new XMLSerializer();
+      return serializer.serializeToString(doc);
     } catch (e) {
       console.error("Colorful Folders: colorizeSvg failed", e);
       return svgStr;

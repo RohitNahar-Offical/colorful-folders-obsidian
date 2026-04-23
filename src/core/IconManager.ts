@@ -284,22 +284,28 @@ export class IconManager {
     private colorizeSvg(svgStr: string, color: string): string {
         try {
             if (!svgStr || !color) return svgStr;
+
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(svgStr, 'image/svg+xml');
+            const svg = doc.querySelector('svg');
+            if (!svg) return svgStr;
+
             const isStroke = svgStr.includes('stroke=') && !svgStr.includes('stroke="none"');
             const isFill = svgStr.includes('fill=') && !svgStr.includes('fill="none"');
             
-            // Remove existing fill/stroke attributes to avoid duplicates, but preserve 'none'
-            let cleaned = svgStr
-                .replace(/fill="([^"]*)"/g, (m, c) => c === 'none' ? m : '')
-                .replace(/stroke="([^"]*)"/g, (m, c) => c === 'none' ? m : '');
-            
-            // Ensure no double spaces or broken tags after replacement
-            cleaned = cleaned.replace(/\s+/g, ' ');
+            // Remove existing fill/stroke attributes if they aren't 'none' to prepare for new color
+            if (svg.getAttribute('fill') !== 'none') svg.removeAttribute('fill');
+            if (svg.getAttribute('stroke') !== 'none') svg.removeAttribute('stroke');
 
             if (isStroke && !isFill) {
-                return cleaned.replace('<svg', `<svg fill="none" stroke="${color}"`);
+                svg.setAttribute('fill', 'none');
+                svg.setAttribute('stroke', color);
             } else {
-                return cleaned.replace('<svg', `<svg fill="${color}"`);
+                svg.setAttribute('fill', color);
             }
+
+            const serializer = new XMLSerializer();
+            return serializer.serializeToString(doc);
         } catch (e) {
             console.error("Colorful Folders: colorizeSvg failed", e);
             return svgStr;
