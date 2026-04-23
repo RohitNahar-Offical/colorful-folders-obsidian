@@ -1,5 +1,30 @@
 # Version History - Colorful Folders for Obsidian
 
+## ⚡ 4.1.2 - High-Performance Architecture
+This release focuses on core engine optimizations to ensure the plugin remains lightning-fast, even in massive vaults with 20,000+ files.
+
+### 🏎️ 1. Optimization Engine
+- **High-Speed CSS Assembly**: Refactored the `StyleGenerator` to use an array-based string builder, drastically reducing the overhead of generating global styles.
+- **DOM lookup Consolidation**: Optimized `IconManager` and `DividerManager` to reduce layout thrashing by consolidating container queries.
+- **Zero-Latency Refresh**: Improved debouncing logic to ensure UI updates are responsive without blocking the main thread.
+
+---
+
+## 🎨 4.1.1 - Advanced Divider Customization
+A visual-focused update that introduces modern design options and interactive color tools.
+
+### 💊 1. Modern Pill Design
+- **Pill Design Mode**: A new optional design that wraps divider labels in a premium rounded background.
+- **Color Inheritance**: Pills automatically inherit the parent folder's color with a smart 15% opacity fallback.
+- **Custom Spacing**: Added a "Line-to-text gap" setting to precisely control the padding between lines and labels.
+
+### 🌈 2. Visual Color Tools
+- **Rich Visual Color Picker**: Integrated a high-end color board and alpha slider for all divider and pill settings.
+- **RGBA Support**: Full transparency support for pill backgrounds, allowing for sophisticated glassmorphic or subtle tinted effects.
+- **Live Preview**: The divider creation modal now features a centered, real-time preview of your designs.
+
+---
+
 ## 💎 4.1.0 - High-End Management & Privacy
 This major release introduces the high-end Hover Message system and a robust, password-protected Stealth system.
 
