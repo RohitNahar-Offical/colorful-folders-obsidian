@@ -937,7 +937,7 @@ export class StyleGenerator {
                             opacity: 0.8 !important;
                         }
 
-                        /* Make right-side labels (tags, extensions, counts, etc.) bold and color-matched */
+                        /* Make right-side labels (tags, extensions, counts, etc.) look like color-matched pills */
                         [data-path="${safePath}"] .nav-file-tag,
                         [data-path="${safePath}"] .nav-folder-tag,
                         [data-path="${safePath}"] .tree-item-flair,
@@ -947,6 +947,15 @@ export class StyleGenerator {
                         [data-path="${safePath}"] .nav-file-extension {
                             font-weight: 900 !important;
                             color: ${color} !important;
+                            background-color: ${color}15 !important;
+                            border: 1px solid ${color}33 !important;
+                            border-radius: 10px !important;
+                            padding: 0 6px !important;
+                            font-size: 0.85em !important;
+                            line-height: 1.4 !important;
+                            display: inline-flex !important;
+                            align-items: center !important;
+                            justify-content: center !important;
                         }
                     `);
                 } else {
@@ -961,6 +970,15 @@ export class StyleGenerator {
                         [data-path="${safePath}"] .nav-file-extension {
                             font-weight: 900 !important;
                             color: ${color} !important;
+                            background-color: ${color}15 !important;
+                            border: 1px solid ${color}33 !important;
+                            border-radius: 10px !important;
+                            padding: 0 6px !important;
+                            font-size: 0.85em !important;
+                            line-height: 1.4 !important;
+                            display: inline-flex !important;
+                            align-items: center !important;
+                            justify-content: center !important;
                         }
                     `);
                 }
