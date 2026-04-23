@@ -4323,7 +4323,7 @@ var StyleGenerator = class {
                             opacity: 0.8 !important;
                         }
 
-                        /* Make right-side labels (tags, extensions, counts, etc.) bold and themed */
+                        /* Make right-side labels (tags, extensions, counts, etc.) bold, themed, and correctly aligned */
                         [data-path="${safePath}"] .nav-file-tag,
                         [data-path="${safePath}"] .nav-folder-tag,
                         [data-path="${safePath}"] .tree-item-flair,
@@ -4334,6 +4334,9 @@ var StyleGenerator = class {
                             font-weight: 900 !important;
                             font-size: 11px !important;
                             color: ${(activeStyle == null ? void 0 : activeStyle.textColor) || color.hex} !important;
+                            margin-left: auto !important;
+                            display: inline-flex !important;
+                            align-items: center !important;
                         }
                     `);
         } else {
@@ -4348,6 +4351,9 @@ var StyleGenerator = class {
                             font-weight: 900 !important;
                             font-size: 11px !important;
                             color: ${(activeStyle == null ? void 0 : activeStyle.textColor) || color.hex} !important;
+                            margin-left: auto !important;
+                            display: inline-flex !important;
+                            align-items: center !important;
                         }
                     `);
         }
