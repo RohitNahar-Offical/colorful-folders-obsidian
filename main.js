@@ -4208,12 +4208,16 @@ var StyleGenerator = class {
         }
         cssRules.push(`
                     .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem),
-                    .tree-item-self[data-path="${safePath}"]:not(.nn-navitem):not(.nn-file) {
+                    .tree-item-self[data-path="${safePath}"]:not(.nn-navitem) {
                         background-color: ${bg} !important;
                         opacity: 1.0 !important;
                         border-radius: 6px;
                         ${glassCss}
                         transition: background-color 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
+                        
+                        /* Dynamic Plugin Variables */
+                        --cf-color: ${color.hex} !important;
+                        --cf-rgb: ${color.rgb} !important;
                         
                         /* Native Obsidian Tag Variables */
                         --nav-tag-background: ${color.hex}15 !important;
@@ -4329,31 +4333,21 @@ var StyleGenerator = class {
                             opacity: 0.8 !important;
                         }
 
-                        /* Universal Metadata Pill Override - Targets all right-side labels (tags, extensions, flair) */
-                        body .nav-folder-title[data-path="${safePath}"] [class*="-tag"],
-                        body .nav-folder-title[data-path="${safePath}"] [class*="-count"],
-                        body .nav-folder-title[data-path="${safePath}"] [class*="-flair"],
-                        body .nav-folder-title[data-path="${safePath}"] [class*="-extension"],
-                        body .nav-folder-title[data-path="${safePath}"] .nav-file-tag,
-                        body .nav-folder-title[data-path="${safePath}"] .nav-folder-tag,
-                        body .nav-folder-title[data-path="${safePath}"] .nav-file-extension,
-                        body .nav-folder-title[data-path="${safePath}"] .tree-item-flair,
-                        body .tree-item-self[data-path="${safePath}"] [class*="-tag"],
-                        body .tree-item-self[data-path="${safePath}"] [class*="-count"],
-                        body .tree-item-self[data-path="${safePath}"] [class*="-flair"],
-                        body .tree-item-self[data-path="${safePath}"] [class*="-extension"],
-                        body .tree-item-self[data-path="${safePath}"] .nav-file-tag,
-                        body .tree-item-self[data-path="${safePath}"] .nav-folder-tag,
-                        body .tree-item-self[data-path="${safePath}"] .nav-file-extension,
-                        body .tree-item-self[data-path="${safePath}"] .tree-item-flair,
-                        body [data-path="${safePath}"] .tag-count,
+                        /* Universal Metadata Pill Override - Targets all right-side labels */
+                        body [data-path="${safePath}"] [class*="-tag"],
+                        body [data-path="${safePath}"] [class*="-count"],
+                        body [data-path="${safePath}"] [class*="-flair"],
+                        body [data-path="${safePath}"] [class*="-extension"],
                         body [data-path="${safePath}"] .nav-file-tag,
+                        body [data-path="${safePath}"] .nav-folder-tag,
                         body [data-path="${safePath}"] .nav-file-extension,
+                        body [data-path="${safePath}"] .tree-item-flair,
+                        body [data-path="${safePath}"] .tag-count,
                         body [data-path="${safePath}"] a.tag {
                             font-weight: 900 !important;
-                            color: ${color.hex} !important;
-                            background-color: ${color.hex}25 !important;
-                            border: 1px solid ${color.hex}44 !important;
+                            color: var(--cf-color) !important;
+                            background-color: rgba(var(--cf-rgb), 0.15) !important;
+                            border: 1px solid rgba(var(--cf-rgb), 0.25) !important;
                             border-radius: 10px !important;
                             padding: 2px 8px !important;
                             font-size: 10px !important;
@@ -4367,31 +4361,21 @@ var StyleGenerator = class {
                     `);
         } else {
           cssRules.push(`
-                        /* Universal Metadata Pill Override - Targets all right-side labels (tags, extensions, flair) */
-                        body .nav-folder-title[data-path="${safePath}"] [class*="-tag"],
-                        body .nav-folder-title[data-path="${safePath}"] [class*="-count"],
-                        body .nav-folder-title[data-path="${safePath}"] [class*="-flair"],
-                        body .nav-folder-title[data-path="${safePath}"] [class*="-extension"],
-                        body .nav-folder-title[data-path="${safePath}"] .nav-file-tag,
-                        body .nav-folder-title[data-path="${safePath}"] .nav-folder-tag,
-                        body .nav-folder-title[data-path="${safePath}"] .nav-file-extension,
-                        body .nav-folder-title[data-path="${safePath}"] .tree-item-flair,
-                        body .tree-item-self[data-path="${safePath}"] [class*="-tag"],
-                        body .tree-item-self[data-path="${safePath}"] [class*="-count"],
-                        body .tree-item-self[data-path="${safePath}"] [class*="-flair"],
-                        body .tree-item-self[data-path="${safePath}"] [class*="-extension"],
-                        body .tree-item-self[data-path="${safePath}"] .nav-file-tag,
-                        body .tree-item-self[data-path="${safePath}"] .nav-folder-tag,
-                        body .tree-item-self[data-path="${safePath}"] .nav-file-extension,
-                        body .tree-item-self[data-path="${safePath}"] .tree-item-flair,
-                        body [data-path="${safePath}"] .tag-count,
+                        /* Universal Metadata Pill Override - Targets all right-side labels */
+                        body [data-path="${safePath}"] [class*="-tag"],
+                        body [data-path="${safePath}"] [class*="-count"],
+                        body [data-path="${safePath}"] [class*="-flair"],
+                        body [data-path="${safePath}"] [class*="-extension"],
                         body [data-path="${safePath}"] .nav-file-tag,
+                        body [data-path="${safePath}"] .nav-folder-tag,
                         body [data-path="${safePath}"] .nav-file-extension,
+                        body [data-path="${safePath}"] .tree-item-flair,
+                        body [data-path="${safePath}"] .tag-count,
                         body [data-path="${safePath}"] a.tag {
                             font-weight: 900 !important;
-                            color: ${color.hex} !important;
-                            background-color: ${color.hex}25 !important;
-                            border: 1px solid ${color.hex}44 !important;
+                            color: var(--cf-color) !important;
+                            background-color: rgba(var(--cf-rgb), 0.15) !important;
+                            border: 1px solid rgba(var(--cf-rgb), 0.25) !important;
                             border-radius: 10px !important;
                             padding: 2px 8px !important;
                             font-size: 10px !important;
