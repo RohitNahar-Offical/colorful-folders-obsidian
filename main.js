@@ -1670,7 +1670,7 @@ var HoverMessageModal = class extends obsidian3.Modal {
     });
     const textArea = editorWrapper.createEl("textarea");
     textArea.value = this.description;
-    textArea.placeholder = "Write something beautiful... \n\nTips:\n- Use [[links]] to jump to notes\n- use #tags to categorize\n- use **bold** or *italic*";
+    textArea.placeholder = "Write something beautiful... \n\nTips:\n- Use [[links]] to jump to notes\n- Use #tags to categorize\n- Use **bold** or *italic*";
     textArea.setCssStyles({
       width: "100%",
       height: "180px",
@@ -1722,8 +1722,8 @@ var HoverMessageModal = class extends obsidian3.Modal {
     addBtn("italic", "Italic (Ctrl+I)", () => wrapText("*", "*"));
     addBtn("strikethrough", "Strikethrough", () => wrapText("~~", "~~"));
     addBtn("highlighter", "Highlight", () => wrapText("==", "=="));
-    addBtn("code", "Inline Code", () => wrapText("`", "`"));
-    addBtn("file-code-2", "Code Block", () => wrapText("\n```\n", "\n```\n"));
+    addBtn("code", "Inline code", () => wrapText("`", "`"));
+    addBtn("file-code-2", "Code block", () => wrapText("\n```\n", "\n```\n"));
     addBtn("link", "Link (Ctrl+K)", () => wrapText("[", "]()", 1 + (textArea.selectionEnd - textArea.selectionStart) + 2));
     const stopNative = (e) => e.stopPropagation();
     textArea.addEventListener("copy", stopNative);
@@ -2689,12 +2689,12 @@ var ColorfulFoldersSettingTab = class extends obsidian7.PluginSettingTab {
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
-    new obsidian7.Setting(genCard).setName("Custom colors (hex)").setDesc("Comma-separated list of hex colors.").addText((text) => text.setPlaceholder("#Ff0000, #00ff00").setValue(this.plugin.settings.customPalette).onChange(async (value) => {
+    new obsidian7.Setting(genCard).setName("Custom colors (hex)").setDesc("Comma-separated list of hex colors.").addText((text) => text.setPlaceholder("#ff0000, #00ff00").setValue(this.plugin.settings.customPalette).onChange(async (value) => {
       this.plugin.settings.customPalette = value;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
-    new obsidian7.Setting(genCard).setName("Folder exclusion list").setDesc("Comma-separated list of folder names to ignore. Note: folder names are case-insensitive.").addText((text) => text.setPlaceholder("templates, attachments, .git").setValue(this.plugin.settings.exclusionList || "").onChange(async (value) => {
+    new obsidian7.Setting(genCard).setName("Folder exclusion list").setDesc("Comma-separated list of folder names to ignore. Note: folder names are case-insensitive.").addText((text) => text.setPlaceholder("Templates, attachments, .git").setValue(this.plugin.settings.exclusionList || "").onChange(async (value) => {
       this.plugin.settings.exclusionList = value;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
@@ -2704,7 +2704,7 @@ var ColorfulFoldersSettingTab = class extends obsidian7.PluginSettingTab {
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
-    new obsidian7.Setting(genCard).setName("Global default background").setDesc("Set a universal background color for all folders/files that do not have a custom style. Leave empty for theme-default (transparent).").addText((text) => text.setPlaceholder("#2A2a2a").setValue(this.plugin.settings.globalBackgroundColor || "").onChange(async (value) => {
+    new obsidian7.Setting(genCard).setName("Global default background").setDesc("Set a universal background color for all folders/files that do not have a custom style. Leave empty for theme-default (transparent).").addText((text) => text.setPlaceholder("#2a2a2a").setValue(this.plugin.settings.globalBackgroundColor || "").onChange(async (value) => {
       this.plugin.settings.globalBackgroundColor = value;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();

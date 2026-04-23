@@ -59,7 +59,7 @@ export class HoverMessageModal extends obsidian.Modal {
 
         const textArea = editorWrapper.createEl("textarea");
         textArea.value = this.description;
-        textArea.placeholder = "Write something beautiful... \n\nTips:\n- Use [[links]] to jump to notes\n- use #tags to categorize\n- use **bold** or *italic*";
+        textArea.placeholder = "Write something beautiful... \n\nTips:\n- Use [[links]] to jump to notes\n- Use #tags to categorize\n- Use **bold** or *italic*";
         textArea.setCssStyles({
             width: "100%", height: "180px", borderRadius: "8px", padding: "12px",
             backgroundColor: "var(--background-primary)", border: "1px solid var(--background-modifier-border)",
@@ -107,8 +107,8 @@ export class HoverMessageModal extends obsidian.Modal {
         addBtn('italic', 'Italic (Ctrl+I)', () => wrapText('*', '*'));
         addBtn('strikethrough', 'Strikethrough', () => wrapText('~~', '~~'));
         addBtn('highlighter', 'Highlight', () => wrapText('==', '=='));
-        addBtn('code', 'Inline Code', () => wrapText('`', '`'));
-        addBtn('file-code-2', 'Code Block', () => wrapText('\n```\n', '\n```\n'));
+        addBtn('code', 'Inline code', () => wrapText('`', '`'));
+        addBtn('file-code-2', 'Code block', () => wrapText('\n```\n', '\n```\n'));
         addBtn('link', 'Link (Ctrl+K)', () => wrapText('[', ']()', 1 + (textArea.selectionEnd - textArea.selectionStart) + 2));
 
         // Fix Native Clipboard (Unblock Obsidian's strict handlers)

@@ -362,7 +362,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .setName('Custom colors (hex)')
             .setDesc('Comma-separated list of hex colors.')
             .addText(text => text
-                .setPlaceholder('#Ff0000, #00ff00')
+                .setPlaceholder('#ff0000, #00ff00')
                 .setValue(this.plugin.settings.customPalette)
                 .onChange(async (value) => {
                     this.plugin.settings.customPalette = value;
@@ -374,7 +374,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .setName('Folder exclusion list')
             .setDesc('Comma-separated list of folder names to ignore. Note: folder names are case-insensitive.')
             .addText(text => text
-                .setPlaceholder('templates, attachments, .git')
+                .setPlaceholder('Templates, attachments, .git')
                 .setValue(this.plugin.settings.exclusionList || "")
                 .onChange(async (value) => {
                     this.plugin.settings.exclusionList = value;
@@ -400,7 +400,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .setName('Global default background')
             .setDesc('Set a universal background color for all folders/files that do not have a custom style. Leave empty for theme-default (transparent).')
             .addText(text => text
-                .setPlaceholder('#2A2a2a')
+                .setPlaceholder('#2a2a2a')
                 .setValue(this.plugin.settings.globalBackgroundColor || "")
                 .onChange(async (value) => {
                     this.plugin.settings.globalBackgroundColor = value;
