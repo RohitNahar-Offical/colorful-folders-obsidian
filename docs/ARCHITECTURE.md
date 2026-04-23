@@ -26,8 +26,8 @@ graph TD
 ### The Cycle:
 1.  **Trigger**: User changes a setting or the plugin loads.
 2.  **State Resolution**: `plugin.getEffectiveStyle()` calculates the visual state for every folder/file.
-3.  **CSS Generation**: `StyleGenerator.traverse()` builds a massive CSS string.
-4.  **Injection**: The string is pushed into `plugin.styleTag` in the `<head>`.
+3.  **High-Performance CSS Generation**: `StyleGenerator.traverse()` builds a collection of CSS rules. To handle 20,000+ files efficiently, it uses the **"Collect-Join" Pattern** (pushing strings into an array) to prevent O(N²) string concatenation overhead.
+4.  **Injection**: The final joined string is pushed into `plugin.styleTag` in the `<head>`.
 5.  **Browser handles the rest**: The browser's CSS engine applies the styles instantly as elements enter the viewport.
 
 ---
@@ -153,19 +153,20 @@ Reconciliation is debounced (usually 50-100ms) to prevent UI stuttering during r
 
 ---
 
-## 5. IconManager: The Double-Rendering Strategy
+## 5. IconManager: The Indestructible & Secure Strategy
 
-The plugin uses a hybrid approach to ensure icons are both performant and indestructible.
+The plugin uses a hybrid approach to ensure icons are performant, visually consistent, and 100% secure.
 
 ### CSS Masking (High Performance)
 *   **Used for**: Auto-Icons, Folder Open/Closed states.
 *   **Mechanism**: `-webkit-mask-image` in `StyleGenerator.ts`.
 *   **Benefit**: Hundreds of icons can be rendered with zero DOM overhead.
 
-### DOM Injection (Indestructible Overrides)
-*   **Used for**: Manual Icon Overrides (Visual Picker).
-*   **Mechanism**: `IconManager.ts` physically inserts a `<span>` and hides the native theme icon.
-*   **Benefit**: Bypass theme CSS conflicts and ensures the chosen icon is always visible.
+### DOM Injection & Sanitization (Secure Overrides)
+*   **Used for**: Manual Icon Overrides (Visual Picker) and external SVG strings.
+*   **Mechanism**: `IconManager.ts` utilizes a **Robust DOM-based Sanitization Engine** (using `DOMParser` and `XMLSerializer`) instead of unsafe regex-based cleaning.
+*   **Security**: All custom SVGs are parsed into a headless document where dangerous tags (like `<script>`) and event handlers (`onmouseover`, etc.) are stripped away before rendering.
+*   **Benefit**: Eliminates potential XSS vulnerabilities while ensuring complex icons (with gradients or paths) render perfectly across all themes.
 
 ---
 

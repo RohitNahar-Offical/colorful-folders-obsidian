@@ -104,14 +104,25 @@ When a Hex code is pasted, the `syncFromHex` function converts it to these integ
 
 ---
 
-## 8. SVG Normalization & Cleaning
+## 8. SVG Normalization & DOM Sanitization
 
-To ensure icons are theme-resilient and correctly colored, the `IconManager.normalizeSvg` process performs the following:
+To ensure icons are theme-resilient and secure, the `IconManager.normalizeSvg` process performs the following:
 
-1.  **Background Removal**: Identifies elements (rects/paths) that cover >90% of the viewport and removes them to prevent "opaque boxes" behind icons.
-2.  **Attribute Hardening**: Detects if an icon is stroke-based (Feather/Lucide) or fill-based (Remix/FA) and injects the appropriate `fill: currentColor` or `stroke: currentColor` attributes.
-3.  **Path Preservation**: Unlike standard cleaners, we preserve white/black paths within the icon tree to maintain the "soul" of complex multi-part icons.
-4.  **Minification**: Strips newlines and redundant whitespace to minimize the size of the final injected CSS string.
+1.  **DOM-Based Sanitization**: Instead of fragile regex cleaning, we use a recursive DOM traversal to strip forbidden tags (`script`, `iframe`, `foreignObject`) and remove all `on-` event handlers and `javascript:` URIs.
+2.  **Background Removal**: Identifies elements (rects/paths) that cover >90% of the viewport and removes them to prevent "opaque boxes" behind icons.
+3.  **Attribute Hardening**: Detects if an icon is stroke-based (Feather/Lucide) or fill-based (Remix/FA) and injects the appropriate `fill: currentColor` or `stroke: currentColor` attributes via the DOM API.
+4.  **Path Preservation**: Unlike standard cleaners, we preserve white/black paths and complex `<defs>` (gradients) within the icon tree to maintain the "soul" of professional icon sets.
+5.  **Minification**: Serializes the sanitized DOM and strips redundant whitespace to minimize the final injected CSS string size.
+
+---
+
+## 9. Folder & File Item Counters
+
+The plugin dynamically calculates the item counts for every folder in the vault during the rendering cycle.
+
+*   **Performance**: Uses a `countCache` (Map) to prevent redundant vault traversals for nested subfolders.
+*   **Visual Style**: Generates a custom dual-indicator SVG containing both Folder and File counts. 
+*   **Readability**: These indicators use a high-visibility bold weight (**900**) and are right-aligned to the explorer item using CSS `::after` pseudo-elements.
 
 ---
 

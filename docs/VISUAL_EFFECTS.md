@@ -122,3 +122,19 @@ When a user toggles Auto-Color Mode **OFF**, the rendering engine does not simpl
 }
 ```
 This prevents "ghost colors" from themes or previous states from lingering, ensuring the vault returns to a perfectly clean, native Obsidian appearance instantly.
+
+---
+
+## 10. High-Visibility Metadata & Counters
+
+The plugin emphasizes readability for essential metadata (folder counts, file counts, and tags).
+
+### Item Counters
+*   **Dual-Indicator Design**: We use a custom SVG that shows both folder and file counts side-by-side.
+*   **Bold Weight (900)**: These numbers use the maximum font weight to ensure they are readable even in dense file explorers.
+*   **Dynamic Tinting**: The SVG color is automatically synced to the folder's primary color or its custom contrast-adjusted label color.
+
+### Bold Metadata Labels
+*   **Targeted Boldness**: Elements on the right side of the explorer (tags, note counts, file extensions) are explicitly set to `font-weight: 900`.
+*   **Theme Integration**: This is implemented via the recursive `StyleGenerator`, ensuring that these labels stand out regardless of whether you are using a native Obsidian theme or a highly customized community theme.
+
