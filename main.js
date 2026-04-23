@@ -2892,14 +2892,15 @@ var ColorfulFoldersSettingTab = class extends obsidian7.PluginSettingTab {
           border: "1px solid var(--background-modifier-border)"
         });
         const current = parseColorToHexAlpha(this.plugin.settings.dividerPillColor);
-        createVisualColorPicker(pickerWrap, current.hex, async (hex, alpha) => {
+        createVisualColorPicker(pickerWrap, current.hex, (hex, alpha) => {
           const rgba = hexAlphaToRgba(hex, alpha);
           this.plugin.settings.dividerPillColor = rgba;
           textComp.setValue(rgba);
           colorBox.setCssStyles({ backgroundColor: rgba });
-          await this.plugin.saveSettings();
-          this.plugin.generateStyles();
-          updatePreview();
+          this.plugin.saveSettings().then(() => {
+            this.plugin.generateStyles();
+            updatePreview();
+          }).catch((err) => console.error("Failed to save settings from color picker:", err));
         }, { showAlpha: true, initialAlpha: current.alpha });
       });
     }).addText((text) => {
@@ -3499,10 +3500,10 @@ var StyleGenerator = class {
   }
   generateCss() {
     var _a;
-    let css = "";
+    const cssRules = [];
     const root = this.app.vault.getRoot();
     if (!root)
-      return css;
+      return cssRules.join("\n");
     const isDark = this.isDarkMode();
     const lightBrightness = (this.settings.lightModeBrightness || 0) / 100;
     const darkBrightness = (this.settings.darkModeBrightness || 0) / 100;
@@ -3579,7 +3580,7 @@ var StyleGenerator = class {
       return palettes[palettes.length - 1];
     };
     if (this.settings.animateActivePath) {
-      css += `
+      cssRules.push(`
                 @keyframes cf-breathe-glow {
                     0% { border-color: rgba(var(--cf-rgb), 0.6) !important; box-shadow: -1px 1px 4px rgba(var(--cf-rgb), 0.05) !important; filter: brightness(1.0); }
                     50% { border-color: rgba(var(--cf-rgb), 0.9) !important; box-shadow: -1px 1px 8px rgba(var(--cf-rgb), 0.15) !important; filter: brightness(1.05); }
@@ -3612,10 +3613,10 @@ var StyleGenerator = class {
                 .cf-icon-active > .nav-file-icon {
                     display: none !important;
                 }
-            `;
+            `);
     }
     if (this.settings.focusMode) {
-      css += `
+      cssRules.push(`
                 body:has(.nav-file-title.is-active) .nav-file-title,
                 body:has(.nav-file-title.is-active) .nav-folder-title,
                 body:has(.nav-file-title.is-active) .nav-folder-content::before {
@@ -3634,7 +3635,7 @@ var StyleGenerator = class {
                     opacity: 1 !important;
                     transition: opacity 0.15s ease !important;
                 }
-            `;
+            `);
     }
     const countCache = /* @__PURE__ */ new Map();
     const countItems = (folderItem) => {
@@ -3728,7 +3729,7 @@ var StyleGenerator = class {
           const isBold = (fileStyle == null ? void 0 : fileStyle.isBold) !== void 0 ? fileStyle.isBold : (inheritedStyle == null ? void 0 : inheritedStyle.applyToFiles) ? inheritedStyle.isBold : false;
           const isItalic = (fileStyle == null ? void 0 : fileStyle.isItalic) !== void 0 ? fileStyle.isItalic : (inheritedStyle == null ? void 0 : inheritedStyle.applyToFiles) ? inheritedStyle.isItalic : false;
           const fileBgAlpha = isCustomColor ? op : this.settings.fileBackgroundOpacity !== void 0 ? this.settings.fileBackgroundOpacity : isDark ? 0.1 : 0.15;
-          css += `
+          cssRules.push(`
                             .nav-files-container .nav-file-title[data-path="${safePath}"]:not(.nn-file),
                             .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) {
                                 ${shouldColorNative ? `
@@ -3744,9 +3745,9 @@ var StyleGenerator = class {
                                 font-style: ${isItalic ? "italic" : "normal"} !important;
                                 border-radius: 4px;
                             }
-                        `;
+                        `);
           if (nnFileBgActive) {
-            css += `
+            cssRules.push(`
                                 ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} {
                                     ${shouldColorNN ? `
                                         background-color: rgba(${color.rgb}, ${fileBgAlpha}) !important;
@@ -3763,21 +3764,21 @@ var StyleGenerator = class {
                                     font-weight: ${isBold ? "bold" : "normal"} !important;
                                     font-style: ${isItalic ? "italic" : "normal"} !important;
                                 }
-                            `;
+                            `);
           }
           if (iconId) {
             const isCustomEmoji = !((_a2 = obsidian10.getIconIds) == null ? void 0 : _a2().includes(`lucide-${iconId}`)) && !((_b = obsidian10.getIconIds) == null ? void 0 : _b().includes(iconId)) && !(this.settings.customIcons && this.settings.customIcons[iconId]);
             if (isCustomEmoji) {
-              css += `
+              cssRules.push(`
                                 body .nav-file-title[data-path="${safePath}"] .nav-file-title-content::before,
                                 body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
                                     content: "${iconId} " !important;
                                     -webkit-mask-image: none !important;
                                     background-image: none !important;
                                 }
-                            `;
+                            `);
               if (nnActive || nnFileBgActive) {
-                css += `
+                cssRules.push(`
                                     ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before,
                                     ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileNameSelector()}::before {
                                         content: "${iconId} " !important;
@@ -3786,12 +3787,12 @@ var StyleGenerator = class {
                                     ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileIconSelector()} {
                                         display: none !important;
                                     }
-                                `;
+                                `);
               }
             } else {
               const isManualCustom = !!(activeStyle && activeStyle.iconId);
               if (isManualCustom) {
-                css += `
+                cssRules.push(`
                                     body [data-path="${safePath}"] .nav-file-title-content::before,
                                     body [data-path="${safePath}"] .tree-item-inner::before,
                                     body [data-path="${safePath}"].nav-file-title .nav-file-title-content::before,
@@ -3799,11 +3800,11 @@ var StyleGenerator = class {
                                         display: none !important;
                                         content: none !important;
                                     }
-                                `;
+                                `);
               } else {
                 const svgStr = this.plugin.iconManager.getIconSvg(iconId, true);
                 if (svgStr) {
-                  css += `
+                  cssRules.push(`
                                         body [data-path="${safePath}"] .nav-file-title-content::before,
                                         body [data-path="${safePath}"] .tree-item-inner::before,
                                         body [data-path="${safePath}"].nav-file-title .nav-file-title-content::before,
@@ -3821,9 +3822,9 @@ var StyleGenerator = class {
                                             vertical-align: middle !important;
                                             opacity: 0.85 !important;
                                         }
-                                    `;
+                                    `);
                   if (nnActive || nnFileBgActive) {
-                    css += `
+                    cssRules.push(`
                                             ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before,
                                             ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileNameSelector()}::before {
                                                 content: '' !important;
@@ -3839,13 +3840,13 @@ var StyleGenerator = class {
                                                 vertical-align: middle !important;
                                                 opacity: 0.85 !important;
                                             }
-                                        `;
+                                        `);
                   }
                 }
               }
             }
           } else if (this.settings.autoIcons) {
-            css += `
+            cssRules.push(`
                             body [data-path="${safePath}"] .nav-file-title-content::before,
                             body [data-path="${safePath}"] .tree-item-inner::before,
                             body [data-path="${safePath}"].nav-file-title .nav-file-title-content::before,
@@ -3863,9 +3864,9 @@ var StyleGenerator = class {
                                 vertical-align: middle !important;
                                 opacity: 0.85 !important;
                             }
-                        `;
+                        `);
             if (nnActive || nnFileBgActive) {
-              css += `
+              cssRules.push(`
                                 ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before,
                                 ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileNameSelector()}::before {
                                     content: '' !important;
@@ -3885,7 +3886,7 @@ var StyleGenerator = class {
                                 ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileIconSelector()} {
                                     display: none !important;
                                 }
-                            `;
+                            `);
             }
           }
           if (this.settings.activeGlow) {
@@ -3898,14 +3899,14 @@ var StyleGenerator = class {
               else if (animStyle === "shimmer")
                 fileActiveAnim = `animation: cf-shimmer-glow ${animDur}s infinite linear;`;
             }
-            css += `
+            cssRules.push(`
                                 body .nav-file-title.is-active[data-path="${safePath}"],
                                 body .tree-item-self.is-active[data-path="${safePath}"] {
                                     box-shadow: -1px 1px 6px rgba(${color.rgb}, 0.2) !important;
                                     --cf-rgb: ${color.rgb};
                                     ${fileActiveAnim}
                                 }
-                            `;
+                            `);
           }
           fileIndex++;
         }
@@ -3917,7 +3918,7 @@ var StyleGenerator = class {
         const bgTint = outlineOnly ? "transparent" : `rgba(${passedColor.rgb}, ${finalTintOp})`;
         if (this.settings.animateActivePath) {
         }
-        css += `
+        cssRules.push(`
                     body .nav-folder-title[data-path="${safePath}"] ~ .nav-folder-children,
                     body .tree-item-self[data-path="${safePath}"] ~ .tree-item-children {
                         background-color: ${bgTint} !important;
@@ -3929,7 +3930,7 @@ var StyleGenerator = class {
                         padding-left: 24px !important;
                         padding-bottom: 12px !important;
                     }
-                `;
+                `);
         if (this.settings.activeGlow && passedColor) {
           let animationProp = "";
           if (this.settings.animateActivePath) {
@@ -3942,7 +3943,7 @@ var StyleGenerator = class {
             else if (style === "shimmer")
               animationProp = `animation: cf-shimmer-glow ${dur}s infinite linear;`;
           }
-          css += `
+          cssRules.push(`
                         body .nav-folder:has(.is-active) > .nav-folder-title[data-path="${safePath}"] ~ .nav-folder-children,
                         body .tree-item:has(.is-active) > .tree-item-self[data-path="${safePath}"] ~ .tree-item-children {
                             border-left: 2px solid rgba(${passedColor.rgb}, 1.0) !important;
@@ -3950,7 +3951,7 @@ var StyleGenerator = class {
                             --cf-rgb: ${passedColor.rgb};
                             ${animationProp}
                         }
-                    `;
+                    `);
         }
       }
       for (let i = 0; i < copyFolders.length; i++) {
@@ -4058,28 +4059,28 @@ var StyleGenerator = class {
         if (activeStyle && activeStyle.iconId) {
           const isCustomEmoji = !((_c = obsidian10.getIconIds) == null ? void 0 : _c().includes(`lucide-${activeStyle.iconId}`)) && !((_d = obsidian10.getIconIds) == null ? void 0 : _d().includes(activeStyle.iconId)) && !this.settings.customIcons[activeStyle.iconId];
           if (isCustomEmoji) {
-            css += `
+            cssRules.push(`
                             body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
                             body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
                                 content: "${activeStyle.iconId} " !important;
                                 -webkit-mask-image: none !important;
                                 background-image: none !important;
                             }
-                        `;
+                        `);
             if (nnActive) {
-              css += `
+              cssRules.push(`
                                 ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before {
                                     content: "${activeStyle.iconId} " !important;
                                 }
                                 ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()} {
                                     display: none !important;
                                 }
-                            `;
+                            `);
             }
           } else {
             const isManualCustom = !!(activeStyle && activeStyle.iconId);
             if (isManualCustom) {
-              css += `
+              cssRules.push(`
                                 body [data-path="${safePath}"] .nav-folder-title-content::before,
                                 body [data-path="${safePath}"] .tree-item-inner::before,
                                 body [data-path="${safePath}"].nav-folder-title .nav-folder-title-content::before,
@@ -4087,11 +4088,11 @@ var StyleGenerator = class {
                                     display: none !important;
                                     content: none !important;
                                 }
-                            `;
+                            `);
             } else if (autoLucideId) {
               const svgStr = this.plugin.iconManager.getIconSvg(autoLucideId, true);
               if (svgStr) {
-                css += `
+                cssRules.push(`
                                     body [data-path="${safePath}"] .nav-folder-title-content::before,
                                     body [data-path="${safePath}"] .tree-item-inner::before,
                                     body [data-path="${safePath}"].nav-folder-title .nav-folder-title-content::before,
@@ -4109,14 +4110,14 @@ var StyleGenerator = class {
                                         vertical-align: middle !important;
                                         opacity: 0.85 !important;
                                     }
-                                `;
+                                `);
               }
             }
           }
         } else if (autoLucideId) {
           const svgStr = this.plugin.iconManager.getIconSvg(autoLucideId, true);
           if (svgStr) {
-            css += `
+            cssRules.push(`
                             body [data-path="${safePath}"] .nav-folder-title-content::before,
                             body [data-path="${safePath}"] .tree-item-inner::before,
                             body [data-path="${safePath}"].nav-folder-title .nav-folder-title-content::before,
@@ -4134,9 +4135,9 @@ var StyleGenerator = class {
                                 vertical-align: middle !important;
                                 opacity: 0.85 !important;
                             }
-                        `;
+                        `);
             if (nnActive) {
-              css += `
+              cssRules.push(`
                                 ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before {
                                     content: '' !important;
                                     display: inline-block !important;
@@ -4155,28 +4156,28 @@ var StyleGenerator = class {
                                 ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()} {
                                     display: none !important;
                                 }
-                            `;
+                            `);
             }
           }
         } else if (isEmoji) {
-          css += `
+          cssRules.push(`
                         body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
                         body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
                             content: ${autoIconContent} !important;
                         }
-                    `;
+                    `);
           if (nnActive) {
-            css += `
+            cssRules.push(`
                             ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before {
                                 content: ${autoIconContent} !important;
                             }
                             ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()} {
                                 display: none !important;
                             }
-                        `;
+                        `);
           }
         } else if (this.settings.autoIcons) {
-          css += `
+          cssRules.push(`
                         body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
                         body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
                             content: '' !important;
@@ -4200,9 +4201,9 @@ var StyleGenerator = class {
                         body .tree-item:not(.is-collapsed) > .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
                              -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(decodeURIComponent(CF_FOLDER_OPEN))}") !important;
                         }
-                    `;
+                    `);
         }
-        css += `
+        cssRules.push(`
                     .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem),
                     .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-navitem):not(.nn-file) {
                         background-color: ${bg} !important;
@@ -4211,9 +4212,9 @@ var StyleGenerator = class {
                         ${glassCss}
                         transition: background-color 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
                     }
-                `;
+                `);
         if (nnActive) {
-          css += `
+          cssRules.push(`
                         ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} {
                         background-color: ${bgNN} !important;
                         border-radius: 4px !important;
@@ -4221,9 +4222,9 @@ var StyleGenerator = class {
                         ${tintOp > 0 ? `background-blend-mode: overlay;` : ""}
                         transition: background-color 0.2s ease, filter 0.2s ease !important;
                     }
-                `;
+                `);
         }
-        css += `
+        cssRules.push(`
                     .nav-folder-title[data-path="${safePath}"] + .nav-folder-content {
                         ${tintOp > 0 ? `background-color: rgba(${color.rgb}, ${tintOp}) !important;` : ""}
                         border-left: 2px solid rgba(${color.rgb}, 0.25) !important;
@@ -4255,15 +4256,15 @@ var StyleGenerator = class {
                     body .tree-item-self[data-path="${safePath}"]:not(.nn-navitem):not(.nn-file) .tree-item-inner {
                         ${textCss}
                     }
-                `;
+                `);
         if (nnActive) {
-          css += `
+          cssRules.push(`
                         ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()} {
                             ${textCssNN}
                         }
-                    `;
+                    `);
         }
-        css += `
+        cssRules.push(`
                     body .nav-folder-title[data-path="${safePath}"] .nav-folder-collapse-indicator svg,
                     body .tree-item-self[data-path="${safePath}"] .tree-item-collapse-indicator svg {
                         color: ${(activeStyle == null ? void 0 : activeStyle.iconColor) || color.hex} !important;
@@ -4274,14 +4275,14 @@ var StyleGenerator = class {
                         filter: brightness(1.2);
                         ${this.settings.glassmorphism ? "backdrop-filter: blur(12px) saturate(150%);" : ""}
                     }
-                `;
+                `);
         if (nnActive) {
-          css += `
+          cssRules.push(`
                         body:not(.is-mobile) .notebook-navigator [data-path="${safePath}"]:hover {
                             filter: brightness(1.2);
                             ${this.settings.glassmorphism ? "backdrop-filter: blur(12px) saturate(150%);" : ""}
                         }
-                    `;
+                    `);
         }
         if (this.settings.showItemCounters) {
           const counts = countItems(child);
@@ -4301,7 +4302,7 @@ var StyleGenerator = class {
                     </svg>`;
           const encodedSvg = encodeURIComponent(combinedSvg.replace(/>\s+</g, "><").replace(/(\r\n|\n|\r)/gm, ""));
           const combinedIconUrl = `url("data:image/svg+xml,${encodedSvg}")`;
-          css += `
+          cssRules.push(`
                         body .nav-folder-title[data-path="${safePath}"]::after,
                         body .tree-item-self[data-path="${safePath}"]::after {
                             content: "" !important;
@@ -4318,7 +4319,7 @@ var StyleGenerator = class {
                             pointer-events: none !important;
                             opacity: 0.8 !important;
                         }
-                    `;
+                    `);
         }
         const nextInherited = (activeStyle == null ? void 0 : activeStyle.applyToSubfolders) ? activeStyle : inheritedStyle;
         traverse(child, depth + 1, i, depth === 0 ? i : rootIndex, color, nextInherited);
@@ -4327,7 +4328,7 @@ var StyleGenerator = class {
     if (this.settings.showFileDivider || Object.values(this.settings.customFolderColors).some((v) => typeof v === "object" && v !== null && v.hasDivider)) {
       const spacing = this.settings.dividerSpacing || 16;
       const dividerHeight = spacing * 2 + 20;
-      css += `
+      cssRules.push(`
                 /* Stability: Core Divider Container - Now Layout Neutral */
                 .cf-interactive-divider {
                     position: absolute !important;
@@ -4509,11 +4510,11 @@ var StyleGenerator = class {
                     flex: 1 !important;
                     font-weight: 500 !important;
                 }
-            `;
+            `);
     }
     traverse(root, 0, 0, 0);
-    css += this.generateStealthCss();
-    return css;
+    cssRules.push(this.generateStealthCss());
+    return cssRules.join("\n");
   }
   generateStealthCss() {
     let stealthCss = "";
@@ -5139,8 +5140,12 @@ var IconManager = class {
    * Scans the visible DOM and injects icons where needed.
    */
   refreshIcons() {
+    const containers = [];
     this.plugin.app.workspace.getLeavesOfType("file-explorer").forEach((leaf) => {
-      const container = leaf.view.containerEl;
+      containers.push(leaf.view.containerEl);
+    });
+    activeDocument.querySelectorAll(".nn-navigation-pane-content, .nn-virtual-container").forEach((c) => containers.push(c));
+    containers.forEach((container) => {
       const items = container.querySelectorAll(".nav-folder-title, .tree-item-self, .nn-navitem, .nn-file");
       items.forEach((item) => {
         const path = item.dataset.path;
@@ -5152,20 +5157,6 @@ var IconManager = class {
         } else {
           this.removeInjectedIcon(item);
         }
-      });
-    });
-    const nnContainers = activeDocument.querySelectorAll(".nn-navigation-pane-content, .nn-virtual-container");
-    nnContainers.forEach((container) => {
-      const items = container.querySelectorAll(".nav-folder-title, .tree-item-self, .nn-navitem, .nn-file");
-      items.forEach((item) => {
-        const path = item.dataset.path;
-        if (!path)
-          return;
-        const style = this.plugin.getStyle(path);
-        if (style && style.iconId)
-          this.injectIcon(item, style);
-        else
-          this.removeInjectedIcon(item);
       });
     });
   }

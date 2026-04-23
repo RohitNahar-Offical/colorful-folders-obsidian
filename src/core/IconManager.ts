@@ -111,8 +111,14 @@ export class IconManager {
      * Scans the visible DOM and injects icons where needed.
      */
     refreshIcons() {
+        const containers: Element[] = [];
         this.plugin.app.workspace.getLeavesOfType('file-explorer').forEach(leaf => {
-            const container = leaf.view.containerEl;
+            containers.push(leaf.view.containerEl);
+        });
+        
+        activeDocument.querySelectorAll('.nn-navigation-pane-content, .nn-virtual-container').forEach(c => containers.push(c));
+
+        containers.forEach(container => {
             const items = container.querySelectorAll('.nav-folder-title, .tree-item-self, .nn-navitem, .nn-file');
             items.forEach(item => {
                 const path = (item as HTMLElement).dataset.path;
@@ -124,19 +130,6 @@ export class IconManager {
                 } else {
                     this.removeInjectedIcon(item as HTMLElement);
                 }
-            });
-        });
-
-        // Also handle Notebook Navigator if active
-        const nnContainers = activeDocument.querySelectorAll('.nn-navigation-pane-content, .nn-virtual-container');
-        nnContainers.forEach(container => {
-            const items = container.querySelectorAll('.nav-folder-title, .tree-item-self, .nn-navitem, .nn-file');
-            items.forEach(item => {
-                const path = (item as HTMLElement).dataset.path;
-                if (!path) return;
-                const style = this.plugin.getStyle(path);
-                if (style && style.iconId) this.injectIcon(item as HTMLElement, style);
-                else this.removeInjectedIcon(item as HTMLElement);
             });
         });
     }
