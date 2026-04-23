@@ -3,6 +3,8 @@ import { IColorfulFoldersPlugin } from '../common/types';
 import { DEFAULT_SETTINGS } from '../common/constants';
 import { PasswordModal } from './modals/PasswordModal';
 import { ConfirmModal } from './modals/ConfirmModal';
+import { createVisualColorPicker } from './components/ColorPicker';
+import { parseColorToHexAlpha, hexAlphaToRgba } from '../common/utils';
 
 
 export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
@@ -344,10 +346,10 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .setName('Color palette theme')
             .setDesc('Select a curated color scheme for your vault. Choose "custom" to enter your own hex codes below.')
             .addDropdown(drop => drop
-                .addOption('Vibrant rainbow', 'Vibrant rainbow')
-                .addOption('Muted dark mode', 'Muted dark mode')
-                .addOption('Pastel dreams', 'Pastel dreams')
-                .addOption('Neon cyberpunk', 'Neon cyberpunk')
+                .addOption('Vibrant Rainbow', 'Vibrant rainbow')
+                .addOption('Muted Dark Mode', 'Muted dark mode')
+                .addOption('Pastel Dreams', 'Pastel dreams')
+                .addOption('Neon Cyberpunk', 'Neon cyberpunk')
                 .addOption('Custom', 'Custom palette')
                 .setValue(this.plugin.settings.palette)
                 .onChange(async (value) => {
@@ -372,7 +374,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .setName('Folder exclusion list')
             .setDesc('Comma-separated list of folder names to ignore. Note: folder names are case-insensitive.')
             .addText(text => text
-                .setPlaceholder('Templates, attachments, .git')
+                .setPlaceholder('templates, attachments, .git')
                 .setValue(this.plugin.settings.exclusionList || "")
                 .onChange(async (value) => {
                     this.plugin.settings.exclusionList = value;
@@ -603,6 +605,46 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         
         const divCard = makeCard(generalPanel, "➖", "Dividers & sections");
 
+        // --- Divider Live Preview ---
+        const previewWrap = divCard.createDiv({ cls: 'cf-divider-preview-wrap' });
+        previewWrap.setCssStyles({
+            padding: '40px 24px',
+            background: 'var(--background-secondary-alt)',
+            borderRadius: '12px',
+            marginBottom: '24px',
+            border: '1px solid var(--background-modifier-border)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '120px',
+            position: 'relative',
+            overflow: 'hidden'
+        });
+        
+        previewWrap.createEl('small', { text: 'Live preview', cls: 'cf-preview-label' }).setCssStyles({
+            position: 'absolute', top: '8px', left: '12px', opacity: '0.4', fontSize: '0.7em', letterSpacing: '0.1em', fontWeight: '700'
+        });
+
+        const dividerContainer = previewWrap.createDiv();
+        dividerContainer.setCssStyles({ width: '100%' });
+
+        const updatePreview = () => {
+            dividerContainer.empty();
+            const previewEl = this.plugin.dividerManager.buildDividerNode('preview-path', {
+                dividerText: 'Preview Section',
+                dividerColor: 'var(--interactive-accent)',
+                hasDivider: true
+            }, activeDocument);
+
+            previewEl.setCssStyles({
+                position: 'relative', top: '0', left: '0', width: '100%', margin: '0', pointerEvents: 'none'
+            });
+            dividerContainer.appendChild(previewEl);
+        };
+        updatePreview();
+        // --- End Preview ---
+
         // Divider overrides merged into divCard
         new obsidian.Setting(divCard)
             .setName('Modern pill design')
@@ -613,7 +655,63 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     this.plugin.settings.dividerPillMode = value;
                     await this.plugin.saveSettings();
                     this.plugin.generateStyles();
+                    updatePreview();
                 }));
+        
+        const pillColorRow = divCard.createDiv();
+        let pickerWrap: HTMLElement | null = null;
+        let colorBox: HTMLElement;
+        let textComp: obsidian.TextComponent;
+
+        new obsidian.Setting(pillColorRow)
+            .setName('Global pill background color')
+            .setDesc('Optional. Set a universal background color for all pills (rgba supported). Leave empty to inherit folder colors automatically.')
+            .addButton(btn => {
+                btn.setIcon('palette')
+                    .setTooltip('Open visual color picker')
+                    .onClick(() => {
+                        if (pickerWrap) {
+                            pickerWrap.remove();
+                            pickerWrap = null;
+                            return;
+                        }
+                        pickerWrap = pillColorRow.createDiv();
+                        pickerWrap.setCssStyles({ 
+                            marginTop: '12px', padding: '16px', background: 'var(--background-secondary-alt)', 
+                            borderRadius: '8px', border: '1px solid var(--background-modifier-border)'
+                        });
+                        
+                        const current = parseColorToHexAlpha(this.plugin.settings.dividerPillColor);
+                        createVisualColorPicker(pickerWrap, current.hex, async (hex, alpha) => {
+                            const rgba = hexAlphaToRgba(hex, alpha);
+                            this.plugin.settings.dividerPillColor = rgba;
+                            textComp.setValue(rgba);
+                            colorBox.setCssStyles({ backgroundColor: rgba });
+                            await this.plugin.saveSettings();
+                            this.plugin.generateStyles();
+                            updatePreview();
+                        }, { showAlpha: true, initialAlpha: current.alpha });
+                    });
+            })
+            .addText(text => {
+                textComp = text;
+                text.setPlaceholder('E.g. Rgba(255, 255, 255, 0.1)')
+                    .setValue(this.plugin.settings.dividerPillColor || "")
+                    .onChange(async (value) => {
+                        this.plugin.settings.dividerPillColor = value;
+                        await this.plugin.saveSettings();
+                        this.plugin.generateStyles();
+                        updatePreview();
+                        colorBox.setCssStyles({ backgroundColor: value || 'transparent' });
+                    });
+                
+                colorBox = text.inputEl.parentElement!.createDiv();
+                colorBox.setCssStyles({
+                    width: '24px', height: '24px', borderRadius: '4px', border: '1px solid var(--background-modifier-border)',
+                    marginLeft: '12px', backgroundColor: this.plugin.settings.dividerPillColor || 'transparent',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                });
+            });
         
         new obsidian.Setting(divCard)
             .setName('Vertical spacing')
@@ -626,8 +724,8 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     this.plugin.settings.dividerSpacing = value;
                     await this.plugin.saveSettings();
                     this.plugin.dividerManager.syncDividers();
+                    updatePreview();
                 }));
-
         new obsidian.Setting(divCard)
             .setName('Line thickness')
             .addSlider(slider => slider
@@ -638,6 +736,21 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     this.plugin.settings.dividerThickness = value;
                     await this.plugin.saveSettings();
                     this.plugin.dividerManager.syncDividers();
+                    updatePreview();
+                }));
+
+        new obsidian.Setting(divCard)
+            .setName('Line-to-text gap')
+            .setDesc('Adjust the horizontal space between the divider lines and the central label/pill.')
+            .addSlider(slider => slider
+                .setLimits(0, 40, 1)
+                .setValue(this.plugin.settings.dividerLinePadding ?? 8)
+                .setDynamicTooltip()
+                .onChange(async (value) => {
+                    this.plugin.settings.dividerLinePadding = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStyles();
+                    updatePreview();
                 }));
                 
         new obsidian.Setting(divCard)
@@ -651,6 +764,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     this.plugin.settings.dividerLineStyle = value;
                     await this.plugin.saveSettings();
                     this.plugin.dividerManager.syncDividers();
+                    updatePreview();
                 }));
 
         const typeCard = makeCard(generalPanel, "Aa", "Path & typography");

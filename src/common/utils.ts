@@ -48,6 +48,11 @@ export function parseCustomPalette(hexString: string): { rgb: string, hex: strin
     const hexes = hexString.split(',').map(s => s.trim().toLowerCase());
     const result: { rgb: string, hex: string }[] = [];
     for (let hex of hexes) {
+        // Add # if missing
+        if (!hex.startsWith('#') && /^[0-9a-f]{3,6}$/i.test(hex)) {
+            hex = '#' + hex;
+        }
+
         if (/^#[0-9a-f]{3}$/i.test(hex)) {
             hex = '#' + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3];
         }
@@ -105,6 +110,29 @@ export function hsvToRgb(h: number, s: number, v: number) {
 export function rgbToHex(r: number, g: number, b: number): string {
     return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 }
+export function parseColorToHexAlpha(color: string): { hex: string, alpha: number } {
+    if (!color) return { hex: "#ffffff", alpha: 0 };
+    if (color.startsWith('#')) return { hex: color, alpha: 1 };
+    if (color.startsWith('rgb')) {
+        const parts = color.match(/[\d.]+/g);
+        if (parts && parts.length >= 3) {
+            const r = parseInt(parts[0]);
+            const g = parseInt(parts[1]);
+            const b = parseInt(parts[2]);
+            const a = parts.length >= 4 ? parseFloat(parts[3]) : 1;
+            const hex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+            return { hex, alpha: a };
+        }
+    }
+    return { hex: "#ffffff", alpha: 1 };
+}
+
+export function hexAlphaToRgba(hex: string, alpha: number): string {
+    const rgb = hexToRgbObj(hex);
+    if (!rgb) return "transparent";
+    return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+}
+
 export function hashString(str: string): number {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {

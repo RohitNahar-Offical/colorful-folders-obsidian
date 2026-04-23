@@ -156,7 +156,9 @@ var DEFAULT_SETTINGS = {
   showHiddenItems: false,
   showRibbonIcon: true,
   lastVersion: "",
-  globalBackgroundColor: ""
+  globalBackgroundColor: "",
+  dividerLinePadding: 8,
+  dividerPillColor: ""
 };
 var AUTO_ICON_CATEGORIES = [
   // --- Core categories ---
@@ -308,6 +310,9 @@ function parseCustomPalette(hexString) {
   const hexes = hexString.split(",").map((s) => s.trim().toLowerCase());
   const result = [];
   for (let hex of hexes) {
+    if (!hex.startsWith("#") && /^[0-9a-f]{3,6}$/i.test(hex)) {
+      hex = "#" + hex;
+    }
     if (/^#[0-9a-f]{3}$/i.test(hex)) {
       hex = "#" + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3];
     }
@@ -395,6 +400,30 @@ function hsvToRgb(h, s, v) {
 }
 function rgbToHex(r, g, b) {
   return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
+function parseColorToHexAlpha(color) {
+  if (!color)
+    return { hex: "#ffffff", alpha: 0 };
+  if (color.startsWith("#"))
+    return { hex: color, alpha: 1 };
+  if (color.startsWith("rgb")) {
+    const parts = color.match(/[\d.]+/g);
+    if (parts && parts.length >= 3) {
+      const r = parseInt(parts[0]);
+      const g = parseInt(parts[1]);
+      const b = parseInt(parts[2]);
+      const a = parts.length >= 4 ? parseFloat(parts[3]) : 1;
+      const hex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+      return { hex, alpha: a };
+    }
+  }
+  return { hex: "#ffffff", alpha: 1 };
+}
+function hexAlphaToRgba(hex, alpha) {
+  const rgb = hexToRgbObj(hex);
+  if (!rgb)
+    return "transparent";
+  return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
 }
 function hashString(str) {
   let hash = 0;
@@ -1937,6 +1966,7 @@ var DividerModal = class extends obsidian4.Modal {
       useGlass: existingStyle.dividerGlass !== void 0 ? existingStyle.dividerGlass : true,
       iconPosition: existingStyle.dividerIconPosition || "left",
       pillMode: existingStyle.dividerPillMode === "off" ? "off" : "on",
+      pillColor: existingStyle.dividerPillColor || "",
       description: existingStyle.dividerDescription || ""
     };
   }
@@ -2061,8 +2091,57 @@ var DividerModal = class extends obsidian4.Modal {
     const styleSect = addSection("Style & shape");
     new obsidian4.Setting(styleSect).setName("Pill mode").setDesc("Force the capsule shape or hide it for this divider.").addDropdown((d) => d.addOption("on", "On").addOption("off", "Off").setValue(this.config.pillMode).onChange((v) => {
       this.config.pillMode = v;
+      this.onOpen();
       this._liveSync();
     }));
+    if (this.config.pillMode === "on") {
+      const pRow = styleSect.createDiv();
+      let pPickerWrap = null;
+      let pColorBox;
+      let pTextComp;
+      new obsidian4.Setting(pRow).setName("Pill background color").setDesc("Optional. Enter an rgba color. Leave empty to inherit folder color.").addButton((btn) => {
+        btn.setIcon("palette").setTooltip("Open visual color picker").onClick(() => {
+          if (pPickerWrap) {
+            pPickerWrap.remove();
+            pPickerWrap = null;
+            return;
+          }
+          pPickerWrap = pRow.createDiv();
+          pPickerWrap.setCssStyles({
+            marginTop: "12px",
+            padding: "16px",
+            background: "var(--background-secondary)",
+            borderRadius: "8px",
+            border: "1px solid var(--background-modifier-border)"
+          });
+          const current = parseColorToHexAlpha(this.config.pillColor);
+          createVisualColorPicker(pPickerWrap, current.hex, (hex, alpha) => {
+            const rgba = hexAlphaToRgba(hex, alpha);
+            this.config.pillColor = rgba;
+            pTextComp.setValue(rgba);
+            pColorBox.setCssStyles({ backgroundColor: rgba });
+            this._liveSync();
+          }, { showAlpha: true, initialAlpha: current.alpha });
+        });
+      }).addText((text) => {
+        pTextComp = text;
+        text.setPlaceholder("Inherit folder color...").setValue(this.config.pillColor || "").onChange((v) => {
+          this.config.pillColor = v;
+          this._liveSync();
+          pColorBox.setCssStyles({ backgroundColor: v || "transparent" });
+        });
+        pColorBox = text.inputEl.parentElement.createDiv();
+        pColorBox.setCssStyles({
+          width: "24px",
+          height: "24px",
+          borderRadius: "4px",
+          border: "1px solid var(--background-modifier-border)",
+          marginLeft: "12px",
+          backgroundColor: this.config.pillColor || "transparent",
+          boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
+        });
+      });
+    }
     new obsidian4.Setting(styleSect).setName("Line style").addDropdown((d) => d.addOption("global", "Global default").addOption("solid", "Solid").addOption("dashed", "Dashed").addOption("dotted", "Dotted").addOption("none", "None").setValue(this.config.lineStyle).onChange((v) => {
       this.config.lineStyle = v;
       this._liveSync();
@@ -2155,6 +2234,7 @@ var DividerModal = class extends obsidian4.Modal {
       delete styleObj.dividerIconColor;
       styleObj.dividerIconPosition = this.config.iconPosition;
       styleObj.dividerPillMode = this.config.pillMode;
+      styleObj.dividerPillColor = this.config.pillColor;
       styleObj.dividerDescription = this.config.description;
       styleObj.hasDivider = true;
       this.plugin.settings.customFolderColors[this.path] = styleObj;
@@ -2180,6 +2260,7 @@ var DividerModal = class extends obsidian4.Modal {
         dividerIcon: this.config.icon,
         dividerIconPosition: this.config.iconPosition,
         dividerPillMode: this.config.pillMode,
+        dividerPillColor: this.config.pillColor,
         dividerDescription: this.config.description,
         hasDivider: true
       };
@@ -2603,7 +2684,7 @@ var ColorfulFoldersSettingTab = class extends obsidian7.PluginSettingTab {
     infoText.createEl("strong", { text: '"set custom style"' });
     infoText.appendText(" to assign specific unique colors or icons!");
     const genCard = makeCard(generalPanel, "\u{1F3A8}", "Global visual palette");
-    new obsidian7.Setting(genCard).setName("Color palette theme").setDesc('Select a curated color scheme for your vault. Choose "custom" to enter your own hex codes below.').addDropdown((drop) => drop.addOption("Vibrant rainbow", "Vibrant rainbow").addOption("Muted dark mode", "Muted dark mode").addOption("Pastel dreams", "Pastel dreams").addOption("Neon cyberpunk", "Neon cyberpunk").addOption("Custom", "Custom palette").setValue(this.plugin.settings.palette).onChange(async (value) => {
+    new obsidian7.Setting(genCard).setName("Color palette theme").setDesc('Select a curated color scheme for your vault. Choose "custom" to enter your own hex codes below.').addDropdown((drop) => drop.addOption("Vibrant Rainbow", "Vibrant rainbow").addOption("Muted Dark Mode", "Muted dark mode").addOption("Pastel Dreams", "Pastel dreams").addOption("Neon Cyberpunk", "Neon cyberpunk").addOption("Custom", "Custom palette").setValue(this.plugin.settings.palette).onChange(async (value) => {
       this.plugin.settings.palette = value;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
@@ -2613,7 +2694,7 @@ var ColorfulFoldersSettingTab = class extends obsidian7.PluginSettingTab {
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
-    new obsidian7.Setting(genCard).setName("Folder exclusion list").setDesc("Comma-separated list of folder names to ignore. Note: folder names are case-insensitive.").addText((text) => text.setPlaceholder("Templates, attachments, .git").setValue(this.plugin.settings.exclusionList || "").onChange(async (value) => {
+    new obsidian7.Setting(genCard).setName("Folder exclusion list").setDesc("Comma-separated list of folder names to ignore. Note: folder names are case-insensitive.").addText((text) => text.setPlaceholder("templates, attachments, .git").setValue(this.plugin.settings.exclusionList || "").onChange(async (value) => {
       this.plugin.settings.exclusionList = value;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
@@ -2741,25 +2822,132 @@ var ColorfulFoldersSettingTab = class extends obsidian7.PluginSettingTab {
       });
     }
     const divCard = makeCard(generalPanel, "\u2796", "Dividers & sections");
+    const previewWrap = divCard.createDiv({ cls: "cf-divider-preview-wrap" });
+    previewWrap.setCssStyles({
+      padding: "40px 24px",
+      background: "var(--background-secondary-alt)",
+      borderRadius: "12px",
+      marginBottom: "24px",
+      border: "1px solid var(--background-modifier-border)",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: "120px",
+      position: "relative",
+      overflow: "hidden"
+    });
+    previewWrap.createEl("small", { text: "Live preview", cls: "cf-preview-label" }).setCssStyles({
+      position: "absolute",
+      top: "8px",
+      left: "12px",
+      opacity: "0.4",
+      fontSize: "0.7em",
+      letterSpacing: "0.1em",
+      fontWeight: "700"
+    });
+    const dividerContainer = previewWrap.createDiv();
+    dividerContainer.setCssStyles({ width: "100%" });
+    const updatePreview = () => {
+      dividerContainer.empty();
+      const previewEl = this.plugin.dividerManager.buildDividerNode("preview-path", {
+        dividerText: "Preview Section",
+        dividerColor: "var(--interactive-accent)",
+        hasDivider: true
+      }, activeDocument);
+      previewEl.setCssStyles({
+        position: "relative",
+        top: "0",
+        left: "0",
+        width: "100%",
+        margin: "0",
+        pointerEvents: "none"
+      });
+      dividerContainer.appendChild(previewEl);
+    };
+    updatePreview();
     new obsidian7.Setting(divCard).setName("Modern pill design").setDesc('When enabled, dividers use the rounded "pill" background and border. When disabled, only text and lines are shown.').addToggle((toggle) => toggle.setValue(this.plugin.settings.dividerPillMode !== false).onChange(async (value) => {
       this.plugin.settings.dividerPillMode = value;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
+      updatePreview();
     }));
+    const pillColorRow = divCard.createDiv();
+    let pickerWrap = null;
+    let colorBox;
+    let textComp;
+    new obsidian7.Setting(pillColorRow).setName("Global pill background color").setDesc("Optional. Set a universal background color for all pills (rgba supported). Leave empty to inherit folder colors automatically.").addButton((btn) => {
+      btn.setIcon("palette").setTooltip("Open visual color picker").onClick(() => {
+        if (pickerWrap) {
+          pickerWrap.remove();
+          pickerWrap = null;
+          return;
+        }
+        pickerWrap = pillColorRow.createDiv();
+        pickerWrap.setCssStyles({
+          marginTop: "12px",
+          padding: "16px",
+          background: "var(--background-secondary-alt)",
+          borderRadius: "8px",
+          border: "1px solid var(--background-modifier-border)"
+        });
+        const current = parseColorToHexAlpha(this.plugin.settings.dividerPillColor);
+        createVisualColorPicker(pickerWrap, current.hex, async (hex, alpha) => {
+          const rgba = hexAlphaToRgba(hex, alpha);
+          this.plugin.settings.dividerPillColor = rgba;
+          textComp.setValue(rgba);
+          colorBox.setCssStyles({ backgroundColor: rgba });
+          await this.plugin.saveSettings();
+          this.plugin.generateStyles();
+          updatePreview();
+        }, { showAlpha: true, initialAlpha: current.alpha });
+      });
+    }).addText((text) => {
+      textComp = text;
+      text.setPlaceholder("E.g. Rgba(255, 255, 255, 0.1)").setValue(this.plugin.settings.dividerPillColor || "").onChange(async (value) => {
+        this.plugin.settings.dividerPillColor = value;
+        await this.plugin.saveSettings();
+        this.plugin.generateStyles();
+        updatePreview();
+        colorBox.setCssStyles({ backgroundColor: value || "transparent" });
+      });
+      colorBox = text.inputEl.parentElement.createDiv();
+      colorBox.setCssStyles({
+        width: "24px",
+        height: "24px",
+        borderRadius: "4px",
+        border: "1px solid var(--background-modifier-border)",
+        marginLeft: "12px",
+        backgroundColor: this.plugin.settings.dividerPillColor || "transparent",
+        boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
+      });
+    });
     new obsidian7.Setting(divCard).setName("Vertical spacing").setDesc("Adjust the empty space above and below dividers.").addSlider((slider) => slider.setLimits(4, 40, 2).setValue(this.plugin.settings.dividerSpacing || 16).setDynamicTooltip().onChange(async (value) => {
       this.plugin.settings.dividerSpacing = value;
       await this.plugin.saveSettings();
       this.plugin.dividerManager.syncDividers();
+      updatePreview();
     }));
     new obsidian7.Setting(divCard).setName("Line thickness").addSlider((slider) => slider.setLimits(1, 10, 0.5).setValue(this.plugin.settings.dividerThickness || 1.5).setDynamicTooltip().onChange(async (value) => {
       this.plugin.settings.dividerThickness = value;
       await this.plugin.saveSettings();
       this.plugin.dividerManager.syncDividers();
+      updatePreview();
     }));
+    new obsidian7.Setting(divCard).setName("Line-to-text gap").setDesc("Adjust the horizontal space between the divider lines and the central label/pill.").addSlider((slider) => {
+      var _a;
+      return slider.setLimits(0, 40, 1).setValue((_a = this.plugin.settings.dividerLinePadding) != null ? _a : 8).setDynamicTooltip().onChange(async (value) => {
+        this.plugin.settings.dividerLinePadding = value;
+        await this.plugin.saveSettings();
+        this.plugin.generateStyles();
+        updatePreview();
+      });
+    });
     new obsidian7.Setting(divCard).setName("Default line style").addDropdown((drop) => drop.addOption("solid", "Solid").addOption("dashed", "Dashed").addOption("dotted", "Dotted").setValue(this.plugin.settings.dividerLineStyle || "solid").onChange(async (value) => {
       this.plugin.settings.dividerLineStyle = value;
       await this.plugin.saveSettings();
       this.plugin.dividerManager.syncDividers();
+      updatePreview();
     }));
     const typeCard = makeCard(generalPanel, "Aa", "Path & typography");
     new obsidian7.Setting(typeCard).setName("Show item counters").setDesc("Displays recursive folder and file counts next to folder names.").addToggle((toggle) => toggle.setValue(this.plugin.settings.showItemCounters).onChange(async (value) => {
@@ -3310,6 +3498,7 @@ var StyleGenerator = class {
     return style;
   }
   generateCss() {
+    var _a;
     let css = "";
     const root = this.app.vault.getRoot();
     if (!root)
@@ -3471,7 +3660,7 @@ var StyleGenerator = class {
       return res;
     };
     const traverse = (folder, depth, validIndex = 0, rootIndex = 0, passedColor = null, inheritedStyle = null) => {
-      var _a, _b, _c, _d;
+      var _a2, _b, _c, _d;
       const copyFolders = folder.children.filter((c) => c instanceof obsidian10.TFolder).sort((a, b) => a.name.localeCompare(b.name));
       const copyFiles = folder.children.filter((c) => c instanceof obsidian10.TFile).sort((a, b) => a.name.localeCompare(b.name));
       const glassCss = this.settings.glassmorphism ? `backdrop-filter: blur(8px) saturate(120%); -webkit-backdrop-filter: blur(8px) saturate(120%);` : "";
@@ -3577,7 +3766,7 @@ var StyleGenerator = class {
                             `;
           }
           if (iconId) {
-            const isCustomEmoji = !((_a = obsidian10.getIconIds) == null ? void 0 : _a().includes(`lucide-${iconId}`)) && !((_b = obsidian10.getIconIds) == null ? void 0 : _b().includes(iconId)) && !(this.settings.customIcons && this.settings.customIcons[iconId]);
+            const isCustomEmoji = !((_a2 = obsidian10.getIconIds) == null ? void 0 : _a2().includes(`lucide-${iconId}`)) && !((_b = obsidian10.getIconIds) == null ? void 0 : _b().includes(iconId)) && !(this.settings.customIcons && this.settings.customIcons[iconId]);
             if (isCustomEmoji) {
               css += `
                                 body .nav-file-title[data-path="${safePath}"] .nav-file-title-content::before,
@@ -4253,7 +4442,7 @@ var StyleGenerator = class {
                     display: flex !important;
                     align-items: center !important;
                     width: 100% !important;
-                    gap: 12px !important;
+                    gap: ${(_a = this.settings.dividerLinePadding) != null ? _a : 8}px !important;
                 }
                 
                 .cf-divider-line {
@@ -4388,7 +4577,7 @@ var _DividerManager = class {
   }
   // ─── Divider Node Factory ───────────────────────────────────────────
   buildDividerNode(path, conf, doc) {
-    var _a;
+    var _a, _b;
     const dividerThickness = this.plugin.settings.dividerThickness || 1.5;
     const globalLineStyle = this.plugin.settings.dividerLineStyle || "solid";
     const div = doc.createElement("div");
@@ -4407,7 +4596,7 @@ var _DividerManager = class {
       display: "flex",
       alignItems: "center",
       width: "100%",
-      gap: "8px"
+      gap: `${(_a = this.plugin.settings.dividerLinePadding) != null ? _a : 8}px`
     });
     const makeLine = (side) => {
       const line = bridge.createDiv({ cls: `cf-divider-line cf-divider-line-${side}` });
@@ -4443,24 +4632,24 @@ var _DividerManager = class {
       "--cf-divider-letter-spacing": isUpper ? "0.15em" : "normal"
     });
     if (pillMode) {
+      let pillBg = useGlass ? "rgba(var(--mono-rgb-100), 0.04)" : "var(--background-secondary-alt)";
+      const customPillColor = conf.dividerPillColor || this.plugin.settings.dividerPillColor;
+      if (customPillColor) {
+        pillBg = customPillColor;
+      } else {
+        const rgb = hexToRgbObj(color);
+        if (rgb) {
+          pillBg = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.15)`;
+        }
+      }
       chip.setCssStyles({
         padding: "6px 16px",
-        borderRadius: "40px"
+        borderRadius: "40px",
+        backgroundColor: pillBg,
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+        border: "1px solid rgba(var(--mono-rgb-100), 0.15)",
+        backdropFilter: useGlass ? "blur(16px)" : "none"
       });
-      if (useGlass) {
-        chip.setCssStyles({
-          backgroundColor: "rgba(var(--mono-rgb-100), 0.04)",
-          backdropFilter: "blur(16px)",
-          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-          border: "1px solid rgba(var(--mono-rgb-100), 0.15)"
-        });
-      } else {
-        chip.setCssStyles({
-          backgroundColor: "var(--background-secondary-alt)",
-          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-          border: "1px solid rgba(var(--mono-rgb-100), 0.15)"
-        });
-      }
     } else {
       chip.setCssStyles({
         backgroundColor: "transparent",
@@ -4471,7 +4660,7 @@ var _DividerManager = class {
       });
     }
     const rawIcon = conf.dividerIcon ? conf.dividerIcon.trim() : "";
-    const iconIds = ((_a = obsidian11.getIconIds) == null ? void 0 : _a()) || [];
+    const iconIds = ((_b = obsidian11.getIconIds) == null ? void 0 : _b()) || [];
     const isLucide = iconIds.includes(`lucide-${rawIcon}`) || iconIds.includes(rawIcon);
     const addIcon2 = () => {
       if (!rawIcon)

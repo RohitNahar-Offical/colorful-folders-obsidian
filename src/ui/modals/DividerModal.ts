@@ -3,6 +3,7 @@ import { FolderStyle, IColorfulFoldersPlugin } from '../../common/types';
 import { IconPickerModal } from './IconPickerModal';
 import { HoverMessageModal } from './HoverMessageModal';
 import { createVisualColorPicker } from '../components/ColorPicker';
+import { parseColorToHexAlpha, hexAlphaToRgba } from '../../common/utils';
 
 export class DividerModal extends obsidian.Modal {
     plugin: IColorfulFoldersPlugin;
@@ -18,6 +19,7 @@ export class DividerModal extends obsidian.Modal {
         useGlass: boolean;
         iconPosition: 'left' | 'right' | 'both';
         pillMode: 'on' | 'off';
+        pillColor: string;
         description: string;
     };
     originalStyle: FolderStyle | string | undefined;
@@ -53,6 +55,7 @@ export class DividerModal extends obsidian.Modal {
             useGlass: existingStyle.dividerGlass !== undefined ? existingStyle.dividerGlass : true,
             iconPosition: existingStyle.dividerIconPosition || "left",
             pillMode: existingStyle.dividerPillMode === 'off' ? 'off' : 'on',
+            pillColor: existingStyle.dividerPillColor || "",
             description: existingStyle.dividerDescription || ""
         };
     }
@@ -216,8 +219,62 @@ export class DividerModal extends obsidian.Modal {
                 .setValue(this.config.pillMode)
                 .onChange(v => {
                     this.config.pillMode = v as 'on' | 'off';
+                    this.onOpen(); // Refresh to show/hide pill color setting
                     this._liveSync();
                 }));
+
+        if (this.config.pillMode === 'on') {
+            const pRow = styleSect.createDiv();
+            let pPickerWrap: HTMLElement | null = null;
+            let pColorBox: HTMLElement;
+            let pTextComp: obsidian.TextComponent;
+
+            new obsidian.Setting(pRow)
+                .setName("Pill background color")
+                .setDesc("Optional. Enter an rgba color. Leave empty to inherit folder color.")
+                .addButton(btn => {
+                    btn.setIcon('palette')
+                        .setTooltip('Open visual color picker')
+                        .onClick(() => {
+                            if (pPickerWrap) {
+                                pPickerWrap.remove();
+                                pPickerWrap = null;
+                                return;
+                            }
+                            pPickerWrap = pRow.createDiv();
+                            pPickerWrap.setCssStyles({ 
+                                marginTop: '12px', padding: '16px', background: 'var(--background-secondary)', 
+                                borderRadius: '8px', border: '1px solid var(--background-modifier-border)'
+                            });
+                            
+                            const current = parseColorToHexAlpha(this.config.pillColor);
+                            createVisualColorPicker(pPickerWrap, current.hex, (hex, alpha) => {
+                                const rgba = hexAlphaToRgba(hex, alpha);
+                                this.config.pillColor = rgba;
+                                pTextComp.setValue(rgba);
+                                pColorBox.setCssStyles({ backgroundColor: rgba });
+                                this._liveSync();
+                            }, { showAlpha: true, initialAlpha: current.alpha });
+                        });
+                })
+                .addText(text => {
+                    pTextComp = text;
+                    text.setPlaceholder("Inherit folder color...")
+                        .setValue(this.config.pillColor || "")
+                        .onChange(v => {
+                            this.config.pillColor = v;
+                            this._liveSync();
+                            pColorBox.setCssStyles({ backgroundColor: v || 'transparent' });
+                        });
+                    
+                    pColorBox = text.inputEl.parentElement!.createDiv();
+                    pColorBox.setCssStyles({
+                        width: '24px', height: '24px', borderRadius: '4px', border: '1px solid var(--background-modifier-border)',
+                        marginLeft: '12px', backgroundColor: this.config.pillColor || 'transparent',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    });
+                });
+        }
 
         new obsidian.Setting(styleSect)
             .setName("Line style")
@@ -327,6 +384,7 @@ export class DividerModal extends obsidian.Modal {
             delete styleObj.dividerIconColor;
             styleObj.dividerIconPosition = this.config.iconPosition;
             styleObj.dividerPillMode = this.config.pillMode;
+            styleObj.dividerPillColor = this.config.pillColor;
             styleObj.dividerDescription = this.config.description;
             styleObj.hasDivider = true;
 
@@ -353,6 +411,7 @@ export class DividerModal extends obsidian.Modal {
                 dividerIcon: this.config.icon,
                 dividerIconPosition: this.config.iconPosition,
                 dividerPillMode: this.config.pillMode,
+                dividerPillColor: this.config.pillColor,
                 dividerDescription: this.config.description,
                 hasDivider: true
             };

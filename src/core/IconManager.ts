@@ -190,7 +190,7 @@ export class IconManager {
         
         const coloredSvg = this.colorizeSvg(svgStr, color);
         wrapper.empty();
-        // eslint-disable-next-line no-unsanitized/method
+        // eslint-disable-next-line no-unsanitized/method -- contextual fragment is safe here as coloredSvg is derived from sanitized/built-in icons
         const frag = doc.createRange().createContextualFragment(coloredSvg);
         wrapper.appendChild(frag);
     }

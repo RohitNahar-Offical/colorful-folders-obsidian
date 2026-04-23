@@ -1065,7 +1065,7 @@ export class StyleGenerator {
                     display: flex !important;
                     align-items: center !important;
                     width: 100% !important;
-                    gap: 12px !important;
+                    gap: ${this.settings.dividerLinePadding ?? 8}px !important;
                 }
                 
                 .cf-divider-line {

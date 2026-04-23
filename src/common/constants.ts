@@ -114,7 +114,9 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     showHiddenItems: false,
     showRibbonIcon: true,
     lastVersion: "",
-    globalBackgroundColor: ""
+    globalBackgroundColor: "",
+    dividerLinePadding: 8,
+    dividerPillColor: ""
 };
 
 export const AUTO_ICON_CATEGORIES: AutoIconData[] = [

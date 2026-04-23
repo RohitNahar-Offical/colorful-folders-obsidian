@@ -21,6 +21,7 @@ export interface FolderStyle {
     dividerIconPosition?: 'left' | 'right' | 'both';
     dividerPillMode?: 'global' | 'on' | 'off';
     dividerDescription?: string;
+    dividerPillColor?: string;
     hasDivider?: boolean;
     isHidden?: boolean;
 }
@@ -77,6 +78,8 @@ export interface ColorfulFoldersSettings {
     showRibbonIcon: boolean;
     lastVersion: string;
     globalBackgroundColor: string;
+    dividerLinePadding: number;
+    dividerPillColor: string;
 }
 
 
@@ -129,6 +132,7 @@ export interface IColorfulFoldersPlugin {
     dividerManager: {
         syncDividers(): void;
         clean(): void;
+        buildDividerNode(path: string, conf: FolderStyle, doc: Document): HTMLElement;
     };
     getStyle(path: string): FolderStyle | null;
     getEffectiveStyle(target: TAbstractFile): EffectiveStyle;

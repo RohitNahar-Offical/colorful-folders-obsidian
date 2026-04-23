@@ -2,7 +2,7 @@ import * as obsidian from 'obsidian';
 import { IColorfulFoldersPlugin, FolderStyle } from '../common/types';
 import { DividerModal } from '../ui/modals/DividerModal';
 import { HoverMessageModal } from '../ui/modals/HoverMessageModal';
-import { safeEscape } from '../common/utils';
+import { safeEscape, hexToRgbObj } from '../common/utils';
 import { NotebookNavigatorIntegration } from '../integrations/NotebookNavigator';
 
 interface InternalPlugins {
@@ -27,7 +27,7 @@ export class DividerManager {
 
     // ─── Divider Node Factory ───────────────────────────────────────────
 
-    private buildDividerNode(path: string, conf: FolderStyle, doc: Document): HTMLElement {
+    public buildDividerNode(path: string, conf: FolderStyle, doc: Document): HTMLElement {
         const dividerThickness = this.plugin.settings.dividerThickness || 1.5;
         const globalLineStyle = this.plugin.settings.dividerLineStyle || 'solid';
 
@@ -57,7 +57,7 @@ export class DividerManager {
             display: 'flex',
             alignItems: 'center',
             width: '100%',
-            gap: '8px'
+            gap: `${this.plugin.settings.dividerLinePadding ?? 8}px`
         });
 
         const makeLine = (side: 'left' | 'right') => {
@@ -99,24 +99,27 @@ export class DividerManager {
         });
 
         if (pillMode) {
+            let pillBg = useGlass ? 'rgba(var(--mono-rgb-100), 0.04)' : 'var(--background-secondary-alt)';
+            const customPillColor = conf.dividerPillColor || this.plugin.settings.dividerPillColor;
+
+            if (customPillColor) {
+                pillBg = customPillColor;
+            } else {
+                // Fallback: Inherit from divider color with transparency
+                const rgb = hexToRgbObj(color);
+                if (rgb) {
+                    pillBg = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.15)`;
+                }
+            }
+
             chip.setCssStyles({
                 padding: '6px 16px',
-                borderRadius: '40px'
+                borderRadius: '40px',
+                backgroundColor: pillBg,
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                border: '1px solid rgba(var(--mono-rgb-100), 0.15)',
+                backdropFilter: useGlass ? 'blur(16px)' : 'none'
             });
-            if (useGlass) {
-                chip.setCssStyles({
-                    backgroundColor: 'rgba(var(--mono-rgb-100), 0.04)',
-                    backdropFilter: 'blur(16px)',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                    border: '1px solid rgba(var(--mono-rgb-100), 0.15)'
-                });
-            } else {
-                chip.setCssStyles({ 
-                    backgroundColor: 'var(--background-secondary-alt)',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                    border: '1px solid rgba(var(--mono-rgb-100), 0.15)'
-                });
-            }
         } else {
             chip.setCssStyles({
                 backgroundColor: 'transparent',
