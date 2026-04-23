@@ -125,7 +125,7 @@ This prevents "ghost colors" from themes or previous states from lingering, ensu
 
 ---
 
-## 10. High-Visibility Metadata & Counters
+## 10. High-visibility metadata & counters
 
 The plugin emphasizes readability for essential metadata (folder counts, file counts, and tags).
 
