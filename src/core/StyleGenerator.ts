@@ -906,14 +906,14 @@ export class StyleGenerator {
                         <g stroke="${color.hex}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(0, 3) scale(0.65)">
                             <path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/>
                         </g>
-                        <text x="22" y="15" fill="${color.hex}" font-family="sans-serif" font-size="12.5" font-weight="bold">${counts.folders}</text>
-                        <g stroke="${color.hex}" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(44, 3) scale(0.65)">
+                        <text x="21" y="15" fill="${color.hex}" font-family="sans-serif" font-size="11" font-weight="700">${counts.folders}</text>
+                        <g stroke="${color.hex}" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(42, 3) scale(0.65)">
                             <path d="M15.5 2H8.6c-.4 0-.8.2-1.1.5-.3.3-.5.7-.5 1.1v12.8c0 .4.2.8.5 1.1.3.3.7.5 1.1.5h9.8c.4 0 .8-.2 1.1-.5.3-.3.5-.7.5-1.1V7.5L15.5 2z"/>
                             <path d="M15 2v5h5"/>
                             <path d="M2 17.6V7.1c0-.4.2-.8.5-1.1.3-.3.7-.5 1.1-.5h3.3"/>
                             <path d="M13 22H3.6c-.4 0-.8-.2-1.1-.5-.3-.3-.5-.7-.5-1.1V10"/>
                         </g>
-                        <text x="64" y="15" fill="${color.hex}" font-family="sans-serif" font-size="12.5" font-weight="bold">${counts.files}</text>
+                        <text x="60" y="15" fill="${color.hex}" font-family="sans-serif" font-size="11" font-weight="700">${counts.files}</text>
                     </svg>`;
 
                     const encodedSvg = encodeURIComponent(combinedSvg.replace(/>\s+</g, '><').replace(/(\r\n|\n|\r)/gm, ""));
@@ -935,6 +935,22 @@ export class StyleGenerator {
                             flex-shrink: 0 !important;
                             pointer-events: none !important;
                             opacity: 0.8 !important;
+                        }
+
+                        /* Make right-side labels (tags, extensions, etc.) bold */
+                        [data-path="${safePath}"] .nav-file-tag,
+                        [data-path="${safePath}"] .nav-folder-tag,
+                        [data-path="${safePath}"] .tree-item-flair {
+                            font-weight: 700 !important;
+                        }
+                    `);
+                } else {
+                    // Even if counters are off, make other labels bold if they exist
+                    cssRules.push(`
+                        [data-path="${safePath}"] .nav-file-tag,
+                        [data-path="${safePath}"] .nav-folder-tag,
+                        [data-path="${safePath}"] .tree-item-flair {
+                            font-weight: 700 !important;
                         }
                     `);
                 }

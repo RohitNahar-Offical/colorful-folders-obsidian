@@ -92,10 +92,10 @@ export class DividerManager {
         // Use CSS variables for dynamic properties to comply with Obsidian guidelines
         chip.setCssProps({
             '--cf-divider-color': color,
-            '--cf-divider-font-size': isUpper ? '12px' : '14px',
-            '--cf-divider-font-weight': isUpper ? '900' : '700',
+            '--cf-divider-font-size': isUpper ? '10px' : '12px',
+            '--cf-divider-font-weight': isUpper ? '800' : '600',
             '--cf-divider-text-transform': isUpper ? 'uppercase' : 'none',
-            '--cf-divider-letter-spacing': isUpper ? '0.2em' : 'normal'
+            '--cf-divider-letter-spacing': isUpper ? '0.15em' : 'normal'
         });
 
         if (pillMode) {

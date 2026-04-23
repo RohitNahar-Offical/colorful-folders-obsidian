@@ -1,19 +1,5 @@
 # Version History - Colorful Folders for Obsidian
 
-## 🛡️ 4.1.3 - Stability & Visual Clarity
-This release enhances visual readability across the file explorer and resolves core stability issues.
-
-### 👓 1. Visual Refinements
-- **Bold Item Counters**: Increased the size and weight of folder/file count indicators for better visibility on high-resolution screens.
-- **Enhanced Divider Labels**: Enlarged divider text and applied a heavier font weight to ensure section headers stand out.
-- **Precision Alignment**: Slightly adjusted icon and text spacing in the sidebar to maintain pixel-perfect layouts with larger fonts.
-
-### 🛡️ 2. Security & Stability
-- **Instant Vault Lock**: Fixed a synchronization issue where the "Lock Vault" button would delay appearing after setting a password.
-- **Linter Compliance**: Performed a full codebase audit and resolved minor warnings to ensure 100% build stability.
-
----
-
 ## ⚡ 4.1.2 - High-Performance Architecture
 This release focuses on core engine optimizations to ensure the plugin remains lightning-fast, even in massive vaults with 20,000+ files.
 
