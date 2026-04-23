@@ -5261,7 +5261,7 @@ var IconManager = class {
       const svg = doc.querySelector("svg");
       if (!svg)
         return svgStr;
-      const FORBIDDEN_TAGS = ["script", "metadata", "foreignObject", "iframe", "object", "embed", "style", "defs"];
+      const FORBIDDEN_TAGS = ["script", "iframe", "object", "embed", "foreignObject"];
       const sanitizeNode = (el) => {
         const tag = el.tagName.toLowerCase();
         if (FORBIDDEN_TAGS.includes(tag)) {

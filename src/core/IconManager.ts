@@ -220,7 +220,9 @@ export class IconManager {
             if (!svg) return svgStr;
 
             // --- Robust DOM-based Sanitization ---
-            const FORBIDDEN_TAGS = ['script', 'metadata', 'foreignObject', 'iframe', 'object', 'embed', 'style', 'defs'];
+            // We block only truly dangerous tags. 'defs' and 'style' are allowed 
+            // for compatibility with complex icons (gradients/patterns).
+            const FORBIDDEN_TAGS = ['script', 'iframe', 'object', 'embed', 'foreignObject'];
             
             const sanitizeNode = (el: Element) => {
                 const tag = el.tagName.toLowerCase();
