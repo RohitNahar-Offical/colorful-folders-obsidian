@@ -4323,10 +4323,13 @@ var StyleGenerator = class {
                             opacity: 0.8 !important;
                         }
 
-                        /* Make right-side labels (tags, extensions, etc.) bold */
+                        /* Make right-side labels (tags, extensions, counts, etc.) bold */
                         [data-path="${safePath}"] .nav-file-tag,
                         [data-path="${safePath}"] .nav-folder-tag,
-                        [data-path="${safePath}"] .tree-item-flair {
+                        [data-path="${safePath}"] .tree-item-flair,
+                        [data-path="${safePath}"] .nav-file-note-count,
+                        [data-path="${safePath}"] .nav-folder-note-count,
+                        [data-path="${safePath}"] .tag-count {
                             font-weight: 700 !important;
                         }
                     `);
@@ -4334,7 +4337,10 @@ var StyleGenerator = class {
           cssRules.push(`
                         [data-path="${safePath}"] .nav-file-tag,
                         [data-path="${safePath}"] .nav-folder-tag,
-                        [data-path="${safePath}"] .tree-item-flair {
+                        [data-path="${safePath}"] .tree-item-flair,
+                        [data-path="${safePath}"] .nav-file-note-count,
+                        [data-path="${safePath}"] .nav-folder-note-count,
+                        [data-path="${safePath}"] .tag-count {
                             font-weight: 700 !important;
                         }
                     `);
