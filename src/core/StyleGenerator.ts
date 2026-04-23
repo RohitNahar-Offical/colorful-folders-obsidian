@@ -809,8 +809,8 @@ export class StyleGenerator {
                 }
 
                 cssRules.push(`
-                    .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem),
-                    .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-navitem):not(.nn-file) {
+                    .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem),
+                    .tree-item-self[data-path="${safePath}"]:not(.nn-navitem):not(.nn-file) {
                         background-color: ${bg} !important;
                         opacity: 1.0 !important;
                         border-radius: 6px;
@@ -938,13 +938,13 @@ export class StyleGenerator {
                         }
 
                         /* Make right-side labels (tags, extensions, counts, etc.) look like color-matched pills */
-                        [data-path="${safePath}"] .nav-file-tag,
-                        [data-path="${safePath}"] .nav-folder-tag,
-                        [data-path="${safePath}"] .tree-item-flair,
-                        [data-path="${safePath}"] .nav-file-note-count,
-                        [data-path="${safePath}"] .nav-folder-note-count,
-                        [data-path="${safePath}"] .tag-count,
-                        [data-path="${safePath}"] .nav-file-extension {
+                        body [data-path="${safePath}"] .nav-file-tag,
+                        body [data-path="${safePath}"] .nav-folder-tag,
+                        body [data-path="${safePath}"] .tree-item-flair,
+                        body [data-path="${safePath}"] .nav-file-note-count,
+                        body [data-path="${safePath}"] .nav-folder-note-count,
+                        body [data-path="${safePath}"] .tag-count,
+                        body [data-path="${safePath}"] .nav-file-extension {
                             font-weight: 900 !important;
                             color: ${color.hex} !important;
                             background-color: ${color.hex}15 !important;
@@ -961,13 +961,13 @@ export class StyleGenerator {
                 } else {
                     // Even if counters are off, make other labels bold if they exist
                     cssRules.push(`
-                        [data-path="${safePath}"] .nav-file-tag,
-                        [data-path="${safePath}"] .nav-folder-tag,
-                        [data-path="${safePath}"] .tree-item-flair,
-                        [data-path="${safePath}"] .nav-file-note-count,
-                        [data-path="${safePath}"] .nav-folder-note-count,
-                        [data-path="${safePath}"] .tag-count,
-                        [data-path="${safePath}"] .nav-file-extension {
+                        body [data-path="${safePath}"] .nav-file-tag,
+                        body [data-path="${safePath}"] .nav-folder-tag,
+                        body [data-path="${safePath}"] .tree-item-flair,
+                        body [data-path="${safePath}"] .nav-file-note-count,
+                        body [data-path="${safePath}"] .nav-folder-note-count,
+                        body [data-path="${safePath}"] .tag-count,
+                        body [data-path="${safePath}"] .nav-file-extension {
                             font-weight: 900 !important;
                             color: ${color.hex} !important;
                             background-color: ${color.hex}15 !important;
