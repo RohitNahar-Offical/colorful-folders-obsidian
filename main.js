@@ -1670,7 +1670,7 @@ var HoverMessageModal = class extends obsidian3.Modal {
     });
     const textArea = editorWrapper.createEl("textarea");
     textArea.value = this.description;
-    textArea.placeholder = "Write something beautiful... \n\nTips:\n- Use [[links]] to jump to notes\n- Use #tags to categorize\n- Use **bold** or *italic*";
+    textArea.placeholder = "Write something beautiful... \n\nTips:\n- Use [[links]] to jump to notes\n- use #tags to categorize\n- use **bold** or *italic*";
     textArea.setCssStyles({
       width: "100%",
       height: "180px",
@@ -2689,7 +2689,7 @@ var ColorfulFoldersSettingTab = class extends obsidian7.PluginSettingTab {
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
-    new obsidian7.Setting(genCard).setName("Custom colors (hex)").setDesc("Comma-separated list of hex colors.").addText((text) => text.setPlaceholder("#ff0000, #00ff00").setValue(this.plugin.settings.customPalette).onChange(async (value) => {
+    new obsidian7.Setting(genCard).setName("Custom colors (hex)").setDesc("Comma-separated list of hex colors.").addText((text) => text.setPlaceholder("#Ff0000, #00ff00").setValue(this.plugin.settings.customPalette).onChange(async (value) => {
       this.plugin.settings.customPalette = value;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
@@ -2704,7 +2704,7 @@ var ColorfulFoldersSettingTab = class extends obsidian7.PluginSettingTab {
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
     }));
-    new obsidian7.Setting(genCard).setName("Global default background").setDesc("Set a universal background color for all folders/files that do not have a custom style. Leave empty for theme-default (transparent).").addText((text) => text.setPlaceholder("#2a2a2a").setValue(this.plugin.settings.globalBackgroundColor || "").onChange(async (value) => {
+    new obsidian7.Setting(genCard).setName("Global default background").setDesc("Set a universal background color for all folders/files that do not have a custom style. Leave empty for theme-default (transparent).").addText((text) => text.setPlaceholder("#2A2a2a").setValue(this.plugin.settings.globalBackgroundColor || "").onChange(async (value) => {
       this.plugin.settings.globalBackgroundColor = value;
       await this.plugin.saveSettings();
       this.plugin.generateStyles();
@@ -4207,23 +4207,13 @@ var StyleGenerator = class {
                     `);
         }
         cssRules.push(`
-                    .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem),
-                    .tree-item-self[data-path="${safePath}"]:not(.nn-navitem) {
+                    .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem),
+                    .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-navitem):not(.nn-file) {
                         background-color: ${bg} !important;
                         opacity: 1.0 !important;
                         border-radius: 6px;
                         ${glassCss}
                         transition: background-color 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
-                        
-                        /* Dynamic Plugin Variables */
-                        --cf-color: ${color.hex} !important;
-                        --cf-rgb: ${color.rgb} !important;
-                        
-                        /* Native Obsidian Tag Variables */
-                        --nav-tag-background: ${color.hex}15 !important;
-                        --nav-tag-color: ${color.hex} !important;
-                        --nav-tag-radius: 10px !important;
-                        --nav-tag-weight: 900 !important;
                     }
                 `);
         if (nnActive) {
@@ -4333,58 +4323,27 @@ var StyleGenerator = class {
                             opacity: 0.8 !important;
                         }
 
-                        /* Universal Metadata Pill Override - Targets all right-side labels */
-                        body [data-path="${safePath}"] [class*="-tag"],
-                        body [data-path="${safePath}"] [class*="-count"],
-                        body [data-path="${safePath}"] [class*="-flair"],
-                        body [data-path="${safePath}"] [class*="-extension"],
-                        body [data-path="${safePath}"] .nav-file-tag,
-                        body [data-path="${safePath}"] .nav-folder-tag,
-                        body [data-path="${safePath}"] .nav-file-extension,
-                        body [data-path="${safePath}"] .tree-item-flair,
-                        body [data-path="${safePath}"] .tag-count,
-                        body [data-path="${safePath}"] a.tag {
+                        /* Make right-side labels (tags, extensions, counts, etc.) bold */
+                        [data-path="${safePath}"] .nav-file-tag,
+                        [data-path="${safePath}"] .nav-folder-tag,
+                        [data-path="${safePath}"] .tree-item-flair,
+                        [data-path="${safePath}"] .nav-file-note-count,
+                        [data-path="${safePath}"] .nav-folder-note-count,
+                        [data-path="${safePath}"] .tag-count,
+                        [data-path="${safePath}"] .nav-file-extension {
                             font-weight: 900 !important;
-                            color: var(--cf-color) !important;
-                            background-color: rgba(var(--cf-rgb), 0.15) !important;
-                            border: 1px solid rgba(var(--cf-rgb), 0.25) !important;
-                            border-radius: 10px !important;
-                            padding: 2px 8px !important;
-                            font-size: 10px !important;
-                            line-height: 1.2 !important;
-                            display: inline-flex !important;
-                            align-items: center !important;
-                            justify-content: center !important;
-                            margin-left: 4px !important;
-                            text-decoration: none !important;
                         }
                     `);
         } else {
           cssRules.push(`
-                        /* Universal Metadata Pill Override - Targets all right-side labels */
-                        body [data-path="${safePath}"] [class*="-tag"],
-                        body [data-path="${safePath}"] [class*="-count"],
-                        body [data-path="${safePath}"] [class*="-flair"],
-                        body [data-path="${safePath}"] [class*="-extension"],
-                        body [data-path="${safePath}"] .nav-file-tag,
-                        body [data-path="${safePath}"] .nav-folder-tag,
-                        body [data-path="${safePath}"] .nav-file-extension,
-                        body [data-path="${safePath}"] .tree-item-flair,
-                        body [data-path="${safePath}"] .tag-count,
-                        body [data-path="${safePath}"] a.tag {
+                        [data-path="${safePath}"] .nav-file-tag,
+                        [data-path="${safePath}"] .nav-folder-tag,
+                        [data-path="${safePath}"] .tree-item-flair,
+                        [data-path="${safePath}"] .nav-file-note-count,
+                        [data-path="${safePath}"] .nav-folder-note-count,
+                        [data-path="${safePath}"] .tag-count,
+                        [data-path="${safePath}"] .nav-file-extension {
                             font-weight: 900 !important;
-                            color: var(--cf-color) !important;
-                            background-color: rgba(var(--cf-rgb), 0.15) !important;
-                            border: 1px solid rgba(var(--cf-rgb), 0.25) !important;
-                            border-radius: 10px !important;
-                            padding: 2px 8px !important;
-                            font-size: 10px !important;
-                            line-height: 1.2 !important;
-                            display: inline-flex !important;
-                            align-items: center !important;
-                            justify-content: center !important;
-                            margin-left: 4px !important;
-                            text-decoration: none !important;
                         }
                     `);
         }

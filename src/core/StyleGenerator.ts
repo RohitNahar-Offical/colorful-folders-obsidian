@@ -292,8 +292,8 @@ export class StyleGenerator {
                     const isBold = fileStyle?.isBold !== undefined ? fileStyle.isBold : (inheritedStyle?.applyToFiles ? inheritedStyle.isBold : false);
                     const isItalic = fileStyle?.isItalic !== undefined ? fileStyle.isItalic : (inheritedStyle?.applyToFiles ? inheritedStyle.isItalic : false);
 
-                    const fileBgAlpha = isCustomColor ? op : (this.settings.fileBackgroundOpacity !== undefined ? this.settings.fileBackgroundOpacity : (isDark ? 0.1 : 0.15));
-                    cssRules.push(`
+                        const fileBgAlpha = isCustomColor ? op : (this.settings.fileBackgroundOpacity !== undefined ? this.settings.fileBackgroundOpacity : (isDark ? 0.1 : 0.15));
+                        cssRules.push(`
                             .nav-files-container .nav-file-title[data-path="${safePath}"]:not(.nn-file),
                             .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) {
                                 ${shouldColorNative ? `
@@ -311,8 +311,8 @@ export class StyleGenerator {
                             }
                         `);
 
-                    if (nnFileBgActive) {
-                        cssRules.push(`
+                        if (nnFileBgActive) {
+                            cssRules.push(`
                                 ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} {
                                     ${shouldColorNN ? `
                                         background-color: rgba(${color.rgb}, ${fileBgAlpha}) !important;
@@ -330,7 +330,7 @@ export class StyleGenerator {
                                     font-style: ${isItalic ? 'italic' : 'normal'} !important;
                                 }
                             `);
-                    }
+                        }
 
 
 
@@ -348,7 +348,7 @@ export class StyleGenerator {
                                     background-image: none !important;
                                 }
                             `);
-
+                            
                             if (nnActive || nnFileBgActive) {
                                 cssRules.push(`
                                     ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before,
@@ -365,7 +365,7 @@ export class StyleGenerator {
                             // Custom/Selected Icon rendering is now handled by DOM Injection (IconManager)
                             // But only if it's a manual override (activeStyle.iconId)
                             const isManualCustom = !!(activeStyle && activeStyle.iconId);
-
+                            
                             if (isManualCustom) {
                                 cssRules.push(`
                                     body [data-path="${safePath}"] .nav-file-title-content::before,
@@ -681,7 +681,7 @@ export class StyleGenerator {
                         // Custom/Selected Icon rendering is now handled by DOM Injection (IconManager)
                         // But only if it's a manual override (activeStyle.iconId)
                         const isManualCustom = !!(activeStyle && activeStyle.iconId);
-
+                        
                         if (isManualCustom) {
                             cssRules.push(`
                                 body [data-path="${safePath}"] .nav-folder-title-content::before,
@@ -809,23 +809,13 @@ export class StyleGenerator {
                 }
 
                 cssRules.push(`
-                    .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem),
-                    .tree-item-self[data-path="${safePath}"]:not(.nn-navitem) {
+                    .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem),
+                    .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-navitem):not(.nn-file) {
                         background-color: ${bg} !important;
                         opacity: 1.0 !important;
                         border-radius: 6px;
                         ${glassCss}
                         transition: background-color 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
-                        
-                        /* Dynamic Plugin Variables */
-                        --cf-color: ${color.hex} !important;
-                        --cf-rgb: ${color.rgb} !important;
-                        
-                        /* Native Obsidian Tag Variables */
-                        --nav-tag-background: ${color.hex}15 !important;
-                        --nav-tag-color: ${color.hex} !important;
-                        --nav-tag-radius: 10px !important;
-                        --nav-tag-weight: 900 !important;
                     }
                 `);
                 if (nnActive) {
@@ -947,59 +937,28 @@ export class StyleGenerator {
                             opacity: 0.8 !important;
                         }
 
-                        /* Universal Metadata Pill Override - Targets all right-side labels */
-                        body [data-path="${safePath}"] [class*="-tag"],
-                        body [data-path="${safePath}"] [class*="-count"],
-                        body [data-path="${safePath}"] [class*="-flair"],
-                        body [data-path="${safePath}"] [class*="-extension"],
-                        body [data-path="${safePath}"] .nav-file-tag,
-                        body [data-path="${safePath}"] .nav-folder-tag,
-                        body [data-path="${safePath}"] .nav-file-extension,
-                        body [data-path="${safePath}"] .tree-item-flair,
-                        body [data-path="${safePath}"] .tag-count,
-                        body [data-path="${safePath}"] a.tag {
+                        /* Make right-side labels (tags, extensions, counts, etc.) bold */
+                        [data-path="${safePath}"] .nav-file-tag,
+                        [data-path="${safePath}"] .nav-folder-tag,
+                        [data-path="${safePath}"] .tree-item-flair,
+                        [data-path="${safePath}"] .nav-file-note-count,
+                        [data-path="${safePath}"] .nav-folder-note-count,
+                        [data-path="${safePath}"] .tag-count,
+                        [data-path="${safePath}"] .nav-file-extension {
                             font-weight: 900 !important;
-                            color: var(--cf-color) !important;
-                            background-color: rgba(var(--cf-rgb), 0.15) !important;
-                            border: 1px solid rgba(var(--cf-rgb), 0.25) !important;
-                            border-radius: 10px !important;
-                            padding: 2px 8px !important;
-                            font-size: 10px !important;
-                            line-height: 1.2 !important;
-                            display: inline-flex !important;
-                            align-items: center !important;
-                            justify-content: center !important;
-                            margin-left: 4px !important;
-                            text-decoration: none !important;
                         }
                     `);
                 } else {
                     // Even if counters are off, make other labels bold if they exist
                     cssRules.push(`
-                        /* Universal Metadata Pill Override - Targets all right-side labels */
-                        body [data-path="${safePath}"] [class*="-tag"],
-                        body [data-path="${safePath}"] [class*="-count"],
-                        body [data-path="${safePath}"] [class*="-flair"],
-                        body [data-path="${safePath}"] [class*="-extension"],
-                        body [data-path="${safePath}"] .nav-file-tag,
-                        body [data-path="${safePath}"] .nav-folder-tag,
-                        body [data-path="${safePath}"] .nav-file-extension,
-                        body [data-path="${safePath}"] .tree-item-flair,
-                        body [data-path="${safePath}"] .tag-count,
-                        body [data-path="${safePath}"] a.tag {
+                        [data-path="${safePath}"] .nav-file-tag,
+                        [data-path="${safePath}"] .nav-folder-tag,
+                        [data-path="${safePath}"] .tree-item-flair,
+                        [data-path="${safePath}"] .nav-file-note-count,
+                        [data-path="${safePath}"] .nav-folder-note-count,
+                        [data-path="${safePath}"] .tag-count,
+                        [data-path="${safePath}"] .nav-file-extension {
                             font-weight: 900 !important;
-                            color: var(--cf-color) !important;
-                            background-color: rgba(var(--cf-rgb), 0.15) !important;
-                            border: 1px solid rgba(var(--cf-rgb), 0.25) !important;
-                            border-radius: 10px !important;
-                            padding: 2px 8px !important;
-                            font-size: 10px !important;
-                            line-height: 1.2 !important;
-                            display: inline-flex !important;
-                            align-items: center !important;
-                            justify-content: center !important;
-                            margin-left: 4px !important;
-                            text-decoration: none !important;
                         }
                     `);
                 }
@@ -1209,12 +1168,12 @@ export class StyleGenerator {
     generateStealthCss(): string {
         let stealthCss = "";
         const styles = this.settings.customFolderColors;
-
+        
         for (const path in styles) {
             const style = styles[path];
             if (typeof style === 'object' && style.isHidden) {
                 const safePath = safeEscape(path);
-
+                
                 // Native Obsidian File Explorer
                 stealthCss += `
                     body:not(.cf-show-hidden) .nav-folder:has(> .nav-folder-title[data-path="${safePath}"]),
@@ -1243,7 +1202,7 @@ export class StyleGenerator {
                 if (this.settings.notebookNavigatorSupport) {
                     const nnSelector = NotebookNavigatorIntegration.getScopedNavSelector(path);
                     const nnFileSelector = NotebookNavigatorIntegration.getScopedFileSelector(path);
-
+                    
                     stealthCss += `
                         body:not(.cf-show-hidden) ${nnSelector},
                         body:not(.cf-show-hidden) ${nnFileSelector} {
