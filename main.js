@@ -5251,8 +5251,7 @@ var IconManager = class {
     try {
       if (!svgStr)
         return "";
-      let rawSvg = svgStr.includes("%") ? decodeURIComponent(svgStr) : svgStr;
-      rawSvg = rawSvg.replace(/<\?xml.*\?>/gi, "").replace(/<!--.*-->/gs, "").replace(/<script.*?>.*?<\/script>/gis, "").replace(/<metadata>.*<\/metadata>/gis, "").replace(/<defs>.*<\/defs>/gis, "");
+      const rawSvg = svgStr.includes("%") ? decodeURIComponent(svgStr) : svgStr;
       if (!rawSvg.includes("<svg"))
         return svgStr;
       const parser = new DOMParser();
@@ -5262,18 +5261,24 @@ var IconManager = class {
       const svg = doc.querySelector("svg");
       if (!svg)
         return svgStr;
-      const sanitizeElement = (el) => {
+      const FORBIDDEN_TAGS = ["script", "metadata", "foreignObject", "iframe", "object", "embed", "style", "defs"];
+      const sanitizeNode = (el) => {
+        const tag = el.tagName.toLowerCase();
+        if (FORBIDDEN_TAGS.includes(tag)) {
+          el.remove();
+          return;
+        }
         const attrs = Array.from(el.attributes);
         for (const attr of attrs) {
-          if (attr.name.toLowerCase().startsWith("on") || attr.value.toLowerCase().includes("javascript:")) {
+          const name = attr.name.toLowerCase();
+          const val = attr.value.toLowerCase();
+          if (name.startsWith("on") || val.includes("javascript:")) {
             el.removeAttribute(attr.name);
           }
         }
-        if (el.tagName.toLowerCase() === "script")
-          el.remove();
+        Array.from(el.children).forEach((child) => sanitizeNode(child));
       };
-      sanitizeElement(svg);
-      svg.querySelectorAll("*").forEach(sanitizeElement);
+      sanitizeNode(svg);
       if (!svg.hasAttribute("xmlns"))
         svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
       const vbAttr = svg.getAttribute("viewBox");
