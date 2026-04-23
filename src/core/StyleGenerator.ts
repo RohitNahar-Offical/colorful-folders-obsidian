@@ -946,9 +946,9 @@ export class StyleGenerator {
                         [data-path="${safePath}"] .tag-count,
                         [data-path="${safePath}"] .nav-file-extension {
                             font-weight: 900 !important;
-                            color: ${color} !important;
-                            background-color: ${color}15 !important;
-                            border: 1px solid ${color}33 !important;
+                            color: ${color.hex} !important;
+                            background-color: ${color.hex}15 !important;
+                            border: 1px solid ${color.hex}33 !important;
                             border-radius: 10px !important;
                             padding: 0 6px !important;
                             font-size: 0.85em !important;
@@ -969,9 +969,9 @@ export class StyleGenerator {
                         [data-path="${safePath}"] .tag-count,
                         [data-path="${safePath}"] .nav-file-extension {
                             font-weight: 900 !important;
-                            color: ${color} !important;
-                            background-color: ${color}15 !important;
-                            border: 1px solid ${color}33 !important;
+                            color: ${color.hex} !important;
+                            background-color: ${color.hex}15 !important;
+                            border: 1px solid ${color.hex}33 !important;
                             border-radius: 10px !important;
                             padding: 0 6px !important;
                             font-size: 0.85em !important;
