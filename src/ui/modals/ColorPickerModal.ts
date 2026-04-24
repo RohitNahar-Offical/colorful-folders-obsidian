@@ -562,7 +562,7 @@ _addToRecentlyUsed: (iconId: string) => Promise<void>;
                 obsidian.setIcon(recentIcon, "history");
                 const rsvg = recentIcon.querySelector("svg") as unknown as HTMLElement | null;
                 if (rsvg) rsvg.setCssStyles({ width: "12px", height: "12px" });
-                recentHeader.createSpan({ text: "Recently Used" });
+                recentHeader.createSpan({ text: "Recently used" });
 
                 this.plugin.settings.recentlyUsedIcons.forEach(id => {
                     createIconCell(id, iconGrid);
@@ -575,7 +575,7 @@ _addToRecentlyUsed: (iconId: string) => Promise<void>;
                     padding: "12px 2px 4px", borderBottom: "1px solid var(--background-modifier-border)",
                     marginBottom: "4px"
                 });
-                allHeader.createDiv({ text: "All Icons" });
+                allHeader.createDiv({ text: "All icons" });
             }
 
             let filtered = allIcons;
