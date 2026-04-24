@@ -308,6 +308,18 @@ export class StyleGenerator {
                                 font-weight: ${isBold ? 'bold' : 'normal'} !important;
                                 font-style: ${isItalic ? 'italic' : 'normal'} !important;
                                 border-radius: 4px;
+
+                                /* Adaptive tag colors */
+                                --nav-tag-background: rgba(${color.rgb}, 0.15) !important;
+                                --nav-tag-color: ${textNative} !important;
+                            }
+
+                            [data-path="${safePath}"] .nav-file-tag,
+                            [data-path="${safePath}"] .nav-folder-tag,
+                            [data-path="${safePath}"] .tree-item-flair {
+                                background-color: rgba(${color.rgb}, 0.15) !important;
+                                color: ${textNative} !important;
+                                font-size: 10px !important;
                             }
                         `);
 
@@ -937,7 +949,7 @@ export class StyleGenerator {
                             opacity: 0.8 !important;
                         }
 
-                        /* Make right-side labels (tags, extensions, counts, etc.) bold */
+                        /* Make right-side labels (tags, extensions, counts, etc.) adaptive and bold */
                         [data-path="${safePath}"] .nav-file-tag,
                         [data-path="${safePath}"] .nav-folder-tag,
                         [data-path="${safePath}"] .tree-item-flair,
@@ -946,10 +958,13 @@ export class StyleGenerator {
                         [data-path="${safePath}"] .tag-count,
                         [data-path="${safePath}"] .nav-file-extension {
                             font-weight: 900 !important;
+                            background-color: rgba(${color.rgb}, 0.15) !important;
+                            color: ${text} !important;
+                            font-size: 10px !important;
                         }
                     `);
                 } else {
-                    // Even if counters are off, make other labels bold if they exist
+                    // Even if counters are off, make other labels adaptive and bold if they exist
                     cssRules.push(`
                         [data-path="${safePath}"] .nav-file-tag,
                         [data-path="${safePath}"] .nav-folder-tag,
@@ -959,6 +974,9 @@ export class StyleGenerator {
                         [data-path="${safePath}"] .tag-count,
                         [data-path="${safePath}"] .nav-file-extension {
                             font-weight: 900 !important;
+                            background-color: rgba(${color.rgb}, 0.15) !important;
+                            color: ${text} !important;
+                            font-size: 10px !important;
                         }
                     `);
                 }
