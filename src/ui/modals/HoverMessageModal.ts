@@ -7,7 +7,7 @@ export class HoverMessageModal extends obsidian.Modal {
     description: string;
     onSave: (val: string) => void;
     previewEl!: HTMLElement;
-    
+
     // Suggester State
     suggestEl: HTMLElement | null = null;
     suggestItems: string[] = [];
@@ -26,7 +26,7 @@ export class HoverMessageModal extends obsidian.Modal {
     onOpen() {
         const { contentEl, modalEl } = this;
         contentEl.empty();
-        
+
         modalEl.setCssStyles({
             maxWidth: "600px",
             width: "90vw",
@@ -49,7 +49,7 @@ export class HoverMessageModal extends obsidian.Modal {
         // Editor Section
         const editorWrapper = body.createDiv();
         editorWrapper.createEl("label", { text: "Markdown editor" }).setCssStyles({ display: "block", marginBottom: "8px", fontWeight: "600", fontSize: "0.85em", textTransform: "uppercase", letterSpacing: "0.05em", opacity: "0.8" });
-        
+
         const toolbar = editorWrapper.createDiv({ cls: 'cf-editor-toolbar' });
         toolbar.setCssStyles({
             display: 'flex', gap: '4px', marginBottom: '8px',
@@ -59,7 +59,7 @@ export class HoverMessageModal extends obsidian.Modal {
 
         const textArea = editorWrapper.createEl("textarea");
         textArea.value = this.description;
-        textArea.placeholder = "Write something beautiful... Use [[links]], #tags, and **Markdown** formatting.";
+        textArea.placeholder = "Write something beautiful... \n\nTips:\n- Use [[links]] to jump to notes\n- use #tags to categorize\n- use **bold** or *italic*";
         textArea.setCssStyles({
             width: "100%", height: "180px", borderRadius: "8px", padding: "12px",
             backgroundColor: "var(--background-primary)", border: "1px solid var(--background-modifier-border)",
@@ -72,16 +72,16 @@ export class HoverMessageModal extends obsidian.Modal {
             const selectedText = textArea.value.substring(start, end);
             const before = textArea.value.substring(0, start);
             const after = textArea.value.substring(end);
-            
+
             textArea.value = before + prefix + selectedText + suffix + after;
-            
+
             if (cursorOffset > 0) {
                 const newPos = start + cursorOffset;
                 textArea.setSelectionRange(newPos, newPos);
             } else {
                 textArea.setSelectionRange(start + prefix.length, start + prefix.length + selectedText.length);
             }
-            
+
             this.description = textArea.value;
             void updatePreview(this.description);
             textArea.focus();
@@ -90,9 +90,9 @@ export class HoverMessageModal extends obsidian.Modal {
         const addBtn = (icon: string, tooltip: string, onClick: () => void) => {
             const btn = new obsidian.ButtonComponent(toolbar);
             btn.setIcon(icon)
-               .setTooltip(tooltip)
-               .onClick(() => onClick());
-            
+                .setTooltip(tooltip)
+                .onClick(() => onClick());
+
             btn.buttonEl.setCssStyles({
                 background: 'transparent', border: 'none', cursor: 'pointer',
                 padding: '4px', borderRadius: '4px', color: 'var(--text-muted)',
@@ -121,7 +121,7 @@ export class HoverMessageModal extends obsidian.Modal {
         // Preview Section
         const previewWrapper = body.createDiv();
         previewWrapper.createEl("label", { text: "Live preview" }).setCssStyles({ display: "block", marginBottom: "8px", fontWeight: "600", fontSize: "0.85em", textTransform: "uppercase", letterSpacing: "0.05em", opacity: "0.8" });
-        
+
         this.previewEl = previewWrapper.createDiv({ cls: "cf-premium-popover" });
         this.previewEl.setCssStyles({
             position: "relative", transform: "none", width: "100%", maxWidth: "none",
@@ -183,15 +183,15 @@ export class HoverMessageModal extends obsidian.Modal {
             const item = this.suggestItems[index];
             const before = textArea.value.substring(0, this.suggestStart);
             const after = textArea.value.substring(textArea.selectionStart);
-            
+
             let inserted = item;
             if (this.suggestType === 'link') inserted = item + "]]";
-            
+
             textArea.value = before + inserted + after;
             textArea.focus();
             const newPos = before.length + inserted.length;
             textArea.setSelectionRange(newPos, newPos);
-            
+
             this.description = textArea.value;
             void updatePreview(this.description);
             closeSuggest();
@@ -243,7 +243,7 @@ export class HoverMessageModal extends obsidian.Modal {
 
             // 1. If currently suggesting, verify trigger is still intact
             if (this.suggestType) {
-                const triggerIntact = this.suggestType === 'link' 
+                const triggerIntact = this.suggestType === 'link'
                     ? (this.suggestStart >= 2 && val.substring(this.suggestStart - 2, this.suggestStart) === "[[")
                     : (this.suggestStart >= 1 && val.substring(this.suggestStart - 1, this.suggestStart) === "#");
 
@@ -279,7 +279,7 @@ export class HoverMessageModal extends obsidian.Modal {
                         const tags = (this.app.metadataCache as unknown as { getTags(): Record<string, number> }).getTags();
                         all = Object.keys(tags).map(t => t.startsWith('#') ? t.substring(1) : t);
                     }
-                    
+
                     this.suggestItems = all.filter(item => item.toLowerCase().includes(query)).slice(0, 10);
                     if (this.suggestItems.length === 0) closeSuggest();
                     else renderSuggest();
