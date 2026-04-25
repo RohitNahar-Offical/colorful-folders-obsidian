@@ -127,7 +127,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         const iconDesc = customIconCard.createEl("p", { text: "Add individual SVG icons or import bulk packs from the internet. All custom icons added here will appear in the icon selection grid when styling a folder or file." });
         iconDesc.setCssStyles({ fontSize: "0.85em", color: "var(--text-muted)", marginBottom: "20px", lineHeight: "1.4" });
 
-        const tip = customIconCard.createEl("div", { text: "Pro tip: custom ids should be unique. Avoid starting them with 'lucide-' unless you intend to override a built-in Obsidian icon." });
+        const tip = customIconCard.createEl("div", { text: "Pro tip: Custom ids should be unique. Avoid starting them with 'lucide-' unless you intend to override a built-in Obsidian icon." });
         tip.setCssStyles({ fontSize: "0.8em", color: "var(--text-accent)", marginBottom: "15px", fontStyle: "italic" });
 
         const manualWrap = customIconCard.createDiv();
@@ -362,7 +362,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .setName('Custom colors (hex)')
             .setDesc('Comma-separated list of hex colors.')
             .addText(text => text
-                .setPlaceholder('E.g., #ff0000, #00ff00')
+                .setPlaceholder('Example: #ff0000, #00ff00')
                 .setValue(this.plugin.settings.customPalette)
                 .onChange(async (value) => {
                     this.plugin.settings.customPalette = value;
@@ -374,7 +374,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .setName('Folder exclusion list')
             .setDesc('Comma-separated list of folder names to ignore. Note: folder names are case-insensitive.')
             .addText(text => text
-                .setPlaceholder('E.g., templates, attachments, .git')
+                .setPlaceholder('Example: templates, attachments, .git')
                 .setValue(this.plugin.settings.exclusionList || "")
                 .onChange(async (value) => {
                     this.plugin.settings.exclusionList = value;
@@ -400,7 +400,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .setName('Global default background')
             .setDesc('Set a universal background color for all folders/files that do not have a custom style. Leave empty for theme-default (transparent).')
             .addText(text => text
-                .setPlaceholder('E.g., #2a2a2a')
+                .setPlaceholder('Example: #2a2a2a')
                 .setValue(this.plugin.settings.globalBackgroundColor || "")
                 .onChange(async (value) => {
                     this.plugin.settings.globalBackgroundColor = value;
