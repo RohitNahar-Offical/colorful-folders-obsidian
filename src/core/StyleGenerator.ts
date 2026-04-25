@@ -46,14 +46,12 @@ export class StyleGenerator {
         const brightnessAmount = isDark ? darkBrightness : lightBrightness;
 
         const iconScale = this.settings.iconScale || 1.0;
-        const fileIconW = Math.round(18 * iconScale);
-        const folderIconW = Math.round(18 * iconScale);
-
         const wideScale = this.settings.wideAutoIcons ? 1.05 : 1.0;
-        const effFileIconW = Math.round(fileIconW * wideScale);
+        const folderIconW = `calc(1.3em * ${iconScale * wideScale})`;
+        const effFileIconW = `calc(1.3em * ${iconScale * wideScale})`;
         const wideOpacity = this.settings.wideAutoIcons ? "1.0" : "0.85";
 
-        const CF_FILE_TEXT_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="${fileIconW}" height="${fileIconW}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; opacity: 0.85; vertical-align: middle;"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+        const CF_FILE_TEXT_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px; margin-right: 6px; opacity: 0.85; vertical-align: middle;"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`;
 
 
         let currentPalette = PALETTES[this.settings.palette] || PALETTES["Muted Dark Mode"];
@@ -358,6 +356,17 @@ export class StyleGenerator {
                                     content: "${iconId} " !important;
                                     -webkit-mask-image: none !important;
                                     background-image: none !important;
+                                    display: inline-flex !important;
+                                    align-items: center !important;
+                                    justify-content: center !important;
+                                    align-self: center !important;
+                                    margin-right: 6px !important;
+                                    flex-shrink: 0 !important;
+                                    overflow: visible !important;
+                                    height: 1.3em !important;
+                                    width: 1.3em !important;
+                                    line-height: 1 !important;
+                                    vertical-align: text-bottom !important;
                                 }
                             `);
                             
@@ -398,15 +407,20 @@ export class StyleGenerator {
                                         body [data-path="${safePath}"].nav-file-title .nav-file-title-content::before,
                                         body [data-path="${safePath}"].tree-item-self .tree-item-inner::before {
                                             content: '' !important;
-                                            display: inline-block !important;
-                                            width: ${effFileIconW}px !important;
-                                            height: ${effFileIconW}px !important;
+                                            display: inline-flex !important;
+                                            flex-shrink: 0 !important;
+                                            align-self: center !important;
+                                            align-items: center !important;
+                                            justify-content: center !important;
+                                            width: ${effFileIconW} !important;
+                                            height: ${effFileIconW} !important;
                                             background-color: ${iconColor || color.hex || textNative} !important;
                                             -webkit-mask-image: url("data:image/svg+xml,${svgStr}") !important;
                                             -webkit-mask-repeat: no-repeat !important;
                                             -webkit-mask-position: center !important;
                                             -webkit-mask-size: contain !important;
                                             margin-right: 6px !important;
+                                            overflow: visible !important;
                                             vertical-align: middle !important;
                                             opacity: 0.85 !important;
                                         }
@@ -416,15 +430,20 @@ export class StyleGenerator {
                                             ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before,
                                             ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileNameSelector()}::before {
                                                 content: '' !important;
-                                                display: inline-block !important;
-                                                width: ${effFileIconW}px !important;
-                                                height: ${effFileIconW}px !important;
+                                                display: inline-flex !important;
+                                                flex-shrink: 0 !important;
+                                                align-self: center !important;
+                                                align-items: center !important;
+                                                justify-content: center !important;
+                                                width: ${effFileIconW} !important;
+                                                height: ${effFileIconW} !important;
                                                 background-color: ${iconColor || color.hex || textNN} !important;
                                                 -webkit-mask-image: url("data:image/svg+xml,${svgStr}") !important;
                                                 -webkit-mask-repeat: no-repeat !important;
                                                 -webkit-mask-position: center !important;
                                                 -webkit-mask-size: contain !important;
                                                 margin-right: 6px !important;
+                                                overflow: visible !important;
                                                 vertical-align: middle !important;
                                                 opacity: 0.85 !important;
                                             }
@@ -440,15 +459,20 @@ export class StyleGenerator {
                             body [data-path="${safePath}"].nav-file-title .nav-file-title-content::before,
                             body [data-path="${safePath}"].tree-item-self .tree-item-inner::before {
                                 content: '' !important;
-                                display: inline-block !important;
-                                width: ${effFileIconW}px !important;
-                                height: ${effFileIconW}px !important;
+                                display: inline-flex !important;
+                                flex-shrink: 0 !important;
+                                align-self: center !important;
+                                align-items: center !important;
+                                justify-content: center !important;
+                                width: ${effFileIconW} !important;
+                                height: ${effFileIconW} !important;
                                     background-color: ${iconColor || color.hex || textNative} !important;
                                     -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(decodeURIComponent(CF_FILE_TEXT_ICON))}") !important;
                                 -webkit-mask-repeat: no-repeat !important;
                                 -webkit-mask-position: center !important;
                                 -webkit-mask-size: contain !important;
                                 margin-right: 6px !important;
+                                overflow: visible !important;
                                 vertical-align: middle !important;
                                 opacity: 0.85 !important;
                             }
@@ -458,15 +482,20 @@ export class StyleGenerator {
                                 ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before,
                                 ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileNameSelector()}::before {
                                     content: '' !important;
-                                    display: inline-block !important;
-                                    width: ${effFileIconW}px !important;
-                                    height: ${effFileIconW}px !important;
+                                    display: inline-flex !important;
+                                    flex-shrink: 0 !important;
+                                    align-self: center !important;
+                                    align-items: center !important;
+                                    justify-content: center !important;
+                                    width: ${effFileIconW} !important;
+                                    height: ${effFileIconW} !important;
                                     background-color: ${iconColor || color.hex || textNN} !important;
                                     -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(decodeURIComponent(CF_FILE_TEXT_ICON))}") !important;
                                     -webkit-mask-repeat: no-repeat !important;
                                     -webkit-mask-position: center !important;
                                     -webkit-mask-size: contain !important;
                                     margin-right: 6px !important;
+                                    overflow: visible !important;
                                     vertical-align: middle !important;
                                     opacity: 0.85 !important;
                                 }
@@ -519,9 +548,7 @@ export class StyleGenerator {
                         border-bottom: 2px solid rgba(${passedColor.rgb}, 0.8) !important;
                         border-radius: 4px !important;
                         border-bottom-left-radius: 8px !important;
-                        margin-left: 0 !important;
-                        padding-left: 24px !important;
-                        padding-bottom: 12px !important;
+                        padding-bottom: 8px !important;
                     }
                 `);
 
@@ -677,6 +704,13 @@ export class StyleGenerator {
                                 content: "${activeStyle.iconId} " !important;
                                 -webkit-mask-image: none !important;
                                 background-image: none !important;
+                                display: inline-flex !important;
+                                align-items: center !important;
+                                justify-content: center !important;
+                                align-self: center !important;
+                                margin-right: 6px !important;
+                                flex-shrink: 0 !important;
+                                overflow: visible !important;
                             }
                         `);
                         if (nnActive) {
@@ -714,15 +748,20 @@ export class StyleGenerator {
                                     body [data-path="${safePath}"].nav-folder-title .nav-folder-title-content::before,
                                     body [data-path="${safePath}"].tree-item-self .tree-item-inner::before {
                                         content: '' !important;
-                                        display: inline-block !important;
-                                        width: ${folderIconW}px !important;
-                                        height: ${folderIconW}px !important;
+                                        display: inline-flex !important;
+                                        flex-shrink: 0 !important;
+                                        align-self: center !important;
+                                        align-items: center !important;
+                                        justify-content: center !important;
+                                        width: ${folderIconW} !important;
+                                        height: ${folderIconW} !important;
                                         background-color: ${text} !important;
                                         -webkit-mask-image: url("data:image/svg+xml,${svgStr}") !important;
                                         -webkit-mask-repeat: no-repeat !important;
                                         -webkit-mask-position: center !important;
                                         -webkit-mask-size: contain !important;
                                         margin-right: 6px !important;
+                                        overflow: visible !important;
                                         vertical-align: middle !important;
                                         opacity: 0.85 !important;
                                     }
@@ -739,15 +778,20 @@ export class StyleGenerator {
                             body [data-path="${safePath}"].nav-folder-title .nav-folder-title-content::before,
                             body [data-path="${safePath}"].tree-item-self .tree-item-inner::before {
                                 content: '' !important;
-                                display: inline-block !important;
-                                width: ${folderIconW}px !important;
-                                height: ${folderIconW}px !important;
+                                display: inline-flex !important;
+                                flex-shrink: 0 !important;
+                                align-self: center !important;
+                                align-items: center !important;
+                                justify-content: center !important;
+                                width: ${folderIconW} !important;
+                                height: ${folderIconW} !important;
                                 background-color: ${text} !important;
                                 -webkit-mask-image: url("data:image/svg+xml,${svgStr}") !important;
                                 -webkit-mask-repeat: no-repeat !important;
                                 -webkit-mask-position: center !important;
                                 -webkit-mask-size: contain !important;
                                 margin-right: 6px !important;
+                                overflow: visible !important;
                                 vertical-align: middle !important;
                                 opacity: 0.85 !important;
                             }
@@ -756,15 +800,20 @@ export class StyleGenerator {
                             cssRules.push(`
                                 ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}::before {
                                     content: '' !important;
-                                    display: inline-block !important;
-                                    width: ${folderIconW}px !important;
-                                    height: ${folderIconW}px !important;
+                                    display: inline-flex !important;
+                                    flex-shrink: 0 !important;
+                                    align-self: center !important;
+                                    align-items: center !important;
+                                    justify-content: center !important;
+                                    width: ${folderIconW} !important;
+                                    height: ${folderIconW} !important;
                                     background-color: ${textNN} !important;
                                     -webkit-mask-image: url("data:image/svg+xml,${svgStr}") !important;
                                     -webkit-mask-repeat: no-repeat !important;
                                     -webkit-mask-position: center !important;
                                     -webkit-mask-size: contain !important;
                                     margin-right: 6px !important;
+                                    overflow: visible !important;
                                     vertical-align: middle !important;
                                     opacity: ${wideOpacity} !important;
                                 }
@@ -780,6 +829,13 @@ export class StyleGenerator {
                         body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
                         body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
                             content: ${autoIconContent} !important;
+                            display: inline-flex !important;
+                            align-items: center !important;
+                            justify-content: center !important;
+                            align-self: center !important;
+                            margin-right: 6px !important;
+                            flex-shrink: 0 !important;
+                            overflow: visible !important;
                         }
                     `);
                     if (nnActive) {
@@ -797,13 +853,18 @@ export class StyleGenerator {
                         body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
                         body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
                             content: '' !important;
-                            display: inline-block !important;
-                            width: ${folderIconW}px !important;
-                            height: ${folderIconW}px !important;
+                            display: inline-flex !important;
+                            flex-shrink: 0 !important;
+                            align-self: center !important;
+                            align-items: center !important;
+                            justify-content: center !important;
+                            width: ${folderIconW} !important;
+                            height: ${folderIconW} !important;
                             background-color: ${activeStyle?.iconColor || color.hex || text} !important;
                             -webkit-mask-repeat: no-repeat !important;
                             -webkit-mask-position: center !important;
                             margin-right: 6px !important;
+                            overflow: visible !important;
                             vertical-align: middle !important;
                             opacity: 0.8 !important;
                         }
@@ -816,6 +877,14 @@ export class StyleGenerator {
                         body .nav-folder:not(.is-collapsed) > .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
                         body .tree-item:not(.is-collapsed) > .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
                              -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(decodeURIComponent(CF_FOLDER_OPEN))}") !important;
+                        }
+
+                        body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content,
+                        body .tree-item-self[data-path="${safePath}"] .tree-item-inner,
+                        body .nav-file-title[data-path="${safePath}"] .nav-file-title-content {
+                            display: flex !important;
+                            align-items: center !important;
+                            overflow: visible !important;
                         }
                     `);
                 }
@@ -914,7 +983,7 @@ export class StyleGenerator {
                 if (this.settings.showItemCounters) {
                     const counts = countItems(child);
                     const totalWidth = 80;
-                    const combinedSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="20" viewBox="0 0 ${totalWidth} 20">
+                    const combinedSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="20" viewBox="0 0 ${totalWidth} 20" preserveAspectRatio="xMidYMid meet">
                         <g stroke="${color.hex}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(0, 3) scale(0.65)">
                             <path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/>
                         </g>

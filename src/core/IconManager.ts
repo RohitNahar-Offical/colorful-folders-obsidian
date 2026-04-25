@@ -166,25 +166,38 @@ export class IconManager {
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                verticalAlign: 'middle',
+                alignSelf: 'center',
                 marginRight: '6px',
-                flexShrink: '0'
+                flexShrink: '0',
+                overflow: 'visible'
             });
             if (content) content.prepend(wrapper);
         }
 
         const color = style.iconColor || style.hex || style.textColor || 'var(--text-normal)';
-        const baseSize = 18;
         const wideScale = this.plugin.settings.wideAutoIcons ? 1.05 : 1.0;
-        const size = Math.round(baseSize * (this.plugin.settings.iconScale || 1.0) * wideScale);
+        const scale = (this.plugin.settings.iconScale || 1.0) * wideScale;
 
-        wrapper.style.width = `${size}px`;
-        wrapper.style.height = `${size}px`;
+        wrapper.setCssStyles({
+            width: `calc(1.3em * ${scale})`,
+            height: `calc(1.3em * ${scale})`
+        });
         
         const coloredSvg = this.colorizeSvg(svgStr, color);
         wrapper.empty();
         // eslint-disable-next-line no-unsanitized/method -- contextual fragment is safe here as coloredSvg is derived from sanitized/built-in icons
         const frag = doc.createRange().createContextualFragment(coloredSvg);
+        
+        // Ensure the SVG perfectly fills our responsive wrapper
+        const svgEl = frag.querySelector('svg');
+        if (svgEl) {
+            (svgEl as unknown as HTMLElement).setCssStyles({
+                width: '100%',
+                height: '100%',
+                display: 'block'
+            });
+        }
+        
         wrapper.appendChild(frag);
     }
 
@@ -249,6 +262,7 @@ export class IconManager {
             // -------------------------------------
 
             if (!svg.hasAttribute('xmlns')) svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+            svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
             
             const vbAttr = svg.getAttribute('viewBox');
             if (!vbAttr && (svg.hasAttribute('width') || svg.hasAttribute('height'))) {
