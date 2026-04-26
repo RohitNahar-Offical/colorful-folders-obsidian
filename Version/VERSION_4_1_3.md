@@ -15,10 +15,5 @@ This release introduces advanced layout controls and a complete UI standard audi
 - **Optimized divider reconciliation**: Switched to a `replaceWith()` strategy for dividers, ensuring configuration updates are applied instantly without full DOM refreshes.
 - **High-speed CSS assembly**: Refactored the `StyleGenerator` to use an array-based string builder, drastically reducing the overhead of generating global styles.
 
-### 🎨 4. Sentence case UI audit
-- **Standard compliance**: Performed a project-wide sweep to ensure all settings, placeholders, and tooltips follow Obsidian's sentence case guidelines.
-- **Improved professionalism**: Updated featured icon pack names and import buttons for a cleaner, more consistent appearance.
-- **Modal cleanup**: Standardized titles and button text across all premium modals.
-
 ---
 *Thank you for using Colorful Folders! If you enjoy the plugin, consider supporting development on GitHub.*
