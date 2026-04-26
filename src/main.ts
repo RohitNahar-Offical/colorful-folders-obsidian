@@ -127,16 +127,18 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
                 this.settings.lastVersion = currentVersion;
                 await this.saveSettings();
 
-                // Show changelog for 4.1.0
+                // Show changelog for the current version
                 try {
                     const adapter = this.app.vault.adapter;
-                    const changelogPath = `${this.app.vault.configDir}/plugins/colorful-folders/Version/VERSION_4_1_0.md`;
+                    const versionFilename = `VERSION_${currentVersion.replace(/\./g, '_')}.md`;
+                    const changelogPath = `${this.app.vault.configDir}/plugins/colorful-folders/Version/${versionFilename}`;
+                    
                     if (await adapter.exists(changelogPath)) {
                         const content = await adapter.read(changelogPath);
                         new ChangelogModal(this.app, content).open();
                     }
                 } catch (err) {
-                    console.error("Colorful Folders: Failed to show changelog", err);
+                    console.error("Colorful folders: failed to show changelog", err);
                 }
             }
         });
