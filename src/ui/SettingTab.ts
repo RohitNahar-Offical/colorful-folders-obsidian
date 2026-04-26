@@ -34,7 +34,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         const intPanel = rootEl.createDiv();
         const iconPanel = rootEl.createDiv();
         const sysPanel = rootEl.createDiv();
-        
+
         generalPanel.setCssStyles({ display: 'block' });
         intPanel.setCssStyles({ display: 'none' });
         iconPanel.setCssStyles({ display: 'none' });
@@ -58,12 +58,12 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             intPanel.setCssStyles({ display: (t === "int" ? "block" : "none") });
             iconPanel.setCssStyles({ display: (t === "icon" ? "block" : "none") });
             sysPanel.setCssStyles({ display: (t === "sys" ? "block" : "none") });
-            
+
             btnGen.toggleClass('is-active', t === "gen");
             btnInt.toggleClass('is-active', t === "int");
             btnIcon.toggleClass('is-active', t === "icon");
             btnSys.toggleClass('is-active', t === "sys");
-            
+
             setHeroInfo(t);
         };
 
@@ -71,7 +71,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         btnInt.onclick = () => setTab("int");
         btnIcon.onclick = () => setTab("icon");
         btnSys.onclick = () => setTab("sys");
-        
+
         setTab(this.activeTab || "gen");
 
         const makeCard = (parent: HTMLElement, icon: string, title: string) => {
@@ -123,11 +123,11 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         // ── ICON PACKS PANEL ──────────────────────────────────────────────────
         // ──────────────────────────────────────────────────────────────────────
         const customIconCard = makeCard(iconPanel, "📦", "Custom icon management");
-        
+
         const iconDesc = customIconCard.createEl("p", { text: "Add individual SVG icons or import bulk packs from the internet. All custom icons added here will appear in the icon selection grid when styling a folder or file." });
         iconDesc.setCssStyles({ fontSize: "0.85em", color: "var(--text-muted)", marginBottom: "20px", lineHeight: "1.4" });
 
-        const tip = customIconCard.createEl("div", { text: "Pro tip: Custom ids should be unique. Avoid starting them with 'lucide-' unless you intend to override a built-in Obsidian icon." });
+        const tip = customIconCard.createEl("div", { text: "Pro tip: custom ids should be unique. Avoid starting them with 'lucide-' unless you intend to override a built-in Obsidian icon." });
         tip.setCssStyles({ fontSize: "0.8em", color: "var(--text-accent)", marginBottom: "15px", fontStyle: "italic" });
 
         const manualWrap = customIconCard.createDiv();
@@ -135,7 +135,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             padding: "16px", background: "var(--background-secondary-alt)", borderRadius: "10px",
             border: "1px solid var(--background-modifier-border)", marginBottom: "20px"
         });
-        
+
         const manualTitle = manualWrap.createEl("div", { text: "Add single icon" });
         manualTitle.setCssStyles({ fontWeight: "700", marginBottom: "10px", fontSize: "0.9em" });
         const manualRow = manualWrap.createDiv();
@@ -143,7 +143,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         const idInp = manualRow.createEl("input", { placeholder: "Icon ID (e.g. cloud-logo)" });
         const svgInp = manualRow.createEl("input", { placeholder: "SVG code (<svg...)" });
         idInp.setCssStyles({ flex: "1" }); svgInp.setCssStyles({ flex: "3" });
-        
+
         const addBtn = manualRow.createEl("button", { text: "Add icon", cls: "mod-cta" });
         addBtn.onclick = async () => {
             const id = idInp.value.trim();
@@ -198,15 +198,15 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
             const content = row.createDiv();
             content.setCssStyles({ flex: "1" });
-            
+
             const pName = content.createEl("div", { text: p.name });
             pName.setCssStyles({ fontWeight: "600" });
             const pDesc = content.createEl("div", { text: p.desc });
             pDesc.setCssStyles({ fontSize: "0.8em" });
-            
+
             const link = content.createEl("a", { text: "View source", href: p.url });
-            link.setCssStyles({ 
-                fontSize: "0.7em", color: "var(--text-accent)", marginTop: "4px", display: "inline-block" 
+            link.setCssStyles({
+                fontSize: "0.7em", color: "var(--text-accent)", marginTop: "4px", display: "inline-block"
             });
 
             const btnGroup = row.createDiv();
@@ -244,7 +244,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             customIconList.forEach(([id, svg]) => {
                 const item = lib.createDiv("cf-icon-item");
                 item.setAttribute("aria-label", id);
-                
+
                 // Safe SVG injection
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(svg, 'image/svg+xml');
@@ -253,7 +253,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     svgEl.setCssStyles({ width: "24px", height: "24px" });
                     item.appendChild(this.containerEl.ownerDocument.importNode(svgEl, true));
                 }
-                
+
                 const del = item.createEl("button", { text: "×", cls: "cf-btn-remove" });
                 del.onclick = async (e) => {
                     e.stopPropagation();
@@ -307,7 +307,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     background: "var(--background-secondary)"
                 });
             });
-        
+
         new obsidian.Setting(manImportCard)
             .addButton(btn => btn
                 .setButtonText('Import manual JSON')
@@ -362,7 +362,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .setName('Custom colors (hex)')
             .setDesc('Comma-separated list of hex colors.')
             .addText(text => text
-                .setPlaceholder('Example: #ff0000, #00ff00')
+                .setPlaceholder('Hex codes: #ff0000, #00ff00')
                 .setValue(this.plugin.settings.customPalette)
                 .onChange(async (value) => {
                     this.plugin.settings.customPalette = value;
@@ -374,7 +374,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .setName('Folder exclusion list')
             .setDesc('Comma-separated list of folder names to ignore. Note: folder names are case-insensitive.')
             .addText(text => text
-                .setPlaceholder('Example: templates, attachments, .git')
+                .setPlaceholder('templates, attachments, .git')
                 .setValue(this.plugin.settings.exclusionList || "")
                 .onChange(async (value) => {
                     this.plugin.settings.exclusionList = value;
@@ -400,7 +400,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .setName('Global default background')
             .setDesc('Set a universal background color for all folders/files that do not have a custom style. Leave empty for theme-default (transparent).')
             .addText(text => text
-                .setPlaceholder('Example: #2a2a2a')
+                .setPlaceholder('Hex: #2a2a2a')
                 .setValue(this.plugin.settings.globalBackgroundColor || "")
                 .onChange(async (value) => {
                     this.plugin.settings.globalBackgroundColor = value;
@@ -602,7 +602,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     });
                 });
         }
-        
+
         const divCard = makeCard(generalPanel, "➖", "Dividers & sections");
 
         // --- Divider Live Preview ---
@@ -621,7 +621,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             position: 'relative',
             overflow: 'hidden'
         });
-        
+
         previewWrap.createEl('small', { text: 'Live preview', cls: 'cf-preview-label' }).setCssStyles({
             position: 'absolute', top: '8px', left: '12px', opacity: '0.4', fontSize: '0.7em', letterSpacing: '0.1em', fontWeight: '700'
         });
@@ -657,7 +657,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     this.plugin.generateStyles();
                     updatePreview();
                 }));
-        
+
         const pillColorRow = divCard.createDiv();
         let pickerWrap: HTMLElement | null = null;
         let colorBox: HTMLElement;
@@ -676,11 +676,11 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                             return;
                         }
                         pickerWrap = pillColorRow.createDiv();
-                        pickerWrap.setCssStyles({ 
-                            marginTop: '12px', padding: '16px', background: 'var(--background-secondary-alt)', 
+                        pickerWrap.setCssStyles({
+                            marginTop: '12px', padding: '16px', background: 'var(--background-secondary-alt)',
                             borderRadius: '8px', border: '1px solid var(--background-modifier-border)'
                         });
-                        
+
                         const current = parseColorToHexAlpha(this.plugin.settings.dividerPillColor);
                         createVisualColorPicker(pickerWrap, current.hex, (hex, alpha) => {
                             const rgba = hexAlphaToRgba(hex, alpha);
@@ -705,7 +705,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         updatePreview();
                         colorBox.setCssStyles({ backgroundColor: value || 'transparent' });
                     });
-                
+
                 colorBox = text.inputEl.parentElement.createDiv();
                 colorBox.setCssStyles({
                     width: '24px', height: '24px', borderRadius: '4px', border: '1px solid var(--background-modifier-border)',
@@ -713,7 +713,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                 });
             });
-        
+
         new obsidian.Setting(divCard)
             .setName('Vertical spacing')
             .setDesc('Adjust the empty space above and below dividers.')
@@ -753,7 +753,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     this.plugin.generateStyles();
                     updatePreview();
                 }));
-                
+
         new obsidian.Setting(divCard)
             .setName('Default line style')
             .addDropdown(drop => drop
@@ -856,7 +856,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         }
 
         const tuneCard = makeCard(generalPanel, "🎛️", "Advanced tuning");
-        
+
         new obsidian.Setting(tuneCard)
             .setName('Root opacity (%)')
             .setDesc('Transparency of top-level folders in file explorer.')
@@ -983,7 +983,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                             if (!value) this.plugin.settings.isVaultLocked = false;
                             await this.plugin.saveSettings();
                         });
-                    
+
                     // Immediately refresh UI when leaving the input so 'Lock' button appears
                     text.inputEl.onblur = () => {
                         this.display();
@@ -1033,7 +1033,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         padding: '6px 0', borderBottom: "1px solid var(--background-modifier-border-soft)"
                     });
                     row.createDiv({ text: path }).setCssStyles({ fontSize: '0.85em', whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginRight: "10px" });
-                    
+
                     const unhideBtn = row.createEl("button", { text: "Unhide" });
                     unhideBtn.setCssStyles({ padding: "2px 8px", fontSize: "0.8em" });
                     unhideBtn.onclick = async () => {
@@ -1104,7 +1104,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             const prefix = (data.prefix as string) || "cf";
             const commonW = (data.width as number) || 24;
             const commonH = (data.height as number) || 24;
-            
+
             const processIcon = (name: string, iconData: { width?: number; height?: number; left?: number; top?: number; body?: string }) => {
                 const id = `${prefix}-${name}`;
                 const w = iconData.width || commonW;
@@ -1113,7 +1113,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 const t = iconData.top || 0;
                 const body = iconData.body;
                 if (!body) return false;
-                
+
                 const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${l} ${t} ${w} ${h}">${body}</svg>`;
                 this.plugin.settings.customIcons[id] = svg;
                 return true;

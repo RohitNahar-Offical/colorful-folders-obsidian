@@ -59,7 +59,7 @@ export class HoverMessageModal extends obsidian.Modal {
 
         const textArea = editorWrapper.createEl("textarea");
         textArea.value = this.description;
-        textArea.placeholder = "Write something beautiful... \n\nTips:\n- Use [[links]] to jump to notes\n- use #tags to categorize\n- use **bold** or *italic*";
+        textArea.placeholder = "Write something beautiful... Use [[links]] to jump to notes, #tags to categorize, and **bold** or *italic* formatting.";
         textArea.setCssStyles({
             width: "100%", height: "180px", borderRadius: "8px", padding: "12px",
             backgroundColor: "var(--background-primary)", border: "1px solid var(--background-modifier-border)",
