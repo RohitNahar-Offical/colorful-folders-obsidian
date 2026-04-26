@@ -56,9 +56,12 @@ export class DividerManager {
         bridge.setCssStyles({
             display: 'flex',
             alignItems: 'center',
-            width: '100%',
-            gap: `${this.plugin.settings.dividerLinePadding ?? 8}px`
+            width: '100%'
         });
+
+        // Resolve paddings
+        const padLeft = conf.dividerLinePaddingLeft ?? this.plugin.settings.dividerLinePaddingLeft ?? 8;
+        const padRight = conf.dividerLinePaddingRight ?? this.plugin.settings.dividerLinePaddingRight ?? 8;
 
         const makeLine = (side: 'left' | 'right') => {
             const line = bridge.createDiv({ cls: `cf-divider-line cf-divider-line-${side}` });
@@ -66,6 +69,9 @@ export class DividerManager {
                 flexGrow: '1',
                 height: `${dividerThickness}px`
             });
+
+            if (side === 'left') line.setCssStyles({ marginRight: `${padLeft}px` });
+            if (side === 'right') line.setCssStyles({ marginLeft: `${padRight}px` });
 
             const gradDir = side === 'left' ? 'right' : 'left';
             if (lineStyle === 'solid') {

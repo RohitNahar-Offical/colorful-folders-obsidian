@@ -22,6 +22,8 @@ export interface FolderStyle {
     dividerPillMode?: 'global' | 'on' | 'off';
     dividerDescription?: string;
     dividerPillColor?: string;
+    dividerLinePaddingLeft?: number;
+    dividerLinePaddingRight?: number;
     hasDivider?: boolean;
     isHidden?: boolean;
 }
@@ -79,6 +81,8 @@ export interface ColorfulFoldersSettings {
     lastVersion: string;
     globalBackgroundColor: string;
     dividerLinePadding: number;
+    dividerLinePaddingLeft?: number;
+    dividerLinePaddingRight?: number;
     dividerPillColor: string;
 }
 

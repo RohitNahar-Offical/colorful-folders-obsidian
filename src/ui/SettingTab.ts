@@ -741,14 +741,28 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 }));
 
         new obsidian.Setting(divCard)
-            .setName('Line-to-text gap')
-            .setDesc('Adjust the horizontal space between the divider lines and the central label/pill.')
+            .setName('Line gap (left)')
+            .setDesc('Adjust horizontal space between the left divider line and the central label.')
             .addSlider(slider => slider
                 .setLimits(0, 40, 1)
-                .setValue(this.plugin.settings.dividerLinePadding ?? 8)
+                .setValue(this.plugin.settings.dividerLinePaddingLeft ?? 8)
                 .setDynamicTooltip()
                 .onChange(async (value) => {
-                    this.plugin.settings.dividerLinePadding = value;
+                    this.plugin.settings.dividerLinePaddingLeft = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStyles();
+                    updatePreview();
+                }));
+
+        new obsidian.Setting(divCard)
+            .setName('Line gap (right)')
+            .setDesc('Adjust horizontal space between the right divider line and the central label.')
+            .addSlider(slider => slider
+                .setLimits(0, 40, 1)
+                .setValue(this.plugin.settings.dividerLinePaddingRight ?? 8)
+                .setDynamicTooltip()
+                .onChange(async (value) => {
+                    this.plugin.settings.dividerLinePaddingRight = value;
                     await this.plugin.saveSettings();
                     this.plugin.generateStyles();
                     updatePreview();

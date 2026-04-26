@@ -116,6 +116,8 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     lastVersion: "",
     globalBackgroundColor: "",
     dividerLinePadding: 8,
+    dividerLinePaddingLeft: 8,
+    dividerLinePaddingRight: 8,
     dividerPillColor: ""
 };
 

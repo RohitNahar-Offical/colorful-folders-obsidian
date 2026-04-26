@@ -164,6 +164,12 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
 
     async loadSettings() {
         this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData() as Partial<ColorfulFoldersSettings>);
+
+        // Migration for independent divider padding
+        if (this.settings.dividerLinePadding !== undefined && this.settings.dividerLinePaddingLeft === undefined) {
+            this.settings.dividerLinePaddingLeft = this.settings.dividerLinePadding;
+            this.settings.dividerLinePaddingRight = this.settings.dividerLinePadding;
+        }
     }
 
     async saveSettings() {

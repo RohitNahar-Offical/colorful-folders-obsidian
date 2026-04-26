@@ -21,6 +21,8 @@ export class DividerModal extends obsidian.Modal {
         pillMode: 'on' | 'off';
         pillColor: string;
         description: string;
+        paddingLeft: number;
+        paddingRight: number;
     };
     originalStyle: FolderStyle | string | undefined;
     isSaved = false;
@@ -56,7 +58,9 @@ export class DividerModal extends obsidian.Modal {
             iconPosition: existingStyle.dividerIconPosition || "left",
             pillMode: existingStyle.dividerPillMode === 'off' ? 'off' : 'on',
             pillColor: existingStyle.dividerPillColor || "",
-            description: existingStyle.dividerDescription || ""
+            description: existingStyle.dividerDescription || "",
+            paddingLeft: existingStyle.dividerLinePaddingLeft ?? this.plugin.settings.dividerLinePaddingLeft ?? 8,
+            paddingRight: existingStyle.dividerLinePaddingRight ?? this.plugin.settings.dividerLinePaddingRight ?? 8
         };
     }
 
@@ -300,6 +304,28 @@ export class DividerModal extends obsidian.Modal {
                     this._liveSync();
                 }));
 
+        new obsidian.Setting(styleSect)
+            .setName("Line gap (left)")
+            .addSlider(s => s
+                .setLimits(0, 40, 1)
+                .setValue(this.config.paddingLeft)
+                .setDynamicTooltip()
+                .onChange(v => {
+                    this.config.paddingLeft = v;
+                    this._liveSync();
+                }));
+
+        new obsidian.Setting(styleSect)
+            .setName("Line gap (right)")
+            .addSlider(s => s
+                .setLimits(0, 40, 1)
+                .setValue(this.config.paddingRight)
+                .setDynamicTooltip()
+                .onChange(v => {
+                    this.config.paddingRight = v;
+                    this._liveSync();
+                }));
+
         const interactiveSect = addSection("Interactive features");
 
         new obsidian.Setting(interactiveSect)
@@ -386,6 +412,8 @@ export class DividerModal extends obsidian.Modal {
             styleObj.dividerPillMode = this.config.pillMode;
             styleObj.dividerPillColor = this.config.pillColor;
             styleObj.dividerDescription = this.config.description;
+            styleObj.dividerLinePaddingLeft = this.config.paddingLeft;
+            styleObj.dividerLinePaddingRight = this.config.paddingRight;
             styleObj.hasDivider = true;
 
             this.plugin.settings.customFolderColors[this.path] = styleObj;
@@ -413,6 +441,8 @@ export class DividerModal extends obsidian.Modal {
                 dividerPillMode: this.config.pillMode,
                 dividerPillColor: this.config.pillColor,
                 dividerDescription: this.config.description,
+                dividerLinePaddingLeft: this.config.paddingLeft,
+                dividerLinePaddingRight: this.config.paddingRight,
                 hasDivider: true
             };
             delete tempStyle.dividerIconColor;
