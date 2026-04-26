@@ -1,6 +1,6 @@
 # Version History - Colorful Folders for Obsidian
 
-## ⚡ 4.3.0 - The "Premium Polish" Update
+## ⚡ 4.1.3 - The "Premium Polish" Update
 This release introduces advanced layout controls and a complete UI standard audit to ensure the plugin feels like a native part of the Obsidian ecosystem.
 
 ### 📐 1. Asymmetrical divider spacing
