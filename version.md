@@ -17,6 +17,10 @@ This release introduces advanced layout controls and a complete UI standard audi
 - **Optimized divider reconciliation**: Switched to a `replaceWith()` strategy for dividers, ensuring configuration updates are applied instantly without full DOM refreshes.
 - **High-speed CSS assembly**: Refactored the `StyleGenerator` to use an array-based string builder, drastically reducing the overhead of generating global styles.
 
+### 🏷️ 4. High-visibility metadata
+- **Bold extensions & tags**: File extensions (PDF, JPEG, etc.) and tags are now explicitly set to a high-visibility bold weight (**900**) for faster identification in dense lists.
+- **Enhanced item counters**: Item counters for folders and files now feature improved contrast and alignment, syncing perfectly with your folder's primary color.
+
 ---
 
 ## ⚡ 4.1.2 - Engine Stability & Performance
