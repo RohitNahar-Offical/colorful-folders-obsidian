@@ -21,7 +21,9 @@ Defined in `src/common/types.ts`. This interface represents the entire `data.jso
 | `showFileDivider` | `boolean` | Enables the automatic 'Files' divider in folders. |
 | `dividerThickness` | `number` | Stroke width for all divider lines. |
 | `dividerSpacing` | `number` | Vertical padding around dividers. |
-| `dividerLinePadding` | `number` | Gap between divider lines and the central text/pill. |
+| `dividerLinePadding` | `number` | [DEPRECATED] Use Left/Right instead. |
+| `dividerLinePaddingLeft` | `number` | Gap between the divider line and central text on the left. |
+| `dividerLinePaddingRight` | `number` | Gap between the divider line and central text on the right. |
 | `dividerPillMode` | `boolean` | Global toggle for the pill background design. |
 | `dividerPillColor` | `string` | Global default background color for divider pills. |
 | `dividerLineStyle` | `string` | Global line style (solid, dashed, dotted, double). |
@@ -57,6 +59,8 @@ interface FolderStyle {
     dividerIconPosition?: string; // 'left', 'right', or 'both'
     dividerPillMode?: string;    // 'on' or 'off'
     dividerPillColor?: string;   // Custom RGBA background for the pill
+    dividerLinePaddingLeft?: number; // Asymmetrical gap (left)
+    dividerLinePaddingRight?: number; // Asymmetrical gap (right)
     isHidden?: boolean;          // Visibility toggle (Stealth Mode)
 }
 ```

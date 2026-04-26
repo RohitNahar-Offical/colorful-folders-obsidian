@@ -3,10 +3,19 @@
 ## ⚡ 4.1.2 - High-Performance Architecture
 This release focuses on core engine optimizations to ensure the plugin remains lightning-fast, even in massive vaults with 20,000+ files.
 
-### 🏎️ 1. Optimization Engine
-- **High-Speed CSS Assembly**: Refactored the `StyleGenerator` to use an array-based string builder, drastically reducing the overhead of generating global styles.
-- **DOM lookup Consolidation**: Optimized `IconManager` and `DividerManager` to reduce layout thrashing by consolidating container queries.
-- **Zero-Latency Refresh**: Improved debouncing logic to ensure UI updates are responsive without blocking the main thread.
+### 🏎️ 1. Optimization engine
+- **High-speed CSS assembly**: Refactored the `StyleGenerator` to use an array-based string builder, drastically reducing the overhead of generating global styles.
+- **DOM lookup consolidation**: Optimized `IconManager` and `DividerManager` to reduce layout thrashing by consolidating container queries.
+- **Zero-latency refresh**: Improved debouncing logic to ensure UI updates are responsive without blocking the main thread.
+- **Optimized divider reconciliation**: Switched to a `replaceWith()` strategy for dividers, ensuring configuration updates are applied instantly without full DOM refreshes.
+
+### 📐 2. Asymmetrical divider spacing
+- **Independent padding**: Added `dividerLinePaddingLeft` and `dividerLinePaddingRight` to allow independent spacing between the lines and the central text/pill.
+- **Migration logic**: Automatically migrates legacy padding settings to the new asymmetrical system for a seamless upgrade.
+
+### 🎨 3. Sentence case UI audit
+- **Standard compliance**: Performed a project-wide sweep to ensure all settings, placeholders, and tooltips follow Obsidian's sentence case guidelines.
+- **Improved professionalism**: Updated featured icon pack names and import buttons for a cleaner, more consistent appearance.
 
 ---
 

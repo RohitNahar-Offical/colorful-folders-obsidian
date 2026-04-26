@@ -36,10 +36,11 @@ Welcome to the internal engineering documentation for **Colorful Folders**. This
 ```text
 colorful-folders/
 ├── src/
-│   ├── main.ts              # Entry point & Lifecycle
+│   ├── main.ts              # Entry point & lifecycle
 │   ├── core/
-│   │   ├── StyleGenerator.ts # Recursive CSS Engine
-│   │   └── DividerManager.ts # DOM Reconciliation for Dividers
+│   │   ├── StyleGenerator.ts # Recursive CSS engine
+│   │   ├── DividerManager.ts # DOM reconciliation for dividers
+│   │   └── IconManager.ts    # Centralized icon processing & sanitization
 │   ├── ui/
 │   │   ├── SettingTab.ts    # Main Config UI
 │   │   ├── MenuHelper.ts    # Context Menu Integration

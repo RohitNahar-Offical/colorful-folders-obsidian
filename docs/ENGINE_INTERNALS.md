@@ -75,12 +75,23 @@ sequenceDiagram
     Note over M: Compare DOM list vs Settings list
     M->>D: remove() orphaned nodes
     M->>D: insertBefore() missing nodes
-    M->>D: setAttribute() update changed nodes
+    M->>D: replaceWith() updated nodes (to apply fresh config)
 ```
 
 ---
 
-## 6. How to Debug a Style Conflict
+## 6. Migration & Schema Hardening
+
+To ensure backward compatibility, the plugin implements a two-stage migration in `main.ts`:
+
+1.  **Raw Data Migration**: Before merging with defaults, we check for legacy fields (e.g., `dividerLinePadding`). If found, we copy their values to the new asymmetrical fields (`dividerLinePaddingLeft`/`Right`).
+2.  **Type Hardening**: During `getEffectiveStyle`, we validate that hex strings are properly formatted. If corruption is detected, we fall back to theme-safe defaults.
+
+---
+
+---
+
+## 7. How to debug a style conflict
 
 If a folder isn't coloring correctly:
 1.  Enable **"Icon debug mode"**.
@@ -91,7 +102,9 @@ If a folder isn't coloring correctly:
 
 ---
 
-## 7. HSV Color Picker Synchronization
+---
+
+## 8. HSV color picker synchronization
 
 The color picker uses a standardized range system to ensure perfect alignment between the UI board and the resulting CSS.
 
@@ -104,7 +117,9 @@ When a Hex code is pasted, the `syncFromHex` function converts it to these integ
 
 ---
 
-## 8. SVG Normalization & DOM Sanitization
+---
+
+## 9. SVG normalization & DOM sanitization
 
 To ensure icons are theme-resilient and secure, the `IconManager.normalizeSvg` process performs the following:
 
@@ -116,7 +131,9 @@ To ensure icons are theme-resilient and secure, the `IconManager.normalizeSvg` p
 
 ---
 
-## 9. Folder & File Item Counters
+---
+
+## 10. Folder & file item counters
 
 The plugin dynamically calculates the item counts for every folder in the vault during the rendering cycle.
 
@@ -126,7 +143,9 @@ The plugin dynamically calculates the item counts for every folder in the vault 
 
 ---
 
-## 9. Stealth Mode (Data Hider) Logic
+---
+
+## 11. Stealth mode (data hider) logic
 
 The Stealth Mode is a CSS-driven privacy layer.
 

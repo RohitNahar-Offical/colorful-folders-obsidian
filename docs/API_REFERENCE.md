@@ -49,9 +49,9 @@ This document provides a detailed technical reference for the public and interna
 *   **Purpose**: Reconciles the DOM with the desired divider state.
 *   **Constraint**: Must be called after every folder expansion/collapse or settings change.
 
-#### `buildDividerNode(path: string, config: FolderStyle): HTMLElement`
-*   **Purpose**: HTML Factory for the divider component.
-*   **Logic**: Attaches context menus and hover listeners.
+#### `buildDividerNode(path: string, config: FolderStyle, doc: Document): HTMLElement`
+*   **Purpose**: HTML factory for the divider component.
+*   **Logic**: Attaches context menus and hover listeners. Requires `doc` for multi-window support.
 
 ---
 
@@ -87,3 +87,22 @@ This document provides a detailed technical reference for the public and interna
 #### `colorizeSvg(svgStr: string, color: string): string`
 *   **Purpose**: Dynamically tints an SVG by rewriting its path attributes.
 *   **Logic**: Intelligent attribute replacement that preserves complex path data while updating color.
+
+---
+
+## 7. UI Modals (Component Reference)
+
+#### `DividerModal`
+*   **File**: `src/ui/modals/DividerModal.ts`
+*   **Purpose**: Per-divider configuration (text, icon, padding, color).
+*   **Features**: Live-sync preview using the standard `DividerManager` factory.
+
+#### `HoverMessageModal`
+*   **File**: `src/ui/modals/HoverMessageModal.ts`
+*   **Purpose**: Markdown-supported editor for divider popovers.
+*   **Features**: Real-time Markdown rendering, link/tag suggester, and native keyboard shortcuts.
+
+#### `ColorPickerModal`
+*   **File**: `src/ui/modals/ColorPickerModal.ts`
+*   **Purpose**: The central styling engine for folders/files.
+*   **Features**: Tabbed interface (Appearance, Icon, Inheritance, Presets), visual color pickers, and live mini-preview.

@@ -19,8 +19,9 @@ Most icons in the plugin are rendered via **CSS Masks**, and all are processed b
 
 The `DividerManager` renders Markdown descriptions using `obsidian.MarkdownRenderer`.
 
-### The Defense: **API-Level Sanitization**
+### The defense: **API-level sanitization**
 *   We rely on the native Obsidian `MarkdownRenderer` which has built-in sanitization for HTML tags.
+*   The `HoverMessageModal` also uses this renderer for its "Live preview" pane, ensuring consistency between the editor and the final popover.
 *   We do not use `innerHTML` directly with user strings. We use `createEl` and `setText` for all UI labels.
 
 ---

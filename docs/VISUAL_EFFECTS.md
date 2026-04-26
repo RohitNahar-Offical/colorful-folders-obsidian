@@ -50,12 +50,15 @@ This ensures the plugin is usable even with extreme custom palettes (e.g., "Neon
 
 The `DividerManager` popovers aren't simple tooltips; they are full Markdown containers.
 
-### Smart Overflow Logic:
+### Smart Overflow & Markdown Logic:
 When a popover is shown:
-1.  We measure the `rect` of the divider chip.
-2.  We measure the `window.innerWidth`.
-3.  If `chip.right + popoverWidth > window.innerWidth`, we flip the popover to the **left** of the chip.
-4.  This prevents the "Clipping Bug" common in simpler Obsidian plugins.
+1.  **Markdown Rendering**: We use `MarkdownRenderer.render()` to transform the raw text into live HTML, supporting `[[links]]` and `#tags`.
+2.  **Navigation Binding**: The plugin attaches event listeners to the rendered HTML, allowing users to click links or tags directly within the popover.
+3.  **Dynamic Positioning**:
+    *   We measure the `rect` of the divider chip.
+    *   **Horizontal**: If `chip.right + popoverWidth > window.innerWidth`, we shift the popover left to prevent clipping.
+    *   **Vertical**: We calculate `spaceAbove`. If the popover would exceed the top of the screen, we flip it to render **below** the divider (the "is-below" state).
+4.  **The Hover Bridge**: A 150ms delay is implemented on `mouseleave`, allowing the user's cursor to travel from the chip to the popover without the menu closing prematurely.
 
 ---
 
@@ -85,9 +88,9 @@ Dividers provide structural separation between groups of folders or files.
 
 ### The "Bridge" Layout:
 We use a flexbox "bridge" strategy to align the divider elements:
-1.  **Divider Lines**: Use `flex-grow: 1` to fill remaining space.
-2.  **Gap Control**: `dividerLinePadding` (8px by default) controls the white space between the lines and the central label.
-3.  **Line Styles**: Supports `solid`, `dashed`, `dotted`, and `double` strokes using CSS borders or linear gradients.
+1.  **Divider lines**: Use `flex-grow: 1` to fill remaining space.
+2.  **Asymmetrical spacing**: `dividerLinePaddingLeft` and `dividerLinePaddingRight` allow independent control over the gap between the lines and the central label. This is ideal for offset divider designs.
+3.  **Line styles**: Supports `solid`, `dashed`, `dotted`, and `double` strokes using CSS borders or linear gradients.
 
 ### Modern Pill Design:
 The "Pill" design wraps the divider text/icon in a rounded background.

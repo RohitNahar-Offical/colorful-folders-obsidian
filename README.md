@@ -5,14 +5,17 @@
 
 ---
 
-## 🚀 Latest: 4.1.1 - The "Folder Counter & Transparency" Fix
-4.1.1 resolves issues with folder item counters and restores the root transparency slider logic.
+## 🚀 Latest: 4.1.2 - The "Asymmetrical Spacing & UI Polish" Update
+4.1.2 introduces independent divider padding and a project-wide UI sentence case cleanup for a perfectly native Obsidian feel.
 
-### 🕵️ 1. New: Stealth & Privacy Engine
-Hide any file or folder from the sidebar with a single click via the context menu. Includes a password-protected dashboard and "Ghost Mode" for semi-transparent viewing.
+### 📐 1. New: Asymmetrical Divider Spacing
+Independently control the gap between divider lines and the central text/pill for the left and right sides. Perfect for offset or unique structural layouts.
 
-### ➕ 2. New: Premium Divider Hovers
-Dividers now support rich Markdown descriptions in a premium, glassmorphic floating popover with a dedicated smart editor.
+### 🎨 2. New: Sentence Case Compliance
+A complete audit of all UI strings (settings, tooltips, modals) to ensure strict adherence to Obsidian's design standards. Everything feels cleaner and more professional.
+
+### ➕ 3. Enhanced: Premium Divider Hovers
+Dividers now support rich Markdown descriptions in a premium, glassmorphic floating popover with a dedicated smart editor. Includes links and tags support.
 
 ### 🎨 3. Enhanced Divider Customization
 Added granular control for icon positioning (Left, Right, or Both) and refined vertical/horizontal centering for pixel-perfect layouts.
@@ -52,8 +55,8 @@ Completely re-engineered integration ensuring specialized DOM selectors match th
 
 ### 📐 Organization & Spacing
 
-  * **Section Dividers:** Add vertical visual dividers to group your files and folders. Includes **Markdown Support** for rich descriptions in glassmorphic popovers and a dedicated smart editor. Choose from Solid, Dashed, or Dotted lines.
-  * **Dynamic Item Counters:** Display recursive statistics showing the total count of folders and files contained within a directory, color-matched to their parent folder.
+  * **Section dividers**: Add vertical visual dividers to group your files and folders. Includes **Markdown support** for rich descriptions in glassmorphic popovers and a dedicated smart editor. Features **asymmetrical spacing** (independent left/right gaps) and support for solid, dashed, or dotted lines.
+  * **Dynamic item counters**: Display recursive statistics showing the total count of folders and files contained within a directory, color-matched to their parent folder.
   * **Exclusion Lists:** Keep utility directories like `attachments` or `templates` looking standard and unaffected by plugin styling.
 
 ### 🕵️ Stealth & Privacy Engine

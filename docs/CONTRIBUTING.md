@@ -69,3 +69,5 @@ If a plugin has its own file explorer (like "Recent Files"):
 *   **`src/core/IconManager.ts`**: The central service for SVG normalization, colorization, and DOM-based icon injection.
 *   **`src/core/DividerManager.ts`**: Manages the injection and reconciliation of folder dividers.
 *   **`src/ui/modals/ColorPickerModal.ts`**: The primary interface for manual styling overrides.
+*   **`src/ui/modals/DividerModal.ts`**: Configuration interface for section dividers.
+*   **`src/ui/modals/HoverMessageModal.ts`**: Markdown editor for premium divider popovers.
