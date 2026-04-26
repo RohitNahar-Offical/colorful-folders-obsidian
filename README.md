@@ -5,8 +5,8 @@
 
 ---
 
-## 🚀 Latest: 4.1.2 - The "Asymmetrical Spacing & UI Polish" Update
-4.1.2 introduces independent divider padding and a project-wide UI sentence case cleanup for a perfectly native Obsidian feel.
+## 🚀 Latest: 4.3.0 - The "Premium Polish" Update
+4.3.0 introduces independent divider padding and a project-wide UI sentence case cleanup for a perfectly native Obsidian feel.
 
 ### 📐 1. New: Asymmetrical Divider Spacing
 Independently control the gap between divider lines and the central text/pill for the left and right sides. Perfect for offset or unique structural layouts.
