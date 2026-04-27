@@ -51,5 +51,5 @@ This major release introduces the high-end Hover Message system and a robust, pa
 ---
 
 ### 🎥 Feature Showcase
-![Version 4.1.0 Highlights](5.mp4)
+https://github.com/user-attachments/assets/17276285-a641-4d74-8ddc-a583bf9b7c5a
 
