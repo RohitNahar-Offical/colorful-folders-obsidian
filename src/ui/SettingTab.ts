@@ -374,7 +374,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .setName('Folder exclusion list')
             .setDesc('Comma-separated list of folder names to ignore. Note: folder names are case-insensitive.')
             .addText(text => text
-                .setPlaceholder('templates, attachments, .git')
+                .setPlaceholder('Templates, attachments, .git')
                 .setValue(this.plugin.settings.exclusionList || "")
                 .onChange(async (value) => {
                     this.plugin.settings.exclusionList = value;
@@ -459,7 +459,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     this.plugin.generateStyles();
                 }));
 
-        const visCard = makeCard(generalPanel, "👁️", "Appearance & visibility");
+        const visCard = makeCard(generalPanel, "👁️", "Appearance and visibility");
         new obsidian.Setting(visCard)
             .setName('Light mode brightness (%)')
             .addSlider(slider => slider
@@ -603,7 +603,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 });
         }
 
-        const divCard = makeCard(generalPanel, "➖", "Dividers & sections");
+        const divCard = makeCard(generalPanel, "➖", "Dividers and sections");
 
         // --- Divider Live Preview ---
         const previewWrap = divCard.createDiv({ cls: 'cf-divider-preview-wrap' });
@@ -782,7 +782,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     updatePreview();
                 }));
 
-        const typeCard = makeCard(generalPanel, "Aa", "Path & typography");
+        const typeCard = makeCard(generalPanel, "Aa", "Path and typography");
         new obsidian.Setting(typeCard)
             .setName('Show item counters')
             .setDesc('Displays recursive folder and file counts next to folder names.')
@@ -927,7 +927,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
 
 
-        const stealthCard = makeCard(sysPanel, "🔏", "Privacy & stealth");
+        const stealthCard = makeCard(sysPanel, "🔏", "Privacy and stealth");
         const isLocked = !!(this.plugin.settings.vaultPassword && this.plugin.settings.isVaultLocked);
 
         if (this.plugin.settings.vaultPassword) {
@@ -1081,7 +1081,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .setButtonText('Reset styling')
                 .setWarning()
                 .onClick(() => {
-                    new ConfirmModal(this.app, "Reset styles & presets", "Are you sure you want to delete all custom styling and presets? This cannot be undone.", async () => {
+                    new ConfirmModal(this.app, "Reset styles and presets", "Are you sure you want to delete all custom styling and presets? This cannot be undone.", async () => {
                         this.plugin.settings.customFolderColors = {};
                         this.plugin.settings.presets = {};
                         await this.plugin.saveSettings();
