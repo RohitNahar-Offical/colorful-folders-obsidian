@@ -119,6 +119,8 @@ export class DividerManager {
             }
 
             chip.setCssStyles({
+                position: 'relative',
+                zIndex: '1',
                 padding: '6px 16px',
                 borderRadius: '40px',
                 backgroundColor: pillBg,

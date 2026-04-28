@@ -307,7 +307,7 @@ export class DividerModal extends obsidian.Modal {
         new obsidian.Setting(styleSect)
             .setName("Line gap (left)")
             .addSlider(s => s
-                .setLimits(0, 40, 1)
+                .setLimits(-10, 40, 1)
                 .setValue(this.config.paddingLeft)
                 .setDynamicTooltip()
                 .onChange(v => {
@@ -318,7 +318,7 @@ export class DividerModal extends obsidian.Modal {
         new obsidian.Setting(styleSect)
             .setName("Line gap (right)")
             .addSlider(s => s
-                .setLimits(0, 40, 1)
+                .setLimits(-10, 40, 1)
                 .setValue(this.config.paddingRight)
                 .setDynamicTooltip()
                 .onChange(v => {
