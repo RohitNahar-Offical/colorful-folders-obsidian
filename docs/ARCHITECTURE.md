@@ -1,13 +1,16 @@
 # 🏗️ Architecture Deep-Dive
 
-This document explains the "Engine" of Colorful Folders: how it transforms a vault of markdown files into a vibrant, structured interface.
+This document explains the "Engine" of **Colorful Folders**: how it transforms a vault of markdown files into a vibrant, structured interface.
+
+---
 
 ## 1. The Rendering Cycle
 
 Colorful Folders does NOT style elements by finding them and setting `.style.color`. Instead, it uses a **Static Style Injection Strategy**.
 
-### Why?
-Obsidian uses a **Virtualized List** for its File Explorer. This means elements are created and destroyed as you scroll. Directly styling DOM elements would be slow and brittle. Instead, we generate CSS rules that target elements by their `data-path` attribute.
+> [!IMPORTANT]
+> **Why this strategy?**
+> Obsidian uses a **Virtualized List** for its File Explorer. Elements are created and destroyed dynamically as you scroll. Directly styling DOM elements would be slow and brittle. Instead, we generate CSS rules that target elements by their `data-path` attribute.
 
 ### The Rendering Pipeline
 
@@ -21,64 +24,28 @@ graph TD
     F --> G[Build CSS String]
     G --> H[Inject into DOM styleTag]
     H --> I[Browser Reflow / Paint]
+    
+    style G fill:#f96,stroke:#333,stroke-width:4px
 ```
 
-### The Cycle:
+### The Cycle Breakdown:
 1.  **Trigger**: User changes a setting or the plugin loads.
 2.  **State Resolution**: `plugin.getEffectiveStyle()` calculates the visual state for every folder/file.
-3.  **High-Performance CSS Generation**: `StyleGenerator.traverse()` builds a collection of CSS rules. To handle 20,000+ files efficiently, it uses the **"Collect-Join" Pattern** (pushing strings into an array) to prevent O(N²) string concatenation overhead.
+3.  **High-Performance Assembly**: `StyleGenerator.traverse()` builds a collection of CSS rules using the **"Collect-Join" Pattern** to prevent string concatenation overhead.
 4.  **Injection**: The final joined string is pushed into `plugin.styleTag` in the `<head>`.
-5.  **Browser handles the rest**: The browser's CSS engine applies the styles instantly as elements enter the viewport.
+5.  **Browser Paint**: The browser's CSS engine applies the styles instantly as elements enter the viewport.
 
 ---
 
 ## 2. The "Effective Style" Algorithm
 
-The most complex part of the plugin is determining what color a folder should be. This happens in `ColorfulFoldersPlugin.getEffectiveStyle(target)`.
+The "Brain" of the plugin is determining what color a folder should be. This happens in `ColorfulFoldersPlugin.getEffectiveStyle(target)`.
 
-### Logic Flow (Simplified):
-```typescript
-function getEffectiveStyle(target) {
-    // 1. Check for Explicit Override
-    if (settings.customFolderColors[target.path]) {
-        return merge(defaults, settings.customFolderColors[target.path]);
-    }
-
-    // 2. Check for Inheritance
-    let parent = target.parent;
-    while (parent) {
-        let parentStyle = settings.customFolderColors[parent.path];
-        if (parentStyle && parentStyle.applyToSubfolders) {
-            return parentStyle; // Inherit
-        }
-        parent = parent.parent;
-    }
-
-    // 3. Fallback to Global Generation Mode
-    if (settings.colorMode === 'heatmap') {
-        return computeHeatmapColor(target);
-    } else if (settings.colorMode === 'monochromatic') {
-        return computeDepthColor(target);
-    } else {
-        return computeSequentialColor(target);
-    }
-}
-```
-
-### Detailed Trace: `getEffectiveStyle`
-
-This function is the "Brain" of the plugin. Here is the exact priority order it follows when determining a folder's color:
-
-1.  **Direct Match**: Does `settings.customFolderColors[path]` exist?
-2.  **Parent Inheritance**:
-    *   Walk up the tree: `target.parent` -> `target.parent.parent`...
-    *   For each ancestor, check if it has a custom style with `applyToSubfolders: true`.
-    *   Stop at the first match.
-3.  **Dynamic Modes**:
-    *   **Heatmap**: Calculate `(now - lastModified)`. Map this duration to the palette index.
-    *   **Monochromatic**: Use `depth % palette.length`. Apply lightness shift based on depth.
-    *   **Cycle (Rainbow)**: Use `posIndex % palette.length`.
-4.  **Default Fallback**: Return the primary color from the active palette.
+### Priority Hierarchy:
+1.  **Direct Match**: Explicitly set in `settings.customFolderColors[path]`.
+2.  **Parent Inheritance**: Ancestor with `applyToSubfolders: true`.
+3.  **Dynamic Modes**: Heatmap, Monochromatic, or Sequential (Rainbow).
+4.  **Default Fallback**: Active palette primary color.
 
 ```mermaid
 graph TD
@@ -102,16 +69,8 @@ graph TD
 
 The `StyleGenerator` is a stateless class that walks the vault tree.
 
-### Traversal Pseudocode:
-```text
-FUNCTION traverse(folder, currentDepth):
-    FOR EACH item IN folder.children:
-        style = plugin.getEffectiveStyle(item)
-        generateSelector(item.path, style)
-        
-        IF item IS folder:
-            traverse(item, currentDepth + 1)
-```
+> [!NOTE]
+> To handle 20,000+ files efficiently, we avoid creating objects inside the loop. We pass a shared `TraversalState` object through the recursion.
 
 ### Generated CSS Pattern:
 ```css
@@ -140,49 +99,38 @@ Dividers are the only part of the plugin that uses **Direct DOM Manipulation**. 
 
 ### Reconciliation Loop:
 `DividerManager.syncDividers()` is called whenever the explorer DOM changes.
-1.  **Diff**: It compares the list of folders that *should* have dividers against the list of elements currently in the DOM with the `cf-interactive-divider` class.
+
+> [!TIP]
+> Reconciliation is debounced (usually 50ms) to prevent UI stuttering during rapid folder expansion.
+
+1.  **Diff**: Compare desired dividers vs current DOM nodes (`.cf-interactive-divider`).
 2.  **Sync**: 
-    *   If a divider is missing, it is created and `insertBefore` is called.
-    *   If a divider is in the wrong place (Obsidian reordered items), it is moved.
-    *   If a divider is no longer needed, it is `remove()`-ed.
-
-### Performance Tip:
-Reconciliation is debounced (usually 50-100ms) to prevent UI stuttering during rapid folder expansion.
+    *   **Create**: Missing dividers are initialized.
+    *   **Move**: Misplaced dividers are repositioned via `insertBefore`.
+    *   **Purge**: Orphaned dividers are removed.
 
 ---
 
----
-
-## 5. IconManager: The Indestructible & Secure Strategy
+## 5. IconManager: Indestructible and Secure
 
 The plugin uses a hybrid approach to ensure icons are performant, visually consistent, and 100% secure.
 
 ### CSS Masking (High Performance)
 *   **Used for**: Auto-Icons, Folder Open/Closed states.
-*   **Mechanism**: `-webkit-mask-image` in `StyleGenerator.ts`.
 *   **Benefit**: Hundreds of icons can be rendered with zero DOM overhead.
 
-### DOM Injection & Sanitization (Secure Overrides)
+### DOM Injection and Sanitization (Secure Overrides)
 *   **Used for**: Manual Icon Overrides (Visual Picker) and external SVG strings.
-*   **Mechanism**: `IconManager.ts` utilizes a **Robust DOM-based Sanitization Engine** (using `DOMParser` and `XMLSerializer`) instead of unsafe regex-based cleaning.
-*   **Security**: All custom SVGs are parsed into a headless document where dangerous tags (like `<script>`) and event handlers (`onmouseover`, etc.) are stripped away before rendering.
-*   **Benefit**: Eliminates potential XSS vulnerabilities while ensuring complex icons (with gradients or paths) render perfectly across all themes.
+*   **Mechanism**: Uses `DOMParser` and `XMLSerializer` for recursive sanitization.
+*   **Security**: Strip `<script>`, `<iframe>`, and all `on*` event handlers.
 
 ---
 
----
-
-## 7. Stealth Mode: The Data Hider
-
-Colorful Folders includes a "Stealth Mode" (Data Hider) to protect sensitive vault sections without requiring complex encryption.
-
-### Security Model
-*   **Logic**: The plugin injects a global `.cf-stealth-active` class to the `<body>`.
-*   **Hiding**: CSS rules automatically collapse and hide any folders/files that are not explicitly authorized by the user during the session.
-*   **Persistence**: The vault lock state is managed in-memory to prevent leaking sensitivity after an Obsidian restart.
-
----
-
-## 8. Third-Party Integrations
+## 6. Third-Party Integrations
 
 We support **Notebook Navigator** by injecting specific selectors that target its custom list items (`.nn-navitem`). The logic is abstracted in `src/integrations/NotebookNavigator.ts` to ensure the core engine remains clean.
+
+---
+
+> [!CAUTION]
+> Avoid modifying the `StyleGenerator`'s core traversal loop unless you are optimizing for big O complexity. Small regressions here can cause major performance drops in large vaults.

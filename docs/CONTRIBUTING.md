@@ -1,6 +1,9 @@
-# 🛠️ Feature Implementation Guide (Contributing)
+# 🛠️ Feature Implementation Guide
 
-This document provides step-by-step instructions for adding new features to Colorful Folders.
+> [!NOTE]
+> This guide provides step-by-step instructions for contributing to **Colorful Folders**. Follow these patterns to ensure code quality and UI consistency.
+
+---
 
 ## 1. How to Add a New Coloring Mode
 
@@ -24,50 +27,54 @@ To add a featured pack (like "Remix Icons"):
 
 ---
 
-## 3. How to Support a New 3rd Party Plugin
+## 3. Support a New 3rd Party Plugin
 
-If a plugin has its own file explorer (like "Recent Files"):
-1.  **Create a new integration file**: `src/integrations/MyPlugin.ts`.
+1.  **Create Integration**: `src/integrations/MyPlugin.ts`.
 2.  **Define Selectors**: Find the CSS classes the plugin uses for its items.
 3.  **Update `StyleGenerator.ts`**: 
-    *   In `generateCss()`, call `MyPlugin.getExtraContainers()`.
-    *   In `traverse()`, generate extra rules using the plugin's specific selectors.
+    - In `generateCss()`, call `MyPlugin.getExtraContainers()`.
+    - In `traverse()`, generate extra rules using the plugin's specific selectors.
 
 ---
 
 ## 4. Debugging Tips
 
-### Style Debugging
-*   Open Obsidian Developer Tools (`Ctrl+Shift+I`).
-*   Go to the **Elements** tab.
-*   Search for `<style id="colorful-folders-styles">`.
-*   You can see exactly what CSS is being generated.
+### 🔍 Style Debugging
+- Open Obsidian Developer Tools (`Ctrl+Shift+I`).
+- Inspect `<style id="colorful-folders-styles">`.
+- Search for the `data-path` of the folder in question.
 
-### Icon Debugging
-*   Enable **"Icon debug mode"** in settings.
-*   Check the console for logs starting with `[Colorful Folders Icon Debug]`.
-*   This will show you which regex pattern matched a specific folder name.
+### 🔍 Icon Debugging
+- Enable **"Icon debug mode"** in settings.
+- Check the console for logs starting with `[Colorful Folders Icon Debug]`.
 
-### Divider Debugging
-*   The `DividerManager` logs reconciliation steps if you add `console.log` inside `syncDividers()`.
-*   Note: Dividers are identified by the `cf-interactive-divider` class.
+### 🔍 Divider Debugging
+- Dividers are identified by the `cf-interactive-divider` class.
+- Inspect the DOM hierarchy to see where the divider is injected relative to `.nav-folder-title`.
 
 ---
 
 ## 5. Coding Standards
 
-*   **Case Sensitivity**: Folder matching should always be case-insensitive where possible.
-*   **Path Escaping**: Always use `utils.safeEscape(path)` before putting a path into a CSS selector.
-*   **Aesthetics**: Follow the "Premium UI" guidelines. Use gradients, subtle shadows, and consistent padding.
+- **Case Sensitivity**: Folder matching should always be case-insensitive.
+- **Path Escaping**: Always use `utils.safeEscape(path)` for CSS selectors.
+- **Sentence Case**: All UI labels must follow sentence case (e.g., `Add new folder`).
+- **Aesthetics**: Follow the "Premium UI" guidelines. Use gradients, subtle shadows, and consistent padding.
 
 ---
 
 ## 6. Core Files Overview
 
-*   **`main.ts`**: Plugin entry point, event listeners, and high-level state management.
-*   **`src/core/StyleGenerator.ts`**: The recursive CSS engine for backgrounds and auto-icons.
-*   **`src/core/IconManager.ts`**: The central service for SVG normalization, colorization, and DOM-based icon injection.
-*   **`src/core/DividerManager.ts`**: Manages the injection and reconciliation of folder dividers.
-*   **`src/ui/modals/ColorPickerModal.ts`**: The primary interface for manual styling overrides.
-*   **`src/ui/modals/DividerModal.ts`**: Configuration interface for section dividers.
-*   **`src/ui/modals/HoverMessageModal.ts`**: Markdown editor for premium divider popovers.
+| File | Responsibility |
+| :--- | :--- |
+| `main.ts` | Lifecycle, Events, & High-level state |
+| `StyleGenerator.ts` | Recursive CSS engine & backgrounds |
+| `IconManager.ts` | SVG normalization & Sanitization |
+| `DividerManager.ts` | DOM reconciliation for dividers |
+| `ColorPickerModal.ts` | Primary manual styling UI |
+| `DividerModal.ts` | Divider & section configuration |
+
+---
+
+> [!IMPORTANT]
+> Always run `npm run lint` before committing. We maintain a zero-warning policy to satisfy Obsidian's strict plugin requirements.

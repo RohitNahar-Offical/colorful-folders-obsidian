@@ -1,29 +1,28 @@
-# ✨ Visual Effects & Advanced Rendering
+# ✨ Visual Effects and Advanced Rendering
 
-This document explains the "Eye Candy" logic—the advanced visual effects that make Colorful Folders feel premium.
+> [!NOTE]
+> This document explains the "Eye Candy" logic—the advanced visual effects that make **Colorful Folders** feel premium.
 
-## 1. Active Path Glow (The Connecting Line)
+---
 
-The **Active Path Glow** is a dynamic line that visually connects the currently open file to its root parent in the explorer.
+## 1. Active Path Glow (Connecting Line)
 
-### Implementation Logic:
-1.  **Detection**: `main.ts` listens for the `file-open` event.
-2.  **Path Resolution**: It iterates through all parents of the active file using `file.parent`.
-3.  **Selector Generation**: For each ancestor folder, we generate a CSS rule that targets `.nav-folder-title.is-active-path`.
-4.  **Pseudo-Element Injection**:
+The **Active Path Glow** is a dynamic line that visually connects the currently open file to its root parent.
+
+### 🛠️ Implementation Logic:
+1.  **Detection**: `main.ts` listens for `file-open`.
+2.  **Path Resolution**: Iterates through all ancestors using `file.parent`.
+3.  **Selector**: Targets `.nav-folder-title.is-active-path`.
+4.  **Pseudo-Element**:
     ```css
     .nav-folder-title.is-active-path::after {
-        content: "";
-        position: absolute;
-        left: 10px;
-        top: 0;
-        bottom: 0;
-        width: 2px;
+        content: ""; position: absolute;
+        left: 10px; width: 2px;
         background: var(--interactive-accent);
         box-shadow: 0 0 8px var(--interactive-accent);
     }
     ```
-5.  **Animation**: If `animateActivePath` is enabled, we apply `@keyframes cf-shimmer` to this pseudo-element, creating a flowing light effect.
+5.  **Animation**: If enabled, `@keyframes cf-shimmer` creates a flowing light effect.
 
 ---
 
@@ -31,113 +30,67 @@ The **Active Path Glow** is a dynamic line that visually connects the currently 
 
 To prevent "unreadable text on bright backgrounds," we use a weighted luminance formula.
 
-### The Formula:
-Based on the **WCAG 2.0** relative luminance formula:
-`L = 0.2126 * R + 0.7152 * G + 0.0722 * B`
+### 📐 The Formula:
+`L = 0.2126 * R + 0.7152 * G + 0.0722 * B` (WCAG 2.0)
 
-### Logic Trace:
-1.  Convert the background `hex` to `RGB`.
-2.  Normalize values to `0-1`.
-3.  Calculate `L`.
-4.  If `L > 0.5` (Bright background), we force the text to be **20% darker** than the primary color.
-5.  If `L < 0.5` (Dark background), we force it to be **30% lighter**.
-
-This ensures the plugin is usable even with extreme custom palettes (e.g., "Neon Cyberpunk").
+### 🧠 Logic Trace:
+1.  Convert background `hex` to `RGB`.
+2.  Calculate relative luminance `L`.
+3.  **Bright BG** (`L > 0.5`): Force text **20% darker**.
+4.  **Dark BG** (`L < 0.5`): Force text **30% lighter**.
 
 ---
 
 ## 3. Premium Popover Positioning
 
-The `DividerManager` popovers aren't simple tooltips; they are full Markdown containers.
+Divider popovers are full Markdown containers with smart positioning.
 
-### Smart Overflow & Markdown Logic:
-When a popover is shown:
-1.  **Markdown Rendering**: We use `MarkdownRenderer.render()` to transform the raw text into live HTML, supporting `[[links]]` and `#tags`.
-2.  **Navigation Binding**: The plugin attaches event listeners to the rendered HTML, allowing users to click links or tags directly within the popover.
-3.  **Dynamic Positioning**:
-    *   We measure the `rect` of the divider chip.
-    *   **Horizontal**: If `chip.right + popoverWidth > window.innerWidth`, we shift the popover left to prevent clipping.
-    *   **Vertical**: We calculate `spaceAbove`. If the popover would exceed the top of the screen, we flip it to render **below** the divider (the "is-below" state).
-4.  **The Hover Bridge**: A 150ms delay is implemented on `mouseleave`, allowing the user's cursor to travel from the chip to the popover without the menu closing prematurely.
+### 🧩 Logic Flow:
+- **Markdown Rendering**: Uses `obsidian.MarkdownRenderer` to support `[[links]]` and `#tags`.
+- **Horizontal**: If `chip.right + width > screen.width`, shift the popover left.
+- **Vertical**: If space above is tight, flip the popover to render **below** the divider.
+- **Hover Bridge**: 150ms delay on `mouseleave` to allow cursor travel to the popover.
 
 ---
 
-## 4. Glassmorphism & Backdrop Filtering
+## 4. Glassmorphism and Backdrop Filtering
 
-We use the `backdrop-filter` CSS property to achieve the "Frosted Glass" look.
+Achieving the "Frosted Glass" look via `backdrop-filter`.
 
-### The Stack:
 ```css
 .glass-effect {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(12px) saturate(150%);
-    -webkit-backdrop-filter: blur(12px) saturate(150%);
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 ```
-*Note: We apply a fallback background color for older Electron versions that do not support backdrop-filter.*
-
----
-6.  **Mode Default**: Dark mode defaults to `0.1`, Light mode to `0.15` if no settings exist.
 
 ---
 
-## 7. Section Dividers & Modern Pill Design
+## 5. Modern Pill Design
 
-Dividers provide structural separation between groups of folders or files.
+"Pills" provide structural separation between groups.
 
-### The "Bridge" Layout:
-We use a flexbox "bridge" strategy to align the divider elements:
-1.  **Divider lines**: Use `flex-grow: 1` to fill remaining space.
-2.  **Asymmetrical spacing**: `dividerLinePaddingLeft` and `dividerLinePaddingRight` allow independent control over the gap between the lines and the central label. This is ideal for offset divider designs.
-3.  **Line styles**: Supports `solid`, `dashed`, `dotted`, and `double` strokes using CSS borders or linear gradients.
-
-### Modern Pill Design:
-The "Pill" design wraps the divider text/icon in a rounded background.
--   **Color Inheritance**: By default, pills inherit the color of the parent folder at **15% opacity**.
--   **Visual Picker**: Integrated rich visual color picker with **Alpha support** allows for precise RGBA overrides.
--   **Glassmorphism Integration**: If enabled, pills use `backdrop-filter: blur(16px)` for a frosted effect.
+- **Bridge Layout**: Flexbox strategy with `flex-grow: 1` lines.
+- **Asymmetrical Spacing**: Independent `Left`/`Right` padding allows for offset designs.
+- **Connectivity**: Supports **negative gaps** (-10px) to let lines intersect the pill.
+- **Inheritance**: Pills inherit parent folder color at **15% opacity** by default.
 
 ---
 
-## 8. Sequential vs. Deterministic Coloring
+## 6. Sequential vs. Deterministic Coloring
 
-*   **Sequential (Cycle)**: Uses the item's index in the folder list. This creates a "Rainbow" flow but can change if you add a new folder at the top.
-*   **Deterministic (File Hashing)**: For files, we use `hashString(filename) % palette.length`. This ensures that `Notes.md` always has the same color, no matter where it is moved.
-
----
-
-## 9. Transparency Hardening & Explicit "OFF" State
-
-The plugin manages background opacity through a strict hierarchy to ensure visual consistency:
-
-### Transparency Hierarchy:
-1.  **Manual Override**: Defined via the modal opacity slider (Saved in `FolderStyle.opacity`).
-2.  **Global Fallback**: Defined in settings (`fileBackgroundOpacity`).
-3.  **Mode Default**: Dark mode defaults to `0.1`, Light mode to `0.15` if no settings exist.
-
-### The Explicit "OFF" Logic:
-When a user toggles Auto-Color Mode **OFF**, the rendering engine does not simply stop styling. Instead, it injects an explicit reset:
-```css
-.nav-file-title:not(.custom-styled) {
-    background-color: transparent !important;
-    border-left: none !important;
-}
-```
-This prevents "ghost colors" from themes or previous states from lingering, ensuring the vault returns to a perfectly clean, native Obsidian appearance instantly.
+- 🌈 **Sequential (Cycle)**: Uses the item's index in the list. Creates a rainbow flow.
+- 🎯 **Deterministic (File Hashing)**: Uses `hashString(filename) % length`. Ensures a file keeps its color even when moved.
 
 ---
 
-## 10. High-visibility metadata & counters
+## 7. High-Visibility Metadata
 
-The plugin emphasizes readability for essential metadata (folder counts, file counts, and tags).
+Readability for essential meta (counts, tags, extensions).
 
-### Item Counters
-*   **Dual-Indicator Design**: We use a custom SVG that shows both folder and file counts side-by-side.
-*   **Bold Weight (900)**: These numbers use the maximum font weight to ensure they are readable even in dense file explorers.
-*   **Dynamic Tinting**: The SVG color is automatically synced to the folder's primary color or its custom contrast-adjusted label color.
+> [!TIP]
+> **Font Weight 900**: Metadata elements are explicitly set to maximum boldness to ensure they stand out in dense explorers.
 
-### Bold Metadata Labels
-*   **Targeted Boldness**: Elements on the right side of the explorer (tags, note counts, file extensions) are explicitly set to `font-weight: 900`.
-*   **Theme Integration**: This is implemented via the recursive `StyleGenerator`, ensuring that these labels stand out regardless of whether you are using a native Obsidian theme or a highly customized community theme.
-
+- **Dual-Indicator Design**: Folder and file counts shown side-by-side.
+- **Dynamic Tinting**: Synced to the folder's primary color.
