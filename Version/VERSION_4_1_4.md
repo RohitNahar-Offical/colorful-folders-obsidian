@@ -1,11 +1,11 @@
 # 🎨 Colorful Folders | Release Notes (v4.1.4)
 
 > [!NOTE]
-> Welcome to version **4.1.4**! This major update focuses on elevating the visual elegance of your vault through refined connectivity, unified styling, and powerful under-the-hood engine optimizations. 
+> Welcome to version **4.1.4**! This update focuses on elevating the visual elegance of your vault through refined connectivity, unified styling, and powerful under-the-hood engine optimizations. 
 
 ---
 
-## ✨ Design & Visual Upgrades
+## ✨ Design & Visual Upgrades for Active Files Paths 
 
 ### 🌟 The New "Luminous" Default
 We've completely decoupled the premium active file highlight from the Radiant Path settings.
@@ -15,13 +15,6 @@ We've completely decoupled the premium active file highlight from the Radiant Pa
 ### 📏 Flawless Divider Integration
 Section dividers have been upgraded to support tighter, more cohesive layouts.
 - **Negative Line Gaps**: You can now push divider lines inward using negative gaps (down to **-10px**).
-- **Flush Intersections**: Achieve a seamless, professional look where the divider lines perfectly intersect your central pills or icon backgrounds.
-- **Layering Precision**: Upgraded z-index management guarantees that intersecting lines tuck cleanly behind the divider chips.
-
-### 🖋️ UI Text Standardization
-We performed a massive project-wide audit to ensure the plugin feels like a native part of Obsidian.
-- **Strict Sentence Case**: Every setting name, description, button, and placeholder has been unified to standard sentence casing (e.g., "Add hover message").
-- **Polished Phrasing**: Replaced informal ampersands (`&`) with "and" across all section headers for maximum professionalism.
 
 ---
 
@@ -31,14 +24,6 @@ We performed a massive project-wide audit to ensure the plugin feels like a nati
 We conducted deep memory profiling of the `StyleGenerator` core to eliminate rendering bottlenecks during massive vault traversals.
 - **Zero-Allocation Loops**: Complex variables and local helper functions have been hoisted completely out of recursive rendering loops.
 - **The Result**: By preventing the allocation of tens of thousands of function closures per render, we've drastically reduced JavaScript garbage collection (GC) stutters, resulting in lightning-fast style updates even on vaults with 20,000+ files.
-
-### 📖 Complete Documentation Overhaul
-The developer documentation suite (in `/docs` and `DEVELOPER.md`) has been entirely rewritten to meet the latest Obsidian plugin submission standards.
-- **Premium Structure**: Now featuring advanced Markdown styling, Mermaid.js architectural diagrams, and technical callouts.
-- **Deep Dives**: Added comprehensive guides detailing the **IconManager** sanitization flow, the **DividerManager** virtual DOM reconciliation loop, and our dynamic release notes system.
-- **Security Audit**: Formally documented the DOM-based sanitization engine that rigidly protects against XSS when processing custom SVGs.
-
----
 
 ## 🔧 Bug Fixes & Stability
 
