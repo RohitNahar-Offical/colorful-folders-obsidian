@@ -172,23 +172,43 @@ export class StyleGenerator {
         }
 
 
-        if (this.settings.focusMode) {
+        if (this.settings.focusMode && activePath) {
+            const safeActivePath = safeEscape(activePath);
             cssRules.push(`
-                body:has(.nav-file-title.is-active) .nav-file-title,
-                body:has(.nav-file-title.is-active) .nav-folder-title,
-                body:has(.nav-file-title.is-active) .nav-folder-content::before {
+                /* DIMMING BASE */
+                .nav-file-title, 
+                .nav-folder-title, 
+                .nav-folder-content::before {
                     opacity: 0.3 !important;
                     transition: opacity 0.3s ease !important;
                 }
-                body:has(.nav-file-title.is-active) .nav-file-title.is-active {
+
+                /* EXEMPTIONS: The active file and its parent path */
+                .nav-file-title[data-path="${safeActivePath}"],
+                .tree-item-self[data-path="${safeActivePath}"] {
                     opacity: 1 !important;
                 }
-                body:has(.nav-file-title.is-active) .nav-folder:has(.is-active) > .nav-folder-title,
-                body:has(.nav-file-title.is-active) .nav-folder:has(.is-active) > .nav-folder-content::before {
-                    opacity: 1 !important;
-                }
-                body:not(.is-mobile):has(.nav-file-title.is-active) .nav-file-title:hover,
-                body:not(.is-mobile):has(.nav-file-title.is-active) .nav-folder-title:hover {
+            `);
+
+            // Traverse up the active path to exempt parents
+            const parts = activePath.split('/');
+            let currentPath = '';
+            for (let i = 0; i < parts.length - 1; i++) {
+                currentPath = currentPath ? `${currentPath}/${parts[i]}` : parts[i];
+                const sc = safeEscape(currentPath);
+                cssRules.push(`
+                    .nav-folder-title[data-path="${sc}"],
+                    .tree-item-self[data-path="${sc}"],
+                    .nav-folder-title[data-path="${sc}"] + .nav-folder-content::before {
+                        opacity: 1 !important;
+                    }
+                `);
+            }
+
+            cssRules.push(`
+                /* Hover restoration for usability */
+                body:not(.is-mobile) .nav-file-title:hover,
+                body:not(.is-mobile) .nav-folder-title:hover {
                     opacity: 1 !important;
                     transition: opacity 0.15s ease !important;
                 }
@@ -639,7 +659,7 @@ export class StyleGenerator {
 
                 // Radiant Path Logic (Permanent Default) - Decoupled from DOM virtualization
                 if (passedColor) {
-                    const isParentOfActive = activePath && (activePath === folder.path || activePath.startsWith(folder.path + "/"));
+                    const isParentOfActive = activePath && (activePath === child.path || activePath.startsWith(child.path + "/"));
                     const activeSelector = `
                         .nav-files-container .nav-folder:has(.is-active) > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) ~ .nav-folder-children,
                         .nav-files-container .tree-item:has(.is-active) > .tree-item-self[data-path="${safePath}"]:not(.nn-navitem) ~ .tree-item-children
