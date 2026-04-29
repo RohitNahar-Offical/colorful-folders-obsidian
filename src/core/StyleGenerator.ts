@@ -554,37 +554,37 @@ export class StyleGenerator {
                         }
                     }
 
-                    // Native Glow (Isolated) - Luminous & Refined (Default)
-                    let fileActiveAnim = '';
-                    
-                    if (activeGlow && animateActivePath) {
-                        if (animStyle === "breathe") fileActiveAnim = `animation: cf-radiant-pulse ${animDur}s infinite ease-in-out;`;
-                        else if (animStyle === "neon") fileActiveAnim = `animation: cf-neon-flicker ${animDur}s infinite alternate;`;
-                        else if (animStyle === "shimmer") fileActiveAnim = `animation: cf-shimmer-glow ${animDur}s infinite linear;`;
-                    }
-
-                    cssRules.push(`
-                        .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file),
-                        .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nn-file) {
-                            position: relative !important;
-                            z-index: 10 !important;
-                            background-color: rgba(${color.rgb}, ${useGlass ? 0.12 : 0.1}) !important;
-                            background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), transparent) !important;
-                            ${useGlass ? `
-                                backdrop-filter: blur(8px) !important;
-                                -webkit-backdrop-filter: blur(8px) !important;
-                                box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 0 0.5px rgba(${color.rgb}, 0.5) !important;
-                            ` : `
-                                box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
-                            `}
-                            border: 0.5px solid rgba(${color.rgb}, 0.2) !important;
-                            --cf-rgb: ${color.rgb};
-                            ${fileActiveAnim}
-                            will-change: opacity;
+                    if (activeGlow) {
+                        // Native Glow (Isolated) - Luminous & Refined (Default)
+                        let fileActiveAnim = '';
+                        
+                        if (animateActivePath) {
+                            if (animStyle === "breathe") fileActiveAnim = `animation: cf-radiant-pulse ${animDur}s infinite ease-in-out;`;
+                            else if (animStyle === "neon") fileActiveAnim = `animation: cf-neon-flicker ${animDur}s infinite alternate;`;
+                            else if (animStyle === "shimmer") fileActiveAnim = `animation: cf-shimmer-glow ${animDur}s infinite linear;`;
                         }
-                    `);
 
-                    if (this.settings.activeGlow) {
+                        cssRules.push(`
+                            .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file),
+                            .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nn-file) {
+                                position: relative !important;
+                                z-index: 10 !important;
+                                background-color: rgba(${color.rgb}, ${useGlass ? 0.12 : 0.1}) !important;
+                                background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), transparent) !important;
+                                ${useGlass ? `
+                                    backdrop-filter: blur(8px) !important;
+                                    -webkit-backdrop-filter: blur(8px) !important;
+                                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 0 0.5px rgba(${color.rgb}, 0.5) !important;
+                                ` : `
+                                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+                                `}
+                                border: 0.5px solid rgba(${color.rgb}, 0.2) !important;
+                                --cf-rgb: ${color.rgb};
+                                ${fileActiveAnim}
+                                will-change: opacity;
+                            }
+                        `);
+
                         /* Mobile Performance Profile */
                         cssRules.push(`
                             @media (max-width: 768px) {
@@ -654,8 +654,8 @@ export class StyleGenerator {
 
                     // Native Radiant Path (Isolated) - Standardized & Vibrant
                     cssRules.push(`
-                        .nav-files-container .nav-folder:has(.is-active) > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) ~ .nav-folder-children,
-                        .nav-files-container .tree-item:has(.is-active) > .tree-item-self[data-path="${safePath}"]:not(.nn-navitem) ~ .tree-item-children {
+                        .nav-files-container .nav-folder-title.cf-has-active-child[data-path="${safePath}"]:not(.nn-navitem) ~ .nav-folder-children,
+                        .nav-files-container .tree-item-self.cf-has-active-child[data-path="${safePath}"]:not(.nn-navitem) ~ .tree-item-children {
                             ${borderStyle}
                             border-bottom: 2px solid rgba(${passedColor.rgb}, 0.8) !important;
                             border-bottom-left-radius: 8px !important;
