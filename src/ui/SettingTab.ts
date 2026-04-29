@@ -795,8 +795,8 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 }));
 
         new obsidian.Setting(typeCard)
-            .setName('Active file glow')
-            .setDesc('Highlights the path to the currently active document with a connecting line.')
+            .setName('Radiant path (active glow)')
+            .setDesc('Highlights the journey to your active document with a glowing trail.')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.activeGlow)
                 .onChange(async (value) => {
@@ -820,9 +820,9 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             new obsidian.Setting(typeCard)
                 .setName('Animation style')
                 .addDropdown(drop => drop
-                    .addOption('pulse', 'Soft pulse')
+                    .addOption('breathe', 'Radiant breathe')
                     .addOption('neon', 'Neon flicker')
-                    .addOption('shimmer', 'Color shimmer')
+                    .addOption('shimmer', 'Ethereal flow')
                     .setValue(this.plugin.settings.activeAnimationStyle || "shimmer")
                     .onChange(async (value) => {
                         this.plugin.settings.activeAnimationStyle = value;

@@ -124,13 +124,23 @@ export class StyleGenerator {
         if (this.settings.animateActivePath) {
             cssRules.push(`
                 @keyframes cf-breathe-glow {
-                    0% { border-color: rgba(var(--cf-rgb), 0.6) !important; box-shadow: -1px 1px 4px rgba(var(--cf-rgb), 0.05) !important; filter: brightness(1.0); }
-                    50% { border-color: rgba(var(--cf-rgb), 0.9) !important; box-shadow: -1px 1px 8px rgba(var(--cf-rgb), 0.15) !important; filter: brightness(1.05); }
-                    100% { border-color: rgba(var(--cf-rgb), 0.6) !important; box-shadow: -1px 1px 4px rgba(var(--cf-rgb), 0.05) !important; filter: brightness(1.0); }
+                    0% { box-shadow: 0 0 5px rgba(var(--cf-rgb), 0.2); filter: brightness(1); }
+                    50% { box-shadow: 0 0 15px rgba(var(--cf-rgb), 0.5); filter: brightness(1.2); }
+                    100% { box-shadow: 0 0 5px rgba(var(--cf-rgb), 0.2); filter: brightness(1); }
+                }
+                @keyframes cf-radiant-pulse {
+                    0% { border-color: rgba(var(--cf-rgb), 0.5); filter: saturate(100%) brightness(1); box-shadow: 0 0 2px rgba(var(--cf-rgb), 0.1); }
+                    50% { border-color: rgba(var(--cf-rgb), 1.0); filter: saturate(150%) brightness(1.15); box-shadow: 0 0 12px rgba(var(--cf-rgb), 0.4); }
+                    100% { border-color: rgba(var(--cf-rgb), 0.5); filter: saturate(100%) brightness(1); box-shadow: 0 0 2px rgba(var(--cf-rgb), 0.1); }
+                }
+                @keyframes cf-ethereal-flow {
+                    0% { border-color: rgba(var(--cf-rgb), 1); opacity: 1; }
+                    50% { border-color: rgba(var(--cf-rgb), 0.4); opacity: 0.8; }
+                    100% { border-color: rgba(var(--cf-rgb), 1); opacity: 1; }
                 }
                 @keyframes cf-neon-flicker {
-                    0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { border-color: rgba(var(--cf-rgb), 0.8) !important; box-shadow: -1px 1px 5px rgba(var(--cf-rgb), 0.15) !important; }
-                    20%, 24%, 55% { border-color: rgba(var(--cf-rgb), 0.5) !important; box-shadow: none !important; }
+                    0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { filter: drop-shadow(0 0 5px rgba(var(--cf-rgb), 0.8)) brightness(1.1); }
+                    20%, 24%, 55% { filter: drop-shadow(0 0 1px rgba(var(--cf-rgb), 0.2)) brightness(0.9); }
                 }
                 @keyframes cf-shimmer-glow {
                     0% { filter: brightness(1.0) saturate(100%); }
@@ -507,22 +517,61 @@ export class StyleGenerator {
                         }
                     }
 
-                    if (this.settings.activeGlow) {
-                        let fileActiveAnim = '';
-                        if (this.settings.animateActivePath) {
-                            if (animStyle === "breathe") fileActiveAnim = `animation: cf-breathe-glow ${animDur}s infinite ease-in-out;`;
-                            else if (animStyle === "neon") fileActiveAnim = `animation: cf-neon-flicker ${animDur}s infinite alternate;`;
-                            else if (animStyle === "shimmer") fileActiveAnim = `animation: cf-shimmer-glow ${animDur}s infinite linear;`;
-                        }
+                    // Native Glow (Isolated) - Luminous & Refined (Default)
+                    const useGlass = this.settings.glassmorphism;
+                    const animStyle = this.settings.activeAnimationStyle || "shimmer";
+                    const animDur = this.settings.activeAnimationDuration || 3.0;
+                    let fileActiveAnim = '';
+                    
+                    if (this.settings.activeGlow && this.settings.animateActivePath) {
+                        if (animStyle === "breathe") fileActiveAnim = `animation: cf-radiant-pulse ${animDur}s infinite ease-in-out;`;
+                        else if (animStyle === "neon") fileActiveAnim = `animation: cf-neon-flicker ${animDur}s infinite alternate;`;
+                        else if (animStyle === "shimmer") fileActiveAnim = `animation: cf-shimmer-glow ${animDur}s infinite linear;`;
+                    }
 
+                    cssRules.push(`
+                        .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file),
+                        .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nn-file) {
+                            position: relative !important;
+                            z-index: 10 !important;
+                            background-color: rgba(${color.rgb}, ${useGlass ? 0.12 : 0.1}) !important;
+                            background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), transparent) !important;
+                            ${useGlass ? `
+                                backdrop-filter: blur(8px) !important;
+                                -webkit-backdrop-filter: blur(8px) !important;
+                                box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 0 0.5px rgba(${color.rgb}, 0.5) !important;
+                            ` : `
+                                box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+                            `}
+                            border: 0.5px solid rgba(${color.rgb}, 0.2) !important;
+                            --cf-rgb: ${color.rgb};
+                            ${fileActiveAnim}
+                            will-change: opacity;
+                        }
+                    `);
+
+                    if (this.settings.activeGlow) {
+                        /* Mobile Performance Profile */
                         cssRules.push(`
-                                body .nav-file-title.is-active[data-path="${safePath}"],
-                                body .tree-item-self.is-active[data-path="${safePath}"] {
-                                    box-shadow: -1px 1px 6px rgba(${color.rgb}, 0.2) !important;
+                            @media (max-width: 768px) {
+                                .nav-files-container .nav-file-title.is-active[data-path="${safePath}"],
+                                .nav-files-container .tree-item-self.is-active[data-path="${safePath}"] {
+                                    backdrop-filter: blur(4px) !important;
+                                    -webkit-backdrop-filter: blur(4px) !important;
+                                }
+                            }
+                        `);
+
+                        // Notebook Navigator Glow (Strictly Separate)
+                        if (nnActive) {
+                            cssRules.push(`
+                                body ${NotebookNavigatorIntegration.getActiveGlowSelector(child.path)} {
+                                    box-shadow: 0 0 6px rgba(${color.rgb}, 0.25) !important;
                                     --cf-rgb: ${color.rgb};
-                                    ${fileActiveAnim}
+                                    ${fileActiveAnim ? `animation: cf-breathe-glow ${animDur}s infinite ease-in-out;` : ''}
                                 }
                             `);
+                        }
                     }
 
                     fileIndex++;
@@ -544,8 +593,8 @@ export class StyleGenerator {
                     body .nav-folder-title[data-path="${safePath}"] ~ .nav-folder-children,
                     body .tree-item-self[data-path="${safePath}"] ~ .tree-item-children {
                         background-color: ${bgTint} !important;
-                        border-left: 2px solid rgba(${passedColor.rgb}, 0.8) !important;
-                        border-bottom: 2px solid rgba(${passedColor.rgb}, 0.8) !important;
+                        border-left: 2px solid rgba(${passedColor.rgb}, 0.15) !important;
+                        border-bottom: 2px solid rgba(${passedColor.rgb}, 0.15) !important;
                         border-radius: 4px !important;
                         border-bottom-left-radius: 8px !important;
                         padding-bottom: 8px !important;
@@ -554,23 +603,43 @@ export class StyleGenerator {
 
                 if (this.settings.activeGlow && passedColor) {
                     let animationProp = '';
+                    let borderStyle = `border-left: 2px solid rgba(${passedColor.rgb}, 0.8) !important;`;
+                    
                     if (this.settings.animateActivePath) {
                         const style = this.settings.activeAnimationStyle || "breathe";
                         const dur = this.settings.activeAnimationDuration || 3.0;
-                        if (style === "breathe") animationProp = `animation: cf-breathe-glow ${dur}s infinite ease-in-out;`;
-                        else if (style === "neon") animationProp = `animation: cf-neon-flicker ${dur}s infinite alternate;`;
-                        else if (style === "shimmer") animationProp = `animation: cf-shimmer-glow ${dur}s infinite linear;`;
+                        if (style === "breathe") {
+                            animationProp = `animation: cf-radiant-pulse ${dur}s infinite ease-in-out;`;
+                        } else if (style === "neon") {
+                            animationProp = `animation: cf-neon-flicker ${dur}s infinite alternate;`;
+                        } else if (style === "shimmer") {
+                            animationProp = `animation: cf-ethereal-flow ${dur}s infinite linear;`;
+                            borderStyle = `border-left: 2px solid rgba(${passedColor.rgb}, 0.8) !important;`;
+                        }
                     }
 
+                    // Native Radiant Path (Isolated) - Standardized & Vibrant
                     cssRules.push(`
-                        body .nav-folder:has(.is-active) > .nav-folder-title[data-path="${safePath}"] ~ .nav-folder-children,
-                        body .tree-item:has(.is-active) > .tree-item-self[data-path="${safePath}"] ~ .tree-item-children {
-                            border-left: 2px solid rgba(${passedColor.rgb}, 1.0) !important;
-                            border-bottom: 2px solid rgba(${passedColor.rgb}, 1.0) !important;
+                        .nav-files-container .nav-folder:has(.is-active) > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) ~ .nav-folder-children,
+                        .nav-files-container .tree-item:has(.is-active) > .tree-item-self[data-path="${safePath}"]:not(.nn-navitem) ~ .tree-item-children {
+                            ${borderStyle}
+                            border-bottom: 2px solid rgba(${passedColor.rgb}, 0.8) !important;
+                            border-bottom-left-radius: 8px !important;
                             --cf-rgb: ${passedColor.rgb};
                             ${animationProp}
+                            transition: border-color 0.4s ease, opacity 0.4s ease !important;
                         }
                     `);
+
+                    // Notebook Navigator Radiant Path (Separate)
+                    if (nnActive) {
+                        cssRules.push(`
+                            body ${NotebookNavigatorIntegration.getRadiantPathSelector(folder.path)} {
+                                border-left: 2px solid rgba(${passedColor.rgb}, 0.6) !important;
+                                --cf-rgb: ${passedColor.rgb};
+                            }
+                        `);
+                    }
                 }
             }
 

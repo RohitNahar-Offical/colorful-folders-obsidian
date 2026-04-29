@@ -67,6 +67,23 @@ export class NotebookNavigatorIntegration {
         return `.notebook-navigator ${NN_SELECTORS.FILE_ITEM}[data-path="${safePath}"]`;
     }
 
+    /**
+     * Returns a selector for an active NN item.
+     */
+    static getActiveGlowSelector(path: string): string {
+        const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        return `.notebook-navigator .is-active[data-path="${safePath}"]`;
+    }
+
+    /**
+     * Returns a selector for NN container vertical lines (if they exist).
+     * Used to explicitly style or disable radiant paths in NN.
+     */
+    static getRadiantPathSelector(path: string): string {
+        const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        return `.notebook-navigator [data-path="${safePath}"] ~ .nn-virtual-container`;
+    }
+
     static getNavNameSelector(): string {
         return NN_SELECTORS.NAV_NAME;
     }
