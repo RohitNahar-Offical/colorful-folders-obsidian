@@ -81,7 +81,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     autoIcons: true,
     autoIconVariety: true,
     wideAutoIcons: true,
-    animateActivePath: false,
+    animateActivePath: true,
     rainbowRootText: true,
     rainbowRootBgTransparent: false,
     autoColorFiles: false,

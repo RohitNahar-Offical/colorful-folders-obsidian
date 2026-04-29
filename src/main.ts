@@ -197,8 +197,8 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
 
 
         this.registerEvent(this.app.workspace.on('layout-change', () => this.initDividerObserver()));
+        this.registerEvent(this.app.workspace.on('file-open', () => this.generateStylesDebounced()));
         this.registerEvent(this.app.workspace.on('css-change', () => this.generateStyles()));
-        this.registerEvent(this.app.workspace.on('active-leaf-change', () => this.updateActivePathClasses()));
 
         this.registerEvent(this.app.vault.on('create', () => {
             this.heatmapCache = null;
@@ -604,7 +604,6 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
                 this.scrollTimeout = win.setTimeout(() => {
                     this.isScrolling = false;
                     this.processDividers();
-                    this.updateActivePathClasses();
                 }, 100);
             }, { passive: true });
         });
@@ -647,7 +646,6 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
             if (hasRelevantChange) {
                 this.processDividers();
                 this.refreshIcons();
-                this.updateActivePathClasses();
             }
         });
 
@@ -687,41 +685,5 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
             this.generateStylesDebounced();
         });
         this.styleObserver.observe(activeDocument.body, { attributes: true, attributeFilter: ['class'] });
-    }
-
-    updateActivePathClasses() {
-        if (!this.settings.activeGlow) {
-            activeDocument.querySelectorAll('.cf-has-active-child').forEach(el => el.classList.remove('cf-has-active-child'));
-            return;
-        }
-
-        const activeFile = this.app.workspace.getActiveFile();
-        if (!activeFile) {
-            activeDocument.querySelectorAll('.cf-has-active-child').forEach(el => el.classList.remove('cf-has-active-child'));
-            return;
-        }
-
-        const ancestors: string[] = [];
-        let p = activeFile.parent;
-        while (p && !p.isRoot()) {
-            ancestors.push(p.path);
-            p = p.parent;
-        }
-
-        this.app.workspace.iterateAllLeaves(leaf => {
-            const viewType = leaf.view.getViewType();
-            if (viewType === 'file-explorer' || viewType === 'nav-files') {
-                const container = leaf.view.containerEl;
-                
-                // Clear existing
-                container.querySelectorAll('.cf-has-active-child').forEach(el => el.classList.remove('cf-has-active-child'));
-                
-                // Add to current ancestors
-                ancestors.forEach(path => {
-                    const el = container.querySelector(`[data-path="${path.replace(/"/g, '\\"')}"]`);
-                    if (el) el.classList.add('cf-has-active-child');
-                });
-            }
-        });
     }
 }
