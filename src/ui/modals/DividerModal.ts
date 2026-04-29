@@ -126,7 +126,7 @@ export class DividerModal extends obsidian.Modal {
             return c;
         };
 
-        const textSect = addSection("Label & appearance");
+        const textSect = addSection("Label and appearance");
         
         new obsidian.Setting(textSect)
             .setName("Label text")
@@ -212,7 +212,7 @@ export class DividerModal extends obsidian.Modal {
                     this._liveSync();
                 }));
 
-        const styleSect = addSection("Style & shape");
+        const styleSect = addSection("Style and shape");
 
         new obsidian.Setting(styleSect)
             .setName("Pill mode")
