@@ -11,23 +11,6 @@
 ### 📏 1. New: Seamless Divider Connectivity
 Set divider line gaps as low as **-10px** to allow lines to perfectly intersect your central "pills" or icon backgrounds.
 
-### 📖 2. New: Documentation Overhaul
-A complete rewrite of the developer guides with premium styling, mermaid diagrams, and detailed security audits.
-
-### 🎨 3. Enhanced: Sentence Case Compliance
-Finalized the project-wide audit for Obsidian store compliance. Every UI label now feels native and professional.
-
-### ➕ 3. Enhanced: Premium Divider Hovers
-Dividers now support rich Markdown descriptions in a premium, glassmorphic floating popover with a dedicated smart editor. Includes links and tags support.
-
-### 🎨 3. Enhanced Divider Customization
-Added granular control for icon positioning (Left, Right, or Both) and refined vertical/horizontal centering for pixel-perfect layouts.
-
-### 🔗 4. Notebook Navigator Restoration
-Completely re-engineered integration ensuring specialized DOM selectors match the native Obsidian aesthetic perfectly.
-
-> [!NOTE]
-> For a full list of technical changes and historical updates, see the [Version History](version.md).
 
 ---
 
