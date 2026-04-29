@@ -1,1 +1,10 @@
-{"id":"colorful-folders","name":"Colorful Folders","version":"4.1.4","minAppVersion":"1.4.4","description":"Automatically adds premium preset colors to all folders and subfolders.","author":"ROHIT-NAHAR","authorUrl":"https://github.com/RohitNahar-Offical","isDesktopOnly":false}
+{
+    "id": "colorful-folders",
+    "name": "Colorful Folders",
+    "version": "4.1.4",
+    "minAppVersion": "1.4.4",
+    "description": "Automatically adds premium preset colors to all folders and subfolders.",
+    "author": "ROHIT-NAHAR",
+    "authorUrl": "https://github.com/RohitNahar-Offical",
+    "isDesktopOnly": false
+}
