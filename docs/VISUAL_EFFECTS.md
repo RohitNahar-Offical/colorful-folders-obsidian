@@ -5,24 +5,21 @@
 
 ---
 
-## 1. Active Path Glow (Connecting Line)
+## 1. Radiant Path and Luminous Selection
 
-The **Active Path Glow** is a dynamic line that visually connects the currently open file to its root parent.
+The plugin features a two-part system to highlight the currently active file:
 
-### 🛠️ Implementation Logic:
-1.  **Detection**: `main.ts` listens for `file-open`.
-2.  **Path Resolution**: Iterates through all ancestors using `file.parent`.
-3.  **Selector**: Targets `.nav-folder-title.is-active-path`.
-4.  **Pseudo-Element**:
-    ```css
-    .nav-folder-title.is-active-path::after {
-        content: ""; position: absolute;
-        left: 10px; width: 2px;
-        background: var(--interactive-accent);
-        box-shadow: 0 0 8px var(--interactive-accent);
-    }
-    ```
-5.  **Animation**: If enabled, `@keyframes cf-shimmer` creates a flowing light effect.
+### 🌟 Luminous Selection (Default)
+The file itself receives a permanent, premium highlight to ensure the user always knows what is active:
+- **Glassmorphism**: `backdrop-filter: blur(8px)` with a subtle white gradient overlay.
+- **Micro-Bevel**: An inset box-shadow creates a 3D sheen.
+- **Status**: This is the default behavior and is independent of the Radiant Path settings.
+
+### ⚡ Radiant Path (Connecting Trails)
+A dynamic vertical trail that visually connects the currently open file to its root parent.
+- **Implementation**: Injects a `2px` solid border on `.nav-folder-children` containers.
+- **Stability**: The `2px` thickness is strictly standardized across all nested levels to prevent browser sub-pixel rendering glitches (the "thinning line" bug).
+- **Animation**: If enabled, `@keyframes` inject breathing, neon-flicker, or shimmering flow effects along the 2px trail.
 
 ---
 

@@ -61,6 +61,7 @@ To handle vaults with **20,000+ files**, we use a tiered optimization strategy:
 2.  **UI Event Debouncer**: (50ms) Aggregates rapid events like typing or folder expansion.
 3.  **Generation Lock**: A boolean flag (`isGenerating`) prevents multiple traversals from running concurrently.
 4.  **Recursion Pruning**: Immediately skip folders in the `exclusionList` (e.g., `.git`, `node_modules`).
+5.  **Memory Allocation Reduction**: Invariant constants and local helper functions (e.g., color calculators) are hoisted completely outside of recursive rendering loops. This prevents the engine from allocating and destroying tens of thousands of function closures per render, drastically reducing JavaScript garbage collection (GC) stutters.
 
 ---
 
