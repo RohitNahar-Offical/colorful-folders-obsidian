@@ -659,7 +659,7 @@ export class StyleGenerator {
 
                 // Radiant Path Logic (Permanent Default) - Decoupled from DOM virtualization
                 if (passedColor) {
-                    const isParentOfActive = activePath && (activePath === child.path || activePath.startsWith(child.path + "/"));
+                    const isParentOfActive = activePath && (activePath === folder.path || activePath.startsWith(folder.path + "/"));
                     const activeSelector = `
                         .nav-files-container .nav-folder:has(.is-active) > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) ~ .nav-folder-children,
                         .nav-files-container .tree-item:has(.is-active) > .tree-item-self[data-path="${safePath}"]:not(.nn-navitem) ~ .tree-item-children
