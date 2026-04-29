@@ -391,7 +391,7 @@ export class DividerModal extends obsidian.Modal {
         cancelBtn.setCssStyles({ padding: "6px 16px" });
         cancelBtn.onclick = () => this.close();
 
-        const saveBtn = rightGroup.createEl("button", { text: "Add / update", cls: "mod-cta" });
+        const saveBtn = rightGroup.createEl("button", { text: "Add or update", cls: "mod-cta" });
         saveBtn.setCssStyles({ padding: "6px 20px" });
         saveBtn.onclick = async () => {
             this.isSaved = true;

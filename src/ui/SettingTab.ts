@@ -1075,7 +1075,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 }));
 
         new obsidian.Setting(dbCard)
-            .setName('Reset styles & presets')
+            .setName('Reset styles and presets')
             .setDesc('Danger: this will permanently remove all custom colors, icons, and individual folder styles. Presets are also cleared.')
             .addButton(btn => btn
                 .setButtonText('Reset styling')
