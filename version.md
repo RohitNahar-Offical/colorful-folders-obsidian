@@ -1,5 +1,22 @@
 # Version History - Colorful Folders for Obsidian
 
+## ⚡ 4.1.4 - The "Visual Connectivity" Update
+This release focuses on pixel-perfect structural connections and a complete documentation overhaul for professional developer onboarding.
+
+### 📏 1. Seamless divider connectivity
+- **Negative line gaps**: Expanded slider limits to **-10px**, allowing divider lines to perfectly intersect central pills or icon backgrounds for a "flush" look.
+- **Layering optimization**: Updated `DividerManager` z-index handling to ensure lines are cleanly masked behind divider chips.
+
+### 🎨 2. Finalized UI standardization
+- **Sentence case completion**: Completed a final sweep of the entire codebase to ensure 100% compliance with Obsidian's UI guidelines.
+- **Header normalization**: Replaced all remaining ampersands (`&`) in section headers and settings cards with "and".
+
+### 📖 3. Documentation overhaul
+- **Premium developer guides**: Fully rewrote the `DEVELOPER.md` and the `/docs` suite with mermaid diagrams, GitHub-style alerts, and detailed technical deep-dives.
+- **Architectural clarity**: Added dedicated sections for the **IconManager** sanitization engine and the **Dynamic Changelog** system.
+
+---
+
 ## ⚡ 4.1.3 - The "Premium Polish" Update
 This release introduces advanced layout controls and a complete UI standard audit to ensure the plugin feels like a native part of the Obsidian ecosystem.
 
