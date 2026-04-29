@@ -1,19 +1,19 @@
 # Version History - Colorful Folders for Obsidian
 
-## ⚡ 4.1.4 - The "Visual Connectivity" Update
-This release focuses on pixel-perfect structural connections and a complete documentation overhaul for professional developer onboarding.
+## ⚡ 4.1.4 - The "Visual & Performance" Update
+This release focuses on elevating visual elegance through the Luminous Selection default, alongside powerful Engine Micro-Optimizations.
 
-### 📏 1. Seamless divider connectivity
-- **Negative line gaps**: Expanded slider limits to **-10px**, allowing divider lines to perfectly intersect central pills or icon backgrounds for a "flush" look.
-- **Layering optimization**: Updated `DividerManager` z-index handling to ensure lines are cleanly masked behind divider chips.
+### 🌟 1. The New "Luminous" Default
+- **Permanent Elegance**: The subtle glass highlight, dynamic white gradient overlay, and 3D micro-bevel sheen are now the permanent default styles for active files.
+- **Unified Aesthetics**: Your active files will always feel premium and tactile, independent of the Radiant Path settings.
 
-### 🎨 2. Finalized UI standardization
-- **Sentence case completion**: Completed a final sweep of the entire codebase to ensure 100% compliance with Obsidian's UI guidelines.
-- **Header normalization**: Replaced all remaining ampersands (`&`) in section headers and settings cards with "and".
+### 📏 2. Flawless Divider Integration
+- **Negative Line Gaps**: You can now push divider lines inward using negative gaps (down to **-10px**) for a seamless intersection with pills.
+- **Layering Precision**: Upgraded z-index management guarantees that intersecting lines tuck cleanly behind the divider chips.
 
-### 📖 3. Documentation overhaul
-- **Premium developer guides**: Fully rewrote the `DEVELOPER.md` and the `/docs` suite with mermaid diagrams, GitHub-style alerts, and detailed technical deep-dives.
-- **Architectural clarity**: Added dedicated sections for the **IconManager** sanitization engine and the **Dynamic Changelog** system.
+### 🚀 3. Engine Performance & Architecture
+- **CSS Generation Micro-Optimizations**: Hoisted complex variables and local helper functions out of recursive rendering loops. This eliminates massive function allocations, drastically reducing JavaScript garbage collection (GC) stutters on massive vaults.
+- **Radiant Path Stability**: Standardized the glowing connecting trail to a strict `2px` thickness, completely resolving the browser sub-pixel "thinning line" rendering glitch for deeply nested files.
 
 ---
 
