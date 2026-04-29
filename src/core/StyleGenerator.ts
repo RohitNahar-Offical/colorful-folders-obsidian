@@ -215,6 +215,64 @@ export class StyleGenerator {
             return res;
         };
 
+        const rootOp = this.settings.rootOpacity !== undefined ? this.settings.rootOpacity : 0.548;
+        const useGlass = this.settings.glassmorphism;
+        const glassCss = useGlass ? `backdrop-filter: blur(8px) saturate(120%); -webkit-backdrop-filter: blur(8px) saturate(120%);` : '';
+        const animStyle = this.settings.activeAnimationStyle || "shimmer";
+        const animDur = this.settings.activeAnimationDuration || 3.0;
+        const fileBgOpacitySettings = this.settings.fileBackgroundOpacity;
+        const activeGlow = this.settings.activeGlow;
+        const animateActivePath = this.settings.animateActivePath;
+        const autoColorFiles = this.settings.autoColorFiles;
+        const autoIcons = this.settings.autoIcons;
+        const nnSupport = this.settings.notebookNavigatorSupport;
+        const nnFileBg = this.settings.notebookNavigatorFileBackground;
+
+        const calculateTextColor = (shouldColor: boolean, textColor: string | null, passedColor: { rgb: string, hex: string } | null, colorRgb: string) => {
+            if (textColor) return textColor;
+            if (shouldColor || passedColor) {
+                if (isDark) {
+                    const fileBright = Math.max(brightnessAmount, 0.15);
+                    return `rgb(${adjustBrightnessRgb(colorRgb, fileBright)})`;
+                } else {
+                    const fileBright = brightnessAmount === 0 ? -0.6 : brightnessAmount;
+                    return `rgb(${adjustBrightnessRgb(colorRgb, fileBright)})`;
+                }
+            }
+            return "var(--text-normal)";
+        };
+        
+        const getStyles = (useOutline: boolean, depth: number, colorRgb: string, colorHex: string, op: number, isCustomColor: boolean, customStyle: FolderStyle | null, inheritedStyle: FolderStyle | null) => {
+            let b: string, t: string;
+            const contrastColor = isDark ? "#ffffff" : "#111111";
+            if (depth === 0) {
+                if (this.settings.rainbowRootText && this.settings.rainbowRootBgTransparent && !isCustomColor) {
+                    b = "transparent";
+                    t = colorHex;
+                } else if (rootBgStyle === "solid") {
+                    b = useOutline ? "transparent" : colorHex;
+                    t = useOutline ? colorHex : contrastColor;
+                } else {
+                    b = useOutline ? "transparent" : `rgba(${colorRgb}, ${op})`;
+                    const rootAdjust = isDark ? Math.max(brightnessAmount, 0) : (brightnessAmount === 0 ? -0.7 : brightnessAmount);
+                    t = (isDark && rootAdjust === 0) ? colorHex : `rgb(${adjustBrightnessRgb(colorRgb, rootAdjust)})`;
+                }
+            } else {
+                b = useOutline ? "transparent" : `rgba(${colorRgb}, ${op})`;
+                const subAdjust = isDark ? Math.max(brightnessAmount, 0) : (brightnessAmount === 0 ? -0.5 : brightnessAmount);
+                t = (isDark && subAdjust === 0) ? colorHex : `rgb(${adjustBrightnessRgb(colorRgb, subAdjust)})`;
+            }
+
+            const effectiveTextColor = customStyle?.textColor || inheritedStyle?.textColor;
+            if (effectiveTextColor) {
+                t = effectiveTextColor;
+            } else if (isCustomColor || inheritedStyle?.hex) {
+                const customAdjust = isDark ? Math.max(brightnessAmount, 0) : (brightnessAmount === 0 ? -0.5 : brightnessAmount);
+                t = (rootBgStyle === "solid" && depth === 0 && !useOutline) ? contrastColor : ((isDark && customAdjust === 0) ? colorHex : `rgb(${adjustBrightnessRgb(colorRgb, customAdjust)})`);
+            }
+            return { b, t };
+        };
+
         const traverse = (folder: obsidian.TFolder, depth: number, validIndex = 0, rootIndex = 0, passedColor: { rgb: string, hex: string } | null = null, inheritedStyle: FolderStyle | null = null) => {
             const copyFolders = folder.children
                 .filter((c): c is obsidian.TFolder => c instanceof obsidian.TFolder)
@@ -224,14 +282,7 @@ export class StyleGenerator {
                 .filter((c): c is obsidian.TFile => c instanceof obsidian.TFile)
                 .sort((a, b) => a.name.localeCompare(b.name));
 
-            const glassCss = this.settings.glassmorphism ? `backdrop-filter: blur(8px) saturate(120%); -webkit-backdrop-filter: blur(8px) saturate(120%);` : '';
-            const animStyle = this.settings.activeAnimationStyle || "breathe";
-            const animDur = this.settings.activeAnimationDuration || 4.0;
-            const rootOp = this.settings.rootOpacity !== undefined ? this.settings.rootOpacity : 0.548;
-
-
-
-            if (passedColor || this.settings.autoColorFiles || this.settings.autoIcons || (this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground)) {
+            if (passedColor || autoColorFiles || autoIcons || (nnSupport && nnFileBg)) {
                 let fileIndex = 0;
                 for (const child of copyFiles) {
                     const safePath = safeEscape(child.path);
@@ -280,27 +331,13 @@ export class StyleGenerator {
                     const autoIconFile = (this.settings.autoIcons && !fileStyle?.iconId && !(inheritedStyle?.applyToFiles && inheritedStyle?.iconId)) ? this.plugin.iconManager.getAutoIconData(child.name) : null;
                     const iconId = fileStyle?.iconId || (inheritedStyle?.applyToFiles ? inheritedStyle.iconId : null) || (autoIconFile ? (this.settings.wideAutoIcons ? autoIconFile.lucide : autoIconFile.emoji) : "");
 
-                    const calculateTextColor = (shouldColor: boolean) => {
-                        if (textColor) return textColor;
-                        if (shouldColor || passedColor) {
-                            if (isDark) {
-                                const fileBright = Math.max(brightnessAmount, 0.15);
-                                return `rgb(${adjustBrightnessRgb(color.rgb, fileBright)})`;
-                            } else {
-                                const fileBright = brightnessAmount === 0 ? -0.6 : brightnessAmount;
-                                return `rgb(${adjustBrightnessRgb(color.rgb, fileBright)})`;
-                            }
-                        }
-                        return "var(--text-normal)";
-                    };
-
-                    const textNative = calculateTextColor(shouldColorNative);
-                    const textNN = calculateTextColor(shouldColorNN);
+                    const textNative = calculateTextColor(shouldColorNative, textColor, passedColor, color.rgb);
+                    const textNN = calculateTextColor(shouldColorNN, textColor, passedColor, color.rgb);
 
                     const isBold = fileStyle?.isBold !== undefined ? fileStyle.isBold : (inheritedStyle?.applyToFiles ? inheritedStyle.isBold : false);
                     const isItalic = fileStyle?.isItalic !== undefined ? fileStyle.isItalic : (inheritedStyle?.applyToFiles ? inheritedStyle.isItalic : false);
 
-                        const fileBgAlpha = isCustomColor ? op : (this.settings.fileBackgroundOpacity !== undefined ? this.settings.fileBackgroundOpacity : (isDark ? 0.1 : 0.15));
+                        const fileBgAlpha = isCustomColor ? op : (fileBgOpacitySettings !== undefined ? fileBgOpacitySettings : (isDark ? 0.1 : 0.15));
                         cssRules.push(`
                             .nav-files-container .nav-file-title[data-path="${safePath}"]:not(.nn-file),
                             .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) {
@@ -518,12 +555,9 @@ export class StyleGenerator {
                     }
 
                     // Native Glow (Isolated) - Luminous & Refined (Default)
-                    const useGlass = this.settings.glassmorphism;
-                    const animStyle = this.settings.activeAnimationStyle || "shimmer";
-                    const animDur = this.settings.activeAnimationDuration || 3.0;
                     let fileActiveAnim = '';
                     
-                    if (this.settings.activeGlow && this.settings.animateActivePath) {
+                    if (activeGlow && animateActivePath) {
                         if (animStyle === "breathe") fileActiveAnim = `animation: cf-radiant-pulse ${animDur}s infinite ease-in-out;`;
                         else if (animStyle === "neon") fileActiveAnim = `animation: cf-neon-flicker ${animDur}s infinite alternate;`;
                         else if (animStyle === "shimmer") fileActiveAnim = `animation: cf-shimmer-glow ${animDur}s infinite linear;`;
@@ -672,43 +706,12 @@ export class StyleGenerator {
 
                 const safePath = safeEscape(child.path);
 
-                const contrastColor = isDark ? "#ffffff" : "#111111";
                 const isCustomColor = !!(activeStyle && activeStyle.hex);
                 const op = (activeStyle && activeStyle.opacity !== undefined) ? activeStyle.opacity : (depth === 0 ? rootOp : subOp);
                 let bg, text;
 
-                const getStyles = (useOutline: boolean) => {
-                    let b: string, t: string;
-                    if (depth === 0) {
-                        if (this.settings.rainbowRootText && this.settings.rainbowRootBgTransparent && !isCustomColor) {
-                            b = "transparent";
-                            t = color.hex;
-                        } else if (rootBgStyle === "solid") {
-                            b = useOutline ? "transparent" : color.hex;
-                            t = useOutline ? color.hex : contrastColor;
-                        } else {
-                            b = useOutline ? "transparent" : `rgba(${color.rgb}, ${op})`;
-                            const rootAdjust = isDark ? Math.max(brightnessAmount, 0) : (brightnessAmount === 0 ? -0.7 : brightnessAmount);
-                            t = (isDark && rootAdjust === 0) ? color.hex : `rgb(${adjustBrightnessRgb(color.rgb, rootAdjust)})`;
-                        }
-                    } else {
-                        b = useOutline ? "transparent" : `rgba(${color.rgb}, ${op})`;
-                        const subAdjust = isDark ? Math.max(brightnessAmount, 0) : (brightnessAmount === 0 ? -0.5 : brightnessAmount);
-                        t = (isDark && subAdjust === 0) ? color.hex : `rgb(${adjustBrightnessRgb(color.rgb, subAdjust)})`;
-                    }
-
-                    const effectiveTextColor = customStyle?.textColor || inheritedStyle?.textColor;
-                    if (effectiveTextColor) {
-                        t = effectiveTextColor;
-                    } else if (isCustomColor || inheritedStyle?.hex) {
-                        const customAdjust = isDark ? Math.max(brightnessAmount, 0) : (brightnessAmount === 0 ? -0.5 : brightnessAmount);
-                        t = (rootBgStyle === "solid" && depth === 0 && !useOutline) ? contrastColor : ((isDark && customAdjust === 0) ? color.hex : `rgb(${adjustBrightnessRgb(color.rgb, customAdjust)})`);
-                    }
-                    return { b, t };
-                };
-
-                const nativeS = getStyles(outlineOnly);
-                const nnS = getStyles(nnOutlineOnly);
+                const nativeS = getStyles(outlineOnly, depth, color.rgb, color.hex, op, isCustomColor, customStyle, inheritedStyle);
+                const nnS = getStyles(nnOutlineOnly, depth, color.rgb, color.hex, op, isCustomColor, customStyle, inheritedStyle);
 
                 bg = nativeS.b;
                 text = nativeS.t;
