@@ -5,8 +5,8 @@
 
 ---
 
-## 🚀 Latest: 4.1.4 - The "Visual Connectivity" Update
-4.1.4 introduces negative slider limits for seamless divider lines and a massive documentation overhaul for better developer onboarding.
+## 🚀 Latest: 4.1.4 - The "Visual & Performance" Update
+4.1.4 introduces **Zero-Lag Performance Hardening** by decommissioning the legacy animation engine in favor of high-performance static visual standards. Includes negative slider limits for seamless divider lines.
 
 ### 📏 1. New: Seamless Divider Connectivity
 Set divider line gaps as low as **-10px** to allow lines to perfectly intersect your central "pills" or icon backgrounds.
@@ -52,11 +52,10 @@ Set divider line gaps as low as **-10px** to allow lines to perfectly intersect 
   * **Password Protection:** Secure your privacy settings with a custom Password Modal featuring shake animations for invalid attempts.
   * **Management Dashboard:** A new "Privacy & stealth" card in settings to manage all hidden items and recovery options.
 
-### ⚡ Performance & Animations
-
-  * **Cross-Platform Engine:** Built for zero-lag performance with a robust CSS engine that works identically on Windows, macOS, Linux, Android, and iOS.
-  * **Subtle Animations:** Choose between Smooth Breathe, Neon Flicker, or Color Shimmer for your active path glow, complete with a custom duration slider.
-  * **Vault Maintenance Tools:** Includes one-click buttons to "Reset All Styling" or "Clear Icon Library", plus an Icon Debug Mode to track exactly how auto-icons are being applied.
+### ⚡ Performance & Visual Stability
+  * **Cross-Platform Engine**: Built for zero-lag performance with a robust CSS engine that works identically on Windows, macOS, Linux, Android, and iOS.
+  * **Static Premium Standards**: All animations have been decommissioned in favor of hardcoded, high-performance static visual standards (e.g., Luminous Selection) to ensure zero GPU stutter.
+  * **Vault Maintenance Tools**: Includes one-click buttons to "Reset All Styling" or "Clear Icon Library", plus an Icon Debug Mode to track exactly how auto-icons are being applied.
 
 -----
 

@@ -12,8 +12,8 @@ This release focuses on elevating visual elegance through the Luminous Selection
 - **Layering Precision**: Upgraded z-index management guarantees that intersecting lines tuck cleanly behind the divider chips.
 
 ### 🚀 3. Engine Performance & Architecture
-- **CSS Generation Micro-Optimizations**: Hoisted complex variables and local helper functions out of recursive rendering loops. This eliminates massive function allocations, drastically reducing JavaScript garbage collection (GC) stutters on massive vaults.
 - **Radiant Path Stability**: Standardized the glowing connecting trail to a strict `2px` thickness, completely resolving the browser sub-pixel "thinning line" rendering glitch for deeply nested files.
+- **Full Animation Decommissioning**: Removed all legacy animation logic and keyframes (Breathe, Neon, Shimmer) to prioritize zero-lag performance and visual hardening. All visuals are now hardcoded to high-performance static standards.
 
 ---
 

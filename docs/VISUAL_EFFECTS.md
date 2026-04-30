@@ -19,7 +19,7 @@ The file itself receives a permanent, premium highlight to ensure the user alway
 A dynamic vertical trail that visually connects the currently open file to its root parent.
 - **Implementation**: Injects a `2px` solid border on `.nav-folder-children` containers.
 - **Stability**: The `2px` thickness is strictly standardized across all nested levels to prevent browser sub-pixel rendering glitches (the "thinning line" bug).
-- **Animation**: If enabled, `@keyframes` inject breathing, neon-flicker, or shimmering flow effects along the 2px trail.
+- **Performance Hardening**: All legacy path animations (Breathe, Neon, Shimmer) have been decommissioned in favor of zero-lag static standards. This ensures that massive folder structures can be scrolled without any GPU position-recalculation overhead.
 
 ---
 

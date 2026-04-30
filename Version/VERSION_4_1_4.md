@@ -20,10 +20,14 @@ Section dividers have been upgraded to support tighter, more cohesive layouts.
 
 ## 🚀 Engine Performance & Architecture
 
-### ⚡ CSS Generation Micro-Optimizations
-We conducted deep memory profiling of the `StyleGenerator` core to eliminate rendering bottlenecks during massive vault traversals.
-- **Zero-Allocation Loops**: Complex variables and local helper functions have been hoisted completely out of recursive rendering loops.
 - **The Result**: By preventing the allocation of tens of thousands of function closures per render, we've drastically reduced JavaScript garbage collection (GC) stutters, resulting in lightning-fast style updates even on vaults with 20,000+ files.
+
+## 🛡️ Hardening & Optimization: Animation Removal
+
+To ensure maximum performance and visual stability, we have **completely decommissioned the legacy animation engine**.
+- **Static Perfection**: All looping `@keyframes` (Breathe, Neon, Shimmer) have been replaced with high-performance static visual standards.
+- **Luminous Selection**: The "Active File" highlight is now hardcoded to the premium frosted-glass standard, eliminating the overhead of constant background position recalculations.
+- **Leaner Codebase**: Pruned redundant settings and logic branches, resulting in a significantly smaller and more stable `StyleGenerator`.
 
 ## 🔧 Bug Fixes & Stability
 
