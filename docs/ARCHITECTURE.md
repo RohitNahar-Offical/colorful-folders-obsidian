@@ -16,17 +16,18 @@ graph TD
     A[User Action / Plugin Load] --> B{Trigger Debouncer}
     B --> C[generateStyles]
     C --> D[StyleGenerator.generateCss]
-    D --> E[Vault Traversal]
-    E --> F[getEffectiveStyle per Item]
-    F --> G[Build CSS String]
-    G --> H[Inject into DOM styleTag]
-    H --> I[Browser Reflow / Paint]
+    D --> E[Check Persistent Caches]
+    E --> F[Vault Traversal]
+    F --> G[getEffectiveStyle per Item]
+    G --> H[Build CSS String]
+    H --> I[Inject into DOM styleTag]
+    I --> J[Browser Reflow / Paint]
 ```
 
 ### The Cycle:
 1.  **Trigger**: User changes a setting or the plugin loads.
 2.  **State Resolution**: `plugin.getEffectiveStyle()` calculates the visual state for every folder/file.
-3.  **High-Performance CSS Generation**: `StyleGenerator.traverse()` builds a collection of CSS rules. To handle 20,000+ files efficiently, it uses the **"Collect-Join" Pattern** (pushing strings into an array) to prevent O(N²) string concatenation overhead.
+3.  **High-Performance CSS Generation**: `StyleGenerator.traverse()` builds a collection of CSS rules. To handle 20,000+ files efficiently, it uses the **"Collect-Join" Pattern** and **Persistent Memoization** (caching item counts and icon category rules) to minimize redundant computations.
 4.  **Injection**: The final joined string is pushed into `plugin.styleTag` in the `<head>`.
 5.  **Browser handles the rest**: The browser's CSS engine applies the styles instantly as elements enter the viewport.
 
@@ -100,7 +101,11 @@ graph TD
 
 ## 3. StyleGenerator: The Recursive Engine
 
-The `StyleGenerator` is a stateless class that walks the vault tree.
+### Traversal Logic:
+The `StyleGenerator` utilizes persistent caches hosted on the main plugin instance to avoid expensive re-computations during traversal.
+
+1.  **Item Count Cache**: Persists folder/file counts across renders, invalidated only on vault structural changes.
+2.  **Icon Category Cache**: Memoizes compiled regex rules for auto-icons, rebuilt only when custom rules are modified.
 
 ### Traversal Pseudocode:
 ```text
@@ -160,6 +165,7 @@ The plugin uses a hybrid approach to ensure icons are performant, visually consi
 ### CSS Masking (High Performance)
 *   **Used for**: Auto-Icons, Folder Open/Closed states.
 *   **Mechanism**: `-webkit-mask-image` in `StyleGenerator.ts`.
+*   **Caching**: Normalized SVG strings are cached in a **Categorical Memoization Layer** to prevent redundant DOM parsing during the traversal loop.
 *   **Benefit**: Hundreds of icons can be rendered with zero DOM overhead.
 
 ### DOM Injection & Sanitization (Secure Overrides)

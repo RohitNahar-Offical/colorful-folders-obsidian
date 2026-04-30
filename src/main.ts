@@ -35,6 +35,7 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
     uiStyleTag: HTMLStyleElement;
     iconCache: Map<string, string> = new Map();
     heatmapCache: Map<string, number> | null = null;
+    folderCountCache: Map<string, { files: number, folders: number }> | null = null;
     generateStylesDebounced: obsidian.Debouncer<[], void>;
     dividerObserver: MutationObserver | null = null;
     styleObserver: MutationObserver | null = null;
@@ -58,7 +59,7 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
 
         this.generateStylesDebounced = obsidian.debounce(() => {
             this.generateStyles();
-            this.initDividerObserver();
+            // P2 fix: initDividerObserver re-inits on layout-change; no need here
         }, 300, true);
 
         this.processDividersDebounced = obsidian.debounce(() => {
@@ -179,6 +180,7 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
     async saveSettings() {
         await this.saveData(this.settings);
         this.iconCache.clear();
+        this.iconManager.invalidateCategoryCache(); // P4: re-parse icon rules on settings change
         this.generateStylesDebounced();
     }
 
@@ -202,14 +204,17 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
 
         this.registerEvent(this.app.vault.on('create', () => {
             this.heatmapCache = null;
+            this.folderCountCache = null; // P1: invalidate counter cache
             this.generateStylesDebounced();
         }));
         this.registerEvent(this.app.vault.on('delete', () => {
             this.heatmapCache = null;
+            this.folderCountCache = null; // P1: invalidate counter cache
             this.generateStylesDebounced();
         }));
         this.registerEvent(this.app.vault.on('rename', async (file, oldPath) => {
             this.heatmapCache = null;
+            this.folderCountCache = null; // P1: invalidate counter cache
             if (this.settings.customFolderColors[oldPath]) {
                 const style = this.settings.customFolderColors[oldPath];
                 this.settings.customFolderColors[file.path] = style;

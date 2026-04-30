@@ -51,6 +51,9 @@ Hardens raw SVG strings for CSS masks.
 ### `colorizeSvg(svgStr: string, color: string)`
 Intelligently tints an SVG by rewriting path attributes.
 
+### `invalidateCategoryCache()`
+Clears the category memoization and normalization caches. Called when icon settings are modified.
+
 ---
 
 ## 5. UI Modals

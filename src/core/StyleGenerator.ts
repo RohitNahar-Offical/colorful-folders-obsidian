@@ -184,7 +184,11 @@ export class StyleGenerator {
             `);
         }
 
-        const countCache = new Map<string, { files: number, folders: number }>();
+        // P1 fix: use persistent plugin-level cache (cleared on vault create/delete/rename)
+        if (!this.plugin.folderCountCache) {
+            this.plugin.folderCountCache = new Map<string, { files: number, folders: number }>();
+        }
+        const countCache = this.plugin.folderCountCache;
         const countItems = (folderItem: obsidian.TFolder): { files: number, folders: number } => {
             const cached = countCache.get(folderItem.path);
             if (cached) return cached;

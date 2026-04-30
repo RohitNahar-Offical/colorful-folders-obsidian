@@ -115,12 +115,14 @@ export interface IColorfulFoldersPlugin {
     app: App;
     settings: ColorfulFoldersSettings;
     heatmapCache: Map<string, number> | null;
+    folderCountCache: Map<string, { files: number, folders: number }> | null;
     iconCache: Map<string, string>;
     iconManager: { 
         refreshIcons(): void,
         getIconSvg(iconId: string, shouldEncode?: boolean): string,
         getAutoIconData(name: string): AutoIconData | null,
-        normalizeSvg(svgStr: string, shouldEncode?: boolean): string
+        normalizeSvg(svgStr: string, shouldEncode?: boolean): string,
+        invalidateCategoryCache(): void
     };
     styleTag: HTMLStyleElement;
     uiStyleTag: HTMLStyleElement;

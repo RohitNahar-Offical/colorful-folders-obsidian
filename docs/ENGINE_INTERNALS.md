@@ -11,11 +11,11 @@ Colorful Folders hooks into the Obsidian event bus to stay reactive.
 
 | Event | Handler | Rationale |
 | :--- | :--- | :--- |
-| `layout-change` | `generateStyles` | UI recalculation on pane resizing/moving. |
+| `layout-change` | `initDividerObserver` | UI recalculation on pane resizing/moving; re-attaches DOM observers. |
 | `css-change` | `generateStyles` | Theme changes (Light/Dark) invalidate contrast calculations. |
 | `file-open` | `generateStyles` | Highlights new path if "Active Path Glow" is enabled. |
 | `modify` | `generateStyles` | Updates "Hot" status in Heatmap mode. |
-| `create` / `delete` / `rename` | `generateStyles` | Vault structure changes require a new traversal. |
+| `create` / `delete` / `rename` | `generateStyles` | Vault structure changes; invalidates item count and heatmap caches. |
 
 ---
 
@@ -53,15 +53,11 @@ This ensures that even if a user picks extreme colors, the text remains crisp an
 
 ---
 
-## 4. Performance Optimization: High-Speed Assembly
-
-To handle vaults with **20,000+ files**, we use a tiered optimization strategy:
-
-1.  **Array-Based Assembly**: Instead of `css += ...`, we use `cssRules: string[]` and `join('\n')` at the end to prevent O(N²) concatenation overhead.
-2.  **UI Event Debouncer**: (50ms) Aggregates rapid events like typing or folder expansion.
-3.  **Generation Lock**: A boolean flag (`isGenerating`) prevents multiple traversals from running concurrently.
-4.  **Recursion Pruning**: Immediately skip folders in the `exclusionList` (e.g., `.git`, `node_modules`).
-5.  **Memory Allocation Reduction**: Invariant constants and local helper functions (e.g., color calculators) are hoisted completely outside of recursive rendering loops. This prevents the engine from allocating and destroying tens of thousands of function closures per render, drastically reducing JavaScript garbage collection (GC) stutters.
+5.  **Tiered Caching Engine**:
+    *   **Folder Count Cache**: A persistent `Map` on the plugin instance. Item counts are only re-calculated when the vault structure actually changes (`create`/`delete`/`rename`).
+    *   **Icon Category Memoization**: Custom icon regex rules and category lookups are compiled once and cached.
+    *   **SVG Normalization Cache**: The result of `DOMParser` sanitization is cached, ensuring constant SVGs (like folder icons) are only parsed once per session.
+6.  **Observer Decoupling**: The `DividerManager`'s MutationObserver is decoupled from the main style render loop. It only re-initializes during structural `layout-change` events, preventing expensive DOM queries during every file navigation.
 
 ---
 
@@ -134,7 +130,8 @@ The color picker uses a standardized range system for perfect UI alignment.
 
 The plugin calculates item counts dynamically during the rendering cycle.
 
-- **Performance**: Uses a `countCache` (Map) to prevent redundant vault traversals for nested subfolders.
+- **Performance**: Uses a **Persistent Count Cache** (`folderCountCache`) to prevent redundant vault traversals. This cache is hosted on the plugin instance and survives multiple render cycles, significantly boosting performance in deep hierarchies.
+- **Invalidation**: The cache is automatically cleared when the vault triggers a structural event (`create`, `delete`, or `rename`).
 - **Visual Style**: Custom dual-indicator SVG: `Folders / Files`.
 - **Readability**: Numbers use a bold weight (**900**) and are right-aligned via `::after`.
 
