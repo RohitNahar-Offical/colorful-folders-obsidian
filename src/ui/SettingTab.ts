@@ -796,30 +796,6 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         // Active File Highlighting (Now Permanent Defaults)
         new obsidian.Setting(typeCard)
-            .setName('Active animation style')
-            .addDropdown(drop => drop
-                .addOption('breathe', 'Radiant breathe')
-                .addOption('neon', 'Neon flicker')
-                .addOption('shimmer', 'Ethereal flow')
-                .setValue(this.plugin.settings.activeAnimationStyle || "shimmer")
-                .onChange(async (value) => {
-                    this.plugin.settings.activeAnimationStyle = value;
-                    await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
-                }));
-
-        new obsidian.Setting(typeCard)
-            .setName('Active animation duration')
-            .setDesc('Adjust how fast the shimmer or pulse effects run (seconds).')
-            .addSlider(slider => slider
-                .setLimits(1, 10, 0.5)
-                .setValue(this.plugin.settings.activeAnimationDuration || 4)
-                .setDynamicTooltip()
-                .onChange(async (value) => {
-                    this.plugin.settings.activeAnimationDuration = value;
-                    await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
-                }));
 
         new obsidian.Setting(typeCard)
             .setName('Rainbow root text')

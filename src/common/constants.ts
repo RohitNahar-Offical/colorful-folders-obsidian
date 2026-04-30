@@ -85,8 +85,6 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     rainbowRootText: true,
     rainbowRootBgTransparent: false,
     autoColorFiles: false,
-    activeAnimationStyle: "shimmer",
-    activeAnimationDuration: 4,
     showItemCounters: true,
     rootTintOpacity: 0.06,
     lightModeBrightness: 0,

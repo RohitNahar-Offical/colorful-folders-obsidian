@@ -51,8 +51,6 @@ export interface ColorfulFoldersSettings {
     rainbowRootText: boolean;
     rainbowRootBgTransparent: boolean;
     autoColorFiles: boolean;
-    activeAnimationStyle: string;
-    activeAnimationDuration: number;
     showItemCounters: boolean;
     rootTintOpacity: number;
     lightModeBrightness: number;

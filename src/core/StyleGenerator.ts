@@ -241,8 +241,8 @@ export class StyleGenerator {
         const rootOp = this.settings.rootOpacity !== undefined ? this.settings.rootOpacity : 0.548;
         const useGlass = this.settings.glassmorphism;
         const glassCss = useGlass ? `backdrop-filter: blur(8px) saturate(120%); -webkit-backdrop-filter: blur(8px) saturate(120%);` : '';
-        const animStyle = this.settings.activeAnimationStyle || "shimmer";
-        const animDur = this.settings.activeAnimationDuration || 3.0;
+        const animStyle = "shimmer";
+        const animDur = 4;
         const fileBgOpacitySettings = this.settings.fileBackgroundOpacity;
         const autoColorFiles = this.settings.autoColorFiles;
         const autoIcons = this.settings.autoIcons;
@@ -577,8 +577,6 @@ export class StyleGenerator {
 
                     // Native Glow (Isolated) - Premium Luminous Selection (Permanent Default)
                     let fileActiveAnim = '';
-                    const animStyle = this.settings.activeAnimationStyle || "shimmer";
-                    const animDur = this.settings.activeAnimationDuration || 4;
 
                     if (animStyle === "breathe") fileActiveAnim = `animation: cf-radiant-pulse ${animDur}s infinite ease-in-out;`;
                     else if (animStyle === "neon") fileActiveAnim = `animation: cf-neon-flicker ${animDur}s infinite alternate;`;
@@ -640,8 +638,6 @@ export class StyleGenerator {
                 const bgTint = outlineOnly ? "transparent" : `rgba(${passedColor.rgb}, ${finalTintOp})`;
 
                 // Always calculate animation for the path if enabled internally
-                const animStyle = this.settings.activeAnimationStyle || "shimmer";
-                const animDur = this.settings.activeAnimationDuration || 4;
 
                 cssRules.push(`
                     body .nav-folder-title[data-path="${safePath}"] ~ .nav-folder-children,
