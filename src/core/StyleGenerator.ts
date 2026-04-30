@@ -124,38 +124,7 @@ export class StyleGenerator {
             return palettes[palettes.length - 1];
         };
 
-        if (this.settings.animateActivePath) {
-            cssRules.push(`
-                @keyframes cf-breathe-glow {
-                    0% { box-shadow: 0 0 5px rgba(var(--cf-rgb), 0.2); filter: brightness(1); }
-                    50% { box-shadow: 0 0 15px rgba(var(--cf-rgb), 0.5); filter: brightness(1.2); }
-                    100% { box-shadow: 0 0 5px rgba(var(--cf-rgb), 0.2); filter: brightness(1); }
-                }
-                @keyframes cf-radiant-pulse {
-                    0% { border-color: rgba(var(--cf-rgb), 0.5); filter: saturate(100%) brightness(1); box-shadow: 0 0 2px rgba(var(--cf-rgb), 0.1); }
-                    50% { border-color: rgba(var(--cf-rgb), 1.0); filter: saturate(150%) brightness(1.15); box-shadow: 0 0 12px rgba(var(--cf-rgb), 0.4); }
-                    100% { border-color: rgba(var(--cf-rgb), 0.5); filter: saturate(100%) brightness(1); box-shadow: 0 0 2px rgba(var(--cf-rgb), 0.1); }
-                }
-                @keyframes cf-ethereal-flow {
-                    0% { border-color: rgba(var(--cf-rgb), 1); opacity: 1; }
-                    50% { border-color: rgba(var(--cf-rgb), 0.4); opacity: 0.8; }
-                    100% { border-color: rgba(var(--cf-rgb), 1); opacity: 1; }
-                }
-                @keyframes cf-neon-flicker {
-                    0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { filter: drop-shadow(0 0 5px rgba(var(--cf-rgb), 0.8)) brightness(1.1); }
-                    20%, 24%, 55% { filter: drop-shadow(0 0 1px rgba(var(--cf-rgb), 0.2)) brightness(0.9); }
-                }
-                @keyframes cf-shimmer-glow {
-                    0% { filter: brightness(1.0) saturate(100%); }
-                    50% { filter: brightness(1.08) saturate(110%); }
-                    100% { filter: brightness(1.0) saturate(100%); }
-                }
-                @keyframes cf-rainbow-text-pan {
-                    0% { background-position: 0% 50%; }
-                    50% { background-position: 100% 50%; }
-                    100% { background-position: 0% 50%; }
-                }
-
+        cssRules.push(`
                 /* Global: Hide default icons when a custom icon is active */
                 .cf-icon-active::before {
                     display: none !important;
@@ -169,7 +138,7 @@ export class StyleGenerator {
                     display: none !important;
                 }
             `);
-        }
+
 
 
         if (this.settings.focusMode && activePath) {
@@ -241,8 +210,7 @@ export class StyleGenerator {
         const rootOp = this.settings.rootOpacity !== undefined ? this.settings.rootOpacity : 0.548;
         const useGlass = this.settings.glassmorphism;
         const glassCss = useGlass ? `backdrop-filter: blur(8px) saturate(120%); -webkit-backdrop-filter: blur(8px) saturate(120%);` : '';
-        const animStyle = "shimmer";
-        const animDur = 4;
+
         const fileBgOpacitySettings = this.settings.fileBackgroundOpacity;
         const autoColorFiles = this.settings.autoColorFiles;
         const autoIcons = this.settings.autoIcons;
@@ -576,11 +544,7 @@ export class StyleGenerator {
                     }
 
                     // Native Glow (Isolated) - Premium Luminous Selection (Permanent Default)
-                    let fileActiveAnim = '';
 
-                    if (animStyle === "breathe") fileActiveAnim = `animation: cf-radiant-pulse ${animDur}s infinite ease-in-out;`;
-                    else if (animStyle === "neon") fileActiveAnim = `animation: cf-neon-flicker ${animDur}s infinite alternate;`;
-                    else if (animStyle === "shimmer") fileActiveAnim = `animation: cf-shimmer-glow ${animDur}s infinite linear;`;
 
                     cssRules.push(`
                         .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file),
@@ -598,7 +562,6 @@ export class StyleGenerator {
                             `}
                             border: 1px solid rgba(${color.rgb}, 0.3) !important;
                             --cf-rgb: ${color.rgb};
-                            ${fileActiveAnim}
                             will-change: transform, opacity;
                             transform: translateZ(0); /* GPU acceleration */
                         }
@@ -621,7 +584,6 @@ export class StyleGenerator {
                             body ${NotebookNavigatorIntegration.getActiveGlowSelector(child.path)} {
                                 box-shadow: 0 0 8px rgba(${color.rgb}, 0.35) !important;
                                 --cf-rgb: ${color.rgb};
-                                ${fileActiveAnim ? `animation: cf-breathe-glow ${animDur}s infinite ease-in-out;` : ''}
                             }
                         `);
                     }
@@ -663,26 +625,15 @@ export class StyleGenerator {
                         .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-navitem) ~ .tree-item-children` : ""}
                     `;
 
-                    let animationProp = '';
-                    let borderStyle = `border-left: 2.5px solid rgba(${passedColor.rgb}, 0.85) !important;`;
-                    
-                    if (animStyle === "breathe") {
-                        animationProp = `animation: cf-radiant-pulse ${animDur}s infinite ease-in-out;`;
-                    } else if (animStyle === "neon") {
-                        animationProp = `animation: cf-neon-flicker ${animDur}s infinite alternate;`;
-                    } else if (animStyle === "shimmer") {
-                        animationProp = `animation: cf-ethereal-flow ${animDur}s infinite linear;`;
-                        borderStyle = `border-left: 2.5px solid rgba(${passedColor.rgb}, 0.85) !important;`;
-                    }
+
 
                     // Native Radiant Path (Isolated) - Standardized & Vibrant
                     cssRules.push(`
                         ${activeSelector} {
-                            ${borderStyle}
+                            border-left: 2.5px solid rgba(${passedColor.rgb}, 0.85) !important;
                             border-bottom: 2.5px solid rgba(${passedColor.rgb}, 0.9) !important;
                             border-bottom-left-radius: 10px !important;
                             --cf-rgb: ${passedColor.rgb};
-                            ${animationProp}
                             transition: border-color 0.4s ease, opacity 0.4s ease !important;
                         }
                     `);
@@ -758,15 +709,12 @@ export class StyleGenerator {
                 if (this.settings.rainbowRootText && depth === 0 && !customStyle?.textColor) {
                     const nextColor = currentPalette[(validIndex + 1) % currentPalette.length];
                     const shadowOp = isDark ? 0.7 : 0.3;
-                    const rainbowAnim = `animation: cf-rainbow-text-pan ${animDur * 2}s ease infinite !important; background-size: 200% 200% !important;`;
-
                     textCss = `
                         background-image: linear-gradient(90deg, ${color.hex}, ${nextColor.hex}, ${color.hex}) !important;
                         background-clip: text !important;
                         -webkit-background-clip: text !important;
                         color: transparent !important;
                         font-weight: 800 !important;
-                        ${rainbowAnim}
                         filter: drop-shadow(0px 1px 1px rgba(0, 0, 0, ${shadowOp}));
                     `;
                 }
@@ -1023,11 +971,6 @@ export class StyleGenerator {
                             box-shadow: 0 0 8px rgba(${color.rgb}, 0.1) !important;
                             z-index: 1;
                             --cf-rgb: ${passedColor ? passedColor.rgb : color.rgb};
-                            ${this.settings.animateActivePath ? (
-                            animStyle === "pulse" ? `animation: cf-breathe-glow ${animDur}s infinite ease-in-out;` :
-                                animStyle === "neon" ? `animation: cf-neon-flicker ${animDur}s infinite alternate;` :
-                                    `animation: cf-shimmer-glow ${animDur}s infinite linear;`
-                        ) : ""}
                         ` : ""}
                     }
 

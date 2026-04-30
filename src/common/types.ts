@@ -47,7 +47,6 @@ export interface ColorfulFoldersSettings {
     autoIcons: boolean;
     autoIconVariety: boolean;
     wideAutoIcons: boolean;
-    animateActivePath: boolean;
     rainbowRootText: boolean;
     rainbowRootBgTransparent: boolean;
     autoColorFiles: boolean;

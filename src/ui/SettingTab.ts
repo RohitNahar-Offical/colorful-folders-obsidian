@@ -794,9 +794,6 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     this.plugin.generateStyles();
                 }));
 
-        // Active File Highlighting (Now Permanent Defaults)
-        new obsidian.Setting(typeCard)
-
         new obsidian.Setting(typeCard)
             .setName('Rainbow root text')
             .setDesc('Applies a vivid rainbow-text horizontal gradient to all top-level folders.')
