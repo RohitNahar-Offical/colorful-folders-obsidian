@@ -128,10 +128,9 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
                 this.settings.lastVersion = currentVersion;
                 await this.saveSettings();
 
-                // Show changelog for the current version (Fetched from GitHub)
+                // Show the collective changelog (Fetched from GitHub)
                 try {
-                    const versionFilename = `VERSION_${currentVersion.replace(/\./g, '_')}.md`;
-                    const githubUrl = `https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/main/Version/${versionFilename}`;
+                    const githubUrl = `https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/main/version.md`;
                     
                     const response = await obsidian.requestUrl({ url: githubUrl });
                     if (response.status === 200) {
@@ -139,7 +138,7 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
                         new ChangelogModal(this.app, content).open();
                     }
                 } catch (err) {
-                    console.error("Colorful folders: failed to fetch changelog from GitHub", err);
+                    console.error("Colorful folders: failed to fetch collective changelog from GitHub", err);
                 }
             }
         });

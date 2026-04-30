@@ -30,6 +30,11 @@ export class ChangelogModal extends obsidian.Modal {
         header.createEl("h2", { text: "What's new in colorful folders" });
 
         const body = contentEl.createDiv({ cls: "cf-changelog-body" });
+        body.setCssStyles({
+            maxHeight: "60vh",
+            overflowY: "auto",
+            paddingRight: "10px"
+        });
         this.renderComponent.load();
         obsidian.MarkdownRenderer.render(this.app, this.content, body, "", this.renderComponent).catch(err => {
             console.error("Failed to render changelog markdown", err);
