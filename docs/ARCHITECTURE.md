@@ -177,9 +177,8 @@ The plugin uses a hybrid approach to ensure icons are performant, visually consi
 Colorful Folders includes a "Stealth Mode" (Data Hider) to protect sensitive vault sections without requiring complex encryption.
 
 ### Security Model
-*   **Logic**: The plugin injects a global `.cf-stealth-active` class to the `<body>`.
-*   **Hiding**: CSS rules automatically collapse and hide any folders/files that are not explicitly authorized by the user during the session.
-*   **Persistence**: The vault lock state is managed in-memory to prevent leaking sensitivity after an Obsidian restart.
+*   **Hiding**: CSS rules automatically collapse and hide any folders/files that are marked as hidden in settings, controlled by the presence or absence of the `cf-show-hidden` class on the `<body>`.
+*   **Persistence**: The vault lock state is managed in-memory to prevent leaking sensitivity after an Obsidian restart, while the list of hidden paths is persisted in `data.json`.
 
 ---
 

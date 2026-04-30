@@ -15,7 +15,7 @@ Representing the entire `data.json` structure. Defined in `src/common/types.ts`.
 | `customFolderColors` | `Record` | Key = Path. Value = Style overrides. |
 | `customIcons` | `Record` | Key = Icon ID. Value = Raw SVG string. |
 | `glassmorphism` | `boolean` | Enables backdrop-blur effects. |
-| `activeGlow` | `boolean` | Draws a line connecting the active file to the root. |
+| `activeGlow` | `boolean` | Applies a luminous box-shadow and gradient sheen to the active item. |
 | `vaultPassword` | `string` | Hashed password for Stealth Mode. |
 | `isVaultLocked` | `boolean` | Session-based state of the privacy lock. |
 | `dividerThickness` | `number` | Stroke width for divider lines. |

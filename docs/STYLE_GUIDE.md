@@ -49,21 +49,18 @@ We use a **Layered CSS** approach. Styles are injected into three distinct areas
 
 ---
 
-## 5. Animations
-
-We provide several "Active Path" animation styles:
-
-### 🌊 Shimmer
-A linear gradient that slides across the active item.
-```css
-@keyframes cf-shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-}
-```
-
-### 💓 Pulse
-A soft breathing effect applied to the path-connecting line.
+## 5. Premium Static Visuals
+ 
+We have decommissioned dynamic animations in favor of high-performance static visual standards that ensure zero GPU overhead.
+ 
+### 🌟 Luminous Selection
+The currently active file is highlighted with a multi-layered static effect:
+- **Bevel Sheen**: A subtle `linear-gradient` overlay mimicking a 3D glass edge.
+- **Luminous Glow**: A path-synced `box-shadow` that creates a "light source" effect without looping keyframes.
+ 
+### 📏 Radiant Path
+The connecting vertical trail is a strictly standardized `2px` solid line.
+- **Visual Stability**: By using a static thickness and color, we eliminate the "jitter" and "thinning" artifacts caused by CSS animation engines during scrolling.
 
 ---
 

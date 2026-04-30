@@ -145,10 +145,10 @@ The plugin calculates item counts dynamically during the rendering cycle.
 The stealth mode is a CSS-driven privacy layer.
 
 **The Workflow**:
-1.  **State Activation**: When the vault is "Locked", the plugin adds `.cf-stealth-active` to the `document.body`.
-2.  **CSS Filter**: A global CSS rule is injected to collapse unauthorized items.
+1.  **State Activation**: When the vault is "Locked", the plugin ensures the `cf-show-hidden` class is removed from the `document.body`.
+2.  **CSS Filter**: Global CSS rules are injected to set `display: none !important` for paths marked `isHidden` when the show class is absent.
 3.  **Ribbon Toggle**: The ribbon icon changes visually (Lock/Unlock) to indicate the current privacy state.
-4.  **Dynamic Updates**: When the user enters the correct password, the class is removed and the UI is refreshed.
+4.  **Dynamic Updates**: When the user enters the correct password, the `cf-show-hidden` class is added and the UI is refreshed.
 
 ---
 
