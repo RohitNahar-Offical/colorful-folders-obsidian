@@ -1,6 +1,6 @@
 # Updates for Colorful Folders
 
-## ⚡ 4.1.4 - The "Visual & Performance" Update
+## ⚡ 4.1.4 - Design & Visual Upgrades for Active Files Paths
 This release focuses on elevating visual elegance through the Luminous Selection default, alongside powerful Engine Micro-Optimizations.
 
 ### 🌟 1. The New "Luminous" Default
