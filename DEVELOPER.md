@@ -16,6 +16,7 @@
 | 🛠️ **[Contributing](docs/CONTRIBUTING.md)** | Feature implementation guide | Workflows |
 | ⚙️ **[Engine Internals](docs/ENGINE_INTERNALS.md)** | Low-level logic & Debugging | Optimization |
 | 🎬 **[Visual Effects](docs/VISUAL_EFFECTS.md)** | Static Effects & Shaders | Polish |
+| 🎨 **[Customization](docs/CUSTOMIZATION.md)** | User-facing CSS overrides | Advanced Styles |
 | 🛡️ **[Security Audit](docs/SECURITY_AUDIT.md)** | SVG Sanitization & Safety | XSS Protection |
 
 ---

@@ -89,6 +89,7 @@ If you are a developer looking to understand the internal architecture, contribu
 *   **[Developer Master Guide](DEVELOPER.md)**: The entry point for all technical documentation.
 *   **[Internal Engine Architecture](docs/ARCHITECTURE.md)**: Deep dive into the rendering pipeline and logic flow.
 *   **[API Reference](docs/API_REFERENCE.md)**: Detailed class and method documentation.
+*   **[Customization Guide](docs/CUSTOMIZATION.md)**: Advanced CSS snippets and styling overrides.
 
 ---
 
