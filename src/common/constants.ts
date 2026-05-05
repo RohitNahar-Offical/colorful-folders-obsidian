@@ -115,7 +115,10 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     dividerLinePadding: 8,
     dividerLinePaddingLeft: 8,
     dividerLinePaddingRight: 8,
-    dividerPillColor: ""
+    dividerPillColor: "",
+    useCustomActiveColor: false,
+    customActiveBg: "",
+    customActiveText: ""
 };
 
 export const AUTO_ICON_CATEGORIES: AutoIconData[] = [

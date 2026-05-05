@@ -81,6 +81,9 @@ export interface ColorfulFoldersSettings {
     dividerLinePaddingLeft?: number;
     dividerLinePaddingRight?: number;
     dividerPillColor: string;
+    useCustomActiveColor: boolean;
+    customActiveBg: string;
+    customActiveText: string;
 }
 
 

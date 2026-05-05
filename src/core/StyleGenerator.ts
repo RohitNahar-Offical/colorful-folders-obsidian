@@ -550,12 +550,21 @@ export class StyleGenerator {
                     // Native Glow (Isolated) - Premium Luminous Selection (Permanent Default)
 
 
+                    const activeBg = (this.settings.useCustomActiveColor && this.settings.customActiveBg)
+                        ? this.settings.customActiveBg
+                        : `rgba(${color.rgb}, ${useGlass ? 0.14 : 0.12})`;
+                    
+                    const activeText = (this.settings.useCustomActiveColor && this.settings.customActiveText)
+                        ? this.settings.customActiveText
+                        : textNative;
+
                     cssRules.push(`
                         .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file),
                         .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nn-file) {
                             position: relative !important;
                             z-index: 10 !important;
-                            background-color: rgba(${color.rgb}, ${useGlass ? 0.14 : 0.12}) !important;
+                            background-color: ${activeBg} !important;
+                            color: ${activeText} !important;
                             background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.08), transparent) !important;
                             ${useGlass ? `
                                 backdrop-filter: blur(12px) saturate(160%) !important;
@@ -566,6 +575,8 @@ export class StyleGenerator {
                             `}
                             border: 1px solid rgba(${color.rgb}, 0.3) !important;
                             --cf-rgb: ${color.rgb};
+                            --cf-active-bg: ${activeBg};
+                            --cf-active-text: ${activeText};
                             will-change: transform, opacity;
                             transform: translateZ(0); /* GPU acceleration */
                         }

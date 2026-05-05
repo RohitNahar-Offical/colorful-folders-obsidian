@@ -459,6 +459,45 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     this.plugin.generateStyles();
                 }));
 
+        const activeCard = makeCard(generalPanel, "✨", "Active item appearance");
+        new obsidian.Setting(activeCard)
+            .setName('Use custom active file colors')
+            .setDesc('Enable this to override the default "Luminous Selection" colors with your own.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.useCustomActiveColor)
+                .onChange(async (value) => {
+                    this.plugin.settings.useCustomActiveColor = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStyles();
+                    this.display(); // Refresh to show/hide sub-settings
+                }));
+
+        if (this.plugin.settings.useCustomActiveColor) {
+            new obsidian.Setting(activeCard)
+                .setName('Active background color')
+                .setDesc('The background color for the currently selected file.')
+                .addText(text => text
+                    .setPlaceholder('#ffffff')
+                    .setValue(this.plugin.settings.customActiveBg || "")
+                    .onChange(async (value) => {
+                        this.plugin.settings.customActiveBg = value;
+                        await this.plugin.saveSettings();
+                        this.plugin.generateStyles();
+                    }));
+
+            new obsidian.Setting(activeCard)
+                .setName('Active text color')
+                .setDesc('The text color for the currently selected file.')
+                .addText(text => text
+                    .setPlaceholder('#c0c0c0')
+                    .setValue(this.plugin.settings.customActiveText || "")
+                    .onChange(async (value) => {
+                        this.plugin.settings.customActiveText = value;
+                        await this.plugin.saveSettings();
+                        this.plugin.generateStyles();
+                    }));
+        }
+
         const visCard = makeCard(generalPanel, "👁️", "Appearance and visibility");
         new obsidian.Setting(visCard)
             .setName('Light mode brightness (%)')
