@@ -24,7 +24,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         // Hero Section
         const hero = rootEl.createDiv('cf-hero');
-        const heroTitle = hero.createEl('h1', { text: 'Colorful folders' });
+        const heroTitle = hero.createEl("h1", { text: "Colorful folders" });
         const heroSubtitle = hero.createEl('p', { text: 'Configuration' });
 
         // Tab Bar
@@ -186,7 +186,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             { name: "🐙 Octicons", desc: "GitHub's native icon library.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/octicon.json", prefix: "octicon" },
             { name: "🎮 RPG awesome", desc: "Fantasy icons for RPG notes.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/ra.json", prefix: "ra" },
             { name: "⚡ Simple icons", desc: "Brand icons for popular services.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/simple-icons.json", prefix: "simple-icons" },
-            { name: "🔥 Ultimate collection", desc: "Curated community starter pack.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/master/icons/community-core.json", prefix: "cf" }
+            { name: "🔥 Ultimate collection", desc: "Curated community starter pack.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/main/icons/community-core.json", prefix: "cf" }
         ];
 
         packs.forEach(p => {
