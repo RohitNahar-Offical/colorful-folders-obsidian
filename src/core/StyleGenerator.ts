@@ -580,6 +580,14 @@ export class StyleGenerator {
                             will-change: transform, opacity;
                             transform: translateZ(0); /* GPU acceleration */
                         }
+
+                        /* Ensure icons in active items also respect the active text color */
+                        .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]::before,
+                        .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]::before,
+                        .nav-files-container .nav-file-title.is-active[data-path="${safePath}"] .nav-file-title-content::before,
+                        .nav-files-container .tree-item-self.is-active[data-path="${safePath}"] .tree-item-inner::before {
+                            background-color: ${activeText} !important;
+                        }
                     `);
 
                     /* Mobile Performance Profile */
@@ -597,8 +605,12 @@ export class StyleGenerator {
                     if (nnActive) {
                         cssRules.push(`
                             body ${NotebookNavigatorIntegration.getActiveGlowSelector(child.path)} {
+                                background-color: ${this.settings.useCustomActiveColor ? activeBg : `rgba(${color.rgb}, 0.35)`} !important;
+                                color: ${activeText} !important;
                                 box-shadow: 0 0 8px rgba(${color.rgb}, 0.35) !important;
                                 --cf-rgb: ${color.rgb};
+                                --cf-active-bg: ${activeBg};
+                                --cf-active-text: ${activeText};
                             }
                         `);
                     }
