@@ -66,26 +66,99 @@ body .cf-divider-line {
     height: 3px !important;
     background: linear-gradient(to right, transparent, var(--interactive-accent), transparent) !important;
 }
+
+### Divider Hover Popovers
+The premium markdown hover messages can be styled for better readability or thematic consistency.
+
+```css
+/* Glassmorphic Popover Styling */
+body .cf-premium-popover {
+    background: rgba(var(--mono-rgb-100), 0.1) !important;
+    backdrop-filter: blur(20px) saturate(180%) !important;
+    border: 1px solid rgba(var(--mono-rgb-100), 0.2) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
+    border-radius: 12px !important;
+}
+
+/* Adjusting the text inside the popover */
+body .cf-popover-content {
+    font-size: 13px !important;
+    line-height: 1.6 !important;
+    color: var(--text-normal) !important;
+}
+```
 ```
 
 ---
 
-## Radiant Path & Active Glow
+## Advanced Visual Effects
 
-### Customizing the Active Glow
+### Luminous Selection (Active File)
+The "Luminous Selection" effect uses a combination of gradients and glassmorphism. You can override it here:
+
 ```css
-/* Change the glow intensity of the active file */
+/* Custom Active File Glow */
 body .nav-file-title.is-active {
-    box-shadow: 0 0 15px 2px rgba(var(--interactive-accent-rgb), 0.5) !important;
+    background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.15), transparent) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 0 2px var(--interactive-accent) !important;
+    border: 1px solid var(--interactive-accent) !important;
 }
 ```
 
-### Customizing Radiant Paths
+### Radiant Paths (Connecting Lines)
+The connecting lines are rendered as borders on the folder's children container.
+
 ```css
-/* Make the connecting vertical lines thicker */
-body .nav-folder-content::before {
-    width: 2px !important;
-    opacity: 0.8 !important;
+/* Make the connecting vertical lines thicker and more vibrant */
+body .nav-folder-children, 
+body .tree-item-children {
+    border-left: 3px solid rgba(var(--interactive-accent-rgb), 0.5) !important;
+    border-bottom: 3px solid rgba(var(--interactive-accent-rgb), 0.5) !important;
+    border-bottom-left-radius: 12px !important;
+}
+
+/* Specific color for the path leading to the active file */
+body .nav-folder:has(.is-active) > .nav-folder-title ~ .nav-folder-children {
+    border-left-color: var(--interactive-accent) !important;
+    border-bottom-color: var(--interactive-accent) !important;
+}
+```
+
+### Rainbow Root Text
+If you use the Rainbow Root Text feature, you can customize the gradient:
+
+```css
+/* Custom Rainbow Text Gradient */
+body .nav-folder-title[data-path$="/"] .nav-folder-title-content {
+    background-image: linear-gradient(90deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff) !important;
+    background-clip: text !important;
+    -webkit-background-clip: text !important;
+    color: transparent !important;
+}
+```
+
+---
+
+## Glassmorphism & Performance
+
+### Adjusting Blur Intensity
+```css
+/* Increase the blur for all glassmorphic elements */
+body .cf-glass {
+    backdrop-filter: blur(15px) saturate(150%) !important;
+    -webkit-backdrop-filter: blur(15px) saturate(150%) !important;
+}
+```
+
+### Mobile Optimizations
+```css
+/* Reduce effects on mobile to save battery */
+@media (max-width: 768px) {
+    body .nav-file-title.is-active {
+        backdrop-filter: none !important;
+        box-shadow: none !important;
+        border: 1px solid var(--interactive-accent) !important;
+    }
 }
 ```
 
