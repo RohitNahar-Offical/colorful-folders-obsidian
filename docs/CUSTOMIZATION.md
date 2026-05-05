@@ -94,16 +94,25 @@ body .cf-popover-content {
 ## Advanced Visual Effects
 
 ### Luminous Selection (Active File)
-The "Luminous Selection" effect uses a combination of gradients and glassmorphism. You can override it using the plugin settings or via CSS variables:
+The "Luminous Selection" effect highlights the currently active file with gradients and glassmorphism.
+
+#### 🎨 Customization via UI
+You can now customize these colors directly in the plugin settings without writing any code:
+1. Go to **General > Active item appearance**.
+2. Toggle **Use custom active file colors**.
+3. Use the **Visual Color Picker** (palette icon) to design your background and text.
+
+#### 🔧 Customization via CSS Variables
+The plugin exposes specific variables that you can override in your snippets for a cleaner implementation:
 
 ```css
-/* Using the new CSS variables (easiest way) */
+/* Simplest override using CSS variables */
 body .nav-file-title.is-active {
-    --cf-active-bg: #ffffff !important;
-    --cf-active-text: #silver !important;
+    --cf-active-bg: rgba(255, 255, 255, 0.2) !important;
+    --cf-active-text: #ffffff !important;
 }
 
-/* Full override for custom effects */
+/* Full manual override for custom effects */
 body .nav-file-title.is-active {
     background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.15), transparent) !important;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 0 2px var(--interactive-accent) !important;
