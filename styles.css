@@ -227,15 +227,31 @@
     gap: 16px;
 }
 
+/* ── NAV ITEM FLEX LAYOUT (Global alignment foundation) ─────────────────
+   Ensures ALL nav title content containers are flex rows so that:
+   - ::before icons can use align-self: center
+   - ::after counter badges can use margin-left: auto
+   - .cf-icon-wrapper can use align-self: center
+   This must be global — icon rendering paths are conditional but alignment must always be consistent.
+──────────────────────────────────────────────────────────────────────── */
+.nav-folder-title-content,
+.nav-file-title-content,
+.tree-item-inner {
+    display: flex !important;
+    align-items: center !important;
+    overflow: visible !important;
+}
+
 /* Icon Rendering Stability */
 .cf-icon-wrapper {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    align-self: center;
     margin-right: 6px;
-    vertical-align: middle;
-    transition: transform 0.2s ease, opacity 0.2s ease;
     flex-shrink: 0;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    overflow: visible;
 }
 
 .cf-icon-wrapper svg {
@@ -265,11 +281,24 @@
     transition: width 0.25s ease, height 0.25s ease, opacity 0.25s ease !important;
 }
 
-/* Ensure icons don't clip when scaled wide */
+/* Ensure nav title rows are flex so arrow, icon, text, and counter all center-align */
 .nav-folder-title,
 .nav-file-title,
 .tree-item-self {
+    display: flex !important;
+    align-items: center !important;
     overflow: visible !important;
+}
+
+/* Global: nav item counter / tag badges are flex items so margin-left: auto works */
+.nav-folder-title-content .nav-folder-tag,
+.nav-folder-title-content .nav-folder-note-count,
+.nav-file-title-content .nav-file-tag,
+.nav-file-title-content .nav-file-note-count,
+.nav-file-title-content .nav-file-extension,
+.tree-item-inner .tree-item-flair {
+    margin-left: auto;
+    flex-shrink: 0;
 }
 
 /* Custom Icon Library Grid */
