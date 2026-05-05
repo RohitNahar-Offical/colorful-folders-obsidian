@@ -128,7 +128,6 @@ export interface IColorfulFoldersPlugin {
         invalidateCategoryCache(): void
     };
     styleTag: HTMLStyleElement;
-    uiStyleTag: HTMLStyleElement;
     isSyncingDividers: boolean;
     processDividersDebounced: Debouncer<[], void>;
     saveSettings(): Promise<void>;
