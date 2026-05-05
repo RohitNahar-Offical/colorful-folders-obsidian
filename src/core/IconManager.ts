@@ -101,7 +101,7 @@ export class IconManager {
             svgStr = this.plugin.settings.customIcons[iconId];
         } else {
             // 2. Try Lucide Icons
-            const tempEl = activeDocument.createElement('div');
+            const tempEl = activeDocument.createDiv();
             obsidian.setIcon(tempEl, iconId);
             if (!tempEl.querySelector('svg') && !iconId.startsWith('lucide-')) {
                 obsidian.setIcon(tempEl, `lucide-${iconId}`);

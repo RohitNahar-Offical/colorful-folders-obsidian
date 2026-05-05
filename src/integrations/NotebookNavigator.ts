@@ -111,7 +111,7 @@ export class NotebookNavigatorIntegration {
     /**
      * Returns true if dividers should be rendered for the given container.
      */
-    static shouldRenderDividers(container: Element, settings: ColorfulFoldersSettings): boolean {
+    static shouldRenderDividers(container: Element, _settings: ColorfulFoldersSettings): boolean {
         if (this.isNNContainer(container)) {
             return false;
         }

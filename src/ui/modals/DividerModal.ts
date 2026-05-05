@@ -94,11 +94,11 @@ export class DividerModal extends obsidian.Modal {
         this._refreshHeaderIcon();
 
         const titleWrap = header.createDiv();
-        const mTitle = titleWrap.createEl("div", { text: "Section divider", cls: "cf-modal-title" });
+        const mTitle = titleWrap.createDiv({ text: "Section divider", cls: "cf-modal-title" });
         mTitle.setCssStyles({
             fontSize: "1.2em", fontWeight: "700", color: "var(--text-normal)", lineHeight: "1.2"
         });
-        const mSub = titleWrap.createEl("div", { text: `Organizing: ${this.item.name}` });
+        const mSub = titleWrap.createDiv({ text: `Organizing: ${this.item.name}` });
         mSub.setCssStyles({
             fontSize: "0.8em", color: "var(--text-muted)", marginTop: "2px", opacity: "0.8"
         });

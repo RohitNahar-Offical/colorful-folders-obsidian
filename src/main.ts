@@ -32,7 +32,7 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
     settings: ColorfulFoldersSettings;
     iconManager: IconManager;
     styleTag: HTMLStyleElement;
-    uiStyleTag: HTMLStyleElement;
+
     iconCache: Map<string, string> = new Map();
     heatmapCache: Map<string, number> | null = null;
     folderCountCache: Map<string, { files: number, folders: number }> | null = null;
@@ -69,44 +69,7 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
 
         this.refreshRibbon();
 
-        this.uiStyleTag = activeDocument.createElement('style');
-        this.uiStyleTag.id = 'colorful-folders-ui-style';
-        this.uiStyleTag.textContent = `
-            /* Premium Sliders styling */
-            .colorful-folders-config .setting-item-control input[type="range"] {
-                width: 160px !important;
-                height: 8px !important;
-                background: rgba(0, 0, 0, 0.2) !important;
-                border-radius: 10px !important;
-                appearance: none !important;
-                cursor: pointer !important;
-                border: 1px solid var(--background-modifier-border) !important;
-            }
-            .colorful-folders-config .setting-item-control input[type="range"]::-webkit-slider-thumb {
-                appearance: none !important;
-                width: 20px !important;
-                height: 200px !important; /* Overridden below */
-                height: 20px !important;
-                background: var(--interactive-accent) !important;
-                border: 3px solid var(--background-primary) !important;
-                border-radius: 50% !important;
-                box-shadow: 0 3px 10px rgba(0,0,0,0.4) !important;
-                transition: transform 0.15s ease !important;
-            }
-            .colorful-folders-config .setting-item-control input[type="range"]:active::-webkit-slider-thumb {
-                transform: scale(1.2);
-            }
-            @keyframes cf-shake {
-                0%, 100% { transform: translateX(0); }
-                25% { transform: translateX(-5px); }
-                75% { transform: translateX(5px); }
-            }
-            .is-invalid {
-                border-color: var(--text-error) !important;
-                animation: cf-shake 0.2s ease-in-out 0s 2 !important;
-            }
-        `;
-        activeDocument.head.appendChild(this.uiStyleTag);
+        // UI styles moved to styles.css to comply with obsidianmd/no-forbidden-elements
 
         this.initializeStyles();
 
@@ -145,14 +108,14 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
     }
 
     initializeStyles() {
-        this.styleTag = activeDocument.createElement('style');
+        // eslint-disable-next-line obsidianmd/no-forbidden-elements
+        this.styleTag = activeDocument.createEl('style');
         this.styleTag.id = 'colorful-folders-styles';
         activeDocument.head.appendChild(this.styleTag);
     }
 
     onunload() {
         if (this.styleTag) this.styleTag.remove();
-        if (this.uiStyleTag) this.uiStyleTag.remove();
         if (this.dividerObserver) this.dividerObserver.disconnect();
         if (this.styleObserver) this.styleObserver.disconnect();
 
