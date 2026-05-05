@@ -6,21 +6,27 @@ This guide provides technical instructions and CSS snippets for advanced customi
 
 The plugin uses `!important` on many of its core styles to ensure cross-theme compatibility. To override these in your own snippets, you must use **higher specificity selectors**.
 
-> [!TIP]
-> Always prefix your selectors with `body` or `.nav-files-container` to ensure your overrides take priority.
+### 🛠️ Pro Techniques for Increasing Weight
+If your styles aren't applying, try these "Weight Boosting" techniques:
 
-### Example: Customizing a Specific Folder
+1.  **Parent Scoping**: Prefix your selectors with `body` or `.nav-files-container`.
+2.  **Selector Chaining**: Instead of `.is-active`, use `.nav-file-title.is-active`.
+3.  **Pseudo-class Stacking**: Add `:not(#ignore)` to a selector. Even if `#ignore` doesn't exist, it adds the weight of an **ID** to your selector.
+4.  **Class Doubling**: You can repeat a class to double its weight: `.nav-folder-title.nav-folder-title`.
+
+### Example: Top-Level Override
 ```css
-/* Override the background for a specific folder */
-body .nav-folder-title[data-path="Your/Folder/Path"] {
+/* Normal Specificity (May fail) */
+.nav-file-title.is-active { background: red; }
+
+/* High Specificity (Recommended) */
+body .nav-files-container .nav-file-title.is-active { 
     background-color: rgba(255, 0, 0, 0.2) !important;
-    border-left: 4px solid #ff0000 !important;
 }
 
-/* Customizing the folder name color */
-body .nav-folder-title[data-path="Your/Folder/Path"] .nav-folder-title-content {
-    color: #ff0000 !important;
-    font-weight: 800 !important;
+/* "The Hulk" Specificity (Nuclear Option) */
+body:not(#_) .nav-files-container .nav-file-title.is-active:not(.nn-file) {
+    background-color: #ff0000 !important;
 }
 ```
 
