@@ -473,29 +473,93 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 }));
 
         if (this.plugin.settings.useCustomActiveColor) {
-            new obsidian.Setting(activeCard)
+            const bgRow = activeCard.createDiv();
+            let bgPickerWrap: HTMLElement | null = null;
+            let bgColorBox: HTMLElement;
+            let bgTextComp: obsidian.TextComponent;
+
+            new obsidian.Setting(bgRow)
                 .setName('Active background color')
                 .setDesc('The background color for the currently selected file.')
-                .addText(text => text
-                    .setPlaceholder('#ffffff')
-                    .setValue(this.plugin.settings.customActiveBg || "")
-                    .onChange(async (value) => {
-                        this.plugin.settings.customActiveBg = value;
-                        await this.plugin.saveSettings();
-                        this.plugin.generateStyles();
-                    }));
+                .addButton(btn => btn
+                    .setIcon('palette')
+                    .setTooltip('Open visual color picker')
+                    .onClick(() => {
+                        if (bgPickerWrap) { bgPickerWrap.remove(); bgPickerWrap = null; return; }
+                        bgPickerWrap = bgRow.createDiv();
+                        bgPickerWrap.setCssStyles({
+                            marginTop: '12px', padding: '16px', background: 'var(--background-secondary-alt)',
+                            borderRadius: '8px', border: '1px solid var(--background-modifier-border)'
+                        });
+                        const current = parseColorToHexAlpha(this.plugin.settings.customActiveBg);
+                        createVisualColorPicker(bgPickerWrap, current.hex, (hex, alpha) => {
+                            const rgba = hexAlphaToRgba(hex, alpha);
+                            this.plugin.settings.customActiveBg = rgba;
+                            bgTextComp.setValue(rgba);
+                            bgColorBox.setCssStyles({ backgroundColor: rgba });
+                            this.plugin.saveSettings().then(() => this.plugin.generateStyles());
+                        }, { showAlpha: true, initialAlpha: current.alpha });
+                    }))
+                .addText(text => {
+                    bgTextComp = text;
+                    text.setPlaceholder('#ffffff')
+                        .setValue(this.plugin.settings.customActiveBg || "")
+                        .onChange(async (value) => {
+                            this.plugin.settings.customActiveBg = value;
+                            await this.plugin.saveSettings();
+                            this.plugin.generateStyles();
+                            bgColorBox.setCssStyles({ backgroundColor: value || 'transparent' });
+                        });
+                    bgColorBox = text.inputEl.parentElement.createDiv();
+                    bgColorBox.setCssStyles({
+                        width: '24px', height: '24px', borderRadius: '4px', border: '1px solid var(--background-modifier-border)',
+                        marginLeft: '12px', backgroundColor: this.plugin.settings.customActiveBg || 'transparent'
+                    });
+                });
 
-            new obsidian.Setting(activeCard)
+            const textRow = activeCard.createDiv();
+            let textPickerWrap: HTMLElement | null = null;
+            let textColorBox: HTMLElement;
+            let textColorTextComp: obsidian.TextComponent;
+
+            new obsidian.Setting(textRow)
                 .setName('Active text color')
                 .setDesc('The text color for the currently selected file.')
-                .addText(text => text
-                    .setPlaceholder('#c0c0c0')
-                    .setValue(this.plugin.settings.customActiveText || "")
-                    .onChange(async (value) => {
-                        this.plugin.settings.customActiveText = value;
-                        await this.plugin.saveSettings();
-                        this.plugin.generateStyles();
-                    }));
+                .addButton(btn => btn
+                    .setIcon('palette')
+                    .setTooltip('Open visual color picker')
+                    .onClick(() => {
+                        if (textPickerWrap) { textPickerWrap.remove(); textPickerWrap = null; return; }
+                        textPickerWrap = textRow.createDiv();
+                        textPickerWrap.setCssStyles({
+                            marginTop: '12px', padding: '16px', background: 'var(--background-secondary-alt)',
+                            borderRadius: '8px', border: '1px solid var(--background-modifier-border)'
+                        });
+                        const current = parseColorToHexAlpha(this.plugin.settings.customActiveText);
+                        createVisualColorPicker(textPickerWrap, current.hex, (hex, alpha) => {
+                            const rgba = hexAlphaToRgba(hex, alpha);
+                            this.plugin.settings.customActiveText = rgba;
+                            textColorTextComp.setValue(rgba);
+                            textColorBox.setCssStyles({ backgroundColor: rgba });
+                            this.plugin.saveSettings().then(() => this.plugin.generateStyles());
+                        }, { showAlpha: true, initialAlpha: current.alpha });
+                    }))
+                .addText(text => {
+                    textColorTextComp = text;
+                    text.setPlaceholder('#c0c0c0')
+                        .setValue(this.plugin.settings.customActiveText || "")
+                        .onChange(async (value) => {
+                            this.plugin.settings.customActiveText = value;
+                            await this.plugin.saveSettings();
+                            this.plugin.generateStyles();
+                            textColorBox.setCssStyles({ backgroundColor: value || 'transparent' });
+                        });
+                    textColorBox = text.inputEl.parentElement.createDiv();
+                    textColorBox.setCssStyles({
+                        width: '24px', height: '24px', borderRadius: '4px', border: '1px solid var(--background-modifier-border)',
+                        marginLeft: '12px', backgroundColor: this.plugin.settings.customActiveText || 'transparent'
+                    });
+                });
         }
 
         const visCard = makeCard(generalPanel, "👁️", "Appearance and visibility");
