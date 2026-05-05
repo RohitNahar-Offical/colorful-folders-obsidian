@@ -120,6 +120,24 @@ body .nav-file-title.is-active {
 }
 ```
 
+#### 🚀 The Nuclear Option (Overriding Everything)
+If you encounter a theme that is extremely aggressive, or if you want to force colors that the UI settings won't allow, you can use a **"Specificity Hack"**. This selector is designed to "win" against almost any other rule.
+
+```css
+/* Forces colors even over Luminous Selection */
+body:not(.is-grabbing) .nav-files-container .nav-file-title.is-active:not(.nn-file), 
+body:not(.is-grabbing) .nav-files-container .tree-item-self.is-active:not(.nn-file) {
+    background-color: white !important;
+    color: silver !important;
+    
+    /* Optional: Disable plugin effects */
+    backdrop-filter: none !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    border: 1px solid silver !important;
+}
+```
+
 ### Radiant Paths (Connecting Lines)
 The connecting lines are rendered as borders on the folder's children container.
 
