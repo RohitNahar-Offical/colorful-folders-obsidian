@@ -374,7 +374,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .setName('Folder exclusion list')
             .setDesc('Comma-separated list of folder names to ignore. Note: folder names are case-insensitive.')
             .addText(text => text
-                .setPlaceholder('Templates, attachments, .git')
+                .setPlaceholder('e.g. templates')
                 .setValue(this.plugin.settings.exclusionList || "")
                 .onChange(async (value) => {
                     this.plugin.settings.exclusionList = value;
@@ -462,7 +462,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         const activeCard = makeCard(generalPanel, "✨", "Active item appearance");
         new obsidian.Setting(activeCard)
             .setName('Use custom active file colors')
-            .setDesc('Enable this to override the default "Luminous Selection" colors with your own.')
+            .setDesc('Enable this to override the default luminous selection colors with your own.')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.useCustomActiveColor)
                 .onChange(async (value) => {
@@ -497,7 +497,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                             this.plugin.settings.customActiveBg = rgba;
                             bgTextComp.setValue(rgba);
                             bgColorBox.setCssStyles({ backgroundColor: rgba });
-                            this.plugin.saveSettings().then(() => this.plugin.generateStyles());
+                            void this.plugin.saveSettings().then(() => this.plugin.generateStyles());
                         }, { showAlpha: true, initialAlpha: current.alpha });
                     }))
                 .addText(text => {
@@ -541,7 +541,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                             this.plugin.settings.customActiveText = rgba;
                             textColorTextComp.setValue(rgba);
                             textColorBox.setCssStyles({ backgroundColor: rgba });
-                            this.plugin.saveSettings().then(() => this.plugin.generateStyles());
+                            void this.plugin.saveSettings().then(() => this.plugin.generateStyles());
                         }, { showAlpha: true, initialAlpha: current.alpha });
                     }))
                 .addText(text => {
