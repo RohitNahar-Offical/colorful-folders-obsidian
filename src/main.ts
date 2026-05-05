@@ -109,9 +109,9 @@ export default class ColorfulFoldersPlugin extends obsidian.Plugin implements IC
 
     initializeStyles() {
         // eslint-disable-next-line obsidianmd/no-forbidden-elements
-        this.styleTag = activeDocument.createEl('style');
-        this.styleTag.id = 'colorful-folders-styles';
-        activeDocument.head.appendChild(this.styleTag);
+        this.styleTag = activeDocument.head.createEl('style', {
+            attr: { id: 'colorful-folders-styles' }
+        });
     }
 
     onunload() {
