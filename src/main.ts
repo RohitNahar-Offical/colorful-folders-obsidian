@@ -18,7 +18,7 @@ import { DividerModal } from "./ui/modals/DividerModal";
 import { ColorfulFoldersSettingTab } from "./ui/SettingTab";
 import { PasswordModal } from "./ui/modals/PasswordModal";
 import { ChangelogModal } from "./ui/modals/ChangelogModal";
-import { StyleGenerator } from "./core/StyleGenerator";
+
 import { DividerManager } from "./core/DividerManager";
 import { NotebookNavigatorIntegration } from "./integrations/NotebookNavigator";
 
@@ -31,7 +31,8 @@ export default class ColorfulFoldersPlugin
 {
   settings: ColorfulFoldersSettings;
   iconManager: IconManager;
-  styleTag: HTMLStyleElement;
+
+
 
   iconCache: Map<string, string> = new Map();
   heatmapCache: Map<string, number> | null = null;
@@ -80,7 +81,7 @@ export default class ColorfulFoldersPlugin
 
     // UI styles moved to styles.css to comply with obsidianmd/no-forbidden-elements
 
-    this.initializeStyles();
+
 
     this.registerCustomIcons();
     this.registerEvents();
@@ -122,15 +123,8 @@ export default class ColorfulFoldersPlugin
     });
   }
 
-  initializeStyles() {
-    // eslint-disable-next-line obsidianmd/no-forbidden-elements
-    this.styleTag = activeDocument.head.createEl("style", {
-      attr: { id: "colorful-folders-styles" },
-    });
-  }
 
   onunload() {
-    if (this.styleTag) this.styleTag.remove();
     if (this.dividerObserver) this.dividerObserver.disconnect();
     if (this.styleObserver) this.styleObserver.disconnect();
 
@@ -651,14 +645,84 @@ export default class ColorfulFoldersPlugin
   }
 
   generateStyles() {
-    if (this.styleTag) {
-      this.styleTag.textContent = new StyleGenerator(this).generateCss();
-      activeDocument.body.classList.toggle(
-        "cf-show-hidden",
-        this.settings.showHiddenItems,
+    const containers: Element[] = [];
+    this.app.workspace.iterateAllLeaves((leaf) => {
+      const view = leaf.view as any;
+      if (
+        view.getViewType() === "file-explorer" ||
+        view.getViewType() === "nav-files"
+      ) {
+        if (view.containerEl) {
+          const content = view.containerEl.querySelector(".nav-files-container");
+          if (content) containers.push(content);
+        }
+      }
+    });
+
+    containers.forEach((container) => {
+      const items = container.querySelectorAll(
+        ".nav-folder-title, .nav-file-title, .tree-item-self",
       );
-      this.refreshIcons();
-    }
+      items.forEach((item) => {
+        const el = item as HTMLElement;
+        const path = el.dataset.path;
+        if (!path) return;
+
+        const file = this.app.vault.getAbstractFileByPath(path);
+        if (!file) return;
+
+        const eff = this.getEffectiveStyle(file);
+
+        // Apply CSS Variables
+        const rgb = this.hexToRgb(eff.hex);
+        el.style.setProperty("--cf-rgb", rgb);
+        el.style.setProperty("--cf-bg", `rgba(${rgb}, ${eff.opacity})`);
+        el.style.setProperty("--cf-color", eff.textColor);
+        el.style.setProperty(
+          "--cf-font-weight",
+          eff.isBold ? "bold" : "normal",
+        );
+        el.style.setProperty(
+          "--cf-font-style",
+          eff.isItalic ? "italic" : "normal",
+        );
+
+        if (eff.hex) {
+          el.style.setProperty("--cf-border-left", `2px solid ${eff.hex}`);
+          // If it has a divider, we might want to color the bottom too
+          if (eff.applyToSubfolders) {
+             el.style.setProperty("--cf-border-bottom", `1px solid rgba(${rgb}, 0.2)`);
+          }
+        }
+
+        // Active state overrides
+        const activeBg =
+          this.settings.useCustomActiveColor && this.settings.customActiveBg
+            ? this.settings.customActiveBg
+            : `rgba(${rgb}, ${this.settings.glassmorphism ? 0.14 : 0.12})`;
+        const activeText =
+          this.settings.useCustomActiveColor && this.settings.customActiveText
+            ? this.settings.customActiveText
+            : eff.textColor;
+
+        el.style.setProperty("--cf-active-bg", activeBg);
+        el.style.setProperty("--cf-active-text", activeText);
+      });
+    });
+
+    activeDocument.body.classList.toggle(
+      "cf-show-hidden",
+      this.settings.showHiddenItems,
+    );
+    this.refreshIcons();
+  }
+
+  private hexToRgb(hex: string): string {
+    if (!hex || !hex.startsWith("#")) return "255, 255, 255";
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `${r}, ${g}, ${b}`;
   }
 
   refreshIcons() {

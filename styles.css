@@ -288,6 +288,30 @@
     display: flex !important;
     align-items: center !important;
     overflow: visible !important;
+    
+    /* Variable Injection Support */
+    background-color: var(--cf-bg, transparent) !important;
+    color: var(--cf-color, inherit) !important;
+    font-weight: var(--cf-font-weight, normal) !important;
+    font-style: var(--cf-font-style, normal) !important;
+    border-left: var(--cf-border-left, none) !important;
+    border-bottom: var(--cf-border-bottom, none) !important;
+    border-radius: var(--cf-radius, 4px) !important;
+}
+
+[data-path] .nav-file-tag,
+[data-path] .nav-folder-tag,
+[data-path] .tree-item-flair {
+    background-color: var(--cf-tag-bg, rgba(var(--cf-rgb, 255, 255, 255), 0.15)) !important;
+    color: var(--cf-color, inherit) !important;
+}
+
+/* Active Glow (Variable Overrides) */
+.nav-folder-title.is-active,
+.nav-file-title.is-active,
+.tree-item-self.is-active {
+    background-color: var(--cf-active-bg, rgba(var(--cf-rgb), 0.12)) !important;
+    color: var(--cf-active-text, var(--cf-color)) !important;
 }
 
 /* Global: nav item counter / tag badges are flex items so margin-left: auto works */
