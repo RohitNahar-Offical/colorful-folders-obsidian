@@ -125,7 +125,7 @@ export class IconManager {
     /**
      * Scans the visible DOM and injects icons where needed.
      */
-    refreshIcons(styleData: Map<string, any>) {
+    refreshIcons() {
         const containers: Element[] = [];
         this.plugin.app.workspace.getLeavesOfType('file-explorer').forEach(leaf => {
             containers.push(leaf.view.containerEl);
@@ -139,9 +139,9 @@ export class IconManager {
                 const path = (item as HTMLElement).dataset.path;
                 if (!path) return;
 
-                const data = styleData.get(path);
-                if (data && data.iconId) {
-                    this.injectIcon(item as HTMLElement, data);
+                const style = this.plugin.getStyle(path);
+                if (style && style.iconId) {
+                    this.injectIcon(item as HTMLElement, style);
                 } else {
                     this.removeInjectedIcon(item as HTMLElement);
                 }

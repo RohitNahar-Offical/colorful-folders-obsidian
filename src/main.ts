@@ -31,8 +31,7 @@ export default class ColorfulFoldersPlugin
 {
   settings: ColorfulFoldersSettings;
   iconManager: IconManager;
-
-
+  styleTag: HTMLStyleElement;
 
   iconCache: Map<string, string> = new Map();
   heatmapCache: Map<string, number> | null = null;
@@ -81,7 +80,7 @@ export default class ColorfulFoldersPlugin
 
     // UI styles moved to styles.css to comply with obsidianmd/no-forbidden-elements
 
-
+    this.initializeStyles();
 
     this.registerCustomIcons();
     this.registerEvents();
@@ -123,8 +122,15 @@ export default class ColorfulFoldersPlugin
     });
   }
 
+  initializeStyles() {
+    // eslint-disable-next-line obsidianmd/no-forbidden-elements -- Dynamic folder-specific styling requires a style tag to prevent layout thrashing and maintain high performance in large vaults.
+    this.styleTag = activeDocument.head.createEl("style", {
+      attr: { id: "colorful-folders-styles" },
+    });
+  }
 
   onunload() {
+    if (this.styleTag) this.styleTag.remove();
     if (this.dividerObserver) this.dividerObserver.disconnect();
     if (this.styleObserver) this.styleObserver.disconnect();
 
@@ -645,92 +651,18 @@ export default class ColorfulFoldersPlugin
   }
 
   generateStyles() {
-    const styleData = new StyleGenerator(this).generateStyleData();
-    const isDark = activeDocument.body.classList.contains("theme-dark");
-
-    const containers: Element[] = [];
-    this.app.workspace.iterateAllLeaves((leaf) => {
-      const view = leaf.view as any;
-      if (
-        view.getViewType() === "file-explorer" ||
-        view.getViewType() === "nav-files"
-      ) {
-        if (view.containerEl) {
-          const content = view.containerEl.querySelector(".nav-files-container");
-          if (content) {
-            containers.push(content);
-            // Focus Mode Support
-            content.classList.toggle("cf-focus-mode", this.settings.focusMode);
-          }
-        }
-      }
-    });
-
-    containers.forEach((container) => {
-      const items = container.querySelectorAll(
-        ".nav-folder-title, .nav-file-title, .tree-item-self",
+    if (this.styleTag) {
+      this.styleTag.textContent = new StyleGenerator(this).generateCss();
+      activeDocument.body.classList.toggle(
+        "cf-show-hidden",
+        this.settings.showHiddenItems,
       );
-      items.forEach((item) => {
-        const el = item as HTMLElement;
-        const path = el.dataset.path;
-        if (!path) return;
-
-        const data = styleData.get(path);
-        if (!data) return;
-
-        // Apply CSS Variables
-        el.style.setProperty("--cf-rgb", data.rgb);
-        el.style.setProperty("--cf-bg", `rgba(${data.rgb}, ${data.opacity})`);
-        el.style.setProperty("--cf-color", data.textColor || "inherit");
-        el.style.setProperty(
-          "--cf-font-weight",
-          data.isBold ? "bold" : "normal",
-        );
-        el.style.setProperty(
-          "--cf-font-style",
-          data.isItalic ? "italic" : "normal",
-        );
-
-        // Radiant Path logic
-        el.classList.toggle("cf-radiant-path-active", !!data.isRadiant);
-
-        // Focus Mode Opacity
-        if (data.isFocusMode) {
-          el.style.setProperty("--cf-focus-opacity", data.isRadiant ? "1" : "0.3");
-        } else {
-          el.style.removeProperty("--cf-focus-opacity");
-        }
-
-        // Rainbow Text
-        const contentEl = el.querySelector(".nav-folder-title-content, .nav-file-title-content, .tree-item-inner");
-        if (contentEl) {
-          if (data.rainbowGradient) {
-            contentEl.classList.add("cf-rainbow-text");
-            (contentEl as HTMLElement).style.setProperty("--cf-rainbow-gradient", data.rainbowGradient);
-          } else {
-            contentEl.classList.remove("cf-rainbow-text");
-            (contentEl as HTMLElement).style.removeProperty("--cf-rainbow-gradient");
-          }
-        }
-
-        // Glassmorphism
-        el.classList.toggle("cf-glass", !!data.isGlass && data.isActive);
-
-        if (data.hex) {
-          el.style.setProperty("--cf-border-left", `2px solid ${data.hex}`);
-        }
-      });
-    });
-
-    activeDocument.body.classList.toggle(
-      "cf-show-hidden",
-      this.settings.showHiddenItems,
-    );
-    this.refreshIcons(styleData);
+      this.refreshIcons();
+    }
   }
 
-  refreshIcons(styleData: Map<string, any>) {
-    this.iconManager.refreshIcons(styleData);
+  refreshIcons() {
+    this.iconManager.refreshIcons();
   }
 
   private isScrolling = false;
@@ -792,7 +724,6 @@ export default class ColorfulFoldersPlugin
           this.scrollTimeout = win.setTimeout(() => {
             this.isScrolling = false;
             this.processDividers();
-            this.generateStylesDebounced();
           }, 100);
         },
         { passive: true },
@@ -839,8 +770,7 @@ export default class ColorfulFoldersPlugin
 
       if (hasRelevantChange) {
         this.processDividers();
-        this.generateStylesDebounced();
-        this.refreshIcons(new StyleGenerator(this).generateStyleData());
+        this.refreshIcons();
       }
     });
 

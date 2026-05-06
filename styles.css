@@ -288,79 +288,9 @@
     display: flex !important;
     align-items: center !important;
     overflow: visible !important;
-    
-    /* Variable Injection Support */
-    background-color: var(--cf-bg, transparent) !important;
-    color: var(--cf-color, inherit) !important;
-    font-weight: var(--cf-font-weight, normal) !important;
-    font-style: var(--cf-font-style, normal) !important;
-    border-left: var(--cf-border-left, none) !important;
-    border-bottom: var(--cf-border-bottom, none) !important;
-    border-radius: var(--cf-radius, 4px) !important;
 }
 
-[data-path] .nav-file-tag,
-[data-path] .nav-folder-tag,
-[data-path] .tree-item-flair {
-    background-color: var(--cf-tag-bg, rgba(var(--cf-rgb, 255, 255, 255), 0.15)) !important;
-    color: var(--cf-color, inherit) !important;
-}
-
-/* ── ADVANCED UI FEATURES (Focus Mode, Radiant Paths, Rainbow) ─────── */
-
-/* Focus Mode Dimming */
-.cf-focus-mode .nav-folder-title,
-.cf-focus-mode .nav-file-title,
-.cf-focus-mode .tree-item-self {
-    opacity: var(--cf-focus-opacity, 1) !important;
-    transition: opacity 0.3s ease !important;
-}
-
-/* Radiant Path (Glow following active file) */
-.cf-radiant-path-active ~ .nav-folder-children,
-.cf-radiant-path-active ~ .tree-item-children {
-    border-left: 2.5px solid rgba(var(--cf-rgb), 0.85) !important;
-    border-bottom: 2.5px solid rgba(var(--cf-rgb), 0.9) !important;
-    border-bottom-left-radius: 10px !important;
-    transition: border-color 0.4s ease !important;
-}
-
-/* Rainbow Root Text */
-.cf-rainbow-text {
-    background-image: var(--cf-rainbow-gradient) !important;
-    background-clip: text !important;
-    -webkit-background-clip: text !important;
-    color: transparent !important;
-    font-weight: 800 !important;
-}
-
-/* Glassmorphism Foundations */
-.cf-glass {
-    backdrop-filter: blur(12px) saturate(160%) !important;
-    -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 4px 12px rgba(0,0,0,0.2), inset 0 0 0.5px rgba(var(--cf-rgb), 0.6) !important;
-}
-
-/* Global: nav item counter / tag badges are flex items so margin-left: auto works *//* ── NOTEBOOK NAVIGATOR INTEGRATION ─────── */
-.nn-file, .nn-navitem {
-    background-color: var(--cf-bg) !important;
-    color: var(--cf-color) !important;
-    border-left: var(--cf-border-left) !important;
-}
-
-.nn-file .nn-file-name, 
-.nn-navitem .nn-navitem-name {
-    color: var(--cf-color) !important;
-    font-weight: var(--cf-font-weight) !important;
-    font-style: var(--cf-font-style) !important;
-}
-
-/* Glassmorphism for NN active state */
-.nn-active {
-    backdrop-filter: blur(12px) saturate(160%) !important;
-    -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 4px 12px rgba(0,0,0,0.2) !important;
-}
+/* Global: nav item counter / tag badges are flex items so margin-left: auto works */
 .nav-folder-title-content .nav-folder-tag,
 .nav-folder-title-content .nav-folder-note-count,
 .nav-file-title-content .nav-file-tag,

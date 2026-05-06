@@ -121,13 +121,13 @@ export interface IColorfulFoldersPlugin {
     folderCountCache: Map<string, { files: number, folders: number }> | null;
     iconCache: Map<string, string>;
     iconManager: { 
-        refreshIcons(styleData: Map<string, any>): void,
+        refreshIcons(): void,
         getIconSvg(iconId: string, shouldEncode?: boolean): string,
         getAutoIconData(name: string): AutoIconData | null,
         normalizeSvg(svgStr: string, shouldEncode?: boolean): string,
         invalidateCategoryCache(): void
     };
-
+    styleTag: HTMLStyleElement;
     isSyncingDividers: boolean;
     processDividersDebounced: Debouncer<[], void>;
     saveSettings(): Promise<void>;
@@ -142,7 +142,7 @@ export interface IColorfulFoldersPlugin {
     getStyle(path: string): FolderStyle | null;
     getEffectiveStyle(target: TAbstractFile): EffectiveStyle;
     generateStyles(): void;
-    refreshIcons(styleData: Map<string, any>): void;
+    refreshIcons(): void;
     initDividerObserver(): void;
     processDividers(): void;
     registerEvent(event: EventRef): void;
