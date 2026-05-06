@@ -18,7 +18,7 @@ import { DividerModal } from "./ui/modals/DividerModal";
 import { ColorfulFoldersSettingTab } from "./ui/SettingTab";
 import { PasswordModal } from "./ui/modals/PasswordModal";
 import { ChangelogModal } from "./ui/modals/ChangelogModal";
-
+import { StyleGenerator } from "./core/StyleGenerator";
 import { DividerManager } from "./core/DividerManager";
 import { NotebookNavigatorIntegration } from "./integrations/NotebookNavigator";
 
@@ -645,6 +645,9 @@ export default class ColorfulFoldersPlugin
   }
 
   generateStyles() {
+    const styleData = new StyleGenerator(this).generateStyleData();
+    const isDark = activeDocument.body.classList.contains("theme-dark");
+
     const containers: Element[] = [];
     this.app.workspace.iterateAllLeaves((leaf) => {
       const view = leaf.view as any;
@@ -654,7 +657,11 @@ export default class ColorfulFoldersPlugin
       ) {
         if (view.containerEl) {
           const content = view.containerEl.querySelector(".nav-files-container");
-          if (content) containers.push(content);
+          if (content) {
+            containers.push(content);
+            // Focus Mode Support
+            content.classList.toggle("cf-focus-mode", this.settings.focusMode);
+          }
         }
       }
     });
@@ -668,45 +675,50 @@ export default class ColorfulFoldersPlugin
         const path = el.dataset.path;
         if (!path) return;
 
-        const file = this.app.vault.getAbstractFileByPath(path);
-        if (!file) return;
-
-        const eff = this.getEffectiveStyle(file);
+        const data = styleData.get(path);
+        if (!data) return;
 
         // Apply CSS Variables
-        const rgb = this.hexToRgb(eff.hex);
-        el.style.setProperty("--cf-rgb", rgb);
-        el.style.setProperty("--cf-bg", `rgba(${rgb}, ${eff.opacity})`);
-        el.style.setProperty("--cf-color", eff.textColor);
+        el.style.setProperty("--cf-rgb", data.rgb);
+        el.style.setProperty("--cf-bg", `rgba(${data.rgb}, ${data.opacity})`);
+        el.style.setProperty("--cf-color", data.textColor || "inherit");
         el.style.setProperty(
           "--cf-font-weight",
-          eff.isBold ? "bold" : "normal",
+          data.isBold ? "bold" : "normal",
         );
         el.style.setProperty(
           "--cf-font-style",
-          eff.isItalic ? "italic" : "normal",
+          data.isItalic ? "italic" : "normal",
         );
 
-        if (eff.hex) {
-          el.style.setProperty("--cf-border-left", `2px solid ${eff.hex}`);
-          // If it has a divider, we might want to color the bottom too
-          if (eff.applyToSubfolders) {
-             el.style.setProperty("--cf-border-bottom", `1px solid rgba(${rgb}, 0.2)`);
+        // Radiant Path logic
+        el.classList.toggle("cf-radiant-path-active", !!data.isRadiant);
+
+        // Focus Mode Opacity
+        if (data.isFocusMode) {
+          el.style.setProperty("--cf-focus-opacity", data.isRadiant ? "1" : "0.3");
+        } else {
+          el.style.removeProperty("--cf-focus-opacity");
+        }
+
+        // Rainbow Text
+        const contentEl = el.querySelector(".nav-folder-title-content, .nav-file-title-content, .tree-item-inner");
+        if (contentEl) {
+          if (data.rainbowGradient) {
+            contentEl.classList.add("cf-rainbow-text");
+            (contentEl as HTMLElement).style.setProperty("--cf-rainbow-gradient", data.rainbowGradient);
+          } else {
+            contentEl.classList.remove("cf-rainbow-text");
+            (contentEl as HTMLElement).style.removeProperty("--cf-rainbow-gradient");
           }
         }
 
-        // Active state overrides
-        const activeBg =
-          this.settings.useCustomActiveColor && this.settings.customActiveBg
-            ? this.settings.customActiveBg
-            : `rgba(${rgb}, ${this.settings.glassmorphism ? 0.14 : 0.12})`;
-        const activeText =
-          this.settings.useCustomActiveColor && this.settings.customActiveText
-            ? this.settings.customActiveText
-            : eff.textColor;
+        // Glassmorphism
+        el.classList.toggle("cf-glass", !!data.isGlass && data.isActive);
 
-        el.style.setProperty("--cf-active-bg", activeBg);
-        el.style.setProperty("--cf-active-text", activeText);
+        if (data.hex) {
+          el.style.setProperty("--cf-border-left", `2px solid ${data.hex}`);
+        }
       });
     });
 
@@ -714,19 +726,11 @@ export default class ColorfulFoldersPlugin
       "cf-show-hidden",
       this.settings.showHiddenItems,
     );
-    this.refreshIcons();
+    this.refreshIcons(styleData);
   }
 
-  private hexToRgb(hex: string): string {
-    if (!hex || !hex.startsWith("#")) return "255, 255, 255";
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return `${r}, ${g}, ${b}`;
-  }
-
-  refreshIcons() {
-    this.iconManager.refreshIcons();
+  refreshIcons(styleData: Map<string, any>) {
+    this.iconManager.refreshIcons(styleData);
   }
 
   private isScrolling = false;
@@ -836,7 +840,7 @@ export default class ColorfulFoldersPlugin
       if (hasRelevantChange) {
         this.processDividers();
         this.generateStylesDebounced();
-        this.refreshIcons();
+        this.refreshIcons(new StyleGenerator(this).generateStyleData());
       }
     });
 
