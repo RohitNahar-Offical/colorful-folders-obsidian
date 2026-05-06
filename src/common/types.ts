@@ -127,7 +127,7 @@ export interface IColorfulFoldersPlugin {
         normalizeSvg(svgStr: string, shouldEncode?: boolean): string,
         invalidateCategoryCache(): void
     };
-    styleTag: HTMLStyleElement;
+    sheet: CSSStyleSheet;
     isSyncingDividers: boolean;
     processDividersDebounced: Debouncer<[], void>;
     saveSettings(): Promise<void>;
