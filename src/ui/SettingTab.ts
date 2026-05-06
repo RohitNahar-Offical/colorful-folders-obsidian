@@ -374,7 +374,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .setName('Folder exclusion list')
             .setDesc('Comma-separated list of folder names to ignore. Note: folder names are case-insensitive.')
             .addText(text => text
-                .setPlaceholder('E.g. Templates')
+                .setPlaceholder('Example templates')
                 .setValue(this.plugin.settings.exclusionList || "")
                 .onChange(async (value) => {
                     this.plugin.settings.exclusionList = value;
