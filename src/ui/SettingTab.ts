@@ -374,7 +374,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .setName('Folder exclusion list')
             .setDesc('Comma-separated list of folder names to ignore. Note: folder names are case-insensitive.')
             .addText(text => text
-                .setPlaceholder('E.g. Templates')
+                .setPlaceholder('e.g. templates')
                 .setValue(this.plugin.settings.exclusionList || "")
                 .onChange(async (value) => {
                     this.plugin.settings.exclusionList = value;
@@ -735,7 +735,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         const updatePreview = () => {
             dividerContainer.empty();
             const previewEl = this.plugin.dividerManager.buildDividerNode('preview-path', {
-            dividerText: 'Preview section',
+                dividerText: 'Preview section',
                 dividerColor: 'var(--interactive-accent)',
                 hasDivider: true
             }, activeDocument);
