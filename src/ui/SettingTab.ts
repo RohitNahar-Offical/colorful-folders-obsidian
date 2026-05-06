@@ -1127,6 +1127,118 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     this.display();
                 }));
 
+        const triggerDownload = (data: any, filename: string) => {
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        };
+
+        new obsidian.Setting(dbCard)
+            .setName('Backup folder styles')
+            .setDesc('Download a backup of your colorful folder and file styles (excludes dividers).')
+            .addButton(btn => btn
+                .setButtonText('Backup folders')
+                .onClick(() => {
+                    const folderData: Record<string, any> = {};
+                    for (const [key, value] of Object.entries(this.plugin.settings.customFolderColors)) {
+                        if (typeof value === 'string') {
+                            folderData[key] = value;
+                        } else {
+                            const { hasDivider, dividerText, dividerColor, dividerAlignment, dividerLineStyle, dividerIcon, dividerIconColor, dividerUpper, dividerGlass, dividerIconPosition, dividerPillMode, dividerDescription, dividerPillColor, dividerLinePaddingLeft, dividerLinePaddingRight, ...folderProps } = value as any;
+                            if (Object.keys(folderProps).length > 0) folderData[key] = folderProps;
+                        }
+                    }
+                    triggerDownload({ type: "cf-folder-backup", version: "1.0", data: folderData, presets: this.plugin.settings.presets }, "colorful-folders-backup.json");
+                }));
+
+        new obsidian.Setting(dbCard)
+            .setName('Backup dividers')
+            .setDesc('Download a backup of your section dividers only.')
+            .addButton(btn => btn
+                .setButtonText('Backup dividers')
+                .onClick(() => {
+                    const dividerData: Record<string, any> = {};
+                    for (const [key, value] of Object.entries(this.plugin.settings.customFolderColors)) {
+                        if (typeof value === 'object' && (value as any).hasDivider) {
+                            const { hasDivider, dividerText, dividerColor, dividerAlignment, dividerLineStyle, dividerIcon, dividerIconColor, dividerUpper, dividerGlass, dividerIconPosition, dividerPillMode, dividerDescription, dividerPillColor, dividerLinePaddingLeft, dividerLinePaddingRight } = value as any;
+                            dividerData[key] = { hasDivider, dividerText, dividerColor, dividerAlignment, dividerLineStyle, dividerIcon, dividerIconColor, dividerUpper, dividerGlass, dividerIconPosition, dividerPillMode, dividerDescription, dividerPillColor, dividerLinePaddingLeft, dividerLinePaddingRight };
+                        }
+                    }
+                    triggerDownload({ type: "cf-divider-backup", version: "1.0", data: dividerData }, "colorful-dividers-backup.json");
+                }));
+
+        new obsidian.Setting(dbCard)
+            .setName('Restore from backup')
+            .setDesc('Restore folder styles or dividers from a previous backup file. This will merge with your current settings.')
+            .addButton(btn => btn
+                .setButtonText('Restore')
+                .onClick(() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = '.json';
+                    input.onchange = async (e: Event) => {
+                        const target = e.target as HTMLInputElement;
+                        if (!target.files || target.files.length === 0) return;
+                        const file = target.files[0];
+                        const reader = new FileReader();
+                        reader.onload = async (e) => {
+                            try {
+                                const parsed = JSON.parse(e.target?.result as string);
+                                if (parsed.type === "cf-folder-backup") {
+                                    if (parsed.data) {
+                                        for (const [key, val] of Object.entries(parsed.data)) {
+                                            if (typeof val === 'string') {
+                                                this.plugin.settings.customFolderColors[key] = val;
+                                            } else if (typeof val === 'object') {
+                                                const existing = this.plugin.settings.customFolderColors[key];
+                                                if (typeof existing === 'object') {
+                                                    this.plugin.settings.customFolderColors[key] = { ...existing, ...(val as any) };
+                                                } else {
+                                                    this.plugin.settings.customFolderColors[key] = val as any;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (parsed.presets) {
+                                        this.plugin.settings.presets = { ...this.plugin.settings.presets, ...parsed.presets };
+                                    }
+                                    new obsidian.Notice("Folder styles backup restored successfully!");
+                                } else if (parsed.type === "cf-divider-backup") {
+                                    if (parsed.data) {
+                                        for (const [key, val] of Object.entries(parsed.data)) {
+                                            if (typeof val === 'object') {
+                                                const existing = this.plugin.settings.customFolderColors[key];
+                                                if (typeof existing === 'object') {
+                                                    this.plugin.settings.customFolderColors[key] = { ...existing, ...(val as any) };
+                                                } else {
+                                                    this.plugin.settings.customFolderColors[key] = val as any;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    new obsidian.Notice("Dividers backup restored successfully!");
+                                } else {
+                                    new obsidian.Notice("Invalid backup file format.");
+                                    return;
+                                }
+                                await this.plugin.saveSettings();
+                                this.plugin.generateStyles();
+                                this.plugin.dividerManager.syncDividers();
+                                this.display();
+                            } catch (err) {
+                                console.error(err);
+                                new obsidian.Notice("Failed to parse backup file.");
+                            }
+                        };
+                        reader.readAsText(file);
+                    };
+                    input.click();
+                }));
+
         new obsidian.Setting(dbCard)
             .setName('Reset styles and presets')
             .setDesc('Danger: this will permanently remove all custom colors, icons, and individual folder styles. Presets are also cleared.')
