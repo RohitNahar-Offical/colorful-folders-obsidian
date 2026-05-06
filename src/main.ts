@@ -31,7 +31,7 @@ export default class ColorfulFoldersPlugin
 {
   settings: ColorfulFoldersSettings;
   iconManager: IconManager;
-  styleTag: HTMLStyleElement;
+  sheet: CSSStyleSheet;
 
   iconCache: Map<string, string> = new Map();
   heatmapCache: Map<string, number> | null = null;
@@ -123,14 +123,18 @@ export default class ColorfulFoldersPlugin
   }
 
   initializeStyles() {
-    // eslint-disable-next-line obsidianmd/no-forbidden-elements -- Dynamic folder-specific styling requires a style tag to prevent layout thrashing and maintain high performance in large vaults.
-    this.styleTag = activeDocument.head.createEl("style", {
-      attr: { id: "colorful-folders-styles" },
-    });
+    this.sheet = new CSSStyleSheet();
+    activeDocument.adoptedStyleSheets = [
+      ...activeDocument.adoptedStyleSheets,
+      this.sheet,
+    ];
   }
 
   onunload() {
-    if (this.styleTag) this.styleTag.remove();
+    if (this.sheet) {
+      activeDocument.adoptedStyleSheets =
+        activeDocument.adoptedStyleSheets.filter((s) => s !== this.sheet);
+    }
     if (this.dividerObserver) this.dividerObserver.disconnect();
     if (this.styleObserver) this.styleObserver.disconnect();
 
@@ -651,14 +655,14 @@ export default class ColorfulFoldersPlugin
   }
 
   generateStyles() {
-    if (this.styleTag) {
-      this.styleTag.textContent = new StyleGenerator(this).generateCss();
-      activeDocument.body.classList.toggle(
-        "cf-show-hidden",
-        this.settings.showHiddenItems,
-      );
-      this.refreshIcons();
+    if (this.sheet) {
+      this.sheet.replaceSync(new StyleGenerator(this).generateCss());
     }
+    activeDocument.body.classList.toggle(
+      "cf-show-hidden",
+      this.settings.showHiddenItems,
+    );
+    this.refreshIcons();
   }
 
   refreshIcons() {

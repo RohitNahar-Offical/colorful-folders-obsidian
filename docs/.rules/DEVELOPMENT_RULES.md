@@ -8,16 +8,16 @@
 ## 🏗️ RULE 1 — ARCHITECTURE: NEVER BREAK THE STYLING ENGINE
 
 ### The Core Engine (DO NOT REPLACE)
-The plugin uses a **CSS string generation engine** via a `<style>` tag. This is intentional.
+The plugin uses a **CSSStyleSheet (Constructable Stylesheets)** API to inject generated CSS. This is the modern, linter-compliant replacement for a `<style>` tag.
 
 - **File**: `src/core/StyleGenerator.ts`
 - **Key method**: `generateCss(): string`
-- **Injected by**: `initializeStyles()` in `src/main.ts`
-- **Applied by**: `generateStyles()` in `src/main.ts`
+- **Injected by**: `initializeStyles()` in `src/main.ts` via `new CSSStyleSheet()` + `adoptedStyleSheets`
+- **Applied by**: `generateStyles()` → `this.sheet.replaceSync(css)` in `src/main.ts`
 
 ### ❌ NEVER DO THIS:
 - Do NOT replace `generateCss()` with a "CSS variable" system that applies styles directly to DOM elements.
-- Do NOT remove the `<style>` tag injection in `main.ts`.
+- Do NOT remove the `sheet.replaceSync()` call in `main.ts`.
 - Do NOT try to use `MutationObserver` to replace the style engine.
 - Do NOT change the traversal logic inside `StyleGenerator.ts` unless you are 100% sure it won't break existing colors.
 
@@ -57,15 +57,11 @@ The following features MUST work at all times. Test each one before pushing:
 
 ### Known Linter Issues & How To Handle Them
 
-#### Issue 1: `obsidianmd/no-forbidden-elements` (the `<style>` tag)
-- **Status**: The `<style>` tag is required and cannot be removed without breaking the plugin.
-- **Current Fix**: An `eslint-disable-next-line` with a **description** is required.
-- **Correct Format**:
-  ```ts
-  // eslint-disable-next-line obsidianmd/no-forbidden-elements -- Dynamic folder-specific styling requires a style tag to prevent layout thrashing and maintain high performance in large vaults.
-  this.styleTag = activeDocument.head.createEl("style", { ... });
-  ```
-- ❌ NEVER use a bare `eslint-disable` without a description — the scanner will reject it.
+#### Issue 1: `obsidianmd/no-forbidden-elements` (RESOLVED ✅)
+- **Status**: The `<style>` tag has been replaced with the native `CSSStyleSheet` API.
+- **Current Fix**: `initializeStyles()` now uses `new CSSStyleSheet()` + `document.adoptedStyleSheets`.
+- **No `eslint-disable` needed**: The new approach does not trigger this linter rule at all.
+- ❌ NEVER reintroduce `createEl("style")` — this will re-trigger the store rejection.
 
 #### Issue 2: UI Text Must Be Sentence Case
 - All `.setName()` and `.setDesc()` text in `src/ui/SettingTab.ts` must use **sentence case**.
