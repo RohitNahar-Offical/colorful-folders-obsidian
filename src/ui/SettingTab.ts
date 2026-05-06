@@ -24,7 +24,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         // Hero Section
         const hero = rootEl.createDiv('cf-hero');
-        const heroTitle = hero.createEl('h1', { text: 'Colorful folders' });
+        const heroTitle = hero.createEl("h1", { text: "Colorful folders" });
         const heroSubtitle = hero.createEl('p', { text: 'Configuration' });
 
         // Tab Bar
@@ -127,7 +127,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         const iconDesc = customIconCard.createEl("p", { text: "Add individual SVG icons or import bulk packs from the internet. All custom icons added here will appear in the icon selection grid when styling a folder or file." });
         iconDesc.setCssStyles({ fontSize: "0.85em", color: "var(--text-muted)", marginBottom: "20px", lineHeight: "1.4" });
 
-        const tip = customIconCard.createEl("div", { text: "Pro tip: custom ids should be unique. Avoid starting them with 'lucide-' unless you intend to override a built-in Obsidian icon." });
+        const tip = customIconCard.createDiv({ text: "Pro tip: custom ids should be unique. Avoid starting them with 'lucide-' unless you intend to override a built-in Obsidian icon." });
         tip.setCssStyles({ fontSize: "0.8em", color: "var(--text-accent)", marginBottom: "15px", fontStyle: "italic" });
 
         const manualWrap = customIconCard.createDiv();
@@ -136,7 +136,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             border: "1px solid var(--background-modifier-border)", marginBottom: "20px"
         });
 
-        const manualTitle = manualWrap.createEl("div", { text: "Add single icon" });
+        const manualTitle = manualWrap.createDiv({ text: "Add single icon" });
         manualTitle.setCssStyles({ fontWeight: "700", marginBottom: "10px", fontSize: "0.9em" });
         const manualRow = manualWrap.createDiv();
         manualRow.setCssStyles({ display: "flex", gap: "8px", flexWrap: "wrap" });
@@ -186,7 +186,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             { name: "🐙 Octicons", desc: "GitHub's native icon library.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/octicon.json", prefix: "octicon" },
             { name: "🎮 RPG awesome", desc: "Fantasy icons for RPG notes.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/ra.json", prefix: "ra" },
             { name: "⚡ Simple icons", desc: "Brand icons for popular services.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/simple-icons.json", prefix: "simple-icons" },
-            { name: "🔥 Ultimate collection", desc: "Curated community starter pack.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/master/icons/community-core.json", prefix: "cf" }
+            { name: "🔥 Ultimate collection", desc: "Curated community starter pack.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/main/icons/community-core.json", prefix: "cf" }
         ];
 
         packs.forEach(p => {
@@ -199,9 +199,9 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             const content = row.createDiv();
             content.setCssStyles({ flex: "1" });
 
-            const pName = content.createEl("div", { text: p.name });
+            const pName = content.createDiv({ text: p.name });
             pName.setCssStyles({ fontWeight: "600" });
-            const pDesc = content.createEl("div", { text: p.desc });
+            const pDesc = content.createDiv({ text: p.desc });
             pDesc.setCssStyles({ fontSize: "0.8em" });
 
             const link = content.createEl("a", { text: "View source", href: p.url });
@@ -238,7 +238,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         const lib = libCard.createDiv("cf-icon-grid");
         const customIconList = Object.entries(this.plugin.settings.customIcons);
         if (customIconList.length === 0) {
-            const emptyMsg = libCard.createEl("div", { text: "No custom icons found." });
+            const emptyMsg = libCard.createDiv({ text: "No custom icons found." });
             emptyMsg.setCssStyles({ color: "var(--text-muted)", fontStyle: "italic", padding: "10px" });
         } else {
             customIconList.forEach(([id, svg]) => {
@@ -374,7 +374,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .setName('Folder exclusion list')
             .setDesc('Comma-separated list of folder names to ignore. Note: folder names are case-insensitive.')
             .addText(text => text
-                .setPlaceholder('e.g. templates')
+                .setPlaceholder('E.g. Templates')
                 .setValue(this.plugin.settings.exclusionList || "")
                 .onChange(async (value) => {
                     this.plugin.settings.exclusionList = value;
@@ -502,7 +502,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     }))
                 .addText(text => {
                     bgTextComp = text;
-                    text.setPlaceholder('#ffffff')
+                    text.setPlaceholder('Hex: #ffffff')
                         .setValue(this.plugin.settings.customActiveBg || "")
                         .onChange(async (value) => {
                             this.plugin.settings.customActiveBg = value;
@@ -546,7 +546,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     }))
                 .addText(text => {
                     textColorTextComp = text;
-                    text.setPlaceholder('#c0c0c0')
+                    text.setPlaceholder('Hex: #c0c0c0')
                         .setValue(this.plugin.settings.customActiveText || "")
                         .onChange(async (value) => {
                             this.plugin.settings.customActiveText = value;
@@ -1024,9 +1024,9 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 borderRadius: "8px", border: "1px dashed var(--background-modifier-border)",
                 marginTop: "15px"
             });
-            lockedContainer.createEl("div", { text: "🔒", cls: "cf-lock-icon" }).setCssStyles({ fontSize: "2em", marginBottom: "10px" });
-            lockedContainer.createEl("div", { text: "Settings are protected" }).setCssStyles({ fontWeight: "bold", marginBottom: "4px" });
-            lockedContainer.createEl("div", { text: "Enter your password above to manage hidden folders." }).setCssStyles({ opacity: "0.5", fontSize: "0.85em" });
+            lockedContainer.createDiv({ text: "🔒", cls: "cf-lock-icon" }).setCssStyles({ fontSize: "2em", marginBottom: "10px" });
+            lockedContainer.createDiv({ text: "Settings are protected" }).setCssStyles({ fontWeight: "bold", marginBottom: "4px" });
+            lockedContainer.createDiv({ text: "Enter your password above to manage hidden folders." }).setCssStyles({ opacity: "0.5", fontSize: "0.85em" });
         } else {
             new obsidian.Setting(stealthCard)
                 .setName('Ghost mode')

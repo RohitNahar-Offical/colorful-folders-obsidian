@@ -101,7 +101,7 @@ export class IconManager {
             svgStr = this.plugin.settings.customIcons[iconId];
         } else {
             // 2. Try Lucide Icons
-            const tempEl = activeDocument.createElement('div');
+            const tempEl = activeDocument.createElementNS('http://www.w3.org/1999/xhtml', 'div') as HTMLDivElement;
             obsidian.setIcon(tempEl, iconId);
             if (!tempEl.querySelector('svg') && !iconId.startsWith('lucide-')) {
                 obsidian.setIcon(tempEl, `lucide-${iconId}`);
@@ -175,7 +175,7 @@ export class IconManager {
 
         let wrapper = el.querySelector<HTMLElement>('.cf-icon-wrapper');
         if (!wrapper) {
-            wrapper = doc.createElement('span');
+            wrapper = doc.createElementNS('http://www.w3.org/1999/xhtml', 'span');
             wrapper.classList.add('cf-icon-wrapper');
             wrapper.setCssStyles({
                 display: 'inline-flex',

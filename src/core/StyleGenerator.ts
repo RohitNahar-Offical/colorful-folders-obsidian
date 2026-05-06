@@ -125,6 +125,28 @@ export class StyleGenerator {
         };
 
         cssRules.push(`
+                /* Global: Flex layout foundation for all nav title rows.
+                   Required so ::before icons (align-self:center), ::after counters
+                   (margin-left:auto) and .cf-icon-wrapper all align correctly
+                   regardless of which conditional icon path fires. */
+                .nav-folder-title-content,
+                .nav-file-title-content,
+                .tree-item-inner {
+                    display: flex !important;
+                    align-items: center !important;
+                    overflow: visible !important;
+                }
+
+                /* Parent row containers: flex so the collapse arrow + title content
+                   are always vertically centered on the same midline. */
+                .nav-folder-title,
+                .nav-file-title,
+                .tree-item-self {
+                    display: flex !important;
+                    align-items: center !important;
+                    overflow: visible !important;
+                }
+
                 /* Global: Hide default icons when a custom icon is active */
                 .cf-icon-active::before {
                     display: none !important;

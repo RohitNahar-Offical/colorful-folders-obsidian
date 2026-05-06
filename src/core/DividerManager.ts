@@ -31,7 +31,7 @@ export class DividerManager {
         const dividerThickness = this.plugin.settings.dividerThickness || 1.5;
         const globalLineStyle = this.plugin.settings.dividerLineStyle || 'solid';
 
-        const div = doc.createElement('div');
+        const div = doc.createElementNS('http://www.w3.org/1999/xhtml', 'div');
         div.className = 'cf-interactive-divider';
         div.dataset.dividerTarget = path;
         

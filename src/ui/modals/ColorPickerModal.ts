@@ -90,11 +90,11 @@ _addToRecentlyUsed: (iconId: string) => Promise<void>;
         }
 
         const titleWrap = header.createDiv();
-        const mTitle = titleWrap.createEl("div", { text: this.item.name, cls: "cf-modal-title" });
+        const mTitle = titleWrap.createDiv({ text: this.item.name, cls: "cf-modal-title" });
         mTitle.setCssStyles({
             fontSize: "1.1em", fontWeight: "700", color: "var(--text-normal)", lineHeight: "1.2"
         });
-        const mSub = titleWrap.createEl("div", { text: `Custom ${this.isFolder ? "folder" : "file"} style` });
+        const mSub = titleWrap.createDiv({ text: `Custom ${this.isFolder ? "folder" : "file"} style` });
         mSub.setCssStyles({
             fontSize: "0.78em", color: "var(--text-muted)", marginTop: "2px"
         });
@@ -258,7 +258,7 @@ _addToRecentlyUsed: (iconId: string) => Promise<void>;
             display: 'flex', alignItems: 'center', gap: '10px',
             marginTop: '10px', padding: '8px 4px'
         });
-        const opLabel = opRow.createEl('span', { text: 'Background opacity' });
+        const opLabel = opRow.createSpan({ text: 'Background opacity' });
         opLabel.setCssStyles({ fontSize: '0.78em', fontWeight: '700', color: 'var(--text-muted)', whiteSpace: 'nowrap' });
 
         const opSlider = opRow.createEl('input', { type: 'range' });
@@ -266,7 +266,7 @@ _addToRecentlyUsed: (iconId: string) => Promise<void>;
         opSlider.value = String(Math.round((this.folderStyle.opacity ?? 1.0) * 100));
         opSlider.setCssStyles({ flex: '1', cursor: 'pointer' });
 
-        const opValLabel = opRow.createEl('span');
+        const opValLabel = opRow.createSpan();
         opValLabel.setCssStyles({ fontSize: '0.78em', fontWeight: '700', color: 'var(--text-normal)', minWidth: '34px', textAlign: 'right' });
         opValLabel.textContent = `${opSlider.value}%`;
 
@@ -335,7 +335,7 @@ _addToRecentlyUsed: (iconId: string) => Promise<void>;
             wrap.setCssStyles({ display: "flex", alignItems: "center", gap: "4px" });
             const chk = wrap.createEl("input", { type: "checkbox" });
             chk.checked = !!this.folderStyle[key];
-            const span = wrap.createEl("span", { text: lbl });
+            const span = wrap.createSpan({ text: lbl });
             span.setCssStyles({ fontSize: "0.75em" });
             chk.onchange = () => { (this.folderStyle as unknown)[key] = chk.checked; updatePreview(); };
         };
@@ -412,9 +412,9 @@ _addToRecentlyUsed: (iconId: string) => Promise<void>;
         curIconHeader.setCssStyles({ display: "flex", alignItems: "center", justifyContent: "space-between", flex: "1", minWidth: "150px" });
         
         const curIconInfo = curIconHeader.createDiv();
-        const ciLabel = curIconInfo.createEl("div", { text: "Current icon" });
+        const ciLabel = curIconInfo.createDiv({ text: "Current icon" });
         ciLabel.setCssStyles({ fontSize: "0.75em", color: "var(--text-muted)", marginBottom: "0px" });
-        this._curIconNameEl = curIconInfo.createEl("div", { text: this.folderStyle.iconId || (this.isFolder ? "folder" : "file") });
+        this._curIconNameEl = curIconInfo.createDiv({ text: this.folderStyle.iconId || (this.isFolder ? "folder" : "file") });
         this._curIconNameEl.setCssStyles({ fontSize: "0.85em", fontWeight: "600", color: "var(--text-normal)" });
         this._curIconBox = curIconBox;
 
@@ -603,7 +603,7 @@ _addToRecentlyUsed: (iconId: string) => Promise<void>;
                 createIconCell(id, iconGrid);
             });
             if (filtered.length === 0) {
-                const emptyMsg = iconGrid.createEl("div", { text: "No icons found" });
+                const emptyMsg = iconGrid.createDiv({ text: "No icons found" });
                 emptyMsg.setCssStyles({
                     padding: "20px", textAlign: "center", color: "var(--text-muted)", fontSize: "0.85em", gridColumn: "1/-1"
                 });
@@ -653,7 +653,7 @@ _addToRecentlyUsed: (iconId: string) => Promise<void>;
         const presetNames = Object.keys(presets);
 
         if (presetNames.length === 0) {
-            const emptyPresets = presetList.createEl("div", { text: "No presets saved yet.", cls: "cf-empty-state" });
+            const emptyPresets = presetList.createDiv({ text: "No presets saved yet.", cls: "cf-empty-state" });
             emptyPresets.setCssStyles({ fontSize: "0.8em", color: "var(--text-muted)", textAlign: "center", padding: "20px" });
         } else {
             presetNames.forEach(name => {
@@ -701,7 +701,7 @@ _addToRecentlyUsed: (iconId: string) => Promise<void>;
             border: "1px dashed var(--background-modifier-border)",
             backgroundColor: "rgba(var(--mono-rgb-100), 0.02)"
         });
-        const saveTitle = saveSection.createEl("div", { text: "Save current style" });
+        const saveTitle = saveSection.createDiv({ text: "Save current style" });
         saveTitle.setCssStyles({ fontSize: "0.75em", fontWeight: "700", color: "var(--text-muted)", marginBottom: "8px", textTransform: "uppercase" });
         
         const saveRow = saveSection.createDiv();

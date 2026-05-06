@@ -144,7 +144,7 @@ export class IconPickerModal extends obsidian.Modal {
             });
 
             if (filtered.length === 0) {
-                const emptyMsg = iconGrid.createEl("div", { text: "No icons found", cls: "cf-no-icons" });
+                const emptyMsg = iconGrid.createDiv({ text: "No icons found", cls: "cf-no-icons" });
                 emptyMsg.setCssStyles({
                     padding: "40px", textAlign: "center", color: "var(--text-muted)", fontSize: "0.9em", gridColumn: "1/-1"
                 });

@@ -53,7 +53,7 @@ export function createVisualColorPicker(
         const row = slidersRow.createDiv();
         row.setCssStyles({ display: 'flex', alignItems: 'center', gap: '8px' });
         
-        const lbl = row.createEl('span', { text: label });
+        const lbl = row.createSpan({ text: label });
         lbl.setCssStyles({ fontSize: '0.7em', fontWeight: '700', color: 'var(--text-muted)', width: '12px', textTransform: 'uppercase', letterSpacing: '1px' });
         
         const slider = row.createEl('input', { type: 'range', cls: 'cf-vcp-slider' });
