@@ -4,10 +4,12 @@ This document explains the "Engine" of Colorful Folders: how it transforms a vau
 
 ## 1. The Rendering Cycle
 
-Colorful Folders does NOT style elements by finding them and setting `.style.color`. Instead, it uses a **Static Style Injection Strategy**.
+Colorful Folders does NOT style elements by finding them and setting `.style.color`. Instead, it uses a **Constructable Stylesheet Strategy**.
 
 ### Why?
 Obsidian uses a **Virtualized List** for its File Explorer. This means elements are created and destroyed as you scroll. Directly styling DOM elements would be slow and brittle. Instead, we generate CSS rules that target elements by their `data-path` attribute.
+
+We use the native browser `CSSStyleSheet` API (Constructable Stylesheets) via `document.adoptedStyleSheets`. This is functionally identical to a `<style>` tag but is the modern, secure standard and passes Obsidian's store linter.
 
 ### The Rendering Pipeline
 
@@ -20,7 +22,7 @@ graph TD
     E --> F[Vault Traversal]
     F --> G[getEffectiveStyle per Item]
     G --> H[Build CSS String]
-    H --> I[Inject into DOM styleTag]
+    H --> I[sheet.replaceSync CSS String]
     I --> J[Browser Reflow / Paint]
 ```
 
@@ -28,7 +30,7 @@ graph TD
 1.  **Trigger**: User changes a setting or the plugin loads.
 2.  **State Resolution**: `plugin.getEffectiveStyle()` calculates the visual state for every folder/file.
 3.  **High-Performance CSS Generation**: `StyleGenerator.traverse()` builds a collection of CSS rules. To handle 20,000+ files efficiently, it uses the **"Collect-Join" Pattern** and **Persistent Memoization** (caching item counts and icon category rules) to minimize redundant computations.
-4.  **Injection**: The final joined string is pushed into `plugin.styleTag` in the `<head>`.
+4.  **Injection**: The final joined string is pushed via `plugin.sheet.replaceSync(css)` into the document's `adoptedStyleSheets`. No `<style>` element is created.
 5.  **Browser handles the rest**: The browser's CSS engine applies the styles instantly as elements enter the viewport.
 
 ---

@@ -43,3 +43,16 @@ Read before making ANY architectural changes.
 **What broke**: Unscoped global styles affected non-plugin elements in Obsidian's interface.
 **Resolution**: Scoped the rule to `.nav-files-container .nav-folder-title-content`.
 **Lesson**: ALL CSS in `styles.css` must be scoped to plugin-specific containers.
+
+---
+
+## Incident #5 — Store Rejection: no-forbidden-elements (2026-05-06)
+**What was attempted**: Submitting plugin to Obsidian store with `createEl("style")` + `eslint-disable` comment.
+**Why it was done**: This was the original stable architecture for CSS injection.
+**What broke**: The Obsidian store bot rejected the submission — disabling the `no-forbidden-elements` rule is never permitted, even with a description.
+**Resolution**: Replaced `createEl("style")` with the native `CSSStyleSheet` API:
+- `initializeStyles()` → `new CSSStyleSheet()` + `document.adoptedStyleSheets`
+- `generateStyles()` → `this.sheet.replaceSync(css)`
+- `onunload()` → filter the sheet out of `adoptedStyleSheets`
+- `StyleGenerator.ts` was **not touched** — same CSS string, different delivery
+**Lesson**: The `CSSStyleSheet` API is the correct, linter-compliant way to inject dynamic CSS in Obsidian plugins. It is functionally identical to a `<style>` tag for virtualised lists and never triggers `no-forbidden-elements`.
