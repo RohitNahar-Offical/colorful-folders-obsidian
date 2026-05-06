@@ -788,6 +788,7 @@ export default class ColorfulFoldersPlugin
           this.scrollTimeout = win.setTimeout(() => {
             this.isScrolling = false;
             this.processDividers();
+            this.generateStylesDebounced();
           }, 100);
         },
         { passive: true },
@@ -834,6 +835,7 @@ export default class ColorfulFoldersPlugin
 
       if (hasRelevantChange) {
         this.processDividers();
+        this.generateStylesDebounced();
         this.refreshIcons();
       }
     });
