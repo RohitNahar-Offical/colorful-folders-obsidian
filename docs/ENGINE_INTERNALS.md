@@ -161,3 +161,28 @@ To avoid shipping large binary files, we fetch release notes directly from GitHu
 
 > [!IMPORTANT]
 > If you implement new low-level logic, ensure it is added to the **Global Event Lifecycle** table in Section 1.
+---
+
+## 13. Backup & Restore Logic
+
+The backup system uses a **Selective Extraction Engine** to maintain data integrity between disparate styling layers.
+
+### Data Extraction (Backup)
+To prevent "property contamination," the engine filters the `customFolderColors` record during export:
+- **Folders**: Uses a shallow-clone and `delete` loop to purge all keys matching the `divider*` pattern.
+- **Dividers**: Uses a property-picking loop that only clones the 15 specific `divider` schema properties for entries where `hasDivider` is true.
+
+### Merge Strategy (Restore)
+The restore process uses a **Type-Aware Merging Algorithm**:
+1.  **Parsing**: Reads the file via `FileReader` and casts to the `BackupData` interface.
+2.  **Validation**: Checks the `type` property (`cf-folder-backup` vs `cf-divider-backup`).
+3.  **Conflict Resolution**: 
+    - If a folder already exists in the local settings, the plugin uses the **Object Spread operator** `{ ...existing, ...imported }`.
+    - This allows for **Cumulative Configuration** (e.g., you can restore folder colors from Backup A and then restore dividers from Backup B without them overwriting each other).
+
+### Popout Window Safety
+Standard `document.createElement('input')` is avoided in favor of `activeDocument.createEl('input')`. This ensures that if the plugin settings are open in an Obsidian **Popout Window**, the file selection dialog is correctly bound to the active window's context.
+
+---
+
+> [!IMPORTANT]

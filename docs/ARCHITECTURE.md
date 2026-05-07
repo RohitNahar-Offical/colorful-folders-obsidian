@@ -193,3 +193,25 @@ Colorful Folders includes a "Stealth Mode" (Data Hider) to protect sensitive vau
 ## 8. Third-Party Integrations
 
 We support **Notebook Navigator** by injecting specific selectors that target its custom list items (`.nn-navitem`). The logic is abstracted in `src/integrations/NotebookNavigator.ts` to ensure the core engine remains clean.
+---
+
+## 9. Maintenance & Persistence
+
+To keep the vault's styling engine healthy, Colorful Folders includes a **Maintenance Suite** in the "Database management" section of the settings.
+
+### The Maintenance Tools
+1.  **Stale Data Cleanup**: Scans `customFolderColors` and removes any entries whose paths no longer exist in the vault.
+2.  **Selective Backups**: Generates type-specific `.json` exports (Folders vs. Dividers).
+3.  **Intelligent Restore**: Merges external backup files into the active configuration using a **Safe-Spread Strategy**.
+
+### Selective Backup Strategy
+The plugin uses a **State Extraction** pattern to separate data during export:
+-   **Folder Backup**: Creates a shallow copy of the state and `delete`s all keys prefixed with `divider` (e.g., `dividerText`, `hasDivider`).
+-   **Divider Backup**: Iterates through the state and copies only entries where `hasDivider` is true, and only the `divider*` properties.
+
+### Safe Restoration Logic
+When restoring, the plugin performs a **Deep Property Merge**:
+```typescript
+this.plugin.settings.customFolderColors[key] = { ...existing, ...imported };
+```
+This ensures that restoring folder colors does not wipe out existing dividers, and vice versa.

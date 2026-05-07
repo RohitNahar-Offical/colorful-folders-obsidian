@@ -56,3 +56,19 @@ Read before making ANY architectural changes.
 - `onunload()` → filter the sheet out of `adoptedStyleSheets`
 - `StyleGenerator.ts` was **not touched** — same CSS string, different delivery
 **Lesson**: The `CSSStyleSheet` API is the correct, linter-compliant way to inject dynamic CSS in Obsidian plugins. It is functionally identical to a `<style>` tag for virtualised lists and never triggers `no-forbidden-elements`.
+---
+
+## Incident #6 — Store Rejection: Unsafe any & Unused Variables (2026-05-07)
+**What was attempted**: Implementing Backup/Restore functionality with standard JSON parsing and object destructuring.
+**Why it was done**: To allow users to export and import their folder/divider configurations.
+**What broke**: The Obsidian store bot rejected the submission with "Unexpected any. Specify a different type." and "Async arrow function has no 'await' expression."
+**Root cause**: 
+- `JSON.parse` returns `any`, leading to unsafe member access errors.
+- Object destructuring used to "omit" properties (e.g., `const { hasDivider, ...folderProps } = value`) created unused variables.
+- Using `document.createElement` instead of `activeDocument.createEl` triggered "prefer-create-el" warnings.
+**Resolution**:
+- Created a `BackupData` interface to type the `parsed` object.
+- Replaced property destructuring with an explicit `delete` loop on a shallow clone.
+- Replaced `document` with `activeDocument` for popout window compatibility.
+- Fixed unnecessary type assertions and removed unused `async` keywords.
+**Lesson**: Always run the linter (`node node_modules/eslint/bin/eslint.js`) before pushing, especially after adding new features that use generic objects or DOM manipulation.

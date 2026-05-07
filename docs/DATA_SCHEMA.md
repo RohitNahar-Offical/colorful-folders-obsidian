@@ -87,3 +87,41 @@ Auto-icons use a priority-based regex matching system in `AUTO_ICON_CATEGORIES`.
 
 > [!CAUTION]
 > Never modify `data.json` manually while Obsidian is running, as the plugin keeps a copy in memory and will overwrite your changes upon the next save.
+---
+
+## 6. Backup & Restore Schema
+
+When exporting data via the "Database management" tools, the generated JSON files follow a standardized wrapper format.
+
+### Folder Style Backup (`cf-folder-backup`)
+```json
+{
+  "type": "cf-folder-backup",
+  "version": "1.0",
+  "data": {
+    "Work/Project-A": {
+      "hex": "#ff0000",
+      "iconId": "lucide-star"
+    }
+  },
+  "presets": { ... }
+}
+```
+
+### Divider Backup (`cf-divider-backup`)
+```json
+{
+  "type": "cf-divider-backup",
+  "version": "1.0",
+  "data": {
+    "Resources": {
+      "hasDivider": true,
+      "dividerText": "Library",
+      "dividerColor": "#00ff00"
+    }
+  }
+}
+```
+
+> [!NOTE]
+> During restore, the plugin validates the `type` field to ensure the data is merged into the correct properties of the `customFolderColors` record.
