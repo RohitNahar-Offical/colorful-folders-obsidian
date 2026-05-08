@@ -165,19 +165,64 @@ export class StyleGenerator {
 
         if (this.settings.focusMode && activePath) {
             const safeActivePath = safeEscape(activePath);
-            cssRules.push(`
-                /* DIMMING BASE */
-                .nav-file-title, 
-                .nav-folder-title, 
-                .nav-folder-content::before {
-                    opacity: 0.3 !important;
-                    transition: opacity 0.3s ease !important;
-                }
+            const intensity = this.settings.focusModeIntensity ?? 0.15;
+            const bgOpacity = 1 - intensity;
+            const focusFilter = this.settings.focusGrayscale ? 'grayscale(1)' : 'none';
+            const siblingOpacity = Math.min(bgOpacity + 0.5, 0.75); // Ensure siblings are more visible than background
 
-                /* EXEMPTIONS: The active file and its parent path */
+            cssRules.push(`
+                /* TIER 3: THE BACKGROUND (Deep Dimming) */
+                .nav-file-title, 
+                .nav-folder-title,
+                .cf-interactive-divider {
+                    opacity: ${bgOpacity} !important;
+                    filter: ${focusFilter} !important;
+                    transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), filter 0.35s ease !important;
+                    will-change: opacity, filter;
+                }
+                
+                /* TIER 3b: Root Connectors and Path Lines */
+                .nav-folder-content::before {
+                    opacity: ${bgOpacity * 0.5} !important;
+                }
+            `);
+
+            // TIER 2: CONTEXTUAL SIBLINGS (The neighborhood)
+            if (this.settings.focusShowSiblings) {
+                const parts = activePath.split('/');
+                if (parts.length > 0) {
+                    // Parent path is everything except the last part
+                    const parentPath = parts.slice(0, -1).join('/');
+                    if (parentPath) {
+                        const safeParent = safeEscape(parentPath);
+                        cssRules.push(`
+                            /* Target siblings inside the same parent container */
+                            .nav-folder:has(> .nav-folder-title[data-path="${safeParent}"]) > .nav-folder-children > .nav-file-title,
+                            .nav-folder:has(> .nav-folder-title[data-path="${safeParent}"]) > .nav-folder-children > .nav-folder-title,
+                            .tree-item:has(> .tree-item-self[data-path="${safeParent}"]) > .tree-item-children > .tree-item-self {
+                                opacity: ${siblingOpacity} !important;
+                                filter: none !important;
+                            }
+                        `);
+                    } else {
+                        // If in root, all root items are siblings
+                        cssRules.push(`
+                            .nav-files-container > div > .nav-file-title,
+                            .nav-files-container > div > .nav-folder-title {
+                                opacity: ${siblingOpacity} !important;
+                                filter: none !important;
+                            }
+                        `);
+                    }
+                }
+            }
+
+            // TIER 1: THE ACTIVE PATH (Crystal Clarity)
+            cssRules.push(`
                 .nav-file-title[data-path="${safeActivePath}"],
                 .tree-item-self[data-path="${safeActivePath}"] {
                     opacity: 1 !important;
+                    filter: none !important;
                 }
             `);
 
@@ -192,16 +237,19 @@ export class StyleGenerator {
                     .tree-item-self[data-path="${sc}"],
                     .nav-folder-title[data-path="${sc}"] + .nav-folder-content::before {
                         opacity: 1 !important;
+                        filter: none !important;
                     }
                 `);
             }
 
             cssRules.push(`
-                /* Hover restoration for usability */
+                /* HOVER BEAM: Restoration for usability */
                 body:not(.is-mobile) .nav-file-title:hover,
-                body:not(.is-mobile) .nav-folder-title:hover {
+                body:not(.is-mobile) .nav-folder-title:hover,
+                body:not(.is-mobile) .cf-interactive-divider:hover {
                     opacity: 1 !important;
-                    transition: opacity 0.15s ease !important;
+                    filter: none !important;
+                    transition: opacity 0.2s ease, filter 0.2s ease !important;
                 }
             `);
         }

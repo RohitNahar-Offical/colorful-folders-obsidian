@@ -44,6 +44,9 @@ export interface ColorfulFoldersSettings {
     recentlyUsedIcons?: string[];
     glassmorphism: boolean;
     focusMode: boolean;
+    focusModeIntensity: number;
+    focusGrayscale: boolean;
+    focusShowSiblings: boolean;
     autoIcons: boolean;
     autoIconVariety: boolean;
     wideAutoIcons: boolean;
