@@ -161,7 +161,7 @@ export default class ColorfulFoldersPlugin
       loadedData.dividerLinePaddingRight = loadedData.dividerLinePadding;
     }
 
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, loadedData);
+    this.settings = Object.assign({}, JSON.parse(JSON.stringify(DEFAULT_SETTINGS)) as ColorfulFoldersSettings, loadedData);
   }
 
   async saveSettings() {

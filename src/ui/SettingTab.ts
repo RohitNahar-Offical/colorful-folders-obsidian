@@ -1,5 +1,5 @@
 import * as obsidian from 'obsidian';
-import { IColorfulFoldersPlugin, FolderStyle } from '../common/types';
+import { IColorfulFoldersPlugin, FolderStyle, ColorfulFoldersSettings } from '../common/types';
 import { DEFAULT_SETTINGS } from '../common/constants';
 import { PasswordModal } from './modals/PasswordModal';
 import { ConfirmModal } from './modals/ConfirmModal';
@@ -1130,11 +1130,17 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         const triggerDownload = (data: Record<string, unknown>, filename: string) => {
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
             const url = URL.createObjectURL(blob);
-            const a = activeDocument.createEl("a");
+            const doc = this.containerEl.ownerDocument;
+            const a = doc.createElement("a");
+            a.setCssStyles({ display: 'none' });
             a.href = url;
             a.download = filename;
+            doc.body.appendChild(a);
             a.click();
-            URL.revokeObjectURL(url);
+            activeWindow.setTimeout(() => {
+                if (doc.body.contains(a)) doc.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 1000);
         };
 
         new obsidian.Setting(dbCard)
@@ -1147,7 +1153,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     for (const [key, value] of Object.entries(this.plugin.settings.customFolderColors)) {
                         if (typeof value === 'string') {
                             folderData[key] = value;
-                        } else {
+                        } else if (value && typeof value === 'object') {
                             const folderProps = { ...value };
                             delete folderProps.hasDivider;
                             delete folderProps.dividerText;
@@ -1178,7 +1184,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onClick(() => {
                     const dividerData: Record<string, FolderStyle> = {};
                     for (const [key, value] of Object.entries(this.plugin.settings.customFolderColors)) {
-                        if (typeof value === 'object' && value.hasDivider) {
+                        if (value && typeof value === 'object' && value.hasDivider) {
                             const v = value;
                             dividerData[key] = {
                                 hasDivider: v.hasDivider,
@@ -1208,12 +1214,19 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .addButton(btn => btn
                 .setButtonText('Restore')
                 .onClick(() => {
-                    const input = activeDocument.createEl('input');
+                    const doc = this.containerEl.ownerDocument;
+                    const input = doc.createElement('input');
                     input.type = 'file';
                     input.accept = '.json';
+                    input.setCssStyles({ display: 'none' });
+                    doc.body.appendChild(input);
+
                     input.onchange = (e: Event) => {
                         const target = e.target as HTMLInputElement;
-                        if (!target.files || target.files.length === 0) return;
+                        if (!target.files || target.files.length === 0) {
+                            if (doc.body.contains(input)) doc.body.removeChild(input);
+                            return;
+                        }
                         const file = target.files[0];
                         const reader = new FileReader();
                         reader.onload = async (e) => {
@@ -1224,15 +1237,23 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                                     data?: Record<string, FolderStyle | string>;
                                     presets?: Record<string, FolderStyle>;
                                 }
-                                const parsed = JSON.parse(e.target?.result as string) as BackupData;
+                                const result = e.target?.result as string;
+                                if (!result) throw new Error("File is empty");
+
+                                const parsed = JSON.parse(result) as BackupData;
+                                if (!parsed || typeof parsed !== 'object') {
+                                    new obsidian.Notice("Invalid backup file format.");
+                                    return;
+                                }
+
                                 if (parsed.type === "cf-folder-backup") {
-                                    if (parsed.data) {
+                                    if (parsed.data && typeof parsed.data === 'object') {
                                         for (const [key, val] of Object.entries(parsed.data)) {
                                             if (typeof val === 'string') {
                                                 this.plugin.settings.customFolderColors[key] = val;
-                                            } else if (typeof val === 'object') {
+                                            } else if (val && typeof val === 'object') {
                                                 const existing = this.plugin.settings.customFolderColors[key];
-                                                if (typeof existing === 'object') {
+                                                if (existing && typeof existing === 'object') {
                                                     this.plugin.settings.customFolderColors[key] = { ...existing, ...val };
                                                 } else {
                                                     this.plugin.settings.customFolderColors[key] = val;
@@ -1240,17 +1261,19 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                                             }
                                         }
                                     }
-                                    if (parsed.presets) {
+                                    if (parsed.presets && typeof parsed.presets === 'object') {
                                         this.plugin.settings.presets = { ...this.plugin.settings.presets, ...parsed.presets };
                                     }
                                     new obsidian.Notice("Folder styles backup restored successfully!");
                                 } else if (parsed.type === "cf-divider-backup") {
-                                    if (parsed.data) {
+                                    if (parsed.data && typeof parsed.data === 'object') {
                                         for (const [key, val] of Object.entries(parsed.data)) {
-                                            if (typeof val === 'object') {
+                                            if (val && typeof val === 'object') {
                                                 const existing = this.plugin.settings.customFolderColors[key];
-                                                if (typeof existing === 'object') {
+                                                if (existing && typeof existing === 'object') {
                                                     this.plugin.settings.customFolderColors[key] = { ...existing, ...val };
+                                                } else if (typeof existing === 'string') {
+                                                    this.plugin.settings.customFolderColors[key] = { hex: existing, ...val };
                                                 } else {
                                                     this.plugin.settings.customFolderColors[key] = val;
                                                 }
@@ -1269,6 +1292,10 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                             } catch (err) {
                                 console.error(err);
                                 new obsidian.Notice("Failed to parse backup file.");
+                            } finally {
+                                if (doc.body.contains(input)) {
+                                    doc.body.removeChild(input);
+                                }
                             }
                         };
                         reader.readAsText(file);
@@ -1301,7 +1328,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .setWarning()
                 .onClick(() => {
                     new ConfirmModal(this.app, "Factory reset", "Are you sure you want to restore all settings to default? This will wipe ALL your customization!", async () => {
-                        this.plugin.settings = Object.assign({}, DEFAULT_SETTINGS);
+                        this.plugin.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS)) as ColorfulFoldersSettings;
                         await this.plugin.saveSettings();
                         this.plugin.generateStyles();
                         this.plugin.dividerManager.syncDividers();

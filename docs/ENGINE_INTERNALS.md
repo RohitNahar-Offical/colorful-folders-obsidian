@@ -181,7 +181,11 @@ The restore process uses a **Type-Aware Merging Algorithm**:
     - This allows for **Cumulative Configuration** (e.g., you can restore folder colors from Backup A and then restore dividers from Backup B without them overwriting each other).
 
 ### Popout Window Safety
-Standard `document.createElement('input')` is avoided in favor of `activeDocument.createEl('input')`. This ensures that if the plugin settings are open in an Obsidian **Popout Window**, the file selection dialog is correctly bound to the active window's context.
+To ensure full compatibility with Obsidian **Popout Windows**, the backup and restore system avoids global `document` or `activeDocument` in favor of `this.containerEl.ownerDocument`. 
+
+1.  **Context Binding**: Temporary elements (`<a>` for downloads, `<input>` for uploads) are created using the `ownerDocument` of the settings tab container.
+2.  **DOM Attachment**: Elements are explicitly appended to the `body` of that specific window before `.click()` is called, satisfying modern browser security policies for programmatic interaction.
+3.  **Safety Delays**: `URL.revokeObjectURL` is deferred by 1000ms to guarantee the browser's download manager has successfully initiated the stream.
 
 ---
 
