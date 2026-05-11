@@ -571,12 +571,19 @@ export class StyleGenerator {
                             height: 100% !important;
                         }
 
-                        /* Icon Injection for NN Files */
+                        /* Icon Injection for NN Files (Ghost-Text Proof) */
                         ${iconId ? `
+                            ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileIconSelector()} {
+                                font-size: 0 !important;
+                                color: transparent !important;
+                            }
                             ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileIconSelector()}::before {
                                 content: "${iconId} " !important;
                                 margin-right: 6px !important;
+                                font-size: 1.2em !important;
+                                color: ${textNN} !important;
                                 font-style: normal !important;
+                                display: inline-block !important;
                             }
                             ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileIconSelector()} svg {
                                 display: none !important;
@@ -812,8 +819,10 @@ export class StyleGenerator {
                     ${glassCss}
                 }
 
-                /* Notebook Navigator Folder Integration (Radiant Glass Model) */
+                /* Notebook Navigator Folder Integration (Native-Sync Model) */
                 ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} {
+                    --nn-item-color: ${folderStyles.t} !important;
+                    --nn-item-background: ${folderStyles.b} !important;
                     background: linear-gradient(90deg, ${folderStyles.b}, rgba(${color.rgb}, 0.1) 80%, transparent) !important;
                     opacity: 1.0 !important;
                     box-sizing: border-box !important;
@@ -828,12 +837,19 @@ export class StyleGenerator {
                     box-shadow: none !important;
                 }
 
-                /* Icon Injection for NN Folders */
+                /* Icon Injection for NN Folders (Ghost-Text Proof) */
                 ${folderIconId ? `
+                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()} {
+                        font-size: 0 !important;
+                        color: transparent !important;
+                    }
                     ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()}::before {
                         content: "${folderIconId} " !important;
                         margin-right: 6px !important;
+                        font-size: 1.2em !important;
+                        color: ${folderStyles.t} !important;
                         font-style: normal !important;
+                        display: inline-block !important;
                     }
                     ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()} svg {
                         display: none !important;
