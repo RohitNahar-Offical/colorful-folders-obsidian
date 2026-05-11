@@ -688,7 +688,9 @@ export class StyleGenerator {
                 const activeSelector = `.nav-files-container .nav-folder:has(.is-active) > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) ~ .nav-folder-children, .nav-files-container .tree-item:has(.is-active) > .tree-item-self[data-path="${safePath}"]:not(.nn-navitem) ~ .tree-item-children ${isParentOfActive ? `, .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) ~ .nav-folder-children, .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-navitem) ~ .tree-item-children` : ""}`;
                 cssRules.push(`
                     ${activeSelector} {
-                        border-left: 1.5px solid ${passedColor.hex} !important;
+                        border-left: 2.5px solid ${passedColor.hex} !important;
+                        border-bottom: 2.5px solid ${passedColor.hex} !important;
+                        border-bottom-left-radius: 8px !important;
                         box-shadow: -2px 0 10px -2px ${passedColor.hex}44;
                         margin-left: 12px !important;
                         padding-left: 0 !important;

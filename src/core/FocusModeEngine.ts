@@ -50,7 +50,9 @@ export class FocusModeEngine {
             /* TIER 3b: Root Connectors and Path Lines (Dimmed) */
             .nav-folder-children,
             .tree-item-children {
-                border-left: 1px solid rgba(var(--cf-rgb, 100, 100, 100), ${bgOpacity * 0.2}) !important;
+                border-left: 2.5px solid rgba(var(--cf-rgb, 100, 100, 100), ${bgOpacity * 0.2}) !important;
+                border-bottom: 2.5px solid rgba(var(--cf-rgb, 100, 100, 100), ${bgOpacity * 0.2}) !important;
+                border-bottom-left-radius: 8px !important;
                 margin-left: 12px !important;
                 padding-left: 0 !important;
             }
@@ -125,7 +127,9 @@ export class FocusModeEngine {
                     .nav-folder:has(> .nav-folder-title[data-path="${sc}"]) > .nav-folder-children {
                         opacity: 1 !important;
                         filter: none !important;
-                        border-left: 1.5px solid rgba(var(--cf-rgb, var(--interactive-accent-rgb)), 0.6) !important;
+                        border-left: 2.5px solid rgba(var(--cf-rgb, var(--interactive-accent-rgb)), 0.6) !important;
+                        border-bottom: 2.5px solid rgba(var(--cf-rgb, var(--interactive-accent-rgb)), 0.6) !important;
+                        border-bottom-left-radius: 8px !important;
                         box-shadow: -2px 0 8px -2px rgba(var(--cf-rgb), 0.2);
                     }
                 `;
