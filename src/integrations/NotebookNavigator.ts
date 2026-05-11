@@ -59,12 +59,12 @@ export class NotebookNavigatorIntegration {
      */
     static getScopedNavSelector(path: string): string {
         const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-        return `.notebook-navigator ${NN_SELECTORS.NAV_ITEM}[data-path="${safePath}"]`;
+        return `.notebook-navigator .nn-explorer-content .nn-navitem[data-path="${safePath}"]`;
     }
 
     static getScopedFileSelector(path: string): string {
         const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-        return `.notebook-navigator ${NN_SELECTORS.FILE_ITEM}[data-path="${safePath}"]`;
+        return `.notebook-navigator .nn-explorer-content .nn-file[data-path="${safePath}"]`;
     }
 
     /**

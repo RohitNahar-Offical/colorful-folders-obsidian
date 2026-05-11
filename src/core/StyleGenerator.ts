@@ -554,8 +554,8 @@ export class StyleGenerator {
                     cssRules.push(`
                         ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} {
                             ${shouldColorNN ? `
-                                background-color: rgba(${color.rgb}, ${fileBgAlpha}) !important;
-                                border-left: 2.5px solid rgba(${color.rgb}, 0.5) !important;
+                                background: linear-gradient(to right, rgba(${color.rgb}, ${fileBgAlpha}), rgba(${color.rgb}, ${fileBgAlpha * 0.7})) !important;
+                                border-left: 3px solid rgba(${color.rgb}, 0.6) !important;
                             ` : ''}
                             opacity: 1.0 !important;
                             color: ${textNN} !important;
@@ -566,17 +566,18 @@ export class StyleGenerator {
                             align-items: center !important;
                             overflow: hidden !important;
                             margin: 0 !important;
-                            padding-top: 0 !important;
-                            padding-bottom: 0 !important;
+                            padding: 0 8px !important;
                             border-radius: 0 !important;
-                            height: inherit !important;
+                            height: 100% !important;
+                            text-shadow: ${isDark && fileBgAlpha > 0.5 ? '0 1px 2px rgba(0,0,0,0.5)' : 'none'} !important;
                         }
 
-                        /* Active Glow for NN (Flat) */
+                        /* Active Glow for NN (Flat-Glass) */
                         ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)}.is-active {
-                            background-color: ${activeBg} !important;
-                            border-left: 2.5px solid ${activeText} !important;
+                            background: linear-gradient(to right, ${activeBg}, rgba(${color.rgb}, 0.2)) !important;
+                            border-left: 3px solid ${activeText} !important;
                             box-shadow: none !important;
+                            color: ${activeText} !important;
                         }
                     `);
                 }
@@ -723,11 +724,11 @@ export class StyleGenerator {
                         --cf-rgb: ${passedColor.rgb};
                     }
 
-                    /* Notebook Navigator Folder Active Path (Flat Slot) */
+                    /* Notebook Navigator Folder Active Path (Flat-Glass) */
                     ${isParentOfActive ? `
                         ${NotebookNavigatorIntegration.getScopedNavSelector(folder.path)} {
-                            border-left: 3px solid ${passedColor.hex} !important;
-                            background-color: rgba(${passedColor.rgb}, 0.15) !important;
+                            border-left: 4px solid ${passedColor.hex} !important;
+                            background: linear-gradient(to right, rgba(${passedColor.rgb}, 0.25), rgba(${passedColor.rgb}, 0.05)) !important;
                         }
                     ` : ''}
                 `);
@@ -796,21 +797,21 @@ export class StyleGenerator {
                     ${glassCss}
                 }
 
-                /* Notebook Navigator Folder Integration (Flat Slot Model) */
+                /* Notebook Navigator Folder Integration (Flat-Glass Model) */
                 ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} {
-                    background-color: ${folderStyles.b} !important;
+                    background: linear-gradient(to right, ${folderStyles.b}, rgba(${color.rgb}, 0.1)) !important;
                     opacity: 1.0 !important;
                     box-sizing: border-box !important;
                     display: flex !important;
                     align-items: center !important;
                     overflow: hidden !important;
                     margin: 0 !important;
-                    padding-top: 0 !important;
-                    padding-bottom: 0 !important;
+                    padding: 0 8px !important;
                     border-radius: 0 !important;
-                    height: inherit !important;
-                    border-left: 2.5px solid rgba(${color.rgb}, 0.5) !important;
+                    height: 100% !important;
+                    border-left: 3px solid rgba(${color.rgb}, 0.6) !important;
                     box-shadow: none !important;
+                    text-shadow: ${isDark ? '0 1px 2px rgba(0,0,0,0.3)' : 'none'} !important;
                 }
 
                 body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content,
