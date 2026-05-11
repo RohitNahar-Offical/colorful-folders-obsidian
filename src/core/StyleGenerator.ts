@@ -554,7 +554,7 @@ export class StyleGenerator {
                     cssRules.push(`
                         ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} {
                             ${shouldColorNN ? `
-                                background: linear-gradient(to right, rgba(${color.rgb}, ${fileBgAlpha}), rgba(${color.rgb}, ${fileBgAlpha * 0.7})) !important;
+                                background: linear-gradient(90deg, rgba(${color.rgb}, ${fileBgAlpha}), rgba(${color.rgb}, ${fileBgAlpha * 0.4}) 60%, transparent) !important;
                                 border-left: 3px solid rgba(${color.rgb}, 0.6) !important;
                             ` : ''}
                             opacity: 1.0 !important;
@@ -569,13 +569,12 @@ export class StyleGenerator {
                             padding: 0 8px !important;
                             border-radius: 0 !important;
                             height: 100% !important;
-                            text-shadow: ${isDark && fileBgAlpha > 0.5 ? '0 1px 2px rgba(0,0,0,0.5)' : 'none'} !important;
                         }
 
-                        /* Active Glow for NN (Flat-Glass) */
+                        /* Active Glow for NN (Radiant Glass) */
                         ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)}.is-active {
-                            background: linear-gradient(to right, ${activeBg}, rgba(${color.rgb}, 0.2)) !important;
-                            border-left: 3px solid ${activeText} !important;
+                            background: linear-gradient(90deg, ${activeBg}, rgba(${color.rgb}, 0.2) 70%, transparent) !important;
+                            border-left: 4px solid ${activeText} !important;
                             box-shadow: none !important;
                             color: ${activeText} !important;
                         }
@@ -797,9 +796,9 @@ export class StyleGenerator {
                     ${glassCss}
                 }
 
-                /* Notebook Navigator Folder Integration (Flat-Glass Model) */
+                /* Notebook Navigator Folder Integration (Radiant Glass Model) */
                 ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} {
-                    background: linear-gradient(to right, ${folderStyles.b}, rgba(${color.rgb}, 0.1)) !important;
+                    background: linear-gradient(90deg, ${folderStyles.b}, rgba(${color.rgb}, 0.1) 80%, transparent) !important;
                     opacity: 1.0 !important;
                     box-sizing: border-box !important;
                     display: flex !important;
@@ -809,9 +808,8 @@ export class StyleGenerator {
                     padding: 0 8px !important;
                     border-radius: 0 !important;
                     height: 100% !important;
-                    border-left: 3px solid rgba(${color.rgb}, 0.6) !important;
+                    border-left: 3.5px solid rgba(${color.rgb}, 0.6) !important;
                     box-shadow: none !important;
-                    text-shadow: ${isDark ? '0 1px 2px rgba(0,0,0,0.3)' : 'none'} !important;
                 }
 
                 body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content,
