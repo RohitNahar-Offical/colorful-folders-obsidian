@@ -552,13 +552,19 @@ export class StyleGenerator {
                         ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} {
                             ${shouldColorNN ? `
                                 background-color: rgba(${color.rgb}, ${fileBgAlpha}) !important;
-                                border-left: 2px solid rgba(${color.rgb}, 0.4) !important;
+                                border-left: 2.5px solid rgba(${color.rgb}, 0.4) !important;
+                                border-bottom: 2.5px solid rgba(${color.rgb}, 0.4) !important;
+                                border-bottom-left-radius: 4px !important;
                             ` : ''}
                             opacity: 1.0 !important;
                             color: ${textNN} !important;
                             font-weight: ${isBold ? 'bold' : 'normal'} !important;
                             font-style: ${isItalic ? 'italic' : 'normal'} !important;
                             border-radius: 4px;
+                            box-sizing: border-box !important;
+                            display: flex !important;
+                            align-items: center !important;
+                            overflow: hidden !important;
                         }
                     `);
                 }
@@ -761,8 +767,21 @@ export class StyleGenerator {
                     border-radius: 6px;
                     ${glassCss}
                 }
+
+                /* Notebook Navigator Folder Integration */
+                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} {
+                    background-color: ${folderStyles.b} !important;
+                    opacity: 1.0 !important;
+                    border-radius: 6px;
+                    box-sizing: border-box !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    overflow: hidden !important;
+                }
+
                 body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content,
-                body .tree-item-self[data-path="${safePath}"] .tree-item-inner {
+                body .tree-item-self[data-path="${safePath}"] .tree-item-inner,
+                body ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()} {
                     ${textCss}
                 }
             `);

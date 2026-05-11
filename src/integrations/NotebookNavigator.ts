@@ -12,7 +12,7 @@ interface NNPlugin {
  * Centralizes all DOM selectors and NN-specific logic.
  */
 export const NN_SELECTORS = {
-    CONTAINERS: '.nn-navigation-pane-content, .nn-virtual-container',
+    CONTAINERS: '.nn-navigation-pane-content, .nn-virtual-container, .nn-list-view, .nn-explorer-content',
     NAV_ITEM: '.nn-navitem',
     FILE_ITEM: '.nn-file',
     NAV_NAME: '.nn-navitem-name',
@@ -105,7 +105,9 @@ export class NotebookNavigatorIntegration {
      */
     static isNNContainer(container: Element): boolean {
         return container.classList.contains('nn-navigation-pane-content') || 
-               container.classList.contains('nn-virtual-container');
+               container.classList.contains('nn-virtual-container') ||
+               container.classList.contains('nn-list-view') ||
+               container.classList.contains('nn-explorer-content');
     }
 
     /**
