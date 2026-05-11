@@ -519,6 +519,9 @@ export class StyleGenerator {
 
                 const fileBgAlpha = isCustomColor ? op : (this.settings.fileBackgroundOpacity !== undefined ? this.settings.fileBackgroundOpacity : (isDark ? 0.1 : 0.15));
                 
+                const activeBg = (this.settings.useCustomActiveColor && this.settings.customActiveBg) ? this.settings.customActiveBg : `rgba(${color.rgb}, ${useGlass ? 0.14 : 0.12})`;
+                const activeText = (this.settings.useCustomActiveColor && this.settings.customActiveText) ? this.settings.customActiveText : textNative;
+                
                 cssRules.push(`
                     .nav-files-container .nav-file-title[data-path="${safePath}"]:not(.nn-file),
                     .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) {
@@ -649,9 +652,6 @@ export class StyleGenerator {
                         }
                     `);
                 }
-
-                const activeBg = (this.settings.useCustomActiveColor && this.settings.customActiveBg) ? this.settings.customActiveBg : `rgba(${color.rgb}, ${useGlass ? 0.14 : 0.12})`;
-                const activeText = (this.settings.useCustomActiveColor && this.settings.customActiveText) ? this.settings.customActiveText : textNative;
 
                 cssRules.push(`
                     .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file),
