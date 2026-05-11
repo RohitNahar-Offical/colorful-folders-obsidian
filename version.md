@@ -14,6 +14,10 @@ This release introduces a ground-up modular redesign of the Focus Mode engine, p
 - **Thickness Standardization**: Standardized all Radiant Path lines (side and bottom) to a robust **2.5px** thickness.
 - **Eliminated "Thinning"**: Fixed the sub-pixel rendering glitch where lines would appear thin when folders were selected. All lines now maintain a consistent, solid weight.
 
+### 🎨 4. Active File Customization
+- **Personalized Highlights**: You can now explicitly override the active file color in settings. 
+- **User-Driven Design**: Under the "Active Files" section, toggle the custom color picker to set your own background and text colors for the currently selected file, bypassing theme defaults for a truly custom experience.
+
 ---
 
 ## ⚡ 4.1.4 - The "Visual & Performance" Update
