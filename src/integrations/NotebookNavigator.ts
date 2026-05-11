@@ -58,17 +58,18 @@ export class NotebookNavigatorIntegration {
      * Returns a scoped selector that ONLY matches if inside an NN container.
      */
     /**
-     * Returns a scoped selector that ONLY matches real vault items in the Explorer view.
-     * Hardened to prevent collisions with Tag/Property views.
+     * Returns a scoped selector that ONLY matches real vault items.
+     * Hardened to exclude system views (Tags/Properties) via attribute filtering.
      */
     static getScopedNavSelector(path: string): string {
         const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-        return `.nn-navigation-pane-content .nn-navitem[data-path="${safePath}"]`;
+        // Exclude items that are headers or lack typical folder attributes
+        return `.notebook-navigator .nn-navitem[data-path="${safePath}"]:not(.nn-header)`;
     }
 
     static getScopedFileSelector(path: string): string {
         const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-        return `.nn-navigation-pane-content .nn-file[data-path="${safePath}"]`;
+        return `.notebook-navigator .nn-file[data-path="${safePath}"]:not(.nn-header)`;
     }
 
     /**
