@@ -60,6 +60,7 @@ export default class ColorfulFoldersPlugin
 
     this.generateStylesDebounced = obsidian.debounce(
       () => {
+        if (activeDocument.body.classList.contains("cf-is-dragging")) return;
         this.generateStyles();
         // P2 fix: initDividerObserver re-inits on layout-change; no need here
       },
@@ -69,7 +70,7 @@ export default class ColorfulFoldersPlugin
 
     this.processDividersDebounced = obsidian.debounce(
       () => {
-        if (this.isSyncingDividers) return;
+        if (this.isSyncingDividers || activeDocument.body.classList.contains("cf-is-dragging")) return;
         this.dividerManager.syncDividers();
       },
       50,
@@ -187,6 +188,22 @@ export default class ColorfulFoldersPlugin
     this.registerEvent(
       this.app.workspace.on("layout-change", () => this.initDividerObserver()),
     );
+
+    // Performance: Detect drag operations to suspend expensive animations and logic
+    const win = activeWindow;
+    this.registerDomEvent(win, "dragstart", () => {
+      activeDocument.body.classList.add("cf-is-dragging");
+      if (this.dividerObserver) {
+          this.dividerObserver.disconnect();
+          this.dividerObserver = null;
+      }
+    });
+    this.registerDomEvent(win, "dragend", () => {
+      activeDocument.body.classList.remove("cf-is-dragging");
+      this.initDividerObserver();
+      this.processDividers();
+    });
+
     this.registerEvent(
       this.app.workspace.on("file-open", () => this.generateStylesDebounced()),
     );
@@ -752,6 +769,8 @@ export default class ColorfulFoldersPlugin
           return (
             !el.classList.contains("cf-interactive-divider") &&
             !el.classList.contains("cf-icon-wrapper") &&
+            !el.classList.contains("nav-file-ghost") &&
+            !el.classList.contains("nav-folder-ghost") &&
             !el.closest(".cf-icon-wrapper")
           );
         };

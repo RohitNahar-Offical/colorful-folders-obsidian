@@ -1379,6 +1379,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         this.plugin.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS)) as ColorfulFoldersSettings;
                         await this.plugin.saveSettings();
                         this.plugin.generateStyles();
+                        this.plugin.dividerManager.clean();
                         this.plugin.dividerManager.syncDividers();
                         new obsidian.Notice("All settings have been restored to defaults.");
                         this.display();

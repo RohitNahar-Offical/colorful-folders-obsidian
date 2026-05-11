@@ -17,10 +17,12 @@ We use the native browser `CSSStyleSheet` API (Constructable Stylesheets) via `d
 graph TD
     A[User Action / Plugin Load] --> B{Trigger Debouncer}
     B --> C[generateStyles]
-    C --> D[StyleGenerator.generateCss]
-    D --> E[Check Persistent Caches]
-    E --> F[Vault Traversal]
-    F --> G[getEffectiveStyle per Item]
+    C --> D[StyleGenerator.prepareContext]
+    D --> E[StyleGenerator.generateCss]
+    E --> F1[FocusModeEngine.generateCss]
+    E --> F2[Modular Helper Methods]
+    F1 --> G[Recursive Traverse with Context]
+    F2 --> G
     G --> H[Build CSS String]
     H --> I[sheet.replaceSync CSS String]
     I --> J[Browser Reflow / Paint]
@@ -101,7 +103,13 @@ graph TD
 
 ---
 
-## 3. StyleGenerator: The Recursive Engine
+### Modular Generation Pattern:
+To maintain performance and maintainability, `generateCss` is an orchestrator that delegates to task-specific generators and peer modules:
+1. **`generateGlobalBaseCss`**: Foundation layouts and foundational variables.
+2. **`FocusModeEngine.generateCss`**: (External Module) Handles high-performance "Strict Spotlight" effects.
+3. **`generateDividerCss`**: Global divider styles using `:has()` selectors.
+4. **`generateStealthCss`**: Privacy layer rules.
+5. **`traverse`**: The recursive engine that applies local styles to files and folders using the `StyleContext`.
 
 ### Traversal Logic:
 The `StyleGenerator` utilizes persistent caches hosted on the main plugin instance to avoid expensive re-computations during traversal.

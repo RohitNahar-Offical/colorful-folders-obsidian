@@ -74,7 +74,8 @@
     font-weight: 700;
     font-size: 1em;
     color: var(--text-muted);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    /* REMOVED TRANSITION */
+
     background: transparent;
     border: none !important;
     box-shadow: none !important;
@@ -201,7 +202,8 @@
     padding: 6px 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    /* REMOVED TRANSITION */
+
 }
 
 .colorful-folders-config button.mod-warning {
@@ -250,7 +252,8 @@
     align-self: center;
     margin-right: 6px;
     flex-shrink: 0;
-    transition: transform 0.2s ease, opacity 0.2s ease;
+    /* REMOVED TRANSITION */
+
     overflow: visible;
 }
 
@@ -278,7 +281,8 @@
     -webkit-mask-position: center !important;
     mask-size: contain !important;
     mask-position: center !important;
-    transition: width 0.25s ease, height 0.25s ease, opacity 0.25s ease !important;
+    /* REMOVED TRANSITION */
+
 }
 
 /* Ensure nav title rows are flex so arrow, icon, text, and counter all center-align */
@@ -323,7 +327,8 @@
     border-radius: 6px;
     position: relative;
     cursor: help;
-    transition: all 0.2s ease;
+    /* REMOVED TRANSITION */
+
 }
 
 .cf-icon-item:hover {
@@ -352,7 +357,8 @@
     justify-content: center !important;
     padding: 0 !important;
     opacity: 0;
-    transition: opacity 0.2s ease;
+    /* REMOVED TRANSITION */
+
 }
 
 .cf-icon-item:hover .cf-btn-remove {
@@ -434,9 +440,8 @@
     overflow-y: auto;
     z-index: 10000;
     pointer-events: auto;
-    animation: 
-        cf-popover-appear 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15) forwards,
-        cf-popover-float 4s ease-in-out infinite alternate 0.3s;
+    /* REMOVED ANIMATION */
+
 }
 
 /* Refined Scrollbar */
@@ -512,35 +517,16 @@
     }
 }
 
-@keyframes cf-popover-float {
-    0% { transform: translate(-50%, -100%) translateY(0); }
-    100% { transform: translate(-50%, -100%) translateY(-4px); }
+/* REMOVED ANIMATION */
 }
 
 /* --- Smart Adaptive Positioning (Below) --- */
 .cf-premium-popover.is-below {
     transform: translate(-50%, 0);
-    animation: 
-        cf-popover-appear-below 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15) forwards,
-        cf-popover-float-below 4s ease-in-out infinite alternate 0.3s;
+    /* REMOVED ANIMATION */
 }
 
-@keyframes cf-popover-appear-below {
-    0% {
-        opacity: 0;
-        margin-top: -15px;
-        transform: translate(-50%, 0) scale(0.92);
-    }
-    100% {
-        opacity: 1;
-        margin-top: 0;
-        transform: translate(-50%, 0) scale(1);
-    }
-}
-
-@keyframes cf-popover-float-below {
-    0% { transform: translate(-50%, 0) translateY(0); }
-    100% { transform: translate(-50%, 0) translateY(4px); }
+/* REMOVED ANIMATION */
 }
 
 /* Reverting native tooltip styling to default to avoid affecting other plugins */
@@ -626,7 +612,8 @@ body > .tooltip {
 }
 
 .cf-tab-panel {
-    animation: cf-fade-in 0.2s ease;
+    /* REMOVED ANIMATION */
+
 }
 
 @keyframes cf-fade-in {
@@ -673,7 +660,8 @@ body > .tooltip {
     cursor: pointer;
     font-size: 0.9em;
     color: var(--text-muted);
-    transition: all 0.1s ease;
+    /* REMOVED TRANSITION */
+
 }
 
 .cf-suggestion-item:hover, .cf-suggestion-item.is-selected {
@@ -705,7 +693,8 @@ body > .tooltip {
     border: 3px solid var(--background-primary) !important;
     border-radius: 50% !important;
     box-shadow: 0 3px 10px rgba(0,0,0,0.4) !important;
-    transition: transform 0.15s ease !important;
+    /* REMOVED TRANSITION */
+
 }
 .colorful-folders-config .setting-item-control input[type="range"]:active::-webkit-slider-thumb {
     transform: scale(1.2);

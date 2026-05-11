@@ -157,6 +157,17 @@ declare global {
     }
 }
 
+export interface StyleContext {
+    currentPalette: { rgb: string, hex: string }[];
+    isDark: boolean;
+    brightnessAmount: number;
+    activePath: string | null;
+    heatmapData: Map<string, number>;
+    excludeFolders: string[];
+    effFileIconW: string;
+    folderIconW: string;
+    now: number;
+}
 export interface MenuItemWithSubmenu extends MenuItem {
     setSubmenu(): Menu;
 }

@@ -21,6 +21,12 @@ Representing the entire `data.json` structure. Defined in `src/common/types.ts`.
 | `dividerThickness` | `number` | Stroke width for divider lines. |
 | `dividerLinePaddingLeft` | `number` | Gap between line and text (Left). Supports negative values. |
 | `dividerLinePaddingRight` | `number` | Gap between line and text (Right). Supports negative values. |
+| `focusMode` | `boolean` | Enables/Disables Focus Mode 3.0 (Strict Spotlight). |
+| `focusModeIntensity` | `number` | Controls the strength of background dimming (0-1). |
+| `focusGrayscale` | `boolean` | Desaturates background items in Focus Mode. |
+| `useCustomActiveColor` | `boolean` | Enables the UI-driven active file color picker. |
+| `customActiveBg` | `string` | User-defined background for the active file. |
+| `customActiveText` | `string` | User-defined text color for the active file. |
 
 ---
 

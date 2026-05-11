@@ -14,7 +14,8 @@ Colorful Folders hooks into the Obsidian event bus to stay reactive.
 | `layout-change` | `initDividerObserver` | UI recalculation on pane resizing/moving; re-attaches DOM observers. |
 | `css-change` | `generateStyles` | Theme changes (Light/Dark) invalidate contrast calculations. |
 | `file-open` | `generateStyles` | Highlights new path if "Active Path Glow" is enabled. |
-| `modify` | `generateStyles` | Updates "Hot" status in Heatmap mode. |
+| `dragstart` | `Logic Freeze` | **Performance**: Disconnects observers and suspends all styling logic during drag. |
+| `dragend` | `Logic Reconnect` | **Performance**: Restores observers and performs a clean 'catch-up' sync. |
 | `create` / `delete` / `rename` | `generateStyles` | Vault structure changes; invalidates item count and heatmap caches. |
 
 ---
@@ -87,6 +88,14 @@ The plugin implements a two-stage migration in `main.ts` to ensure backward comp
 
 1.  **Raw Data Migration**: Legacy fields (e.g., `dividerLinePadding`) are automatically split into asymmetrical fields (`Left`/`Right`).
 2.  **Type Hardening**: Corrupted hex strings are detected during traversal and reset to theme-safe defaults.
+
+---
+
+### 🎯 Focus Mode 3.0 (Strict Spotlight)
+Focus Mode 3.0 uses a 3-tier visibility system to create a high-contrast spotlight effect:
+1. **Tier 1: The Target**: The active file and its immediate parent folder (100% opacity, Bold Weight, Pulse Glow).
+2. **Tier 2: The Siblings**: Immediate neighbors of the active folder (Capped 70% opacity, no filters).
+3. **Tier 3: The Background**: Everything else, including deep ancestors (Grandparents). Deeply dimmed via instantaneous `brightness()` and `opacity` filters.
 
 ---
 
