@@ -760,7 +760,6 @@ export class StyleGenerator {
                     opacity: 1.0 !important;
                     border-radius: 6px;
                     ${glassCss}
-                    transition: background-color 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
                 }
                 body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content,
                 body .tree-item-self[data-path="${safePath}"] .tree-item-inner {

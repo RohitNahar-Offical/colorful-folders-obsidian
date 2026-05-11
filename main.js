@@ -441,7 +441,6 @@ daily = \u{1F4C5} @150`).setValue(this.plugin.settings.customIconRules||"").onCh
                     opacity: 1.0 !important;
                     border-radius: 6px;
                     ${m}
-                    transition: background-color 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
                 }
                 body .nav-folder-title[data-path="${M}"] .nav-folder-title-content,
                 body .tree-item-self[data-path="${M}"] .tree-item-inner {
