@@ -551,53 +551,19 @@ export class StyleGenerator {
                 `);
 
                 if (nnFileBgActive) {
-                    cssRules.push(`
-                        ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} {
-                            ${shouldColorNN ? `
-                                background: linear-gradient(90deg, rgba(${color.rgb}, ${fileBgAlpha}), rgba(${color.rgb}, ${fileBgAlpha * 0.4}) 60%, transparent) !important;
-                                border-left: 3px solid rgba(${color.rgb}, 0.6) !important;
-                            ` : ''}
-                            opacity: 1.0 !important;
-                            color: ${textNN} !important;
-                            font-weight: ${isBold ? 'bold' : 'normal'} !important;
-                            font-style: ${isItalic ? 'italic' : 'normal'} !important;
-                            box-sizing: border-box !important;
-                            display: flex !important;
-                            align-items: center !important;
-                            overflow: hidden !important;
-                            margin: 0 !important;
-                            padding: 0 8px !important;
-                            border-radius: 0 !important;
-                            height: 100% !important;
-                        }
-
-                        /* Icon Injection for NN Files (Ghost-Text Proof) */
-                        ${iconId ? `
-                            ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileIconSelector()} {
-                                font-size: 0 !important;
-                                color: transparent !important;
-                            }
-                            ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileIconSelector()}::before {
-                                content: "${iconId} " !important;
-                                margin-right: 6px !important;
-                                font-size: 1.2em !important;
-                                color: ${textNN} !important;
-                                font-style: normal !important;
-                                display: inline-block !important;
-                            }
-                            ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileIconSelector()} svg {
-                                display: none !important;
-                            }
-                        ` : ''}
-
-                        /* Active Glow for NN (Radiant Glass) */
-                        ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)}.is-active {
-                            background: linear-gradient(90deg, ${activeBg}, rgba(${color.rgb}, 0.2) 70%, transparent) !important;
-                            border-left: 4px solid ${activeText} !important;
-                            box-shadow: none !important;
-                            color: ${activeText} !important;
-                        }
-                    `);
+                    cssRules.push(NotebookNavigatorIntegration.generateIntegratedStyles(
+                        child.path,
+                        false,
+                        color,
+                        fileBgAlpha,
+                        textNN,
+                        iconId,
+                        activeBg,
+                        activeText,
+                        isBold,
+                        isItalic,
+                        shouldColorNN
+                    ));
                 }
 
                 if (iconId) {
@@ -819,42 +785,20 @@ export class StyleGenerator {
                     ${glassCss}
                 }
 
-                /* Notebook Navigator Folder Integration (Native-Sync Model) */
-                ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} {
-                    --nn-item-color: ${folderStyles.t} !important;
-                    --nn-item-background: ${folderStyles.b} !important;
-                    background: linear-gradient(90deg, ${folderStyles.b}, rgba(${color.rgb}, 0.1) 80%, transparent) !important;
-                    opacity: 1.0 !important;
-                    box-sizing: border-box !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    overflow: hidden !important;
-                    margin: 0 !important;
-                    padding: 0 8px !important;
-                    border-radius: 0 !important;
-                    height: 100% !important;
-                    border-left: 3.5px solid rgba(${color.rgb}, 0.6) !important;
-                    box-shadow: none !important;
-                }
-
-                /* Icon Injection for NN Folders (Ghost-Text Proof) */
-                ${folderIconId ? `
-                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()} {
-                        font-size: 0 !important;
-                        color: transparent !important;
-                    }
-                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()}::before {
-                        content: "${folderIconId} " !important;
-                        margin-right: 6px !important;
-                        font-size: 1.2em !important;
-                        color: ${folderStyles.t} !important;
-                        font-style: normal !important;
-                        display: inline-block !important;
-                    }
-                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()} svg {
-                        display: none !important;
-                    }
-                ` : ''}
+                /* Notebook Navigator Folder Integration (Native-Bridge Architecture) */
+                cssRules.push(NotebookNavigatorIntegration.generateIntegratedStyles(
+                    child.path,
+                    true,
+                    color,
+                    op,
+                    folderStyles.t,
+                    folderIconId,
+                    activeBg,
+                    activeText,
+                    isBold,
+                    isItalic,
+                    true
+                ));
 
                 body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content,
                 body .tree-item-self[data-path="${safePath}"] .tree-item-inner,

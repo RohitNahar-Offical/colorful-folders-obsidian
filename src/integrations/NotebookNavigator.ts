@@ -57,14 +57,18 @@ export class NotebookNavigatorIntegration {
     /**
      * Returns a scoped selector that ONLY matches if inside an NN container.
      */
+    /**
+     * Returns a scoped selector that ONLY matches real vault items in the Explorer view.
+     * Hardened to prevent collisions with Tag/Property views.
+     */
     static getScopedNavSelector(path: string): string {
         const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-        return `.notebook-navigator .nn-navitem[data-path="${safePath}"]`;
+        return `.nn-navigation-pane-content .nn-navitem[data-path="${safePath}"]`;
     }
 
     static getScopedFileSelector(path: string): string {
         const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-        return `.notebook-navigator .nn-file[data-path="${safePath}"]`;
+        return `.nn-navigation-pane-content .nn-file[data-path="${safePath}"]`;
     }
 
     /**
@@ -132,6 +136,93 @@ export class NotebookNavigatorIntegration {
      */
     static isFile(el: Element): boolean {
         return el.classList.contains('nav-file') || el.classList.contains('nn-file');
+    }
+
+    /**
+     * Generates a complete, hardened CSS block for a specific item in Notebook Navigator.
+     * Implements the 'Native-Bridge' architecture.
+     */
+    static generateIntegratedStyles(
+        path: string, 
+        isFolder: boolean, 
+        color: { rgb: string, hex: string }, 
+        bgAlpha: number, 
+        textCol: string, 
+        iconId: string, 
+        activeBg: string, 
+        activeText: string,
+        isBold: boolean,
+        isItalic: boolean,
+        shouldColor: boolean
+    ): string {
+        const selector = isFolder ? this.getScopedNavSelector(path) : this.getScopedFileSelector(path);
+        const iconSelector = isFolder ? this.getNavIconSelector() : this.getFileIconSelector();
+        const nameSelector = isFolder ? this.getNavNameSelector() : this.getFileNameSelector();
+
+        return `
+            ${selector} {
+                ${shouldColor ? `
+                    --nn-item-color: ${textCol} !important;
+                    --nn-item-background: rgba(${color.rgb}, ${bgAlpha}) !important;
+                    background: linear-gradient(90deg, rgba(${color.rgb}, ${bgAlpha}), rgba(${color.rgb}, ${bgAlpha * 0.4}) 60%, transparent) !important;
+                    border-left: 3.5px solid rgba(${color.rgb}, 0.6) !important;
+                ` : ''}
+                opacity: 1.0 !important;
+                color: ${textCol} !important;
+                box-sizing: border-box !important;
+                display: flex !important;
+                align-items: center !important;
+                overflow: hidden !important;
+                margin: 0 !important;
+                padding: 0 8px !important;
+                border-radius: 0 !important;
+                height: 100% !important;
+                box-shadow: none !important;
+            }
+
+            ${selector} ${nameSelector} {
+                color: ${textCol} !important;
+                font-weight: ${isBold ? 'bold' : 'normal'} !important;
+                font-style: ${isItalic ? 'italic' : 'normal'} !important;
+            }
+
+            /* Ghost-Text Purge & Icon Injection */
+            ${iconId ? `
+                ${selector} ${iconSelector} {
+                    font-size: 0 !important;
+                    color: transparent !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                }
+                ${selector} ${iconSelector}::before {
+                    content: "${iconId} " !important;
+                    margin-right: 6px !important;
+                    font-size: 1.2em !important;
+                    color: ${textCol} !important;
+                    font-style: normal !important;
+                    display: inline-block !important;
+                    line-height: 1 !important;
+                }
+                ${selector} ${iconSelector} svg {
+                    display: none !important;
+                }
+            ` : ''}
+
+            /* Active Glow (Radiant Glass) */
+            ${selector}.is-active {
+                background: linear-gradient(90deg, ${activeBg}, rgba(${color.rgb}, 0.2) 70%, transparent) !important;
+                border-left: 4px solid ${activeText} !important;
+                color: ${activeText} !important;
+                box-shadow: none !important;
+            }
+            ${selector}.is-active ${nameSelector} {
+                color: ${activeText} !important;
+            }
+            ${selector}.is-active ${iconSelector}::before {
+                color: ${activeText} !important;
+            }
+        `;
     }
 
     static registerMenuExtensions(plugin: IColorfulFoldersPlugin) {
