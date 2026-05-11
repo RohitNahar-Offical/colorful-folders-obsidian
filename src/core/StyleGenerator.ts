@@ -571,6 +571,18 @@ export class StyleGenerator {
                             height: 100% !important;
                         }
 
+                        /* Icon Injection for NN Files */
+                        ${iconId ? `
+                            ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileIconSelector()}::before {
+                                content: "${iconId} " !important;
+                                margin-right: 6px !important;
+                                font-style: normal !important;
+                            }
+                            ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} ${NotebookNavigatorIntegration.getFileIconSelector()} svg {
+                                display: none !important;
+                            }
+                        ` : ''}
+
                         /* Active Glow for NN (Radiant Glass) */
                         ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)}.is-active {
                             background: linear-gradient(90deg, ${activeBg}, rgba(${color.rgb}, 0.2) 70%, transparent) !important;
@@ -811,6 +823,18 @@ export class StyleGenerator {
                     border-left: 3.5px solid rgba(${color.rgb}, 0.6) !important;
                     box-shadow: none !important;
                 }
+
+                /* Icon Injection for NN Folders */
+                ${folderIconId ? `
+                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()}::before {
+                        content: "${folderIconId} " !important;
+                        margin-right: 6px !important;
+                        font-style: normal !important;
+                    }
+                    ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavIconSelector()} svg {
+                        display: none !important;
+                    }
+                ` : ''}
 
                 body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content,
                 body .tree-item-self[data-path="${safePath}"] .tree-item-inner,
