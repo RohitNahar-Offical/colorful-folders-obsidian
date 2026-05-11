@@ -552,19 +552,28 @@ export class StyleGenerator {
                         ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)} {
                             ${shouldColorNN ? `
                                 background-color: rgba(${color.rgb}, ${fileBgAlpha}) !important;
-                                border-left: 2.5px solid rgba(${color.rgb}, 0.4) !important;
-                                border-bottom: 2.5px solid rgba(${color.rgb}, 0.4) !important;
-                                border-bottom-left-radius: 4px !important;
+                                border-left: 2.5px solid rgba(${color.rgb}, 0.5) !important;
                             ` : ''}
                             opacity: 1.0 !important;
                             color: ${textNN} !important;
                             font-weight: ${isBold ? 'bold' : 'normal'} !important;
                             font-style: ${isItalic ? 'italic' : 'normal'} !important;
-                            border-radius: 4px;
                             box-sizing: border-box !important;
                             display: flex !important;
                             align-items: center !important;
                             overflow: hidden !important;
+                            margin: 0 !important;
+                            padding-top: 0 !important;
+                            padding-bottom: 0 !important;
+                            border-radius: 0 !important;
+                            height: inherit !important;
+                        }
+
+                        /* Active Glow for NN (Flat) */
+                        ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)}.is-active {
+                            background-color: ${activeBg} !important;
+                            border-left: 2.5px solid ${activeText} !important;
+                            box-shadow: none !important;
                         }
                     `);
                 }
@@ -659,13 +668,14 @@ export class StyleGenerator {
                         `}
                     }
 
-                    /* Notebook Navigator Active File Glow */
+                    /* Notebook Navigator Active File Glow (Flat Slot) */
                     ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)}.is-active {
                         background-color: ${activeBg} !important;
                         color: ${activeText} !important;
-                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
-                        border-left: 2.5px solid ${activeText} !important;
+                        border-left: 3px solid ${activeText} !important;
                         box-sizing: border-box !important;
+                        box-shadow: none !important;
+                        border-radius: 0 !important;
                     }
 
                     .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]::before,
@@ -713,11 +723,11 @@ export class StyleGenerator {
                         --cf-rgb: ${passedColor.rgb};
                     }
 
-                    /* Notebook Navigator Folder Active Path */
+                    /* Notebook Navigator Folder Active Path (Flat Slot) */
                     ${isParentOfActive ? `
                         ${NotebookNavigatorIntegration.getScopedNavSelector(folder.path)} {
-                            border-left: 2.5px solid ${passedColor.hex} !important;
-                            box-shadow: -2px 0 8px -2px ${passedColor.hex}44;
+                            border-left: 3px solid ${passedColor.hex} !important;
+                            background-color: rgba(${passedColor.rgb}, 0.15) !important;
                         }
                     ` : ''}
                 `);
@@ -786,15 +796,21 @@ export class StyleGenerator {
                     ${glassCss}
                 }
 
-                /* Notebook Navigator Folder Integration */
+                /* Notebook Navigator Folder Integration (Flat Slot Model) */
                 ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} {
                     background-color: ${folderStyles.b} !important;
                     opacity: 1.0 !important;
-                    border-radius: 6px;
                     box-sizing: border-box !important;
                     display: flex !important;
                     align-items: center !important;
                     overflow: hidden !important;
+                    margin: 0 !important;
+                    padding-top: 0 !important;
+                    padding-bottom: 0 !important;
+                    border-radius: 0 !important;
+                    height: inherit !important;
+                    border-left: 2.5px solid rgba(${color.rgb}, 0.5) !important;
+                    box-shadow: none !important;
                 }
 
                 body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content,
