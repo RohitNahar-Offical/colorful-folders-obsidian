@@ -777,6 +777,10 @@ export class StyleGenerator {
             const isCustomColor = !!(activeStyle && activeStyle.hex);
             const op = (activeStyle && activeStyle.opacity !== undefined) ? activeStyle.opacity : (depth === 0 ? rootOp : subOp);
 
+            // Pre-calculate folder icons to avoid warnings
+            const autoIconFolder = (this.settings.autoIcons && !customStyle?.iconId && !inheritedStyle?.iconId) ? this.plugin.iconManager.getAutoIconData(child.name) : null;
+            const folderIconId = customStyle?.iconId || inheritedStyle?.iconId || (autoIconFolder ? (this.settings.wideAutoIcons ? autoIconFolder.lucide : autoIconFolder.emoji) : "");
+
             const folderStyles = this.getFolderStyles(outlineOnly, depth, color.rgb, color.hex, op, isCustomColor, customStyle, inheritedStyle, context);
 
             const isBold = customStyle?.isBold !== undefined ? customStyle.isBold : (inheritedStyle?.isBold !== undefined ? inheritedStyle.isBold : true);
@@ -842,10 +846,6 @@ export class StyleGenerator {
                     ${textCss}
                 }
             `);
-
-            // Icon logic for folders
-            const autoIconFolder = (this.settings.autoIcons && !customStyle?.iconId && !inheritedStyle?.iconId) ? this.plugin.iconManager.getAutoIconData(child.name) : null;
-            const folderIconId = customStyle?.iconId || inheritedStyle?.iconId || (autoIconFolder ? (this.settings.wideAutoIcons ? autoIconFolder.lucide : autoIconFolder.emoji) : "");
 
             if (folderIconId) {
                 const isCustomEmoji = !obsidian.getIconIds?.().includes(`lucide-${folderIconId}`) &&
