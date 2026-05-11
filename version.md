@@ -1,5 +1,21 @@
 # Updates for Colorful Folders
 
+## ⚡ 4.1.5 - The "Strict Spotlight" Update
+This release introduces a ground-up modular redesign of the Focus Mode engine, prioritizing absolute visual clarity and zero-latency interaction.
+
+### 🎯 1. Modular Focus Engine
+- **Architectural Extraction**: Focus Mode has been moved into a dedicated peer module. This decouples focus logic from the core rendering loop, significantly increasing stability.
+- **Strict Spotlight Pattern**: Replaced the legacy "Tunnel Vision" blur with a hardened contrast system. Background items are instantaneously dimmed, while the active folder remains in a crystal-clear "Spotlight" with a bold pulse glow.
+
+### 🚀 2. The "Instant UI" Performance Model
+- **Zero-Animation Mandate**: Purged all remaining CSS transitions from the File Explorer. The UI now updates with **absolute zero latency**, ensuring a sharp, responsive feel.
+
+### 📐 3. Path Border Stabilization
+- **Thickness Standardization**: Standardized all Radiant Path lines (side and bottom) to a robust **2.5px** thickness.
+- **Eliminated "Thinning"**: Fixed the sub-pixel rendering glitch where lines would appear thin when folders were selected. All lines now maintain a consistent, solid weight.
+
+---
+
 ## ⚡ 4.1.4 - The "Visual & Performance" Update
 This release focuses on elevating visual elegance through the Luminous Selection default, alongside powerful Engine Micro-Optimizations.
 
