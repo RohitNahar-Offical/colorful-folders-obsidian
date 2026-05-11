@@ -658,6 +658,16 @@ export class StyleGenerator {
                             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 2px 8px rgba(0,0,0,0.1) !important;
                         `}
                     }
+
+                    /* Notebook Navigator Active File Glow */
+                    ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)}.is-active {
+                        background-color: ${activeBg} !important;
+                        color: ${activeText} !important;
+                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+                        border-left: 2.5px solid ${activeText} !important;
+                        box-sizing: border-box !important;
+                    }
+
                     .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]::before,
                     .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]::before {
                         background-color: ${activeText} !important;
@@ -702,6 +712,14 @@ export class StyleGenerator {
                         padding-left: 0 !important;
                         --cf-rgb: ${passedColor.rgb};
                     }
+
+                    /* Notebook Navigator Folder Active Path */
+                    ${isParentOfActive ? `
+                        ${NotebookNavigatorIntegration.getScopedNavSelector(folder.path)} {
+                            border-left: 2.5px solid ${passedColor.hex} !important;
+                            box-shadow: -2px 0 8px -2px ${passedColor.hex}44;
+                        }
+                    ` : ''}
                 `);
             }
         }
