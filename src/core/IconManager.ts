@@ -122,9 +122,6 @@ export class IconManager {
         return "";
     }
 
-    /**
-     * Scans the visible DOM and injects icons where needed.
-     */
     refreshIcons() {
         const containers: Element[] = [];
         this.plugin.app.workspace.getLeavesOfType('file-explorer').forEach(leaf => {
@@ -175,7 +172,7 @@ export class IconManager {
 
         let wrapper = el.querySelector<HTMLElement>('.cf-icon-wrapper');
         if (!wrapper) {
-            wrapper = doc.createElementNS('http://www.w3.org/1999/xhtml', 'span');
+            wrapper = doc.createElement('span');
             wrapper.classList.add('cf-icon-wrapper');
             wrapper.setCssStyles({
                 display: 'inline-flex',

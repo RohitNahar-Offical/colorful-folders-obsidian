@@ -562,7 +562,9 @@ export class StyleGenerator {
                         activeText,
                         isBold,
                         isItalic,
-                        shouldColorNN
+                        shouldColorNN,
+                        useGlass,
+                        tintOp
                     ));
                 }
 
@@ -776,6 +778,9 @@ export class StyleGenerator {
                 `;
             }
 
+            const activeBg = (this.settings.useCustomActiveColor && this.settings.customActiveBg) ? this.settings.customActiveBg : `rgba(${color.rgb}, ${useGlass ? 0.14 : 0.12})`;
+            const activeText = (this.settings.useCustomActiveColor && this.settings.customActiveText) ? this.settings.customActiveText : folderStyles.t;
+
             cssRules.push(`
                 .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem),
                 .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-navitem):not(.nn-file) {
@@ -784,22 +789,26 @@ export class StyleGenerator {
                     border-radius: 6px;
                     ${glassCss}
                 }
+            `);
 
-                /* Notebook Navigator Folder Integration (Native-Bridge Architecture) */
-                cssRules.push(NotebookNavigatorIntegration.generateIntegratedStyles(
-                    child.path,
-                    true,
-                    color,
-                    op,
-                    folderStyles.t,
-                    folderIconId,
-                    activeBg,
-                    activeText,
-                    isBold,
-                    isItalic,
-                    true
-                ));
+            /* Notebook Navigator Folder Integration (Native-Bridge Architecture) */
+            cssRules.push(NotebookNavigatorIntegration.generateIntegratedStyles(
+                child.path,
+                true,
+                color,
+                op,
+                folderStyles.t,
+                folderIconId,
+                activeBg,
+                activeText,
+                isBold,
+                isItalic,
+                true,
+                useGlass,
+                tintOp
+            ));
 
+            cssRules.push(`
                 body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content,
                 body .tree-item-self[data-path="${safePath}"] .tree-item-inner,
                 body ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()} {
@@ -930,6 +939,50 @@ export class StyleGenerator {
         cssRules.push(this.generateDividerCss());
 
         const root = this.app.vault.getRoot();
+        
+        // Support for styling the vault root in Notebook Navigator
+        const rootStyle = this.getStyle(root.path) || this.getStyle("/");
+        if (rootStyle && this.settings.notebookNavigatorSupport) {
+            const palette = this.settings.palette ? PALETTES[this.settings.palette] || Object.values(PALETTES)[0] : Object.values(PALETTES)[0];
+            const rootColor = rootStyle.hex ? { rgb: hexToRgbObj(rootStyle.hex).r + "," + hexToRgbObj(rootStyle.hex).g + "," + hexToRgbObj(rootStyle.hex).b, hex: rootStyle.hex } : palette[0];
+            const activeBg = (this.settings.useCustomActiveColor && this.settings.customActiveBg) ? this.settings.customActiveBg : `rgba(${rootColor.rgb}, 0.14)`;
+            const activeText = (this.settings.useCustomActiveColor && this.settings.customActiveText) ? this.settings.customActiveText : (rootStyle.textColor || rootColor.hex);
+            
+            cssRules.push(NotebookNavigatorIntegration.generateIntegratedStyles(
+                root.path,
+                true,
+                rootColor,
+                rootStyle.opacity ?? 0.8,
+                rootStyle.textColor || rootColor.hex,
+                rootStyle.iconId || "",
+                activeBg,
+                activeText,
+                !!rootStyle.isBold,
+                !!rootStyle.isItalic,
+                true,
+                this.settings.glassmorphism,
+                0
+            ));
+            // Also handle potential empty path/slash variants
+            if (root.path !== "/") {
+                 cssRules.push(NotebookNavigatorIntegration.generateIntegratedStyles(
+                    "/",
+                    true,
+                    rootColor,
+                    rootStyle.opacity ?? 0.8,
+                    rootStyle.textColor || rootColor.hex,
+                    rootStyle.iconId || "",
+                    activeBg,
+                    activeText,
+                    !!rootStyle.isBold,
+                    !!rootStyle.isItalic,
+                    true,
+                    this.settings.glassmorphism,
+                    0
+                ));
+            }
+        }
+
         this.traverse(root, 0, 0, 0, null, null, context, cssRules);
 
         cssRules.push(this.generateStealthCss());

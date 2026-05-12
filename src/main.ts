@@ -13,6 +13,7 @@ import {
   parseCustomPalette,
   hashString,
 } from "./common/utils";
+import { NotebookNavigatorIntegration } from './integrations/NotebookNavigator';
 import { ColorPickerModal } from "./ui/modals/ColorPickerModal";
 import { DividerModal } from "./ui/modals/DividerModal";
 import { ColorfulFoldersSettingTab } from "./ui/SettingTab";
@@ -20,7 +21,6 @@ import { PasswordModal } from "./ui/modals/PasswordModal";
 import { ChangelogModal } from "./ui/modals/ChangelogModal";
 import { StyleGenerator } from "./core/StyleGenerator";
 import { DividerManager } from "./core/DividerManager";
-import { NotebookNavigatorIntegration } from "./integrations/NotebookNavigator";
 
 import { MenuHelper } from "./ui/MenuHelper";
 import { IconManager } from "./core/IconManager";

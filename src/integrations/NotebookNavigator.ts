@@ -63,13 +63,13 @@ export class NotebookNavigatorIntegration {
      */
     static getScopedNavSelector(path: string): string {
         const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-        // Exclude items that are headers or lack typical folder attributes
-        return `.notebook-navigator .nn-navitem[data-path="${safePath}"]:not(.nn-header)`;
+        return `.nn-navigation-pane .nn-navitem[data-path="${safePath}"]:not(.nn-header), 
+                .nn-navigation-pane .nn-shortcut-item[data-path="${safePath}"]`;
     }
 
     static getScopedFileSelector(path: string): string {
         const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-        return `.notebook-navigator .nn-file[data-path="${safePath}"]:not(.nn-header)`;
+        return `.nn-list-view .nn-file[data-path="${safePath}"]:not(.nn-header)`;
     }
 
     /**
@@ -143,84 +143,107 @@ export class NotebookNavigatorIntegration {
      * Generates a complete, hardened CSS block for a specific item in Notebook Navigator.
      * Implements the 'Native-Bridge' architecture.
      */
+    private static applySuffix(selector: string, suffix: string): string {
+        return selector.split(',').map(s => `${s.trim()} ${suffix}`).join(', ');
+    }
+
     static generateIntegratedStyles(
         path: string, 
         isFolder: boolean, 
-        color: { rgb: string, hex: string }, 
-        bgAlpha: number, 
+        color: { rgb: string, hex: string },
+        bgAlpha: number,
         textCol: string, 
         iconId: string, 
-        activeBg: string, 
+        _activeBg: string, 
         activeText: string,
         isBold: boolean,
         isItalic: boolean,
-        shouldColor: boolean
+        shouldColor: boolean,
+        useGlass: boolean = false,
+        tintOp: number = 0
     ): string {
-        const selector = isFolder ? this.getScopedNavSelector(path) : this.getScopedFileSelector(path);
-        const iconSelector = isFolder ? this.getNavIconSelector() : this.getFileIconSelector();
-        const nameSelector = isFolder ? this.getNavNameSelector() : this.getFileNameSelector();
+        const base = isFolder ? this.getScopedNavSelector(path) : this.getScopedFileSelector(path);
+        const nameSel = isFolder ? this.getNavNameSelector() : this.getFileNameSelector();
+        const iconSel = isFolder ? this.getNavIconSelector() : this.getFileIconSelector();
+        const countSel = '.nn-navitem-count';
+
+        const glassCss = useGlass ? `backdrop-filter: blur(8px) saturate(120%); -webkit-backdrop-filter: blur(8px) saturate(120%);` : '';
+        const isEmoji = iconId && iconId.length <= 3;
+        
+        let iconCss = '';
+        if (iconId) {
+            if (isEmoji) {
+                iconCss = `
+                    ${this.applySuffix(base, nameSel)}::before {
+                        content: "${iconId} " !important;
+                    }
+                    ${this.applySuffix(base, iconSel)} {
+                        display: none !important;
+                    }
+                `;
+            }
+            // For custom SVGs set via settings, we rely on IconManager.
+            // For auto-icons, the StyleGenerator handles the mask-image CSS separately 
+            // (or it can be handled here if we pass the SVG string, but in 4.1.4 it was in StyleGenerator).
+            // To be safe and identical to 4.1.4, StyleGenerator will emit the SVG masks for auto-icons,
+            // but we ensure we hide the native icon if ANY icon is active (and we injected it).
+            else {
+                iconCss = `
+                    ${this.applySuffix(base, iconSel)} {
+                        display: none !important;
+                    }
+                `;
+            }
+        }
+
+        let bgCss = '';
+        if (isFolder) {
+            bgCss = `
+                ${base} {
+                    background-color: rgba(${color.rgb}, ${bgAlpha}) !important;
+                    border-radius: 4px !important;
+                    ${glassCss}
+                    ${tintOp > 0 ? `background-blend-mode: overlay;` : ''}
+                    transition: background-color 0.2s ease, filter 0.2s ease !important;
+                }
+            `;
+        } else {
+            bgCss = `
+                ${base} {
+                    ${shouldColor ? `
+                        background-color: rgba(${color.rgb}, ${bgAlpha}) !important;
+                        border-left: 2px solid rgba(${color.rgb}, 0.4) !important;
+                    ` : ''}
+                    opacity: 1.0 !important;
+                    color: ${textCol} !important;
+                    font-weight: ${isBold ? 'bold' : 'normal'} !important;
+                    font-style: ${isItalic ? 'italic' : 'normal'} !important;
+                    border-radius: 4px;
+                }
+            `;
+        }
 
         return `
-            ${selector} {
-                ${shouldColor ? `
-                    --nn-item-color: ${textCol} !important;
-                    --nn-item-background: rgba(${color.rgb}, ${bgAlpha}) !important;
-                    background: linear-gradient(90deg, rgba(${color.rgb}, ${bgAlpha}), rgba(${color.rgb}, ${bgAlpha * 0.4}) 60%, transparent) !important;
-                    border-left: 3.5px solid rgba(${color.rgb}, 0.6) !important;
-                ` : ''}
-                opacity: 1.0 !important;
-                color: ${textCol} !important;
-                box-sizing: border-box !important;
-                display: flex !important;
-                align-items: center !important;
-                overflow: hidden !important;
-                margin: 0 !important;
-                padding: 0 8px !important;
-                border-radius: 0 !important;
-                height: 100% !important;
-                box-shadow: none !important;
-            }
+            ${shouldColor ? bgCss : ''}
 
-            ${selector} ${nameSelector} {
+            ${this.applySuffix(base, nameSel)},
+            ${this.applySuffix(base, countSel)} {
                 color: ${textCol} !important;
                 font-weight: ${isBold ? 'bold' : 'normal'} !important;
                 font-style: ${isItalic ? 'italic' : 'normal'} !important;
             }
 
-            /* Ghost-Text Purge & Icon Injection */
-            ${iconId ? `
-                ${selector} ${iconSelector} {
-                    font-size: 0 !important;
-                    color: transparent !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                }
-                ${selector} ${iconSelector}::before {
-                    content: "${iconId} " !important;
-                    margin-right: 6px !important;
-                    font-size: 1.2em !important;
-                    color: ${textCol} !important;
-                    font-style: normal !important;
-                    display: inline-block !important;
-                    line-height: 1 !important;
-                }
-                ${selector} ${iconSelector} svg {
-                    display: none !important;
-                }
-            ` : ''}
+            ${iconCss}
 
-            /* Active Glow (Radiant Glass) */
-            ${selector}.is-active {
-                background: linear-gradient(90deg, ${activeBg}, rgba(${color.rgb}, 0.2) 70%, transparent) !important;
-                border-left: 4px solid ${activeText} !important;
-                color: ${activeText} !important;
-                box-shadow: none !important;
-            }
-            ${selector}.is-active ${nameSelector} {
+            /* Active / Selected Glow */
+            body .notebook-navigator .is-active[data-path="${path.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"] {
+                box-shadow: 0 0 8px rgba(${color.rgb}, 0.35) !important;
+                --cf-rgb: ${color.rgb};
                 color: ${activeText} !important;
             }
-            ${selector}.is-active ${iconSelector}::before {
+            
+            body .notebook-navigator .is-active[data-path="${path.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"] ${nameSel},
+            body .notebook-navigator .is-active[data-path="${path.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"] ${countSel} {
                 color: ${activeText} !important;
             }
         `;
