@@ -150,6 +150,11 @@ Examples:
 - **Result**: Failed automated submission with error: "Unexpected undescribed directive comment."
 - **Lesson**: ALL `eslint-disable` comments must include a `-- Description` explaining why.
 
+### ❌ Danger #6: Styling virtualized lists with JavaScript
+- **What happened**: Tried to inject background colors into Notebook Navigator using `el.style.setProperty` and CSS classes via `IconManager`.
+- **Result**: Severe flickering during scroll. Rows appeared white before turning the correct color.
+- **Lesson**: Virtualized lists (React/NN) recycle DOM elements faster than JS can track. Use **Pure CSS targeting `data-path`** for O(1) performance and zero flicker.
+
 ---
 
 ## 🧪 RULE 7 — TESTING CHECKLIST BEFORE EVERY PUSH

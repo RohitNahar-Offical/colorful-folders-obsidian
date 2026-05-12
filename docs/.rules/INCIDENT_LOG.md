@@ -72,3 +72,16 @@ Read before making ANY architectural changes.
 - Replaced `document` with `activeDocument` for popout window compatibility.
 - Fixed unnecessary type assertions and removed unused `async` keywords.
 **Lesson**: Always run the linter (`node node_modules/eslint/bin/eslint.js`) before pushing, especially after adding new features that use generic objects or DOM manipulation.
+
+---
+
+## Incident #7 — Notebook Navigator Flickering (2026-05-12)
+**What was attempted**: Implementing Notebook Navigator backgrounds and icons via DOM manipulation (`IconManager` adding classes and inline styles).
+**Why it was done**: To create a cleaner "CSS Variable Bridge" between plugins.
+**What broke**: 
+- Background colors "flickered" (showed white for a split second) during scroll.
+- Icons occasionally disappeared or moved during rapid scrolling.
+- Some rows remained completely uncolored if scrolled past too quickly.
+**Root cause**: Notebook Navigator uses a **Virtualized List** (React). DOM rows are recycled instantly. JavaScript observers cannot keep up with the scroll speed to inject styles.
+**Resolution**: Reverted to the **"Native-Bridge" (Pure CSS)** strategy from version 4.1.4. The engine now generates static CSS rules targeting items by `data-path`.
+**Lesson**: For virtualized lists, NEVER rely on JavaScript to inject styles or classes. Use direct, high-specificity CSS selectors (`[data-path="..."]`) for O(1) rendering.

@@ -18,7 +18,8 @@ Use this to instantly know WHICH file to edit for any task.
 → Edit `src/core/StyleGenerator.ts` — add to `cssRules.push()` inside the folder loop.
 
 ## "I want to fix Notebook Navigator compatibility"
-→ Edit `src/core/StyleGenerator.ts` — look for `nnActive` boolean checks.
+→ Edit `src/integrations/NotebookNavigator.ts`.
+→ Read `docs/NOTEBOOK_NAVIGATOR.md` for architecture details.
 
 ## "I want to change dividers"
 → Edit `src/core/DividerManager.ts`. Divider CSS is in the bottom of `StyleGenerator.ts`.
