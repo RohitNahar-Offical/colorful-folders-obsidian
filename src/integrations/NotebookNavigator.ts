@@ -154,7 +154,7 @@ export class NotebookNavigatorIntegration {
         bgAlpha: number,
         textCol: string, 
         iconId: string, 
-        _activeBg: string, 
+        activeBg: string, 
         activeText: string,
         isBold: boolean,
         isItalic: boolean,
@@ -234,7 +234,7 @@ export class NotebookNavigatorIntegration {
             bgCss = `
                 ${base} {
                     ${shouldColor ? `
-                        background-color: rgba(${color.rgb}, ${bgAlpha}) !important;
+                        background-color: rgba(${color.rgb}, ${Math.max(bgAlpha, 0.18)}) !important;
                         border-left: 3px solid rgba(${color.rgb}, 0.6) !important;
                     ` : ''}
                     opacity: 1.0 !important;
@@ -265,6 +265,7 @@ export class NotebookNavigatorIntegration {
 
             /* Active / Selected Glow (Premium) */
             body .notebook-navigator .is-active[data-path="${safePath}"] {
+                background-color: ${activeBg} !important;
                 box-shadow: 0 0 15px rgba(${color.rgb}, 0.5), 0 0 5px rgba(${color.rgb}, 0.3) !important;
                 border-left: 4px solid rgba(${color.rgb}, 1.0) !important;
                 transform: scale(1.01) !important;
