@@ -65,7 +65,7 @@ export default class ColorfulFoldersPlugin
         // P2 fix: initDividerObserver re-inits on layout-change; no need here
       },
       300,
-      true,
+      false,
     );
 
     this.processDividersDebounced = obsidian.debounce(
@@ -672,14 +672,16 @@ export default class ColorfulFoldersPlugin
   }
 
   generateStyles() {
-    if (this.sheet) {
-      this.sheet.replaceSync(new StyleGenerator(this).generateCss());
-    }
-    activeDocument.body.classList.toggle(
-      "cf-show-hidden",
-      this.settings.showHiddenItems,
-    );
-    this.refreshIcons();
+    activeWindow.requestAnimationFrame(() => {
+      if (this.sheet) {
+        this.sheet.replaceSync(new StyleGenerator(this).generateCss());
+      }
+      activeDocument.body.classList.toggle(
+        "cf-show-hidden",
+        this.settings.showHiddenItems,
+      );
+      this.refreshIcons();
+    });
   }
 
   refreshIcons() {
