@@ -757,45 +757,43 @@ export default class ColorfulFoldersPlugin
       if (this.isSyncingDividers || this.isScrolling) return;
 
       let hasRelevantChange = false;
-      for (const m of mutations) {
-        // Ignore any changes inside our own icon wrappers or interactive dividers
-        const target = m.target as HTMLElement;
-        if (target.closest(".cf-icon-wrapper, .cf-interactive-divider"))
-          continue;
+      const nodesToProcess = new Set<HTMLElement>();
 
+      for (const m of mutations) {
+        const target = m.target as HTMLElement;
+        if (target.closest(".cf-icon-wrapper, .cf-interactive-divider")) continue;
         if (m.type !== "childList") continue;
 
-        const isRelevantNode = (node: Node) => {
-          if (node.nodeType !== Node.ELEMENT_NODE) return false;
+        const checkNode = (node: Node) => {
+          if (node.nodeType !== Node.ELEMENT_NODE) return;
           const el = node as HTMLElement;
-          return (
+          if (
             !el.classList.contains("cf-interactive-divider") &&
             !el.classList.contains("cf-icon-wrapper") &&
             !el.classList.contains("nav-file-ghost") &&
-            !el.classList.contains("nav-folder-ghost") &&
-            !el.closest(".cf-icon-wrapper")
-          );
+            !el.classList.contains("nav-folder-ghost")
+          ) {
+            hasRelevantChange = true;
+            if (el.matches('.nav-folder-title, .tree-item-self, .nn-navitem, .nn-file')) {
+                nodesToProcess.add(el);
+            }
+            // Check children for nested items
+            el.querySelectorAll('.nav-folder-title, .tree-item-self, .nn-navitem, .nn-file').forEach(child => {
+                nodesToProcess.add(child as HTMLElement);
+            });
+          }
         };
 
-        for (const node of Array.from(m.addedNodes)) {
-          if (isRelevantNode(node)) {
-            hasRelevantChange = true;
-            break;
-          }
-        }
-        if (hasRelevantChange) break;
-        for (const node of Array.from(m.removedNodes)) {
-          if (isRelevantNode(node)) {
-            hasRelevantChange = true;
-            break;
-          }
-        }
-        if (hasRelevantChange) break;
+        m.addedNodes.forEach(checkNode);
+        m.removedNodes.forEach(checkNode);
       }
 
       if (hasRelevantChange) {
+        // 1. Instant targeted icon update for the new nodes (Minimal impact)
+        nodesToProcess.forEach(el => this.iconManager.refreshIconForElement(el));
+        
+        // 2. Debounced global sync for dividers (Heavy layout work)
         this.processDividers();
-        this.refreshIcons();
       }
     });
 
