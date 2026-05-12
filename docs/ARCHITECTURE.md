@@ -198,9 +198,20 @@ Colorful Folders includes a "Stealth Mode" (Data Hider) to protect sensitive vau
 
 ---
 
-## 8. Third-Party Integrations
+## 8. Third-Party Integrations: Notebook Navigator
 
-We support **Notebook Navigator** by injecting specific selectors that target its custom list items (`.nn-navitem`). The logic is abstracted in `src/integrations/NotebookNavigator.ts` to ensure the core engine remains clean.
+We support **Notebook Navigator** through a specialized **"Native-Bridge" (Pure CSS)** architecture. This is handled by `src/integrations/NotebookNavigator.ts`.
+
+### Why Pure CSS?
+Notebook Navigator uses a **highly aggressive virtualized list**. DOM elements are created, recycled, and destroyed instantly as the user scrolls. 
+- **The Problem**: Using JavaScript to inject classes or inline styles (like `IconManager` does for the native explorer) causes race conditions and visible flickering because the script can't keep up with the scroll speed.
+- **The Solution**: The `StyleGenerator` generates static CSS rules that target items by their `data-path` (e.g., `.nn-navitem[data-path="Notes"]`). 
+- **Performance**: This is **O(1)**. The browser's native CSS engine applies the styling the exact nanosecond React renders the row, ensuring 100% stable backgrounds and colors without any lag or scrolling artifacts.
+
+### Integration Mechanism:
+1.  **Selective Scoping**: Rules target `.nn-navitem` (folders) and `.nn-file` (files).
+2.  **State Logic**: The generator correctly identifies the "Active" state in Notebook Navigator (`.is-active`) to apply custom selection glows and active file colors.
+3.  **Icon Management**: While auto-icons use CSS `::before` masking, manual icon overrides are injected by `IconManager` into the `.nn-navitem-name` span, ensuring they move seamlessly with the text during scrolling.
 ---
 
 ## 9. Maintenance & Persistence

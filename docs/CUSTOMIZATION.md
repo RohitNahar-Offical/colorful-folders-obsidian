@@ -203,6 +203,31 @@ body .cf-glass {
 
 ---
 
+## Notebook Navigator Customization
+
+Since Notebook Navigator uses its own CSS classes, you must use specific selectors to override its styles.
+
+```css
+/* Change background of a specific folder in NN */
+body .notebook-navigator .nn-navitem[data-path="Your Folder"] {
+    background-color: gold !important;
+    border-radius: 8px !important;
+}
+
+/* Customize the selection glow in NN */
+body .notebook-navigator .is-active {
+    box-shadow: 0 0 15px var(--interactive-accent) !important;
+    filter: brightness(1.2);
+}
+
+/* Custom icons in NN list view */
+body .notebook-navigator .nn-file[data-path$=".md"] .nn-file-name::before {
+    content: "📝 " !important;
+}
+```
+
+---
+
 ## Best Practices
 1. **Use `data-path`**: Use the `data-path` attribute to target specific folders/files without affecting others.
 2. **Respect Variables**: Use Obsidian CSS variables (like `var(--interactive-accent)`) to ensure your snippets adapt to light/dark modes.
