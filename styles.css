@@ -642,10 +642,6 @@ body .nav-files-container .tree-item-inner {
     z-index: 1;
 }
 
-.cf-tab-panel {
-    /* REMOVED ANIMATION */
-
-}
 
 @keyframes cf-fade-in {
     from { opacity: 0; transform: translateY(4px); }
