@@ -608,6 +608,7 @@ body .nav-files-container .tree-item-inner {
 
 .cf-vcp-slider {
     -webkit-appearance: none;
+    appearance: none;
     height: 8px !important;
     border-radius: 4px;
     outline: none;
@@ -618,6 +619,7 @@ body .nav-files-container .tree-item-inner {
 
 .cf-vcp-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
+    appearance: none;
     width: 16px;
     height: 16px;
     border-radius: 50%;
@@ -711,11 +713,13 @@ body .nav-files-container .tree-item-inner {
     background: rgba(0, 0, 0, 0.2) !important;
     border-radius: 10px !important;
     appearance: none !important;
+    -webkit-appearance: none !important;
     cursor: pointer !important;
     border: 1px solid var(--background-modifier-border) !important;
 }
 .colorful-folders-config .setting-item-control input[type="range"]::-webkit-slider-thumb {
     appearance: none !important;
+    -webkit-appearance: none !important;
     width: 20px !important;
     height: 20px !important;
     background: var(--interactive-accent) !important;
