@@ -214,8 +214,8 @@ daily = \u{1F4C5} @150`).setValue(this.plugin.settings.customIconRules||"").onCh
                 margin-bottom: 0 !important;
             }
 
-            .nav-folder-collapse-indicator,
-            .tree-item-collapse-indicator {
+            body .nav-files-container .nav-folder-collapse-indicator,
+            body .nav-files-container .tree-item-collapse-indicator {
                 display: flex !important;
                 align-items: center !important;
                 justify-content: center !important;
@@ -596,8 +596,8 @@ daily = \u{1F4C5} @150`).setValue(this.plugin.settings.customIconRules||"").onCh
                                 content: none !important;
                             }
                         `);else{let Ie=this.plugin.iconManager.getIconSvg(te,!0);Ie&&c.push(`
-                                body [data-path="${F}"] .nav-folder-title-content::before,
-                                body [data-path="${F}"] .tree-item-inner::before {
+                                body .nav-files-container [data-path="${F}"] .nav-folder-title-content::before,
+                                body .nav-files-container [data-path="${F}"] .tree-item-inner::before {
                                     content: '' !important;
                                     display: inline-flex !important;
                                     width: ${D} !important;
@@ -610,8 +610,8 @@ daily = \u{1F4C5} @150`).setValue(this.plugin.settings.customIconRules||"").onCh
                                     margin-right: 6px !important;
                                 }
                             `)}else N&&c.push(`
-                    body .nav-folder-title[data-path="${F}"] .nav-folder-title-content::before,
-                    body .tree-item-self[data-path="${F}"] .tree-item-inner::before {
+                    body .nav-files-container .nav-folder-title[data-path="${F}"] .nav-folder-title-content::before,
+                    body .nav-files-container .tree-item-self[data-path="${F}"] .tree-item-inner::before {
                         content: '' !important;
                         display: inline-flex !important;
                         width: ${D} !important;
@@ -636,8 +636,8 @@ daily = \u{1F4C5} @150`).setValue(this.plugin.settings.customIconRules||"").onCh
                     </g>
                     <text x="60" y="10.5" dominant-baseline="central" fill="${B.hex}" font-family="sans-serif" font-size="11" font-weight="900">${he.files}</text>
                 </svg>`,Se=`url("data:image/svg+xml,${encodeURIComponent(Ie.replace(/>\s+</g,"><").replace(/(\r\n|\n|\r)/gm,""))}")`;c.push(`
-                    body .nav-folder-title[data-path="${F}"]::after,
-                    body .tree-item-self[data-path="${F}"]::after {
+                    body .nav-files-container .nav-folder-title[data-path="${F}"]::after,
+                    body .nav-files-container .tree-item-self[data-path="${F}"]::after {
                         content: "" !important;
                         background-image: ${Se} !important;
                         background-repeat: no-repeat !important;

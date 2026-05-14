@@ -220,8 +220,8 @@ export class StyleGenerator {
                 margin-bottom: 0 !important;
             }
 
-            .nav-folder-collapse-indicator,
-            .tree-item-collapse-indicator {
+            body .nav-files-container .nav-folder-collapse-indicator,
+            body .nav-files-container .tree-item-collapse-indicator {
                 display: flex !important;
                 align-items: center !important;
                 justify-content: center !important;
@@ -884,8 +884,8 @@ export class StyleGenerator {
                         const svgStr = this.plugin.iconManager.getIconSvg(folderIconId, true);
                         if (svgStr) {
                             cssRules.push(`
-                                body [data-path="${safePath}"] .nav-folder-title-content::before,
-                                body [data-path="${safePath}"] .tree-item-inner::before {
+                                body .nav-files-container [data-path="${safePath}"] .nav-folder-title-content::before,
+                                body .nav-files-container [data-path="${safePath}"] .tree-item-inner::before {
                                     content: '' !important;
                                     display: inline-flex !important;
                                     width: ${folderIconW} !important;
@@ -903,8 +903,8 @@ export class StyleGenerator {
                 }
             } else if (autoIcons) {
                 cssRules.push(`
-                    body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
-                    body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
+                    body .nav-files-container .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
+                    body .nav-files-container .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
                         content: '' !important;
                         display: inline-flex !important;
                         width: ${folderIconW} !important;
@@ -939,8 +939,8 @@ export class StyleGenerator {
                 const combinedIconUrl = `url("data:image/svg+xml,${encodedSvg}")`;
 
                 cssRules.push(`
-                    body .nav-folder-title[data-path="${safePath}"]::after,
-                    body .tree-item-self[data-path="${safePath}"]::after {
+                    body .nav-files-container .nav-folder-title[data-path="${safePath}"]::after,
+                    body .nav-files-container .tree-item-self[data-path="${safePath}"]::after {
                         content: "" !important;
                         background-image: ${combinedIconUrl} !important;
                         background-repeat: no-repeat !important;

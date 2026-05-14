@@ -261,8 +261,8 @@ body .nav-files-container .tree-item-self::after {
     margin-bottom: 0 !important;
 }
 
-.nav-folder-collapse-indicator,
-.tree-item-collapse-indicator {
+body .nav-files-container .nav-folder-collapse-indicator,
+body .nav-files-container .tree-item-collapse-indicator {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -552,7 +552,6 @@ body .nav-files-container .tree-item-inner {
 }
 
 /* REMOVED ANIMATION */
-}
 
 /* --- Smart Adaptive Positioning (Below) --- */
 .cf-premium-popover.is-below {
@@ -561,7 +560,6 @@ body .nav-files-container .tree-item-inner {
 }
 
 /* REMOVED ANIMATION */
-}
 
 /* Reverting native tooltip styling to default to avoid affecting other plugins */
 body > .tooltip {
