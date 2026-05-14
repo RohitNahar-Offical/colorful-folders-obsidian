@@ -65,7 +65,7 @@ export default class ColorfulFoldersPlugin
         // P2 fix: initDividerObserver re-inits on layout-change; no need here
       },
       300,
-      false,
+      true,
     );
 
     this.processDividersDebounced = obsidian.debounce(
@@ -672,16 +672,14 @@ export default class ColorfulFoldersPlugin
   }
 
   generateStyles() {
-    activeWindow.requestAnimationFrame(() => {
-      if (this.sheet) {
-        this.sheet.replaceSync(new StyleGenerator(this).generateCss());
-      }
-      activeDocument.body.classList.toggle(
-        "cf-show-hidden",
-        this.settings.showHiddenItems,
-      );
-      this.refreshIcons();
-    });
+    if (this.sheet) {
+      this.sheet.replaceSync(new StyleGenerator(this).generateCss());
+    }
+    activeDocument.body.classList.toggle(
+      "cf-show-hidden",
+      this.settings.showHiddenItems,
+    );
+    this.refreshIcons();
   }
 
   refreshIcons() {
@@ -757,43 +755,45 @@ export default class ColorfulFoldersPlugin
       if (this.isSyncingDividers || this.isScrolling) return;
 
       let hasRelevantChange = false;
-      const nodesToProcess = new Set<HTMLElement>();
-
       for (const m of mutations) {
+        // Ignore any changes inside our own icon wrappers or interactive dividers
         const target = m.target as HTMLElement;
-        if (target.closest(".cf-icon-wrapper, .cf-interactive-divider")) continue;
+        if (target.closest(".cf-icon-wrapper, .cf-interactive-divider"))
+          continue;
+
         if (m.type !== "childList") continue;
 
-        const checkNode = (node: Node) => {
-          if (node.nodeType !== Node.ELEMENT_NODE) return;
+        const isRelevantNode = (node: Node) => {
+          if (node.nodeType !== Node.ELEMENT_NODE) return false;
           const el = node as HTMLElement;
-          if (
+          return (
             !el.classList.contains("cf-interactive-divider") &&
             !el.classList.contains("cf-icon-wrapper") &&
             !el.classList.contains("nav-file-ghost") &&
-            !el.classList.contains("nav-folder-ghost")
-          ) {
-            hasRelevantChange = true;
-            if (el.matches('.nav-folder-title, .tree-item-self, .nn-navitem, .nn-file')) {
-                nodesToProcess.add(el);
-            }
-            // Check children for nested items
-            el.querySelectorAll('.nav-folder-title, .tree-item-self, .nn-navitem, .nn-file').forEach(child => {
-                nodesToProcess.add(child as HTMLElement);
-            });
-          }
+            !el.classList.contains("nav-folder-ghost") &&
+            !el.closest(".cf-icon-wrapper")
+          );
         };
 
-        m.addedNodes.forEach(checkNode);
-        m.removedNodes.forEach(checkNode);
+        for (const node of Array.from(m.addedNodes)) {
+          if (isRelevantNode(node)) {
+            hasRelevantChange = true;
+            break;
+          }
+        }
+        if (hasRelevantChange) break;
+        for (const node of Array.from(m.removedNodes)) {
+          if (isRelevantNode(node)) {
+            hasRelevantChange = true;
+            break;
+          }
+        }
+        if (hasRelevantChange) break;
       }
 
       if (hasRelevantChange) {
-        // 1. Instant targeted icon update for the new nodes (Minimal impact)
-        nodesToProcess.forEach(el => this.iconManager.refreshIconForElement(el));
-        
-        // 2. Debounced global sync for dividers (Heavy layout work)
         this.processDividers();
+        this.refreshIcons();
       }
     });
 

@@ -133,21 +133,17 @@ export class IconManager {
         containers.forEach(container => {
             const items = container.querySelectorAll('.nav-folder-title, .tree-item-self, .nn-navitem, .nn-file');
             items.forEach(item => {
-                this.refreshIconForElement(item as HTMLElement);
+                const path = (item as HTMLElement).dataset.path;
+                if (!path) return;
+
+                const style = this.plugin.getStyle(path);
+                if (style && style.iconId) {
+                    this.injectIcon(item as HTMLElement, style);
+                } else {
+                    this.removeInjectedIcon(item as HTMLElement);
+                }
             });
         });
-    }
-
-    refreshIconForElement(item: HTMLElement) {
-        const path = item.dataset.path;
-        if (!path) return;
-
-        const style = this.plugin.getStyle(path);
-        if (style && style.iconId) {
-            this.injectIcon(item, style);
-        } else {
-            this.removeInjectedIcon(item);
-        }
     }
 
     /**

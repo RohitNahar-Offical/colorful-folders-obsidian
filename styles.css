@@ -242,6 +242,8 @@
     display: flex !important;
     align-items: center !important;
     overflow: visible !important;
+    line-height: normal !important;
+    height: auto !important;
 }
 
 /* Icon Rendering Stability */
@@ -281,8 +283,10 @@
     -webkit-mask-position: center !important;
     mask-size: contain !important;
     mask-position: center !important;
-    /* REMOVED TRANSITION */
-
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    vertical-align: middle !important;
 }
 
 /* Ensure nav title rows are flex so arrow, icon, text, and counter all center-align */
@@ -292,6 +296,8 @@
     display: flex !important;
     align-items: center !important;
     overflow: visible !important;
+    line-height: normal !important;
+    min-height: 24px !important;
 }
 
 /* Global: nav item counter / tag badges are flex items so margin-left: auto works */

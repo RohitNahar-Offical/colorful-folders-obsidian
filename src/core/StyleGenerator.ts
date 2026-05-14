@@ -195,6 +195,8 @@ export class StyleGenerator {
                 display: flex !important;
                 align-items: center !important;
                 overflow: visible !important;
+                line-height: normal !important;
+                height: auto !important;
             }
 
             .nav-folder-title,
@@ -203,6 +205,8 @@ export class StyleGenerator {
                 display: flex !important;
                 align-items: center !important;
                 overflow: visible !important;
+                line-height: normal !important;
+                min-height: 24px !important;
             }
 
             .cf-icon-active::before {
@@ -908,6 +912,8 @@ export class StyleGenerator {
                         background-repeat: no-repeat !important;
                         background-position: center right !important;
                         display: inline-flex !important;
+                        align-items: center !important;
+                        vertical-align: middle !important;
                         width: ${totalWidth}px !important;
                         min-width: ${totalWidth}px !important;
                         height: 20px !important;
