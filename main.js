@@ -625,14 +625,14 @@ daily = \u{1F4C5} @150`).setValue(this.plugin.settings.customIconRules||"").onCh
                     <g stroke="${B.hex}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(0, 3) scale(0.65)">
                         <path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/>
                     </g>
-                    <text x="21" y="15" fill="${B.hex}" font-family="sans-serif" font-size="11" font-weight="900">${he.folders}</text>
+                    <text x="21" y="10.5" dominant-baseline="central" fill="${B.hex}" font-family="sans-serif" font-size="11" font-weight="900">${he.folders}</text>
                     <g stroke="${B.hex}" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(42, 3) scale(0.65)">
                         <path d="M15.5 2H8.6c-.4 0-.8.2-1.1.5-.3.3-.5.7-.5 1.1v12.8c0 .4.2.8.5 1.1.3.3.7.5 1.1.5h9.8c.4 0 .8-.2 1.1-.5.3-.3.5-.7.5-1.1V7.5L15.5 2z"/>
                         <path d="M15 2v5h5"/>
                         <path d="M2 17.6V7.1c0-.4.2-.8.5-1.1.3-.3.7-.5 1.1-.5h3.3"/>
                         <path d="M13 22H3.6c-.4 0-.8-.2-1.1-.5-.3-.3-.5-.7-.5-1.1V10"/>
                     </g>
-                    <text x="60" y="15" fill="${B.hex}" font-family="sans-serif" font-size="11" font-weight="900">${he.files}</text>
+                    <text x="60" y="10.5" dominant-baseline="central" fill="${B.hex}" font-family="sans-serif" font-size="11" font-weight="900">${he.files}</text>
                 </svg>`,Se=`url("data:image/svg+xml,${encodeURIComponent(Ie.replace(/>\s+</g,"><").replace(/(\r\n|\n|\r)/gm,""))}")`;c.push(`
                     body .nav-folder-title[data-path="${F}"]::after,
                     body .tree-item-self[data-path="${F}"]::after {
