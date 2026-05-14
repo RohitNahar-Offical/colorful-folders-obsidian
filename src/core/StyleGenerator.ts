@@ -188,33 +188,33 @@ export class StyleGenerator {
                 background-color: transparent !important;
             }
 
-            /* ── PIXEL-PERFECT NAV ITEM FLEX LAYOUT ─────────────────────────────────
-               To achieve perfect visual centering, we must "shrink-wrap" the 
-               content boxes and explicitly center all children to bypass font metrics.
+            /* ── NUCLEAR SPECIFICITY NAV ITEM LAYOUT ───────────────────────────────
+               We use high-specificity selectors to defeat theme overrides (like Prism).
             ──────────────────────────────────────────────────────────────────────── */
-            .nav-folder-title,
-            .nav-file-title,
-            .tree-item-self {
+            body .nav-files-container .nav-folder-title,
+            body .nav-files-container .nav-file-title,
+            body .nav-files-container .tree-item-self {
                 display: flex !important;
                 align-items: center !important;
                 justify-content: flex-start !important;
                 padding-top: 0 !important;
                 padding-bottom: 0 !important;
                 height: 30px !important;
+                max-height: 30px !important;
                 min-height: 30px !important;
                 overflow: visible !important;
             }
 
             /* Force all immediate children and pseudo-elements to perfectly center vertically */
-            .nav-folder-title > *,
-            .nav-file-title > *,
-            .tree-item-self > *,
-            .nav-folder-title::before,
-            .nav-file-title::before,
-            .tree-item-self::before,
-            .nav-folder-title::after,
-            .nav-file-title::after,
-            .tree-item-self::after {
+            body .nav-files-container .nav-folder-title > *,
+            body .nav-files-container .nav-file-title > *,
+            body .nav-files-container .tree-item-self > *,
+            body .nav-files-container .nav-folder-title::before,
+            body .nav-files-container .nav-file-title::before,
+            body .nav-files-container .tree-item-self::before,
+            body .nav-files-container .nav-folder-title::after,
+            body .nav-files-container .nav-file-title::after,
+            body .nav-files-container .tree-item-self::after {
                 align-self: center !important;
                 margin-top: 0 !important;
                 margin-bottom: 0 !important;
@@ -228,9 +228,9 @@ export class StyleGenerator {
                 height: auto !important;
             }
 
-            .nav-folder-title-content,
-            .nav-file-title-content,
-            .tree-item-inner {
+            body .nav-files-container .nav-folder-title-content,
+            body .nav-files-container .nav-file-title-content,
+            body .nav-files-container .tree-item-inner {
                 display: flex !important;
                 align-items: center !important;
                 overflow: visible !important;
