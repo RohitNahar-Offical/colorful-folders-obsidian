@@ -188,10 +188,9 @@ export class StyleGenerator {
                 background-color: transparent !important;
             }
 
-            /* ── NAV ITEM FLEX LAYOUT (Global alignment foundation) ─────────────────
-               To work flawlessly across ALL themes, we must enforce a strict, 
-               symmetric flexbox layout that overrides inconsistent native theme 
-               paddings and heights (e.g., shifting items when collapsed).
+            /* ── PIXEL-PERFECT NAV ITEM FLEX LAYOUT ─────────────────────────────────
+               To achieve perfect visual centering, we must "shrink-wrap" the 
+               content boxes and explicitly center all children to bypass font metrics.
             ──────────────────────────────────────────────────────────────────────── */
             .nav-folder-title,
             .nav-file-title,
@@ -203,8 +202,22 @@ export class StyleGenerator {
                 padding-bottom: 4px !important;
                 min-height: 28px !important;
                 height: auto !important;
-                line-height: normal !important;
                 overflow: visible !important;
+            }
+
+            /* Force all immediate children and pseudo-elements to perfectly center vertically */
+            .nav-folder-title > *,
+            .nav-file-title > *,
+            .tree-item-self > *,
+            .nav-folder-title::before,
+            .nav-file-title::before,
+            .tree-item-self::before,
+            .nav-folder-title::after,
+            .nav-file-title::after,
+            .tree-item-self::after {
+                align-self: center !important;
+                margin-top: 0 !important;
+                margin-bottom: 0 !important;
             }
 
             .nav-folder-collapse-indicator,
@@ -212,8 +225,6 @@ export class StyleGenerator {
                 display: flex !important;
                 align-items: center !important;
                 justify-content: center !important;
-                margin-top: 0 !important;
-                margin-bottom: 0 !important;
                 height: auto !important;
             }
 
@@ -225,8 +236,7 @@ export class StyleGenerator {
                 overflow: visible !important;
                 flex-grow: 1 !important;
                 height: auto !important;
-                margin-top: 0 !important;
-                margin-bottom: 0 !important;
+                line-height: 1.2 !important; /* Shrink-wrap the font baseline */
                 padding-top: 0 !important;
                 padding-bottom: 0 !important;
             }
