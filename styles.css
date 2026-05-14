@@ -236,26 +236,11 @@
    - .cf-icon-wrapper can use align-self: center
    This must be global — icon rendering paths are conditional but alignment must always be consistent.
 ──────────────────────────────────────────────────────────────────────── */
-/* Aggressive Vertical Centering Reset */
+/* Ensure icons don't clip when scaled wide */
 .nav-folder-title,
 .nav-file-title,
 .tree-item-self {
-    display: flex !important;
-    align-items: center !important;
     overflow: visible !important;
-    padding-top: 6px !important;
-    padding-bottom: 6px !important;
-    min-height: 28px !important;
-}
-
-.nav-folder-collapse-indicator,
-.tree-item-collapse-indicator {
-    display: flex !important;
-    align-items: center !important;
-    align-self: center !important;
-    height: auto !important;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
 }
 
 .nav-folder-title-content,
@@ -264,13 +249,6 @@
     display: flex !important;
     align-items: center !important;
     overflow: visible !important;
-    flex-grow: 1 !important;
-    height: auto !important;
-    line-height: 1 !important;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
 }
 
 /* Icon Rendering Stability */
@@ -316,7 +294,6 @@
     vertical-align: middle !important;
 }
 
-/* Removed redundant row flex as it is handled by the aggressive reset above */
 
 /* Global: nav item counter / tag badges are flex items so margin-left: auto works */
 .nav-folder-title-content .nav-folder-tag,
