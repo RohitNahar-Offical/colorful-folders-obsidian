@@ -192,10 +192,10 @@ daily = \u{1F4C5} @150`).setValue(this.plugin.settings.customIconRules||"").onCh
                 display: flex !important;
                 align-items: center !important;
                 justify-content: flex-start !important;
-                padding-top: 4px !important;
-                padding-bottom: 4px !important;
-                min-height: 28px !important;
-                height: auto !important;
+                padding-top: 0 !important;
+                padding-bottom: 0 !important;
+                height: 30px !important;
+                min-height: 30px !important;
                 overflow: visible !important;
             }
 
@@ -230,9 +230,11 @@ daily = \u{1F4C5} @150`).setValue(this.plugin.settings.customIconRules||"").onCh
                 overflow: visible !important;
                 flex-grow: 1 !important;
                 height: auto !important;
-                line-height: 1.2 !important; /* Shrink-wrap the font baseline */
+                line-height: 1 !important; /* Absolute shrink-wrap */
                 padding-top: 0 !important;
                 padding-bottom: 0 !important;
+                margin-top: 0 !important;
+                margin-bottom: 0 !important;
             }
 
             .cf-icon-active::before {
