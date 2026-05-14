@@ -188,25 +188,41 @@ export class StyleGenerator {
                 background-color: transparent !important;
             }
 
-            /* Global: Flex layout foundation for all nav title rows. */
-            .nav-folder-title-content,
-            .nav-file-title-content,
-            .tree-item-inner {
-                display: flex !important;
-                align-items: center !important;
-                overflow: visible !important;
-                line-height: normal !important;
-                height: auto !important;
-            }
-
+            /* Aggressive Vertical Centering Reset */
             .nav-folder-title,
             .nav-file-title,
             .tree-item-self {
                 display: flex !important;
                 align-items: center !important;
                 overflow: visible !important;
-                line-height: normal !important;
-                min-height: 24px !important;
+                padding-top: 6px !important;
+                padding-bottom: 6px !important;
+                min-height: 28px !important;
+            }
+
+            .nav-folder-collapse-indicator,
+            .tree-item-collapse-indicator {
+                display: flex !important;
+                align-items: center !important;
+                align-self: center !important;
+                height: auto !important;
+                margin-top: 0 !important;
+                margin-bottom: 0 !important;
+            }
+
+            .nav-folder-title-content,
+            .nav-file-title-content,
+            .tree-item-inner {
+                display: flex !important;
+                align-items: center !important;
+                overflow: visible !important;
+                flex-grow: 1 !important;
+                height: auto !important;
+                line-height: 1 !important;
+                margin-top: 0 !important;
+                margin-bottom: 0 !important;
+                padding-top: 0 !important;
+                padding-bottom: 0 !important;
             }
 
             .cf-icon-active::before {
