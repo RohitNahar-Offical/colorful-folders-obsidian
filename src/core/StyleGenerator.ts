@@ -188,13 +188,47 @@ export class StyleGenerator {
                 background-color: transparent !important;
             }
 
-            /* Global: Flex layout foundation for all nav title rows. */
+            /* ── NAV ITEM FLEX LAYOUT (Global alignment foundation) ─────────────────
+               To work flawlessly across ALL themes, we must enforce a strict, 
+               symmetric flexbox layout that overrides inconsistent native theme 
+               paddings and heights (e.g., shifting items when collapsed).
+            ──────────────────────────────────────────────────────────────────────── */
+            .nav-folder-title,
+            .nav-file-title,
+            .tree-item-self {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: flex-start !important;
+                padding-top: 4px !important;
+                padding-bottom: 4px !important;
+                min-height: 28px !important;
+                height: auto !important;
+                line-height: normal !important;
+                overflow: visible !important;
+            }
+
+            .nav-folder-collapse-indicator,
+            .tree-item-collapse-indicator {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                margin-top: 0 !important;
+                margin-bottom: 0 !important;
+                height: auto !important;
+            }
+
             .nav-folder-title-content,
             .nav-file-title-content,
             .tree-item-inner {
                 display: flex !important;
                 align-items: center !important;
                 overflow: visible !important;
+                flex-grow: 1 !important;
+                height: auto !important;
+                margin-top: 0 !important;
+                margin-bottom: 0 !important;
+                padding-top: 0 !important;
+                padding-bottom: 0 !important;
             }
 
             .cf-icon-active::before {
