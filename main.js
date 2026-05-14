@@ -599,6 +599,7 @@ daily = \u{1F4C5} @150`).setValue(this.plugin.settings.customIconRules||"").onCh
                         display: inline-flex !important;
                         align-items: center !important;
                         vertical-align: middle !important;
+                        align-self: center !important;
                         width: ${be}px !important;
                         min-width: ${be}px !important;
                         height: 20px !important;

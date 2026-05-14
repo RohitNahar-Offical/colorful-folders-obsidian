@@ -241,6 +241,20 @@
 .nav-file-title,
 .tree-item-self {
     overflow: visible !important;
+    align-items: center !important;
+}
+
+/* Force all immediate children (arrow, content) to perfectly center vertically */
+.nav-folder-title > *,
+.nav-file-title > *,
+.tree-item-self > *,
+.nav-folder-title::before,
+.nav-file-title::before,
+.tree-item-self::before,
+.nav-folder-title::after,
+.nav-file-title::after,
+.tree-item-self::after {
+    align-self: center !important;
 }
 
 .nav-folder-title-content,
