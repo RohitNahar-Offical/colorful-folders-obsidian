@@ -3,7 +3,7 @@
     "name": "Colorful Folders",
     "version": "4.1.5",
     "minAppVersion": "1.4.4",
-    "description": "Automatically adds premium preset colors to all folders and subfolders.",
+    "description": "Run OpenAgent tasks from Canvas through a local Codex server and Codex Desktop.",
     "author": "ROHIT-NAHAR",
     "authorUrl": "https://github.com/RohitNahar-Offical",
     "isDesktopOnly": false
