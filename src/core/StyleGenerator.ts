@@ -902,7 +902,6 @@ export class StyleGenerator {
                         display: inline-flex !important;
                         align-items: center !important;
                         vertical-align: middle !important;
-                        align-self: center !important;
                         width: ${totalWidth}px !important;
                         min-width: ${totalWidth}px !important;
                         height: 20px !important;
