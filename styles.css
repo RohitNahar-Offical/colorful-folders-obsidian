@@ -562,9 +562,6 @@ body .nav-files-container .tree-item-inner {
 /* REMOVED ANIMATION */
 
 /* Reverting native tooltip styling to default to avoid affecting other plugins */
-body > .tooltip {
-    /* Obsidian defaults or keep it clean */
-}
 
 /* ── MODERN COLOR PICKER (VCP) ───────────────────────────────────────── */
 .cf-vcp {
