@@ -266,7 +266,8 @@ body .nav-files-container .tree-item-collapse-indicator {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    height: auto !important;
+    height: 100% !important;
+    min-height: 100% !important;
 }
 
 body .nav-files-container .nav-folder-title-content,
