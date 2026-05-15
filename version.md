@@ -1,22 +1,20 @@
 # Updates for Colorful Folders
 
-## ⚡ 4.1.5 - The "Strict Spotlight" Update
-This release introduces a ground-up modular redesign of the Focus Mode engine, prioritizing absolute visual clarity and zero-latency interaction.
+## ⚡ 4.1.5 - The "Stability & Customization" Update
+This release focuses on structural stabilization and provides new powerful ways to customize your active workspace elements.
 
-### 🎯 1. Modular Focus Engine
-- **Architectural Extraction**: Focus Mode has been moved into a dedicated peer module. This decouples focus logic from the core rendering loop, significantly increasing stability.
-- **Strict Spotlight Pattern**: Replaced the legacy "Tunnel Vision" blur with a hardened contrast system. Background items are instantaneously dimmed, while the active folder remains in a crystal-clear "Spotlight" with a bold pulse glow.
-
-### 🚀 2. The "Instant UI" Performance Model
-- **Zero-Animation Mandate**: Purged all remaining CSS transitions from the File Explorer. The UI now updates with **absolute zero latency**, ensuring a sharp, responsive feel.
-
-### 📐 3. Path Border Stabilization
+### 📐 1. Path Border Stabilization
 - **Thickness Standardization**: Standardized all Radiant Path lines (side and bottom) to a robust **2.5px** thickness.
-- **Eliminated "Thinning"**: Fixed the sub-pixel rendering glitch where lines would appear thin when folders were selected. All lines now maintain a consistent, solid weight.
+- **Eliminated "Thinning"**: Fixed the sub-pixel rendering glitch where lines would appear thin when folders were selected. All lines now maintain a consistent, solid weight across all themes.
 
-### 🎨 4. Active File Customization
+### 🎨 2. Active File Customization
 - **Personalized Highlights**: You can now explicitly override the active file color in settings. 
-- **User-Driven Design**: Under the "Active Files" section, toggle the custom color picker to set your own background and text colors for the currently selected file, bypassing theme defaults for a truly custom experience.
+- **User-Driven Design**: Under the "Active Item Appearance" section, toggle the custom color picker to set your own background and text colors for the currently selected file.
+
+### 🚀 3. Performance & Cleanup
+- **Zero-Animation Mandate**: Purged expensive CSS transitions from the File Explorer core. The UI now updates with **absolute zero latency**, ensuring a sharp, responsive feel.
+- **Engine Hardening**: Internal architectural cleanup to ensure maximum compatibility with the latest Obsidian versions.
+
 
 ---
 
