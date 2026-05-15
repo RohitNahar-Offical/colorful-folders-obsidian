@@ -437,64 +437,6 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     this.plugin.generateStyles();
                 }));
 
-        new obsidian.Setting(genCard)
-            .setName('Focus mode')
-            .setDesc('Creates a visual tunnel towards your active file by dimming unrelated folders.')
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.focusMode)
-                .onChange(async (value) => {
-                    this.plugin.settings.focusMode = value;
-                    await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
-                    this.display();
-                }));
-
-        if (this.plugin.settings.focusMode) {
-            const focusContainer = genCard.createDiv({ cls: 'cf-focus-subsettings' });
-            focusContainer.setCssStyles({
-                padding: '15px', 
-                background: 'var(--background-secondary-alt)', 
-                borderRadius: '8px', 
-                marginTop: '10px', 
-                marginBottom: '20px',
-                border: '1px solid var(--background-modifier-border)' 
-            });
-
-            new obsidian.Setting(focusContainer)
-                .setName('Focus intensity (%)')
-                .setDesc('How much background items should fade. 100% makes them almost invisible.')
-                .addSlider(slider => slider
-                    .setLimits(1, 100, 1)
-                    .setValue((this.plugin.settings.focusModeIntensity ?? 0.15) * 100)
-                    .setDynamicTooltip()
-                    .onChange(async (value) => {
-                        this.plugin.settings.focusModeIntensity = parseFloat((value / 100).toFixed(3));
-                        await this.plugin.saveSettings();
-                        this.plugin.generateStyles();
-                    }));
-
-            new obsidian.Setting(focusContainer)
-                .setName('Show contextual neighbors')
-                .setDesc('Keep files in the same folder as the active file visible at higher opacity.')
-                .addToggle(toggle => toggle
-                    .setValue(this.plugin.settings.focusShowSiblings)
-                    .onChange(async (value) => {
-                        this.plugin.settings.focusShowSiblings = value;
-                        await this.plugin.saveSettings();
-                        this.plugin.generateStyles();
-                    }));
-
-            new obsidian.Setting(focusContainer)
-                .setName('Grayscale distractions')
-                .setDesc('Desaturate inactive items to help the active path stand out.')
-                .addToggle(toggle => toggle
-                    .setValue(this.plugin.settings.focusGrayscale)
-                    .onChange(async (value) => {
-                        this.plugin.settings.focusGrayscale = value;
-                        await this.plugin.saveSettings();
-                        this.plugin.generateStyles();
-                    }));
-        }
 
         new obsidian.Setting(genCard)
             .setName('Glassmorphism blur')

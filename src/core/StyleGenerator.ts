@@ -3,7 +3,7 @@ import { PALETTES, CF_FOLDER_CLOSED } from '../common/constants';
 import { hexToRgbObj, adjustBrightnessRgb, safeEscape, parseCustomPalette, hashString } from '../common/utils';
 import * as obsidian from 'obsidian';
 import { NotebookNavigatorIntegration } from '../integrations/NotebookNavigator';
-import { FocusModeEngine } from './FocusModeEngine';
+
 
 export class StyleGenerator {
     plugin: IColorfulFoldersPlugin;
@@ -972,9 +972,7 @@ export class StyleGenerator {
         const cssRules: string[] = [];
         cssRules.push(this.generateGlobalBaseCss());
 
-        if (this.settings.focusMode && context.activePath) {
-            cssRules.push(FocusModeEngine.generateCss(this.settings, context));
-        }
+
 
         cssRules.push(this.generateDividerCss());
 

@@ -77,10 +77,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     presets: {},
     recentlyUsedIcons: [],
     glassmorphism: false,
-    focusMode: false,
-    focusModeIntensity: 0.15,
-    focusGrayscale: false,
-    focusShowSiblings: true,
+
     autoIcons: true,
     autoIconVariety: true,
     wideAutoIcons: true,
