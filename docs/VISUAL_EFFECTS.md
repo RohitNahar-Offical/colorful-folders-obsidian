@@ -5,6 +5,11 @@
 
 ---
 
+## 0.1 The Structural Foundation
+Before any visual effects (glows, paths, tints) are applied, the plugin enforces a rigid **Structural Grid** in `styles.css`. This ensures that "Eye Candy" doesn't lead to layout instability.
+- **Strict 32px Verticality**: Every row in the explorer is locked to exactly 32px. This prevents the "shivering" effect when complex glows or icons are toggled.
+- **Fixed-Width Icon Locking**: Collapse arrows and folder icons are pinned to a 20px flex-container. This prevents text from jumping horizontally when folders are expanded.
+
 ## 1. Radiant Path and Luminous Selection
 
 The plugin features a two-part system to highlight the currently active file:

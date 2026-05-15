@@ -117,6 +117,9 @@ The `StyleGenerator` utilizes persistent caches hosted on the main plugin instan
 1.  **Item Count Cache**: Persists folder/file counts across renders, invalidated only on vault structural changes.
 2.  **Icon Category Cache**: Memoizes compiled regex rules for auto-icons, rebuilt only when custom rules are modified.
 
+### Structural Foundation (`styles.css`):
+While `StyleGenerator` handles dynamic colors and icons, the core structural integrity is maintained by `styles.css`. This file provides the **Static Grid** (32px row height, 20px icon width) that ensures dynamic coloring doesn't cause layout shivering.
+
 ### Traversal Pseudocode:
 ```text
 FUNCTION traverse(folder, currentDepth):

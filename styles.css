@@ -1,8 +1,9 @@
 /* Colorful Folders (TS) Modern UI Design System */
+/* Architected for High Performance and Zero Glitches */
 
+/* ── 1. DESIGN TOKENS (CSS VARIABLES) ────────────────────────────────── */
 :root {
-    --cf-accent: #1e88e5;
-    /* Modern bright blue from image */
+    --cf-accent: #1e88e5; /* Modern bright blue */
     --cf-accent-rgb: 30, 136, 229;
     --cf-accent-glow: rgba(30, 136, 229, 0.4);
 
@@ -13,6 +14,12 @@
 
     --cf-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     --cf-radius: 12px;
+
+    /* Standards from STYLE_GUIDE.md */
+    --cf-divider-color: var(--background-modifier-border);
+    --cf-popover-bg: var(--background-secondary);
+    --cf-active-glow: var(--interactive-accent);
+    --cf-meta-weight: 900;
 }
 
 .theme-dark {
@@ -23,19 +30,229 @@
     --cf-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
-/* Base UI Overrides */
+/* ── 2. FILE EXPLORER ALIGNMENT ENGINE ───────────────────────────────── */
+/* Guaranteed High-Specificity Match to Working Snippet */
+
+body .nav-folder-title,
+body .nav-file-title {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+    height: 32px !important;
+}
+
+/* Fix Arrow & Icon Width */
+body .nav-folder-collapse-indicator,
+body .nav-folder-icon {
+    width: 20px !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+}
+
+/* Handle Text Truncation */
+body .nav-folder-title-content {
+    flex-grow: 1 !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    margin-right: 10px !important;
+}
+
+/* Lock Counts to the Right */
+body .nav-folder-title > span:last-child {
+    margin-left: auto !important;
+    display: flex !important;
+    gap: 8px !important;
+    align-items: center !important;
+    font-variant-numeric: tabular-nums !important;
+}
+
+
+/* ── 3. HIGH-PERFORMANCE VISUAL STANDARDS ────────────────────────────── */
+
+/* Icon Rendering Stability */
+.cf-icon-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    margin-right: 6px;
+    flex-shrink: 0;
+    overflow: visible;
+}
+
+.cf-icon-wrapper svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* Hide default icons when a CF icon is present */
+.nav-folder-title:has(.cf-icon-wrapper) .nav-folder-title-content::before,
+.tree-item-self:has(.cf-icon-wrapper) .tree-item-inner::before,
+.nn-navitem:has(.cf-icon-wrapper) .nn-navitem-icon,
+.nn-file:has(.cf-icon-wrapper) .nn-file-icon {
+    display: none !important;
+}
+
+/* Auto-Icons CSS Masking */
+[data-path] .nav-folder-title-content::before,
+[data-path] .nav-file-title-content::before,
+[data-path] .tree-item-inner::before,
+[data-path] .nn-navitem-name::before {
+    background-size: contain !important;
+    background-position: center !important;
+    -webkit-mask-size: contain !important;
+    -webkit-mask-position: center !important;
+    mask-size: contain !important;
+    mask-position: center !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    vertical-align: middle !important;
+}
+
+/* Interactive Dividers (Modern Pill Design) */
+.cf-interactive-divider {
+    padding: 10px 0;
+    cursor: default;
+}
+
+.cf-divider-bridge {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 8px; /* Negative gaps allowed via inline styles */
+}
+
+.cf-divider-line {
+    flex-grow: 1;
+}
+
+.cf-divider-chip {
+    display: flex !important;
+    align-items: center !important;
+    color: var(--cf-divider-color) !important;
+    font-size: var(--cf-divider-font-size) !important;
+    font-weight: var(--cf-divider-font-weight, 700) !important;
+    text-transform: var(--cf-divider-text-transform) !important;
+    letter-spacing: var(--cf-divider-letter-spacing) !important;
+    white-space: nowrap !important;
+    gap: 0 !important;
+}
+
+.cf-divider-label {
+    display: block !important;
+    margin: 0 12px !important;
+    transform: translateX(0.075em) !important;
+}
+
+.cf-divider-emoji-icon,
+.cf-divider-icon {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 24px !important;
+}
+
+.cf-divider-icon svg {
+    width: 14px !important;
+    height: 14px !important;
+    stroke: var(--cf-divider-color) !important;
+    stroke-width: 2.5px !important;
+}
+
+/* Premium Markdown Popover */
+.cf-premium-popover {
+    position: fixed;
+    transform: translate(-50%, -100%);
+    background: var(--cf-popover-bg);
+    backdrop-filter: blur(12px) saturate(190%);
+    -webkit-backdrop-filter: blur(12px) saturate(190%);
+    border: 1px solid var(--background-modifier-border-focus);
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4), inset 0 0 1px 1px rgba(255, 255, 255, 0.05);
+    padding: 14px 20px;
+    border-radius: 14px;
+    max-width: 340px;
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 10000;
+    pointer-events: auto;
+}
+
+.cf-premium-popover.is-below {
+    transform: translate(-50%, 0);
+}
+
+.cf-premium-popover::-webkit-scrollbar {
+    width: 4px;
+}
+.cf-premium-popover::-webkit-scrollbar-thumb {
+    background: var(--background-modifier-border-focus);
+    border-radius: 10px;
+}
+
+.cf-popover-content {
+    font-size: 0.92em;
+    line-height: 1.6;
+    color: var(--text-normal);
+}
+.cf-popover-content .internal-link {
+    color: var(--text-accent);
+    text-decoration: none;
+    font-weight: 600;
+    border-bottom: 1px dashed rgba(var(--interactive-accent-rgb), 0.3);
+}
+.cf-popover-content .tag {
+    background-color: var(--text-accent);
+    color: white;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 0.85em;
+}
+.cf-popover-content code {
+    background-color: rgba(var(--mono-rgb-100), 0.08);
+    color: var(--text-accent);
+    padding: 0.15em 0.35em;
+    border-radius: 4px;
+    font-family: var(--font-monospace);
+    font-size: 0.9em;
+    border: 1px solid rgba(var(--mono-rgb-100), 0.12);
+    font-weight: 500;
+}
+.cf-popover-content pre {
+    background-color: var(--background-secondary-alt);
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--background-modifier-border);
+    overflow-x: auto;
+    margin: 12px 0;
+    box-shadow: inset 0 1px 4px rgba(0,0,0,0.1);
+}
+.cf-popover-content pre code {
+    background-color: transparent !important;
+    padding: 0 !important;
+    border: none !important;
+    color: var(--text-normal) !important;
+    font-size: 0.85em !important;
+}
+
+/* ── 4. SETTINGS UI COMPONENTS ───────────────────────────────────────── */
+
 .colorful-folders-config {
     padding: 30px;
     max-width: 850px !important;
     margin: 0 auto !important;
 }
 
-/* Hide default h2 */
-.colorful-folders-config>h2 {
+.colorful-folders-config > h2 {
     display: none;
 }
 
-/* Hero Section */
 .cf-hero {
     text-align: center;
     margin-bottom: 40px;
@@ -55,7 +272,6 @@
     margin: 8px 0 0 0;
 }
 
-/* Premium Tab Bar */
 .cf-tab-bar {
     display: flex;
     justify-content: center;
@@ -74,8 +290,6 @@
     font-weight: 700;
     font-size: 1em;
     color: var(--text-muted);
-    /* REMOVED TRANSITION */
-
     background: transparent;
     border: none !important;
     box-shadow: none !important;
@@ -92,7 +306,6 @@
     box-shadow: 0 4px 16px var(--cf-accent-glow) !important;
 }
 
-/* Setting Cards */
 .cf-settings-card {
     background: var(--cf-card-bg);
     border: 1px solid var(--cf-card-border);
@@ -122,7 +335,6 @@
     height: 32px;
 }
 
-/* Individual Settings within Cards */
 .cf-settings-card .setting-item {
     background: var(--cf-row-bg);
     border: 1px solid var(--cf-card-border);
@@ -147,7 +359,6 @@
     color: var(--text-muted);
 }
 
-/* Pro Tip & Info Blocks */
 .cf-info-block {
     background: rgba(var(--cf-accent-rgb), 0.08);
     border-left: 4px solid var(--cf-accent);
@@ -178,20 +389,41 @@
     line-height: 1.5;
 }
 
-/* Custom Checkbox/Toggle Overrides */
 .colorful-folders-config .checkbox-container.is-enabled {
     background-color: var(--cf-accent) !important;
 }
 
-/* Slider Overrides */
+/* Custom Sliders */
+.colorful-folders-config input[type='range'] {
+    background-color: rgba(var(--mono-rgb-100), 0.1);
+}
 .colorful-folders-config input[type='range']::-webkit-slider-thumb {
     background-color: #ffffff !important;
     border: 2px solid var(--cf-accent) !important;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
 }
-
-.colorful-folders-config input[type='range'] {
-    background-color: rgba(var(--mono-rgb-100), 0.1);
+.colorful-folders-config .setting-item-control input[type="range"] {
+    width: 160px !important;
+    height: 8px !important;
+    background: rgba(0, 0, 0, 0.2) !important;
+    border-radius: 10px !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    cursor: pointer !important;
+    border: 1px solid var(--background-modifier-border) !important;
+}
+.colorful-folders-config .setting-item-control input[type="range"]::-webkit-slider-thumb {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    width: 20px !important;
+    height: 20px !important;
+    background: var(--interactive-accent) !important;
+    border: 3px solid var(--background-primary) !important;
+    border-radius: 50% !important;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.4) !important;
+}
+.colorful-folders-config .setting-item-control input[type="range"]:active::-webkit-slider-thumb {
+    transform: scale(1.2);
 }
 
 /* Buttons */
@@ -202,142 +434,25 @@
     padding: 6px 14px;
     font-weight: 600;
     cursor: pointer;
-    /* REMOVED TRANSITION */
-
 }
-
 .colorful-folders-config button.mod-warning {
     background-color: rgba(var(--color-red-rgb), 0.1);
     color: var(--text-error);
     border-color: rgba(var(--color-red-rgb), 0.3);
 }
-
 .colorful-folders-config button.mod-cta {
     background-color: var(--cf-accent);
     color: #fff;
     border-color: rgba(0, 0, 0, 0.1);
 }
-
 .colorful-folders-config button:hover:not(.cf-tab-btn) {
     background-color: var(--background-modifier-hover);
 }
 
-/* Grid for featured packs */
 .cf-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
-}
-
-/* ── NUCLEAR SPECIFICITY NAV ITEM LAYOUT ───────────────────────────────
-   We use high-specificity selectors to defeat theme overrides (like Prism).
-──────────────────────────────────────────────────────────────────────── */
-body .nav-files-container .nav-folder-title,
-body .nav-files-container .nav-file-title,
-body .nav-files-container .tree-item-self {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    height: 30px !important;
-    max-height: 30px !important;
-    min-height: 30px !important;
-    overflow: visible !important;
-}
-
-/* Force all immediate children and pseudo-elements to perfectly center vertically */
-body .nav-files-container .nav-folder-title > *,
-body .nav-files-container .nav-file-title > *,
-body .nav-files-container .tree-item-self > *,
-body .nav-files-container .nav-folder-title::before,
-body .nav-files-container .nav-file-title::before,
-body .nav-files-container .tree-item-self::before,
-body .nav-files-container .nav-folder-title::after,
-body .nav-files-container .nav-file-title::after,
-body .nav-files-container .tree-item-self::after {
-    align-self: center !important;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-}
-
-body .nav-files-container .nav-folder-collapse-indicator,
-body .nav-files-container .tree-item-collapse-indicator {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    height: 100% !important;
-    min-height: 100% !important;
-}
-
-body .nav-files-container .nav-folder-title-content,
-body .nav-files-container .nav-file-title-content,
-body .nav-files-container .tree-item-inner {
-    display: flex !important;
-    align-items: center !important;
-    overflow: visible !important;
-    flex-grow: 1 !important;
-    height: auto !important;
-    line-height: 1 !important; /* Absolute shrink-wrap */
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-}
-
-/* Icon Rendering Stability */
-.cf-icon-wrapper {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    align-self: center;
-    margin-right: 6px;
-    flex-shrink: 0;
-    /* REMOVED TRANSITION */
-
-    overflow: visible;
-}
-
-.cf-icon-wrapper svg {
-    display: block;
-    width: 100%;
-    height: 100%;
-}
-
-/* Hide default icons when a CF icon is present */
-.nav-folder-title:has(.cf-icon-wrapper) .nav-folder-title-content::before,
-.tree-item-self:has(.cf-icon-wrapper) .tree-item-inner::before,
-.nn-navitem:has(.cf-icon-wrapper) .nn-navitem-icon,
-.nn-file:has(.cf-icon-wrapper) .nn-file-icon {
-    display: none !important;
-}
-
-[data-path] .nav-folder-title-content::before,
-[data-path] .nav-file-title-content::before,
-[data-path] .tree-item-inner::before,
-[data-path] .nn-navitem-name::before {
-    background-size: contain !important;
-    background-position: center !important;
-    -webkit-mask-size: contain !important;
-    -webkit-mask-position: center !important;
-    mask-size: contain !important;
-    mask-position: center !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    vertical-align: middle !important;
-}
-
-
-/* Global: nav item counter / tag badges are flex items so margin-left: auto works */
-.nav-folder-title-content .nav-folder-tag,
-.nav-folder-title-content .nav-folder-note-count,
-.nav-file-title-content .nav-file-tag,
-.nav-file-title-content .nav-file-note-count,
-.nav-file-title-content .nav-file-extension,
-.tree-item-inner .tree-item-flair {
-    margin-left: auto;
-    flex-shrink: 0;
 }
 
 /* Custom Icon Library Grid */
@@ -350,6 +465,15 @@ body .nav-files-container .tree-item-inner {
     border-radius: 8px;
     max-height: 400px;
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--background-modifier-border) transparent;
+}
+.cf-icon-grid::-webkit-scrollbar {
+    width: 5px;
+}
+.cf-icon-grid::-webkit-scrollbar-thumb {
+    background: var(--background-modifier-border);
+    border-radius: 10px;
 }
 
 .cf-icon-item {
@@ -362,13 +486,13 @@ body .nav-files-container .tree-item-inner {
     border-radius: 6px;
     position: relative;
     cursor: help;
-    /* REMOVED TRANSITION */
-
 }
 
-.cf-icon-item:hover {
+.cf-icon-item:hover, .cf-icon-cell:hover {
     background: var(--cf-accent);
     border-color: var(--cf-accent);
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .cf-icon-item:hover svg {
@@ -392,179 +516,13 @@ body .nav-files-container .tree-item-inner {
     justify-content: center !important;
     padding: 0 !important;
     opacity: 0;
-    /* REMOVED TRANSITION */
-
 }
 
 .cf-icon-item:hover .cf-btn-remove {
     opacity: 1;
 }
 
-/* Interactive Dividers */
-.cf-interactive-divider {
-    padding: 10px 0;
-    cursor: default;
-}
-
-.cf-divider-bridge {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    gap: 8px;
-}
-
-.cf-divider-line {
-    flex-grow: 1;
-}
-
-.cf-divider-chip {
-    display: flex !important;
-    align-items: center !important;
-    color: var(--cf-divider-color) !important;
-    font-size: var(--cf-divider-font-size) !important;
-    font-weight: var(--cf-divider-font-weight, 700) !important;
-    text-transform: var(--cf-divider-text-transform) !important;
-    letter-spacing: var(--cf-divider-letter-spacing) !important;
-    white-space: nowrap !important;
-    gap: 0 !important;
-}
-
-.cf-divider-label {
-    display: block !important;
-    margin: 0 12px !important;
-    transform: translateX(0.075em) !important;
-}
-
-.cf-divider-emoji-icon {
-    display: flex !important;
-    align-items: center !important;
-    font-size: 1.2em !important;
-    width: 24px !important;
-    justify-content: center !important;
-}
-
-.cf-divider-icon {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 24px !important;
-}
-
-.cf-divider-icon svg {
-    width: 14px !important;
-    height: 14px !important;
-    stroke: var(--cf-divider-color) !important;
-    stroke-width: 2.5px !important;
-}
-
-/* --- Premium Markdown Popover --- */
-.cf-premium-popover {
-    position: fixed;
-    transform: translate(-50%, -100%);
-    background: var(--background-floating);
-    backdrop-filter: blur(14px) saturate(190%);
-    -webkit-backdrop-filter: blur(14px) saturate(190%);
-    border: 1px solid var(--background-modifier-border-focus);
-    box-shadow: 
-        0 15px 50px rgba(0, 0, 0, 0.4),
-        inset 0 0 1px 1px rgba(255, 255, 255, 0.05);
-    padding: 14px 20px;
-    border-radius: 14px;
-    max-width: 340px;
-    max-height: 400px;
-    overflow-y: auto;
-    z-index: 10000;
-    pointer-events: auto;
-    /* REMOVED ANIMATION */
-
-}
-
-/* Refined Scrollbar */
-.cf-premium-popover::-webkit-scrollbar {
-    width: 4px;
-}
-.cf-premium-popover::-webkit-scrollbar-thumb {
-    background: var(--background-modifier-border-focus);
-    border-radius: 10px;
-}
-
-.cf-popover-content {
-    font-size: 0.92em;
-    line-height: 1.6;
-    color: var(--text-normal);
-}
-
-/* Ensure links and tags are beautiful inside */
-.cf-popover-content .internal-link {
-    color: var(--text-accent);
-    text-decoration: none;
-    font-weight: 600;
-    border-bottom: 1px dashed rgba(var(--interactive-accent-rgb), 0.3);
-}
-.cf-popover-content .tag {
-    background-color: var(--text-accent);
-    color: white;
-    border-radius: 4px;
-    padding: 1px 6px;
-    font-size: 0.85em;
-}
-
-/* Premium Code Styling */
-.cf-popover-content code {
-    background-color: rgba(var(--mono-rgb-100), 0.08);
-    color: var(--text-accent);
-    padding: 0.15em 0.35em;
-    border-radius: 4px;
-    font-family: var(--font-monospace);
-    font-size: 0.9em;
-    border: 1px solid rgba(var(--mono-rgb-100), 0.12);
-    font-weight: 500;
-}
-
-.cf-popover-content pre {
-    background-color: var(--background-secondary-alt);
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid var(--background-modifier-border);
-    overflow-x: auto;
-    margin: 12px 0;
-    box-shadow: inset 0 1px 4px rgba(0,0,0,0.1);
-}
-
-.cf-popover-content pre code {
-    background-color: transparent !important;
-    padding: 0 !important;
-    border: none !important;
-    color: var(--text-normal) !important;
-    font-size: 0.85em !important;
-}
-
-@keyframes cf-popover-appear {
-    0% {
-        opacity: 0;
-        margin-top: 15px;
-        transform: translate(-50%, -100%) scale(0.92);
-    }
-    100% {
-        opacity: 1;
-        margin-top: 0;
-        transform: translate(-50%, -100%) scale(1);
-    }
-}
-
-/* REMOVED ANIMATION */
-
-/* --- Smart Adaptive Positioning (Below) --- */
-.cf-premium-popover.is-below {
-    transform: translate(-50%, 0);
-    /* REMOVED ANIMATION */
-}
-
-/* REMOVED ANIMATION */
-
-/* Reverting native tooltip styling to default to avoid affecting other plugins */
-
-/* ── MODERN COLOR PICKER (VCP) ───────────────────────────────────────── */
+/* Modern Color Picker (VCP) */
 .cf-vcp {
     display: flex;
     gap: 16px;
@@ -630,50 +588,18 @@ body .nav-files-container .tree-item-inner {
     cursor: pointer;
 }
 
-/* ── MODAL TAB UI ────────────────────────────────────────────────────── */
+/* Modal Tab UI */
 .cf-modal-header {
-    background-color: var(--background-secondary-alt);
+    background: var(--background-secondary-alt);
 }
-
 .cf-tab-btn {
     position: relative;
 }
-
 .cf-tab-btn span {
     z-index: 1;
 }
 
-
-@keyframes cf-fade-in {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* Icon Grid in Modal */
-.cf-icon-grid {
-    scrollbar-width: thin;
-    scrollbar-color: var(--background-modifier-border) transparent;
-}
-
-.cf-icon-grid::-webkit-scrollbar {
-    width: 5px;
-}
-
-.cf-icon-grid::-webkit-scrollbar-thumb {
-    background: var(--background-modifier-border);
-    border-radius: 10px;
-}
-
-.cf-icon-cell:hover {
-    transform: scale(1.05);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.cf-picker-section {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-}
-
-/* ── SUGGESTER UI ────────────────────────────────────────────────────── */
+/* Suggester UI */
 .cf-suggestion-container {
     background: var(--background-floating);
     border: 1px solid var(--background-modifier-border-focus);
@@ -688,8 +614,6 @@ body .nav-files-container .tree-item-inner {
     cursor: pointer;
     font-size: 0.9em;
     color: var(--text-muted);
-    /* REMOVED TRANSITION */
-
 }
 
 .cf-suggestion-item:hover, .cf-suggestion-item.is-selected {
@@ -703,32 +627,7 @@ body .nav-files-container .tree-item-inner {
     text-overflow: ellipsis;
 }
 
-/* UI Styles for Settings Tab */
-.colorful-folders-config .setting-item-control input[type="range"] {
-    width: 160px !important;
-    height: 8px !important;
-    background: rgba(0, 0, 0, 0.2) !important;
-    border-radius: 10px !important;
-    appearance: none !important;
-    -webkit-appearance: none !important;
-    cursor: pointer !important;
-    border: 1px solid var(--background-modifier-border) !important;
-}
-.colorful-folders-config .setting-item-control input[type="range"]::-webkit-slider-thumb {
-    appearance: none !important;
-    -webkit-appearance: none !important;
-    width: 20px !important;
-    height: 20px !important;
-    background: var(--interactive-accent) !important;
-    border: 3px solid var(--background-primary) !important;
-    border-radius: 50% !important;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.4) !important;
-    /* REMOVED TRANSITION */
-
-}
-.colorful-folders-config .setting-item-control input[type="range"]:active::-webkit-slider-thumb {
-    transform: scale(1.2);
-}
+/* Micro-animations */
 @keyframes cf-shake {
     0%, 100% { transform: translateX(0); }
     25% { transform: translateX(-5px); }

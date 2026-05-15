@@ -85,3 +85,15 @@ Read before making ANY architectural changes.
 **Root cause**: Notebook Navigator uses a **Virtualized List** (React). DOM rows are recycled instantly. JavaScript observers cannot keep up with the scroll speed to inject styles.
 **Resolution**: Reverted to the **"Native-Bridge" (Pure CSS)** strategy from version 4.1.4. The engine now generates static CSS rules targeting items by `data-path`.
 **Lesson**: For virtualized lists, NEVER rely on JavaScript to inject styles or classes. Use direct, high-specificity CSS selectors (`[data-path="..."]`) for O(1) rendering.
+
+---
+
+## Incident #8 — Native File Explorer Layout Collapse (2026-05-15)
+**What was attempted**: Creating a universal "Perfect Alignment Engine" in `styles.css` using broad selectors like `.nn-navitem` and `display: flex !important;`.
+**Why it was done**: To enforce strict 32px heights and fix text truncation across both native Obsidian and Notebook Navigator without needing user snippets.
+**What broke**: 
+- Notebook Navigator layout entirely collapsed.
+- Inline metadata (like `.nav-folder-note-count`) misaligned and broke the flex flow.
+**Root cause**: Notebook Navigator automatically injects native `.nav-folder-title` classes into its virtualized rows to ensure theme compatibility. By aggressively targeting the outer `.nn-navitem` wrapper and forcing it to be a flex container, the plugin destroyed the row's internal DOM structure. Additionally, forcing `margin-left: auto` onto internal tags (which are not flex siblings) broke their layout.
+**Resolution**: Reverted to using the exact, simple native selectors (e.g., `.nav-folder-title`), but anchored them with `body` and `!important` to ensure they win the CSS loading order battle against themes.
+**Lesson**: When styling Notebook Navigator, do not over-engineer or target its wrapper classes (`.nn-navitem`) for layout mechanics. Rely on the native classes it injects (`.nav-folder-title`) and elevate their specificity safely using `body`.

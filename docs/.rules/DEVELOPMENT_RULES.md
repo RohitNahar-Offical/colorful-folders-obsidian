@@ -155,6 +155,11 @@ Examples:
 - **Result**: Severe flickering during scroll. Rows appeared white before turning the correct color.
 - **Lesson**: Virtualized lists (React/NN) recycle DOM elements faster than JS can track. Use **Pure CSS targeting `data-path`** for O(1) performance and zero flicker.
 
+### ❌ Danger #7: Over-Engineering Layout Selectors
+- **What happened**: Attempted to unify alignment by targeting wrapper classes (like `.nn-navitem`) and grouping disparate tags in a single flex-rule.
+- **Result**: The entire file explorer layout collapsed; metadata counts misaligned.
+- **Lesson**: When modifying layout, strictly use the simplest native Obsidian classes (e.g., `.nav-folder-title`). Do NOT target outer wrappers or group nested tags with flex-parent rules. Elevate specificity using `body` instead of combining complex selectors.
+
 ---
 
 ## 🧪 RULE 7 — TESTING CHECKLIST BEFORE EVERY PUSH

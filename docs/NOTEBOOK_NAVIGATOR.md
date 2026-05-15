@@ -80,3 +80,4 @@ If you are writing your own CSS snippets for Notebook Navigator, use these high-
 
 > [!TIP]
 > **Performance First**: If you notice any lag in your sidebar, ensure you aren't using complex CSS filters (like `blur`) on every single item. Stick to `background-color` and `opacity` for the smoothest experience.
+
