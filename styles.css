@@ -33,42 +33,42 @@
 /* ── 2. FILE EXPLORER ALIGNMENT ENGINE ───────────────────────────────── */
 /* Guaranteed High-Specificity Match to Working Snippet */
 
-body .nav-folder-title,
-body .nav-file-title {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    padding-top: 4px !important;
-    padding-bottom: 4px !important;
-    height: 32px !important;
+body .nav-files-container .nav-folder-title,
+body .nav-files-container .nav-file-title {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    height: 32px;
 }
 
 /* Fix Arrow & Icon Width */
-body .nav-folder-collapse-indicator,
-body .nav-folder-icon {
-    width: 20px !important;
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    flex-shrink: 0 !important;
+body .nav-files-container .nav-folder-collapse-indicator,
+body .nav-files-container .nav-folder-icon {
+    width: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
 }
 
 /* Handle Text Truncation */
-body .nav-folder-title-content {
-    flex-grow: 1 !important;
-    overflow: hidden !important;
-    white-space: nowrap !important;
-    text-overflow: ellipsis !important;
-    margin-right: 10px !important;
+body .nav-files-container .nav-folder-title-content {
+    flex-grow: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    margin-right: 10px;
 }
 
 /* Lock Counts to the Right */
-body .nav-folder-title > span:last-child {
-    margin-left: auto !important;
-    display: flex !important;
-    gap: 8px !important;
-    align-items: center !important;
-    font-variant-numeric: tabular-nums !important;
+body .nav-files-container .nav-folder-title > span:last-child {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-variant-numeric: tabular-nums;
 }
 
 
@@ -95,24 +95,24 @@ body .nav-folder-title > span:last-child {
 .nav-folder-title-content.cf-icon-active::before,
 .nav-file-title-content.cf-icon-active::before,
 .tree-item-inner.cf-icon-active::before {
-    display: none !important;
+    display: none;
 }
 
 /* Auto-Icons CSS Masking */
-[data-path] .nav-folder-title-content::before,
-[data-path] .nav-file-title-content::before,
-[data-path] .tree-item-inner::before,
-[data-path] .nn-navitem-name::before {
-    background-size: contain !important;
-    background-position: center !important;
-    -webkit-mask-size: contain !important;
-    -webkit-mask-position: center !important;
-    mask-size: contain !important;
-    mask-position: center !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    vertical-align: middle !important;
+body .nav-files-container [data-path] .nav-folder-title-content::before,
+body .nav-files-container [data-path] .nav-file-title-content::before,
+body .nav-files-container [data-path] .tree-item-inner::before,
+body .nav-files-container [data-path] .nn-navitem-name::before {
+    background-size: contain;
+    background-position: center;
+    -webkit-mask-size: contain;
+    -webkit-mask-position: center;
+    mask-size: contain;
+    mask-position: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
 }
 
 /* Interactive Dividers (Modern Pill Design) */
@@ -132,37 +132,37 @@ body .nav-folder-title > span:last-child {
     flex-grow: 1;
 }
 
-.cf-divider-chip {
-    display: flex !important;
-    align-items: center !important;
-    color: var(--cf-divider-color) !important;
-    font-size: var(--cf-divider-font-size) !important;
-    font-weight: var(--cf-divider-font-weight, 700) !important;
-    text-transform: var(--cf-divider-text-transform) !important;
-    letter-spacing: var(--cf-divider-letter-spacing) !important;
-    white-space: nowrap !important;
-    gap: 0 !important;
+body .nav-files-container .cf-divider-chip {
+    display: flex;
+    align-items: center;
+    color: var(--cf-divider-color);
+    font-size: var(--cf-divider-font-size);
+    font-weight: var(--cf-divider-font-weight, 700);
+    text-transform: var(--cf-divider-text-transform);
+    letter-spacing: var(--cf-divider-letter-spacing);
+    white-space: nowrap;
+    gap: 0;
 }
 
-.cf-divider-label {
-    display: block !important;
-    margin: 0 12px !important;
-    transform: translateX(0.075em) !important;
+body .nav-files-container .cf-divider-label {
+    display: block;
+    margin: 0 12px;
+    transform: translateX(0.075em);
 }
 
-.cf-divider-emoji-icon,
-.cf-divider-icon {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 24px !important;
+body .nav-files-container .cf-divider-emoji-icon,
+body .nav-files-container .cf-divider-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
 }
 
-.cf-divider-icon svg {
-    width: 14px !important;
-    height: 14px !important;
-    stroke: var(--cf-divider-color) !important;
-    stroke-width: 2.5px !important;
+body .nav-files-container .cf-divider-icon svg {
+    width: 14px;
+    height: 14px;
+    stroke: var(--cf-divider-color);
+    stroke-width: 2.5px;
 }
 
 /* Premium Markdown Popover */
@@ -233,19 +233,19 @@ body .nav-folder-title > span:last-child {
     box-shadow: inset 0 1px 4px rgba(0,0,0,0.1);
 }
 .cf-popover-content pre code {
-    background-color: transparent !important;
-    padding: 0 !important;
-    border: none !important;
-    color: var(--text-normal) !important;
-    font-size: 0.85em !important;
+    background-color: transparent;
+    padding: 0;
+    border: none;
+    color: var(--text-normal);
+    font-size: 0.85em;
 }
 
 /* ── 4. SETTINGS UI COMPONENTS ───────────────────────────────────────── */
 
-.colorful-folders-config {
+body .colorful-folders-config {
     padding: 30px;
-    max-width: 850px !important;
-    margin: 0 auto !important;
+    max-width: 850px;
+    margin: 0 auto;
 }
 
 .colorful-folders-config > h2 {
@@ -279,7 +279,7 @@ body .nav-folder-title > span:last-child {
     padding: 0;
 }
 
-.cf-tab-btn {
+body .colorful-folders-config .cf-tab-btn {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -290,8 +290,8 @@ body .nav-folder-title > span:last-child {
     font-size: 1em;
     color: var(--text-muted);
     background: transparent;
-    border: none !important;
-    box-shadow: none !important;
+    border: none;
+    box-shadow: none;
     position: relative;
 }
 
@@ -304,10 +304,10 @@ body .nav-folder-title > span:last-child {
     background: rgba(var(--mono-rgb-100), 0.05);
 }
 
-.cf-tab-btn.is-active {
-    background: var(--cf-accent) !important;
-    color: #ffffff !important;
-    box-shadow: 0 4px 16px var(--cf-accent-glow) !important;
+body .colorful-folders-config .cf-tab-btn.is-active {
+    background: var(--cf-accent);
+    color: #ffffff;
+    box-shadow: 0 4px 16px var(--cf-accent-glow);
 }
 
 .cf-settings-card {
@@ -393,38 +393,38 @@ body .nav-folder-title > span:last-child {
     line-height: 1.5;
 }
 
-.colorful-folders-config .checkbox-container.is-enabled {
-    background-color: var(--cf-accent) !important;
+body .colorful-folders-config .checkbox-container.is-enabled {
+    background-color: var(--cf-accent);
 }
 
 /* Custom Sliders */
 .colorful-folders-config input[type='range'] {
     background-color: rgba(var(--mono-rgb-100), 0.1);
 }
-.colorful-folders-config input[type='range']::-webkit-slider-thumb {
-    background-color: #ffffff !important;
-    border: 2px solid var(--cf-accent) !important;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+body .colorful-folders-config input[type='range']::-webkit-slider-thumb {
+    background-color: #ffffff;
+    border: 2px solid var(--cf-accent);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
-.colorful-folders-config .setting-item-control input[type="range"] {
-    width: 160px !important;
-    height: 8px !important;
-    background: rgba(0, 0, 0, 0.2) !important;
-    border-radius: 10px !important;
-    appearance: none !important;
-    -webkit-appearance: none !important;
-    cursor: pointer !important;
-    border: 1px solid var(--background-modifier-border) !important;
+body .colorful-folders-config .setting-item-control input[type="range"] {
+    width: 160px;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    border: 1px solid var(--background-modifier-border);
 }
-.colorful-folders-config .setting-item-control input[type="range"]::-webkit-slider-thumb {
-    appearance: none !important;
-    -webkit-appearance: none !important;
-    width: 20px !important;
-    height: 20px !important;
-    background: var(--interactive-accent) !important;
-    border: 3px solid var(--background-primary) !important;
-    border-radius: 50% !important;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.4) !important;
+body .colorful-folders-config .setting-item-control input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    background: var(--interactive-accent);
+    border: 3px solid var(--background-primary);
+    border-radius: 50%;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.4);
 }
 .colorful-folders-config .setting-item-control input[type="range"]:active::-webkit-slider-thumb {
     transform: scale(1.2);
@@ -499,26 +499,26 @@ body .nav-folder-title > span:last-child {
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-.cf-icon-item:hover svg {
-    color: #ffffff !important;
-    fill: none !important;
-    stroke: #ffffff !important;
+body .colorful-folders-config .cf-icon-item:hover svg {
+    color: #ffffff;
+    fill: none;
+    stroke: #ffffff;
 }
 
-.cf-icon-item .cf-btn-remove {
+body .colorful-folders-config .cf-icon-item .cf-btn-remove {
     position: absolute;
     top: -6px;
     right: -6px;
     width: 18px;
     height: 18px;
-    border-radius: 50% !important;
-    background: var(--text-error) !important;
-    color: white !important;
-    font-size: 12px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 0 !important;
+    border-radius: 50%;
+    background: var(--text-error);
+    color: white;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
     opacity: 0;
 }
 
@@ -569,10 +569,10 @@ body .nav-folder-title > span:last-child {
     z-index: 5;
 }
 
-.cf-vcp-slider {
+body .colorful-folders-config .cf-vcp-slider {
     -webkit-appearance: none;
     appearance: none;
-    height: 8px !important;
+    height: 8px;
     border-radius: 4px;
     outline: none;
     cursor: pointer;
@@ -631,7 +631,7 @@ body .nav-folder-title > span:last-child {
     25% { transform: translateX(-5px); }
     75% { transform: translateX(5px); }
 }
-.is-invalid {
-    border-color: var(--text-error) !important;
-    animation: cf-shake 0.2s ease-in-out 0s 2 !important;
+body .colorful-folders-config .is-invalid {
+    border-color: var(--text-error);
+    animation: cf-shake 0.2s ease-in-out 0s 2;
 }
