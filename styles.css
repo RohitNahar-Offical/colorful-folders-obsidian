@@ -92,10 +92,9 @@ body .nav-folder-title > span:last-child {
 }
 
 /* Hide default icons when a CF icon is present */
-.nav-folder-title:has(.cf-icon-wrapper) .nav-folder-title-content::before,
-.tree-item-self:has(.cf-icon-wrapper) .tree-item-inner::before,
-.nn-navitem:has(.cf-icon-wrapper) .nn-navitem-icon,
-.nn-file:has(.cf-icon-wrapper) .nn-file-icon {
+.nav-folder-title-content.cf-icon-active::before,
+.nav-file-title-content.cf-icon-active::before,
+.tree-item-inner.cf-icon-active::before {
     display: none !important;
 }
 
@@ -293,6 +292,11 @@ body .nav-folder-title > span:last-child {
     background: transparent;
     border: none !important;
     box-shadow: none !important;
+    position: relative;
+}
+
+.cf-tab-btn span {
+    z-index: 1;
 }
 
 .cf-tab-btn:hover {
@@ -442,7 +446,7 @@ body .nav-folder-title > span:last-child {
 }
 .colorful-folders-config button.mod-cta {
     background-color: var(--cf-accent);
-    color: #fff;
+    color: #ffffff;
     border-color: rgba(0, 0, 0, 0.1);
 }
 .colorful-folders-config button:hover:not(.cf-tab-btn) {
@@ -544,13 +548,13 @@ body .nav-folder-title > span:last-child {
 .cf-vcp-board-grad-white {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(to right, #fff, transparent);
+    background: linear-gradient(to right, #ffffff, transparent);
 }
 
 .cf-vcp-board-grad-black {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(to top, #000, transparent);
+    background: linear-gradient(to top, #000000, transparent);
 }
 
 .cf-vcp-thumb {
@@ -558,7 +562,7 @@ body .nav-folder-title > span:last-child {
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    border: 2px solid #fff;
+    border: 2px solid #ffffff;
     box-shadow: 0 0 0 1.5px rgba(0,0,0,0.25), 0 2px 8px rgba(0,0,0,0.3);
     transform: translate(-50%, -50%);
     pointer-events: none;
@@ -582,7 +586,7 @@ body .nav-folder-title > span:last-child {
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    background: #fff;
+    background: #ffffff;
     border: 2px solid var(--cf-card-border);
     box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     cursor: pointer;
@@ -591,12 +595,6 @@ body .nav-folder-title > span:last-child {
 /* Modal Tab UI */
 .cf-modal-header {
     background: var(--background-secondary-alt);
-}
-.cf-tab-btn {
-    position: relative;
-}
-.cf-tab-btn span {
-    z-index: 1;
 }
 
 /* Suggester UI */

@@ -141,7 +141,7 @@ export class IconManager {
         });
 
         containers.forEach(container => {
-            const items = container.querySelectorAll('.nav-folder-title, .tree-item-self');
+            const items = container.querySelectorAll('.nav-folder-title, .nav-file-title, .tree-item-self');
             items.forEach(item => {
                 const path = (item as HTMLElement).dataset.path;
                 if (!path) return;
@@ -171,7 +171,7 @@ export class IconManager {
 
         // Prepare or find wrapper
         const doc = el.ownerDocument || activeDocument;
-        const content = el.querySelector('.nav-folder-title-content, .tree-item-inner');
+        const content = el.querySelector('.nav-folder-title-content, .nav-file-title-content, .tree-item-inner');
         if (content) {
             content.addClass('cf-icon-active');
             // Proactively hide any existing default SVG icons or tags
@@ -227,7 +227,7 @@ export class IconManager {
         const wrapper = el.querySelector('.cf-icon-wrapper');
         if (wrapper) wrapper.remove();
         
-        const content = el.querySelector('.nav-folder-title-content, .tree-item-inner');
+        const content = el.querySelector('.nav-folder-title-content, .nav-file-title-content, .tree-item-inner');
         if (content) {
             content.removeClass('cf-icon-active');
             // Restore hidden SVGs if they were hidden by us
