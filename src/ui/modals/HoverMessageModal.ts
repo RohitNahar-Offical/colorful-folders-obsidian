@@ -274,6 +274,7 @@ export class HoverMessageModal extends obsidian.Modal {
                 } else {
                     let all: string[] = [];
                     if (this.suggestType === 'link') {
+                        // Vault Enumeration: Used to provide basenames for the markdown link suggester.
                         all = this.app.vault.getMarkdownFiles().map(f => f.basename);
                     } else {
                         const tags = (this.app.metadataCache as unknown as { getTags(): Record<string, number> }).getTags();

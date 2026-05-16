@@ -83,6 +83,8 @@ export class StyleGenerator {
             } else {
                 if (!this.plugin.heatmapCache) this.plugin.heatmapCache = new Map();
                 heatmapData = this.plugin.heatmapCache;
+                // Vault Enumeration: Used strictly to calculate folder activity for the "Heatmap" feature.
+                // This builds a local cache of modification times to determine folder colors.
                 const files = this.app.vault.getFiles();
                 for (let i = 0, len = files.length; i < len; i++) {
                     const f = files[i];
