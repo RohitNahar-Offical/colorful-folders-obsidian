@@ -139,5 +139,6 @@ Read before making ANY architectural changes.
 **Resolution**: 
 1. Created `.github/predicates/predicate.json` with build metadata.
 2. Updated `.github/workflows/build.yml` to use `https://slsa.dev/provenance/v1.0` and specified the `predicate-path`.
-3. Standardized release tags to use the semantic version only (e.g., `4.1.5`).
-**Lesson**: Attestation protocols are strict about URI versioning. Always use the fully qualified version string (`v1.0`) and ensure all mandatory parameters are explicitly defined in the workflow YAML.
+3. Elevated `contents` permissions to `write` to allow automated GitHub Release creation and note generation.
+4. Standardized release tags to use the semantic version only (e.g., `4.1.5`).
+**Lesson**: Attestation and Release actions have distinct permission requirements. While `read` is sufficient for building and attesting, `write` is mandatory for modifying repository resources like Releases and generating notes.
