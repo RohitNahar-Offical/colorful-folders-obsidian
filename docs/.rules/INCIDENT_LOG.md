@@ -114,3 +114,15 @@ Read before making ANY architectural changes.
 - **DOM Cleanup**: Removed NN support from `IconManager.ts` (Pure CSS only for NN).
 - **Decoupled Scaling**: Reduced NN icon base multiplier to **1.1em**.
 **Lesson**: Hybrid rendering (JS + CSS) is fatal in virtualized lists. Choose one path and strictly isolate it using the CSS Firewall.
+
+---
+
+## Incident #10 — Blank Items in Integrated Views (2026-05-16)
+**What was attempted**: Implementing the Pure CSS bridge for Notebook Navigator.
+**What broke**: 
+- Items that didn't match a custom icon appeared completely blank (no folder/file icons).
+**Root cause**: 
+- The bridge targeted the native NN icon slots but didn't provide a fallback when the user's configuration was empty.
+**Resolution**:
+- **Surgical Fallback**: Implemented a mandatory default icon injection in `NotebookNavigator.ts`. If no icon matches, a Lucide folder/file is injected via CSS mask at 50% opacity.
+**Lesson**: When overriding native UI elements in third-party plugins, always provide a "Neutral Fallback" to prevent layout collapse or missing information.

@@ -116,3 +116,14 @@ To prevent lag during file movement, the plugin enters a "High-Performance State
 - **Decoration Suspension**: Box-shadows, animations, and complex filters are instantly disabled.
 - **Opacity Normalization**: All explorer elements are forced to `opacity: 1` to prevent browser transparency calculations.
 - **Logic Freeze**: The JavaScript `MutationObserver` is fully disconnected during the drag to give 100% CPU priority to Obsidian's native drag-and-drop logic.
+
+---
+
+## 10. Native-Bridge Architecture (Notebook Navigator)
+
+To ensure visual parity with third-party integrated views (like Notebook Navigator), the plugin utilizes a **"Native-Bridge" (Pure CSS)** rendering strategy.
+
+- **The CSS Firewall**: Implements a strict exclusion layer using `:not()` selectors. This prevents standard explorer styles (like custom folder icons) from leaking into virtualized views, resolving the "Double Icon" glitch.
+- **Decoupled Scaling**: Icons in integrated views use a dedicated **1.1em** scale constant, separate from the standard explorer's **1.3em**. This maintains visual balance across the different row heights of each view.
+- **Fallback Icon System**: To ensure no item ever appears blank, the bridge implements a mandatory fallback. If an item lacks a manual or auto-assigned icon, it is automatically injected with a professional Lucide folder or file icon via a CSS mask.
+- **Zero-Flicker Virtualization**: By using static CSS rules instead of JavaScript DOM manipulation, the bridge ensures that styles are applied at the browser's hardware-accelerated paint level, making it immune to React row-recycling lag.

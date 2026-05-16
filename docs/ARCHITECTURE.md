@@ -214,8 +214,10 @@ Notebook Navigator uses a **highly aggressive virtualized list**. DOM elements a
 
 ### Integration Mechanism:
 1.  **Selective Scoping**: Rules target `.nn-navitem` (folders) and `.nn-file` (files).
-2.  **State Logic**: The generator correctly identifies the "Active" state in Notebook Navigator (`.is-active`) to apply custom selection glows and active file colors.
-3.  **Icon Management**: Uses the **Surgical Container Replacement** (Pure CSS) strategy. The original NN icon slot is transformed into a Colorful Folders icon using CSS masking, while the standard explorer's `::before` rules are strictly excluded via a CSS Firewall.
+2.  **CSS Firewall**: All standard explorer icon rules explicitly exclude NN items using `:not(.nn-file):not(.nn-navitem)`. This prevents "Double-Rendering" glitches in virtualized views.
+3.  **Surgical Container Replacement**: The original NN icon slot is transformed into a Colorful Folders icon using CSS masking.
+4.  **Fallback Icon System**: If no manual or auto-icon matches, the bridge injects a default Lucide folder/file icon via CSS to ensure the UI is never blank.
+5.  **Decoupled Scaling**: NN icons use a dedicated scaling constant (`1.1em`) separate from the standard explorer (`1.3em`) to maintain visual harmony in the card-based layout.
 ---
 
 ## 9. Maintenance & Persistence

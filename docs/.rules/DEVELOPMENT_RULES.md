@@ -166,6 +166,11 @@ Examples:
 - **Result**: Icons intended for the standard explorer leaked into Notebook Navigator rows.
 - **Lesson**: ALWAYS use the CSS Firewall: add `:not(.nn-file):not(.nn-navitem)` to all general explorer rules to prevent unintended leakage into integration panes.
 
+### ❌ Danger #10: Blank Items in Integrated Panes
+- **What happened**: If an item in NN didn't match a custom or auto-icon, it appeared completely blank because we suppressed native icons.
+- **Result**: Broken UI feel in Notebook Navigator.
+- **Lesson**: INTEGRATED VIEWS MUST HAVE FALLBACKS. Use the **Surgical Fallback Rule**: if no icon is matched in the bridge, inject a default Lucide folder/file icon via CSS mask to maintain visual continuity.
+
 ---
 
 ## 🧪 RULE 7 — TESTING CHECKLIST BEFORE EVERY PUSH

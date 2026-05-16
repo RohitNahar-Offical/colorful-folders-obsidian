@@ -36,27 +36,31 @@ Instead of trying to "touch" the DOM elements with code, we generate a massive s
 - **Zero Flickering**: Because the style is already in the browser's memory, there is no "calculation" delay.
 - **Immune to Virtualization**: It doesn't matter how many times React recycles the DOM row; as long as the row has `data-path="Project A"`, the browser will paint it correctly.
 
----
-
+### 3. Surgical Icon Replacement
+We use the **CSS Masking Strategy** to swap native NN icons for Colorful Folders icons. 
 - This ensures the icon remains in its **exact layout position** within the NN row, preventing any "double icon" or alignment issues during rapid scrolling.
 
-### 4. The CSS Firewall (Double Icon Fix)
-To prevent visual regressions, the plugin implements a **Strict CSS Firewall**. All general icon rules that add `::before` elements to the standard explorer (which also uses `.tree-item-inner`) are explicitly scoped with `:not(.nn-file):not(.nn-navitem)`. This ensures that Notebook Navigator is only styled by its dedicated integration layer.
+### 4. The Fallback Icon System (New in 4.1.5)
+To ensure the UI is never blank, the integration bridge implements a mandatory **Zero-Blank Policy**:
+- **Automatic Fallback**: If an item does not have a manual icon or an auto-detected rule, the bridge automatically injects a professional Lucide folder or file icon.
+- **Dynamic Styling**: These fallback icons inherit the folder's primary color and opacity, ensuring they look like a native part of your configuration.
 
-### 5. Sizing Optimization
-Notebook Navigator cards use a larger base font than the sidebar. To maintain visual balance:
+### 5. The CSS Firewall (Double Icon Fix)
+To prevent visual regressions, the plugin implements a **Strict CSS Firewall**. All general icon rules that add `::before` elements to the standard explorer are explicitly scoped with `:not(.nn-file):not(.nn-navitem)`. This ensures that Notebook Navigator is only styled by its dedicated integration layer.
+
+### 6. Decoupled Sizing Optimization
+Notebook Navigator cards use a denser layout than the standard sidebar. To maintain visual balance:
 - **Standard Explorer**: Icons are scaled at a **1.3em** base.
 - **Notebook Navigator**: Icons are optimized at a **1.1em** base.
 Both views still respect your global **Icon Scale** setting, but the relative proportions are tuned for each layout.
 
 ---
 
-## 4. Why Version 4.1.4 was the "Golden Standard"
+## 4. Stability & Performance
 
-During development, we discovered that version 4.1.4 had the most stable Notebook Navigator integration. 
-- **The Insight**: 4.1.4 relied heavily on direct CSS background-color overrides rather than trying to "cooperate" with NN's internal state variables.
-- **The Action**: We have restored the exact CSS generation logic from 4.1.4 into the current 4.1.5 engine. 
-- **Result**: You get the modern features of 4.1.5 (Active File Coloring, Focus Mode 3.0) with the rock-solid performance of 4.1.4.
+The integration bridge uses a **Non-Blocking Architecture**:
+- **Static Generation**: CSS is generated once and updated only when settings change.
+- **React-Native Rendering**: Because we use pure CSS, the styles are applied at the browser's paint level, bypasses the React reconciliation loop entirely for maximum scroll performance.
 
 ---
 
