@@ -135,6 +135,8 @@ Read before making ANY architectural changes.
 **What broke**: 
 - The CI job failed with a "Missing mandatory parameter" error.
 - Attestations were not generated for `main.js`, `manifest.json`, or `styles.css`.
-**Root cause**: The `actions/attest@v1` action requires an explicit `predicate-type` parameter (e.g., `https://slsa.dev/provenance/v1`) to define the structure of the attestation data. 
-**Resolution**: Updated `.github/workflows/build.yml` to include the mandatory `predicate-type`.
-**Lesson**: When using experimental or security-critical GitHub Actions, always verify the minimum required parameters beyond just the `subject-path`.
+**Root cause**: The `actions/attest@v1` action requires both an explicit `predicate-type` AND a `predicate-path` (or inline `predicate`) to be defined. It cannot generate an attestation without a source predicate file.
+**Resolution**: 
+1. Created `.github/predicates/predicate.json` with basic build versioning metadata.
+2. Updated `.github/workflows/build.yml` to include the mandatory `predicate-type` and `predicate-path` for each artifact.
+**Lesson**: When using the granular `actions/attest` action, a local predicate file is required even for standard provenance. Always check the full parameter schema in the action's documentation.
