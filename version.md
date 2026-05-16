@@ -1,25 +1,26 @@
 # Updates for Colorful Folders
 
 ## ⚡ 4.1.5 - The "Native-Bridge" & Stability Update
-This release finalizes the integration with Notebook Navigator and introduces a series of architectural hardening measures for a flawlessly synchronized experience.
+This release focuses on structural stabilization and provides new powerful ways to customize your active workspace elements.
 
-### 🧩 1. Hardened Notebook Navigator Integration
-- **CSS Firewall Architecture**: Implemented a "Native-Bridge" selector system using `:not()` exclusions. This prevents standard explorer styles from leaking into Notebook Navigator, permanently resolving the "Double Icon" issue.
-- **Pure CSS Rendering**: Purged legacy DOM injection for integrated panes, ensuring 100% flicker-free performance in virtualized lists.
-- **Decoupled Scaling**: Optimized icon scaling (1.1em) specifically for the Notebook Navigator card layout, ensuring visual parity with the standard sidebar (1.3em).
+### 📐 1. Dynamic Path Thickness
+- **User-Defined Weight**: Introducing a new **Path line thickness** slider. You can now adjust the base weight of vertical indentation guides and active highlights (1.0px to 10.0px) for a perfectly tailored look.
+- **Visual Harmony**: The engine automatically scales related borders proportionately to maintain structural hierarchy, ensuring the file tree remains crisp and organized regardless of thickness.
 
-### 🎨 2. Fallback Icon System
-- **Zero-Blank Policy**: Added an intelligent fallback system for Notebook Navigator. Items without a manual or auto-assigned icon will now show a professional Lucide folder or file icon.
-- **Perfect Synchronization**: These icons correctly inherit your configured colors and opacity for a unified aesthetic.
+### 🎨 2. Active File Customization
+- **Personalized Highlights**: You can now explicitly override the active file color in settings. 
+- **User-Driven Design**: Under the "Active Item Appearance" section, toggle the custom color picker to set your own background and text colors for the currently selected file.
 
-### 📐 3. Dynamic Path Thickness
-- **User-Defined Weight**: Introducing a new **Path line thickness** slider. You can now adjust the base weight of vertical indentation guides and active highlights (1.0px to 10.0px).
-- **Visual Harmony**: The engine automatically scales related borders proportionately to maintain structural hierarchy.
-
-### 🚀 4. Performance & Stability
+### 🚀 3. Performance & Stability
 - **Deep Code Audit**: Purged redundant logic and dead code across all core modules.
 - **Zero-Animation Mandate**: UI updates now occur with absolute zero latency for a sharp, responsive feel.
 - **Luminous Default**: Finalized the premium glass sheen as the standard for active items.
+
+### 🧩 4. Notebook Navigator Integration (Native-Bridge)
+- **CSS Firewall Architecture**: Implemented a "Native-Bridge" selector system using `:not()` exclusions. This prevents standard explorer styles from leaking into Notebook Navigator, permanently resolving the "Double Icon" issue.
+- **Zero-Blank Policy**: Added an intelligent fallback system. Items without a manual icon will now show a professional Lucide folder or file icon.
+- **Pure CSS Rendering**: Purged legacy DOM injection for integrated panes, ensuring 100% flicker-free performance in virtualized lists.
+- **Decoupled Scaling**: Optimized icon scaling (1.1em) specifically for the Notebook Navigator card layout.
 
 
 ---
