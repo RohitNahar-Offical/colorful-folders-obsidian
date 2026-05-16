@@ -126,3 +126,15 @@ Read before making ANY architectural changes.
 **Resolution**:
 - **Surgical Fallback**: Implemented a mandatory default icon injection in `NotebookNavigator.ts`. If no icon matches, a Lucide folder/file is injected via CSS mask at 50% opacity.
 **Lesson**: When overriding native UI elements in third-party plugins, always provide a "Neutral Fallback" to prevent layout collapse or missing information.
+
+---
+
+## Incident #11 — GitHub Attestation Failure (2026-05-16)
+**What was attempted**: Adding `actions/attest@v1` to the GitHub Actions workflow for build provenance.
+**Why it was done**: To secure the release pipeline and provide verifiable build artifacts.
+**What broke**: 
+- The CI job failed with a "Missing mandatory parameter" error.
+- Attestations were not generated for `main.js`, `manifest.json`, or `styles.css`.
+**Root cause**: The `actions/attest@v1` action requires an explicit `predicate-type` parameter (e.g., `https://slsa.dev/provenance/v1`) to define the structure of the attestation data. 
+**Resolution**: Updated `.github/workflows/build.yml` to include the mandatory `predicate-type`.
+**Lesson**: When using experimental or security-critical GitHub Actions, always verify the minimum required parameters beyond just the `subject-path`.
