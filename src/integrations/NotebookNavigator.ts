@@ -1,5 +1,6 @@
 import * as obsidian from 'obsidian';
 import { ColorfulFoldersSettings, IColorfulFoldersPlugin } from '../common/types';
+import { CF_FOLDER_CLOSED, CF_FILE_DEFAULT } from '../common/constants';
 import { MenuHelper } from '../ui/MenuHelper';
 
 interface NNPlugin {
@@ -143,9 +144,6 @@ export class NotebookNavigatorIntegration {
      * Generates a complete, hardened CSS block for a specific item in Notebook Navigator.
      * Implements the 'Native-Bridge' architecture.
      */
-    private static applySuffix(selector: string, suffix: string): string {
-        return selector.split(',').map(s => `${s.trim()} ${suffix}`).join(', ');
-    }
 
     static generateIntegratedStyles(
         path: string, 
@@ -225,6 +223,30 @@ export class NotebookNavigatorIntegration {
                     ${target} * { display: none !important; }
                 `;
             }
+        } else {
+            // FALLBACK: Use default icons if none matched (Ensures no items are blank)
+            const target = `body .notebook-navigator [data-path="${safePath}"] :is(${_iconSel})`;
+            const fallbackSvg = isFolder ? CF_FOLDER_CLOSED : CF_FILE_DEFAULT;
+            // Note: CF_FOLDER_CLOSED and CF_FILE_DEFAULT are already URL-encoded
+            
+            iconCss = `
+                ${target} {
+                    display: inline-flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    width: ${effIconW} !important;
+                    height: ${effIconW} !important;
+                    background-color: ${iconColor || color.hex || textCol} !important;
+                    -webkit-mask-image: url("data:image/svg+xml,${fallbackSvg}") !important;
+                    -webkit-mask-repeat: no-repeat !important;
+                    -webkit-mask-position: center !important;
+                    -webkit-mask-size: contain !important;
+                    content: "" !important;
+                    opacity: 0.5 !important;
+                    visibility: visible !important;
+                }
+                ${target} * { display: none !important; }
+            `;
         }
 
         const hoverCss = `
@@ -303,8 +325,8 @@ export class NotebookNavigatorIntegration {
             ${shouldColor ? bgCss : ''}
             ${radiantCss}
 
-            ${this.applySuffix(base, nameSel)},
-            ${this.applySuffix(base, countSel)} {
+            ${base} ${nameSel},
+            ${base} ${countSel} {
                 color: ${textCol} !important;
                 font-weight: ${isBold ? 'bold' : 'normal'} !important;
                 font-style: ${isItalic ? 'italic' : 'normal'} !important;
@@ -373,13 +395,6 @@ export class NotebookNavigatorIntegration {
             return true;
         };
 
-        // Fallback: Listen for contextmenu globally in case API registration fails
-        plugin.registerEvent(
-            plugin.app.workspace.on('file-menu', (_menu, _file) => {
-                // If it's already being handled by standard Obsidian menu, MenuHelper already ran.
-                // But if we're here, we can double check if it's an NN item.
-            })
-        );
 
         // Initial attempt
         if (!tryRegister()) {

@@ -19,11 +19,6 @@ export class StyleGenerator {
             this.plugin.heatmapCache = new Map<string, number>();
         }
     }
-
-
-
-
-
     isDarkMode() {
         return (activeDocument.body.classList.contains('theme-dark'));
     }
@@ -211,9 +206,9 @@ export class StyleGenerator {
             body .nav-files-container .nav-folder-title > *,
             body .nav-files-container .nav-file-title > *,
             body .nav-files-container .tree-item-self > *,
-            body .nav-files-container .nav-folder-title::before,
-            body .nav-files-container .nav-file-title::before,
-            body .nav-files-container .tree-item-self::before,
+            body .nav-files-container .nav-folder-title:not(.nn-navitem)::before,
+            body .nav-files-container .nav-file-title:not(.nn-file)::before,
+            body .nav-files-container .tree-item-self:not(.nn-file):not(.nn-navitem)::before,
             body .nav-files-container .nav-folder-title::after,
             body .nav-files-container .nav-file-title::after,
             body .nav-files-container .tree-item-self::after {
@@ -718,8 +713,8 @@ export class StyleGenerator {
                         border-radius: 0 !important;
                     }
 
-                    .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]::before,
-                    .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]::before {
+                    .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file)::before,
+                    .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem)::before {
                         background-color: ${activeText} !important;
                     }
                 `);
@@ -901,8 +896,8 @@ export class StyleGenerator {
                     const isManualCustom = !!(customStyle && customStyle.iconId);
                     if (isManualCustom) {
                         cssRules.push(`
-                            body [data-path="${safePath}"] .nav-folder-title-content::before,
-                            body [data-path="${safePath}"] .tree-item-inner::before {
+                            body .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before,
+                            body .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before {
                                 display: none !important;
                                 content: none !important;
                             }
