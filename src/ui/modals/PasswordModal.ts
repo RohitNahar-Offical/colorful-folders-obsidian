@@ -51,7 +51,7 @@ export class PasswordModal extends obsidian.Modal {
                 } else {
                     inputEl.value = "";
                     inputEl.addClass("is-invalid");
-                    activeWindow.setTimeout(() => inputEl.removeClass("is-invalid"), 500);
+                    window.setTimeout(() => inputEl.removeClass("is-invalid"), 500);
                 }
             }
         };
@@ -71,7 +71,7 @@ export class PasswordModal extends obsidian.Modal {
             } else {
                 inputEl.value = "";
                 inputEl.addClass("is-invalid");
-                activeWindow.setTimeout(() => inputEl.removeClass("is-invalid"), 500);
+                window.setTimeout(() => inputEl.removeClass("is-invalid"), 500);
             }
         };
 

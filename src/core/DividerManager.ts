@@ -371,7 +371,7 @@ export class DividerManager {
                 // Keep open on popover hover (The Bridge)
                 popover.onmouseenter = () => {
                     if (timeout) { 
-                        activeWindow.clearTimeout(timeout); 
+                        window.clearTimeout(timeout); 
                         timeout = null; 
                     }
                 };
@@ -379,8 +379,8 @@ export class DividerManager {
             };
 
             const hidePopover = () => {
-                if (timeout) activeWindow.clearTimeout(timeout);
-                timeout = activeWindow.setTimeout(() => {
+                if (timeout) window.clearTimeout(timeout);
+                timeout = window.setTimeout(() => {
                     if (popover) {
                         if (DividerManager.activePopover === popover) DividerManager.activePopover = null;
                         popover.remove();

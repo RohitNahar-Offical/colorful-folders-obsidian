@@ -398,9 +398,9 @@ export class NotebookNavigatorIntegration {
 
         // Initial attempt
         if (!tryRegister()) {
-            const timer = activeWindow.setInterval(() => {
+            const timer = window.setInterval(() => {
                 if (tryRegister() || attempts >= maxAttempts) {
-                    activeWindow.clearInterval(timer);
+                    window.clearInterval(timer);
                 }
             }, interval);
         }

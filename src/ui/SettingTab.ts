@@ -1145,7 +1145,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             a.download = filename;
             doc.body.appendChild(a);
             a.click();
-            activeWindow.setTimeout(() => {
+            window.setTimeout(() => {
                 if (doc.body.contains(a)) doc.body.removeChild(a);
                 URL.revokeObjectURL(url);
             }, 1000);

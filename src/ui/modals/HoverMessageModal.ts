@@ -289,7 +289,7 @@ export class HoverMessageModal extends obsidian.Modal {
 
         textArea.onblur = () => {
             // Delay closing to allow clicks on suggestion items
-            activeWindow.setTimeout(() => closeSuggest(), 200);
+            window.setTimeout(() => closeSuggest(), 200);
         };
 
         // Footer

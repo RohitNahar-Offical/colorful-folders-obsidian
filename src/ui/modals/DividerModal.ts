@@ -425,8 +425,8 @@ export class DividerModal extends obsidian.Modal {
     }
 
     _liveSync() {
-        if (this._liveSyncTimeout) activeWindow.clearTimeout(this._liveSyncTimeout);
-        this._liveSyncTimeout = activeWindow.setTimeout(() => {
+        if (this._liveSyncTimeout) window.clearTimeout(this._liveSyncTimeout);
+        this._liveSyncTimeout = window.setTimeout(() => {
             const style = this.plugin.getStyle(this.path) || {};
             const tempStyle: FolderStyle = {
                 ...style,
