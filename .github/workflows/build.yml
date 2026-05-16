@@ -35,14 +35,14 @@ jobs:
         uses: actions/attest@v1
         with:
           subject-path: 'main.js'
-          predicate-type: 'https://slsa.dev/provenance/v1'
+          predicate-type: 'https://slsa.dev/provenance/v1.0'
           predicate-path: '.github/predicates/predicate.json'
 
       - name: Generate artifact attestation (manifest.json)
         uses: actions/attest@v1
         with:
           subject-path: 'manifest.json'
-          predicate-type: 'https://slsa.dev/provenance/v1'
+          predicate-type: 'https://slsa.dev/provenance/v1.0'
           predicate-path: '.github/predicates/predicate.json'
 
       - name: Generate artifact attestation (styles.css)
