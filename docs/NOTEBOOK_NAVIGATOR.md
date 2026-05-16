@@ -38,20 +38,16 @@ Instead of trying to "touch" the DOM elements with code, we generate a massive s
 
 ---
 
-## 3. Icon Rendering Strategy
+- This ensures the icon remains in its **exact layout position** within the NN row, preventing any "double icon" or alignment issues during rapid scrolling.
 
-Notebook Navigator handles icons differently than the standard Obsidian explorer. We use a hybrid approach to ensure they look native.
+### 4. The CSS Firewall (Double Icon Fix)
+To prevent visual regressions, the plugin implements a **Strict CSS Firewall**. All general icon rules that add `::before` elements to the standard explorer (which also uses `.tree-item-inner`) are explicitly scoped with `:not(.nn-file):not(.nn-navitem)`. This ensures that Notebook Navigator is only styled by its dedicated integration layer.
 
-### Auto-Icons (CSS Masking)
-For auto-icons (Lucide/Emoji), we use CSS pseudo-elements (`::before`) and `-webkit-mask-image`. 
-- We hide NN's native icon slot (`.nn-navitem-icon`).
-- We inject our icon directly into the text span.
-- This ensures the icon stays perfectly aligned with the text even during rapid scrolling.
-
-### Manual Overrides (DOM Injection)
-For custom icons selected via the Visual Picker, we use `IconManager.ts` to inject a `.cf-icon-wrapper` into the `.nn-navitem-name` / `.nn-file-name` spans.
-- This is the "Indestructible" strategy inherited from version 4.1.4.
-- By placing the icon *inside* the name span, we ensure it is treated as part of the text content by the browser, preventing layout shifts.
+### 5. Sizing Optimization
+Notebook Navigator cards use a larger base font than the sidebar. To maintain visual balance:
+- **Standard Explorer**: Icons are scaled at a **1.3em** base.
+- **Notebook Navigator**: Icons are optimized at a **1.1em** base.
+Both views still respect your global **Icon Scale** setting, but the relative proportions are tuned for each layout.
 
 ---
 

@@ -47,9 +47,8 @@ The following features MUST work at all times. Test each one before pushing:
 | **Item Counters** | `showItemCounters` | `countItems()` + `::after` CSS |
 | **Hidden Items (Stealth)** | `isHidden` in `FolderStyle` | `generateStealthCss()` |
 | **Notebook Navigator** | `notebookNavigatorSupport` | `nnActive` checks throughout |
-| **Active File Custom Color** | `useCustomActiveColor` | `activeBg` / `activeText` variables |
-| **Subfolder Tinting** | `tintOpacity` | `depth > 0` tint block |
-| **Dividers** | `hasDivider` / `showFileDivider` | Bottom of `generateCss()` |
+| **Path Line Thickness** | `pathLineThickness` | `generateGlobalBaseCss` & `traverse` |
+| **Decoupled Icon Scaling** | (Internal Logic) | `nnIconW` (1.1em) vs `effFileIconW` (1.3em) |
 
 ---
 
@@ -81,7 +80,7 @@ The following features MUST work at all times. Test each one before pushing:
 | File | Responsibility | Do NOT |
 |---|---|---|
 | `src/core/StyleGenerator.ts` | Generate ALL CSS as a string | Add DOM manipulation here |
-| `src/core/IconManager.ts` | Inject SVG icons into DOM elements | Generate CSS here |
+| `src/core/IconManager.ts` | Inject SVG icons into DOM elements (Standard Explorer) | Generate CSS or touch Notebook Navigator |
 | `src/core/DividerManager.ts` | Create/manage divider DOM elements | Touch folder colors |
 | `src/main.ts` | Orchestrate: load, observers, apply CSS | Put CSS generation logic here |
 | `src/ui/SettingTab.ts` | UI settings panel only | Apply styles directly |
@@ -155,10 +154,17 @@ Examples:
 - **Result**: Severe flickering during scroll. Rows appeared white before turning the correct color.
 - **Lesson**: Virtualized lists (React/NN) recycle DOM elements faster than JS can track. Use **Pure CSS targeting `data-path`** for O(1) performance and zero flicker.
 
-### ❌ Danger #7: Over-Engineering Layout Selectors
-- **What happened**: Attempted to unify alignment by targeting wrapper classes (like `.nn-navitem`) and grouping disparate tags in a single flex-rule.
-- **Result**: The entire file explorer layout collapsed; metadata counts misaligned.
-- **Lesson**: When modifying layout, strictly use the simplest native Obsidian classes (e.g., `.nav-folder-title`). Do NOT target outer wrappers or group nested tags with flex-parent rules. Elevate specificity using `body` instead of combining complex selectors.
+- **Lesson**: When styling Notebook Navigator, do not over-engineer or target its wrapper classes (`.nn-navitem`) for layout mechanics. Rely on the native classes it injects (`.nav-folder-title`) and elevate their specificity safely using `body`.
+
+### ❌ Danger #8: Double Icons in Virtualized Lists
+- **What happened**: Used both DOM injection (IconManager) and CSS masking (StyleGenerator) for Notebook Navigator.
+- **Result**: Side-by-side icons in the NN pane.
+- **Lesson**: Virtualized panes like NN must use a SINGLE rendering path. All NN icons must be handled by the **Surgical Container Replacement** (CSS) strategy. DOM injection must be strictly disabled for these containers.
+
+### ❌ Danger #9: Broad Selector Leakage
+- **What happened**: Applied `::before` icons to `.tree-item-inner` without exclusions.
+- **Result**: Icons intended for the standard explorer leaked into Notebook Navigator rows.
+- **Lesson**: ALWAYS use the CSS Firewall: add `:not(.nn-file):not(.nn-navitem)` to all general explorer rules to prevent unintended leakage into integration panes.
 
 ---
 

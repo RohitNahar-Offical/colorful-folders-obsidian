@@ -88,6 +88,18 @@ export class IconManager {
     }
 
     /**
+     * Returns true if the given iconId is an Emoji rather than a Lucide/custom SVG ID.
+     * Lucide and custom icon IDs only contain a-z, 0-9, dashes and underscores.
+     * Anything with non-standard characters (or very short) is an emoji.
+     */
+    isEmojiIcon(iconId: string): boolean {
+        if (!iconId) return false;
+        if (iconId.length <= 2) return true; // Single/double char emojis
+        return /[^a-zA-Z0-9\-_]/.test(iconId); // Contains non-standard chars
+    }
+
+
+    /**
      * Gets a normalized SVG string, handling cache.
      */
     getIconSvg(iconId: string, shouldEncode = true): string {
@@ -127,11 +139,9 @@ export class IconManager {
         this.plugin.app.workspace.getLeavesOfType('file-explorer').forEach(leaf => {
             containers.push(leaf.view.containerEl);
         });
-        
-        activeDocument.querySelectorAll('.nn-navigation-pane-content, .nn-virtual-container').forEach(c => containers.push(c));
 
         containers.forEach(container => {
-            const items = container.querySelectorAll('.nav-folder-title, .tree-item-self, .nn-navitem, .nn-file');
+            const items = container.querySelectorAll('.nav-folder-title, .tree-item-self');
             items.forEach(item => {
                 const path = (item as HTMLElement).dataset.path;
                 if (!path) return;
@@ -161,7 +171,7 @@ export class IconManager {
 
         // Prepare or find wrapper
         const doc = el.ownerDocument || activeDocument;
-        const content = el.querySelector('.nav-folder-title-content, .tree-item-inner, .nn-navitem-name, .nn-file-name');
+        const content = el.querySelector('.nav-folder-title-content, .tree-item-inner');
         if (content) {
             content.addClass('cf-icon-active');
             // Proactively hide any existing default SVG icons or tags
@@ -217,7 +227,7 @@ export class IconManager {
         const wrapper = el.querySelector('.cf-icon-wrapper');
         if (wrapper) wrapper.remove();
         
-        const content = el.querySelector('.nav-folder-title-content, .tree-item-inner, .nn-navitem-name, .nn-file-name');
+        const content = el.querySelector('.nav-folder-title-content, .tree-item-inner');
         if (content) {
             content.removeClass('cf-icon-active');
             // Restore hidden SVGs if they were hidden by us

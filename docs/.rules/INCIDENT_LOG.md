@@ -97,3 +97,20 @@ Read before making ANY architectural changes.
 **Root cause**: Notebook Navigator automatically injects native `.nav-folder-title` classes into its virtualized rows to ensure theme compatibility. By aggressively targeting the outer `.nn-navitem` wrapper and forcing it to be a flex container, the plugin destroyed the row's internal DOM structure. Additionally, forcing `margin-left: auto` onto internal tags (which are not flex siblings) broke their layout.
 **Resolution**: Reverted to using the exact, simple native selectors (e.g., `.nav-folder-title`), but anchored them with `body` and `!important` to ensure they win the CSS loading order battle against themes.
 **Lesson**: When styling Notebook Navigator, do not over-engineer or target its wrapper classes (`.nn-navitem`) for layout mechanics. Rely on the native classes it injects (`.nav-folder-title`) and elevate their specificity safely using `body`.
+
+---
+
+## Incident #9 — Double Icons & Selector Leakage (2026-05-16)
+**What was attempted**: Finalizing icon synchronization for Notebook Navigator.
+**What broke**: 
+- Side-by-side "double icons" appeared in the NN pane.
+- Icons in NN appeared "massive" compared to the sidebar.
+**Root cause**: 
+- **Leakage**: General CSS rules for the explorer (targeting `.tree-item-inner`) were leaking into NN rows.
+- **Redundancy**: `IconManager.ts` was still attempting DOM injection for NN while `StyleGenerator.ts` was also applying a CSS mask.
+- **Scale**: NN cards use a larger font; the standard `1.3em` multiplier was too big for card layouts.
+**Resolution**:
+- **CSS Firewall**: Added `:not(.nn-file):not(.nn-navitem)` to all general icon rules.
+- **DOM Cleanup**: Removed NN support from `IconManager.ts` (Pure CSS only for NN).
+- **Decoupled Scaling**: Reduced NN icon base multiplier to **1.1em**.
+**Lesson**: Hybrid rendering (JS + CSS) is fatal in virtualized lists. Choose one path and strictly isolate it using the CSS Firewall.

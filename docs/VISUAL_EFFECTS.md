@@ -22,8 +22,8 @@ The file itself receives a permanent, premium highlight to ensure the user alway
 
 ### ⚡ Radiant Path (Connecting Trails)
 A dynamic vertical trail that visually connects the currently open file to its root parent.
-- **Implementation**: Injects a variable solid border on `.nav-folder-children` containers, calculated from the **Path line thickness** setting.
-- **Stability**: The base thickness is user-defined (Default: `2.0px`) and scales proportionately across folders and files to maintain visual hierarchy.
+- **Stability**: The base thickness is user-defined (via `pathLineThickness` setting, Default: `2.0px`) and scales proportionately across folders and files to maintain visual hierarchy.
+- **Proportional Scaling**: Icons and paths utilize independent scaling constants (e.g., 1.1em for Notebook Navigator cards vs 1.3em for the standard sidebar) to ensure visual balance across different UI layouts.
 - **Performance Hardening**: All legacy path animations (Breathe, Neon, Shimmer) have been decommissioned in favor of zero-lag static standards. This ensures that massive folder structures can be scrolled without any GPU position-recalculation overhead.
 
 ---

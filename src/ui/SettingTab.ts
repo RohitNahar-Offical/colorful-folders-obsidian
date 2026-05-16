@@ -86,6 +86,11 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         // ── INTEGRATIONS PANEL ────────────────────────────────────────────────
         // ──────────────────────────────────────────────────────────────────────
         const intCard = makeCard(intPanel, "🔗", "Notebook navigator");
+        intCard.createEl('p', { 
+            text: '💡 Tip: To change icons in notebook navigator, simply use the colorful folders menu in the standard explorer. All changes are automatically synchronized.',
+            cls: 'setting-item-description'
+        }).setCssStyles({ fontSize: '0.85em', fontStyle: 'italic', marginBottom: '12px', color: 'var(--text-accent)' });
+
         new obsidian.Setting(intCard)
             .setName('Enable notebook navigator support')
             .setDesc('Allows colorful folders to safely style the icons and text of notebook navigator items.')

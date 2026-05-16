@@ -126,7 +126,8 @@ export interface IColorfulFoldersPlugin {
         getIconSvg(iconId: string, shouldEncode?: boolean): string,
         getAutoIconData(name: string): AutoIconData | null,
         normalizeSvg(svgStr: string, shouldEncode?: boolean): string,
-        invalidateCategoryCache(): void
+        invalidateCategoryCache(): void,
+        isEmojiIcon(iconId: string): boolean
     };
     sheet: CSSStyleSheet;
     isSyncingDividers: boolean;
@@ -164,6 +165,7 @@ export interface StyleContext {
     excludeFolders: string[];
     effFileIconW: string;
     folderIconW: string;
+    nnIconW: string;
     now: number;
 }
 export interface MenuItemWithSubmenu extends MenuItem {

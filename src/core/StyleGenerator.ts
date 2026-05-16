@@ -44,6 +44,7 @@ export class StyleGenerator {
         const wideScale = this.settings.wideAutoIcons ? 1.05 : 1.0;
         const folderIconW = `calc(1.3em * ${iconScale * wideScale})`;
         const effFileIconW = `calc(1.3em * ${iconScale * wideScale})`;
+        const nnIconW = `calc(1.1em * ${iconScale * wideScale})`;
 
         let currentPalette = PALETTES[this.settings.palette] || PALETTES["Muted Dark Mode"];
         if (this.settings.palette === "Custom") {
@@ -74,6 +75,7 @@ export class StyleGenerator {
             excludeFolders,
             effFileIconW,
             folderIconW,
+            nnIconW,
             now: Date.now()
         };
     }
@@ -592,6 +594,9 @@ export class StyleGenerator {
                 `);
 
                 if (nnFileBgActive) {
+                    const isEmoji = this.plugin.iconManager.isEmojiIcon(iconId);
+                    const iconSvg = !isEmoji && iconId ? this.plugin.iconManager.getIconSvg(iconId, true) : "";
+                    
                     cssRules.push(NotebookNavigatorIntegration.generateIntegratedStyles(
                         child.path,
                         false,
@@ -599,6 +604,9 @@ export class StyleGenerator {
                         fileBgAlpha,
                         textNN,
                         iconId,
+                        iconColor,
+                        isEmoji,
+                        iconSvg,
                         activeBg,
                         activeText,
                         isBold,
@@ -606,7 +614,10 @@ export class StyleGenerator {
                         shouldColorNN,
                         useGlass,
                         tintOp,
-                        baseThick
+                        baseThick,
+                        this.settings.notebookNavigatorOutlineOnly,
+                        false,
+                        context.nnIconW
                     ));
                 }
 
@@ -617,16 +628,16 @@ export class StyleGenerator {
 
                     if (isCustomEmoji) {
                         cssRules.push(`
-                            body .nav-file-title[data-path="${safePath}"] .nav-file-title-content::before,
-                            body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
+                            body .nav-files-container .nav-file-title[data-path="${safePath}"]:not(.nn-file) .nav-file-title-content::before,
+                            body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before {
                                 content: "${iconId} " !important;
                                 display: inline-flex !important;
                                 align-items: center !important;
                                 justify-content: center !important;
                                 margin-right: 6px !important;
                                 flex-shrink: 0 !important;
-                                height: 1.3em !important;
-                                width: 1.3em !important;
+                                height: ${effFileIconW} !important;
+                                width: ${effFileIconW} !important;
                                 line-height: 1 !important;
                                 vertical-align: text-bottom !important;
                             }
@@ -635,8 +646,8 @@ export class StyleGenerator {
                         const isManualCustom = !!(activeStyle && activeStyle.iconId);
                         if (isManualCustom) {
                             cssRules.push(`
-                                body [data-path="${safePath}"] .nav-file-title-content::before,
-                                body [data-path="${safePath}"] .tree-item-inner::before {
+                                body .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before,
+                                body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before {
                                     display: none !important;
                                     content: none !important;
                                 }
@@ -645,8 +656,8 @@ export class StyleGenerator {
                             const svgStr = this.plugin.iconManager.getIconSvg(iconId, true);
                             if (svgStr) {
                                 cssRules.push(`
-                                    body [data-path="${safePath}"] .nav-file-title-content::before,
-                                    body [data-path="${safePath}"] .tree-item-inner::before {
+                                    body .nav-files-container .nav-file-title[data-path="${safePath}"]:not(.nn-file) .nav-file-title-content::before,
+                                    body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before {
                                         content: '' !important;
                                         display: inline-flex !important;
                                         width: ${effFileIconW} !important;
@@ -665,8 +676,8 @@ export class StyleGenerator {
                     }
                 } else if (autoIcons) {
                     cssRules.push(`
-                        body [data-path="${safePath}"] .nav-file-title-content::before,
-                        body [data-path="${safePath}"] .tree-item-inner::before {
+                        body .nav-files-container .nav-file-title[data-path="${safePath}"]:not(.nn-file) .nav-file-title-content::before,
+                        body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before {
                             content: '' !important;
                             display: inline-flex !important;
                             width: ${effFileIconW} !important;
@@ -701,7 +712,7 @@ export class StyleGenerator {
                     ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)}.is-active {
                         background-color: ${activeBg} !important;
                         color: ${activeText} !important;
-                        border-left: 3px solid ${activeText} !important;
+                        border-left: ${activeFolderThick}px solid ${activeText} !important;
                         box-sizing: border-box !important;
                         box-shadow: none !important;
                         border-radius: 0 !important;
@@ -834,6 +845,11 @@ export class StyleGenerator {
             `);
 
             /* Notebook Navigator Folder Integration (Native-Bridge Architecture) */
+            const isParentOfActive = activePath && (activePath === child.path || activePath.startsWith(child.path + "/"));
+            
+            const isEmoji = this.plugin.iconManager.isEmojiIcon(folderIconId);
+            const iconSvg = !isEmoji && folderIconId ? this.plugin.iconManager.getIconSvg(folderIconId, true) : "";
+
             cssRules.push(NotebookNavigatorIntegration.generateIntegratedStyles(
                 child.path,
                 true,
@@ -841,13 +857,20 @@ export class StyleGenerator {
                 op,
                 folderStyles.t,
                 folderIconId,
+                customStyle?.iconColor || null,
+                isEmoji,
+                iconSvg,
                 activeBg,
                 activeText,
                 isBold,
                 isItalic,
                 true,
                 useGlass,
-                tintOp
+                tintOp,
+                baseThick,
+                this.settings.notebookNavigatorOutlineOnly,
+                !!isParentOfActive,
+                context.nnIconW
             ));
 
             cssRules.push(`
@@ -865,8 +888,8 @@ export class StyleGenerator {
 
                 if (isCustomEmoji) {
                     cssRules.push(`
-                        body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
-                        body .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
+                        body .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before,
+                        body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before {
                             content: "${folderIconId} " !important;
                             display: inline-flex !important;
                             align-items: center !important;
@@ -888,8 +911,8 @@ export class StyleGenerator {
                         const svgStr = this.plugin.iconManager.getIconSvg(folderIconId, true);
                         if (svgStr) {
                             cssRules.push(`
-                                body .nav-files-container [data-path="${safePath}"] .nav-folder-title-content::before,
-                                body .nav-files-container [data-path="${safePath}"] .tree-item-inner::before {
+                                body .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before,
+                                body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before {
                                     content: '' !important;
                                     display: inline-flex !important;
                                     width: ${folderIconW} !important;
@@ -907,8 +930,8 @@ export class StyleGenerator {
                 }
             } else if (autoIcons) {
                 cssRules.push(`
-                    body .nav-files-container .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content::before,
-                    body .nav-files-container .tree-item-self[data-path="${safePath}"] .tree-item-inner::before {
+                    body .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before,
+                    body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before {
                         content: '' !important;
                         display: inline-flex !important;
                         width: ${folderIconW} !important;
@@ -976,6 +999,8 @@ export class StyleGenerator {
         const cssRules: string[] = [];
         cssRules.push(this.generateGlobalBaseCss());
 
+        const baseThick = this.settings.pathLineThickness ?? 2.0;
+
 
 
         cssRules.push(this.generateDividerCss());
@@ -989,21 +1014,32 @@ export class StyleGenerator {
             const rootColor = rootStyle.hex ? { rgb: hexToRgbObj(rootStyle.hex).r + "," + hexToRgbObj(rootStyle.hex).g + "," + hexToRgbObj(rootStyle.hex).b, hex: rootStyle.hex } : palette[0];
             const activeBg = (this.settings.useCustomActiveColor && this.settings.customActiveBg) ? this.settings.customActiveBg : `rgba(${rootColor.rgb}, 0.14)`;
             const activeText = (this.settings.useCustomActiveColor && this.settings.customActiveText) ? this.settings.customActiveText : (rootStyle.textColor || rootColor.hex);
-            
+            const rootIconId = rootStyle.iconId || "";
+
+            const isEmoji = this.plugin.iconManager.isEmojiIcon(rootIconId);
+            const iconSvg = !isEmoji && rootIconId ? this.plugin.iconManager.getIconSvg(rootIconId, true) : "";
+
             cssRules.push(NotebookNavigatorIntegration.generateIntegratedStyles(
                 root.path,
                 true,
                 rootColor,
                 rootStyle.opacity ?? 0.8,
                 rootStyle.textColor || rootColor.hex,
-                rootStyle.iconId || "",
+                rootIconId,
+                rootStyle.iconColor || null,
+                isEmoji,
+                iconSvg,
                 activeBg,
                 activeText,
                 !!rootStyle.isBold,
                 !!rootStyle.isItalic,
                 true,
                 this.settings.glassmorphism,
-                0
+                0,
+                baseThick,
+                this.settings.notebookNavigatorOutlineOnly,
+                true,
+                context.nnIconW
             ));
             // Also handle potential empty path/slash variants
             if (root.path !== "/") {
@@ -1013,14 +1049,21 @@ export class StyleGenerator {
                     rootColor,
                     rootStyle.opacity ?? 0.8,
                     rootStyle.textColor || rootColor.hex,
-                    rootStyle.iconId || "",
+                    rootIconId,
+                    rootStyle.iconColor || null,
+                    isEmoji,
+                    iconSvg,
                     activeBg,
                     activeText,
                     !!rootStyle.isBold,
                     !!rootStyle.isItalic,
                     true,
                     this.settings.glassmorphism,
-                    0
+                    0,
+                    baseThick,
+                    this.settings.notebookNavigatorOutlineOnly,
+                    true,
+                    context.nnIconW
                 ));
             }
         }

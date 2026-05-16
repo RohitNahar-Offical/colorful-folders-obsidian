@@ -16,9 +16,9 @@ export const NN_SELECTORS = {
     NAV_ITEM: '.nn-navitem',
     FILE_ITEM: '.nn-file',
     NAV_NAME: '.nn-navitem-name',
-    NAV_ICON: '.nn-navitem-icon',
+    NAV_ICON: '.nn-navitem-icon, .nn-navitem-icon-slot, .nn-icon-container, .nn-nav-icon',
     FILE_NAME: '.nn-file-name',
-    FILE_ICON: '.nn-file-icon',
+    FILE_ICON: '.nn-file-icon, .nn-file-icon-slot, .nn-icon-container, .nn-file-icon',
 };
 
 export class NotebookNavigatorIntegration {
@@ -63,13 +63,13 @@ export class NotebookNavigatorIntegration {
      */
     static getScopedNavSelector(path: string): string {
         const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-        return `.nn-navigation-pane .nn-navitem[data-path="${safePath}"]:not(.nn-header), 
-                .nn-navigation-pane .nn-shortcut-item[data-path="${safePath}"]`;
+        return `.notebook-navigator .nn-navitem[data-path="${safePath}"]:not(.nn-header), 
+                .notebook-navigator .nn-shortcut-item[data-path="${safePath}"]`;
     }
 
     static getScopedFileSelector(path: string): string {
         const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-        return `.nn-list-view .nn-file[data-path="${safePath}"]:not(.nn-header)`;
+        return `.notebook-navigator .nn-file[data-path="${safePath}"]:not(.nn-header)`;
     }
 
     /**
@@ -154,6 +154,9 @@ export class NotebookNavigatorIntegration {
         bgAlpha: number,
         textCol: string, 
         iconId: string, 
+        iconColor: string | null,
+        isEmoji: boolean,
+        iconSvg: string,
         activeBg: string, 
         activeText: string,
         isBold: boolean,
@@ -161,13 +164,17 @@ export class NotebookNavigatorIntegration {
         shouldColor: boolean,
         useGlass: boolean = false,
         tintOp: number = 0,
-        baseThick: number = 2.0
+        baseThick: number = 2.0,
+        outlineOnly: boolean = false,
+        useRadiantPath: boolean = false,
+        effIconW: string = '1.3em'
     ): string {
-        const nnThick = baseThick + 1.0;
+        const nnThick = baseThick + 0.5; // Scaled for NN visibility
         const activeThick = baseThick + 2.0;
+        const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
         const base = isFolder ? this.getScopedNavSelector(path) : this.getScopedFileSelector(path);
         const nameSel = isFolder ? this.getNavNameSelector() : this.getFileNameSelector();
-        const iconSel = isFolder ? this.getNavIconSelector() : this.getFileIconSelector();
+        const _iconSel = isFolder ? this.getNavIconSelector() : this.getFileIconSelector();
         const countSel = '.nn-navitem-count';
 
         const glassCss = useGlass ? `
@@ -175,25 +182,47 @@ export class NotebookNavigatorIntegration {
             -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
         ` : '';
-        const isEmoji = iconId && iconId.length <= 3;
-        
+
+        // CSS-Based Icon Injection (Match 4.1.4 for Zero-Flicker stability)
         let iconCss = '';
         if (iconId) {
+            // Target the native NN icon container directly to swap its contents with ours
+            const target = `body .notebook-navigator [data-path="${safePath}"] :is(${_iconSel})`;
+
             if (isEmoji) {
                 iconCss = `
-                    ${this.applySuffix(base, nameSel)}::before {
-                        content: "${iconId} " !important;
+                    ${target} {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        width: ${effIconW} !important;
+                        height: ${effIconW} !important;
+                        content: "${iconId}" !important;
+                        font-style: normal !important;
+                        background: none !important;
+                        -webkit-mask-image: none !important;
+                        visibility: visible !important;
                     }
-                    ${this.applySuffix(base, iconSel)} {
-                        display: none !important;
-                    }
+                    ${target} * { display: none !important; }
                 `;
-            }
-            else {
+            } else if (iconSvg) {
                 iconCss = `
-                    ${this.applySuffix(base, iconSel)} {
-                        display: none !important;
+                    ${target} {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        width: ${effIconW} !important;
+                        height: ${effIconW} !important;
+                        background-color: ${iconColor || color.hex || textCol} !important;
+                        -webkit-mask-image: url("data:image/svg+xml,${iconSvg}") !important;
+                        -webkit-mask-repeat: no-repeat !important;
+                        -webkit-mask-position: center !important;
+                        -webkit-mask-size: contain !important;
+                        content: "" !important;
+                        opacity: 0.85 !important;
+                        visibility: visible !important;
                     }
+                    ${target} * { display: none !important; }
                 `;
             }
         }
@@ -220,10 +249,12 @@ export class NotebookNavigatorIntegration {
 
         let bgCss = '';
         if (isFolder) {
+            const finalBgAlpha = outlineOnly ? 0 : bgAlpha;
+            const finalBorderAlpha = outlineOnly ? 0.9 : 0.8;
             bgCss = `
                 ${base} {
-                    background-color: rgba(${color.rgb}, ${bgAlpha}) !important;
-                    border-left: ${nnThick}px solid rgba(${color.rgb}, 0.8) !important;
+                    background-color: rgba(${color.rgb}, ${finalBgAlpha}) !important;
+                    border-left: ${nnThick}px solid rgba(${color.rgb}, ${finalBorderAlpha}) !important;
                     border-radius: 6px !important;
                     ${glassCss}
                     ${tintOp > 0 ? `background-blend-mode: overlay;` : ''}
@@ -234,10 +265,13 @@ export class NotebookNavigatorIntegration {
                 ${metadataCss}
             `;
         } else {
+            // Files retain background if shouldColor is true, ignoring global outlineOnly 
+            // because file backgrounds are specifically requested via a separate toggle.
+            const fileBg = outlineOnly ? Math.max(bgAlpha, 0.12) : Math.max(bgAlpha, 0.18);
             bgCss = `
                 ${base} {
                     ${shouldColor ? `
-                        background-color: rgba(${color.rgb}, ${Math.max(bgAlpha, 0.18)}) !important;
+                        background-color: rgba(${color.rgb}, ${fileBg}) !important;
                         border-left: ${nnThick}px solid rgba(${color.rgb}, 0.6) !important;
                     ` : ''}
                     opacity: 1.0 !important;
@@ -253,9 +287,21 @@ export class NotebookNavigatorIntegration {
             `;
         }
 
-        const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        // Radiant Path for NN
+        let radiantCss = '';
+        if (isFolder && useRadiantPath) {
+            radiantCss = `
+                ${this.getRadiantPathSelector(path)} {
+                    border-left: ${nnThick}px solid rgba(${color.rgb}, 0.25) !important;
+                    margin-left: 12px !important;
+                    transition: border-color 0.3s ease !important;
+                }
+            `;
+        }
+
         return `
             ${shouldColor ? bgCss : ''}
+            ${radiantCss}
 
             ${this.applySuffix(base, nameSel)},
             ${this.applySuffix(base, countSel)} {
@@ -284,6 +330,8 @@ export class NotebookNavigatorIntegration {
             }
         `;
     }
+
+
 
     static registerMenuExtensions(plugin: IColorfulFoldersPlugin) {
         let attempts = 0;

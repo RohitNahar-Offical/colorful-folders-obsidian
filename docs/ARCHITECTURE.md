@@ -180,6 +180,7 @@ The plugin uses a hybrid approach to ensure icons are performant, visually consi
 *   **Mechanism**: `-webkit-mask-image` in `StyleGenerator.ts`.
 *   **Caching**: Normalized SVG strings are cached in a **Categorical Memoization Layer** to prevent redundant DOM parsing during the traversal loop.
 *   **Benefit**: Hundreds of icons can be rendered with zero DOM overhead.
+*   **Isolation**: Notebook Navigator items are strictly EXCLUDED from this engine to prevent double-rendering.
 
 ### DOM Injection & Sanitization (Secure Overrides)
 *   **Used for**: Manual Icon Overrides (Visual Picker) and external SVG strings.
@@ -214,7 +215,7 @@ Notebook Navigator uses a **highly aggressive virtualized list**. DOM elements a
 ### Integration Mechanism:
 1.  **Selective Scoping**: Rules target `.nn-navitem` (folders) and `.nn-file` (files).
 2.  **State Logic**: The generator correctly identifies the "Active" state in Notebook Navigator (`.is-active`) to apply custom selection glows and active file colors.
-3.  **Icon Management**: While auto-icons use CSS `::before` masking, manual icon overrides are injected by `IconManager` into the `.nn-navitem-name` span, ensuring they move seamlessly with the text during scrolling.
+3.  **Icon Management**: Uses the **Surgical Container Replacement** (Pure CSS) strategy. The original NN icon slot is transformed into a Colorful Folders icon using CSS masking, while the standard explorer's `::before` rules are strictly excluded via a CSS Firewall.
 ---
 
 ## 9. Maintenance & Persistence
