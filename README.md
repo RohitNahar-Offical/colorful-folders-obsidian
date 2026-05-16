@@ -5,8 +5,8 @@
 
 ---
 
-## 🚀 Latest: 4.1.4 - The "Visual & Performance" Update
-4.1.4 introduces **Zero-Lag Performance Hardening** by decommissioning the legacy animation engine in favor of high-performance static visual standards. Includes negative slider limits for seamless divider lines. [Full Changelog](version.md)
+## 🚀 Latest: 4.1.5 - The "Native-Bridge" & Stability Update
+4.1.5 introduces the **Native-Bridge Architecture** for perfect Notebook Navigator integration and **Dynamic Path Thickness** for custom-weighted indentation guides. [Full Changelog](version.md)
 
 ### 📏 1. New: Seamless Divider Connectivity
 Set divider line gaps as low as **-10px** to allow lines to perfectly intersect your central "pills" or icon backgrounds.
