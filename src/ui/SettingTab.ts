@@ -877,6 +877,19 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         const typeCard = makeCard(generalPanel, "Aa", "Path and typography");
         new obsidian.Setting(typeCard)
+            .setName('Path line thickness')
+            .setDesc('Adjust the thickness of vertical indentation lines and active borders.')
+            .addSlider(slider => slider
+                .setLimits(1, 10, 0.5)
+                .setValue(this.plugin.settings.pathLineThickness ?? 2.0)
+                .setDynamicTooltip()
+                .onChange(async (value) => {
+                    this.plugin.settings.pathLineThickness = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStyles();
+                }));
+
+        new obsidian.Setting(typeCard)
             .setName('Show item counters')
             .setDesc('Displays recursive folder and file counts next to folder names.')
             .addToggle(toggle => toggle

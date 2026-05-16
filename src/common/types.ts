@@ -84,6 +84,7 @@ export interface ColorfulFoldersSettings {
     useCustomActiveColor: boolean;
     customActiveBg: string;
     customActiveText: string;
+    pathLineThickness: number;
 }
 
 

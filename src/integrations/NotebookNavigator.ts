@@ -160,8 +160,11 @@ export class NotebookNavigatorIntegration {
         isItalic: boolean,
         shouldColor: boolean,
         useGlass: boolean = false,
-        tintOp: number = 0
+        tintOp: number = 0,
+        baseThick: number = 2.0
     ): string {
+        const nnThick = baseThick + 1.0;
+        const activeThick = baseThick + 2.0;
         const base = isFolder ? this.getScopedNavSelector(path) : this.getScopedFileSelector(path);
         const nameSel = isFolder ? this.getNavNameSelector() : this.getFileNameSelector();
         const iconSel = isFolder ? this.getNavIconSelector() : this.getFileIconSelector();
@@ -220,7 +223,7 @@ export class NotebookNavigatorIntegration {
             bgCss = `
                 ${base} {
                     background-color: rgba(${color.rgb}, ${bgAlpha}) !important;
-                    border-left: 3px solid rgba(${color.rgb}, 0.8) !important;
+                    border-left: ${nnThick}px solid rgba(${color.rgb}, 0.8) !important;
                     border-radius: 6px !important;
                     ${glassCss}
                     ${tintOp > 0 ? `background-blend-mode: overlay;` : ''}
@@ -235,7 +238,7 @@ export class NotebookNavigatorIntegration {
                 ${base} {
                     ${shouldColor ? `
                         background-color: rgba(${color.rgb}, ${Math.max(bgAlpha, 0.18)}) !important;
-                        border-left: 3px solid rgba(${color.rgb}, 0.6) !important;
+                        border-left: ${nnThick}px solid rgba(${color.rgb}, 0.6) !important;
                     ` : ''}
                     opacity: 1.0 !important;
                     color: ${textCol} !important;
@@ -267,7 +270,7 @@ export class NotebookNavigatorIntegration {
             body .notebook-navigator .is-active[data-path="${safePath}"] {
                 background-color: ${activeBg} !important;
                 box-shadow: 0 0 15px rgba(${color.rgb}, 0.5), 0 0 5px rgba(${color.rgb}, 0.3) !important;
-                border-left: 4px solid rgba(${color.rgb}, 1.0) !important;
+                border-left: ${activeThick}px solid rgba(${color.rgb}, 1.0) !important;
                 transform: scale(1.01) !important;
                 filter: brightness(1.2) !important;
                 --cf-rgb: ${color.rgb};

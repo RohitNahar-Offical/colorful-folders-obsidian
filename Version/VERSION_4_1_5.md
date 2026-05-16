@@ -2,9 +2,9 @@
 
 This release delivers a comprehensive architectural cleanup and introduces advanced customization options for active workspace elements, prioritizing high-performance rendering and visual consistency.
 
-### 📐 1. Radiant Path Stabilization
-- **Thickness Standardization**: We have standardized all Radiant Path lines (side and bottom accents) to a robust **2.5px** thickness. This ensures a bold, high-end look across all themes.
-- **Eliminated "Thinning" Glitches**: Resolved a long-standing sub-pixel rendering issue where borders would appear inconsistently thin (1px) depending on folder selection states.
+### 📐 1. Radiant Path Customization
+- **Dynamic Path Thickness**: We have introduced a user-controlled slider to adjust the thickness of all Radiant Path lines (indentation guides and active highlights). This replaces the fixed-value system with a dynamic range from **1.0px to 10.0px**.
+- **Proportional Scaling**: The engine now automatically calculates appropriate weights for folder and file accents based on your base thickness selection, ensuring visual harmony at any scale.
 - **Bottom Shelf Restoration**: Fixed a visual regression where horizontal bottom borders were missing on certain active path segments. Every parent path now features a complete, solid frame.
 
 ### 🎨 2. Active Item Appearance Engine

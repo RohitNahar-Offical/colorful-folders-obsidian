@@ -498,6 +498,9 @@ export class StyleGenerator {
         const tintOp = this.settings.tintOpacity;
         const autoColorFiles = this.settings.autoColorFiles;
         const autoIcons = this.settings.autoIcons;
+        const baseThick = this.settings.pathLineThickness ?? 2.0;
+        const folderThick = baseThick + 0.5;
+        const activeFolderThick = baseThick + 2.0;
         const CF_FILE_TEXT_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px; margin-right: 6px; opacity: 0.85; vertical-align: middle;"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`;
 
         // Process Files
@@ -565,7 +568,7 @@ export class StyleGenerator {
                     .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) {
                         ${shouldColorNative ? `
                             background-color: rgba(${color.rgb}, ${fileBgAlpha}) !important;
-                            border-left: 2px solid rgba(${color.rgb}, 0.4) !important;
+                            border-left: ${baseThick}px solid rgba(${color.rgb}, 0.4) !important;
                         ` : `
                             background-color: transparent !important;
                             border-left: none !important;
@@ -602,7 +605,8 @@ export class StyleGenerator {
                         isItalic,
                         shouldColorNN,
                         useGlass,
-                        tintOp
+                        tintOp,
+                        baseThick
                     ));
                 }
 
@@ -724,8 +728,8 @@ export class StyleGenerator {
                 body .nav-folder-title[data-path="${safePath}"] ~ .nav-folder-children,
                 body .tree-item-self[data-path="${safePath}"] ~ .tree-item-children {
                     background-color: ${bgTint} !important;
-                    border-left: 2.5px solid rgba(${passedColor.rgb}, 0.25) !important;
-                    border-bottom: 2.5px solid rgba(${passedColor.rgb}, 0.25) !important;
+                    border-left: ${folderThick}px solid rgba(${passedColor.rgb}, 0.25) !important;
+                    border-bottom: ${folderThick}px solid rgba(${passedColor.rgb}, 0.25) !important;
                     border-radius: 4px !important;
                     border-bottom-left-radius: 8px !important;
                     padding-bottom: 4px !important;
@@ -739,8 +743,8 @@ export class StyleGenerator {
                 const activeSelector = `.nav-files-container .nav-folder:has(.is-active) > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) ~ .nav-folder-children, .nav-files-container .tree-item:has(.is-active) > .tree-item-self[data-path="${safePath}"]:not(.nn-navitem) ~ .tree-item-children ${isParentOfActive ? `, .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) ~ .nav-folder-children, .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-navitem) ~ .tree-item-children` : ""}`;
                 cssRules.push(`
                     ${activeSelector} {
-                        border-left: 2.5px solid ${passedColor.hex} !important;
-                        border-bottom: 2.5px solid ${passedColor.hex} !important;
+                        border-left: ${folderThick}px solid ${passedColor.hex} !important;
+                        border-bottom: ${folderThick}px solid ${passedColor.hex} !important;
                         border-bottom-left-radius: 8px !important;
                         box-shadow: -2px 0 10px -2px ${passedColor.hex}44;
                         margin-left: 12px !important;
@@ -751,7 +755,7 @@ export class StyleGenerator {
                     /* Notebook Navigator Folder Active Path (Flat-Glass) */
                     ${isParentOfActive ? `
                         ${NotebookNavigatorIntegration.getScopedNavSelector(folder.path)} {
-                            border-left: 4px solid ${passedColor.hex} !important;
+                            border-left: ${activeFolderThick}px solid ${passedColor.hex} !important;
                             background: linear-gradient(to right, rgba(${passedColor.rgb}, 0.25), rgba(${passedColor.rgb}, 0.05)) !important;
                         }
                     ` : ''}

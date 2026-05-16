@@ -10,23 +10,54 @@ Representing the entire `data.json` structure. Defined in `src/common/types.ts`.
 
 | Key | Type | Description |
 | :--- | :--- | :--- |
+| **Visual Palette** | | |
 | `palette` | `string` | Active palette name (e.g., "Neon Cyberpunk"). |
-| `colorMode` | `string` | `cycle`, `monochromatic`, or `heatmap`. |
-| `customFolderColors` | `Record` | Key = Path. Value = Style overrides. |
-| `customIcons` | `Record` | Key = Icon ID. Value = Raw SVG string. |
-| `glassmorphism` | `boolean` | Enables backdrop-blur effects. |
+| `customPalette` | `string` | Comma-separated hex list for the "Custom" palette mode. |
+| `colorMode` | `string` | `cycle` (sequential), `monochromatic` (fixed root color), or `heatmap` (by age). |
+| `cycleOffset` | `number` | Shifts the starting point of the color cycle. |
+| **Opacity & Accents** | | |
+| `rootOpacity` | `number` | Background transparency of top-level folders (0-1). |
+| `subfolderOpacity` | `number` | Background transparency of nested folders (0-1). |
+| `tintOpacity` | `number` | Global transparency for folder background colors. |
+| `rootTintOpacity` | `number` | Specific tint transparency for root folders. |
+| `fileBackgroundOpacity` | `number` | Transparency for file background highlights. |
+| `globalBackgroundColor` | `string` | Forces a specific hex/color across all items if set. |
+| **Radiant Path & Active Highlighting** | | |
 | `activeGlow` | `boolean` | Applies a luminous box-shadow and gradient sheen to the active item. |
-| `vaultPassword` | `string` | Hashed password for Stealth Mode. |
-| `isVaultLocked` | `boolean` | Session-based state of the privacy lock. |
-| `dividerThickness` | `number` | Stroke width for divider lines. |
-| `dividerLinePaddingLeft` | `number` | Gap between line and text (Left). Supports negative values. |
-| `dividerLinePaddingRight` | `number` | Gap between line and text (Right). Supports negative values. |
-| `focusMode` | `boolean` | Enables/Disables Focus Mode 3.0 (Strict Spotlight). |
-| `focusModeIntensity` | `number` | Controls the strength of background dimming (0-1). |
-| `focusGrayscale` | `boolean` | Desaturates background items in Focus Mode. |
+| `pathLineThickness` | `number` | Dynamic stroke width for Radiant Path indentation lines and active highlights. |
 | `useCustomActiveColor` | `boolean` | Enables the UI-driven active file color picker. |
 | `customActiveBg` | `string` | User-defined background for the active file. |
 | `customActiveText` | `string` | User-defined text color for the active file. |
+| **Auto-Icons & Scaling** | | |
+| `autoIcons` | `boolean` | Automatically assigns icons based on folder/file names. |
+| `autoIconVariety` | `boolean` | Assigns different icons to items within the same category. |
+| `wideAutoIcons` | `boolean` | Prefers Lucide icons over emojis for automatic assignment. |
+| `customIconRules` | `string` | Simple pattern match string (e.g., `Work = briefcase @200`). |
+| `iconScale` | `number` | Multiplier for all folder/file icons. |
+| **Typography & Structure** | | |
+| `rootStyle` | `string` | `translucent` or `solid` design for root folders. |
+| `rainbowRootText` | `boolean` | Applies horizontal rainbow gradients to root folder text. |
+| `rainbowRootBgTransparent`| `boolean` | Removes root background box when rainbow text is active. |
+| `showItemCounters` | `boolean` | Displays recursive item counts next to folders. |
+| `autoColorFiles` | `boolean` | Automatically assigns colors to files based on parent or name. |
+| **Section Dividers** | | |
+| `dividerThickness` | `number` | Stroke width for section divider lines. |
+| `dividerSpacing` | `number` | Vertical padding above/below dividers. |
+| `dividerLineStyle` | `string` | `solid`, `dashed`, or `dotted`. |
+| `dividerLinePaddingLeft` | `number` | Gap between line and text (Left). |
+| `dividerLinePaddingRight` | `number` | Gap between line and text (Right). |
+| `dividerPillMode` | `boolean` | Enables/Disables the "Modern Pill" design wrapper. |
+| `dividerPillColor` | `string` | Universal background color for all divider pills. |
+| **Integrations** | | |
+| `notebookNavigatorSupport` | `boolean` | Enables styling for Notebook Navigator items. |
+| `notebookNavigatorFileBackground` | `boolean` | Applies background colors to NN file items. |
+| `notebookNavigatorOutlineOnly` | `boolean` | Force outline-only mode specifically for NN items. |
+| **System & Privacy** | | |
+| `showHiddenItems` | `boolean` | Toggles "Stealth Mode" visibility. |
+| `showRibbonIcon` | `boolean` | Displays the Stealth Mode eye icon in the sidebar. |
+| `vaultPassword` | `string` | Hashed password for privacy lock. |
+| `isVaultLocked` | `boolean` | Session state of the password lock. |
+| `lastVersion` | `string` | Tracks the last version to show the changelog on update. |
 
 ---
 

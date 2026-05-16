@@ -3,9 +3,9 @@
 ## ⚡ 4.1.5 - The "Stability & Customization" Update
 This release focuses on structural stabilization and provides new powerful ways to customize your active workspace elements.
 
-### 📐 1. Path Border Stabilization
-- **Thickness Standardization**: Standardized all Radiant Path lines (side and bottom) to a robust **2.5px** thickness.
-- **Eliminated "Thinning"**: Fixed the sub-pixel rendering glitch where lines would appear thin when folders were selected. All lines now maintain a consistent, solid weight across all themes.
+### 📐 1. Dynamic Path Thickness
+- **User-Defined Weight**: Introducing a new **Path line thickness** slider. You can now adjust the base weight of vertical indentation guides and active highlights (1.0px to 10.0px) for a perfectly tailored look.
+- **Visual Harmony**: The engine automatically scales related borders proportionately to maintain structural hierarchy, ensuring the file tree remains crisp and organized regardless of thickness.
 
 ### 🎨 2. Active File Customization
 - **Personalized Highlights**: You can now explicitly override the active file color in settings. 

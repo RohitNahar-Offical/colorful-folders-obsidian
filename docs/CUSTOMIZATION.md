@@ -147,6 +147,9 @@ body:not(.is-grabbing) .nav-files-container .tree-item-self.is-active:not(.nn-fi
 ### Radiant Paths (Connecting Lines)
 The connecting lines are rendered as borders on the folder's children container.
 
+> [!TIP]
+> You can now adjust the base thickness of these lines directly in the plugin settings under **General > Path and typography > Path line thickness** without using custom CSS.
+
 ```css
 /* Make the connecting vertical lines thicker and more vibrant */
 body .nav-folder-children, 
