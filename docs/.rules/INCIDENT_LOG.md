@@ -135,8 +135,9 @@ Read before making ANY architectural changes.
 **What broke**: 
 - The CI job failed with a "Missing mandatory parameter" error.
 - Attestations were not generated for `main.js`, `manifest.json`, or `styles.css`.
-**Root cause**: The `actions/attest@v1` action requires both an explicit `predicate-type` AND a `predicate-path` (or inline `predicate`) to be defined. It cannot generate an attestation without a source predicate file.
+**Root cause**: The `actions/attest@v1` action requires both an explicit `predicate-type` AND a `predicate-path` (or inline `predicate`). Furthermore, the `predicate-type` must strictly match the SLSA specification version (e.g., `https://slsa.dev/provenance/v1.0`), as `v1` alone may be rejected by the attestation API.
 **Resolution**: 
-1. Created `.github/predicates/predicate.json` with basic build versioning metadata.
-2. Updated `.github/workflows/build.yml` to include the mandatory `predicate-type` and `predicate-path` for each artifact.
-**Lesson**: When using the granular `actions/attest` action, a local predicate file is required even for standard provenance. Always check the full parameter schema in the action's documentation.
+1. Created `.github/predicates/predicate.json` with build metadata.
+2. Updated `.github/workflows/build.yml` to use `https://slsa.dev/provenance/v1.0` and specified the `predicate-path`.
+3. Standardized release tags to use the semantic version only (e.g., `4.1.5`).
+**Lesson**: Attestation protocols are strict about URI versioning. Always use the fully qualified version string (`v1.0`) and ensure all mandatory parameters are explicitly defined in the workflow YAML.
