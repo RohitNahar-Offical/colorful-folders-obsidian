@@ -8,7 +8,7 @@ This release introduces a modern, developer-friendly styling engine featuring dy
   - `--cf-folder-bg` / `--cf-folder-color` (Folder layout hooks)
   - `--cf-active-bg` / `--cf-active-color` (Active selection hooks)
   - `--cf-tag-bg` / `--cf-tag-color` (Metadata flair hooks)
-- **Color-Matched Multi-Selections**: Introduced `--cf-selection-bg` to automatically shade multi-selected items with a translucent hue matching the parent folder's color, while cleanly falling back to match the active accent/selection color of your theme.
+- **Color-Matched Multi-Selections**: Introduced `--cf-selection-bg` to automatically shade multi-selected items with a translucent hue matching the parent folder's color, while cleanly falling back to match your accent color.
 - **Zero-Specificity Customization**: You can now override active states, selections, and hover highlights natively within your custom stylesheets or snippets without using a single `!important` rule.
 - **Theme Stability Overrides**: Cleaned up the core plugin's `styles.css` sheet by stripping hardcoded native fallbacks, ensuring robust compatibility with third-party themes (like Minimal Theme) without clobbering theme selection variables.
 
