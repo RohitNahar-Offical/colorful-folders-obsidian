@@ -637,13 +637,7 @@ body .colorful-folders-config .is-invalid {
 }
 
 /* ── 5. NATIVE OVERRIDES & CUSTOMIZATION HOOKS (WITHOUT !IMPORTANT) ── */
-body {
-    --nav-item-background-hover: rgba(var(--mono-rgb-100), 0.05);
-    --nav-item-color-hover: var(--text-normal);
-    --nav-item-background-selected: var(--background-modifier-selected);
-    --nav-item-color-selected: var(--text-normal);
-    --background-modifier-border-focus: var(--interactive-accent);
-}
+
 
 /* Hovering Files & Folders */
 body:not(.is-grabbing) .nav-files-container .nav-file-title:not(.is-active):not(.is-selected):hover,
