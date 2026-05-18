@@ -568,7 +568,7 @@ export class StyleGenerator {
                         ${shouldColorNative ? `
                             background-color: var(--cf-file-bg, rgba(${color.rgb}, ${fileBgAlpha})) !important;
                             border-left: ${baseThick}px solid rgba(${color.rgb}, 0.4) !important;
-                            --cf-selection-bg: rgba(${color.rgb}, ${Math.min(1.0, fileBgAlpha + 0.15)}) !important;
+                            --cf-selection-bg: rgba(${color.rgb}, ${Math.min(1.0, fileBgAlpha + 0.15)});
                         ` : `
                             background-color: var(--cf-file-bg, transparent) !important;
                             border-left: none !important;
@@ -836,7 +836,7 @@ export class StyleGenerator {
                 .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem),
                 .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-navitem):not(.nn-file) {
                     background-color: var(--cf-folder-bg, ${folderStyles.b}) !important;
-                    --cf-selection-bg: rgba(${color.rgb}, ${Math.min(1.0, op + 0.15)}) !important;
+                    --cf-selection-bg: rgba(${color.rgb}, ${Math.min(1.0, op + 0.15)});
                     opacity: 1.0 !important;
                     border-radius: 6px;
                     ${glassCss}
