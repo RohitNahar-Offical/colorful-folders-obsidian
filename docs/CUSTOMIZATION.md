@@ -115,7 +115,7 @@ The plugin exposes specific variables that you can override in your snippets for
 /* Simplest override using CSS variables */
 body .nav-file-title.is-active {
     --cf-active-bg: rgba(255, 255, 255, 0.2) !important;
-    --cf-active-text: #ffffff !important;
+    --cf-active-color: #ffffff !important;
 }
 
 /* Full manual override for custom effects */
@@ -235,3 +235,86 @@ body .notebook-navigator .nn-file[data-path$=".md"] .nn-file-name::before {
 1. **Use `data-path`**: Use the `data-path` attribute to target specific folders/files without affecting others.
 2. **Respect Variables**: Use Obsidian CSS variables (like `var(--interactive-accent)`) to ensure your snippets adapt to light/dark modes.
 3. **Check for `:has()`**: The plugin uses `:has()` for some layout overrides. Ensure your browser/Obsidian version supports it if you are writing complex parent-targeting CSS.
+
+---
+
+## 🔌 Modern CSS Variable Hook Engine (No `!important` Needed)
+
+The plugin's styling engine dynamically exposes standard **CSS Variable Hooks** on all folder and file paths. By scoping overrides to these variables inside standard selectors, you can customize the appearance of any element **natively without using a single `!important` declaration**!
+
+### 📊 Available Hook Variables
+
+| Hook Variable | Description | Default Fallback Value |
+| :--- | :--- | :--- |
+| `--cf-file-bg` | Background color for files | Active dynamic/tinted background color |
+| `--cf-file-color` | Text color for files | Calculated WCAG contrast text color |
+| `--cf-folder-bg` | Background color for folders | Dynamic folder background |
+| `--cf-folder-color` | Text color for folders | Dynamic folder text color |
+| `--cf-active-bg` | Background color for active files | Active highlight color (configured or tinted glass) |
+| `--cf-active-color` | Text and border color for active files | Active text highlight color |
+| `--cf-tag-bg` | Background for tags/flairs/metadata | Dynamic parent 15% opacity color tint |
+| `--cf-tag-color` | Text color for tags/flairs/metadata | Calculated contrast text color |
+
+### 🛠️ Hover and Selection Hook Override Examples
+
+Instead of writing high-specificity overrides that need `!important` to fight with the theme, you can seamlessly bind your custom color design tokens to these variables:
+
+```css
+body {
+    /* Define your design tokens */
+    --nav-item-background-hover: gray;
+    --nav-item-color-hover: black;
+    --nav-item-background-selected: green;
+    --nav-item-color-selected: yellow;
+}
+
+/* Override hover states cleanly across folders & files */
+body:not(.is-grabbing) .nav-files-container .tree-item-self:not(.is-active):not(.is-selected):hover {
+    --cf-file-bg: var(--nav-item-background-hover);
+    --cf-file-color: var(--nav-item-color-hover);
+    --cf-folder-bg: var(--nav-item-background-hover);
+    --cf-folder-color: var(--nav-item-color-hover);
+}
+
+/* Override selection states cleanly across folders & files */
+body:not(.is-grabbing) .nav-files-container .tree-item-self.is-selected:not(.nn-file) {
+    --cf-file-bg: var(--nav-item-background-selected);
+    --cf-file-color: var(--nav-item-color-selected);
+    --cf-folder-bg: var(--nav-item-background-selected);
+    --cf-folder-color: var(--nav-item-color-selected);
+}
+```
+
+---
+
+## 🎨 Cross-Plugin Interoperability (e.g. Calendar Integration)
+
+When creating CSS snippets to customize multiple plugins at once (such as **Colorful Folders** alongside Liam Cain's **Calendar** plugin), it is best practice to decouple your styling declarations to prevent theme conflicts and ensure visual harmony.
+
+By combining the **CSS Variable Hook Engine** of Colorful Folders with clean, variable-based overrides for third-party views, you can build unified theme controllers:
+
+```css
+body {
+    /* Shared Branding Variables */
+    --brand-accent: #ff7b00;
+    --brand-accent-glow: rgba(255, 123, 0, 0.2);
+    
+    /* Calendar Plugin Customization Hooks */
+    --calendar-active-day-bg: var(--brand-accent);
+    --calendar-hover-day-bg: rgba(var(--mono-rgb-100), 0.08);
+
+    /* Colorful Folders Customization Hooks */
+    --cf-active-bg: var(--brand-accent-glow);
+    --cf-active-color: var(--brand-accent);
+}
+
+/* Style Calendar active days and hover states natively */
+.calendar-view .day.active {
+    background-color: var(--calendar-active-day-bg) !important;
+    border-radius: 50%;
+}
+.calendar-view .day:hover {
+    background-color: var(--calendar-hover-day-bg);
+}
+```
+

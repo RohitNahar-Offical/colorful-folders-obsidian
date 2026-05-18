@@ -566,26 +566,26 @@ export class StyleGenerator {
                     .nav-files-container .nav-file-title[data-path="${safePath}"]:not(.nn-file),
                     .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) {
                         ${shouldColorNative ? `
-                            background-color: rgba(${color.rgb}, ${fileBgAlpha}) !important;
+                            background-color: var(--cf-file-bg, rgba(${color.rgb}, ${fileBgAlpha})) !important;
                             border-left: ${baseThick}px solid rgba(${color.rgb}, 0.4) !important;
                         ` : `
-                            background-color: transparent !important;
+                            background-color: var(--cf-file-bg, transparent) !important;
                             border-left: none !important;
                         `}
                         opacity: 1.0 !important;
-                        color: ${textNative} !important;
+                        color: var(--cf-file-color, ${textNative}) !important;
                         font-weight: ${isBold ? 'bold' : 'normal'} !important;
                         font-style: ${isItalic ? 'italic' : 'normal'} !important;
                         border-radius: 4px;
-                        --nav-tag-background: rgba(${color.rgb}, 0.15) !important;
-                        --nav-tag-color: ${textNative} !important;
+                        --nav-tag-background: var(--cf-tag-bg, rgba(${color.rgb}, 0.15)) !important;
+                        --nav-tag-color: var(--cf-tag-color, ${textNative}) !important;
                     }
 
                     [data-path="${safePath}"] .nav-file-tag,
                     [data-path="${safePath}"] .nav-folder-tag,
                     [data-path="${safePath}"] .tree-item-flair {
-                        background-color: rgba(${color.rgb}, 0.15) !important;
-                        color: ${textNative} !important;
+                        background-color: var(--cf-tag-bg, rgba(${color.rgb}, 0.15)) !important;
+                        color: var(--cf-tag-color, ${textNative}) !important;
                         font-size: 10px !important;
                     }
                 `);
@@ -693,8 +693,8 @@ export class StyleGenerator {
                 cssRules.push(`
                     .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file),
                     .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nn-file) {
-                        background-color: ${activeBg} !important;
-                        color: ${activeText} !important;
+                        background-color: var(--cf-active-bg, ${activeBg}) !important;
+                        color: var(--cf-active-color, ${activeText}) !important;
                         border: 1px solid rgba(${color.rgb}, 0.3) !important;
                         ${useGlass ? `
                             backdrop-filter: blur(12px) saturate(160%) !important;
@@ -707,9 +707,9 @@ export class StyleGenerator {
 
                     /* Notebook Navigator Active File Glow (Flat Slot) */
                     ${NotebookNavigatorIntegration.getScopedFileSelector(child.path)}.is-active {
-                        background-color: ${activeBg} !important;
-                        color: ${activeText} !important;
-                        border-left: ${activeFolderThick}px solid ${activeText} !important;
+                        background-color: var(--cf-active-bg, ${activeBg}) !important;
+                        color: var(--cf-active-color, ${activeText}) !important;
+                        border-left: ${activeFolderThick}px solid var(--cf-active-color, ${activeText}) !important;
                         box-sizing: border-box !important;
                         box-shadow: none !important;
                         border-radius: 0 !important;
@@ -717,7 +717,7 @@ export class StyleGenerator {
 
                     .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file)::before,
                     .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem)::before {
-                        background-color: ${activeText} !important;
+                        background-color: var(--cf-active-color, ${activeText}) !important;
                     }
                 `);
 
@@ -812,7 +812,7 @@ export class StyleGenerator {
             const isItalic = customStyle?.isItalic !== undefined ? customStyle.isItalic : (inheritedStyle?.isItalic !== undefined ? inheritedStyle.isItalic : false);
 
             let textCss = `
-                color: ${folderStyles.t} !important;
+                color: var(--cf-folder-color, ${folderStyles.t}) !important;
                 font-weight: ${isBold ? 'bold' : 'normal'} !important;
                 font-style: ${isItalic ? 'italic' : 'normal'} !important;
             `;
@@ -834,7 +834,7 @@ export class StyleGenerator {
             cssRules.push(`
                 .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem),
                 .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-navitem):not(.nn-file) {
-                    background-color: ${folderStyles.b} !important;
+                    background-color: var(--cf-folder-bg, ${folderStyles.b}) !important;
                     opacity: 1.0 !important;
                     border-radius: 6px;
                     ${glassCss}

@@ -40,6 +40,14 @@ To ensure pixel-perfect vertical alignment and zero "jitter" during vault intera
 | `--cf-popover-bg` | Background for Markdown hover popover | `var(--background-secondary)` |
 | `--cf-active-glow` | Color for the path connecting line | `var(--interactive-accent)` |
 | `--cf-meta-weight` | Weight for tags, extensions, and counters | **900** |
+| `--cf-file-bg` | Dynamic path hook for file background | Calculated dynamic/tinted background |
+| `--cf-file-color` | Dynamic path hook for file text color | Calculated contrast text color |
+| `--cf-folder-bg` | Dynamic path hook for folder background | Dynamic folder background |
+| `--cf-folder-color` | Dynamic path hook for folder text color | Dynamic folder text color |
+| `--cf-active-bg` | Dynamic path hook for active item background | Active highlight color (glass/solid) |
+| `--cf-active-color` | Dynamic path hook for active item text & border | Active text highlight color |
+| `--cf-tag-bg` | Dynamic path hook for tags/flairs background | Parent 15% opacity tint |
+| `--cf-tag-color` | Dynamic path hook for tags/flairs text color | Calculated contrast text color |
 
 ---
 

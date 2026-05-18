@@ -32,7 +32,7 @@ graph TD
 1.  **Trigger**: User changes a setting or the plugin loads.
 2.  **State Resolution**: `plugin.getEffectiveStyle()` calculates the visual state for every folder/file.
 3.  **High-Performance CSS Generation**: `StyleGenerator.traverse()` builds a collection of CSS rules. To handle 20,000+ files efficiently, it uses the **"Collect-Join" Pattern** and **Persistent Memoization** (caching item counts and icon category rules) to minimize redundant computations.
-4.  **Injection**: The final joined string is pushed via `plugin.sheet.replaceSync(css)` into the document's `adoptedStyleSheets`. No `<style>` element is created.
+4.  **Injection**: The final joined string is pushed via `plugin.sheet.replaceSync(css)` into the document's `adoptedStyleSheets`. No `<style>` element is created. The dynamic styles are dynamically wrapped in standard CSS Custom Properties (e.g. `--cf-folder-bg`), providing a modern hook API for custom user stylesheets and themes to natively override elements.
 5.  **Browser handles the rest**: The browser's CSS engine applies the styles instantly as elements enter the viewport.
 
 ---
@@ -133,14 +133,14 @@ FUNCTION traverse(folder, currentDepth):
 
 ### Generated CSS Pattern:
 ```css
-/* Folder Title Tint */
+/* Folder Title Tint with CSS Variable Hook */
 .nav-folder-title[data-path="Folder A"] {
-    background-color: rgba(235, 111, 146, 0.548);
+    background-color: var(--cf-folder-bg, rgba(235, 111, 146, 0.548)) !important;
 }
 
 /* Container Tint (The space behind the files) */
 .nav-folder-title[data-path="Folder A"] + .nav-folder-children {
-    background-color: rgba(235, 111, 146, 0.028);
+    background-color: rgba(235, 111, 146, 0.028) !important;
 }
 
 /* Icon Masking */

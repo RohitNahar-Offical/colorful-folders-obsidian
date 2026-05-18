@@ -635,3 +635,35 @@ body .colorful-folders-config .is-invalid {
     border-color: var(--text-error);
     animation: cf-shake 0.2s ease-in-out 0s 2;
 }
+
+/* ── 5. NATIVE OVERRIDES & CUSTOMIZATION HOOKS (WITHOUT !IMPORTANT) ── */
+body {
+    --nav-item-background-hover: rgba(var(--mono-rgb-100), 0.05);
+    --nav-item-color-hover: var(--text-normal);
+    --nav-item-background-selected: var(--background-modifier-selected);
+    --nav-item-color-selected: var(--text-normal);
+    --background-modifier-border-focus: var(--interactive-accent);
+}
+
+/* Hovering Files & Folders */
+body:not(.is-grabbing) .nav-files-container .tree-item-self:not(.is-active):not(.is-selected):hover {
+    --cf-file-bg: var(--nav-item-background-hover);
+    --cf-file-color: var(--nav-item-color-hover);
+    --cf-folder-bg: var(--nav-item-background-hover);
+    --cf-folder-color: var(--nav-item-color-hover);
+}
+
+/* One or Multiple Selected Files */
+body:not(.is-grabbing) .nav-files-container .tree-item-self.is-selected:not(.nn-file) {
+    --cf-file-bg: var(--nav-item-background-selected);
+    --cf-file-color: var(--nav-item-color-selected);
+    --cf-folder-bg: var(--nav-item-background-selected);
+    --cf-folder-color: var(--nav-item-color-selected);
+}
+body:not(.is-grabbing) .nav-files-container .tree-item-self.is-selected:not(.nn-file):hover {
+    --cf-file-bg: var(--nav-item-background-selected);
+    --cf-file-color: var(--nav-item-color-selected);
+    --cf-folder-bg: var(--nav-item-background-selected);
+    --cf-folder-color: var(--nav-item-color-selected);
+}
+
