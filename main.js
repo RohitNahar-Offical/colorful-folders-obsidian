@@ -403,7 +403,7 @@ daily = \u{1F4C5} @150`).setValue(this.plugin.settings.customIconRules||"").onCh
                         ${ge?`
                             background-color: var(--cf-file-bg, rgba(${W.rgb}, ${ue})) !important;
                             border-left: ${U}px solid rgba(${W.rgb}, 0.4) !important;
-                            --cf-selection-bg: rgba(${W.rgb}, ${Math.min(1,ue+.15)}) !important;
+                            --cf-selection-bg: rgba(${W.rgb}, ${Math.min(1,ue+.15)});
                         `:`
                             background-color: var(--cf-file-bg, transparent) !important;
                             border-left: none !important;
@@ -547,7 +547,7 @@ daily = \u{1F4C5} @150`).setValue(this.plugin.settings.customIconRules||"").onCh
                 .nav-files-container .nav-folder-title[data-path="${M}"]:not(.nn-navitem),
                 .nav-files-container .tree-item-self[data-path="${M}"]:not(.nn-navitem):not(.nn-file) {
                     background-color: var(--cf-folder-bg, ${se.b}) !important;
-                    --cf-selection-bg: rgba(${H.rgb}, ${Math.min(1,ie+.15)}) !important;
+                    --cf-selection-bg: rgba(${H.rgb}, ${Math.min(1,ie+.15)});
                     opacity: 1.0 !important;
                     border-radius: 6px;
                     ${m}
