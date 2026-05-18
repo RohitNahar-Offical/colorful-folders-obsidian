@@ -646,6 +646,7 @@ body {
 }
 
 /* Hovering Files & Folders */
+body:not(.is-grabbing) .nav-files-container .nav-file-title:not(.is-active):not(.is-selected):hover,
 body:not(.is-grabbing) .nav-files-container .tree-item-self:not(.is-active):not(.is-selected):hover {
     --cf-file-bg: var(--nav-item-background-hover);
     --cf-file-color: var(--nav-item-color-hover);
@@ -654,23 +655,12 @@ body:not(.is-grabbing) .nav-files-container .tree-item-self:not(.is-active):not(
 }
 
 /* One or Multiple Selected Files */
-body:not(.is-grabbing) .nav-files-container .tree-item-self.is-selected:not(.nn-file) {
-    --cf-file-bg: var(--nav-item-background-selected);
-    --cf-file-color: var(--nav-item-color-selected);
-    --cf-folder-bg: var(--nav-item-background-selected);
-    --cf-folder-color: var(--nav-item-color-selected);
-}
+body:not(.is-grabbing) .nav-files-container .nav-file-title.is-selected:not(.nn-file),
+body:not(.is-grabbing) .nav-files-container .tree-item-self.is-selected:not(.nn-file),
+body:not(.is-grabbing) .nav-files-container .nav-file-title.is-selected:not(.nn-file):hover,
 body:not(.is-grabbing) .nav-files-container .tree-item-self.is-selected:not(.nn-file):hover {
     --cf-file-bg: var(--nav-item-background-selected);
     --cf-file-color: var(--nav-item-color-selected);
     --cf-folder-bg: var(--nav-item-background-selected);
     --cf-folder-color: var(--nav-item-color-selected);
 }
-
-/* One or Multiple selected files */
-body:not(.is-grabbing) .nav-files-container .tree-item-self.is-selected:not(.nn-file):hover, 
-body:not(.is-grabbing) .nav-files-container .tree-item-self.is-selected:not(.nn-file) {
-    background-color: var(--nav-item-background-selected) !important;
-}
-
-
