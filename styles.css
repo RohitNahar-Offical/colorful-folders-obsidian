@@ -667,3 +667,10 @@ body:not(.is-grabbing) .nav-files-container .tree-item-self.is-selected:not(.nn-
     --cf-folder-color: var(--nav-item-color-selected);
 }
 
+/* One or Multiple selected files */
+body:not(.is-grabbing) .nav-files-container .tree-item-self.is-selected:not(.nn-file):hover, 
+body:not(.is-grabbing) .nav-files-container .tree-item-self.is-selected:not(.nn-file) {
+    background-color: var(--nav-item-background-selected) !important;
+}
+
+
