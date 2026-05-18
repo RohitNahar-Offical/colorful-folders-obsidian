@@ -5,11 +5,11 @@
 
 ---
 
-## 🚀 Latest: 4.1.5 - The "Native-Bridge" & Stability Update
-4.1.5 introduces the **Native-Bridge Architecture** for perfect Notebook Navigator integration and **Dynamic Path Thickness** for custom-weighted indentation guides. [Full Changelog](version.md)
+## 🚀 Latest: 4.1.6 - The "CSS Variable Hook Engine" Update
+4.1.6 introduces the new **CSS Variable Hook Engine** for zero-specificity customization alongside a complete documentation audit and synchronization. [Full Changelog](version.md)
 
-### 📏 1. New: Seamless Divider Connectivity
-Set divider line gaps as low as **-10px** to allow lines to perfectly intersect your central "pills" or icon backgrounds.
+### 🔌 1. Modern CSS Variable Hook Engine
+Refactored the core Traversal Engine to wrap dynamic style assignments in standard CSS custom properties (like `--cf-file-bg`, `--cf-folder-bg`, etc.) to enable seamless, non-destructive overrides in your custom snippets.
 
 
 ---
@@ -61,9 +61,18 @@ Set divider line gaps as low as **-10px** to allow lines to perfectly intersect 
 
 ## 🛠️ Installation
 
-### Via BRAT (Recommended & Fastest)
+### Via Obsidian Community Plugins (Official & Recommended)
+**Colorful Folders is now officially available in the Obsidian Community Plugins gallery!**
 
-Using the **BRAT** (Beta Reviewer's Auto-update Tool) plugin is the best way to install Colorful Folders. It ensures you receive the latest feature drops, bug fixes, and color presets the moment they are released.
+1. Open Obsidian and navigate to **Settings** > **Community plugins**.
+2. Click **Browse** next to Community plugins.
+3. Search for **Colorful Folders**.
+4. Click **Install**, then click **Enable**.
+
+---
+
+### Via BRAT (For Beta Releases)
+If you would like to test the absolute latest beta features, presets, and updates before they hit the main store, you can use BRAT:
 
 1.  Install the **BRAT** plugin from the Obsidian Community Plugins gallery.
 2.  Go to **Settings** \> **BRAT** \> **Beta Plugin List**.
