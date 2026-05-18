@@ -653,8 +653,8 @@ body:not(.is-grabbing) .nav-files-container .nav-file-title.is-selected:not(.nn-
 body:not(.is-grabbing) .nav-files-container .tree-item-self.is-selected:not(.nn-file),
 body:not(.is-grabbing) .nav-files-container .nav-file-title.is-selected:not(.nn-file):hover,
 body:not(.is-grabbing) .nav-files-container .tree-item-self.is-selected:not(.nn-file):hover {
-    --cf-file-bg: var(--nav-item-background-selected);
+    --cf-file-bg: var(--cf-selection-bg, var(--nav-item-background-selected));
     --cf-file-color: var(--nav-item-color-selected);
-    --cf-folder-bg: var(--nav-item-background-selected);
+    --cf-folder-bg: var(--cf-selection-bg, var(--nav-item-background-selected));
     --cf-folder-color: var(--nav-item-color-selected);
 }
