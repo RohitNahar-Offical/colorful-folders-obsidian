@@ -2,13 +2,15 @@
 
 This release introduces a modern, developer-friendly styling engine featuring dynamic CSS Variable Hooks, alongside complete documentation synchronization to ensure robust, non-destructive customization.
 
-### 🔌 1. Modern CSS Variable Hook Engine
+### 🔌 1. Modern CSS Variable Hook Engine & Color-Matched Selections
 - **Non-Destructive Hooks**: Refactored the Traversal Engine (`StyleGenerator.ts`) to wrap dynamic background and color declarations inside standard CSS custom properties:
   - `--cf-file-bg` / `--cf-file-color` (File layout hooks)
   - `--cf-folder-bg` / `--cf-folder-color` (Folder layout hooks)
   - `--cf-active-bg` / `--cf-active-color` (Active selection hooks)
   - `--cf-tag-bg` / `--cf-tag-color` (Metadata flair hooks)
+- **Color-Matched Multi-Selections**: Introduced `--cf-selection-bg` to automatically shade multi-selected items with a translucent hue matching the parent folder's color instead of standard selection gray.
 - **Zero-Specificity Customization**: You can now override active states, selections, and hover highlights natively within your custom stylesheets or snippets without using a single `!important` rule.
+- **Theme Stability Overrides**: Cleaned up the core plugin's `styles.css` sheet by stripping hardcoded native fallbacks, ensuring robust compatibility with third-party themes (like Minimal Theme) without clobbering theme selection variables.
 
 ### 📑 2. Documentation Standardization & Synchronization
 - **FolderStyle Schema Realignment**: Fully audited `DATA_SCHEMA.md` to document over 12 previously hidden TypeScript properties (including typography modifiers, interactive divider settings, and custom pill parameters).
