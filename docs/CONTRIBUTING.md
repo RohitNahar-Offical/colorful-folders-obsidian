@@ -41,8 +41,8 @@ To add a featured pack (like "Remix Icons"):
 
 ### 🔍 Style Debugging
 - Open Obsidian Developer Tools (`Ctrl+Shift+I`).
-- Inspect `<style id="colorful-folders-styles">`.
-- Search for the `data-path` of the folder in question.
+- Inspect elements and look at the **Adopted Stylesheets** applied to the DOM.
+- Search for the `data-path` of the folder in question inside the active stylesheet rules.
 
 ### 🔍 Icon Debugging
 - Enable **"Icon debug mode"** in settings.

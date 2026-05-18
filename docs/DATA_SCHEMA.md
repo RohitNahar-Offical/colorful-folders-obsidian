@@ -70,18 +70,31 @@ Stored inside `customFolderColors` for specific paths.
 
 ```typescript
 interface FolderStyle {
-    hex?: string;                 // Background color (hex)
-    textColor?: string;           // Label color override
-    iconId?: string;              // Custom icon (Lucide or Custom ID)
-    opacity?: number;             // Background transparency (0-1)
-    isBold?: boolean;             // Label font-weight override
-    applyToSubfolders?: boolean;  // Inheritance toggle for children
-    hasDivider?: boolean;           // Section divider presence
-    dividerText?: string;           // Divider chip label
-    dividerDescription?: string;    // Markdown hover content
-    dividerLineStyle?: string;      // solid, dashed, dotted, double
-    dividerLinePaddingLeft?: number; // Asymmetrical gap
-    isHidden?: boolean;             // Stealth Mode visibility toggle
+    hex?: string;                    // Background color (hex)
+    textColor?: string;              // Label color override (hex)
+    iconColor?: string;              // Custom icon color override (hex)
+    iconId?: string;                 // Custom icon ID (Lucide, emoji, or Custom)
+    opacity?: number;                // Background transparency (0-1)
+    isBold?: boolean;                // Label bold font-weight override
+    isItalic?: boolean;              // Label italic style override
+    applyToSubfolders?: boolean;     // Cascade style to nested subfolders
+    applyToFiles?: boolean;          // Cascade style to nested files
+    hasDivider?: boolean;            // Displays a section divider before this item
+    dividerText?: string;            // Text label inside the divider pill
+    dividerColor?: string;           // Custom color for the divider line/pill
+    dividerAlignment?: string;       // Alignment of the divider text ('left', 'center', 'right')
+    dividerLineStyle?: string;       // Line pattern ('solid', 'dashed', 'dotted', 'double')
+    dividerIcon?: string;            // Custom Lucide/emoji divider icon ID
+    dividerIconColor?: string;       // Custom color override for the divider icon
+    dividerUpper?: boolean;          // Force uppercase on the divider label text
+    dividerGlass?: boolean;          // Glassmorphic backdrop filter on the divider
+    dividerIconPosition?: 'left' | 'right' | 'both'; // Placement of the divider icon
+    dividerPillMode?: 'global' | 'on' | 'off';     // Interactive Pill Mode override
+    dividerDescription?: string;     // Premium Markdown hover popover content
+    dividerPillColor?: string;       // Background color override for the divider pill
+    dividerLinePaddingLeft?: number; // Asymmetrical padding between line and text (Left)
+    dividerLinePaddingRight?: number;// Asymmetrical padding between line and text (Right)
+    isHidden?: boolean;              // Stealth Mode privacy hide toggle
 }
 ```
 

@@ -162,7 +162,7 @@ The stealth mode is a CSS-driven privacy layer.
 
 To avoid shipping large binary files, we fetch release notes directly from GitHub.
 
-- **Mechanism**: `main.ts` hits the raw URL for the version's markdown (e.g., `Version/VERSION_4_1_3.md`).
+- **Mechanism**: `main.ts` fetches the collective, raw release notes markdown from GitHub (`version.md` on the `main` branch).
 - **Caching**: Fetched once per session and stored in-memory.
 - **UX**: Rendered via `ChangelogModal` with glassmorphism effects.
 
