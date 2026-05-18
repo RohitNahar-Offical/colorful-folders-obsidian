@@ -252,6 +252,7 @@ The plugin's styling engine dynamically exposes standard **CSS Variable Hooks** 
 | `--cf-folder-color` | Text color for folders | Dynamic folder text color |
 | `--cf-active-bg` | Background color for active files | Active highlight color (configured or tinted glass) |
 | `--cf-active-color` | Text and border color for active files | Active text highlight color |
+| `--cf-selection-bg` | Custom multi-selection background shade | Calculated transparent color overlay (color + 0.15 opacity) |
 | `--cf-tag-bg` | Background for tags/flairs/metadata | Dynamic parent 15% opacity color tint |
 | `--cf-tag-color` | Text color for tags/flairs/metadata | Calculated contrast text color |
 
@@ -269,6 +270,7 @@ body {
 }
 
 /* Override hover states cleanly across folders & files */
+body:not(.is-grabbing) .nav-files-container .nav-file-title:not(.is-active):not(.is-selected):hover,
 body:not(.is-grabbing) .nav-files-container .tree-item-self:not(.is-active):not(.is-selected):hover {
     --cf-file-bg: var(--nav-item-background-hover);
     --cf-file-color: var(--nav-item-color-hover);
@@ -276,11 +278,14 @@ body:not(.is-grabbing) .nav-files-container .tree-item-self:not(.is-active):not(
     --cf-folder-color: var(--nav-item-color-hover);
 }
 
-/* Override selection states cleanly across folders & files */
-body:not(.is-grabbing) .nav-files-container .tree-item-self.is-selected:not(.nn-file) {
-    --cf-file-bg: var(--nav-item-background-selected);
+/* Override selection states cleanly across folders & files, inheriting custom selection backgrounds */
+body:not(.is-grabbing) .nav-files-container .nav-file-title.is-selected:not(.nn-file),
+body:not(.is-grabbing) .nav-files-container .tree-item-self.is-selected:not(.nn-file),
+body:not(.is-grabbing) .nav-files-container .nav-file-title.is-selected:not(.nn-file):hover,
+body:not(.is-grabbing) .nav-files-container .tree-item-self.is-selected:not(.nn-file):hover {
+    --cf-file-bg: var(--cf-selection-bg, var(--nav-item-background-selected));
     --cf-file-color: var(--nav-item-color-selected);
-    --cf-folder-bg: var(--nav-item-background-selected);
+    --cf-folder-bg: var(--cf-selection-bg, var(--nav-item-background-selected));
     --cf-folder-color: var(--nav-item-color-selected);
 }
 ```
