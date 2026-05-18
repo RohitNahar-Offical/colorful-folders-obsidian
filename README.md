@@ -10,7 +10,7 @@
 
 ### 🔌 1. Modern CSS Variable Hook Engine & Color-Matched Selections
 * **Dynamic Variable Hooks**: Refactored the core Traversal Engine to wrap dynamic style assignments in standard CSS custom properties (like `--cf-file-bg`, `--cf-folder-bg`, etc.) to enable seamless, non-destructive overrides in your custom snippets without using `!important`.
-* **Color-Matched Multi-Selections**: Introduced `--cf-selection-bg` to automatically shade multi-selected items with a translucent hue matching their parent folder's color instead of standard selection gray.
+* **Color-Matched Multi-Selections**: Introduced `--cf-selection-bg` to automatically shade multi-selected items with a translucent hue matching their parent folder's color, while cleanly falling back to match the active accent/selection color of your theme.
 * **Theme Stability & Compatibility**: Removed hardcoded native fallbacks from the core `styles.css` sheet, ensuring seamless compatibility with premium third-party themes (like Minimal Theme) without clobbering native theme selection variables.
 
 ---
