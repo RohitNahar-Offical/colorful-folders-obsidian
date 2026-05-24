@@ -286,6 +286,7 @@ export class DividerManager {
             
             let popover: HTMLElement | null = null;
             let timeout: number | null = null;
+            let outsideClickListener: ((e: MouseEvent) => void) | null = null;
 
             const showPopover = async () => {
                 if (popover) return;
@@ -376,10 +377,23 @@ export class DividerManager {
                     }
                 };
                 popover.onmouseleave = () => hidePopover();
+
+                // Add tap-outside listener to dismiss popover on click/tap elsewhere
+                outsideClickListener = (e: MouseEvent) => {
+                    const target = e.target as HTMLElement;
+                    if (popover && !popover.contains(target) && !chip.contains(target)) {
+                        hidePopover();
+                    }
+                };
+                activeDocument.addEventListener('click', outsideClickListener, true);
             };
 
             const hidePopover = () => {
                 if (timeout) window.clearTimeout(timeout);
+                if (outsideClickListener) {
+                    activeDocument.removeEventListener('click', outsideClickListener, true);
+                    outsideClickListener = null;
+                }
                 timeout = window.setTimeout(() => {
                     if (popover) {
                         if (DividerManager.activePopover === popover) DividerManager.activePopover = null;
@@ -389,15 +403,27 @@ export class DividerManager {
                 }, 150); // Slightly longer delay for easier "bridging"
             };
 
-            chip.onmouseenter = () => {
-                const win = doc.defaultView || activeWindow;
-                if (timeout) win.clearTimeout(timeout);
-                timeout = win.setTimeout(() => {
-                    void showPopover();
-                }, 250); // Faster trigger
-            };
-            
-            chip.onmouseleave = () => hidePopover();
+            if (obsidian.Platform.isMobile) {
+                chip.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (popover) {
+                        hidePopover();
+                    } else {
+                        void showPopover();
+                    }
+                };
+            } else {
+                chip.onmouseenter = () => {
+                    const win = doc.defaultView || activeWindow;
+                    if (timeout) win.clearTimeout(timeout);
+                    timeout = win.setTimeout(() => {
+                        void showPopover();
+                    }, 250); // Faster trigger
+                };
+                
+                chip.onmouseleave = () => hidePopover();
+            }
         }
 
         return div;

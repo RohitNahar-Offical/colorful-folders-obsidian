@@ -139,6 +139,39 @@ export default class ColorfulFoldersPlugin
     if (this.dividerObserver) this.dividerObserver.disconnect();
     if (this.styleObserver) this.styleObserver.disconnect();
 
+    // Clean up scroll listeners
+    const explorers: HTMLElement[] = [];
+    this.app.workspace.iterateAllLeaves((leaf) => {
+      const view = leaf.view as obsidian.View & {
+        getViewType(): string;
+        containerEl: HTMLElement;
+      };
+      if (
+        view.getViewType() === "file-explorer" ||
+        view.getViewType() === "nav-files"
+      ) {
+        const container = view.containerEl.querySelector(
+          ".nav-files-container"
+        );
+        if (container) explorers.push(container as HTMLElement);
+      }
+    });
+
+    const docs = new Set<Document>();
+    explorers.forEach((e) => docs.add(e.ownerDocument));
+    docs.add(activeDocument);
+
+    const allContainers = [...explorers];
+    docs.forEach((doc) => {
+      const extra = NotebookNavigatorIntegration.getExtraContainers(doc);
+      if (extra) extra.forEach((e) => allContainers.push(e as HTMLElement));
+    });
+
+    allContainers.forEach((container) => {
+      container.removeEventListener("scroll", this.handleScroll);
+      delete (container as HTMLElement & { cfHasScrollListener?: boolean }).cfHasScrollListener;
+    });
+
     this.cleanDividers();
   }
 
@@ -517,13 +550,13 @@ export default class ColorfulFoldersPlugin
         const rgb = hexToRgbObj(customStyle.hex);
         color = cp
           ? cp[0]
-          : { rgb: `${rgb.r}, ${rgb.g}, ${rgb.b}`, hex: customStyle.hex };
+          : (rgb ? { rgb: `${rgb.r}, ${rgb.g}, ${rgb.b}`, hex: customStyle.hex } : palette[0]);
       } else if (inheritedStyle && inheritedStyle.hex) {
         const cp = parseCustomPalette(inheritedStyle.hex);
         const rgb = hexToRgbObj(inheritedStyle.hex);
         color = cp
           ? cp[0]
-          : { rgb: `${rgb.r}, ${rgb.g}, ${rgb.b}`, hex: inheritedStyle.hex };
+          : (rgb ? { rgb: `${rgb.r}, ${rgb.g}, ${rgb.b}`, hex: inheritedStyle.hex } : palette[0]);
       } else if (isFile) {
         const parentColor =
           parentFolder && !parentFolder.isRoot()
@@ -534,7 +567,7 @@ export default class ColorfulFoldersPlugin
           this.settings.notebookNavigatorFileBackground;
 
         if (inheritedStyle && inheritedStyle.applyToFiles && parentColor) {
-          const hObj = hexToRgbObj(inheritedStyle.hex || parentColor.hex);
+          const hObj = hexToRgbObj(inheritedStyle.hex || parentColor.hex) || { r: 235, g: 111, b: 146 };
           const nameHash = hashString(target.name);
           const offset = ((nameHash % 5) - 2) * 5;
           color = {
@@ -689,6 +722,18 @@ export default class ColorfulFoldersPlugin
   private isScrolling = false;
   private scrollTimeout: number | null = null;
 
+  handleScroll = (e: Event) => {
+    const container = e.currentTarget as HTMLElement;
+    const doc = container.ownerDocument;
+    const win = doc.defaultView || activeWindow;
+    this.isScrolling = true;
+    win.clearTimeout(this.scrollTimeout || undefined);
+    this.scrollTimeout = win.setTimeout(() => {
+      this.isScrolling = false;
+      this.processDividers();
+    }, 100);
+  };
+
   initDividerObserver() {
     if (this.dividerObserver) {
       this.dividerObserver.disconnect();
@@ -734,21 +779,7 @@ export default class ColorfulFoldersPlugin
         container as HTMLElement & { cfHasScrollListener?: boolean }
       ).cfHasScrollListener = true;
 
-      const doc = container.ownerDocument;
-      const win = doc.defaultView || activeWindow;
-
-      container.addEventListener(
-        "scroll",
-        () => {
-          this.isScrolling = true;
-          win.clearTimeout(this.scrollTimeout || undefined);
-          this.scrollTimeout = win.setTimeout(() => {
-            this.isScrolling = false;
-            this.processDividers();
-          }, 100);
-        },
-        { passive: true },
-      );
+      container.addEventListener("scroll", this.handleScroll, { passive: true });
     });
 
     this.dividerObserver = new MutationObserver((mutations) => {

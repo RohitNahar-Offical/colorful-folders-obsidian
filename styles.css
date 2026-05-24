@@ -40,7 +40,9 @@ body .nav-files-container .nav-file-title {
     justify-content: flex-start;
     padding-top: 4px;
     padding-bottom: 4px;
-    height: 32px;
+    padding-right: 14px !important;
+    min-height: 32px;
+    height: auto;
 }
 
 /* Fix Arrow & Icon Width */
@@ -54,21 +56,27 @@ body .nav-files-container .nav-folder-icon {
 }
 
 /* Handle Text Truncation */
-body .nav-files-container .nav-folder-title-content {
+body .nav-files-container .nav-folder-title-content,
+body .nav-files-container .nav-file-title-content {
     flex-grow: 1;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+    min-width: 0;
     margin-right: 10px;
 }
 
 /* Lock Counts to the Right */
-body .nav-files-container .nav-folder-title > span:last-child {
-    margin-left: auto;
+body:not(.novel-word-count--folder-below) .nav-files-container .nav-folder-title > span:last-child,
+body:not(.novel-word-count--folder-below) .nav-files-container .nav-folder-title::after,
+body:not(.novel-word-count--note-below) .nav-files-container .nav-file-title::after {
+    margin-left: auto !important;
     display: flex;
     gap: 8px;
     align-items: center;
     font-variant-numeric: tabular-nums;
+    flex: 0 1 auto !important;
+    justify-content: flex-end;
 }
 
 
@@ -113,6 +121,7 @@ body .nav-files-container [data-path] .nn-navitem-name::before {
     align-items: center;
     justify-content: center;
     vertical-align: middle;
+    flex-shrink: 0;
 }
 
 /* Interactive Dividers (Modern Pill Design) */
@@ -640,8 +649,8 @@ body .colorful-folders-config .is-invalid {
 
 
 /* Hovering Files & Folders */
-body:not(.is-grabbing) .nav-files-container .nav-file-title:not(.is-active):not(.is-selected):hover,
-body:not(.is-grabbing) .nav-files-container .tree-item-self:not(.is-active):not(.is-selected):hover {
+body:not(.is-mobile):not(.is-grabbing) .nav-files-container .nav-file-title:not(.is-active):not(.is-selected):hover,
+body:not(.is-mobile):not(.is-grabbing) .nav-files-container .tree-item-self:not(.is-active):not(.is-selected):hover {
     --cf-file-bg: var(--nav-item-background-hover);
     --cf-file-color: var(--nav-item-color-hover);
     --cf-folder-bg: var(--nav-item-background-hover);
@@ -651,10 +660,54 @@ body:not(.is-grabbing) .nav-files-container .tree-item-self:not(.is-active):not(
 /* One or Multiple Selected Files */
 body:not(.is-grabbing) .nav-files-container .nav-file-title.is-selected:not(.nn-file),
 body:not(.is-grabbing) .nav-files-container .tree-item-self.is-selected:not(.nn-file),
-body:not(.is-grabbing) .nav-files-container .nav-file-title.is-selected:not(.nn-file):hover,
-body:not(.is-grabbing) .nav-files-container .tree-item-self.is-selected:not(.nn-file):hover {
+body:not(.is-mobile):not(.is-grabbing) .nav-files-container .nav-file-title.is-selected:not(.nn-file):hover,
+body:not(.is-mobile):not(.is-grabbing) .nav-files-container .tree-item-self.is-selected:not(.nn-file):hover {
     --cf-file-bg: var(--cf-selection-bg, var(--nav-item-background-selected));
     --cf-file-color: var(--nav-item-color-selected);
     --cf-folder-bg: var(--cf-selection-bg, var(--nav-item-background-selected));
     --cf-folder-color: var(--nav-item-color-selected);
+}
+
+/* ── 6. MOBILE RESPONSIVE MEDIA QUERIES ────────────────────────────── */
+@media (max-width: 600px) {
+    body .colorful-folders-config {
+        padding: 12px !important;
+    }
+    .cf-hero h1 {
+        font-size: 1.6em !important;
+    }
+    .cf-tab-bar {
+        gap: 6px !important;
+        margin-bottom: 20px !important;
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+        flex-wrap: nowrap !important;
+        justify-content: flex-start !important;
+        -webkit-overflow-scrolling: touch !important;
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+    body .colorful-folders-config .cf-tab-btn,
+    .cf-tab-btn {
+        padding: 6px 12px !important;
+        font-size: 0.78em !important;
+        flex-shrink: 0 !important;
+    }
+    .cf-settings-card {
+        padding: 16px !important;
+        margin-bottom: 20px !important;
+    }
+    .cf-grid {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+    }
+    .cf-vcp {
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        gap: 12px !important;
+    }
+    .cf-premium-popover {
+        width: 85vw !important;
+        max-width: 280px !important;
+    }
 }

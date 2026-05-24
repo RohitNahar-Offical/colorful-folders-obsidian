@@ -26,7 +26,7 @@
 ### 🚀 1. High-Performance CSS Engine
 We never style elements directly in the loop. We use a **Static Style Injection Strategy**. 
 *   **Mechanism**: Path-specific CSS rules.
-*   **Execution**: Generated once, injected into a global `<style>` tag.
+*   **Execution**: Generated once, injected via browser `adoptedStyleSheets` API.
 *   **Result**: Supports **20,000+ files** with zero UI lag.
 
 ### 🛡️ 2. "Sanitization-First" Security

@@ -230,12 +230,14 @@ export class StyleGenerator {
             body .nav-files-container .nav-folder-title-content,
             body .nav-files-container .nav-file-title-content,
             body .nav-files-container .tree-item-inner {
-                display: flex !important;
-                align-items: center !important;
-                overflow: visible !important;
+                display: block !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                white-space: nowrap !important;
+                min-width: 0 !important;
                 flex-grow: 1 !important;
                 height: auto !important;
-                line-height: 1 !important; /* Absolute shrink-wrap */
+                line-height: 1.3 !important; /* Proper line height for text truncation */
                 padding-top: 0 !important;
                 padding-bottom: 0 !important;
                 margin-top: 0 !important;
@@ -658,6 +660,7 @@ export class StyleGenerator {
                                     body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before {
                                         content: '' !important;
                                         display: inline-flex !important;
+                                        flex-shrink: 0 !important;
                                         width: ${effFileIconW} !important;
                                         height: ${effFileIconW} !important;
                                         background-color: ${iconColor || color.hex || textNative} !important;
@@ -678,6 +681,7 @@ export class StyleGenerator {
                         body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before {
                             content: '' !important;
                             display: inline-flex !important;
+                            flex-shrink: 0 !important;
                             width: ${effFileIconW} !important;
                             height: ${effFileIconW} !important;
                             background-color: ${iconColor || color.hex || textNative} !important;
@@ -894,6 +898,7 @@ export class StyleGenerator {
                             align-items: center !important;
                             justify-content: center !important;
                             margin-right: 6px !important;
+                            flex-shrink: 0 !important;
                         }
                     `);
                 } else {
@@ -914,6 +919,7 @@ export class StyleGenerator {
                                 body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before {
                                     content: '' !important;
                                     display: inline-flex !important;
+                                    flex-shrink: 0 !important;
                                     width: ${folderIconW} !important;
                                     height: ${folderIconW} !important;
                                     background-color: ${customStyle?.iconColor || color.hex || folderStyles.t} !important;
@@ -933,6 +939,7 @@ export class StyleGenerator {
                     body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before {
                         content: '' !important;
                         display: inline-flex !important;
+                        flex-shrink: 0 !important;
                         width: ${folderIconW} !important;
                         height: ${folderIconW} !important;
                         background-color: ${customStyle?.iconColor || color.hex || folderStyles.t} !important;
@@ -1010,7 +1017,8 @@ export class StyleGenerator {
         const rootStyle = this.getStyle(root.path) || this.getStyle("/");
         if (rootStyle && this.settings.notebookNavigatorSupport) {
             const palette = this.settings.palette ? PALETTES[this.settings.palette] || Object.values(PALETTES)[0] : Object.values(PALETTES)[0];
-            const rootColor = rootStyle.hex ? { rgb: hexToRgbObj(rootStyle.hex).r + "," + hexToRgbObj(rootStyle.hex).g + "," + hexToRgbObj(rootStyle.hex).b, hex: rootStyle.hex } : palette[0];
+            const rObj = rootStyle.hex ? hexToRgbObj(rootStyle.hex) : null;
+            const rootColor = rObj ? { rgb: `${rObj.r},${rObj.g},${rObj.b}`, hex: rootStyle.hex } : palette[0];
             const activeBg = (this.settings.useCustomActiveColor && this.settings.customActiveBg) ? this.settings.customActiveBg : `rgba(${rootColor.rgb}, 0.14)`;
             const activeText = (this.settings.useCustomActiveColor && this.settings.customActiveText) ? this.settings.customActiveText : (rootStyle.textColor || rootColor.hex);
             const rootIconId = rootStyle.iconId || "";

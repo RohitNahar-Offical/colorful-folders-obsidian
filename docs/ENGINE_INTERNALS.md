@@ -17,6 +17,7 @@ Colorful Folders hooks into the Obsidian event bus to stay reactive.
 | `dragstart` | `Logic Freeze` | **Performance**: Disconnects observers and suspends all styling logic during drag. |
 | `dragend` | `Logic Reconnect` | **Performance**: Restores observers and performs a clean 'catch-up' sync. |
 | `create` / `delete` / `rename` | `generateStyles` | Vault structure changes; invalidates item count and heatmap caches. |
+| `scroll` (container) | `handleScroll` | Repositions interactive dividers during virtual/native list scroll. Unbound on plugin disable. |
 
 ---
 
@@ -88,6 +89,7 @@ The plugin implements a two-stage migration in `main.ts` to ensure backward comp
 
 1.  **Raw Data Migration**: Legacy fields (e.g., `dividerLinePadding`) are automatically split into asymmetrical fields (`Left`/`Right`).
 2.  **Type Hardening**: Corrupted hex strings are detected during traversal and reset to theme-safe defaults.
+3.  **Null-Safety Enforcement**: All parsing result mappings from `hexToRgbObj` are explicitly defended against `null` returns (caused by invalid user values or 3-digit shorthand parsing anomalies) before accessing color channels, resolving runtime TypeErrors.
 
 ---
 

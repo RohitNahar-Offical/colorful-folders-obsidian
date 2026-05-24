@@ -2,16 +2,24 @@
 
 export function hexToRgbObj(hex: string): {r: number, g: number, b: number} | null {
     if (!hex || typeof hex !== 'string') return null;
-    let cleanHex = hex.trim();
-    if (!cleanHex.startsWith('#') && /^[a-f\d]{3,6}$/i.test(cleanHex)) {
-        cleanHex = '#' + cleanHex;
+    let cleanHex = hex.trim().toLowerCase();
+    
+    const hasHash = cleanHex.startsWith('#');
+    let hexDigits = hasHash ? cleanHex.slice(1) : cleanHex;
+    
+    if (/^[a-f\d]{3}$/i.test(hexDigits)) {
+        hexDigits = hexDigits[0] + hexDigits[0] + hexDigits[1] + hexDigits[1] + hexDigits[2] + hexDigits[2];
     }
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(cleanHex);
-    return result ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16)
-    } : null;
+    
+    if (!/^[a-f\d]{6}$/i.test(hexDigits)) {
+        return null;
+    }
+    
+    return {
+        r: parseInt(hexDigits.slice(0, 2), 16),
+        g: parseInt(hexDigits.slice(2, 4), 16),
+        b: parseInt(hexDigits.slice(4, 6), 16)
+    };
 }
 
 export function anyToHex(color: string): string {

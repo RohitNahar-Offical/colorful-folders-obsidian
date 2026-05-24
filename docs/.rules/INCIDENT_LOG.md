@@ -142,3 +142,18 @@ Read before making ANY architectural changes.
 3. Elevated `contents` permissions to `write` to allow automated GitHub Release creation and note generation.
 4. Standardized release tags to use the semantic version only (e.g., `4.1.5`).
 **Lesson**: Attestation and Release actions have distinct permission requirements. While `read` is sufficient for building and attesting, `write` is mandatory for modifying repository resources like Releases and generating notes.
+
+---
+
+## Incident #12 — Color Parsing Crashes & Scroll Listener Leak (2026-05-24)
+**What was attempted**: Adding support for 3-character hex colors (e.g., `#f00`) and optimizing scroll-based divider positioning.
+**Why it was done**: To improve shorthand color support, prevent TypeErrors from invalid color inputs, and resolve memory leaks.
+**What broke**: 
+- Inputting a 3-character hex shorthand returned `null` from `hexToRgbObj`, causing unhandled `TypeError` crashes when accessing `.r`, `.g`, or `.b` in `main.ts` and `StyleGenerator.ts`.
+- Scroll event listeners bound to workspace explorer containers during divider synchronization were never cleaned up, resulting in memory and class instance leaks on plugin unload.
+**Resolution**:
+1. Refactored `hexToRgbObj` in `utils.ts` to support both 3-digit and 6-digit hex strings and automatically expand shorthands.
+2. Added defensive checks and theme-safe fallbacks for all color parser results in `main.ts` and `StyleGenerator.ts`.
+3. Refactored the scroll listener to use a class-level bound method and explicitly unregistered it from all containers in `onunload`.
+**Lesson**: Always normalize user inputs (like shorthand hexes), ensure parsing helpers return default fallbacks, and always mirror registration and unregistration of event listeners to prevent memory leaks in the Obsidian lifecycle.
+

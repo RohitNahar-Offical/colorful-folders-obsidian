@@ -1,7 +1,7 @@
 # 📋 COLORFUL FOLDERS — DEVELOPMENT RULES & GUIDELINES
 
 > **⚠️ MANDATORY: Read ALL rules in this file BEFORE making any code changes, edits, or GitHub pushes.**
-> Last updated: 2026-05-06
+> Last updated: 2026-05-24
 
 ---
 
@@ -154,6 +154,9 @@ Examples:
 - **Result**: Severe flickering during scroll. Rows appeared white before turning the correct color.
 - **Lesson**: Virtualized lists (React/NN) recycle DOM elements faster than JS can track. Use **Pure CSS targeting `data-path`** for O(1) performance and zero flicker.
 
+### ❌ Danger #7: Over-engineering wrapper classes in integrations
+- **What happened**: Targeted `.nn-navitem` wrapper classes for layout mechanics in Notebook Navigator.
+- **Result**: Layout entirely collapsed and inline metadata misaligned.
 - **Lesson**: When styling Notebook Navigator, do not over-engineer or target its wrapper classes (`.nn-navitem`) for layout mechanics. Rely on the native classes it injects (`.nav-folder-title`) and elevate their specificity safely using `body`.
 
 ### ❌ Danger #8: Double Icons in Virtualized Lists
@@ -170,6 +173,11 @@ Examples:
 - **What happened**: If an item in NN didn't match a custom or auto-icon, it appeared completely blank because we suppressed native icons.
 - **Result**: Broken UI feel in Notebook Navigator.
 - **Lesson**: INTEGRATED VIEWS MUST HAVE FALLBACKS. Use the **Surgical Fallback Rule**: if no icon is matched in the bridge, inject a default Lucide folder/file icon via CSS mask to maintain visual continuity.
+
+### ❌ Danger #11: Unsafe color parsing & leaking event listeners
+- **What happened**: Calling `hexToRgbObj` on unchecked values, and neglecting to unregister scroll listeners on unload.
+- **Result**: Unhandled `TypeError` crashes from shorthand hex values, and memory/instance leaks when disabling the plugin.
+- **Lesson**: Always verify and defend against `null` returns when parsing color/user inputs, and ensure all dynamic DOM event listeners are matched with corresponding cleanup in `onunload`.
 
 ---
 

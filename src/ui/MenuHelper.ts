@@ -70,14 +70,10 @@ export class MenuHelper {
 
         menu.addSeparator();
 
-        // ── Step 2: Styling (Grouped in Submenu) ──
-        menu.addItem((item: obsidian.MenuItem) => {
-            item.setTitle('Set custom style')
-                .setIcon('palette');
-            
-            const subMenu = (item as MenuItemWithSubmenu).setSubmenu();
-
-            subMenu.addItem((sub: obsidian.MenuItem) => {
+        // ── Step 2: Styling ──
+        if (obsidian.Platform.isMobile) {
+            // Flatten on mobile since native sheets don't support nested submenus
+            menu.addItem((sub: obsidian.MenuItem) => {
                 sub.setTitle('Change icon / color')
                     .setIcon('palette')
                     .onClick(() => {
@@ -85,7 +81,7 @@ export class MenuHelper {
                     });
             });
 
-            subMenu.addItem((sub: obsidian.MenuItem) => {
+            menu.addItem((sub: obsidian.MenuItem) => {
                 sub.setTitle('Change color')
                     .setIcon('pipette')
                     .onClick(() => {
@@ -93,7 +89,7 @@ export class MenuHelper {
                     });
             });
 
-            subMenu.addItem((sub: obsidian.MenuItem) => {
+            menu.addItem((sub: obsidian.MenuItem) => {
                 sub.setTitle('Change background')
                     .setIcon('paint-bucket')
                     .onClick(() => {
@@ -103,17 +99,64 @@ export class MenuHelper {
 
             const existing = plugin.settings.customFolderColors[file.path];
             if (existing) {
-                subMenu.addSeparator();
-                subMenu.addItem((sub: obsidian.MenuItem) => {
+                menu.addItem((sub: obsidian.MenuItem) => {
                     sub.setTitle('Clear style')
                         .setIcon('eraser')
                         .onClick(async () => {
                             delete plugin.settings.customFolderColors[file.path];
                             await plugin.saveSettings();
+                            plugin.generateStyles();
                             new obsidian.Notice(`Cleared style for ${file.name}`);
                         });
                 });
             }
-        });
+        } else {
+            // Grouped in submenu on desktop for a cleaner UI layout
+            menu.addItem((item: obsidian.MenuItem) => {
+                item.setTitle('Set custom style')
+                    .setIcon('palette');
+                
+                const subMenu = (item as MenuItemWithSubmenu).setSubmenu();
+
+                subMenu.addItem((sub: obsidian.MenuItem) => {
+                    sub.setTitle('Change icon / color')
+                        .setIcon('palette')
+                        .onClick(() => {
+                            new ColorPickerModal(plugin.app, plugin, file, 'icon').open();
+                        });
+                });
+
+                subMenu.addItem((sub: obsidian.MenuItem) => {
+                    sub.setTitle('Change color')
+                        .setIcon('pipette')
+                        .onClick(() => {
+                            new ColorPickerModal(plugin.app, plugin, file, 'color').open();
+                        });
+                });
+
+                subMenu.addItem((sub: obsidian.MenuItem) => {
+                    sub.setTitle('Change background')
+                        .setIcon('paint-bucket')
+                        .onClick(() => {
+                            new ColorPickerModal(plugin.app, plugin, file, 'background').open();
+                        });
+                });
+
+                const existing = plugin.settings.customFolderColors[file.path];
+                if (existing) {
+                    subMenu.addSeparator();
+                    subMenu.addItem((sub: obsidian.MenuItem) => {
+                        sub.setTitle('Clear style')
+                            .setIcon('eraser')
+                            .onClick(async () => {
+                                delete plugin.settings.customFolderColors[file.path];
+                                await plugin.saveSettings();
+                                plugin.generateStyles();
+                                new obsidian.Notice(`Cleared style for ${file.name}`);
+                            });
+                    });
+                }
+            });
+        }
     }
 }
