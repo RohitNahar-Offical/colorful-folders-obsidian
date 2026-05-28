@@ -120,7 +120,8 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     useCustomActiveColor: false,
     customActiveBg: "",
     customActiveText: "",
-    pathLineThickness: 2.0
+    pathLineThickness: 2.0,
+    wrapMetadata: false
 };
 
 export const AUTO_ICON_CATEGORIES: AutoIconData[] = [

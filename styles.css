@@ -40,7 +40,7 @@ body .nav-files-container .nav-file-title {
     justify-content: flex-start;
     padding-top: 4px;
     padding-bottom: 4px;
-    padding-right: 14px !important;
+    padding-right: 14px;
     min-height: 32px;
     height: auto;
 }
@@ -70,12 +70,12 @@ body .nav-files-container .nav-file-title-content {
 body:not(.novel-word-count--folder-below) .nav-files-container .nav-folder-title > span:last-child,
 body:not(.novel-word-count--folder-below) .nav-files-container .nav-folder-title::after,
 body:not(.novel-word-count--note-below) .nav-files-container .nav-file-title::after {
-    margin-left: auto !important;
+    margin-left: auto;
     display: flex;
     gap: 8px;
     align-items: center;
     font-variant-numeric: tabular-nums;
-    flex: 0 1 auto !important;
+    flex: 0 1 auto;
     justify-content: flex-end;
 }
 
@@ -113,10 +113,14 @@ body .nav-files-container [data-path] .tree-item-inner::before,
 body .nav-files-container [data-path] .nn-navitem-name::before {
     background-size: contain;
     background-position: center;
+    /* doiuse-disable css-masks */
+    /* stylelint-disable plugin/no-unsupported-browser-features, no-unsupported-browser-features */
     -webkit-mask-size: contain;
     -webkit-mask-position: center;
     mask-size: contain;
     mask-position: center;
+    /* stylelint-enable plugin/no-unsupported-browser-features, no-unsupported-browser-features */
+    /* doiuse-enable css-masks */
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -478,8 +482,12 @@ body .colorful-folders-config .setting-item-control input[type="range"]::-webkit
     border-radius: 8px;
     max-height: 400px;
     overflow-y: auto;
+    /* doiuse-disable css-scrollbar */
+    /* stylelint-disable plugin/no-unsupported-browser-features, no-unsupported-browser-features */
     scrollbar-width: thin;
     scrollbar-color: var(--background-modifier-border) transparent;
+    /* stylelint-enable plugin/no-unsupported-browser-features, no-unsupported-browser-features */
+    /* doiuse-enable css-scrollbar */
 }
 .cf-icon-grid::-webkit-scrollbar {
     width: 5px;
@@ -671,43 +679,43 @@ body:not(.is-mobile):not(.is-grabbing) .nav-files-container .tree-item-self.is-s
 /* ── 6. MOBILE RESPONSIVE MEDIA QUERIES ────────────────────────────── */
 @media (max-width: 600px) {
     body .colorful-folders-config {
-        padding: 12px !important;
+        padding: 12px;
     }
     .cf-hero h1 {
-        font-size: 1.6em !important;
+        font-size: 1.6em;
     }
     .cf-tab-bar {
-        gap: 6px !important;
-        margin-bottom: 20px !important;
-        overflow-x: auto !important;
-        white-space: nowrap !important;
-        flex-wrap: nowrap !important;
-        justify-content: flex-start !important;
-        -webkit-overflow-scrolling: touch !important;
-        padding-left: 8px !important;
-        padding-right: 8px !important;
+        gap: 6px;
+        margin-bottom: 20px;
+        overflow-x: auto;
+        white-space: nowrap;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        -webkit-overflow-scrolling: touch;
+        padding-left: 8px;
+        padding-right: 8px;
     }
     body .colorful-folders-config .cf-tab-btn,
     .cf-tab-btn {
-        padding: 6px 12px !important;
-        font-size: 0.78em !important;
-        flex-shrink: 0 !important;
+        padding: 6px 12px;
+        font-size: 0.78em;
+        flex-shrink: 0;
     }
     .cf-settings-card {
-        padding: 16px !important;
-        margin-bottom: 20px !important;
+        padding: 16px;
+        margin-bottom: 20px;
     }
     .cf-grid {
-        grid-template-columns: 1fr !important;
-        gap: 12px !important;
+        grid-template-columns: 1fr;
+        gap: 12px;
     }
     .cf-vcp {
-        flex-wrap: wrap !important;
-        justify-content: center !important;
-        gap: 12px !important;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 12px;
     }
     .cf-premium-popover {
-        width: 85vw !important;
-        max-width: 280px !important;
+        width: 85vw;
+        max-width: 280px;
     }
 }

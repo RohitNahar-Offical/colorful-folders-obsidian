@@ -93,6 +93,10 @@ export default class ColorfulFoldersPlugin
       "cf-show-hidden",
       this.settings.showHiddenItems,
     );
+    activeDocument.body.classList.toggle(
+      "cf-wrap-metadata",
+      !!this.settings.wrapMetadata,
+    );
 
     this.app.workspace.onLayoutReady(async () => {
       this.generateStyles();
@@ -711,6 +715,10 @@ export default class ColorfulFoldersPlugin
     activeDocument.body.classList.toggle(
       "cf-show-hidden",
       this.settings.showHiddenItems,
+    );
+    activeDocument.body.classList.toggle(
+      "cf-wrap-metadata",
+      !!this.settings.wrapMetadata,
     );
     this.refreshIcons();
   }

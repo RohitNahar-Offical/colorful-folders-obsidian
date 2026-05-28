@@ -624,6 +624,17 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
+        new obsidian.Setting(visCard)
+            .setName('Wrap metadata to next line (desktop)')
+            .setDesc('Forces file counts, word counts, and other plugin metadata to wrap to the next line on desktop. (This is always enabled automatically on mobile devices).')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.wrapMetadata || false)
+                .onChange(async (value) => {
+                    this.plugin.settings.wrapMetadata = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStyles();
+                }));
+
 
 
 
