@@ -5,7 +5,7 @@ This release introduces a cleaner desktop context menu layout with submenu group
 
 ### 📱 1. Responsive Settings Tab & Desktop Submenus
 - **Mobile-First Layout**: Introduced a dedicated `@media (max-width: 600px)` style block to ensure the settings card grid, action buttons, tab bars, and premium popovers scale elegantly on smaller phone and tablet viewports.
-- **Context Menu Grouping**: Consolidated folder styling actions ("Change icon / color", "Change color", "Change background") into a unified "Set custom style" submenu on Desktop, keeping the context menu compact. Left them as top-level actions on mobile for easy touch targets.
+
 - **Wrap Metadata Option**: Added a toggle to wrap file counts, word counts, and other plugin metadata (e.g., from *Novel Word Count* plugin) to the next line on desktop. (This remains automatically active on mobile).
 
 ### 🔧 2. Bug Fixes & Code Hardening

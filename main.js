@@ -236,9 +236,9 @@ daily = \u{1F4C5} @150`).setValue(this.plugin.settings.customIconRules||"").onCh
                 align-items: flex-start !important;
                 height: auto !important;
                 max-height: none !important;
-                min-height: 30px !important;
-                padding-top: 6px !important;
-                padding-bottom: 6px !important;
+                min-height: 24px !important;
+                padding-top: 2px !important;
+                padding-bottom: 2px !important;
                 position: relative !important;
             }
 
@@ -248,7 +248,7 @@ daily = \u{1F4C5} @150`).setValue(this.plugin.settings.customIconRules||"").onCh
             body.is-mobile .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) > *:not(::after),
             body.is-mobile .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) > *:not(::after) {
                 align-self: flex-start !important;
-                margin-top: 2px !important;
+                margin-top: 0px !important;
             }
 
             body.cf-wrap-metadata .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) .cf-icon-wrapper,
@@ -256,7 +256,7 @@ daily = \u{1F4C5} @150`).setValue(this.plugin.settings.customIconRules||"").onCh
             body.is-mobile .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) .cf-icon-wrapper,
             body.is-mobile .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) .cf-icon-wrapper {
                 align-self: flex-start !important;
-                margin-top: 2px !important;
+                margin-top: 0px !important;
             }
 
             body.cf-wrap-metadata .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) .nav-file-title-content,
@@ -279,10 +279,10 @@ daily = \u{1F4C5} @150`).setValue(this.plugin.settings.customIconRules||"").onCh
                 display: flex !important;
                 align-items: center !important;
                 justify-content: flex-start !important;
-                font-size: 0.85em !important;
-                opacity: 0.85 !important;
+                font-size: 0.78em !important;
+                opacity: 0.75 !important;
                 box-sizing: border-box !important;
-                margin-top: 4px !important;
+                margin-top: 1px !important;
                 padding-left: 24px !important;
                 background-position: 24px center !important;
             }
@@ -298,7 +298,7 @@ daily = \u{1F4C5} @150`).setValue(this.plugin.settings.customIconRules||"").onCh
             body.is-mobile .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) .nav-file-tag {
                 position: absolute !important;
                 right: 14px !important;
-                top: 6px !important;
+                top: 3px !important;
                 margin: 0 !important;
                 height: 18px !important;
                 line-height: 18px !important;
