@@ -234,9 +234,9 @@ daily = \u{1F4C5} @150`).setValue(this.plugin.settings.customIconRules||"").onCh
             body.is-mobile .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) {
                 flex-wrap: wrap !important;
                 align-items: flex-start !important;
-                height: auto !important;
-                max-height: none !important;
-                min-height: 24px !important;
+                height: 36px !important;
+                max-height: 36px !important;
+                min-height: 36px !important;
                 padding-top: 2px !important;
                 padding-bottom: 2px !important;
                 position: relative !important;
