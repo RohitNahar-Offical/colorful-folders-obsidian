@@ -605,8 +605,6 @@ daily = \u{1F4C5} @150`).setValue(this.plugin.settings.customIconRules||"").onCh
                         border-bottom: ${D}px solid ${n.hex} !important;
                         border-bottom-left-radius: 8px !important;
                         box-shadow: -2px 0 10px -2px ${n.hex}44;
-                        margin-left: 12px !important;
-                        padding-left: 0 !important;
                         --cf-rgb: ${n.rgb};
                     }
 

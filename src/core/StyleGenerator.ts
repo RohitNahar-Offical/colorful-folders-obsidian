@@ -840,8 +840,6 @@ export class StyleGenerator {
                         border-bottom: ${folderThick}px solid ${passedColor.hex} !important;
                         border-bottom-left-radius: 8px !important;
                         box-shadow: -2px 0 10px -2px ${passedColor.hex}44;
-                        margin-left: 12px !important;
-                        padding-left: 0 !important;
                         --cf-rgb: ${passedColor.rgb};
                     }
 
