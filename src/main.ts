@@ -102,6 +102,15 @@ export default class ColorfulFoldersPlugin
       this.generateStyles();
       this.initDividerObserver();
 
+      try {
+        const optimized = await this.optimizeBlueTopazStyleSettings();
+        if (optimized) {
+          new obsidian.Notice("Colorful Folders: Conflicting Blue Topaz theme settings in Style Settings have been automatically disabled.");
+        }
+      } catch (err) {
+        console.error("Colorful Folders: Failed to optimize Blue Topaz settings", err);
+      }
+
       // Check for version update and show changelog
       const currentVersion = this.manifest.version;
       if (this.settings.lastVersion !== currentVersion) {
@@ -404,6 +413,65 @@ export default class ColorfulFoldersPlugin
         },
       );
     }
+  }
+
+  async optimizeBlueTopazStyleSettings(): Promise<boolean> {
+    interface StyleSettingsManager {
+      settings?: Record<string, unknown>;
+      removeClasses(): void;
+      save(): Promise<void>;
+      initClasses(): void;
+    }
+
+    interface StyleSettingsPlugin {
+      settingsManager?: StyleSettingsManager;
+    }
+
+    interface CustomApp extends obsidian.App {
+      customCss?: {
+        theme?: string;
+      };
+      plugins?: {
+        getPlugin(id: string): obsidian.Plugin | null;
+      };
+    }
+
+    const customApp = this.app as unknown as CustomApp;
+    const currentTheme = customApp.customCss?.theme;
+    if (currentTheme !== "Blue Topaz") return false;
+
+    if (!customApp.plugins) return false;
+    const styleSettingsPlugin = customApp.plugins.getPlugin("obsidian-style-settings") as unknown as StyleSettingsPlugin | null;
+    if (!styleSettingsPlugin) return false;
+
+    const manager = styleSettingsPlugin.settingsManager;
+    if (!manager || !manager.settings) return false;
+
+    let changed = false;
+
+    if (manager.settings["blue-topaz-theme@@remove-file-icons"] !== false) {
+      manager.settings["blue-topaz-theme@@remove-file-icons"] = false;
+      changed = true;
+    }
+
+    if (manager.settings["blue-topaz-theme@@folder-icons"] !== false) {
+      manager.settings["blue-topaz-theme@@folder-icons"] = false;
+      changed = true;
+    }
+
+    if (manager.settings["blue-topaz-theme@@bt-toggle-colorful-folder"] !== false) {
+      manager.settings["blue-topaz-theme@@bt-toggle-colorful-folder"] = false;
+      changed = true;
+    }
+
+    if (changed) {
+      manager.removeClasses();
+      await manager.save();
+      manager.initClasses();
+      return true;
+    }
+
+    return false;
   }
 
   getStyle(path: string): FolderStyle | null {
