@@ -6,7 +6,7 @@
 ---
 
 ## 🚀 Latest: 4.1.8 - The "Speed & Smoothness" Update
-This release focuses entirely on making Colorful Folders feel lightning-fast and incredibly smooth to use, especially for users with massive vaults and lots of other plugins. [Full Changelog](version.md)
+This release focuses entirely on making Colorful Folders feel lightning-fast and incredibly smooth to use, especially for users with massive vaults and lots of other plugins. [Full Changelog](Version/VERSION_4_1_8.md)
 
 ### 🚀 1. Faster Navigation
 * **Instant Clicking**: Selecting files is now completely instant. We rebuilt the "active folder" highlighting engine from the ground up to completely eliminate input lag when opening files.
