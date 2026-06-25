@@ -16,6 +16,10 @@
 * **Icon Refresh Debouncing**: Added a 100ms debouncer to the icon refresh cycle to prevent layout thrashing and stuttering when expanding folders rapidly.
 * **Startup & Event Optimization**: Optimized startup routines and file mutation handlers (create, delete, rename) to run on a debounced cycle, ensuring the main thread remains fully responsive during heavy vault operations.
 
+### 🛡️ 3. MutationObserver Reactivity Filtering
+* **Eliminated Layout Thrashing**: Implemented strict class filtering on the `document.body` style observer. The plugin now only regenerates its massive `CSSStyleSheet` if a critical theme class (e.g., `theme-dark`, `theme-light`) is mutated. It actively ignores all noisy, high-frequency interaction classes from Obsidian (like `is-dragging` or `workspace-leaf-active`), completely eliminating CPU spikes during normal cursor navigation.
+* **Virtualized DOM Immunity**: Hardened the divider synchronization observer to actively ignore non-standard DOM insertions from third-party badge plugins and virtual scroll lists.
+
 ---
 
 ## ✨ Core Features
