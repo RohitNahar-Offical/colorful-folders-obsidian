@@ -157,3 +157,16 @@ Read before making ANY architectural changes.
 3. Refactored the scroll listener to use a class-level bound method and explicitly unregistered it from all containers in `onunload`.
 **Lesson**: Always normalize user inputs (like shorthand hexes), ensure parsing helpers return default fallbacks, and always mirror registration and unregistration of event listeners to prevent memory leaks in the Obsidian lifecycle.
 
+---
+
+## Incident #13 — MutationObserver Layout Thrashing (2026-06-25)
+**What was attempted**: Using `MutationObserver` on `activeDocument.body` to listen for class changes (like theme toggles) and `.nav-files-container` to sync dividers.
+**Why it was done**: To react automatically when users switch between Dark/Light mode or change layout density, and to sync dividers when folders expand.
+**What broke**: 
+- Severe lag and CPU spikes during normal interaction (dragging, hovering, switching panes).
+- The `CSSStyleSheet` was being completely replaced multiple times per second because Obsidian appends noisy interaction classes (`is-dragging`, `is-focused`, `workspace-leaf-active`) to the body continuously.
+- Virtualized file explorer plugins injecting random `<div>` or `<span>` badges were triggering the `dividerObserver` into an infinite loop.
+**Resolution**:
+1. Added a strict filter to `styleObserver` that parses the `oldValue` against the new class string, triggering style generation **only** if specific whitelisted classes mutate (e.g., `theme-dark`, `theme-light`, `cf-show-hidden`).
+2. Added a strict node type check to `dividerObserver`, ignoring any injected DOM element that lacks core file explorer classes (`nav-file`, `nav-folder`, `tree-item`, etc.).
+**Lesson**: Never bind `MutationObserver` to high-traffic elements like `document.body` or scrolling containers without extreme filtering. Always whitelist the specific classes or node types you care about to prevent cascading layout thrashing.

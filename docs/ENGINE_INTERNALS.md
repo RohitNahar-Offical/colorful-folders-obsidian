@@ -55,11 +55,15 @@ This ensures that even if a user picks extreme colors, the text remains crisp an
 
 ---
 
-5.  **Tiered Caching Engine**:
+## 4. Performance & Caching Engine
+
+1.  **Tiered Caching Engine**:
     *   **Folder Count Cache**: A persistent `Map` on the plugin instance. Item counts are only re-calculated when the vault structure actually changes (`create`/`delete`/`rename`).
     *   **Icon Category Memoization**: Custom icon regex rules and category lookups are compiled once and cached.
     *   **SVG Normalization Cache**: The result of `DOMParser` sanitization is cached, ensuring constant SVGs (like folder icons) are only parsed once per session.
-6.  **Observer Decoupling**: The `DividerManager`'s MutationObserver is decoupled from the main style render loop. It only re-initializes during structural `layout-change` events, preventing expensive DOM queries during every file navigation.
+2.  **Observer Decoupling & Filtering**: 
+    *   **Style Observer Filtering**: The `MutationObserver` on `activeDocument.body` strictly filters for critical theme changes (`theme-dark`, `theme-light`) and ignores noisy interaction classes (`is-dragging`, `is-focused`, `workspace-leaf-active`). This prevents layout thrashing during user navigation.
+    *   **Divider Observer Decoupling**: The `DividerManager`'s observer ignores injected virtual-dom nodes from other plugins by strictly verifying `.nav-file`, `.nav-folder`, or `.tree-item` classes, preventing infinite sync loops. It only re-initializes during structural `layout-change` events.
 
 ---
 
