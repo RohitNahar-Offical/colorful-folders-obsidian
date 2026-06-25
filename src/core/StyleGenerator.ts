@@ -562,7 +562,6 @@ export class StyleGenerator {
 
         const currentPalette = context.currentPalette;
         const isDark = context.isDark;
-        const activePath = context.activePath;
         const heatmapData = context.heatmapData;
         const excludeFolders = context.excludeFolders;
         const effFileIconW = context.effFileIconW;
