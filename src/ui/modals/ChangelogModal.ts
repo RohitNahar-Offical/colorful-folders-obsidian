@@ -36,8 +36,6 @@ export class ChangelogModal extends obsidian.Modal {
 
         const body = contentEl.createDiv({ cls: "cf-changelog-body" });
         body.setCssStyles({
-            maxHeight: "60vh",
-            overflowY: "auto",
             paddingRight: "10px"
         });
         this.renderComponent.load();
