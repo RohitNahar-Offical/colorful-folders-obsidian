@@ -124,6 +124,19 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     this.plugin.generateStyles();
                 }));
 
+        new obsidian.Setting(intCard)
+            .setName('Navigator icon scaling')
+            .setDesc('Multiplies the size of icons strictly within Notebook Navigator (default 0.8). Range: 0.5 to 2.5.')
+            .addSlider(slider => slider
+                .setLimits(0.5, 2.5, 0.1)
+                .setValue(this.plugin.settings.notebookNavigatorIconScale ?? 0.8)
+                .setDynamicTooltip()
+                .onChange(async (value) => {
+                    this.plugin.settings.notebookNavigatorIconScale = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStyles();
+                }));
+
         // ──────────────────────────────────────────────────────────────────────
         // ── ICON PACKS PANEL ──────────────────────────────────────────────────
         // ──────────────────────────────────────────────────────────────────────

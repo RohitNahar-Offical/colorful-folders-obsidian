@@ -38,7 +38,8 @@ export class StyleGenerator {
         const wideScale = this.settings.wideAutoIcons ? 1.05 : 1.0;
         const folderIconW = `calc(1.3em * ${iconScale * wideScale})`;
         const effFileIconW = `calc(1.3em * ${iconScale * wideScale})`;
-        const nnIconW = `calc(1.1em * ${iconScale * wideScale})`;
+        const nnIconScale = this.settings.notebookNavigatorIconScale ?? 0.8;
+        const nnIconW = `calc(1.1em * ${nnIconScale * wideScale})`;
 
         let currentPalette = PALETTES[this.settings.palette] || PALETTES["Muted Dark Mode"];
         if (this.settings.palette === "Custom") {

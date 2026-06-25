@@ -59,6 +59,7 @@ export interface ColorfulFoldersSettings {
     notebookNavigatorSupport: boolean;
     notebookNavigatorFileBackground: boolean;
     iconScale: number;
+    notebookNavigatorIconScale: number;
     customIcons: Record<string, string>;
     showFileDivider: boolean;
     fileDividerText: string;

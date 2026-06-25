@@ -94,6 +94,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     notebookNavigatorSupport: true,
     notebookNavigatorFileBackground: true,
     iconScale: 1.0,
+    notebookNavigatorIconScale: 0.8,
     customIcons: {},
     cycleOffset: 0,
     showFileDivider: false,
