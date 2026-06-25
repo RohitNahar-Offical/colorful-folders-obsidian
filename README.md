@@ -5,20 +5,20 @@
 
 ---
 
-## 🚀 Latest: 4.1.8 - Performance Optimization & Refined Active State Engine
-4.1.8 introduces major performance optimizations for large vaults, decoupling active selection styling from the dynamic stylesheet generation engine, debouncing folder icon refreshes, and refactoring integrations to prevent rendering overhead and input lag. [Full Changelog](version.md)
+## 🚀 Latest: 4.1.8 - The "Speed & Smoothness" Update
+This release focuses entirely on making Colorful Folders feel lightning-fast and incredibly smooth to use, especially for users with massive vaults and lots of other plugins. [Full Changelog](version.md)
 
-### 🚀 1. Active Selection Engine Refactor
-* **Class-Based Dynamic Highlighting**: Decoupled active path highlighting from the main stylesheet generator. Instead of rebuilding and parsing a massive CSS string on every file selection event, the plugin now dynamically applies lightweight `.cf-active-parent` classes to the DOM, eliminating file-open input lag.
-* **Notebook Navigator Integration**: Refactored the integration for the *Notebook Navigator* plugin to natively support and align with the new class-based dynamic highlight engine.
+### 🚀 1. Faster Navigation
+* **Instant Clicking**: Selecting files is now completely instant. We rebuilt the "active folder" highlighting engine from the ground up to completely eliminate input lag when opening files.
+* **Notebook Navigator Sync**: We updated the *Notebook Navigator* integration so it natively supports the new, lightning-fast active highlights.
 
-### ⚡ 2. Rendering Optimization & Debouncing
-* **Icon Refresh Debouncing**: Added a 100ms debouncer to the icon refresh cycle to prevent layout thrashing and stuttering when expanding folders rapidly.
-* **Startup & Event Optimization**: Optimized startup routines and file mutation handlers (create, delete, rename) to run on a debounced cycle, ensuring the main thread remains fully responsive during heavy vault operations.
+### ⚡ 2. Smooth Scrolling & Expanding
+* **No More Stuttering**: Rapidly expanding or collapsing folders is now buttery smooth. The plugin smartly groups visual updates to prevent your screen from freezing during intense folder management.
+* **Faster Startups & Edits**: Creating, deleting, or renaming files has been heavily optimized so Obsidian stays perfectly responsive while you work.
 
-### 🛡️ 3. MutationObserver Reactivity Filtering
-* **Eliminated Layout Thrashing**: Implemented strict class filtering on the `document.body` style observer. The plugin now only regenerates its massive `CSSStyleSheet` if a critical theme class (e.g., `theme-dark`, `theme-light`) is mutated. It actively ignores all noisy, high-frequency interaction classes from Obsidian (like `is-dragging` or `workspace-leaf-active`), completely eliminating CPU spikes during normal cursor navigation.
-* **Virtualized DOM Immunity**: Hardened the divider synchronization observer to actively ignore non-standard DOM insertions from third-party badge plugins and virtual scroll lists.
+### 🛡️ 3. Zero Drag Lag & Better Compatibility
+* **Smooth Mouse Movements**: Hovering over files, dragging items, or switching tabs will no longer cause CPU spikes. The plugin now safely ignores rapid mouse movements and only triggers visual updates when absolutely necessary (like when you switch between Light and Dark mode).
+* **Third-Party Plugin Immunity**: Colorful Folders is now much smarter at ignoring visual "noise" injected by other plugins (like file counters or virtual scroll lists), completely preventing layout flickering and infinite reload loops.
 
 ---
 
