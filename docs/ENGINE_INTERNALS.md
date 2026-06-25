@@ -13,7 +13,7 @@ Colorful Folders hooks into the Obsidian event bus to stay reactive.
 | :--- | :--- | :--- |
 | `layout-change` | `initDividerObserver` | UI recalculation on pane resizing/moving; re-attaches DOM observers. |
 | `css-change` | `generateStyles` | Theme changes (Light/Dark) invalidate contrast calculations. |
-| `file-open` | `generateStyles` | Highlights new path if "Active Path Glow" is enabled. |
+| `file-open` | `updateActiveParentClasses` | Updates the active parent/ancestor folder classes (`.cf-active-parent`) dynamically for active folder path highlighting, bypassing CSS generation. |
 | `dragstart` | `Logic Freeze` | **Performance**: Disconnects observers and suspends all styling logic during drag. |
 | `dragend` | `Logic Reconnect` | **Performance**: Restores observers and performs a clean 'catch-up' sync. |
 | `create` / `delete` / `rename` | `generateStyles` | Vault structure changes; invalidates item count and heatmap caches. |

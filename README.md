@@ -5,13 +5,16 @@
 
 ---
 
-## 🚀 Latest: 4.1.6 - The "CSS Variable Hook Engine" Update
-4.1.6 introduces the new **CSS Variable Hook Engine** for zero-specificity customization, intelligent **Color-Matched Multi-Selections**, and complete theme stability updates. [Full Changelog](version.md)
+## 🚀 Latest: 4.1.8 - Performance Optimization & Refined Active State Engine
+4.1.8 introduces major performance optimizations for large vaults, decoupling active selection styling from the dynamic stylesheet generation engine, debouncing folder icon refreshes, and refactoring integrations to prevent rendering overhead and input lag. [Full Changelog](version.md)
 
-### 🔌 1. Modern CSS Variable Hook Engine & Color-Matched Selections
-* **Dynamic Variable Hooks**: Refactored the core Traversal Engine to wrap dynamic style assignments in standard CSS custom properties (like `--cf-file-bg`, `--cf-folder-bg`, etc.) to enable seamless, non-destructive overrides in your custom snippets without using `!important`.
-* **Color-Matched Multi-Selections**: Introduced `--cf-selection-bg` to automatically shade multi-selected items with a translucent hue matching their parent folder's color, while cleanly falling back to match your accent color.
-* **Theme Stability & Compatibility**: Removed hardcoded native fallbacks from the core `styles.css` sheet, ensuring seamless compatibility with premium third-party themes (like Minimal Theme) without clobbering native theme selection variables.
+### 🚀 1. Active Selection Engine Refactor
+* **Class-Based Dynamic Highlighting**: Decoupled active path highlighting from the main stylesheet generator. Instead of rebuilding and parsing a massive CSS string on every file selection event, the plugin now dynamically applies lightweight `.cf-active-parent` classes to the DOM, eliminating file-open input lag.
+* **Notebook Navigator Integration**: Refactored the integration for the *Notebook Navigator* plugin to natively support and align with the new class-based dynamic highlight engine.
+
+### ⚡ 2. Rendering Optimization & Debouncing
+* **Icon Refresh Debouncing**: Added a 100ms debouncer to the icon refresh cycle to prevent layout thrashing and stuttering when expanding folders rapidly.
+* **Startup & Event Optimization**: Optimized startup routines and file mutation handlers (create, delete, rename) to run on a debounced cycle, ensuring the main thread remains fully responsive during heavy vault operations.
 
 ---
 
