@@ -11,14 +11,19 @@ export class ChangelogModal extends obsidian.Modal {
     }
 
     onOpen() {
-        const { contentEl } = this;
+        const { contentEl, modalEl } = this;
         contentEl.empty();
         contentEl.addClass("cf-changelog-modal");
         
+        modalEl.setCssStyles({
+            width: "800px",
+            maxWidth: "90vw"
+        });
+
         // Premium styling
         contentEl.setCssStyles({
             padding: "30px",
-            maxWidth: "700px"
+            maxWidth: "100%"
         });
 
         const header = contentEl.createDiv({ cls: "cf-changelog-header" });
