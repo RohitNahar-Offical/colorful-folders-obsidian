@@ -52,6 +52,7 @@ Representing the entire `data.json` structure. Defined in `src/common/types.ts`.
 | `notebookNavigatorSupport` | `boolean` | Enables styling for Notebook Navigator items. |
 | `notebookNavigatorFileBackground` | `boolean` | Applies background colors to NN file items. |
 | `notebookNavigatorOutlineOnly` | `boolean` | Force outline-only mode specifically for NN items. |
+| `notebookNavigatorIconScale` | `number` | Independent icon scale multiplier strictly for NN items. |
 | **System & Privacy** | | |
 | `showHiddenItems` | `boolean` | Toggles "Stealth Mode" visibility. |
 | `showRibbonIcon` | `boolean` | Displays the Stealth Mode eye icon in the sidebar. |

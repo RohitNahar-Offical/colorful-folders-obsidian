@@ -50,9 +50,9 @@ To prevent visual regressions, the plugin implements a **Strict CSS Firewall**. 
 
 ### 6. Decoupled Sizing Optimization
 Notebook Navigator cards use a denser layout than the standard sidebar. To maintain visual balance:
-- **Standard Explorer**: Icons are scaled at a **1.3em** base.
-- **Notebook Navigator**: Icons are optimized at a **1.1em** base.
-Both views still respect your global **Icon Scale** setting, but the relative proportions are tuned for each layout.
+- **Standard Explorer**: Icons are scaled at a **1.3em** base and use the **Global icon scaling** setting.
+- **Notebook Navigator**: Icons are optimized at a **1.1em** base and use the independent **Navigator icon scaling** setting (defaults to 0.8).
+This allows you to dial in the perfect icon size for the tight Notebook Navigator rows without ruining the proportions of your standard file explorer.
 
 ---
 
