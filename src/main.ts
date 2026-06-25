@@ -900,6 +900,16 @@ export default class ColorfulFoldersPlugin
         const isRelevantNode = (node: Node) => {
           if (node.nodeType !== Node.ELEMENT_NODE) return false;
           const el = node as HTMLElement;
+          
+          if (!el.classList.contains("nav-file") && 
+              !el.classList.contains("nav-folder") && 
+              !el.classList.contains("tree-item") && 
+              !el.classList.contains("nn-navitem") &&
+              !el.classList.contains("nav-file-title") &&
+              !el.classList.contains("nav-folder-title")) {
+            return false;
+          }
+
           return (
             !el.classList.contains("cf-interactive-divider") &&
             !el.classList.contains("cf-icon-wrapper") &&
@@ -966,12 +976,41 @@ export default class ColorfulFoldersPlugin
 
   initStyleObserver() {
     if (this.styleObserver) this.styleObserver.disconnect();
-    this.styleObserver = new MutationObserver(() => {
-      this.generateStylesDebounced();
+    this.styleObserver = new MutationObserver((mutations) => {
+      let shouldRegenerate = false;
+      for (const m of mutations) {
+        if (m.type === "attributes" && m.attributeName === "class") {
+          const target = m.target as HTMLElement;
+          const oldClass = m.oldValue || "";
+          const newClass = typeof target.className === 'string' ? target.className : (target.getAttribute('class') || "");
+          
+          if (oldClass === newClass) continue;
+          
+          const relevantClasses = ["theme-dark", "theme-light", "cf-show-hidden", "cf-wrap-metadata"];
+          
+          const oldClasses = oldClass.split(/\s+/);
+          const newClasses = newClass.split(/\s+/);
+
+          for (const cls of relevantClasses) {
+            const wasPresent = oldClasses.includes(cls);
+            const isPresent = newClasses.includes(cls);
+            if (wasPresent !== isPresent) {
+              shouldRegenerate = true;
+              break;
+            }
+          }
+          if (shouldRegenerate) break;
+        }
+      }
+      
+      if (shouldRegenerate) {
+        this.generateStylesDebounced();
+      }
     });
     this.styleObserver.observe(activeDocument.body, {
       attributes: true,
       attributeFilter: ["class"],
+      attributeOldValue: true,
     });
   }
 }
