@@ -12,6 +12,7 @@ import {
   anyToHex,
   parseCustomPalette,
   hashString,
+  safeEscape,
 } from "./common/utils";
 import { NotebookNavigatorIntegration } from './integrations/NotebookNavigator';
 import { ColorPickerModal } from "./ui/modals/ColorPickerModal";
@@ -38,6 +39,7 @@ export default class ColorfulFoldersPlugin
   folderCountCache: Map<string, { files: number; folders: number }> | null =
     null;
   generateStylesDebounced: obsidian.Debouncer<[], void>;
+  refreshIconsDebounced: obsidian.Debouncer<[], void>;
   dividerObserver: MutationObserver | null = null;
   styleObserver: MutationObserver | null = null;
   dividerManager: DividerManager;
@@ -74,6 +76,15 @@ export default class ColorfulFoldersPlugin
         this.dividerManager.syncDividers();
       },
       50,
+      true,
+    );
+
+    this.refreshIconsDebounced = obsidian.debounce(
+      () => {
+        if (activeDocument.body.classList.contains("cf-is-dragging")) return;
+        this.refreshIcons();
+      },
+      100,
       true,
     );
 
@@ -251,7 +262,7 @@ export default class ColorfulFoldersPlugin
     });
 
     this.registerEvent(
-      this.app.workspace.on("file-open", () => this.generateStylesDebounced()),
+      this.app.workspace.on("file-open", (file) => this.updateActiveParentClasses(file?.path || "")),
     );
     this.registerEvent(
       this.app.workspace.on("css-change", () => this.generateStyles()),
@@ -795,6 +806,22 @@ export default class ColorfulFoldersPlugin
     this.iconManager.refreshIcons();
   }
 
+  updateActiveParentClasses(activePath: string) {
+    activeDocument.querySelectorAll('.cf-active-parent').forEach(el => el.classList.remove('cf-active-parent'));
+    if (!activePath) return;
+
+    const segments = activePath.split('/');
+    let current = "";
+    for (let i = 0; i < segments.length - 1; i++) {
+      current += (current ? '/' : '') + segments[i];
+      const safePath = safeEscape(current);
+      activeDocument.querySelectorAll(`.nav-folder-title[data-path="${safePath}"]`).forEach(title => {
+        const folder = title.closest('.nav-folder, .tree-item, .nn-navitem');
+        if (folder) folder.classList.add('cf-active-parent');
+      });
+    }
+  }
+
   private isScrolling = false;
   private scrollTimeout: number | null = null;
 
@@ -900,7 +927,7 @@ export default class ColorfulFoldersPlugin
 
       if (hasRelevantChange) {
         this.processDividers();
-        this.refreshIcons();
+        this.refreshIconsDebounced();
       }
     });
 

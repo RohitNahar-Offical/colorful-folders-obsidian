@@ -68,6 +68,12 @@ export class NotebookNavigatorIntegration {
                 .notebook-navigator .nn-shortcut-item[data-path="${safePath}"]`;
     }
 
+    static getScopedActiveNavSelector(path: string): string {
+        const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        return `.notebook-navigator .cf-active-parent.nn-navitem[data-path="${safePath}"]:not(.nn-header), 
+                .notebook-navigator .cf-active-parent.nn-shortcut-item[data-path="${safePath}"]`;
+    }
+
     static getScopedFileSelector(path: string): string {
         const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
         return `.notebook-navigator .nn-file[data-path="${safePath}"]:not(.nn-header)`;
@@ -88,6 +94,11 @@ export class NotebookNavigatorIntegration {
     static getRadiantPathSelector(path: string): string {
         const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
         return `.notebook-navigator [data-path="${safePath}"] ~ .nn-virtual-container`;
+    }
+
+    static getActiveRadiantPathSelector(path: string): string {
+        const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        return `.notebook-navigator .cf-active-parent[data-path="${safePath}"] ~ .nn-virtual-container`;
     }
 
     static getNavNameSelector(): string {
@@ -311,9 +322,9 @@ export class NotebookNavigatorIntegration {
 
         // Radiant Path for NN
         let radiantCss = '';
-        if (isFolder && useRadiantPath) {
+        if (isFolder) {
             radiantCss = `
-                ${this.getRadiantPathSelector(path)} {
+                ${this.getActiveRadiantPathSelector(path)} {
                     border-left: ${nnThick}px solid rgba(${color.rgb}, 0.25) !important;
                     margin-left: 12px !important;
                     transition: border-color 0.3s ease !important;

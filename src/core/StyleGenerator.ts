@@ -32,8 +32,7 @@ export class StyleGenerator {
         const darkBrightness = (this.settings.darkModeBrightness || 0) / 100;
         const brightnessAmount = isDark ? darkBrightness : lightBrightness;
         
-        const activeFile = this.app.workspace.getActiveFile();
-        const activePath = activeFile ? activeFile.path : "";
+        const activePath = ""; // Deprecated: Managed via .cf-active-parent DOM classes
 
         const iconScale = this.settings.iconScale || 1.0;
         const wideScale = this.settings.wideAutoIcons ? 1.05 : 1.0;
@@ -832,8 +831,7 @@ export class StyleGenerator {
             `);
 
             if (passedColor) {
-                const isParentOfActive = activePath && (activePath === folder.path || activePath.startsWith(folder.path + "/"));
-                const activeSelector = `.nav-files-container .nav-folder:has(.is-active) > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) ~ .nav-folder-children, .nav-files-container .tree-item:has(.is-active) > .tree-item-self[data-path="${safePath}"]:not(.nn-navitem) ~ .tree-item-children ${isParentOfActive ? `, .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) ~ .nav-folder-children, .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-navitem) ~ .tree-item-children` : ""}`;
+                const activeSelector = `.nav-files-container .nav-folder:has(.is-active) > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) ~ .nav-folder-children, .nav-files-container .tree-item:has(.is-active) > .tree-item-self[data-path="${safePath}"]:not(.nn-navitem) ~ .tree-item-children, .nav-files-container .nav-folder.cf-active-parent > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) ~ .nav-folder-children, .nav-files-container .tree-item.cf-active-parent > .tree-item-self[data-path="${safePath}"]:not(.nn-navitem) ~ .tree-item-children`;
                 cssRules.push(`
                     ${activeSelector} {
                         border-left: ${folderThick}px solid ${passedColor.hex} !important;
@@ -846,12 +844,10 @@ export class StyleGenerator {
                     }
 
                     /* Notebook Navigator Folder Active Path (Flat-Glass) */
-                    ${isParentOfActive ? `
-                        ${NotebookNavigatorIntegration.getScopedNavSelector(folder.path)} {
-                            border-left: ${activeFolderThick}px solid ${passedColor.hex} !important;
-                            background: linear-gradient(to right, rgba(${passedColor.rgb}, 0.25), rgba(${passedColor.rgb}, 0.05)) !important;
-                        }
-                    ` : ''}
+                    ${NotebookNavigatorIntegration.getScopedActiveNavSelector(folder.path)} {
+                        border-left: ${activeFolderThick}px solid ${passedColor.hex} !important;
+                        background: linear-gradient(to right, rgba(${passedColor.rgb}, 0.25), rgba(${passedColor.rgb}, 0.05)) !important;
+                    }
                 `);
             }
         }
@@ -928,7 +924,6 @@ export class StyleGenerator {
             `);
 
             /* Notebook Navigator Folder Integration (Native-Bridge Architecture) */
-            const isParentOfActive = activePath && (activePath === child.path || activePath.startsWith(child.path + "/"));
             
             const isEmoji = this.plugin.iconManager.isEmojiIcon(folderIconId);
             const iconSvg = !isEmoji && folderIconId ? this.plugin.iconManager.getIconSvg(folderIconId, true) : "";
@@ -952,7 +947,7 @@ export class StyleGenerator {
                 tintOp,
                 baseThick,
                 this.settings.notebookNavigatorOutlineOnly,
-                !!isParentOfActive,
+                false, /* useRadiantPath is now managed via cf-active-parent statically */
                 context.nnIconW
             ));
 
