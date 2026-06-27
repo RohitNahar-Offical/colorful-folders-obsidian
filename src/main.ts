@@ -128,18 +128,16 @@ export default class ColorfulFoldersPlugin
         this.settings.lastVersion = currentVersion;
         await this.saveSettings();
 
-        // Show the collective changelog (Fetched from GitHub)
+        // Show the collective changelog (Read from local file)
         try {
-          const githubUrl = `https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/main/version.md`;
-
-          const response = await obsidian.requestUrl({ url: githubUrl });
-          if (response.status === 200) {
-            const content = response.text;
+          const versionFile = `${this.manifest.dir}/version.md`;
+          if (await this.app.vault.adapter.exists(versionFile)) {
+            const content = await this.app.vault.adapter.read(versionFile);
             new ChangelogModal(this.app, content).open();
           }
         } catch (err) {
           console.error(
-            "Colorful folders: failed to fetch collective changelog from GitHub",
+            "Colorful folders: failed to read collective changelog",
             err,
           );
         }

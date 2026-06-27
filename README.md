@@ -65,6 +65,10 @@ This release focuses entirely on making Colorful Folders feel lightning-fast and
   * **Static Premium Standards**: All animations have been decommissioned in favor of hardcoded, high-performance static visual standards (e.g., Luminous Selection) to ensure zero GPU stutter.
   * **Vault Maintenance Tools**: Includes one-click buttons to "Reset All Styling" or "Clear Icon Library", plus an Icon Debug Mode to track exactly how auto-icons are being applied.
 
+### 🌐 Network Usage & Privacy
+
+  * **External Requests:** Colorful Folders makes external network requests to `raw.githubusercontent.com` to download featured icon packs and to fetch changelogs when the plugin updates. These external calls are only made with user knowledge and do not transmit any personal data.
+
 -----
 
 ## 🛠️ Installation
