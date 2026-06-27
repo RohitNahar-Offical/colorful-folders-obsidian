@@ -719,3 +719,16 @@ body:not(.is-mobile):not(.is-grabbing) .nav-files-container .tree-item-self.is-s
         max-width: 280px;
     }
 }
+
+/* Password Shake Animation */
+@keyframes cf-shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-5px); }
+    40%, 80% { transform: translateX(5px); }
+}
+
+.is-invalid {
+    animation: cf-shake 0.4s ease-in-out;
+    border-color: var(--color-red) !important;
+    background-color: rgba(255, 0, 0, 0.05) !important;
+}
