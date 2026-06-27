@@ -15,6 +15,7 @@ import {
   safeEscape,
 } from "./common/utils";
 import { NotebookNavigatorIntegration } from './integrations/NotebookNavigator';
+import { GraphColorSync } from './integrations/GraphColorSync';
 import { ColorPickerModal } from "./ui/modals/ColorPickerModal";
 import { DividerModal } from "./ui/modals/DividerModal";
 import { ColorfulFoldersSettingTab } from "./ui/SettingTab";
@@ -195,6 +196,9 @@ export default class ColorfulFoldersPlugin
     });
 
     this.cleanDividers();
+
+    // Remove CF-generated graph groups on plugin unload
+    void GraphColorSync.clearGraphColors(this);
   }
 
   cleanDividers() {
@@ -798,6 +802,10 @@ export default class ColorfulFoldersPlugin
       !!this.settings.wrapMetadata,
     );
     this.refreshIcons();
+    // Sync folder colors to Graph View groups if the feature is enabled
+    if (this.settings.graphColorSync) {
+      void GraphColorSync.syncGraphColors(this);
+    }
   }
 
   refreshIcons() {

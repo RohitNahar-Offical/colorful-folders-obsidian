@@ -18,6 +18,8 @@ Colorful Folders hooks into the Obsidian event bus to stay reactive.
 | `dragend` | `Logic Reconnect` | **Performance**: Restores observers and performs a clean 'catch-up' sync. |
 | `create` / `delete` / `rename` | `generateStyles` | Vault structure changes; invalidates item count and heatmap caches. |
 | `scroll` (container) | `handleScroll` | Repositions interactive dividers during virtual/native list scroll. Unbound on plugin disable. |
+| `generateStyles` (post-render) | `GraphColorSync.syncGraphColors` | **Graph View**: After CSS injection, syncs folder hex colors to `.obsidian/graph.json` colorGroups if `graphColorSync` is enabled. Runs async to avoid blocking the render cycle. |
+
 
 ---
 

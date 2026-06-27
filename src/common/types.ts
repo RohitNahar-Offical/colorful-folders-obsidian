@@ -60,6 +60,7 @@ export interface ColorfulFoldersSettings {
     notebookNavigatorFileBackground: boolean;
     iconScale: number;
     notebookNavigatorIconScale: number;
+    graphColorSync: boolean;
     customIcons: Record<string, string>;
     showFileDivider: boolean;
     fileDividerText: string;

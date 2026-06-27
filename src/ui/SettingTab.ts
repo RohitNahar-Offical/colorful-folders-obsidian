@@ -138,8 +138,54 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 }));
 
         // ──────────────────────────────────────────────────────────────────────
+        // ── GRAPH VIEW SYNC CARD ──────────────────────────────────────────────
+        // ──────────────────────────────────────────────────────────────────────
+        const graphCard = makeCard(intPanel, "🕸️", "Graph View Color Sync");
+        graphCard.createEl('p', {
+            text: '💡 Tip: Colors are applied to the graph view using path-based node groups. Re-open the graph view after making changes for them to take effect.',
+            cls: 'setting-item-description'
+        }).setCssStyles({ fontSize: '0.85em', fontStyle: 'italic', marginBottom: '12px', color: 'var(--text-accent)' });
+
+        new obsidian.Setting(graphCard)
+            .setName('Sync colors to graph view')
+            .setDesc('Automatically applies your folder colors as node color groups in Obsidian\'s native graph view. Only top-level and explicitly custom-colored folders are synced. Your existing graph view groups are preserved.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.graphColorSync)
+                .onChange(async (value) => {
+                    this.plugin.settings.graphColorSync = value;
+                    await this.plugin.saveSettings();
+                    if (value) {
+                        // Import lazily at use-time to keep startup cost zero
+                        const { GraphColorSync } = await import('../integrations/GraphColorSync');
+                        await GraphColorSync.syncGraphColors(this.plugin);
+                        new obsidian.Notice('Graph View colors synced! Re-open your Graph View to see the changes.');
+                    } else {
+                        const { GraphColorSync } = await import('../integrations/GraphColorSync');
+                        await GraphColorSync.clearGraphColors(this.plugin);
+                        new obsidian.Notice('Graph View color sync disabled. CF groups removed from graph.json.');
+                    }
+                }));
+
+        new obsidian.Setting(graphCard)
+            .setName('Sync now')
+            .setDesc('Manually push the current folder colors to the graph view. Useful after changing palettes or custom colors.')
+            .addButton(btn => btn
+                .setButtonText('Sync now')
+                .setCta()
+                .onClick(async () => {
+                    if (!this.plugin.settings.graphColorSync) {
+                        new obsidian.Notice('Enable "Sync colors to Graph View" first.');
+                        return;
+                    }
+                    const { GraphColorSync } = await import('../integrations/GraphColorSync');
+                    await GraphColorSync.syncGraphColors(this.plugin);
+                    new obsidian.Notice('Graph View colors synced! Re-open your Graph View to see the changes.');
+                }));
+
+        // ──────────────────────────────────────────────────────────────────────
         // ── ICON PACKS PANEL ──────────────────────────────────────────────────
         // ──────────────────────────────────────────────────────────────────────
+
         const customIconCard = makeCard(iconPanel, "📦", "Custom icon management");
 
         const iconDesc = customIconCard.createEl("p", { text: "Add individual SVG icons or import bulk packs from the internet. All custom icons added here will appear in the icon selection grid when styling a folder or file." });
