@@ -7,8 +7,7 @@ on:
   pull_request:
     branches: [ "main" ]
 
-env:
-  # Removed FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 to allow actions to use their native environments
+# Removed FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 to allow actions to use their native environments
 
 permissions:
   id-token: write
