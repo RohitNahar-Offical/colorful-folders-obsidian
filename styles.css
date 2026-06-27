@@ -727,8 +727,9 @@ body:not(.is-mobile):not(.is-grabbing) .nav-files-container .tree-item-self.is-s
     40%, 80% { transform: translateX(5px); }
 }
 
-.is-invalid {
+body .modal input.is-invalid,
+body .modal .setting-item input.is-invalid {
     animation: cf-shake 0.4s ease-in-out;
-    border-color: var(--color-red) !important;
-    background-color: rgba(255, 0, 0, 0.05) !important;
+    border-color: var(--color-red);
+    background-color: rgba(255, 0, 0, 0.05);
 }
