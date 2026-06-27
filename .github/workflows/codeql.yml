@@ -30,8 +30,15 @@ jobs:
       uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
+        db-location: '/home/runner/work/_temp/codeql_databases'
+
+    - name: Set Node version
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
       with:
         category: "/language:${{matrix.language}}"
+        disable-incremental: true
