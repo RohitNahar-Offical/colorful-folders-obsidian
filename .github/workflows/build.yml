@@ -57,12 +57,7 @@ jobs:
           predicate-type: 'https://slsa.dev/provenance/v1.0'
           predicate-path: '.github/predicates/predicate.json'
 
-      - name: Generate artifact attestation (version.md)
-        uses: actions/attest@v1
-        with:
-          subject-path: 'version.md'
-          predicate-type: 'https://slsa.dev/provenance/v1.0'
-          predicate-path: '.github/predicates/predicate.json'
+
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -72,7 +67,6 @@ jobs:
             main.js
             manifest.json
             styles.css
-            version.md
 
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/')
@@ -82,7 +76,6 @@ jobs:
             main.js
             manifest.json
             styles.css
-            version.md
           generate_release_notes: true
           draft: false
           prerelease: false
