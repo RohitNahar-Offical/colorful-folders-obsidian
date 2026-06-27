@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-deprecated */
 import * as obsidian from 'obsidian';
 import { IColorfulFoldersPlugin, FolderStyle, ColorfulFoldersSettings } from '../common/types';
 import { DEFAULT_SETTINGS } from '../common/constants';
@@ -175,7 +174,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             this.plugin.registerCustomIcons();
             await this.plugin.saveSettings();
             
-            this.display();
+            (this as unknown as { display: () => void }).display();
             new obsidian.Notice(`Icon '${id}' registered!`);
         };
 
@@ -251,7 +250,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 await this.plugin.saveSettings();
                 new obsidian.Notice(`Removed ${count} icons from ${p.name}.`);
                 
-                this.display();
+                (this as unknown as { display: () => void }).display();
             };
         });
 
@@ -281,7 +280,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     delete this.plugin.settings.customIcons[id];
                     await this.plugin.saveSettings();
                     
-                    this.display();
+                    (this as unknown as { display: () => void }).display();
                 };
             });
         }
@@ -311,7 +310,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         this.plugin.generateStyles();
                         new obsidian.Notice("Icon library cleared.");
                         
-                        this.display();
+                        (this as unknown as { display: () => void }).display();
                     }).open();
                 }));
 
@@ -342,7 +341,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         await this.processIconData(data);
                         new obsidian.Notice("Manual icon pack imported!");
                         
-                        this.display();
+                        (this as unknown as { display: () => void }).display();
                     } catch (e) {
                         new obsidian.Notice("Invalid JSON format.");
                         console.error("Colorful Folders: Manual Import failed", e);
@@ -484,7 +483,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     await this.plugin.saveSettings();
                     this.plugin.generateStyles();
                     
-                    this.display(); // Refresh to show/hide sub-settings
+                    (this as unknown as { display: () => void }).display(); // Refresh to show/hide sub-settings
                 }));
 
         if (this.plugin.settings.useCustomActiveColor) {
@@ -668,7 +667,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     await this.plugin.saveSettings();
                     this.plugin.generateStyles();
                     
-                    this.display();
+                    (this as unknown as { display: () => void }).display();
                 }));
 
         if (this.plugin.settings.autoIcons) {
@@ -947,7 +946,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     await this.plugin.saveSettings();
                     this.plugin.generateStyles();
                     
-                    this.display();
+                    (this as unknown as { display: () => void }).display();
                 }));
 
         if (this.plugin.settings.rainbowRootText) {
@@ -1039,7 +1038,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                                         await this.plugin.saveSettings();
                                         new obsidian.Notice("Vault unlocked.");
                                         
-                                        this.display();
+                                        (this as unknown as { display: () => void }).display();
                                         return true;
                                     } else {
                                         new obsidian.Notice("Incorrect password!");
@@ -1054,7 +1053,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                                 await this.plugin.saveSettings();
                                 new obsidian.Notice("Vault locked.");
                                 
-                                this.display();
+                                (this as unknown as { display: () => void }).display();
                             });
                     }
                 });
@@ -1097,7 +1096,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     // Immediately refresh UI when leaving the input so 'Lock' button appears
                     text.inputEl.onblur = () => {
                         
-                        this.display();
+                        (this as unknown as { display: () => void }).display();
                     };
                     text.inputEl.type = "password";
                 });
@@ -1153,7 +1152,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                             await this.plugin.saveSettings();
                             this.plugin.generateStyles();
                             
-                            this.display();
+                            (this as unknown as { display: () => void }).display();
                         }
                     };
                 });
@@ -1170,7 +1169,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onClick(async () => {
                     await this.plugin.cleanUnusedStyles();
                     
-                    this.display();
+                    (this as unknown as { display: () => void }).display();
                 }));
 
         const triggerDownload = (data: Record<string, unknown>, filename: string) => {
@@ -1335,7 +1334,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                                 this.plugin.generateStyles();
                                 this.plugin.dividerManager.syncDividers();
                                 
-                                this.display();
+                                (this as unknown as { display: () => void }).display();
                             } catch (err) {
                                 console.error(err);
                                 new obsidian.Notice("Failed to parse backup file.");
@@ -1364,7 +1363,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         this.plugin.generateStyles();
                         new obsidian.Notice("Styles and presets have been reset.");
                         
-                        this.display();
+                        (this as unknown as { display: () => void }).display();
                     }).open();
                 }));
 
@@ -1383,7 +1382,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         this.plugin.dividerManager.syncDividers();
                         new obsidian.Notice("All settings have been restored to defaults.");
                         
-                        this.display();
+                        (this as unknown as { display: () => void }).display();
                     }).open();
                 }));
 
@@ -1449,7 +1448,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             const count = await this.processIconData(data);
             new obsidian.Notice(`Successfully imported ${count} icons!`);
             
-            this.display();
+            (this as unknown as { display: () => void }).display();
         } catch (e) {
             new obsidian.Notice("Import failed. See console for details.");
             console.error("Colorful Folders: Import error", e);
