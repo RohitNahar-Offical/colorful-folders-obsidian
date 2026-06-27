@@ -76,7 +76,6 @@ jobs:
             main.js
             manifest.json
             styles.css
-          body_path: version.md
           generate_release_notes: true
           draft: false
           prerelease: false

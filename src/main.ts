@@ -129,34 +129,11 @@ export default class ColorfulFoldersPlugin
         this.settings.lastVersion = currentVersion;
         await this.saveSettings();
 
-        // Show the changelog. Strategy:
-        // 1. Try reading the local version.md (available for BRAT/dev installs).
-        // 2. If missing (community plugin updater only ships main.js/manifest/styles),
-        //    fall back to fetching the release body from the GitHub Releases API,
-        //    which already contains the changelog because our workflow sets body_path: version.md.
+        // Show the changelog from local version.md if it exists
         try {
-          let content: string | null = null;
-
-          // Attempt 1: local file
           const versionFile = `${this.manifest.dir}/version.md`;
           if (await this.app.vault.adapter.exists(versionFile)) {
-            content = await this.app.vault.adapter.read(versionFile);
-          }
-
-          // Attempt 2: GitHub Releases API (tag-based for the exact version)
-          if (!content) {
-            const apiUrl = `https://api.github.com/repos/RohitNahar-Offical/colorful-folders-obsidian/releases/tags/${currentVersion}`;
-            const resp = await obsidian.requestUrl({
-              url: apiUrl,
-              headers: { 'Accept': 'application/vnd.github+json' }
-            });
-            if (resp.status === 200) {
-              const release = resp.json as { body?: string };
-              if (release.body) content = release.body;
-            }
-          }
-
-          if (content) {
+            const content = await this.app.vault.adapter.read(versionFile);
             new ChangelogModal(this.app, content).open();
           }
         } catch (err) {
