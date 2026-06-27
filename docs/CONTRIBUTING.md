@@ -78,3 +78,5 @@ To add a featured pack (like "Remix Icons"):
 
 > [!IMPORTANT]
 > Always run `npm run lint` before committing. We maintain a zero-warning policy to satisfy Obsidian's strict plugin requirements.
+> 
+> **Package Updates**: When updating the `obsidian` type definitions package (e.g., to fix API deprecations or type resolution errors), ALWAYS simultaneously update the linter-related packages (such as `eslint` and `eslint-plugin-obsidianmd`) to ensure type definitions and linting rules remain perfectly synchronized and do not produce mismatched "unsafe type" errors.

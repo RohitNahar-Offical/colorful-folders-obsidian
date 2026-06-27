@@ -13,3 +13,7 @@ This release focuses entirely on making Colorful Folders feel lightning-fast and
 ### 🛡️ 3. Zero Drag Lag & Better Compatibility (MutationObserver Reactivity Filtering)
 - **Smooth Mouse Movements**: Hovering over files, dragging items, or switching tabs will no longer cause CPU spikes. We implemented strict class filtering on the `document.body` style observer. The plugin now only regenerates its massive `CSSStyleSheet` if a critical theme class (e.g., `theme-dark`, `theme-light`) is mutated, actively ignoring noisy interaction classes (like `is-dragging` or `workspace-leaf-active`).
 - **Third-Party Plugin Immunity**: Colorful Folders is now much smarter at ignoring visual "noise" injected by other plugins. We hardened the divider synchronization observer to actively ignore non-standard DOM insertions from third-party badge plugins and virtual scroll lists.
+
+### 🛠️ 4. Obsidian 1.13+ API Compatibility
+- **Deprecation Fixes**: Addressed developer console warnings by migrating to the new `.setDestructive()` API for buttons and removing deprecated slider tooltips.
+- **Linter Compliance**: Updated project typing to fully align with the latest `obsidian` API definitions.
