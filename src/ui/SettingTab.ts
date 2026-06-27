@@ -299,10 +299,10 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         new obsidian.Setting(maintCard)
             .setName('Clear icon library')
             .setDesc('Permanently deletes all imported icon packs.')
-            .addButton(btn => btn
-                .setButtonText('Clear icon library')
-                .setDestructive()
-                .onClick(() => {
+            .addButton(btn => {
+                btn.setButtonText('Clear icon library');
+                (btn as unknown as { setWarning: () => typeof btn }).setWarning();
+                btn.onClick(() => {
                     new ConfirmModal(this.app, "Clear icon library", "Are you sure you want to delete ALL custom icons?", async () => {
                         this.plugin.settings.customIcons = {};
                         this.plugin.registerCustomIcons();
@@ -312,7 +312,8 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         
                         (this as unknown as { display: () => void }).display();
                     }).open();
-                }));
+                });
+            });
 
         const manImportCard = makeCard(iconPanel, "📥", "Manual icon pack import");
         const packDesc = manImportCard.createEl('p', { text: 'You can manually paste the JSON content of an icon pack below to import it.' });
@@ -1352,10 +1353,10 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         new obsidian.Setting(dbCard)
             .setName('Reset styles and presets')
             .setDesc('Danger: this will permanently remove all custom colors, icons, and individual folder styles. Presets are also cleared.')
-            .addButton(btn => btn
-                .setButtonText('Reset styling')
-                .setDestructive()
-                .onClick(() => {
+            .addButton(btn => {
+                btn.setButtonText('Reset styling');
+                (btn as unknown as { setWarning: () => typeof btn }).setWarning();
+                btn.onClick(() => {
                     new ConfirmModal(this.app, "Reset styles and presets", "Are you sure you want to delete all custom styling and presets? This cannot be undone.", async () => {
                         this.plugin.settings.customFolderColors = {};
                         this.plugin.settings.presets = {};
@@ -1365,15 +1366,16 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         
                         (this as unknown as { display: () => void }).display();
                     }).open();
-                }));
+                });
+            });
 
         new obsidian.Setting(dbCard)
             .setName('Factory reset')
             .setDesc('Critical: this will reset every setting in the plugin to its original default state, including opacities, toggles, and all custom data.')
-            .addButton(btn => btn
-                .setButtonText('Hard reset everything')
-                .setDestructive()
-                .onClick(() => {
+            .addButton(btn => {
+                btn.setButtonText('Hard reset everything');
+                (btn as unknown as { setWarning: () => typeof btn }).setWarning();
+                btn.onClick(() => {
                     new ConfirmModal(this.app, "Factory reset", "Are you sure you want to restore all settings to default? This will wipe ALL your customization!", async () => {
                         this.plugin.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS)) as ColorfulFoldersSettings;
                         await this.plugin.saveSettings();
@@ -1384,7 +1386,8 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         
                         (this as unknown as { display: () => void }).display();
                     }).open();
-                }));
+                });
+            });
 
 
     }

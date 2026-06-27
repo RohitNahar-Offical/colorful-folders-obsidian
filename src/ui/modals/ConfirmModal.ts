@@ -18,13 +18,14 @@ export class ConfirmModal extends obsidian.Modal {
         contentEl.createEl('p', { text: this.message });
 
         new obsidian.Setting(contentEl)
-            .addButton(btn => btn
-                .setButtonText('Confirm')
-                .setDestructive()
-                .onClick(async () => {
+            .addButton(btn => {
+                btn.setButtonText('Confirm');
+                (btn as unknown as { setWarning: () => typeof btn }).setWarning();
+                btn.onClick(async () => {
                     await this.onConfirm();
                     this.close();
-                }))
+                });
+            })
             .addButton(btn => btn
                 .setButtonText('Cancel')
                 .onClick(() => {
