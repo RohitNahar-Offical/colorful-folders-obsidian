@@ -20,6 +20,11 @@ This release focuses entirely on making Colorful Folders feel lightning-fast and
 * **Smooth Mouse Movements**: Hovering over files, dragging items, or switching tabs will no longer cause CPU spikes. The plugin now safely ignores rapid mouse movements and only triggers visual updates when absolutely necessary (like when you switch between Light and Dark mode).
 * **Third-Party Plugin Immunity**: Colorful Folders is now much smarter at ignoring visual "noise" injected by other plugins (like file counters or virtual scroll lists), completely preventing layout flickering and infinite reload loops.
 
+### 🛠️ 4. Obsidian 1.13+ API Compatibility & Legacy Support
+* **Deprecation Fixes**: Safely bypassed developer console warnings for older APIs (like `setWarning()` and `display()`) instead of migrating to newer ones, guaranteeing that the plugin remains fully backwards-compatible with Obsidian 1.4.4+.
+* **CSS Optimization**: Improved CSS selector specificity (e.g. `.is-invalid` fields) and removed all `!important` flags for a cleaner styles structure.
+* **Linter Compliance**: Updated project typing to align with the latest `obsidian` API definitions while preserving backwards compatibility.
+
 ---
 
 ## ✨ Core Features

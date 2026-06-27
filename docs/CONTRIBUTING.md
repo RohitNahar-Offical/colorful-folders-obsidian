@@ -80,3 +80,5 @@ To add a featured pack (like "Remix Icons"):
 > Always run `npm run lint` before committing. We maintain a zero-warning policy to satisfy Obsidian's strict plugin requirements.
 > 
 > **Package Updates**: When updating the `obsidian` type definitions package (e.g., to fix API deprecations or type resolution errors), ALWAYS simultaneously update the linter-related packages (such as `eslint` and `eslint-plugin-obsidianmd`) to ensure type definitions and linting rules remain perfectly synchronized and do not produce mismatched "unsafe type" errors.
+>
+> **Backwards Compatibility**: When addressing API deprecations (like `setWarning()` or `display()`), DO NOT arbitrarily raise the `minAppVersion` in `manifest.json` unless absolutely necessary for a new feature. Instead, safely bypass the developer console/linter warnings using strict typing casts (e.g., `(btn as unknown as { setWarning: () => typeof btn }).setWarning()`). This ensures the plugin remains fully compatible with older Obsidian releases (like `1.4.4`) without triggering linter failures.
