@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-deprecated */
 import * as obsidian from 'obsidian';
 import { IColorfulFoldersPlugin, FolderStyle, ColorfulFoldersSettings } from '../common/types';
 import { DEFAULT_SETTINGS } from '../common/constants';
@@ -130,7 +131,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .addSlider(slider => slider
                 .setLimits(0.5, 2.5, 0.1)
                 .setValue(this.plugin.settings.notebookNavigatorIconScale ?? 0.8)
-                .setDynamicTooltip()
+                
                 .onChange(async (value) => {
                     this.plugin.settings.notebookNavigatorIconScale = value;
                     await this.plugin.saveSettings();
@@ -173,6 +174,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             this.plugin.settings.customIcons[id] = svg;
             this.plugin.registerCustomIcons();
             await this.plugin.saveSettings();
+            
             this.display();
             new obsidian.Notice(`Icon '${id}' registered!`);
         };
@@ -248,6 +250,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 this.plugin.registerCustomIcons();
                 await this.plugin.saveSettings();
                 new obsidian.Notice(`Removed ${count} icons from ${p.name}.`);
+                
                 this.display();
             };
         });
@@ -277,6 +280,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     e.stopPropagation();
                     delete this.plugin.settings.customIcons[id];
                     await this.plugin.saveSettings();
+                    
                     this.display();
                 };
             });
@@ -298,7 +302,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .setDesc('Permanently deletes all imported icon packs.')
             .addButton(btn => btn
                 .setButtonText('Clear icon library')
-                .setWarning()
+                .setDestructive()
                 .onClick(() => {
                     new ConfirmModal(this.app, "Clear icon library", "Are you sure you want to delete ALL custom icons?", async () => {
                         this.plugin.settings.customIcons = {};
@@ -306,6 +310,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         await this.plugin.saveSettings();
                         this.plugin.generateStyles();
                         new obsidian.Notice("Icon library cleared.");
+                        
                         this.display();
                     }).open();
                 }));
@@ -336,6 +341,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         const data = JSON.parse(manualJson) as Record<string, unknown>;
                         await this.processIconData(data);
                         new obsidian.Notice("Manual icon pack imported!");
+                        
                         this.display();
                     } catch (e) {
                         new obsidian.Notice("Invalid JSON format.");
@@ -433,7 +439,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .addSlider(slider => slider
                     .setLimits(0, 20, 1)
                     .setValue(this.plugin.settings.cycleOffset || 0)
-                    .setDynamicTooltip()
+                    
                     .onChange(async (value) => {
                         this.plugin.settings.cycleOffset = value;
                         await this.plugin.saveSettings();
@@ -477,6 +483,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     this.plugin.settings.useCustomActiveColor = value;
                     await this.plugin.saveSettings();
                     this.plugin.generateStyles();
+                    
                     this.display(); // Refresh to show/hide sub-settings
                 }));
 
@@ -620,7 +627,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .addSlider(slider => slider
                 .setLimits(0.5, 2.5, 0.1)
                 .setValue(this.plugin.settings.iconScale || 1.0)
-                .setDynamicTooltip()
+                
                 .onChange(async (value) => {
                     this.plugin.settings.iconScale = value;
                     await this.plugin.saveSettings();
@@ -660,6 +667,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     this.plugin.settings.autoIcons = value;
                     await this.plugin.saveSettings();
                     this.plugin.generateStyles();
+                    
                     this.display();
                 }));
 
@@ -842,7 +850,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .addSlider(slider => slider
                 .setLimits(4, 40, 2)
                 .setValue(this.plugin.settings.dividerSpacing || 16)
-                .setDynamicTooltip()
+                
                 .onChange(async (value) => {
                     this.plugin.settings.dividerSpacing = value;
                     await this.plugin.saveSettings();
@@ -854,7 +862,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .addSlider(slider => slider
                 .setLimits(1, 10, 0.5)
                 .setValue(this.plugin.settings.dividerThickness || 1.5)
-                .setDynamicTooltip()
+                
                 .onChange(async (value) => {
                     this.plugin.settings.dividerThickness = value;
                     await this.plugin.saveSettings();
@@ -868,7 +876,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .addSlider(slider => slider
                 .setLimits(-10, 40, 1)
                 .setValue(this.plugin.settings.dividerLinePaddingLeft ?? 8)
-                .setDynamicTooltip()
+                
                 .onChange(async (value) => {
                     this.plugin.settings.dividerLinePaddingLeft = value;
                     await this.plugin.saveSettings();
@@ -882,7 +890,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .addSlider(slider => slider
                 .setLimits(-10, 40, 1)
                 .setValue(this.plugin.settings.dividerLinePaddingRight ?? 8)
-                .setDynamicTooltip()
+                
                 .onChange(async (value) => {
                     this.plugin.settings.dividerLinePaddingRight = value;
                     await this.plugin.saveSettings();
@@ -911,7 +919,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .addSlider(slider => slider
                 .setLimits(1, 10, 0.5)
                 .setValue(this.plugin.settings.pathLineThickness ?? 2.0)
-                .setDynamicTooltip()
+                
                 .onChange(async (value) => {
                     this.plugin.settings.pathLineThickness = value;
                     await this.plugin.saveSettings();
@@ -938,6 +946,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     this.plugin.settings.rainbowRootText = value;
                     await this.plugin.saveSettings();
                     this.plugin.generateStyles();
+                    
                     this.display();
                 }));
 
@@ -962,7 +971,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .addSlider(slider => slider
                 .setLimits(1, 100, 1)
                 .setValue(this.plugin.settings.rootOpacity * 100)
-                .setDynamicTooltip()
+                
                 .onChange(async (value) => {
                     this.plugin.settings.rootOpacity = parseFloat((value / 100).toFixed(3));
                     await this.plugin.saveSettings();
@@ -975,7 +984,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .addSlider(slider => slider
                 .setLimits(1, 100, 1)
                 .setValue(this.plugin.settings.subfolderOpacity * 100)
-                .setDynamicTooltip()
+                
                 .onChange(async (value) => {
                     this.plugin.settings.subfolderOpacity = parseFloat((value / 100).toFixed(3));
                     await this.plugin.saveSettings();
@@ -988,7 +997,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .addSlider(slider => slider
                 .setLimits(0, 100, 1)
                 .setValue(this.plugin.settings.tintOpacity * 100)
-                .setDynamicTooltip()
+                
                 .onChange(async (value) => {
                     this.plugin.settings.tintOpacity = parseFloat((value / 100).toFixed(3));
                     await this.plugin.saveSettings();
@@ -1002,7 +1011,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .addSlider(slider => slider
                 .setLimits(0, 100, 1)
                 .setValue((this.plugin.settings.fileBackgroundOpacity !== undefined ? this.plugin.settings.fileBackgroundOpacity : 0.1) * 100)
-                .setDynamicTooltip()
+                
                 .onChange(async (value) => {
                     this.plugin.settings.fileBackgroundOpacity = parseFloat((value / 100).toFixed(3));
                     await this.plugin.saveSettings();
@@ -1029,6 +1038,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                                         this.plugin.settings.isVaultLocked = false;
                                         await this.plugin.saveSettings();
                                         new obsidian.Notice("Vault unlocked.");
+                                        
                                         this.display();
                                         return true;
                                     } else {
@@ -1043,6 +1053,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                                 this.plugin.settings.isVaultLocked = true;
                                 await this.plugin.saveSettings();
                                 new obsidian.Notice("Vault locked.");
+                                
                                 this.display();
                             });
                     }
@@ -1085,6 +1096,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
                     // Immediately refresh UI when leaving the input so 'Lock' button appears
                     text.inputEl.onblur = () => {
+                        
                         this.display();
                     };
                     text.inputEl.type = "password";
@@ -1140,6 +1152,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                             style.isHidden = false;
                             await this.plugin.saveSettings();
                             this.plugin.generateStyles();
+                            
                             this.display();
                         }
                     };
@@ -1156,6 +1169,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .setButtonText('Clean up stale data')
                 .onClick(async () => {
                     await this.plugin.cleanUnusedStyles();
+                    
                     this.display();
                 }));
 
@@ -1320,6 +1334,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                                 await this.plugin.saveSettings();
                                 this.plugin.generateStyles();
                                 this.plugin.dividerManager.syncDividers();
+                                
                                 this.display();
                             } catch (err) {
                                 console.error(err);
@@ -1340,7 +1355,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .setDesc('Danger: this will permanently remove all custom colors, icons, and individual folder styles. Presets are also cleared.')
             .addButton(btn => btn
                 .setButtonText('Reset styling')
-                .setWarning()
+                .setDestructive()
                 .onClick(() => {
                     new ConfirmModal(this.app, "Reset styles and presets", "Are you sure you want to delete all custom styling and presets? This cannot be undone.", async () => {
                         this.plugin.settings.customFolderColors = {};
@@ -1348,6 +1363,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         await this.plugin.saveSettings();
                         this.plugin.generateStyles();
                         new obsidian.Notice("Styles and presets have been reset.");
+                        
                         this.display();
                     }).open();
                 }));
@@ -1357,7 +1373,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .setDesc('Critical: this will reset every setting in the plugin to its original default state, including opacities, toggles, and all custom data.')
             .addButton(btn => btn
                 .setButtonText('Hard reset everything')
-                .setWarning()
+                .setDestructive()
                 .onClick(() => {
                     new ConfirmModal(this.app, "Factory reset", "Are you sure you want to restore all settings to default? This will wipe ALL your customization!", async () => {
                         this.plugin.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS)) as ColorfulFoldersSettings;
@@ -1366,6 +1382,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         this.plugin.dividerManager.clean();
                         this.plugin.dividerManager.syncDividers();
                         new obsidian.Notice("All settings have been restored to defaults.");
+                        
                         this.display();
                     }).open();
                 }));
@@ -1431,6 +1448,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             const data = res.json as Record<string, unknown>;
             const count = await this.processIconData(data);
             new obsidian.Notice(`Successfully imported ${count} icons!`);
+            
             this.display();
         } catch (e) {
             new obsidian.Notice("Import failed. See console for details.");

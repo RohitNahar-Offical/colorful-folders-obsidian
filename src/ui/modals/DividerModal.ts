@@ -309,7 +309,7 @@ export class DividerModal extends obsidian.Modal {
             .addSlider(s => s
                 .setLimits(-10, 40, 1)
                 .setValue(this.config.paddingLeft)
-                .setDynamicTooltip()
+                
                 .onChange(v => {
                     this.config.paddingLeft = v;
                     this._liveSync();
@@ -320,7 +320,7 @@ export class DividerModal extends obsidian.Modal {
             .addSlider(s => s
                 .setLimits(-10, 40, 1)
                 .setValue(this.config.paddingRight)
-                .setDynamicTooltip()
+                
                 .onChange(v => {
                     this.config.paddingRight = v;
                     this._liveSync();

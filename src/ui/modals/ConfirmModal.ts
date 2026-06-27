@@ -20,7 +20,7 @@ export class ConfirmModal extends obsidian.Modal {
         new obsidian.Setting(contentEl)
             .addButton(btn => btn
                 .setButtonText('Confirm')
-                .setWarning()
+                .setDestructive()
                 .onClick(async () => {
                     await this.onConfirm();
                     this.close();
