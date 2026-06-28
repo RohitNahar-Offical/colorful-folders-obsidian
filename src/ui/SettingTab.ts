@@ -146,6 +146,11 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             cls: 'setting-item-description'
         }).setCssStyles({ fontSize: '0.85em', fontStyle: 'italic', marginBottom: '12px', color: 'var(--text-accent)' });
 
+        graphCard.createEl('p', {
+            text: 'How it works: To prevent bloating your graph settings, the plugin only syncs (1) all top-level folders and (2) any subfolders where you have explicitly picked a custom color using the color picker. Subfolders that just inherit their color automatically are skipped.',
+            cls: 'setting-item-description'
+        }).setCssStyles({ fontSize: '0.85em', color: 'var(--text-muted)', marginBottom: '16px' });
+
         new obsidian.Setting(graphCard)
             .setName('Sync colors to graph view')
             .setDesc('Automatically applies your folder colors as node color groups in Obsidian\'s native graph view. Only top-level and explicitly custom-colored folders are synced. Your existing graph view groups are preserved.')
