@@ -31,7 +31,7 @@ export default class ColorfulFoldersPlugin
   extends obsidian.Plugin
   implements IColorfulFoldersPlugin
 {
-  settings: ColorfulFoldersSettings;
+  declare settings: ColorfulFoldersSettings;
   iconManager: IconManager;
   sheet: CSSStyleSheet;
 
