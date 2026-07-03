@@ -187,23 +187,6 @@ export class StyleGenerator {
                 opacity: 1 !important;
             }
 
-            /* Strip heavy effects from the drag ghost itself to ensure native 60fps movement */
-            .is-being-dragged, .is-being-dragged * {
-                transition: none !important;
-                animation: none !important;
-                filter: none !important;
-                backdrop-filter: none !important;
-                -webkit-backdrop-filter: none !important;
-                box-shadow: none !important;
-                background-image: none !important;
-                border-color: transparent !important;
-            }
-
-            /* Hide SVG icons inside the drag ghost as they cause severe rasterization lag */
-            .is-being-dragged .cf-icon-wrapper {
-                display: none !important;
-            }
-
             /* Suspend heavy backgrounds and borders during drag */
             body.cf-is-dragging .nav-folder-title,
             body.cf-is-dragging .nav-file-title,

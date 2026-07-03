@@ -316,11 +316,38 @@ export default class ColorfulFoldersPlugin
 
     // Performance: Detect drag operations to suspend expensive animations and logic
     const doc = activeDocument;
-    this.registerDomEvent(doc, "dragstart", () => {
+    this.registerDomEvent(doc, "dragstart", (e: DragEvent) => {
       this.isDragging = true;
       activeDocument.body.classList.add("cf-is-dragging");
       if (this.dividerObserver) {
           this.dividerObserver.disconnect();
+      }
+
+      // Fix slow-motion drag ghost: generate a lightweight dummy element instead of the heavy DOM snapshot
+      if (e.dataTransfer && e.target instanceof HTMLElement) {
+          const titleEl = e.target.querySelector('.nav-folder-title-content, .nav-file-title-content');
+          const innerText = titleEl ? (titleEl as HTMLElement).innerText.trim() : e.target.innerText.trim();
+          
+          const dummy = activeDocument.createElement("div");
+          dummy.textContent = innerText || "Dragging...";
+          dummy.style.position = "absolute";
+          dummy.style.top = "-1000px";
+          dummy.style.left = "-1000px";
+          dummy.style.padding = "4px 10px";
+          dummy.style.background = "var(--background-secondary, #333)";
+          dummy.style.color = "var(--text-normal, #fff)";
+          dummy.style.borderRadius = "4px";
+          dummy.style.border = "1px solid var(--background-modifier-border)";
+          dummy.style.whiteSpace = "nowrap";
+          dummy.style.pointerEvents = "none";
+          
+          activeDocument.body.appendChild(dummy);
+          
+          // Override the heavy raster snapshot with our simple DIV
+          e.dataTransfer.setDragImage(dummy, -10, -10);
+          
+          // Instantly clean up the DOM once the snapshot is securely captured
+          setTimeout(() => dummy.remove(), 0);
       }
     });
     
