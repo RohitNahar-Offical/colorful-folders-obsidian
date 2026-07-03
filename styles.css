@@ -739,7 +739,11 @@ body .modal .setting-item input.is-invalid {
 body > .drag-ghost,
 body > .workspace-drag-ghost,
 .drag-ghost,
-.workspace-drag-ghost {
+.workspace-drag-ghost,
+.workspace-leaf-drag-ghost,
+[class*="drag-ghost"],
+body.cf-is-dragging .drag-ghost,
+body.is-grabbing .drag-ghost {
     background-color: var(--background-secondary, #333) !important;
     background-image: none !important;
     box-shadow: none !important;
@@ -754,7 +758,11 @@ body > .workspace-drag-ghost,
 body > .drag-ghost *,
 body > .workspace-drag-ghost *,
 .drag-ghost *,
-.workspace-drag-ghost * {
+.workspace-drag-ghost *,
+.workspace-leaf-drag-ghost *,
+[class*="drag-ghost"] *,
+body.cf-is-dragging .drag-ghost *,
+body.is-grabbing .drag-ghost * {
     background-color: transparent !important;
     background-image: none !important;
     box-shadow: none !important;
@@ -768,6 +776,7 @@ body > .workspace-drag-ghost *,
 
 /* Instantly hide custom SVG icons in the drag ghost to prevent rendering lag */
 .drag-ghost .cf-icon-wrapper,
-.workspace-drag-ghost .cf-icon-wrapper {
+.workspace-drag-ghost .cf-icon-wrapper,
+[class*="drag-ghost"] .cf-icon-wrapper {
     display: none !important;
 }
