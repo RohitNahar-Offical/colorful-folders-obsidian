@@ -908,6 +908,10 @@ export default class ColorfulFoldersPlugin
     this.scrollTimeout = win.setTimeout(() => {
       this.isScrolling = false;
       this.processDividers();
+      // FIX 1: Single catch-up icon refresh after scroll stops.
+      // This ensures any nodes recycled by Obsidian's virtual list
+      // during the scroll are correctly decorated after motion ends.
+      this.refreshIconsDebounced();
     }, 100);
   };
 
@@ -1011,7 +1015,24 @@ export default class ColorfulFoldersPlugin
 
       if (hasRelevantChange) {
         this.processDividers();
-        this.refreshIconsDebounced();
+        // FIX 1: Do NOT call refreshIconsDebounced during scroll.
+        // The scroll handler already queues a catch-up refresh after scroll stops.
+        // FIX 2: For non-scroll mutations (expand/collapse/new file), inject icons
+        // only on the specific nodes that changed (O(N-changed) vs O(N-total)).
+        if (!this.isScrolling) {
+          const addedNodes = mutations
+            .flatMap(m => Array.from(m.addedNodes));
+          if (addedNodes.length > 0) {
+            // Targeted: inject only into the nodes that just appeared
+            const nodelist = {
+              forEach: (cb: (node: Node) => void) => addedNodes.forEach(cb),
+            } as unknown as NodeList;
+            this.iconManager.injectIconsForNodes(nodelist);
+          } else {
+            // Fallback for remove-only mutations (e.g., folder collapse)
+            this.refreshIconsDebounced();
+          }
+        }
       }
     });
 

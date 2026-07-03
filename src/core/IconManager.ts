@@ -11,6 +11,13 @@ export class IconManager {
     private _customRulesKey: string = '';
     private _normCache: Map<string, string> = new Map();
 
+    // --- FIX 3: RAF-batched injection queue ---
+    // Pending icon injections are collected synchronously and flushed
+    // in a single requestAnimationFrame to avoid interleaved read/write
+    // layout thrashing when many icons need to be rendered at once.
+    private _pendingInjections: Array<{ el: HTMLElement; style: FolderStyle }> = [];
+    private _rafPending = false;
+
     constructor(plugin: IColorfulFoldersPlugin) {
         this.plugin = plugin;
     }
@@ -151,7 +158,8 @@ export class IconManager {
 
                 const style = this.plugin.getStyle(path);
                 if (style && style.iconId) {
-                    this.injectIcon(item as HTMLElement, style);
+                    // FIX 3: Route through RAF queue so bulk renders don't thrash layout
+                    this._queueInjection(item as HTMLElement, style);
                 } else {
                     this.removeInjectedIcon(item as HTMLElement);
                 }
@@ -160,15 +168,89 @@ export class IconManager {
     }
 
     /**
-     * Injects a specific icon into an element.
+     * FIX 2: Targeted injection for specific nodes from a MutationRecord.
+     * Instead of re-scanning the entire explorer container (O(N-total)),
+     * this only processes the nodes that actually changed (O(N-changed)),
+     * which is typically 1-5 nodes during a virtual-list scroll recycle.
+     */
+    injectIconsForNodes(nodes: NodeList) {
+        nodes.forEach(node => {
+            if (node.nodeType !== Node.ELEMENT_NODE) return;
+            const el = node as HTMLElement;
+
+            // The added node could be the title element itself, or a parent wrapper.
+            // Check the node and its direct title child.
+            const titleSelectors = '.nav-folder-title, .nav-file-title, .tree-item-self';
+            const candidates: HTMLElement[] = [];
+            if (el.matches(titleSelectors)) {
+                candidates.push(el);
+            } else {
+                el.querySelectorAll<HTMLElement>(titleSelectors).forEach(c => candidates.push(c));
+            }
+
+            for (const titleEl of candidates) {
+                const path = titleEl.dataset.path;
+                if (!path) continue;
+                const style = this.plugin.getStyle(path);
+                if (style && style.iconId) {
+                    this._queueInjection(titleEl, style);
+                } else {
+                    this.removeInjectedIcon(titleEl);
+                }
+            }
+        });
+    }
+
+    /** FIX 3: Enqueue an icon injection to be flushed on the next animation frame. */
+    private _queueInjection(el: HTMLElement, style: FolderStyle) {
+        this._pendingInjections.push({ el, style });
+        if (!this._rafPending) {
+            this._rafPending = true;
+            requestAnimationFrame(() => {
+                this._flushInjections();
+                this._rafPending = false;
+            });
+        }
+    }
+
+    /** FIX 3: Execute all queued injections in one batch. */
+    private _flushInjections() {
+        const batch = this._pendingInjections.splice(0);
+        for (const { el, style } of batch) {
+            this._doInjectIcon(el, style);
+        }
+    }
+
+    /**
+     * Public entry point: routes through the RAF queue for scroll-safe rendering.
      */
     injectIcon(el: HTMLElement, style: FolderStyle) {
+        this._queueInjection(el, style);
+    }
+
+    /**
+     * FIX 3 + 4: The actual synchronous injection work, called only from _flushInjections.
+     * Contains the FIX 4 version-stamp early-exit guard.
+     */
+    private _doInjectIcon(el: HTMLElement, style: FolderStyle) {
         if (!style.iconId) return;
 
         // Get RAW cleaned SVG
         const svgStr = this.getIconSvg(style.iconId, false);
         if (!svgStr) {
             this.removeInjectedIcon(el);
+            return;
+        }
+
+        const color = style.iconColor || style.hex || style.textColor || 'var(--text-normal)';
+
+        // FIX 4: Version-stamp early-exit. If the wrapper already shows the correct
+        // icon and color, skip ALL DOM work — this makes repeat refreshIcons() calls
+        // essentially free for already-rendered elements.
+        const existingWrapper = el.querySelector<HTMLElement>('.cf-icon-wrapper');
+        if (existingWrapper &&
+            existingWrapper.dataset.cfIconId === style.iconId &&
+            existingWrapper.dataset.cfIconColor === color) {
             return;
         }
 
@@ -199,7 +281,6 @@ export class IconManager {
             if (content) content.prepend(wrapper);
         }
 
-        const color = style.iconColor || style.hex || style.textColor || 'var(--text-normal)';
         const wideScale = this.plugin.settings.wideAutoIcons ? 1.05 : 1.0;
         const scale = (this.plugin.settings.iconScale || 1.0) * wideScale;
 
@@ -224,6 +305,10 @@ export class IconManager {
         }
         
         wrapper.appendChild(frag);
+
+        // FIX 4: Stamp the rendered icon ID and color so repeat calls can early-exit
+        wrapper.dataset.cfIconId = style.iconId;
+        wrapper.dataset.cfIconColor = color;
     }
 
     removeInjectedIcon(el: HTMLElement) {
