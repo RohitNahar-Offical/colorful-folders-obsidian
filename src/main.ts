@@ -66,7 +66,7 @@ export default class ColorfulFoldersPlugin
 
     this.generateStylesDebounced = obsidian.debounce(
       () => {
-        if (activeDocument.body.classList.contains("cf-is-dragging")) return;
+        if (this.isDragging) return;
         this.generateStyles();
         // P2 fix: initDividerObserver re-inits on layout-change; no need here
       },
@@ -76,7 +76,7 @@ export default class ColorfulFoldersPlugin
 
     this.processDividersDebounced = obsidian.debounce(
       () => {
-        if (this.isSyncingDividers || activeDocument.body.classList.contains("cf-is-dragging")) return;
+        if (this.isSyncingDividers || this.isDragging) return;
         this.dividerManager.syncDividers();
       },
       50,
@@ -85,7 +85,7 @@ export default class ColorfulFoldersPlugin
 
     this.refreshIconsDebounced = obsidian.debounce(
       () => {
-        if (activeDocument.body.classList.contains("cf-is-dragging")) return;
+        if (this.isDragging) return;
         this.refreshIcons();
       },
       100,
@@ -318,7 +318,6 @@ export default class ColorfulFoldersPlugin
     const doc = activeDocument;
     this.registerDomEvent(doc, "dragstart", () => {
       this.isDragging = true;
-      activeDocument.body.classList.add("cf-is-dragging");
       if (this.dividerObserver) {
           this.dividerObserver.disconnect();
       }
@@ -327,7 +326,6 @@ export default class ColorfulFoldersPlugin
     const handleDragEnd = () => {
       if (!this.isDragging) return;
       this.isDragging = false;
-      activeDocument.body.classList.remove("cf-is-dragging");
       
       // Physically reconnect the observer
       this.initDividerObserver();

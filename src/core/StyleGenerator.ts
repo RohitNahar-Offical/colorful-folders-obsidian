@@ -176,25 +176,6 @@ export class StyleGenerator {
 
     private generateGlobalBaseCss(): string {
         return `
-            /* Performance: Scoped Drag Overrides (No Wildcards) */
-            body.cf-is-dragging .nav-folder,
-            body.cf-is-dragging .nav-file,
-            body.cf-is-dragging .nav-folder-title,
-            body.cf-is-dragging .nav-file-title,
-            body.cf-is-dragging .nav-folder-children,
-            body.cf-is-dragging .cf-icon-wrapper,
-            body.cf-is-dragging .cf-interactive-divider {
-                transition: none !important;
-                animation: none !important;
-                filter: none !important;
-                backdrop-filter: none !important;
-                -webkit-backdrop-filter: none !important;
-                box-shadow: none !important;
-                opacity: 1 !important;
-                background-image: none !important;
-                border-color: transparent !important;
-                background-color: transparent !important;
-            }
 
             /* ── NUCLEAR SPECIFICITY NAV ITEM LAYOUT ───────────────────────────────
                We use high-specificity selectors to defeat theme overrides (like Prism).
