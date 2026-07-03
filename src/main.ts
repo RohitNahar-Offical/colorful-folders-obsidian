@@ -59,7 +59,7 @@ export default class ColorfulFoldersPlugin
     // Register Notebook Navigator extensions
     this.app.workspace.onLayoutReady(() => {
       NotebookNavigatorIntegration.registerMenuExtensions(this);
-      this.loadLocalIcons();
+      void this.loadLocalIcons();
     });
 
     this.addSettingTab(new ColorfulFoldersSettingTab(this.app, this));
@@ -162,7 +162,7 @@ export default class ColorfulFoldersPlugin
   async loadLocalIcons() {
     try {
       const adapter = this.app.vault.adapter;
-      const iconsPath = '.obsidian/icons';
+      const iconsPath = `${this.app.vault.configDir}/icons`;
       if (await adapter.exists(iconsPath)) {
         const list = await adapter.list(iconsPath);
 

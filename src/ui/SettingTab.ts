@@ -149,7 +149,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         new obsidian.Setting(tagCard)
             .setName('Enable tag color sync')
-            .setDesc('Applies colors to tags in Live Preview and Reading mode.')
+            .setDesc('Applies colors to tags in live preview and reading mode.')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.tagSyncEnabled)
                 .onChange(async (value) => {
@@ -173,7 +173,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .setName('Custom tag rules')
             .setDesc('Explicitly map tags to specific colors. Format: TagName = #hexcolor (e.g. Urgent = #ff0000)')
             .addTextArea(text => {
-                text.setPlaceholder("Urgent = #ff0000\nIdea = #00ff00")
+                text.setPlaceholder("Urgent = #ff0000\nidea = #00ff00")
                     .setValue(this.plugin.settings.tagSyncRules || "")
                     .onChange(async (value) => {
                         this.plugin.settings.tagSyncRules = value;
@@ -799,7 +799,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 padding: "10px", background: "var(--background-secondary-alt)", borderRadius: "6px",
                 borderLeft: "3px solid var(--interactive-accent)", lineHeight: "1.4"
             });
-            rulesDesc.createEl('strong', { text: 'Advanced Regex Rule Builder' });
+            rulesDesc.createEl('strong', { text: 'Advanced regex rule builder' });
             rulesDesc.createEl('br');
             rulesDesc.appendText('Define rules to automatically assign icons based on folder/file names using regex patterns. Rules are evaluated top to bottom, highest priority first.');
 
@@ -815,9 +815,9 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 
                 const header = rulesUIContainer.createDiv();
                 header.setCssStyles({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' });
-                header.createEl('h4', { text: 'Active Rules' }).setCssStyles({ margin: '0' });
+                header.createEl('h4', { text: 'Active rules' }).setCssStyles({ margin: '0' });
                 
-                const addBtn = header.createEl('button', { text: 'Add Rule', cls: 'mod-cta' });
+                const addBtn = header.createEl('button', { text: 'Add rule', cls: 'mod-cta' });
                 
                 // Parse existing rules
                 let rules = (this.plugin.settings.customIconRules || "").split('\n').filter(r => r.trim().length > 0);
@@ -855,12 +855,12 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     const setIconBtnVisuals = (currentIcon: string) => {
                         iconBtn.empty();
                         if (this.plugin.iconManager.isEmojiIcon(currentIcon)) {
-                            iconBtn.setText(currentIcon || "Choose Icon");
+                            iconBtn.setText(currentIcon || "Choose icon");
                         } else if (currentIcon) {
                             const svg = this.plugin.iconManager.getIconSvg(currentIcon, false);
                             if (svg) {
                                 // eslint-disable-next-line no-unsanitized/method
-                                const frag = document.createRange().createContextualFragment(svg);
+                                const frag = activeDocument.createRange().createContextualFragment(svg);
                                 const svgEl = frag.querySelector('svg');
                                 if (svgEl) {
                                     (svgEl as unknown as HTMLElement).setCssStyles({ width: '16px', height: '16px', color: 'currentColor' });
@@ -870,7 +870,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                                 iconBtn.setText(currentIcon);
                             }
                         } else {
-                            iconBtn.setText("Choose Icon");
+                            iconBtn.setText("Choose icon");
                         }
                     };
                     setIconBtnVisuals(icon);
@@ -878,7 +878,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     const prioInp = row.createEl('input', { type: 'number', placeholder: '1-100' });
                     prioInp.min = "1";
                     prioInp.max = "100";
-                    prioInp.title = "Priority (1-100). Minimum 1, Maximum 100.";
+                    prioInp.title = "Priority (1-100). Minimum 1, maximum 100.";
                     prioInp.value = priority;
                     prioInp.setCssStyles({ width: '70px' });
                     

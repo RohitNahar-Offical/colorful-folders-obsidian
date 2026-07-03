@@ -220,7 +220,7 @@ export class IconManager {
         this._pendingInjections.push({ el, style });
         if (!this._rafPending) {
             this._rafPending = true;
-            requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => {
                 this._flushInjections();
                 this._rafPending = false;
             });
