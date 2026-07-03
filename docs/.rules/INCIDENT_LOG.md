@@ -186,3 +186,20 @@ Read before making ANY architectural changes.
 3. **RAF Batching**: Created an icon injection queue (`_queueInjection`) that flushes all DOM writes in a single `requestAnimationFrame`.
 4. **Version Stamping**: Added `data-cf-icon-id` and `data-cf-icon-color` attributes to wrapper elements to instantly skip re-rendering if the icon hasn't changed.
 **Lesson**: Never run full-container DOM scans (like `querySelectorAll`) or synchronous DOM injections inside observers attached to virtualized lists. Use targeted node updates, throttle during scroll, and always batch DOM writes using `requestAnimationFrame`.
+
+---
+
+## Incident #15 — Drag Lag & Style Recalculation Thrashing (2026-07-03)
+**What was attempted**: Optimizing dragging performance in the file explorer.
+**Why it was done**: Dragging files/folders caused severe frame lag, stuttering, and mouse tracing lag.
+**What broke**: 
+- **Observer Re-activation**: Disconnecting the `MutationObserver` on `dragstart` was nullified because Obsidian's mid-drag hovers fired workspace `layout-change` events, which automatically reactivated a new observer instance.
+- **Style Recalculation Storm**: CSS `:has()` pseudo-classes (e.g. `.nav-folder:has(> .cf-interactive-divider)`, `.nav-folder:has(.is-active)`) and wildcard drag overrides (`body.cf-is-dragging *`) forced Chrome to recalculate styles for 1,300+ elements on every mouse movement.
+**Resolution**:
+1. **Hard Disconnect Guard**: Added `if (this.isDragging) return;` at the start of `initDividerObserver()`, blocking observer re-creation during drag.
+2. **Purged `:has()` Selectors**: Replaced CSS parent queries with Javascript class toggles:
+   - Added `.cf-has-divider` to parent elements when inserting section dividers.
+   - Added `.cf-hidden` to wrapper elements when hiding files/folders in stealth mode.
+   - Replaced `:has(.is-active)` active highlights with the pre-computed `.cf-active-parent` class, resolved on startup.
+3. **Cleaned Drag Selectors**: Removed the expensive wildcard `*` drag overrides and resolved drag state using JavaScript memory flags instead of toggling body classes.
+**Lesson**: Avoid CSS `:has()` pseudo-classes in high-traffic trees like file structures, as hover states will trigger parent-tree style invalidation cascades. Shift complex parent checks to O(1) JavaScript class toggles. Additionally, guard observer initialization from layout events firing mid-action.

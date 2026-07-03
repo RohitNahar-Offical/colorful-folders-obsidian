@@ -160,7 +160,7 @@ body .tree-item-children {
 }
 
 /* Specific color for the path leading to the active file */
-body .nav-folder:has(.is-active) > .nav-folder-title ~ .nav-folder-children {
+body .nav-folder.cf-active-parent > .nav-folder-title ~ .nav-folder-children {
     border-left-color: var(--interactive-accent) !important;
     border-bottom-color: var(--interactive-accent) !important;
 }
@@ -249,7 +249,6 @@ body .notebook-navigator .nn-file[data-path$=".md"] .nn-file-name::before {
 ## Best Practices
 1. **Use `data-path`**: Use the `data-path` attribute to target specific folders/files without affecting others.
 2. **Respect Variables**: Use Obsidian CSS variables (like `var(--interactive-accent)`) to ensure your snippets adapt to light/dark modes.
-3. **Check for `:has()`**: The plugin uses `:has()` for some layout overrides. Ensure your browser/Obsidian version supports it if you are writing complex parent-targeting CSS.
 
 ---
 

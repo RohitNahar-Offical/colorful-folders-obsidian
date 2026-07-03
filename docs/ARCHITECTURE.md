@@ -110,7 +110,7 @@ graph TD
 To maintain performance and maintainability, `generateCss` is an orchestrator that delegates to task-specific generators and peer modules:
 1. **`generateGlobalBaseCss`**: Foundation layouts and foundational variables.
 2. **`FocusModeEngine.generateCss`**: (External Module) Handles high-performance "Strict Spotlight" effects.
-3. **`generateDividerCss`**: Global divider styles using `:has()` selectors.
+3. **`generateDividerCss`**: Global divider styles using `.cf-has-divider` parent classes.
 4. **`generateStealthCss`**: Privacy layer rules.
 5. **`traverse`**: The recursive engine that applies local styles to files and folders using the `StyleContext`.
 
