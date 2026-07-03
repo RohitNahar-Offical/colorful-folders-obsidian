@@ -928,6 +928,8 @@ export default class ColorfulFoldersPlugin
   };
 
   initDividerObserver() {
+    if (this.isDragging) return; // Prevent layout-change from reactivating observer mid-drag
+
     if (this.dividerObserver) {
       this.dividerObserver.disconnect();
     }
