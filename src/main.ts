@@ -46,6 +46,7 @@ export default class ColorfulFoldersPlugin
   styleObserver: MutationObserver | null = null;
   dividerManager: DividerManager;
   isSyncingDividers: boolean = false;
+  isDragging: boolean = false;
   processDividersDebounced: obsidian.Debouncer<[], void>;
   ribbonEl: HTMLElement | null = null;
 
@@ -314,19 +315,23 @@ export default class ColorfulFoldersPlugin
     );
 
     // Performance: Detect drag operations to suspend expensive animations and logic
-    const win = activeWindow;
-    this.registerDomEvent(win, "dragstart", () => {
+    const doc = activeDocument;
+    this.registerDomEvent(doc, "dragstart", () => {
+      this.isDragging = true;
       activeDocument.body.classList.add("cf-is-dragging");
-      if (this.dividerObserver) {
-          this.dividerObserver.disconnect();
-          this.dividerObserver = null;
-      }
     });
-    this.registerDomEvent(win, "dragend", () => {
+    
+    const handleDragEnd = () => {
+      if (!this.isDragging) return;
+      this.isDragging = false;
       activeDocument.body.classList.remove("cf-is-dragging");
-      this.initDividerObserver();
-      this.processDividers();
-    });
+      // Catch-up render after drag finishes
+      if (this.processDividersDebounced) this.processDividersDebounced();
+      if (this.refreshIconsDebounced) this.refreshIconsDebounced();
+    };
+    
+    this.registerDomEvent(doc, "dragend", handleDragEnd);
+    this.registerDomEvent(doc, "drop", handleDragEnd);
 
     this.registerEvent(
       this.app.workspace.on("file-open", (file) => this.updateActiveParentClasses(file?.path || "")),
@@ -964,7 +969,8 @@ export default class ColorfulFoldersPlugin
     });
 
     this.dividerObserver = new MutationObserver((mutations) => {
-      if (this.isSyncingDividers || this.isScrolling) return;
+      // Suspend all logic during virtualized scroll or drag operations
+      if (this.isSyncingDividers || this.isScrolling || this.isDragging) return;
 
       let hasRelevantChange = false;
       for (const m of mutations) {
