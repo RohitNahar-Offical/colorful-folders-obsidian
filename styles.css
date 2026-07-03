@@ -733,3 +733,41 @@ body .modal .setting-item input.is-invalid {
     border-color: var(--color-red);
     background-color: rgba(255, 0, 0, 0.05);
 }
+
+/* ── 7. CUSTOM DRAG GHOST LIGHTWEIGHT OVERRIDES ──────────────────────── */
+/* Strip heavy styles, transitions and SVGs from Obsidian's body-level drag ghost clones */
+body > .drag-ghost,
+body > .workspace-drag-ghost,
+.drag-ghost,
+.workspace-drag-ghost {
+    background-color: var(--background-secondary, #333) !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    border: 1px solid var(--background-modifier-border) !important;
+    border-radius: 4px !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    transition: none !important;
+    animation: none !important;
+}
+
+body > .drag-ghost *,
+body > .workspace-drag-ghost *,
+.drag-ghost *,
+.workspace-drag-ghost * {
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    border-color: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    transition: none !important;
+    animation: none !important;
+    text-shadow: none !important;
+}
+
+/* Instantly hide custom SVG icons in the drag ghost to prevent rendering lag */
+.drag-ghost .cf-icon-wrapper,
+.workspace-drag-ghost .cf-icon-wrapper {
+    display: none !important;
+}
