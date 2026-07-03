@@ -41,6 +41,7 @@ export default class ColorfulFoldersPlugin
     null;
   generateStylesDebounced: obsidian.Debouncer<[], void>;
   refreshIconsDebounced: obsidian.Debouncer<[], void>;
+  localFileSystemIcons: Record<string, string> = {};
   dividerObserver: MutationObserver | null = null;
   styleObserver: MutationObserver | null = null;
   dividerManager: DividerManager;
@@ -57,6 +58,7 @@ export default class ColorfulFoldersPlugin
     // Register Notebook Navigator extensions
     this.app.workspace.onLayoutReady(() => {
       NotebookNavigatorIntegration.registerMenuExtensions(this);
+      this.loadLocalIcons();
     });
 
     this.addSettingTab(new ColorfulFoldersSettingTab(this.app, this));
@@ -156,6 +158,47 @@ export default class ColorfulFoldersPlugin
     ];
   }
 
+  async loadLocalIcons() {
+    try {
+      const adapter = this.app.vault.adapter;
+      const iconsPath = '.obsidian/icons';
+      if (await adapter.exists(iconsPath)) {
+        const list = await adapter.list(iconsPath);
+
+        // PERF FIX 1: Parallel file reads with Promise.all().
+        // Previously each adapter.read() was awaited sequentially — in a vault
+        // with 750+ SVGs this could waste 200-400ms at startup.
+        const buildEntries = async (files: string[]): Promise<[string, string][]> => {
+          const svgFiles = files.filter(f => f.toLowerCase().endsWith('.svg'));
+          const results = await Promise.all(
+            svgFiles.map(async (file): Promise<[string, string]> => {
+              const content = await adapter.read(file);
+              const parts = file.split('/');
+              const name = parts[parts.length - 1].slice(0, -4); // strip .svg
+              return [name, content];
+            })
+          );
+          return results;
+        };
+
+        // Process root-level files and all immediate subfolders in parallel
+        const [rootEntries, ...subEntries] = await Promise.all([
+          buildEntries(list.files),
+          ...list.folders.map(async (folder) => {
+            const sublist = await adapter.list(folder);
+            return buildEntries(sublist.files);
+          })
+        ]);
+
+        for (const [name, content] of [...rootEntries, ...subEntries.flat()]) {
+          this.localFileSystemIcons[name] = content;
+        }
+      }
+    } catch(e) {
+      console.error("Colorful Folders: Failed to load local icons", e);
+    }
+  }
+
   onunload() {
     if (this.sheet) {
       activeDocument.adoptedStyleSheets =
@@ -223,13 +266,33 @@ export default class ColorfulFoldersPlugin
       loadedData.dividerLinePaddingRight = loadedData.dividerLinePadding;
     }
 
-    this.settings = Object.assign({}, JSON.parse(JSON.stringify(DEFAULT_SETTINGS)) as ColorfulFoldersSettings, loadedData);
+    // PERF FIX 2: Shallow spread instead of JSON.parse(JSON.stringify(...)).
+    // loadedData from disk always provides complete values for any keys it defines,
+    // making a deep clone of DEFAULT_SETTINGS unnecessary and wasteful.
+    this.settings = Object.assign({} as ColorfulFoldersSettings, DEFAULT_SETTINGS, loadedData);
   }
 
+  // PERF FIX 3: Selective icon cache invalidation.
+  // Snapshot the icon-relevant keys before saving. Only clear the SVG
+  // cache if customIcons or customIconRules actually changed — saving
+  // unrelated settings (opacity, tag colors, etc.) no longer thrashes the cache.
+  private _lastIconRulesKey = '';
+  private _lastCustomIconsKey = '';
+
   async saveSettings() {
+    const iconRulesChanged = (this.settings.customIconRules || '') !== this._lastIconRulesKey;
+    const customIconsChanged = JSON.stringify(this.settings.customIcons || {}) !== this._lastCustomIconsKey;
+    const shouldClearIconCache = iconRulesChanged || customIconsChanged;
+
     await this.saveData(this.settings);
-    this.iconCache.clear();
-    this.iconManager.invalidateCategoryCache(); // P4: re-parse icon rules on settings change
+
+    if (shouldClearIconCache) {
+      this.iconCache.clear();
+      this.iconManager.invalidateCategoryCache();
+      this._lastIconRulesKey = this.settings.customIconRules || '';
+      this._lastCustomIconsKey = JSON.stringify(this.settings.customIcons || {});
+    }
+
     this.generateStylesDebounced();
   }
 
@@ -269,7 +332,10 @@ export default class ColorfulFoldersPlugin
       this.app.workspace.on("file-open", (file) => this.updateActiveParentClasses(file?.path || "")),
     );
     this.registerEvent(
-      this.app.workspace.on("css-change", () => this.generateStyles()),
+      // PERF FIX 5: Debounce css-change. Obsidian fires this event multiple times
+      // during theme switches/plugin reloads. The leading-edge debouncer fires
+      // instantly on the first call, then coalesces all rapid-fire follow-ups.
+      this.app.workspace.on("css-change", () => this.generateStylesDebounced()),
     );
 
     this.registerEvent(

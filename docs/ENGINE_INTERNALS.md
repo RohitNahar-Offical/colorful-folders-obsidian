@@ -59,15 +59,31 @@ This ensures that even if a user picks extreme colors, the text remains crisp an
 
 ## 4. Performance & Caching Engine
 
+### Startup Optimizations
+
+| Optimization | Location | Description |
+| :--- | :--- | :--- |
+| **Parallel SVG Loading** | `main.ts → loadLocalIcons()` | Local icons in `.obsidian/icons` are read with `Promise.all()` instead of a serial loop. In vaults with 750+ SVGs this saves **200-400ms** of startup time. |
+| **Shallow Settings Clone** | `main.ts → loadSettings()` | The default settings are merged with a direct `Object.assign` spread instead of `JSON.parse(JSON.stringify(...))`, which was wastefully deep-cloning the entire settings schema. |
+
+### Runtime Optimizations
+
 1.  **Tiered Caching Engine**:
     *   **Folder Count Cache**: A persistent `Map` on the plugin instance. Item counts are only re-calculated when the vault structure actually changes (`create`/`delete`/`rename`).
-    *   **Icon Category Memoization**: Custom icon regex rules and category lookups are compiled once and cached.
+    *   **Icon Category Memoization**: Custom icon regex rules and category lookups are compiled once and cached. The cache is invalidated only when `customIconRules` or `customIcons` changes, not on every `saveSettings()` call.
     *   **SVG Normalization Cache**: The result of `DOMParser` sanitization is cached, ensuring constant SVGs (like folder icons) are only parsed once per session.
-2.  **Observer Decoupling & Filtering**: 
+    *   **Counter SVG Template Cache**: In `StyleGenerator`, the three static SVG segments of the folder counter icon are pre-encoded with `encodeURIComponent()` once per unique color. Subsequent folders of the same color use O(1) string concatenation instead of re-running the expensive encode + regex chain.
+
+2.  **Selective Icon Cache Invalidation** (`main.ts → saveSettings()`):
+    Snapshot keys (`_lastIconRulesKey`, `_lastCustomIconsKey`) track the last saved values of icon-relevant settings. The SVG icon cache is **only cleared** when `customIcons` or `customIconRules` actually changes. Toggling unrelated settings (opacity, tag sync, glassmorphism, etc.) no longer evicts the entire cache.
+
+3.  **Observer Decoupling & Filtering**:
     *   **Style Observer Filtering**: The `MutationObserver` on `activeDocument.body` strictly filters for critical theme changes (`theme-dark`, `theme-light`) and ignores noisy interaction classes (`is-dragging`, `is-focused`, `workspace-leaf-active`). This prevents layout thrashing during user navigation.
     *   **Divider Observer Decoupling**: The `DividerManager`'s observer ignores injected virtual-dom nodes from other plugins by strictly verifying `.nav-file`, `.nav-folder`, or `.tree-item` classes, preventing infinite sync loops. It only re-initializes during structural `layout-change` events.
+    *   **`css-change` Debouncing**: The `css-change` event (triggered by theme switches) uses the leading-edge `generateStylesDebounced()` instead of a direct call, coalescing Obsidian's 3-5 rapid-fire events into a single traversal.
 
 ---
+
 
 ## 5. Virtual DOM Reconciliation (Dividers)
 

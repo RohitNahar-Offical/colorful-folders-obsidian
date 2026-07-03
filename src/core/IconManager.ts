@@ -111,8 +111,11 @@ export class IconManager {
         // 1. Try Custom Icons
         if (this.plugin.settings.customIcons[iconId]) {
             svgStr = this.plugin.settings.customIcons[iconId];
+        } else if (this.plugin.localFileSystemIcons && this.plugin.localFileSystemIcons[iconId]) {
+            // 2. Try Local Filesystem Icons (from .obsidian/icons)
+            svgStr = this.plugin.localFileSystemIcons[iconId];
         } else {
-            // 2. Try Lucide Icons
+            // 3. Try Lucide Icons
             const tempEl = activeDocument.createElementNS('http://www.w3.org/1999/xhtml', 'div') as HTMLDivElement;
             obsidian.setIcon(tempEl, iconId);
             if (!tempEl.querySelector('svg') && !iconId.startsWith('lucide-')) {

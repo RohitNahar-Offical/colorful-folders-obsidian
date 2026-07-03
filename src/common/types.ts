@@ -88,6 +88,9 @@ export interface ColorfulFoldersSettings {
     customActiveText: string;
     pathLineThickness: number;
     wrapMetadata?: boolean;
+    tagSyncEnabled: boolean;
+    tagSyncMatchFolders: boolean;
+    tagSyncRules: string;
 }
 
 
@@ -139,6 +142,7 @@ export interface IColorfulFoldersPlugin {
     registerCustomIcons(): void;
     cleanUnusedStyles(): Promise<void>;
     refreshRibbon(): void;
+    localFileSystemIcons?: Record<string, string>;
     dividerManager: {
         syncDividers(): void;
         clean(): void;

@@ -206,6 +206,21 @@ body .cf-glass {
 
 ---
 
+## Graph View Color Sync
+
+The plugin can automatically sync your custom folder colors to Obsidian's native **Graph View**. 
+
+### Enabling Graph Sync
+1. Open Colorful Folders settings.
+2. Navigate to **Integrations > Sync folder colors to Graph View**.
+3. Toggle the setting to **On**.
+
+Once enabled, the plugin will inject custom color groups into your `.obsidian/graph.json`. 
+- **Non-Destructive**: The plugin preserves any manual color groups you have already created in your graph settings. Your manual groups will always have higher priority.
+- **Clean Uninstallation**: If you disable the setting, the plugin automatically removes only its generated groups from the graph configuration.
+
+---
+
 ## Notebook Navigator Customization
 
 Since Notebook Navigator uses its own CSS classes, you must use specific selectors to override its styles.
@@ -323,3 +338,70 @@ body {
 }
 ```
 
+---
+
+## Tag Color Sync Customization
+
+The **Tag Color Sync** feature injects CSS rules that colorize `#tags` in the editor and reading view to match your folder colors. You can override these styles using the exposed CSS variables.
+
+### CSS Variables Exposed by Tag Color Sync
+```css
+/* All tag rules use these two variables */
+.cm-hashtag.cm-tag-mytag {
+    --cf-tag-bg: rgba(r, g, b, 0.2);
+    --cf-tag-color: #hexcolor;
+}
+```
+
+### Customization Examples
+```css
+/* Make ALL synced tags use a pill shape */
+body .cm-s-obsidian .cm-hashtag[class*="cm-tag-"] {
+    border-radius: 999px !important;
+    padding: 1px 8px !important;
+    font-size: 0.85em !important;
+}
+
+/* Override a specific tag's color without touching settings */
+body .markdown-rendered a.tag[href="#projects"] {
+    --cf-tag-bg: rgba(255, 100, 0, 0.2) !important;
+    --cf-tag-color: #ff6400 !important;
+}
+```
+
+### Custom Tag Rules Format (in Settings)
+Go to **Integrations → Tag Color Sync → Custom tag rules** and add lines in the format:
+```
+tagname = #hexcolor
+projects = #ff6400
+areas = #00aaff
+```
+Rules here take priority over automatic folder-name matching.
+
+---
+
+## Advanced Auto-Icon Regex Builder
+
+The **Regex Builder** UI lets you create custom icon matching rules in the **Icon Packs** settings tab. Rules follow the syntax:
+
+```
+<regex-pattern> = <icon-id> @<priority>
+```
+
+### Priority Range
+- Valid range: **1 to 100** (integers only).
+- **1** = lowest priority (will be overridden by most other rules).
+- **100** = highest priority (wins over all other custom rules).
+- The built-in icon categories use internal values; your custom rules always operate in the 1–100 range.
+
+### Examples
+
+| Goal | Rule |
+| :--- | :--- |
+| Match folders ending in `_Archive` | `_archive$ = lucide-archive @90` |
+| Match files starting with a year | `^202[0-9]- = 📅 @85` |
+| Match anything containing "work" | `work = lucide-briefcase @50` |
+| Low-priority fallback for untitled | `^untitled = 📄 @1` |
+
+### Live Testing
+Type a folder or file name in the **Test name** input field in the Regex Builder UI. The icon that would be assigned is displayed immediately without requiring a reload.

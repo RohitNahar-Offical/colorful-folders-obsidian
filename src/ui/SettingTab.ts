@@ -3,6 +3,7 @@ import { IColorfulFoldersPlugin, FolderStyle, ColorfulFoldersSettings } from '..
 import { DEFAULT_SETTINGS } from '../common/constants';
 import { PasswordModal } from './modals/PasswordModal';
 import { ConfirmModal } from './modals/ConfirmModal';
+import { IconPickerModal } from './modals/IconPickerModal';
 import { createVisualColorPicker } from './components/ColorPicker';
 import { parseColorToHexAlpha, hexAlphaToRgba } from '../common/utils';
 
@@ -136,6 +137,53 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     await this.plugin.saveSettings();
                     this.plugin.generateStyles();
                 }));
+
+        // ──────────────────────────────────────────────────────────────────────
+        // ── TAG SYNC CARD ─────────────────────────────────────────────────────
+        // ──────────────────────────────────────────────────────────────────────
+        const tagCard = makeCard(intPanel, "🏷️", "Tag Color Sync");
+        tagCard.createEl('p', {
+            text: 'Automatically colors your Markdown tags based on your folder colors and custom rules.',
+            cls: 'setting-item-description'
+        }).setCssStyles({ fontSize: '0.85em', color: 'var(--text-muted)', marginBottom: '16px' });
+
+        new obsidian.Setting(tagCard)
+            .setName('Enable tag color sync')
+            .setDesc('Applies colors to tags in Live Preview and Reading mode.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.tagSyncEnabled)
+                .onChange(async (value) => {
+                    this.plugin.settings.tagSyncEnabled = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStyles();
+                }));
+
+        new obsidian.Setting(tagCard)
+            .setName('Match folder colors')
+            .setDesc('Automatically applies a folder\'s color to any tag that shares the exact same name.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.tagSyncMatchFolders)
+                .onChange(async (value) => {
+                    this.plugin.settings.tagSyncMatchFolders = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStyles();
+                }));
+
+        new obsidian.Setting(tagCard)
+            .setName('Custom tag rules')
+            .setDesc('Explicitly map tags to specific colors. Format: TagName = #hexcolor (e.g. Urgent = #ff0000)')
+            .addTextArea(text => {
+                text.setPlaceholder("Urgent = #ff0000\nIdea = #00ff00")
+                    .setValue(this.plugin.settings.tagSyncRules || "")
+                    .onChange(async (value) => {
+                        this.plugin.settings.tagSyncRules = value;
+                        await this.plugin.saveSettings();
+                        this.plugin.generateStyles();
+                    });
+                text.inputEl.setCssStyles({
+                    width: "100%", height: "100px", fontFamily: "var(--font-monospace)", background: "var(--background-secondary)", padding: "10px"
+                });
+            });
 
         // ──────────────────────────────────────────────────────────────────────
         // ── GRAPH VIEW SYNC CARD ──────────────────────────────────────────────
@@ -751,37 +799,137 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 padding: "10px", background: "var(--background-secondary-alt)", borderRadius: "6px",
                 borderLeft: "3px solid var(--interactive-accent)", lineHeight: "1.4"
             });
-            rulesDesc.createEl('strong', { text: 'How to use priority rules:' });
+            rulesDesc.createEl('strong', { text: 'Advanced Regex Rule Builder' });
             rulesDesc.createEl('br');
-            rulesDesc.appendText('Define rules to automatically assign icons based on folder/file names.');
-            rulesDesc.createEl('br');
-            rulesDesc.createEl('br');
-            rulesDesc.createEl('strong', { text: 'Simplified format: ' });
-            rulesDesc.createEl('code', { text: 'Pattern = iconid @priority' });
-            rulesDesc.createEl('br');
-            rulesDesc.createEl('strong', { text: 'Example: ' });
-            rulesDesc.createEl('code', { text: 'Projects = rocket @200' });
-            rulesDesc.createEl('br');
-            rulesDesc.createEl('strong', { text: 'Example: ' });
-            rulesDesc.createEl('code', { text: 'Journal = 📅 @150' });
+            rulesDesc.appendText('Define rules to automatically assign icons based on folder/file names using regex patterns. Rules are evaluated top to bottom, highest priority first.');
 
-            new obsidian.Setting(autoCard)
-                .setName('Priority rules')
-                .setDesc('Customize matching logic with simple patterns.')
-                .addTextArea(text => {
-                    text.setPlaceholder("Work = briefcase @200\ndaily = 📅 @150")
-                        .setValue(this.plugin.settings.customIconRules || "")
-                        .onChange(async (value) => {
-                            this.plugin.settings.customIconRules = value;
-                            await this.plugin.saveSettings();
-                        });
-                    text.inputEl.setCssStyles({
-                        width: "100%", height: "120px", background: "var(--background-secondary)",
-                        border: "1px solid var(--background-modifier-border-focus)",
-                        color: "var(--text-normal)", fontFamily: "var(--font-monospace)",
-                        fontSize: "0.85em", padding: "12px", borderRadius: "6px"
-                    });
+            // --- Advanced Icon Rule Builder ---
+            const rulesUIContainer = autoCard.createDiv('cf-rules-builder');
+            rulesUIContainer.setCssStyles({
+                marginTop: '15px', background: 'var(--background-secondary)', padding: '16px',
+                borderRadius: '8px', border: '1px solid var(--background-modifier-border)'
+            });
+            
+            const renderRulesUI = () => {
+                rulesUIContainer.empty();
+                
+                const header = rulesUIContainer.createDiv();
+                header.setCssStyles({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' });
+                header.createEl('h4', { text: 'Active Rules' }).setCssStyles({ margin: '0' });
+                
+                const addBtn = header.createEl('button', { text: 'Add Rule', cls: 'mod-cta' });
+                
+                // Parse existing rules
+                let rules = (this.plugin.settings.customIconRules || "").split('\n').filter(r => r.trim().length > 0);
+                
+                const list = rulesUIContainer.createDiv('cf-rules-list');
+                list.setCssStyles({ display: 'flex', flexDirection: 'column', gap: '8px' });
+                
+                const saveRules = async () => {
+                    this.plugin.settings.customIconRules = rules.join('\n');
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStyles();
+                };
+                
+                rules.forEach((rule, index) => {
+                    const row = list.createDiv();
+                    row.setCssStyles({ display: 'flex', gap: '8px', alignItems: 'center' });
+                    
+                    let pattern = "", icon = "", priority = "";
+                    const match = rule.match(/^(.*?)\s*=\s*(.*?)\s*(?:@(\d+))?$/);
+                    if (match) {
+                        pattern = match[1].trim();
+                        icon = match[2].trim();
+                        priority = match[3] ? match[3].trim() : "";
+                    } else {
+                        pattern = rule; // fallback
+                    }
+                    
+                    const patInp = row.createEl('input', { type: 'text', placeholder: 'Regex / Name (e.g. Work)' });
+                    patInp.value = pattern;
+                    patInp.setCssStyles({ flex: '2', fontFamily: 'var(--font-monospace)' });
+                    
+                    const iconBtn = row.createEl('button');
+                    iconBtn.setCssStyles({ flex: '1', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' });
+                    
+                    const setIconBtnVisuals = (currentIcon: string) => {
+                        iconBtn.empty();
+                        if (this.plugin.iconManager.isEmojiIcon(currentIcon)) {
+                            iconBtn.setText(currentIcon || "Choose Icon");
+                        } else if (currentIcon) {
+                            const svg = this.plugin.iconManager.getIconSvg(currentIcon, false);
+                            if (svg) {
+                                // eslint-disable-next-line no-unsanitized/method
+                                const frag = document.createRange().createContextualFragment(svg);
+                                const svgEl = frag.querySelector('svg');
+                                if (svgEl) {
+                                    (svgEl as unknown as HTMLElement).setCssStyles({ width: '16px', height: '16px', color: 'currentColor' });
+                                    iconBtn.appendChild(svgEl);
+                                }
+                            } else {
+                                iconBtn.setText(currentIcon);
+                            }
+                        } else {
+                            iconBtn.setText("Choose Icon");
+                        }
+                    };
+                    setIconBtnVisuals(icon);
+                    
+                    const prioInp = row.createEl('input', { type: 'number', placeholder: '1-100' });
+                    prioInp.min = "1";
+                    prioInp.max = "100";
+                    prioInp.title = "Priority (1-100). Minimum 1, Maximum 100.";
+                    prioInp.value = priority;
+                    prioInp.setCssStyles({ width: '70px' });
+                    
+                    const updateRule = () => {
+                        const p = patInp.value.trim();
+                        let pr = prioInp.value.trim();
+                        
+                        let prNum = parseInt(pr);
+                        if (!isNaN(prNum)) {
+                            if (prNum < 1) prNum = 1;
+                            if (prNum > 100) prNum = 100;
+                            pr = prNum.toString();
+                            prioInp.value = pr;
+                        }
+                        
+                        if (p && icon) {
+                            rules[index] = `${p} = ${icon}${pr ? ' @' + pr : ''}`;
+                            void saveRules();
+                        }
+                    };
+                    
+                    iconBtn.onclick = () => {
+                        new IconPickerModal(this.app, this.plugin, icon, (selectedIcon) => {
+                            icon = selectedIcon;
+                            setIconBtnVisuals(icon);
+                            updateRule();
+                        }).open();
+                    };
+                    
+                    patInp.onchange = updateRule;
+                    prioInp.onchange = updateRule;
+                    
+                    const delBtn = row.createEl('button', { text: '×' });
+                    delBtn.setCssStyles({ color: 'var(--text-error)', cursor: 'pointer', border: 'none', background: 'transparent' });
+                    delBtn.onclick = () => {
+                        rules.splice(index, 1);
+                        void saveRules().then(() => renderRulesUI());
+                    };
                 });
+                
+                if (rules.length === 0) {
+                    list.createDiv({ text: 'No custom rules defined.' }).setCssStyles({ color: 'var(--text-muted)', fontStyle: 'italic', padding: '8px 0' });
+                }
+                
+                addBtn.onclick = () => {
+                    rules.push("New_Rule = 🌟 @100");
+                    void saveRules().then(() => renderRulesUI());
+                };
+            };
+            
+            renderRulesUI();
         }
 
         const divCard = makeCard(generalPanel, "➖", "Dividers and sections");

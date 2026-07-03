@@ -61,8 +61,9 @@ export class IconPickerModal extends obsidian.Modal {
 
         // Pack Filter
         const customIds = Object.keys(this.plugin.settings.customIcons);
+        const localIds = this.plugin.localFileSystemIcons ? Object.keys(this.plugin.localFileSystemIcons) : [];
         const prefixes = new Set(['all', 'lucide']);
-        customIds.forEach(id => {
+        [...customIds, ...localIds].forEach(id => {
             const parts = id.split('-');
             if (parts.length > 1) prefixes.add(parts[0]);
             else prefixes.add('custom');
@@ -92,7 +93,7 @@ export class IconPickerModal extends obsidian.Modal {
             .filter(id => id.startsWith('lucide-'))
             .map(id => id.replace('lucide-', ''));
         
-        const allIcons = Array.from(new Set([...customIds, ...lucideIcons]));
+        const allIcons = Array.from(new Set([...customIds, ...localIds, ...lucideIcons]));
 
         const renderIcons = (search: string, packFilter: string) => {
             iconGrid.empty();

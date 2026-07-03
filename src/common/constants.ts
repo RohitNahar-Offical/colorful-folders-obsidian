@@ -123,7 +123,10 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     customActiveBg: "",
     customActiveText: "",
     pathLineThickness: 2.0,
-    wrapMetadata: false
+    wrapMetadata: false,
+    tagSyncEnabled: false,
+    tagSyncMatchFolders: true,
+    tagSyncRules: ""
 };
 
 export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
@@ -231,4 +234,14 @@ export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
     { rex: /game|steam|play|console|gaming/i, emoji: "🎮", lucide: "gamepad-2", priority: 85, emojis: ["🎮", "🕹️", "🎲"], lucides: ["gamepad-2", "dices", "sword"] },
     { rex: /social|twitter|x|facebook|insta|reddit|discord/i, emoji: "🌐", lucide: "globe", priority: 85, emojis: ["🌐", "📱", "🗨️"], lucides: ["globe", "share", "at-sign"] },
     { rex: /stream|twitch|netflix|disney|movie|film/i, emoji: "🎬", lucide: "clapperboard", priority: 85, emojis: ["🎬", "🍿", "📺"], lucides: ["clapperboard", "play", "film"] },
+
+    // --- Newly Added Diverse Categories ---
+    { rex: /space|astronomy|stars|universe|galaxy/i, emoji: "🌌", lucide: "telescope", priority: 75, emojis: ["🌌", "🪐", "☄️", "🛸"], lucides: ["telescope", "moon", "sun"] },
+    { rex: /magic|fantasy|spell|witch|wizard/i, emoji: "✨", lucide: "wand-2", priority: 75, emojis: ["✨", "🔮", "🧙"], lucides: ["wand-2", "sparkles", "stars"] },
+    { rex: /hardware|pc|computer|build|components/i, emoji: "🖥️", lucide: "cpu", priority: 75, emojis: ["🖥️", "⌨️", "🖱️"], lucides: ["cpu", "hard-drive", "memory-stick"] },
+    { rex: /design-system|tokens|components|assets|brand/i, emoji: "💅", lucide: "brush", priority: 90, emojis: ["💅", "🎨", "📐"], lucides: ["brush", "swatch-book", "palette"] },
+    { rex: /podcast|interview|audiobook|listen/i, emoji: "🎙️", lucide: "mic", priority: 80, emojis: ["🎙️", "🎧", "📻"], lucides: ["mic", "headphones", "radio"] },
+    { rex: /recipe|baking|dessert|sweets|cake/i, emoji: "🍰", lucide: "cake", priority: 85, emojis: ["🍰", "🍪", "🧁"], lucides: ["cake", "cookie"] },
+    { rex: /fitness|workout|run|marathon|lift/i, emoji: "🏃", lucide: "dumbbell", priority: 85, emojis: ["🏃", "🏋️", "🚴"], lucides: ["dumbbell", "activity", "heart"] },
+    { rex: /journal|thoughts|diary|reflection/i, emoji: "📔", lucide: "book-heart", priority: 85, emojis: ["📔", "💭", "✍️"], lucides: ["book-heart", "pen-tool"] },
 ];
