@@ -43,7 +43,7 @@ export default class ColorfulFoldersPlugin
   refreshIconsDebounced: obsidian.Debouncer<[], void>;
   localFileSystemIcons: Record<string, string> = {};
   dividerObserver: MutationObserver | null = null;
-  styleObserver: MutationObserver | null = null;
+  styleObservers: MutationObserver[] = [];
   dividerManager: DividerManager;
   isSyncingDividers: boolean = false;
   isDragging: boolean = false;
@@ -101,7 +101,7 @@ export default class ColorfulFoldersPlugin
     this.registerCustomIcons();
     this.registerEvents();
     this.registerCommands();
-    this.initStyleObserver();
+    this.initStyleObservers();
 
     // Initial stealth mode state
     activeDocument.body.classList.toggle(
@@ -153,10 +153,11 @@ export default class ColorfulFoldersPlugin
 
   initializeStyles() {
     this.sheet = new CSSStyleSheet();
-    activeDocument.adoptedStyleSheets = [
-      ...activeDocument.adoptedStyleSheets,
-      this.sheet,
-    ];
+    this.getOpenDocuments().forEach(doc => {
+      if (!doc.adoptedStyleSheets.includes(this.sheet)) {
+        doc.adoptedStyleSheets = [...doc.adoptedStyleSheets, this.sheet];
+      }
+    });
   }
 
   async loadLocalIcons() {
@@ -201,12 +202,13 @@ export default class ColorfulFoldersPlugin
   }
 
   onunload() {
-    if (this.sheet) {
-      activeDocument.adoptedStyleSheets =
-        activeDocument.adoptedStyleSheets.filter((s) => s !== this.sheet);
-    }
+    this.getOpenDocuments().forEach(doc => {
+      if (this.sheet) {
+        doc.adoptedStyleSheets = doc.adoptedStyleSheets.filter((s) => s !== this.sheet);
+      }
+    });
     if (this.dividerObserver) this.dividerObserver.disconnect();
-    if (this.styleObserver) this.styleObserver.disconnect();
+    this.styleObservers.forEach(obs => obs.disconnect());
 
     // Clean up scroll listeners
     const explorers: HTMLElement[] = [];
@@ -315,28 +317,20 @@ export default class ColorfulFoldersPlugin
     );
 
     // Performance: Detect drag operations to suspend expensive animations and logic
-    const doc = activeDocument;
-    this.registerDomEvent(doc, "dragstart", () => {
-      this.isDragging = true;
-      if (this.dividerObserver) {
-          this.dividerObserver.disconnect();
-      }
+    this.getOpenDocuments().forEach(doc => {
+      this.registerDragEventsForDoc(doc);
     });
-    
-    const handleDragEnd = () => {
-      if (!this.isDragging) return;
-      this.isDragging = false;
-      
-      // Physically reconnect the observer
-      this.initDividerObserver();
-      
-      // Catch-up render after drag finishes
-      if (this.processDividersDebounced) this.processDividersDebounced();
-      if (this.refreshIconsDebounced) this.refreshIconsDebounced();
-    };
-    
-    this.registerDomEvent(doc, "dragend", handleDragEnd);
-    this.registerDomEvent(doc, "drop", handleDragEnd);
+
+    this.registerEvent(
+      this.app.workspace.on("window-open", (win: obsidian.WorkspaceWindow, doc: Document) => {
+        if (this.sheet && !doc.adoptedStyleSheets.includes(this.sheet)) {
+          doc.adoptedStyleSheets = [...doc.adoptedStyleSheets, this.sheet];
+        }
+        this.registerDragEventsForDoc(doc);
+        this.initStyleObservers();
+        this.generateStylesDebounced();
+      })
+    );
 
     this.registerEvent(
       this.app.workspace.on("file-open", (file) => this.updateActiveParentClasses(file?.path || "")),
@@ -1084,43 +1078,84 @@ export default class ColorfulFoldersPlugin
     }
   }
 
-  initStyleObserver() {
-    if (this.styleObserver) this.styleObserver.disconnect();
-    this.styleObserver = new MutationObserver((mutations) => {
-      let shouldRegenerate = false;
-      for (const m of mutations) {
-        if (m.type === "attributes" && m.attributeName === "class") {
-          const target = m.target as HTMLElement;
-          const oldClass = m.oldValue || "";
-          const newClass = typeof target.className === 'string' ? target.className : (target.getAttribute('class') || "");
-          
-          if (oldClass === newClass) continue;
-          
-          const relevantClasses = ["theme-dark", "theme-light", "cf-show-hidden", "cf-wrap-metadata"];
-          
-          const oldClasses = oldClass.split(/\s+/);
-          const newClasses = newClass.split(/\s+/);
+  getOpenDocuments(): Document[] {
+    const docs = new Set<Document>();
+    docs.add(activeDocument);
+    this.app.workspace.iterateAllLeaves((leaf) => {
+      const doc = leaf.view?.containerEl?.ownerDocument;
+      if (doc) docs.add(doc);
+    });
+    return Array.from(docs);
+  }
 
-          for (const cls of relevantClasses) {
-            const wasPresent = oldClasses.includes(cls);
-            const isPresent = newClasses.includes(cls);
-            if (wasPresent !== isPresent) {
-              shouldRegenerate = true;
-              break;
-            }
-          }
-          if (shouldRegenerate) break;
-        }
-      }
-      
-      if (shouldRegenerate) {
-        this.generateStylesDebounced();
+  registerDragEventsForDoc(doc: Document) {
+    this.registerDomEvent(doc, "dragstart", () => {
+      this.isDragging = true;
+      if (this.dividerObserver) {
+          this.dividerObserver.disconnect();
       }
     });
-    this.styleObserver.observe(activeDocument.body, {
-      attributes: true,
-      attributeFilter: ["class"],
-      attributeOldValue: true,
+    
+    const handleDragEnd = () => {
+      if (!this.isDragging) return;
+      this.isDragging = false;
+      
+      // Physically reconnect the observer
+      this.initDividerObserver();
+      
+      // Catch-up render after drag finishes
+      if (this.processDividersDebounced) this.processDividersDebounced();
+      if (this.refreshIconsDebounced) this.refreshIconsDebounced();
+    };
+    
+    this.registerDomEvent(doc, "dragend", handleDragEnd);
+    this.registerDomEvent(doc, "drop", handleDragEnd);
+  }
+
+  initStyleObservers() {
+    if (this.styleObservers) {
+      this.styleObservers.forEach(obs => obs.disconnect());
+    }
+    this.styleObservers = [];
+
+    this.getOpenDocuments().forEach(doc => {
+      const observer = new MutationObserver((mutations) => {
+        let shouldRegenerate = false;
+        for (const m of mutations) {
+          if (m.type === "attributes" && m.attributeName === "class") {
+            const target = m.target as HTMLElement;
+            const oldClass = m.oldValue || "";
+            const newClass = typeof target.className === 'string' ? target.className : (target.getAttribute('class') || "");
+            
+            if (oldClass === newClass) continue;
+            
+            const relevantClasses = ["theme-dark", "theme-light", "cf-show-hidden", "cf-wrap-metadata"];
+            
+            const oldClasses = oldClass.split(/\s+/);
+            const newClasses = newClass.split(/\s+/);
+
+            for (const cls of relevantClasses) {
+              const wasPresent = oldClasses.includes(cls);
+              const isPresent = newClasses.includes(cls);
+              if (wasPresent !== isPresent) {
+                shouldRegenerate = true;
+                break;
+              }
+            }
+            if (shouldRegenerate) break;
+          }
+        }
+        
+        if (shouldRegenerate) {
+          this.generateStylesDebounced();
+        }
+      });
+      observer.observe(doc.body, {
+        attributes: true,
+        attributeFilter: ["class"],
+        attributeOldValue: true,
+      });
+      this.styleObservers.push(observer);
     });
   }
 }
