@@ -8,8 +8,9 @@
 ## 🚀 Latest: 4.2.0 - The "Advanced Features & Ultimate Performance" Update
 This massive release brings powerful new customization options and resolves one of the most stubborn UI bugs for power users with huge vaults. [Full Changelog](Version/VERSION_4_2_0.md)
 
-### ⚡ 1. Perfect Scroll Performance
-* **Zero Scroll Lag**: We completely rewrote the icon injection engine. Rapidly scrolling through hundreds of folders in the virtualized list is now perfectly smooth with zero layout thrashing or CPU spikes. 
+### ⚡ 1. Perfect Scroll & Instant Startup
+* **Instant Obsidian Startup**: Refactored the core settings loading and local icon fetching (using parallel `Promise.all` logic) to completely eliminate startup delays. Reloading the plugin or opening Obsidian is now significantly faster, even with hundreds of SVGs.
+* **Zero Scroll Lag**: We completely rewrote the icon injection engine. Rapidly scrolling through hundreds of folders in the virtualized list is now perfectly smooth with zero layout thrashing or CPU spikes.
 
 ### 🏷️ 2. Tag Color Synchronization
 * **Unify Your Vault**: Folder colors can now automatically synchronize with Obsidian tags!

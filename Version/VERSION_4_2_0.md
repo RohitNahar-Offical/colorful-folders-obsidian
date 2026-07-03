@@ -2,7 +2,8 @@
 
 This massive release brings powerful new customization options and resolves one of the most stubborn UI bugs for power users with huge vaults.
 
-### ⚡ 1. Perfect Scroll Performance
+### ⚡ 1. Perfect Scroll & Instant Startup
+* **Instant Obsidian Startup**: Refactored the core settings loading and local icon fetching (using parallel `Promise.all` logic) to completely eliminate startup delays. Reloading the plugin or opening Obsidian is now significantly faster, even with hundreds of SVGs.
 * **Zero Scroll Lag**: We completely rewrote the icon injection engine. Rapidly scrolling through hundreds of folders in the virtualized list is now perfectly smooth with zero layout thrashing or CPU spikes. 
 * **Targeted Updates**: The plugin now intelligently updates only the specific icons that just appeared on screen, rather than scanning the entire file explorer.
 * **RAF Batching**: All visual updates are now grouped using `requestAnimationFrame`, eliminating layout stutter on first load.
