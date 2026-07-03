@@ -319,12 +319,19 @@ export default class ColorfulFoldersPlugin
     this.registerDomEvent(doc, "dragstart", () => {
       this.isDragging = true;
       activeDocument.body.classList.add("cf-is-dragging");
+      if (this.dividerObserver) {
+          this.dividerObserver.disconnect();
+      }
     });
     
     const handleDragEnd = () => {
       if (!this.isDragging) return;
       this.isDragging = false;
       activeDocument.body.classList.remove("cf-is-dragging");
+      
+      // Physically reconnect the observer
+      this.initDividerObserver();
+      
       // Catch-up render after drag finishes
       if (this.processDividersDebounced) this.processDividersDebounced();
       if (this.refreshIconsDebounced) this.refreshIconsDebounced();
