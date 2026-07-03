@@ -53,6 +53,10 @@ Representing the entire `data.json` structure. Defined in `src/common/types.ts`.
 | `notebookNavigatorFileBackground` | `boolean` | Applies background colors to NN file items. |
 | `notebookNavigatorOutlineOnly` | `boolean` | Force outline-only mode specifically for NN items. |
 | `notebookNavigatorIconScale` | `number` | Independent icon scale multiplier strictly for NN items. |
+| `graphColorSync` | `boolean` | Syncs assigned folder colors to Graph View nodes. |
+| `tagSyncEnabled` | `boolean` | Enables syncing folder colors to their respective tags. |
+| `tagSyncMatchFolders` | `boolean` | Auto-syncs tags that perfectly match a styled folder name. |
+| `tagSyncRules` | `string` | Custom line-by-line mapping rules (`#tag = /path`). |
 | **System & Privacy** | | |
 | `showHiddenItems` | `boolean` | Toggles "Stealth Mode" visibility. |
 | `showRibbonIcon` | `boolean` | Displays the Stealth Mode eye icon in the sidebar. |
