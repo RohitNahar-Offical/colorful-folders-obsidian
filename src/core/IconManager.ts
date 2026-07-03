@@ -157,6 +157,13 @@ export class IconManager {
                 if (!path) return;
 
                 const style = this.plugin.getStyle(path);
+                
+                // Toggle cf-hidden class on wrapper
+                const wrapper = item.closest('.nav-folder, .nav-file, .tree-item, .nn-navitem');
+                if (wrapper) {
+                    wrapper.classList.toggle('cf-hidden', !!(style && typeof style === 'object' && style.isHidden));
+                }
+
                 if (style && style.iconId) {
                     // FIX 3: Route through RAF queue so bulk renders don't thrash layout
                     this._queueInjection(item as HTMLElement, style);
@@ -192,6 +199,13 @@ export class IconManager {
                 const path = titleEl.dataset.path;
                 if (!path) continue;
                 const style = this.plugin.getStyle(path);
+                
+                // Toggle cf-hidden class on wrapper
+                const wrapper = titleEl.closest('.nav-folder, .nav-file, .tree-item, .nn-navitem');
+                if (wrapper) {
+                    wrapper.classList.toggle('cf-hidden', !!(style && typeof style === 'object' && style.isHidden));
+                }
+
                 if (style && style.iconId) {
                     this._queueInjection(titleEl, style);
                 } else {

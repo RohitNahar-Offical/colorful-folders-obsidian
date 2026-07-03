@@ -534,7 +534,11 @@ export class DividerManager {
                 const targetEl = this.findTargetElement(container, path, isGlobal);
                 if (!targetEl) {
                     const stale = existingByPath.get(path);
-                    if (stale) stale.remove();
+                    if (stale) {
+                        const parent = stale.parentElement;
+                        if (parent) parent.classList.remove('cf-has-divider');
+                        stale.remove();
+                    }
                     continue;
                 }
 
@@ -544,15 +548,19 @@ export class DividerManager {
                     // Re-build and replace to ensure fresh config is applied (name, color, etc.)
                     const newNode = this.buildDividerNode(path, conf, container.ownerDocument);
                     existing.replaceWith(newNode);
+                    targetEl.classList.add('cf-has-divider');
                 } else {
                     const node = this.buildDividerNode(path, conf, container.ownerDocument);
                     targetEl.prepend(node);
+                    targetEl.classList.add('cf-has-divider');
                 }
 
             }
 
             for (const [path, el] of existingByPath) {
                 if (!kept.has(path)) {
+                    const parent = el.parentElement;
+                    if (parent) parent.classList.remove('cf-has-divider');
                     el.remove();
                 }
             }
@@ -572,7 +580,11 @@ export class DividerManager {
         const containers = Array.from(activeDocument.querySelectorAll('.nav-files-container'));
         const extraContainers = Array.from(NotebookNavigatorIntegration.getExtraContainers(activeDocument));
         [...containers, ...extraContainers].forEach(container => {
-            container.querySelectorAll('.cf-interactive-divider').forEach(el => el.remove());
+            container.querySelectorAll('.cf-interactive-divider').forEach(el => {
+                const parent = el.parentElement;
+                if (parent) parent.classList.remove('cf-has-divider');
+                el.remove();
+            });
         });
     }
 

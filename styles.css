@@ -780,3 +780,18 @@ body.is-grabbing .drag-ghost * {
 [class*="drag-ghost"] .cf-icon-wrapper {
     display: none !important;
 }
+
+/* Stealth Mode Overrides (replacing O(N) :has selectors with highly optimized class matching) */
+body:not(.cf-show-hidden) .cf-hidden {
+    display: none !important;
+}
+
+body.cf-show-hidden .cf-hidden {
+    opacity: 0.3 !important;
+    filter: grayscale(1) blur(0.5px) !important;
+}
+
+body.cf-show-hidden .cf-hidden:hover {
+    opacity: 0.8 !important;
+    filter: grayscale(0.5) blur(0px) !important;
+}

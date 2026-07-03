@@ -881,6 +881,8 @@ export default class ColorfulFoldersPlugin
       "cf-wrap-metadata",
       !!this.settings.wrapMetadata,
     );
+    // Ensure parent classes are indexed on startup/refresh
+    this.updateActiveParentClasses(this.app.workspace.getActiveFile()?.path || "");
     this.refreshIcons();
     // Sync folder colors to Graph View groups if the feature is enabled
     if (this.settings.graphColorSync) {

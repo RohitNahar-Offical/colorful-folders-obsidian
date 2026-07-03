@@ -406,8 +406,7 @@ export class StyleGenerator {
             }
 
             /* Parent item reserves the space for the absolute divider */
-            .nav-folder:has(> .cf-interactive-divider),
-            .nav-file:has(> .cf-interactive-divider) {
+            .cf-has-divider {
                 position: relative !important;
                 padding-top: ${dividerHeight}px !important;
                 display: flex !important;
@@ -415,8 +414,8 @@ export class StyleGenerator {
             }
 
             /* Ensure folder lines/children start below the divider */
-            .nav-folder:has(> .cf-interactive-divider) > .nav-folder-title,
-            .nav-folder:has(> .cf-interactive-divider) > .nav-folder-children {
+            .cf-has-divider > .nav-folder-title,
+            .cf-has-divider > .nav-folder-children {
                 position: relative !important;
             }
 
@@ -504,7 +503,7 @@ export class StyleGenerator {
             }
 
             /* Fix for folder vertical lines */
-            .nav-folder:has(> .cf-interactive-divider) > .nav-folder-children {
+            .cf-has-divider > .nav-folder-children {
                 border-left: none !important;
             }
 
@@ -840,7 +839,7 @@ export class StyleGenerator {
             `);
 
             if (passedColor) {
-                const activeSelector = `.nav-files-container .nav-folder:has(.is-active) > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) ~ .nav-folder-children, .nav-files-container .tree-item:has(.is-active) > .tree-item-self[data-path="${safePath}"]:not(.nn-navitem) ~ .tree-item-children, .nav-files-container .nav-folder.cf-active-parent > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) ~ .nav-folder-children, .nav-files-container .tree-item.cf-active-parent > .tree-item-self[data-path="${safePath}"]:not(.nn-navitem) ~ .tree-item-children`;
+                const activeSelector = `.nav-files-container .nav-folder.cf-active-parent > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) ~ .nav-folder-children, .nav-files-container .tree-item.cf-active-parent > .tree-item-self[data-path="${safePath}"]:not(.nn-navitem) ~ .tree-item-children`;
                 cssRules.push(`
                     ${activeSelector} {
                         border-left: ${folderThick}px solid ${passedColor.hex} !important;
@@ -1174,32 +1173,7 @@ export class StyleGenerator {
         for (const path in styles) {
             const style = styles[path];
             if (typeof style === 'object' && style.isHidden) {
-                const safePath = safeEscape(path);
-                
-                // Native Obsidian File Explorer
-                stealthCss += `
-                    body:not(.cf-show-hidden) .nav-folder:has(> .nav-folder-title[data-path="${safePath}"]),
-                    body:not(.cf-show-hidden) .nav-file:has(> .nav-file-title[data-path="${safePath}"]),
-                    body:not(.cf-show-hidden) .tree-item:has(> .tree-item-self[data-path="${safePath}"]) {
-                        display: none !important;
-                    }
-
-                    body.cf-show-hidden .nav-folder:has(> .nav-folder-title[data-path="${safePath}"]),
-                    body.cf-show-hidden .nav-file:has(> .nav-file-title[data-path="${safePath}"]),
-                    body.cf-show-hidden .tree-item:has(> .tree-item-self[data-path="${safePath}"]) {
-                        opacity: 0.3 !important;
-                        filter: grayscale(1) blur(0.5px) !important;
-                    }
-                    
-                    body.cf-show-hidden .nav-folder:has(> .nav-folder-title[data-path="${safePath}"]):hover,
-                    body.cf-show-hidden .nav-file:has(> .nav-file-title[data-path="${safePath}"]):hover,
-                    body.cf-show-hidden .tree-item:has(> .tree-item-self[data-path="${safePath}"]):hover {
-                        opacity: 0.8 !important;
-                        filter: grayscale(0.5) blur(0px) !important;
-                    }
-                `;
-
-                // Notebook Navigator Integration
+                // Notebook Navigator Integration (requires static CSS rules due to React virtual scroll)
                 if (this.settings.notebookNavigatorSupport) {
                     const nnSelector = NotebookNavigatorIntegration.getScopedNavSelector(path);
                     const nnFileSelector = NotebookNavigatorIntegration.getScopedFileSelector(path);
