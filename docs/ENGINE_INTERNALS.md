@@ -17,7 +17,7 @@ Colorful Folders hooks into the Obsidian event bus to stay reactive.
 | `dragstart` | `Logic Freeze` | **Performance**: Disconnects observers and suspends all styling logic during drag. |
 | `dragend` | `Logic Reconnect` | **Performance**: Restores observers and performs a clean 'catch-up' sync. |
 | `create` / `delete` / `rename` | `generateStyles` | Vault structure changes; invalidates item count and heatmap caches. |
-| `scroll` (container) | `handleScroll` | Repositions interactive dividers during virtual/native list scroll. Unbound on plugin disable. |
+| `scroll` (container) | `handleScroll` | Repositions interactive dividers and suppresses heavy DOM injections (like icons) mid-scroll. Queues a single catch-up render via `refreshIconsDebounced` after scrolling stops. Unbound on plugin disable. |
 | `generateStyles` (post-render) | `GraphColorSync.syncGraphColors` | **Graph View**: After CSS injection, syncs folder hex colors to `.obsidian/graph.json` colorGroups if `graphColorSync` is enabled. Runs async to avoid blocking the render cycle. |
 
 
@@ -79,8 +79,11 @@ This ensures that even if a user picks extreme colors, the text remains crisp an
 
 3.  **Observer Decoupling & Filtering**:
     *   **Style Observer Filtering**: The `MutationObserver` on `activeDocument.body` strictly filters for critical theme changes (`theme-dark`, `theme-light`) and ignores noisy interaction classes (`is-dragging`, `is-focused`, `workspace-leaf-active`). This prevents layout thrashing during user navigation.
-    *   **Divider Observer Decoupling**: The `DividerManager`'s observer ignores injected virtual-dom nodes from other plugins by strictly verifying `.nav-file`, `.nav-folder`, or `.tree-item` classes, preventing infinite sync loops. It only re-initializes during structural `layout-change` events.
+    *   **Divider & Icon Observer Filtering**: The explorer `MutationObserver` skips updates if the user `isScrolling`, ignores non-folder/file node types, and uses `addedNodes` to directly target changed nodes (O(1-5)) rather than re-scanning the entire container (O(N)).
     *   **`css-change` Debouncing**: The `css-change` event (triggered by theme switches) uses the leading-edge `generateStylesDebounced()` instead of a direct call, coalescing Obsidian's 3-5 rapid-fire events into a single traversal.
+
+4.  **RAF-Batched DOM Injection**: 
+    The `IconManager` routes all synchronous DOM injections (`injectIcon`) through a `requestAnimationFrame` batching queue (`_queueInjection`). This eliminates layout thrashing caused by interleaved DOM reads and writes during bulk renders. It also employs a version-stamp early-exit mechanism (`dataset.cfIconId`) to make repeat render requests virtually cost-free.
 
 ---
 

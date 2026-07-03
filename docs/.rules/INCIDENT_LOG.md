@@ -170,3 +170,19 @@ Read before making ANY architectural changes.
 1. Added a strict filter to `styleObserver` that parses the `oldValue` against the new class string, triggering style generation **only** if specific whitelisted classes mutate (e.g., `theme-dark`, `theme-light`, `cf-show-hidden`).
 2. Added a strict node type check to `dividerObserver`, ignoring any injected DOM element that lacks core file explorer classes (`nav-file`, `nav-folder`, `tree-item`, etc.).
 **Lesson**: Never bind `MutationObserver` to high-traffic elements like `document.body` or scrolling containers without extreme filtering. Always whitelist the specific classes or node types you care about to prevent cascading layout thrashing.
+
+---
+
+## Incident #14 — Virtualized List Scroll Lag (2026-07-03)
+**What was attempted**: Ensuring icons stay visible when scrolling rapidly in the file explorer.
+**What broke**: Severe scroll lag and UI blocking. As Obsidian's virtualized list recycled DOM nodes during scroll, it triggered the `MutationObserver`, which blindly queued `refreshIconsDebounced`. This caused a full `querySelectorAll` across the entire container and synchronous DOM read/write interleaving for every icon, causing massive layout thrashing on every scroll event.
+**Root cause**: 
+- Missing `isScrolling` guard for icon refresh in the MutationObserver callback.
+- Bulk `querySelectorAll` on every mutation rather than targeting only the changed nodes.
+- Interleaved read/write operations inside `injectIcon()` causing forced reflows.
+**Resolution**: 
+1. **Scroll Guard**: Added `!this.isScrolling` guard to the observer, suppressing mid-scroll icon work entirely. Queued a single catch-up refresh after the scroll ends.
+2. **Targeted Injection**: Updated the observer to pass `addedNodes` directly to `injectIconsForNodes()`, dropping complexity from O(N-total) to O(N-changed).
+3. **RAF Batching**: Created an icon injection queue (`_queueInjection`) that flushes all DOM writes in a single `requestAnimationFrame`.
+4. **Version Stamping**: Added `data-cf-icon-id` and `data-cf-icon-color` attributes to wrapper elements to instantly skip re-rendering if the icon hasn't changed.
+**Lesson**: Never run full-container DOM scans (like `querySelectorAll`) or synchronous DOM injections inside observers attached to virtualized lists. Use targeted node updates, throttle during scroll, and always batch DOM writes using `requestAnimationFrame`.
