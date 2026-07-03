@@ -203,3 +203,18 @@ Read before making ANY architectural changes.
    - Replaced `:has(.is-active)` active highlights with the pre-computed `.cf-active-parent` class, resolved on startup.
 3. **Cleaned Drag Selectors**: Removed the expensive wildcard `*` drag overrides and resolved drag state using JavaScript memory flags instead of toggling body classes.
 **Lesson**: Avoid CSS `:has()` pseudo-classes in high-traffic trees like file structures, as hover states will trigger parent-tree style invalidation cascades. Shift complex parent checks to O(1) JavaScript class toggles. Additionally, guard observer initialization from layout events firing mid-action.
+
+---
+
+## Incident #16 — Popout Window Drag Lag & Style Invalidation (2026-07-03)
+**What was attempted**: Validating drag lag fixes across all window contexts.
+**Why it was done**: Dragging inside native Obsidian popout windows still caused severe style invalidation lag and the layout remained completely unstyled.
+**What broke**: 
+- **Window Isolation**: Styleheets, style observers, and drag performance hooks were only bound to the main window's `activeDocument` during plugin `onload`. 
+- **Popout Neglect**: Popout windows have separate `Document` objects. Consequently, moving the file explorer to a popout window left it unstyled (stylesheet not adopted) and dragging there did not set `isDragging = true`, leaving observers active and triggers unblocked.
+**Resolution**:
+1. **Multi-Window Tracking**: Implemented `getOpenDocuments()` helper to harvest all active workspace leaf document owners (covering both main and popout windows).
+2. **Dynamic Adoption & Listeners**: Bound stylesheet adoptions, performance drag listeners (`registerDragEventsForDoc`), and style MutationObservers (`styleObservers`) to all open documents on load.
+3. **Window Open Hook**: Subscribed to the workspace `"window-open"` event to dynamically adopt the stylesheet, register drag hooks, and update style observers on any new windows launched at runtime.
+4. **Workspace Type Augmentation**: Augmented the `obsidian` module to declare the `"window-open"` event in the `Workspace` interface, ensuring compilation type safety without needing unsafe casting.
+**Lesson**: Always architect Obsidian style and event logic to track multi-document contexts (`getOpenDocuments()` and `"window-open"` hooks) to prevent style collapses and layout thrashing in native popout windows.

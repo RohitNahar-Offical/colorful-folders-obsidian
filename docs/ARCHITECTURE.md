@@ -9,7 +9,7 @@ Colorful Folders does NOT style elements by finding them and setting `.style.col
 ### Why?
 Obsidian uses a **Virtualized List** for its File Explorer. This means elements are created and destroyed as you scroll. Directly styling DOM elements would be slow and brittle. Instead, we generate CSS rules that target elements by their `data-path` attribute.
 
-We use the native browser `CSSStyleSheet` API (Constructable Stylesheets) via `document.adoptedStyleSheets`. This is functionally identical to a `<style>` tag but is the modern, secure standard and passes Obsidian's store linter.
+We use the native browser `CSSStyleSheet` API (Constructable Stylesheets) via `doc.adoptedStyleSheets` registered on all open windows. This is functionally identical to a `<style>` tag but is the modern, secure standard and passes Obsidian's store linter.
 
 ### The Rendering Pipeline
 
@@ -25,18 +25,18 @@ graph TD
     F2 --> G
     G --> H[Build CSS String]
     H --> I[sheet.replaceSync CSS String]
-    I --> J[Browser Reflow / Paint]
+    I --> J[Browser Reflow / Paint on all windows]
 ```
 
 ### The Cycle:
 1.  **Trigger**: User changes a setting or the plugin loads.
 2.  **State Resolution**: `plugin.getEffectiveStyle()` calculates the visual state for every folder/file.
 3.  **High-Performance CSS Generation**: `StyleGenerator.traverse()` builds a collection of CSS rules. To handle 20,000+ files efficiently, it uses the **"Collect-Join" Pattern** and **Persistent Memoization** (caching item counts and icon category rules) to minimize redundant computations.
-4.  **Injection**: The final joined string is pushed via `plugin.sheet.replaceSync(css)` into the document's `adoptedStyleSheets`. No `<style>` element is created. The dynamic styles are dynamically wrapped in standard CSS Custom Properties (e.g. `--cf-folder-bg`), providing a modern hook API for custom user stylesheets and themes to natively override elements.
+4.  **Injection**: The final joined string is pushed via `plugin.sheet.replaceSync(css)` into all open documents' `adoptedStyleSheets` (including popout windows). No `<style>` element is created. The dynamic styles are dynamically wrapped in standard CSS Custom Properties (e.g. `--cf-folder-bg`), providing a modern hook API for custom user stylesheets and themes to natively override elements.
 5.  **Browser handles the rest**: The browser's CSS engine applies the styles instantly as elements enter the viewport.
 
 ### High-Performance Modifiers:
-To ensure the native Obsidian UI remains flawlessly smooth even under heavy CSS operations, the engine dynamically handles state changes. For instance, when a user is dragging-and-dropping files, the `cf-is-dragging` class is added to the `body`. The generated CSS detects this and instantly suspends all CSS transitions, animations, backdrop-filters, and heavy background renderings (`transition: none !important; animation: none !important;`), ensuring absolute native-speed drag-and-drop performance.
+To ensure the native Obsidian UI remains flawlessly smooth even under heavy CSS operations, the engine dynamically handles state changes. For instance, when a user is dragging-and-dropping files inside any open workspace window, the local `isDragging` boolean state is set to `true` and the file explorer's `MutationObserver` is disconnected. The debounced style generators, divider builders, and icon injection queues detect this flag and instantly suspend all calculations, ensuring absolute native-speed drag-and-drop performance. Once the drag operation terminates (`dragend` / `drop`), observers are reconnected and catch-up rendering runs.
 
 ---
 
