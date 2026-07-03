@@ -176,8 +176,14 @@ export class StyleGenerator {
 
     private generateGlobalBaseCss(): string {
         return `
-            /* Performance: Native-Speed Override during drag-and-drop */
-            body.cf-is-dragging * {
+            /* Performance: Scoped Drag Overrides (No Wildcards) */
+            body.cf-is-dragging .nav-folder,
+            body.cf-is-dragging .nav-file,
+            body.cf-is-dragging .nav-folder-title,
+            body.cf-is-dragging .nav-file-title,
+            body.cf-is-dragging .nav-folder-children,
+            body.cf-is-dragging .cf-icon-wrapper,
+            body.cf-is-dragging .cf-interactive-divider {
                 transition: none !important;
                 animation: none !important;
                 filter: none !important;
@@ -185,13 +191,6 @@ export class StyleGenerator {
                 -webkit-backdrop-filter: none !important;
                 box-shadow: none !important;
                 opacity: 1 !important;
-            }
-
-            /* Suspend heavy backgrounds and borders during drag */
-            body.cf-is-dragging .nav-folder-title,
-            body.cf-is-dragging .nav-file-title,
-            body.cf-is-dragging .nav-folder-children,
-            body.cf-is-dragging .cf-interactive-divider {
                 background-image: none !important;
                 border-color: transparent !important;
                 background-color: transparent !important;
