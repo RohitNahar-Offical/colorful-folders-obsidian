@@ -27,6 +27,10 @@ import { DividerManager } from "./core/DividerManager";
 import { MenuHelper } from "./ui/MenuHelper";
 import { IconManager } from "./core/IconManager";
 
+interface ExtendedWorkspace extends obsidian.Workspace {
+  on(name: "window-open", callback: (win: unknown, doc: Document) => unknown, ctx?: unknown): obsidian.EventRef;
+}
+
 export default class ColorfulFoldersPlugin
   extends obsidian.Plugin
   implements IColorfulFoldersPlugin
@@ -322,7 +326,7 @@ export default class ColorfulFoldersPlugin
     });
 
     this.registerEvent(
-      this.app.workspace.on("window-open", (win: obsidian.WorkspaceWindow, doc: Document) => {
+      (this.app.workspace as ExtendedWorkspace).on("window-open", (win: unknown, doc: Document) => {
         if (this.sheet && !doc.adoptedStyleSheets.includes(this.sheet)) {
           doc.adoptedStyleSheets = [...doc.adoptedStyleSheets, this.sheet];
         }
