@@ -53,8 +53,14 @@ export class TagColorSync {
 
             css += `
 /* Unified styling for Live Preview and Reading Mode */
+body [class~="cm-tag-${tag}" i],
 body .cm-hashtag.cm-tag-${tag},
-body .markdown-rendered a.tag[href="#${tag}" i] {
+body .cm-hashtag.cm-tag-${tag.toLowerCase()},
+body .cm-hashtag.cm-tag-${tag.toUpperCase()},
+body .markdown-rendered a.tag[href="#${tag}" i],
+body .markdown-rendered a.tag[href="#${tag}"],
+body .markdown-rendered a.tag[href="#${tag.toLowerCase()}"],
+body .markdown-rendered a.tag[href="#${tag.toUpperCase()}"] {
     --cf-tag-bg: rgba(${rgbStr}, 0.2) !important;
     --cf-tag-color: ${t} !important;
     background-color: var(--cf-tag-bg) !important;
@@ -62,23 +68,37 @@ body .markdown-rendered a.tag[href="#${tag}" i] {
 }
 
 /* Reading mode border and shape */
-body .markdown-rendered a.tag[href="#${tag}" i] {
+body .markdown-rendered a.tag[href="#${tag}" i],
+body .markdown-rendered a.tag[href="#${tag}"],
+body .markdown-rendered a.tag[href="#${tag.toLowerCase()}"],
+body .markdown-rendered a.tag[href="#${tag.toUpperCase()}"] {
     border: 1px solid rgba(${rgbStr}, 0.3) !important;
     border-radius: 4px !important;
 }
 
 /* Editing mode (CodeMirror 6) seamless borders and shape for #begin and end tokens */
-body .cm-hashtag.cm-tag-${tag} {
+body [class~="cm-tag-${tag}" i],
+body .cm-hashtag.cm-tag-${tag},
+body .cm-hashtag.cm-tag-${tag.toLowerCase()},
+body .cm-hashtag.cm-tag-${tag.toUpperCase()} {
     border-top: 1px solid rgba(${rgbStr}, 0.3) !important;
     border-bottom: 1px solid rgba(${rgbStr}, 0.3) !important;
 }
-body .cm-hashtag-begin.cm-tag-${tag} {
+
+body [class~="cm-hashtag-begin"][class~="cm-tag-${tag}" i],
+body .cm-hashtag-begin.cm-tag-${tag},
+body .cm-hashtag-begin.cm-tag-${tag.toLowerCase()},
+body .cm-hashtag-begin.cm-tag-${tag.toUpperCase()} {
     border-left: 1px solid rgba(${rgbStr}, 0.3) !important;
     border-right: none !important;
     border-top-left-radius: 4px !important;
     border-bottom-left-radius: 4px !important;
 }
-body .cm-hashtag-end.cm-tag-${tag} {
+
+body [class~="cm-hashtag-end"][class~="cm-tag-${tag}" i],
+body .cm-hashtag-end.cm-tag-${tag},
+body .cm-hashtag-end.cm-tag-${tag.toLowerCase()},
+body .cm-hashtag-end.cm-tag-${tag.toUpperCase()} {
     border-right: 1px solid rgba(${rgbStr}, 0.3) !important;
     border-left: none !important;
     border-top-right-radius: 4px !important;
@@ -86,8 +106,14 @@ body .cm-hashtag-end.cm-tag-${tag} {
 }
 
 /* Hover effects */
+body [class~="cm-tag-${tag}" i]:hover,
 body .cm-hashtag.cm-tag-${tag}:hover,
-body .markdown-rendered a.tag[href="#${tag}" i]:hover {
+body .cm-hashtag.cm-tag-${tag.toLowerCase()}:hover,
+body .cm-hashtag.cm-tag-${tag.toUpperCase()}:hover,
+body .markdown-rendered a.tag[href="#${tag}" i]:hover,
+body .markdown-rendered a.tag[href="#${tag}"]:hover,
+body .markdown-rendered a.tag[href="#${tag.toLowerCase()}"]:hover,
+body .markdown-rendered a.tag[href="#${tag.toUpperCase()}"]:hover {
     --cf-tag-bg: rgba(${rgbStr}, 0.3) !important;
     background-color: var(--cf-tag-bg) !important;
 }
