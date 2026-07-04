@@ -2,6 +2,7 @@ import * as obsidian from 'obsidian';
 import { ColorfulFoldersSettings, IColorfulFoldersPlugin } from '../common/types';
 import { CF_FOLDER_CLOSED, CF_FILE_DEFAULT } from '../common/constants';
 import { MenuHelper } from '../ui/MenuHelper';
+import { safeEscape } from '../common/utils';
 
 interface NNPlugin {
     registerFileMenu?: (cb: (menu: obsidian.Menu, file: obsidian.TAbstractFile) => void) => void;
@@ -42,7 +43,7 @@ export class NotebookNavigatorIntegration {
      * Finds a specific item (folder or file) in the NN DOM by its path.
      */
     static findItemInDOM(container: Element, path: string): HTMLElement | null {
-        const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        const safePath = safeEscape(path);
         return container.querySelector(
             `${NN_SELECTORS.NAV_ITEM}[data-path="${safePath}"], ${NN_SELECTORS.FILE_ITEM}[data-path="${safePath}"]`
         );
@@ -63,19 +64,19 @@ export class NotebookNavigatorIntegration {
      * Hardened to exclude system views (Tags/Properties) via attribute filtering.
      */
     static getScopedNavSelector(path: string): string {
-        const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        const safePath = safeEscape(path);
         return `.notebook-navigator .nn-navitem[data-path="${safePath}"]:not(.nn-header), 
                 .notebook-navigator .nn-shortcut-item[data-path="${safePath}"]`;
     }
 
     static getScopedActiveNavSelector(path: string): string {
-        const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        const safePath = safeEscape(path);
         return `.notebook-navigator .cf-active-parent.nn-navitem[data-path="${safePath}"]:not(.nn-header), 
                 .notebook-navigator .cf-active-parent.nn-shortcut-item[data-path="${safePath}"]`;
     }
 
     static getScopedFileSelector(path: string): string {
-        const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        const safePath = safeEscape(path);
         return `.notebook-navigator .nn-file[data-path="${safePath}"]:not(.nn-header)`;
     }
 
@@ -83,7 +84,7 @@ export class NotebookNavigatorIntegration {
      * Returns a selector for an active NN item.
      */
     static getActiveGlowSelector(path: string): string {
-        const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        const safePath = safeEscape(path);
         return `.notebook-navigator .is-active[data-path="${safePath}"]`;
     }
 
@@ -92,12 +93,12 @@ export class NotebookNavigatorIntegration {
      * Used to explicitly style or disable radiant paths in NN.
      */
     static getRadiantPathSelector(path: string): string {
-        const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        const safePath = safeEscape(path);
         return `.notebook-navigator [data-path="${safePath}"] ~ .nn-virtual-container`;
     }
 
     static getActiveRadiantPathSelector(path: string): string {
-        const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        const safePath = safeEscape(path);
         return `.notebook-navigator .cf-active-parent[data-path="${safePath}"] ~ .nn-virtual-container`;
     }
 
@@ -180,7 +181,7 @@ export class NotebookNavigatorIntegration {
     ): string {
         const nnThick = baseThick + 0.5; // Scaled for NN visibility
         const activeThick = baseThick + 2.0;
-        const safePath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        const safePath = safeEscape(path);
         const base = isFolder ? this.getScopedNavSelector(path) : this.getScopedFileSelector(path);
         const nameSel = isFolder ? this.getNavNameSelector() : this.getFileNameSelector();
         const _iconSel = isFolder ? this.getNavIconSelector() : this.getFileIconSelector();

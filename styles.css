@@ -721,11 +721,6 @@ body:not(.is-mobile):not(.is-grabbing) .nav-files-container .tree-item-self.is-s
 }
 
 /* Password Shake Animation */
-@keyframes cf-shake {
-    0%, 100% { transform: translateX(0); }
-    20%, 60% { transform: translateX(-5px); }
-    40%, 80% { transform: translateX(5px); }
-}
 
 body .modal input.is-invalid,
 body .modal .setting-item input.is-invalid {

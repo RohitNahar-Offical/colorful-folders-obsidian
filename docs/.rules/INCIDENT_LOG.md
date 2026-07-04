@@ -218,3 +218,16 @@ Read before making ANY architectural changes.
 3. **Window Open Hook**: Subscribed to the workspace `"window-open"` event to dynamically adopt the stylesheet, register drag hooks, and update style observers on any new windows launched at runtime.
 4. **Workspace Type Augmentation**: Augmented the `obsidian` module to declare the `"window-open"` event in the `Workspace` interface, ensuring compilation type safety without needing unsafe casting.
 **Lesson**: Always architect Obsidian style and event logic to track multi-document contexts (`getOpenDocuments()` and `"window-open"` hooks) to prevent style collapses and layout thrashing in native popout windows.
+
+---
+
+## Incident #17 — Antigravity Style Engine Refactoring & Deduplication (2026-07-04)
+**What was attempted**: Perform a critical analysis of the folder style engine and refactor to eliminate massive code duplication between `getEffectiveStyle` and `StyleGenerator.traverse`.
+**Why it was done**: Code duplication created structural risks, maintenance overhead, and discrepancy glitches (e.g. file offsets missing or mismatching).
+**What was done/fixed**:
+- **Unification**: Extracted `resolveColor`, `resolveOpacity`, and `resolveTextColor` static helpers on `StyleGenerator` to act as the single source of truth for color and contrast math.
+- **Deduplication**: Refactored `getEffectiveStyle` to act as a parameter builder that calls the shared helpers, dropping duplication from O(N) duplicate paths down to zero.
+- **StyleGenerator Singleton**: Replaced dynamic reinstantiation of `StyleGenerator` with a persistent instance property on `ColorfulFoldersPlugin` to preserve memory and caches.
+- **Shared Explorer discovery**: Consolidated 4 different container query logic blocks across `main.ts` and `DividerManager.ts` into a single shared helper `getAllExplorerContainers()`.
+- **Linter & Build**: Standardized theme detections (`activeDocument` check) and fixed imports (`safeEscape` Consolidations). Build and linter verified at 100% clean.
+**Lesson**: Keep core calculations strictly single-sourced (DRY). For recursive generation engines, keep positional traversal fast while exporting static calculations for leaf and UI queries.

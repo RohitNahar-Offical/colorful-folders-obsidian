@@ -327,3 +327,21 @@ When resolving an icon ID:
 
 ### Icon Picker Integration
 `IconPickerModal` merges `localFileSystemIcons` keys with `customIcons` keys and Lucide IDs into a single searchable grid. If the icon ID prefix matches (e.g., `remix-` for all files in `.obsidian/icons/Remix/`), a pack filter option is automatically generated in the dropdown.
+
+---
+
+## 14. Unified Style Resolution & Singleton Engine (Refactoring 4.2.0)
+
+To resolve code duplication, discrepancies, and optimization bottlenecks, version 4.2.0 restructured the dynamic styling engine:
+
+### 1. StyleGenerator Singleton
+Previously, a new `StyleGenerator` was allocated on every `generateStyles()` call, discarding cache allocations. The engine now uses a persistent `styleGenerator` instance declared on the main `ColorfulFoldersPlugin` class and initialized in `onload()`. This preserves counter SVGs and category caches throughout the lifetime of the plugin.
+
+### 2. Static Math Resolution
+Core calculations for folder colors, text contrasting, and opacities have been extracted into three static helper functions on `StyleGenerator`:
+* `StyleGenerator.resolveColor(...)`: Standardizes color calculations for all heatmap, cycle, and monochromatic modes.
+* `StyleGenerator.resolveOpacity(...)`: Determines correct folder, file, and subfolder opacities based on settings.
+* `StyleGenerator.resolveTextColor(...)`: Applies WCAG contrast checks and theme offsets to return optimal text colors.
+
+### 3. Consolidated Discovery
+Instead of manual leaf iterations in 4+ locations, the engine uses `plugin.getAllExplorerContainers()` to query and return all file explorers (including popout windows and Notebook Navigator virtual containers) in a single shared, cached call.

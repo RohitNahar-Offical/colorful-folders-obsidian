@@ -434,26 +434,7 @@ export class DividerManager {
     syncDividers() {
         if (this.plugin.isSyncingDividers) return;
 
-        // Iterate over all windows to find file explorers
-        const explorers: HTMLElement[] = [];
-        this.app.workspace.iterateAllLeaves(leaf => {
-            const view = leaf.view as obsidian.View & { getViewType(): string; containerEl: HTMLElement };
-            if (view.getViewType() === 'file-explorer' || view.getViewType() === 'nav-files') {
-                const container = view.containerEl.querySelector('.nav-files-container');
-                if (container) explorers.push(container as HTMLElement);
-            }
-        });
-
-        // Also check Notebook Navigator extra containers in all open documents
-        const docs = new Set<Document>();
-        explorers.forEach(e => docs.add(e.ownerDocument));
-        docs.add(activeDocument); // Fallback
-        
-        const allContainers = [...explorers];
-        docs.forEach(doc => {
-            const extra = NotebookNavigatorIntegration.getExtraContainers(doc);
-            if (extra) extra.forEach(e => allContainers.push(e as HTMLElement));
-        });
+        const allContainers = this.plugin.getAllExplorerContainers();
 
         if (allContainers.length === 0) return;
 
@@ -577,9 +558,8 @@ export class DividerManager {
             DividerManager.activePopover.remove();
             DividerManager.activePopover = null;
         }
-        const containers = Array.from(activeDocument.querySelectorAll('.nav-files-container'));
-        const extraContainers = Array.from(NotebookNavigatorIntegration.getExtraContainers(activeDocument));
-        [...containers, ...extraContainers].forEach(container => {
+        const allContainers = this.plugin.getAllExplorerContainers();
+        allContainers.forEach(container => {
             container.querySelectorAll('.cf-interactive-divider').forEach(el => {
                 const parent = el.parentElement;
                 if (parent) parent.classList.remove('cf-has-divider');
