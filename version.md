@@ -4,11 +4,10 @@
 This massive release brings powerful new customization options and resolves one of the most stubborn UI bugs for power users with huge vaults.
 
 ### ⚡ 1. Perfect Scroll & Instant Startup
-- **Instant Obsidian Startup**: Refactored the core settings loading and local icon fetching to completely eliminate startup delays. Local `.obsidian/icons` discovery is deferred by 2 seconds to move file scanning out of the critical startup path.
-- **Batched SVG Loading**: Custom icons are loaded in batches of **50 concurrent operations** instead of loading hundreds of files simultaneously, completely eliminating Electron thread pool freeze and disk I/O saturation.
-- **O(1) Palette & Parser Caching**: Color palettes and hex parser translations are computed once and stored in global memory caches. Lookups and `getEffectiveStyle` queries run in O(1) time without performing redundant math.
-- **Zero Scroll Lag**: We completely rewrote the icon injection engine. Rapidly scrolling through hundreds of folders in the virtualized list is now perfectly smooth with zero layout thrashing or CPU spikes.
-- **Removed Redundant Observers**: Removed premature observer calls from the `onload()` startup phase, preventing premature layout reflows before workspace leaves are fully loaded.
+- **Instant Startup**: Optimized the plugin loading cycle. Folder styles and settings load instantly when you open your vault.
+- **Smooth Sidebar Scrolling**: Rewrote the background styling engine. Scrolling through thousands of folders and files is now buttery smooth, with zero lag or stutter.
+- **Smart Background Icon Loading**: Custom icons are now loaded gently in the background. The plugin waits 2 seconds after startup before scanning files, ensuring it never freezes your Obsidian app.
+- **Cached Folder Colors**: Folder colors and styles are calculated once and stored in memory. The plugin doesn't need to recalculate them constantly, saving your device's CPU.
 
 ### 🏷️ 2. Tag Color Synchronization
 - **Unify Your Vault**: Folder colors can now automatically synchronize with Obsidian tags!

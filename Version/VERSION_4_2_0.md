@@ -26,6 +26,9 @@ This massive release brings powerful new customization options and resolves one 
 ---
 
 ## 🛠️ Behind the Scenes (Developer Updates)
+* **O(1) Palette & Parser Caching**: Implemented a caching mechanism (`_cachedPalette`, `_cachedPaletteKey`) in `getCurrentPalette()` and global parsing caches (`rgbCache` and `paletteCache` in `utils.ts`) to make styling lookups O(1) and avoid recalculations.
+* **Batched & Deferred I/O**: Swapped raw parallel `Promise.all` reads in `loadLocalIcons()` for a chunking strategy (batch size 50) and deferred scanning by 2 seconds using `window.setTimeout` to prevent Electron IPC bottlenecks and thread congestion.
+* **Redundant Observer Removal**: Removed premature observer calls from the `onload()` constructor, deferring layout observer registrations strictly to `onLayoutReady()`.
 * **MutationObserver Guards**: Implemented strict `isScrolling` guards on the global file explorer observer to prevent cascade rendering.
 * **Documentation Overhaul**: Updated the `ENGINE_INTERNALS.md`, `ARCHITECTURE.md`, `API_REFERENCE.md`, and `INCIDENT_LOG.md` to map the new scroll performance systems and Regex Icon Builder internals.
 * **Data Schema Updated**: All new settings (`tagSyncEnabled`, `tagSyncMatchFolders`, `tagSyncRules`, `graphColorSync`) have been documented in `DATA_SCHEMA.md`.
