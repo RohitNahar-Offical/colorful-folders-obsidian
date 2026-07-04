@@ -3,10 +3,13 @@
 This massive release brings powerful new customization options and resolves one of the most stubborn UI bugs for power users with huge vaults.
 
 ### ⚡ 1. Perfect Scroll & Instant Startup
-* **Instant Obsidian Startup**: Refactored the core settings loading and local icon fetching (using parallel `Promise.all` logic) to completely eliminate startup delays. Reloading the plugin or opening Obsidian is now significantly faster, even with hundreds of SVGs.
+* **Instant Obsidian Startup**: Refactored the core settings loading and local icon fetching to completely eliminate startup delays. Local `.obsidian/icons` discovery is deferred by 2 seconds to move file scanning out of the critical startup path.
+* **Batched SVG Loading**: Custom icons are loaded in batches of **50 concurrent operations** instead of loading hundreds of files simultaneously, completely eliminating Electron thread pool freeze and disk I/O saturation.
+* **O(1) Palette & Parser Caching**: Color palettes and hex parser translations are computed once and stored in global memory caches. Lookups and `getEffectiveStyle` queries run in O(1) time without performing redundant math.
 * **Zero Scroll Lag**: We completely rewrote the icon injection engine. Rapidly scrolling through hundreds of folders in the virtualized list is now perfectly smooth with zero layout thrashing or CPU spikes. 
 * **Targeted Updates**: The plugin now intelligently updates only the specific icons that just appeared on screen, rather than scanning the entire file explorer.
 * **RAF Batching**: All visual updates are now grouped using `requestAnimationFrame`, eliminating layout stutter on first load.
+* **Removed Redundant Observers**: Removed premature observer calls from the `onload()` startup phase, preventing premature layout reflows before workspace leaves are fully loaded.
 
 ### 🏷️ 2. Tag Color Synchronization
 * **Unify Your Vault**: Folder colors can now automatically synchronize with Obsidian tags!
