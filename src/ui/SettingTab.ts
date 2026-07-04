@@ -143,13 +143,13 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         // ──────────────────────────────────────────────────────────────────────
         const tagCard = makeCard(intPanel, "🏷️", "Tag Color Sync");
         tagCard.createEl('p', {
-            text: 'Automatically colors your Markdown tags based on your folder colors and custom rules.',
+            text: 'Harmonize your vault\'s visual hierarchy by automatically color-coding tags to match your folder themes.',
             cls: 'setting-item-description'
         }).setCssStyles({ fontSize: '0.85em', color: 'var(--text-muted)', marginBottom: '16px' });
 
         new obsidian.Setting(tagCard)
             .setName('Enable tag color sync')
-            .setDesc('Applies colors to tags in live preview and reading mode.')
+            .setDesc('Apply colors directly to hashtag pills across both live preview and reading mode.')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.tagSyncEnabled)
                 .onChange(async (value) => {
@@ -160,7 +160,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         new obsidian.Setting(tagCard)
             .setName('Match folder colors')
-            .setDesc('Automatically applies a folder\'s color to any tag that shares the exact same name.')
+            .setDesc('Automatically color tags that share the exact same name as any styled folder (e.g. Styling the folder "work" automatically styles the tag "#work").')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.tagSyncMatchFolders)
                 .onChange(async (value) => {
@@ -171,7 +171,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         new obsidian.Setting(tagCard)
             .setName('Custom tag rules')
-            .setDesc('Explicitly map tags to specific colors. Format: TagName = #hexcolor (e.g. Urgent = #ff0000)')
+            .setDesc('Define custom color overrides for specific tags. Format: TagName = #hexcode (one rule per line, e.g. Urgent = #ff0000).')
             .addTextArea(text => {
                 text.setPlaceholder("Urgent = #ff0000\nidea = #00ff00")
                     .setValue(this.plugin.settings.tagSyncRules || "")
@@ -190,18 +190,18 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         // ──────────────────────────────────────────────────────────────────────
         const graphCard = makeCard(intPanel, "🕸️", "Graph View Color Sync");
         graphCard.createEl('p', {
-            text: '💡 Tip: Colors are applied to the graph view using path-based node groups. Re-open the graph view after making changes for them to take effect.',
+            text: '💡 Tip: Colors are applied to the graph view using node path groups. Re-open or refresh the graph view tab after changes to see updates.',
             cls: 'setting-item-description'
         }).setCssStyles({ fontSize: '0.85em', fontStyle: 'italic', marginBottom: '12px', color: 'var(--text-accent)' });
 
         graphCard.createEl('p', {
-            text: 'How it works: To prevent bloating your graph settings, the plugin only syncs (1) all top-level folders and (2) any subfolders where you have explicitly picked a custom color using the color picker. Subfolders that just inherit their color automatically are skipped.',
+            text: 'How it works: To keep your graph configuration clean, only top-level folders and folders with explicit custom styles are synced. Automatically inherited subfolders are skipped.',
             cls: 'setting-item-description'
         }).setCssStyles({ fontSize: '0.85em', color: 'var(--text-muted)', marginBottom: '16px' });
 
         new obsidian.Setting(graphCard)
             .setName('Sync colors to graph view')
-            .setDesc('Automatically applies your folder colors as node color groups in Obsidian\'s native graph view. Only top-level and explicitly custom-colored folders are synced. Your existing graph view groups are preserved.')
+            .setDesc('Automatically injects color groups matching your folders into Obsidian\'s native graph view. Pre-existing user-defined graph groups are safely preserved.')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.graphColorSync)
                 .onChange(async (value) => {
@@ -221,7 +221,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         new obsidian.Setting(graphCard)
             .setName('Sync now')
-            .setDesc('Manually push the current folder colors to the graph view. Useful after changing palettes or custom colors.')
+            .setDesc('Manually export your current folder colors and presets to the graph view settings file.')
             .addButton(btn => btn
                 .setButtonText('Sync now')
                 .setCta()
