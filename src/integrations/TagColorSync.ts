@@ -73,7 +73,8 @@ body .markdown-rendered a.tag[href="#${tag}"],
 body .markdown-rendered a.tag[href="#${tag.toLowerCase()}"],
 body .markdown-rendered a.tag[href="#${tag.toUpperCase()}"] {
     border: 1px solid rgba(${rgbStr}, 0.3) !important;
-    border-radius: 4px !important;
+    border-radius: 12px !important;
+    padding: 2px 8px !important;
 }
 
 /* Editing mode (CodeMirror 6) seamless borders and shape for #begin and end tokens */
@@ -91,8 +92,10 @@ body .cm-hashtag-begin.cm-tag-${tag.toLowerCase()},
 body .cm-hashtag-begin.cm-tag-${tag.toUpperCase()} {
     border-left: 1px solid rgba(${rgbStr}, 0.3) !important;
     border-right: none !important;
-    border-top-left-radius: 4px !important;
-    border-bottom-left-radius: 4px !important;
+    border-top-left-radius: 12px !important;
+    border-bottom-left-radius: 12px !important;
+    padding-left: 8px !important;
+    padding-right: 0 !important;
 }
 
 body [class~="cm-hashtag-end"][class~="cm-tag-${tag}" i],
@@ -101,8 +104,10 @@ body .cm-hashtag-end.cm-tag-${tag.toLowerCase()},
 body .cm-hashtag-end.cm-tag-${tag.toUpperCase()} {
     border-right: 1px solid rgba(${rgbStr}, 0.3) !important;
     border-left: none !important;
-    border-top-right-radius: 4px !important;
-    border-bottom-right-radius: 4px !important;
+    border-top-right-radius: 12px !important;
+    border-bottom-right-radius: 12px !important;
+    padding-right: 8px !important;
+    padding-left: 0 !important;
 }
 
 /* Hover effects */
