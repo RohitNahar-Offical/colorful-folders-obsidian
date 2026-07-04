@@ -20,6 +20,9 @@ export class StyleGenerator {
     private _counterSvgMid = '';
     private _counterSvgSuffix = '';
 
+    private _cachedPalette: { rgb: string, hex: string }[] | null = null;
+    private _cachedPaletteKey = '';
+
     constructor(plugin: IColorfulFoldersPlugin) {
         this.plugin = plugin;
         this.settings = plugin.settings;
@@ -29,6 +32,33 @@ export class StyleGenerator {
             this.plugin.heatmapCache = new Map<string, number>();
         }
     }
+    getCurrentPalette(): { rgb: string, hex: string }[] {
+        const isDark = this.isDarkMode();
+        const key = `${this.settings.palette}_${this.settings.customPalette}_${isDark}`;
+        if (this._cachedPalette && this._cachedPaletteKey === key) {
+            return this._cachedPalette;
+        }
+
+        let currentPalette = PALETTES[this.settings.palette] || PALETTES["Muted Dark Mode"];
+        if (this.settings.palette === "Custom") {
+            const custom = parseCustomPalette(this.settings.customPalette);
+            if (custom) currentPalette = custom;
+        }
+
+        if (!isDark) {
+            this._cachedPalette = currentPalette.map(c => {
+                const darker = adjustBrightnessRgb(c.rgb, -0.15);
+                const p = darker.split(',').map(s => parseInt(s.trim()));
+                const hex = "#" + ((1 << 24) + (p[0] << 16) + (p[1] << 8) + p[2]).toString(16).slice(1);
+                return { rgb: darker, hex: hex };
+            });
+        } else {
+            this._cachedPalette = currentPalette;
+        }
+        this._cachedPaletteKey = key;
+        return this._cachedPalette;
+    }
+
     isDarkMode() {
         return (activeDocument.body.classList.contains('theme-dark'));
     }
@@ -197,20 +227,7 @@ export class StyleGenerator {
         const nnIconScale = this.settings.notebookNavigatorIconScale ?? 0.8;
         const nnIconW = `calc(1.1em * ${nnIconScale * wideScale})`;
 
-        let currentPalette = PALETTES[this.settings.palette] || PALETTES["Muted Dark Mode"];
-        if (this.settings.palette === "Custom") {
-            const custom = parseCustomPalette(this.settings.customPalette);
-            if (custom) currentPalette = custom;
-        }
-
-        if (!isDark) {
-            currentPalette = currentPalette.map(c => {
-                const darker = adjustBrightnessRgb(c.rgb, -0.15);
-                const p = darker.split(',').map(s => parseInt(s.trim()));
-                const hex = "#" + ((1 << 24) + (p[0] << 16) + (p[1] << 8) + p[2]).toString(16).slice(1);
-                return { rgb: darker, hex: hex };
-            });
-        }
+        const currentPalette = this.getCurrentPalette();
 
         const excludeFolders = this.settings.exclusionList
             .split(',')

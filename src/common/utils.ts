@@ -1,7 +1,10 @@
-
+const rgbCache = new Map<string, {r: number, g: number, b: number} | null>();
 
 export function hexToRgbObj(hex: string): {r: number, g: number, b: number} | null {
     if (!hex || typeof hex !== 'string') return null;
+    const cached = rgbCache.get(hex);
+    if (cached !== undefined) return cached;
+
     let cleanHex = hex.trim().toLowerCase();
     
     const hasHash = cleanHex.startsWith('#');
@@ -12,14 +15,17 @@ export function hexToRgbObj(hex: string): {r: number, g: number, b: number} | nu
     }
     
     if (!/^[a-f\d]{6}$/i.test(hexDigits)) {
+        rgbCache.set(hex, null);
         return null;
     }
     
-    return {
+    const result = {
         r: parseInt(hexDigits.slice(0, 2), 16),
         g: parseInt(hexDigits.slice(2, 4), 16),
         b: parseInt(hexDigits.slice(4, 6), 16)
     };
+    rgbCache.set(hex, result);
+    return result;
 }
 
 export function anyToHex(color: string): string {
@@ -51,8 +57,13 @@ export function safeEscape(path: string): string {
     return path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
+const paletteCache = new Map<string, { rgb: string, hex: string }[] | null>();
+
 export function parseCustomPalette(hexString: string): { rgb: string, hex: string }[] | null {
     if (!hexString) return null;
+    const cached = paletteCache.get(hexString);
+    if (cached !== undefined) return cached;
+
     const hexes = hexString.split(',').map(s => s.trim().toLowerCase());
     const result: { rgb: string, hex: string }[] = [];
     for (let hex of hexes) {
@@ -71,7 +82,9 @@ export function parseCustomPalette(hexString: string): { rgb: string, hex: strin
             result.push({ rgb: `${r}, ${g}, ${b}`, hex: hex });
         }
     }
-    return result.length > 0 ? result : null;
+    const finalVal = result.length > 0 ? result : null;
+    paletteCache.set(hexString, finalVal);
+    return finalVal;
 }
 export function rgbToHsv(r: number, g: number, b: number) {
     r /= 255; g /= 255; b /= 255;

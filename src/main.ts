@@ -5,9 +5,8 @@ import {
   EffectiveStyle,
   IColorfulFoldersPlugin,
 } from "./common/types";
-import { DEFAULT_SETTINGS, PALETTES } from "./common/constants";
+import { DEFAULT_SETTINGS } from "./common/constants";
 import {
-  adjustBrightnessRgb,
   hexToRgbObj,
   anyToHex,
   parseCustomPalette,
@@ -61,12 +60,13 @@ export default class ColorfulFoldersPlugin
     this.styleGenerator = new StyleGenerator(this);
     this.iconManager = new IconManager(this);
     this.dividerManager = new DividerManager(this);
-    this.initDividerObserver();
-
     // Register Notebook Navigator extensions
     this.app.workspace.onLayoutReady(() => {
       NotebookNavigatorIntegration.registerMenuExtensions(this);
-      void this.loadLocalIcons();
+      // Defer loading of local icons to keep initial startup fast
+      window.setTimeout(() => {
+        void this.loadLocalIcons();
+      }, 2000);
     });
 
     this.addSettingTab(new ColorfulFoldersSettingTab(this.app, this));
@@ -174,19 +174,24 @@ export default class ColorfulFoldersPlugin
       if (await adapter.exists(iconsPath)) {
         const list = await adapter.list(iconsPath);
 
-        // PERF FIX 1: Parallel file reads with Promise.all().
-        // Previously each adapter.read() was awaited sequentially — in a vault
-        // with 750+ SVGs this could waste 200-400ms at startup.
+        // Read files in chunks of 50 to avoid I/O / threadpool saturation (Electron freeze)
         const buildEntries = async (files: string[]): Promise<[string, string][]> => {
           const svgFiles = files.filter(f => f.toLowerCase().endsWith('.svg'));
-          const results = await Promise.all(
-            svgFiles.map(async (file): Promise<[string, string]> => {
-              const content = await adapter.read(file);
-              const parts = file.split('/');
-              const name = parts[parts.length - 1].slice(0, -4); // strip .svg
-              return [name, content];
-            })
-          );
+          const results: [string, string][] = [];
+          const chunkSize = 50;
+
+          for (let i = 0; i < svgFiles.length; i += chunkSize) {
+            const chunk = svgFiles.slice(i, i + chunkSize);
+            const chunkResults = await Promise.all(
+              chunk.map(async (file): Promise<[string, string]> => {
+                const content = await adapter.read(file);
+                const parts = file.split('/');
+                const name = parts[parts.length - 1].slice(0, -4); // strip .svg
+                return [name, content];
+              })
+            );
+            results.push(...chunkResults);
+          }
           return results;
         };
 
@@ -557,25 +562,8 @@ export default class ColorfulFoldersPlugin
           : this.settings.lightModeBrightness) / 100;
       const cycleOff = this.settings.cycleOffset || 0;
 
-      // Build palette (same logic as StyleGenerator)
-      let palette =
-        PALETTES[this.settings.palette] || PALETTES["Muted Dark Mode"];
-      if (this.settings.palette === "Custom") {
-        const custom = parseCustomPalette(this.settings.customPalette);
-        if (custom) palette = custom;
-      }
-      if (!isDark) {
-        palette = palette.map((c) => {
-          const darker = adjustBrightnessRgb(c.rgb, -0.15);
-          const p = darker.split(",").map((s) => parseInt(s.trim()));
-          const hex =
-            "#" +
-            ((1 << 24) + (p[0] << 16) + (p[1] << 8) + p[2])
-              .toString(16)
-              .slice(1);
-          return { rgb: darker, hex };
-        });
-      }
+      // Build palette using StyleGenerator's cached method
+      const palette = this.styleGenerator.getCurrentPalette();
 
       const isFile = target instanceof obsidian.TFile;
       const path = target.path;
