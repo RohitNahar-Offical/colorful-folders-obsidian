@@ -171,19 +171,114 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         new obsidian.Setting(tagCard)
             .setName('Custom tag rules')
-            .setDesc('Define custom color overrides for specific tags. Format: TagName = #hexcode (one rule per line, e.g. Urgent = #ff0000).')
-            .addTextArea(text => {
-                text.setPlaceholder("Urgent = #ff0000\nidea = #00ff00")
-                    .setValue(this.plugin.settings.tagSyncRules || "")
-                    .onChange(async (value) => {
-                        this.plugin.settings.tagSyncRules = value;
-                        await this.plugin.saveSettings();
-                        this.plugin.generateStyles();
-                    });
-                text.inputEl.setCssStyles({
-                    width: "100%", height: "100px", fontFamily: "var(--font-monospace)", background: "var(--background-secondary)", padding: "10px"
+            .setDesc('Define custom color overrides for specific tags.');
+
+        const tagRulesUIContainer = tagCard.createDiv('cf-tag-rules-builder');
+        tagRulesUIContainer.setCssStyles({
+            marginTop: '15px', background: 'var(--background-secondary)', padding: '16px',
+            borderRadius: '8px', border: '1px solid var(--background-modifier-border)'
+        });
+
+        const renderTagRulesUI = () => {
+            tagRulesUIContainer.empty();
+
+            const header = tagRulesUIContainer.createDiv();
+            header.setCssStyles({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' });
+            header.createEl('h4', { text: 'Active rules' }).setCssStyles({ margin: '0' });
+
+            const addBtn = header.createEl('button', { text: 'Add rule', cls: 'mod-cta' });
+
+            // Parse existing tag rules
+            let rules = (this.plugin.settings.tagSyncRules || "").split('\n').filter(r => r.trim().length > 0);
+
+            const list = tagRulesUIContainer.createDiv('cf-tag-rules-list');
+            list.setCssStyles({ display: 'flex', flexDirection: 'column', gap: '8px' });
+
+            const saveTagRules = async () => {
+                this.plugin.settings.tagSyncRules = rules.join('\n');
+                await this.plugin.saveSettings();
+                this.plugin.generateStyles();
+            };
+
+            rules.forEach((rule, index) => {
+                const row = list.createDiv();
+                row.setCssStyles({ display: 'flex', gap: '8px', alignItems: 'center' });
+
+                let tagName = "", colorHex = "#ffffff";
+                const parts = rule.split('=').map(p => p.trim());
+                if (parts.length >= 2) {
+                    tagName = parts[0];
+                    colorHex = parts[1].startsWith('#') ? parts[1] : "#ffffff";
+                } else {
+                    tagName = rule;
+                }
+
+                // Tag Name Input
+                const tagInp = row.createEl('input', { type: 'text', placeholder: 'Tag name (e.g. Urgent)' });
+                tagInp.value = tagName;
+                tagInp.setCssStyles({ flex: '2', fontFamily: 'var(--font-monospace)' });
+
+                // Color Input (Picker)
+                const colorInp = row.createEl('input', { type: 'color' });
+                colorInp.value = colorHex;
+                colorInp.setCssStyles({
+                    width: '40px', height: '30px', border: 'none', borderRadius: '4px',
+                    cursor: 'pointer', padding: '0', background: 'transparent'
                 });
+
+                // Hex Text Input
+                const hexInp = row.createEl('input', { type: 'text', placeholder: '#ffffff' });
+                hexInp.value = colorHex;
+                hexInp.setCssStyles({ width: '90px', fontFamily: 'var(--font-monospace)' });
+
+                const updateRule = () => {
+                    const tName = tagInp.value.trim();
+                    let cHex = hexInp.value.trim();
+                    if (!cHex.startsWith('#')) {
+                        cHex = '#' + cHex;
+                    }
+                    // Validate hex
+                    if (/^#[0-9A-F]{6}$/i.test(cHex)) {
+                        colorInp.value = cHex;
+                        hexInp.value = cHex;
+                    } else {
+                        cHex = colorInp.value; // revert to color picker value
+                        hexInp.value = cHex;
+                    }
+
+                    if (tName) {
+                        rules[index] = `${tName} = ${cHex}`;
+                        void saveTagRules();
+                    }
+                };
+
+                colorInp.onchange = () => {
+                    hexInp.value = colorInp.value;
+                    updateRule();
+                };
+
+                tagInp.onchange = updateRule;
+                hexInp.onchange = updateRule;
+
+                const delBtn = row.createEl('button', { text: '×' });
+                delBtn.setCssStyles({ color: 'var(--text-error)', cursor: 'pointer', border: 'none', background: 'transparent', fontSize: '1.2em' });
+                delBtn.onclick = () => {
+                    rules.splice(index, 1);
+                    void saveTagRules().then(() => renderTagRulesUI());
+                };
             });
+
+            if (rules.length === 0) {
+                list.createDiv({ text: 'No custom tag rules defined.' }).setCssStyles({ color: 'var(--text-muted)', fontStyle: 'italic', padding: '8px 0' });
+            }
+
+            addBtn.onclick = () => {
+                rules.push("New_Rule = #5ebd8e");
+                void saveTagRules().then(() => renderTagRulesUI());
+            };
+        };
+
+        renderTagRulesUI();
 
         // ──────────────────────────────────────────────────────────────────────
         // ── GRAPH VIEW SYNC CARD ──────────────────────────────────────────────
