@@ -73,7 +73,7 @@ This massive release brings powerful new customization options and resolves one 
 
 ### 🌐 Network Usage & Privacy
 
-  * **External Requests:** Colorful Folders makes external network requests to `raw.githubusercontent.com` to download featured icon packs and to fetch changelogs when the plugin updates. These external calls are only made with user knowledge and do not transmit any personal data.
+  * **External Requests**: Colorful Folders makes exactly **one necessary network call** to `raw.githubusercontent.com` to fetch the changelog file (`version.md`) when the plugin is updated to a new version. This call is only performed to display update notes, does not transmit any user or vault data, and requires no authentication.
 
 -----
 
