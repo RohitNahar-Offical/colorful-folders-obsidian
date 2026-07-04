@@ -231,3 +231,19 @@ Read before making ANY architectural changes.
 - **Shared Explorer discovery**: Consolidated 4 different container query logic blocks across `main.ts` and `DividerManager.ts` into a single shared helper `getAllExplorerContainers()`.
 - **Linter & Build**: Standardized theme detections (`activeDocument` check) and fixed imports (`safeEscape` Consolidations). Build and linter verified at 100% clean.
 **Lesson**: Keep core calculations strictly single-sourced (DRY). For recursive generation engines, keep positional traversal fast while exporting static calculations for leaf and UI queries.
+
+---
+
+## Incident #18 — Startup & Reload Performance Regression (2026-07-04)
+**What was attempted**: Optimizing loading and reloading speed after refactoring.
+**Why it was done**: The plugin loading time was increased due to repetitive color calculations, premature observer layout queries, and I/O saturation from parallel custom SVG file reads.
+**What broke**: 
+- Calling observer queries in `onload()` before the layout was ready caused premature layout thrashing.
+- Rebuilding palettes and parsing hex strings on every `getEffectiveStyle` call created a CPU bottleneck.
+- Parallel file reading of hundreds of custom local SVG files on layout ready saturated Electron's I/O queue and froze the Obsidian main thread.
+**Resolution**:
+1. **Palette Caching**: Implemented a caching mechanism (`_cachedPalette`, `_cachedPaletteKey`) inside `StyleGenerator.getCurrentPalette()` so that `getEffectiveStyle()` fetches the pre-calculated palette in O(1) time.
+2. **Parser Caching**: Added top-level cache maps (`rgbCache` and `paletteCache`) in `utils.ts` to cache color parsing translations.
+3. **Observer Deferral**: Removed redundant observer queries from `onload()`, deferring layout queries strictly to `onLayoutReady()`.
+4. **Batched & Deferred I/O**: Deferred local icon scanning by 2 seconds using `window.setTimeout`, and batched SVG file reads in chunks of 50 to prevent I/O thread congestion.
+**Lesson**: Avoid heavy disk I/O and expensive string parsing during the critical startup path of Obsidian plugins. Cache frequently used visual layouts (like color palettes) and batch large filesystem queries in chunks.
