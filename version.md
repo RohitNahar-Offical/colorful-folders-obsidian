@@ -13,6 +13,8 @@ This massive release brings powerful new customization options and resolves one 
 - **Unify Your Vault**: Folder colors can now automatically synchronize with Obsidian tags!
 - **Match Folders**: Automatically color tags that perfectly match a styled folder's name (e.g. styling the folder "Work" automatically styles `#Work`).
 - **Custom Tag Rules**: Use the new Tag Sync Rules setting to map specific tags to any styled folder path manually (e.g. `#todo = /Projects/Active`).
+- **Interactive Tag Rules Builder**: Added a visual rules builder in the settings. Click to pick tag colors using a color picker and manage rules with buttons instead of typing them manually.
+- **True Capsule Pill Styling**: Styled tags now display as beautiful rounded pills in both Reading Mode and Live Preview (writing mode), with seamless border corners and balanced spacing.
 
 ### 🎨 3. Graph View Color Sync
 - **Colorful Nodes**: Your beautiful folder colors now sync directly into Obsidian's built-in Graph View as color groups, giving you a perfectly unified aesthetic across your entire workspace.
