@@ -53,10 +53,17 @@ export class TagColorSync {
 
             css += `
 /* Unified styling for Live Preview and Reading Mode */
+body [class*="cm-tag-${tag}" i],
 body [class~="cm-tag-${tag}" i],
+body .cm-tag-${tag},
+body .cm-tag-${tag.toLowerCase()},
+body .cm-tag-${tag.toUpperCase()},
 body .cm-hashtag.cm-tag-${tag},
 body .cm-hashtag.cm-tag-${tag.toLowerCase()},
 body .cm-hashtag.cm-tag-${tag.toUpperCase()},
+body .tag.cm-tag-${tag},
+body .tag.cm-tag-${tag.toLowerCase()},
+body .tag.cm-tag-${tag.toUpperCase()},
 body .markdown-rendered a.tag[href="#${tag}" i],
 body .markdown-rendered a.tag[href="#${tag}"],
 body .markdown-rendered a.tag[href="#${tag.toLowerCase()}"],
@@ -67,18 +74,21 @@ body .markdown-rendered a.tag[href="#${tag.toUpperCase()}"] {
     color: var(--cf-tag-color) !important;
 }
 
-/* Reading mode border and shape */
+/* Reading mode & Live Preview widgets border and shape */
 body .markdown-rendered a.tag[href="#${tag}" i],
 body .markdown-rendered a.tag[href="#${tag}"],
 body .markdown-rendered a.tag[href="#${tag.toLowerCase()}"],
-body .markdown-rendered a.tag[href="#${tag.toUpperCase()}"] {
+body .markdown-rendered a.tag[href="#${tag.toUpperCase()}"],
+body .tag.cm-tag-${tag},
+body .tag.cm-tag-${tag.toLowerCase()},
+body .tag.cm-tag-${tag.toUpperCase()},
+body .tag[class*="cm-tag-${tag}" i] {
     border: 1px solid rgba(${rgbStr}, 0.3) !important;
     border-radius: 12px !important;
     padding: 2px 8px !important;
 }
 
-/* Editing mode (CodeMirror 6) seamless borders and shape for #begin and end tokens */
-body [class~="cm-tag-${tag}" i],
+/* Editing mode (CodeMirror 6 inline text) seamless borders and shape for #begin and end tokens */
 body .cm-hashtag.cm-tag-${tag},
 body .cm-hashtag.cm-tag-${tag.toLowerCase()},
 body .cm-hashtag.cm-tag-${tag.toUpperCase()} {
@@ -86,7 +96,7 @@ body .cm-hashtag.cm-tag-${tag.toUpperCase()} {
     border-bottom: 1px solid rgba(${rgbStr}, 0.3) !important;
 }
 
-body [class~="cm-hashtag-begin"][class~="cm-tag-${tag}" i],
+body [class~="cm-hashtag-begin"][class*="cm-tag-${tag}" i],
 body .cm-hashtag-begin.cm-tag-${tag},
 body .cm-hashtag-begin.cm-tag-${tag.toLowerCase()},
 body .cm-hashtag-begin.cm-tag-${tag.toUpperCase()} {
@@ -98,7 +108,7 @@ body .cm-hashtag-begin.cm-tag-${tag.toUpperCase()} {
     padding-right: 0 !important;
 }
 
-body [class~="cm-hashtag-end"][class~="cm-tag-${tag}" i],
+body [class~="cm-hashtag-end"][class*="cm-tag-${tag}" i],
 body .cm-hashtag-end.cm-tag-${tag},
 body .cm-hashtag-end.cm-tag-${tag.toLowerCase()},
 body .cm-hashtag-end.cm-tag-${tag.toUpperCase()} {
@@ -111,10 +121,14 @@ body .cm-hashtag-end.cm-tag-${tag.toUpperCase()} {
 }
 
 /* Hover effects */
+body [class*="cm-tag-${tag}" i]:hover,
 body [class~="cm-tag-${tag}" i]:hover,
 body .cm-hashtag.cm-tag-${tag}:hover,
 body .cm-hashtag.cm-tag-${tag.toLowerCase()}:hover,
 body .cm-hashtag.cm-tag-${tag.toUpperCase()}:hover,
+body .tag.cm-tag-${tag}:hover,
+body .tag.cm-tag-${tag.toLowerCase()}:hover,
+body .tag.cm-tag-${tag.toUpperCase()}:hover,
 body .markdown-rendered a.tag[href="#${tag}" i]:hover,
 body .markdown-rendered a.tag[href="#${tag}"]:hover,
 body .markdown-rendered a.tag[href="#${tag.toLowerCase()}"]:hover,
