@@ -593,7 +593,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             paletteBuilderContainer.empty();
 
             const header = paletteBuilderContainer.createDiv();
-            header.setCssStyles({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' });
+            header.setCssStyles({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' });
             header.createEl('span', { text: 'Palette colors' }).setCssStyles({ fontWeight: '600', fontSize: '0.9em' });
             const addColorBtn = header.createEl('button', { text: '+ add color', cls: 'mod-cta' });
 
@@ -604,17 +604,28 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .filter(c => /^#[0-9a-fA-F]{6}$/.test(c));
             if (colors.length === 0) colors = ['#eb6f92'];
 
-            const list = paletteBuilderContainer.createDiv();
-            list.setCssStyles({ display: 'flex', flexDirection: 'column', gap: '8px' });
+            const mainSplit = paletteBuilderContainer.createDiv();
+            mainSplit.setCssStyles({ display: 'flex', gap: '24px', alignItems: 'flex-start' });
+
+            const list = mainSplit.createDiv();
+            list.setCssStyles({ display: 'flex', flexDirection: 'column', gap: '8px', flex: '1' });
+
+            const pickerSide = mainSplit.createDiv();
+            pickerSide.setCssStyles({ flex: '1' });
+            
+            const pickerPlaceholder = pickerSide.createDiv();
+            pickerPlaceholder.setCssStyles({ 
+                padding: '20px', textAlign: 'center', color: 'var(--text-muted)', 
+                fontStyle: 'italic', background: 'var(--background-primary-alt)',
+                borderRadius: '8px', border: '1px dashed var(--background-modifier-border)'
+            });
+            pickerPlaceholder.setText('Click a color to edit');
 
             const savePalette = async () => {
                 this.plugin.settings.customPalette = colors.join(', ');
                 await this.plugin.saveSettings();
                 this.plugin.generateStyles();
             };
-
-            // Shared active picker — only one open at a time
-            let activePicker: HTMLElement | null = null;
 
             const renderRow = (hex: string, index: number) => {
                 const row = list.createDiv();
@@ -629,16 +640,14 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 });
 
                 swatch.addEventListener('click', () => {
-                    // Close the currently open picker (whether same or different swatch)
-                    if (activePicker) { activePicker.remove(); activePicker = null; }
-                    const pickerWrap = row.createDiv();
-                    activePicker = pickerWrap;
+                    pickerSide.empty();
+                    
+                    const pickerWrap = pickerSide.createDiv();
                     pickerWrap.setCssStyles({
-                        position: 'absolute', zIndex: '9999', marginTop: '4px',
                         padding: '14px', background: 'var(--background-secondary-alt)',
-                        borderRadius: '8px', border: '1px solid var(--background-modifier-border)',
-                        boxShadow: '0 8px 24px rgba(0,0,0,0.3)'
+                        borderRadius: '8px', border: '1px solid var(--background-modifier-border)'
                     });
+                    
                     createVisualColorPicker(pickerWrap, colors[index], (newHex) => {
                         colors[index] = newHex;
                         swatch.setCssStyles({ backgroundColor: newHex });
@@ -669,7 +678,8 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 const delBtn = row.createEl('button', { text: '×' });
                 delBtn.setCssStyles({ color: 'var(--text-error)', cursor: 'pointer', border: 'none', background: 'transparent', fontSize: '1.2em' });
                 delBtn.onclick = () => {
-                    if (activePicker) { activePicker.remove(); activePicker = null; }
+                    pickerSide.empty();
+                    pickerSide.appendChild(pickerPlaceholder);
                     colors.splice(index, 1);
                     void savePalette().then(() => renderPaletteBuilder());
                 };
