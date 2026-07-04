@@ -559,6 +559,9 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         infoText.appendText(' to assign specific unique colors or icons!');
 
         const genCard = makeCard(generalPanel, "🎨", "Global visual palette");
+        let globalBgPickerWrap: HTMLElement | null = null;
+        let globalBgTextComp: obsidian.TextComponent;
+        let globalBgSwatch: HTMLElement;
 
         new obsidian.Setting(genCard)
             .setName('Color palette theme')
@@ -578,15 +581,109 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         new obsidian.Setting(genCard)
             .setName('Custom colors (hex)')
-            .setDesc('Comma-separated list of hex colors.')
-            .addText(text => text
-                .setPlaceholder('Hex codes: #ff0000, #00ff00')
-                .setValue(this.plugin.settings.customPalette)
-                .onChange(async (value) => {
-                    this.plugin.settings.customPalette = value;
-                    await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
-                }));
+            .setDesc('Your custom palette colors. Click a swatch to pick visually, or type a hex code directly. Only active when "custom palette" is selected above.');
+
+        const paletteBuilderContainer = genCard.createDiv('cf-palette-builder');
+        paletteBuilderContainer.setCssStyles({
+            marginTop: '8px', background: 'var(--background-secondary)', padding: '14px',
+            borderRadius: '8px', border: '1px solid var(--background-modifier-border)'
+        });
+
+        const renderPaletteBuilder = () => {
+            paletteBuilderContainer.empty();
+
+            const header = paletteBuilderContainer.createDiv();
+            header.setCssStyles({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' });
+            header.createEl('span', { text: 'Palette colors' }).setCssStyles({ fontWeight: '600', fontSize: '0.9em' });
+            const addColorBtn = header.createEl('button', { text: '+ add color', cls: 'mod-cta' });
+
+            // Parse current palette — filter out empty entries
+            let colors = (this.plugin.settings.customPalette || '')
+                .split(',')
+                .map(c => c.trim())
+                .filter(c => /^#[0-9a-fA-F]{6}$/.test(c));
+            if (colors.length === 0) colors = ['#eb6f92'];
+
+            const list = paletteBuilderContainer.createDiv();
+            list.setCssStyles({ display: 'flex', flexDirection: 'column', gap: '8px' });
+
+            const savePalette = async () => {
+                this.plugin.settings.customPalette = colors.join(', ');
+                await this.plugin.saveSettings();
+                this.plugin.generateStyles();
+            };
+
+            const renderRow = (hex: string, index: number) => {
+                const row = list.createDiv();
+                row.setCssStyles({ display: 'flex', gap: '8px', alignItems: 'center' });
+
+                // Color swatch (clickable — opens inline picker)
+                const swatch = row.createDiv();
+                swatch.setCssStyles({
+                    width: '32px', height: '32px', borderRadius: '6px', flexShrink: '0',
+                    border: '2px solid var(--background-modifier-border)',
+                    backgroundColor: hex, cursor: 'pointer'
+                });
+
+                let pickerWrap: HTMLElement | null = null;
+
+                swatch.addEventListener('click', () => {
+                    if (pickerWrap) { pickerWrap.remove(); pickerWrap = null; return; }
+                    pickerWrap = row.createDiv();
+                    pickerWrap.setCssStyles({
+                        position: 'absolute', zIndex: '9999', marginTop: '4px',
+                        padding: '14px', background: 'var(--background-secondary-alt)',
+                        borderRadius: '8px', border: '1px solid var(--background-modifier-border)',
+                        boxShadow: '0 8px 24px rgba(0,0,0,0.3)'
+                    });
+                    createVisualColorPicker(pickerWrap, hex, (newHex) => {
+                        colors[index] = newHex;
+                        swatch.setCssStyles({ backgroundColor: newHex });
+                        hexInp.value = newHex;
+                        void savePalette();
+                    }, { showAlpha: false });
+                });
+
+                // Hex text input
+                const hexInp = row.createEl('input', { type: 'text' });
+                hexInp.value = hex;
+                hexInp.setCssStyles({
+                    flex: '1', fontFamily: 'var(--font-monospace)', fontSize: '0.85em'
+                });
+                hexInp.onchange = () => {
+                    let val = hexInp.value.trim();
+                    if (!val.startsWith('#')) val = '#' + val;
+                    if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+                        colors[index] = val;
+                        swatch.setCssStyles({ backgroundColor: val });
+                        void savePalette();
+                    } else {
+                        hexInp.value = colors[index]; // revert
+                    }
+                };
+
+                // Remove button
+                const delBtn = row.createEl('button', { text: '×' });
+                delBtn.setCssStyles({ color: 'var(--text-error)', cursor: 'pointer', border: 'none', background: 'transparent', fontSize: '1.2em' });
+                delBtn.onclick = () => {
+                    colors.splice(index, 1);
+                    void savePalette().then(() => renderPaletteBuilder());
+                };
+            };
+
+            colors.forEach((c, i) => renderRow(c, i));
+
+            if (colors.length === 0) {
+                list.createDiv({ text: 'No colors defined.' }).setCssStyles({ color: 'var(--text-muted)', fontStyle: 'italic', padding: '6px 0' });
+            }
+
+            addColorBtn.onclick = () => {
+                colors.push('#5ebd8e');
+                void savePalette().then(() => renderPaletteBuilder());
+            };
+        };
+
+        renderPaletteBuilder();
 
         new obsidian.Setting(genCard)
             .setName('Folder exclusion list')
@@ -617,14 +714,41 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         new obsidian.Setting(genCard)
             .setName('Global default background')
             .setDesc('Set a universal background color for all folders/files that do not have a custom style. Leave empty for theme-default (transparent).')
-            .addText(text => text
-                .setPlaceholder('Hex: #2a2a2a')
-                .setValue(this.plugin.settings.globalBackgroundColor || "")
-                .onChange(async (value) => {
-                    this.plugin.settings.globalBackgroundColor = value;
-                    await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
-                }));
+            .addButton(btn => btn
+                .setIcon('palette')
+                .setTooltip('Open visual color picker')
+                .onClick(() => {
+                    if (globalBgPickerWrap) { globalBgPickerWrap.remove(); globalBgPickerWrap = null; return; }
+                    globalBgPickerWrap = genCard.createDiv();
+                    globalBgPickerWrap.setCssStyles({
+                        marginTop: '12px', padding: '16px', background: 'var(--background-secondary-alt)',
+                        borderRadius: '8px', border: '1px solid var(--background-modifier-border)'
+                    });
+                    const current = parseColorToHexAlpha(this.plugin.settings.globalBackgroundColor);
+                    createVisualColorPicker(globalBgPickerWrap, current.hex, (hex) => {
+                        this.plugin.settings.globalBackgroundColor = hex;
+                        globalBgTextComp.setValue(hex);
+                        globalBgSwatch.setCssStyles({ backgroundColor: hex });
+                        void this.plugin.saveSettings().then(() => this.plugin.generateStyles());
+                    }, { showAlpha: false });
+                }))
+            .addText(text => {
+                globalBgTextComp = text;
+                text.setPlaceholder('Hex: #2a2a2a')
+                    .setValue(this.plugin.settings.globalBackgroundColor || '')
+                    .onChange(async (value) => {
+                        this.plugin.settings.globalBackgroundColor = value;
+                        globalBgSwatch.setCssStyles({ backgroundColor: value || 'transparent' });
+                        await this.plugin.saveSettings();
+                        this.plugin.generateStyles();
+                    });
+                globalBgSwatch = text.inputEl.parentElement?.createDiv() ?? text.inputEl.insertAdjacentElement('afterend', activeDocument.createElement('div')) as HTMLElement;
+                globalBgSwatch.setCssStyles({
+                    width: '24px', height: '24px', borderRadius: '6px',
+                    border: '1px solid var(--background-modifier-border)',
+                    backgroundColor: this.plugin.settings.globalBackgroundColor || 'transparent'
+                });
+            });
 
         if (this.plugin.settings.colorMode === 'cycle') {
             new obsidian.Setting(genCard)
