@@ -613,6 +613,9 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 this.plugin.generateStyles();
             };
 
+            // Shared active picker — only one open at a time
+            let activePicker: HTMLElement | null = null;
+
             const renderRow = (hex: string, index: number) => {
                 const row = list.createDiv();
                 row.setCssStyles({ display: 'flex', gap: '8px', alignItems: 'center' });
@@ -625,18 +628,18 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     backgroundColor: hex, cursor: 'pointer'
                 });
 
-                let pickerWrap: HTMLElement | null = null;
-
                 swatch.addEventListener('click', () => {
-                    if (pickerWrap) { pickerWrap.remove(); pickerWrap = null; return; }
-                    pickerWrap = row.createDiv();
+                    // Close the currently open picker (whether same or different swatch)
+                    if (activePicker) { activePicker.remove(); activePicker = null; }
+                    const pickerWrap = row.createDiv();
+                    activePicker = pickerWrap;
                     pickerWrap.setCssStyles({
                         position: 'absolute', zIndex: '9999', marginTop: '4px',
                         padding: '14px', background: 'var(--background-secondary-alt)',
                         borderRadius: '8px', border: '1px solid var(--background-modifier-border)',
                         boxShadow: '0 8px 24px rgba(0,0,0,0.3)'
                     });
-                    createVisualColorPicker(pickerWrap, hex, (newHex) => {
+                    createVisualColorPicker(pickerWrap, colors[index], (newHex) => {
                         colors[index] = newHex;
                         swatch.setCssStyles({ backgroundColor: newHex });
                         hexInp.value = newHex;
@@ -644,11 +647,11 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     }, { showAlpha: false });
                 });
 
-                // Hex text input
+                // Compact hex text input
                 const hexInp = row.createEl('input', { type: 'text' });
                 hexInp.value = hex;
                 hexInp.setCssStyles({
-                    flex: '1', fontFamily: 'var(--font-monospace)', fontSize: '0.85em'
+                    width: '90px', fontFamily: 'var(--font-monospace)', fontSize: '0.85em'
                 });
                 hexInp.onchange = () => {
                     let val = hexInp.value.trim();
@@ -658,7 +661,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         swatch.setCssStyles({ backgroundColor: val });
                         void savePalette();
                     } else {
-                        hexInp.value = colors[index]; // revert
+                        hexInp.value = colors[index]; // revert on invalid
                     }
                 };
 
@@ -666,6 +669,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 const delBtn = row.createEl('button', { text: '×' });
                 delBtn.setCssStyles({ color: 'var(--text-error)', cursor: 'pointer', border: 'none', background: 'transparent', fontSize: '1.2em' });
                 delBtn.onclick = () => {
+                    if (activePicker) { activePicker.remove(); activePicker = null; }
                     colors.splice(index, 1);
                     void savePalette().then(() => renderPaletteBuilder());
                 };
@@ -682,6 +686,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 void savePalette().then(() => renderPaletteBuilder());
             };
         };
+
 
         renderPaletteBuilder();
 
