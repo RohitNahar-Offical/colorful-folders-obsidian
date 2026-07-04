@@ -1,3 +1,4 @@
+import { TFolder } from 'obsidian';
 import { IColorfulFoldersPlugin, StyleContext } from '../common/types';
 import { adjustBrightnessRgb, hexToRgbObj } from '../common/utils';
 
@@ -9,14 +10,15 @@ export class TagColorSync {
 
         // 1. Folders Matching
         if (plugin.settings.tagSyncMatchFolders) {
-            for (const [path, style] of Object.entries(plugin.settings.customFolderColors)) {
-                if (typeof style === 'object' && !style.hasDivider && style.hex) {
-                    const parts = path.split('/');
-                    const name = parts[parts.length - 1];
+            const folders = plugin.app.vault.getAllLoadedFiles().filter((f): f is TFolder => f instanceof TFolder);
+            for (const folder of folders) {
+                const effStyle = plugin.getEffectiveStyle(folder);
+                if (effStyle && effStyle.hex) {
+                    const name = folder.name;
                     if (name) {
                         const cleanName = name.replace(/[^\w-]/g, '').toLowerCase();
                         if (cleanName) {
-                            tagMap.set(cleanName, style.hex);
+                            tagMap.set(cleanName, effStyle.hex);
                         }
                     }
                 }
@@ -51,7 +53,7 @@ export class TagColorSync {
 
             css += `
 body .cm-s-obsidian .cm-hashtag.cm-tag-${tag},
-body .markdown-rendered a.tag[href="#${tag}"] {
+body .markdown-rendered a.tag[href="#${tag}" i] {
     --cf-tag-bg: rgba(${rgbStr}, 0.2) !important;
     --cf-tag-color: ${t} !important;
     background-color: var(--cf-tag-bg) !important;
@@ -59,7 +61,7 @@ body .markdown-rendered a.tag[href="#${tag}"] {
     border: 1px solid rgba(${rgbStr}, 0.3) !important;
 }
 body .cm-s-obsidian .cm-hashtag.cm-tag-${tag}:hover,
-body .markdown-rendered a.tag[href="#${tag}"]:hover {
+body .markdown-rendered a.tag[href="#${tag}" i]:hover {
     --cf-tag-bg: rgba(${rgbStr}, 0.3) !important;
     background-color: var(--cf-tag-bg) !important;
 }
