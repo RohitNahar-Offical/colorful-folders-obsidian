@@ -1,5 +1,9 @@
 # 🌈 Colorful Folders for Obsidian
 
+<a href="https://github.com/sponsors/RohitNahar-Offical">
+  <img src="https://img.shields.io/badge/Sponsor-RohitNahar--Offical-ea4aaa?style=for-the-badge&logo=github-sponsors" alt="Sponsor RohitNahar-Offical" />
+</a>
+
 **Transform your Obsidian file explorer from a dull list into a vibrant, organized, and high-performance visual dashboard.**
 
 Colorful Folders automatically applies premium color palettes, smart icons, and structural intelligence to your vault. Whether you prefer a strictly organized, monochromatic workspace or a neon-glowing cyberpunk aesthetic, this plugin makes navigation intuitive and your workspace absolutely beautiful.

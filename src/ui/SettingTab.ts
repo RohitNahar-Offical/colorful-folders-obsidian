@@ -1920,6 +1920,21 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 });
             });
 
+        const sponsorCard = makeCard(sysPanel, "❤️", "Support the developer");
+        sponsorCard.createEl('p', { 
+            text: 'If you enjoy using Colorful Folders and want to support its continued development, please consider becoming a sponsor!'
+        }).setCssStyles({ fontSize: '0.85em', color: 'var(--text-muted)', marginBottom: '12px' });
+
+        const iframeWrap = sponsorCard.createDiv();
+        iframeWrap.setCssStyles({ display: 'flex', justifyContent: 'center', padding: '8px 0' });
+        
+        const iframe = activeDocument.createElement('iframe') as HTMLIFrameElement;
+        iframe.src = 'https://github.com/sponsors/RohitNahar-Offical/button';
+        iframe.title = 'Sponsor RohitNahar-Offical';
+        iframe.height = '32';
+        iframe.width = '114';
+        iframe.setCssStyles({ border: '0', borderRadius: '6px' });
+        iframeWrap.appendChild(iframe);
 
     }
 
