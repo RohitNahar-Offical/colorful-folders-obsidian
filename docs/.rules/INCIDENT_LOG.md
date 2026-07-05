@@ -247,3 +247,18 @@ Read before making ANY architectural changes.
 3. **Observer Deferral**: Removed redundant observer queries from `onload()`, deferring layout queries strictly to `onLayoutReady()`.
 4. **Batched & Deferred I/O**: Deferred local icon scanning by 2 seconds using `window.setTimeout`, and batched SVG file reads in chunks of 50 to prevent I/O thread congestion.
 **Lesson**: Avoid heavy disk I/O and expensive string parsing during the critical startup path of Obsidian plugins. Cache frequently used visual layouts (like color palettes) and batch large filesystem queries in chunks.
+
+---
+
+## Incident #19 — High-frequency Settings Persistence Lag in Palette Builder (2026-07-05)
+**What was attempted**: Rebuilding the "Palette colors" settings UI into a modern, side-by-side two-column layout matching the target mockup design.
+**Why it was done**: To provide a clean, premium visual palette editor using native Obsidian CSS variables instead of hardcoded/inconsistent styles.
+**What broke**: 
+- Standard color picker events (`onChange`) fire on every single mouse movement frame when dragging sliders.
+- Updating settings and calling `saveSettings` and `generateStyles` continuously during color picking triggered immediate, synchronous JSON file writes (`saveData`) and stylesheet swaps.
+- This caused severe input lag, micro-stutters, and browser thread blocking during dragging.
+**Resolution**:
+1. **Debounced saving**: Wrapped the custom palette serialization, disk save, and style generation in a debounced function `savePaletteDebounced` using Obsidian's native `debounce()` utility with a `300ms` window.
+2. **Instant Visual Feedback**: Kept the UI updates (updating the color swatch background and hex text value) fully synchronous and instantaneous, while deferring the heavy database persistence and class style regeneration until dragging ceased.
+3. **Native CSS variables**: Styled the header, pill-style hex inputs (`var(--background-modifier-form-field)`), and delete buttons using theme-aware native tokens so that the layout adapts perfectly to light, dark, or user themes without style leakage.
+**Lesson**: Always debounce setting persistence and style generation when handling visual drag inputs or high-frequency sliders. Maintain immediate visual feedback inside the local UI DOM elements, but delay costly disk I/O and document-wide style adoption.

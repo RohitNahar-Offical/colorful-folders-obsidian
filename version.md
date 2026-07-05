@@ -23,4 +23,9 @@ This massive release brings powerful new customization options and resolves one 
 - **Regex Icon Matching**: The Custom Icon Rules engine now supports powerful Regular Expressions. Match multiple folders instantly using flexible patterns instead of strict names.
 - **`.obsidian/icons` Support**: The plugin now automatically detects and loads any SVG icons placed in the standard `.obsidian/icons` directory! (Includes parallel loading for near-instant startups even with 1000+ icons).
 
+### 🖌️ 5. Visual Settings Pickers & Interactive UI
+- **Visual Global Backgrounds**: The global background setting now uses an interactive visual color picker instead of forcing you to type raw hex codes.
+- **Interactive Palette Builder**: The Custom Hex Palette setting has been completely rewritten into a side-by-side interactive builder.
+- **Swatch Previews**: See all your palette colors as real swatches, click them to open a side-panel visual color picker, and manage them effortlessly with new "Add Color" and "Reset to Default" buttons.
+
 ---

@@ -585,120 +585,218 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         const paletteBuilderContainer = genCard.createDiv('cf-palette-builder');
         paletteBuilderContainer.setCssStyles({
-            marginTop: '8px', background: 'var(--background-secondary)', padding: '14px',
-            borderRadius: '8px', border: '1px solid var(--background-modifier-border)'
+            marginTop: '12px',
+            background: 'transparent',
+            padding: '0'
         });
 
-        const renderPaletteBuilder = () => {
-            paletteBuilderContainer.empty();
+        // 1. Create header with title on the left, reset and add buttons on the right
+        const header = paletteBuilderContainer.createDiv();
+        header.setCssStyles({
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '16px'
+        });
+        header.createEl('span', { text: 'Palette colors' }).setCssStyles({
+            fontWeight: '600',
+            fontSize: '1.0em',
+            color: 'var(--text-normal)'
+        });
 
-            const header = paletteBuilderContainer.createDiv();
-            header.setCssStyles({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' });
-            header.createEl('span', { text: 'Palette colors' }).setCssStyles({ fontWeight: '600', fontSize: '0.9em' });
-            const addColorBtn = header.createEl('button', { text: '+ add color', cls: 'mod-cta' });
+        const btnContainer = header.createDiv();
+        btnContainer.setCssStyles({
+            display: 'flex',
+            gap: '10px'
+        });
 
-            // Parse current palette — filter out empty entries
-            let colors = (this.plugin.settings.customPalette || '')
-                .split(',')
-                .map(c => c.trim())
-                .filter(c => /^#[0-9a-fA-F]{6}$/.test(c));
-            if (colors.length === 0) colors = ['#eb6f92'];
+        const resetBtn = btnContainer.createEl('button', { text: 'Reset' });
+        resetBtn.setCssStyles({
+            cursor: 'pointer'
+        });
+        
+        const addColorBtn = btnContainer.createEl('button', { text: '+ add color' });
+        addColorBtn.setCssStyles({
+            backgroundColor: 'var(--interactive-accent)',
+            color: 'var(--text-on-accent)',
+            cursor: 'pointer',
+            border: 'none'
+        });
 
-            const mainSplit = paletteBuilderContainer.createDiv();
-            mainSplit.setCssStyles({ display: 'flex', gap: '24px', alignItems: 'flex-start' });
+        // 2. Create two-column layout: Left column for rows, Right column for editor panel
+        const mainSplit = paletteBuilderContainer.createDiv();
+        mainSplit.setCssStyles({
+            display: 'flex',
+            gap: '20px',
+            alignItems: 'flex-start'
+        });
 
-            const list = mainSplit.createDiv();
-            list.setCssStyles({ display: 'flex', flexDirection: 'column', gap: '8px', flex: '1' });
+        const list = mainSplit.createDiv();
+        list.setCssStyles({
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+            flex: '1'
+        });
 
-            const pickerSide = mainSplit.createDiv();
-            pickerSide.setCssStyles({ flex: '1' });
-            
-            const pickerPlaceholder = pickerSide.createDiv();
-            pickerPlaceholder.setCssStyles({ 
-                padding: '20px', textAlign: 'center', color: 'var(--text-muted)', 
-                fontStyle: 'italic', background: 'var(--background-primary-alt)',
-                borderRadius: '8px', border: '1px dashed var(--background-modifier-border)'
+        const pickerSide = mainSplit.createDiv();
+        pickerSide.setCssStyles({ 
+            flex: '1', 
+            background: 'var(--background-secondary)', 
+            borderRadius: '8px', 
+            border: '1px solid var(--background-modifier-border)',
+            minHeight: '200px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px'
+        });
+        
+        const pickerPlaceholder = pickerSide.createDiv();
+        pickerPlaceholder.setCssStyles({ 
+            textAlign: 'center', 
+            color: 'var(--text-muted)', 
+            fontStyle: 'italic'
+        });
+        pickerPlaceholder.setText('Click a color to edit');
+
+        // 3. Setup colors and functions
+        let colors = (this.plugin.settings.customPalette || '')
+            .split(',')
+            .map(c => c.trim())
+            .filter(c => /^#[0-9a-fA-F]{6}$/.test(c));
+        if (colors.length === 0) colors = ['#eb6f92'];
+
+        // Debounce saving/generating to prevent lag during color picking drag events
+        const savePaletteDebounced = obsidian.debounce(() => {
+            this.plugin.settings.customPalette = colors.join(', ');
+            void this.plugin.saveSettings().then(() => this.plugin.generateStyles());
+        }, 300, true);
+
+        const renderRow = (hex: string, index: number) => {
+            const row = list.createDiv();
+            row.setCssStyles({
+                display: 'flex',
+                gap: '10px',
+                alignItems: 'center'
             });
-            pickerPlaceholder.setText('Click a color to edit');
 
-            const savePalette = async () => {
-                this.plugin.settings.customPalette = colors.join(', ');
-                await this.plugin.saveSettings();
-                this.plugin.generateStyles();
+            // Color swatch: clean square 28x28px, border-radius: 6px
+            const swatch = row.createDiv();
+            swatch.setCssStyles({
+                width: '28px', 
+                height: '28px', 
+                borderRadius: '6px', 
+                flexShrink: '0',
+                border: '1px solid var(--background-modifier-border)',
+                backgroundColor: hex, 
+                cursor: 'pointer'
+            });
+
+            swatch.addEventListener('click', () => {
+                pickerSide.empty();
+                pickerSide.setCssStyles({
+                    display: 'block',
+                    padding: '16px'
+                });
+                
+                const pickerWrap = pickerSide.createDiv();
+                createVisualColorPicker(pickerWrap, colors[index], (newHex) => {
+                    colors[index] = newHex;
+                    swatch.setCssStyles({ backgroundColor: newHex });
+                    hexInp.value = newHex;
+                    savePaletteDebounced();
+                }, { showAlpha: false });
+            });
+
+            // Hex text input: pill-style, native form field background, monospace
+            const hexInp = row.createEl('input', { type: 'text' });
+            hexInp.value = hex;
+            hexInp.setCssStyles({
+                width: '90px', 
+                fontFamily: 'var(--font-monospace)', 
+                fontSize: '0.85em',
+                background: 'var(--background-modifier-form-field)',
+                border: 'none',
+                outline: 'none',
+                borderRadius: '999px',
+                padding: '4px 12px',
+                color: 'var(--text-normal)'
+            });
+            hexInp.onchange = () => {
+                let val = hexInp.value.trim();
+                if (!val.startsWith('#')) val = '#' + val;
+                if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+                    colors[index] = val;
+                    swatch.setCssStyles({ backgroundColor: val });
+                    savePaletteDebounced();
+                } else {
+                    hexInp.value = colors[index]; // revert on invalid
+                }
             };
 
-            const renderRow = (hex: string, index: number) => {
-                const row = list.createDiv();
-                row.setCssStyles({ display: 'flex', gap: '8px', alignItems: 'center' });
-
-                // Color swatch (clickable — opens inline picker)
-                const swatch = row.createDiv();
-                swatch.setCssStyles({
-                    width: '32px', height: '32px', borderRadius: '6px', flexShrink: '0',
-                    border: '2px solid var(--background-modifier-border)',
-                    backgroundColor: hex, cursor: 'pointer'
+            // Remove button: clean 'x' icon (color: var(--text-muted)) transitioning to var(--text-error) (red) on hover
+            const delBtn = row.createEl('button', { text: '×' });
+            delBtn.setCssStyles({ 
+                color: 'var(--text-muted)', 
+                cursor: 'pointer', 
+                border: 'none', 
+                background: 'transparent', 
+                fontSize: '1.2em',
+                padding: '0 4px',
+                transition: 'color 0.15s ease'
+            });
+            delBtn.addEventListener('pointerenter', () => {
+                delBtn.setCssStyles({ color: 'var(--text-error)' });
+            });
+            delBtn.addEventListener('pointerleave', () => {
+                delBtn.setCssStyles({ color: 'var(--text-muted)' });
+            });
+            delBtn.onclick = () => {
+                pickerSide.empty();
+                pickerSide.setCssStyles({
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '20px'
                 });
-
-                swatch.addEventListener('click', () => {
-                    pickerSide.empty();
-                    
-                    const pickerWrap = pickerSide.createDiv();
-                    pickerWrap.setCssStyles({
-                        padding: '14px', background: 'var(--background-secondary-alt)',
-                        borderRadius: '8px', border: '1px solid var(--background-modifier-border)'
-                    });
-                    
-                    createVisualColorPicker(pickerWrap, colors[index], (newHex) => {
-                        colors[index] = newHex;
-                        swatch.setCssStyles({ backgroundColor: newHex });
-                        hexInp.value = newHex;
-                        void savePalette();
-                    }, { showAlpha: false });
-                });
-
-                // Compact hex text input
-                const hexInp = row.createEl('input', { type: 'text' });
-                hexInp.value = hex;
-                hexInp.setCssStyles({
-                    width: '90px', fontFamily: 'var(--font-monospace)', fontSize: '0.85em'
-                });
-                hexInp.onchange = () => {
-                    let val = hexInp.value.trim();
-                    if (!val.startsWith('#')) val = '#' + val;
-                    if (/^#[0-9a-fA-F]{6}$/.test(val)) {
-                        colors[index] = val;
-                        swatch.setCssStyles({ backgroundColor: val });
-                        void savePalette();
-                    } else {
-                        hexInp.value = colors[index]; // revert on invalid
-                    }
-                };
-
-                // Remove button
-                const delBtn = row.createEl('button', { text: '×' });
-                delBtn.setCssStyles({ color: 'var(--text-error)', cursor: 'pointer', border: 'none', background: 'transparent', fontSize: '1.2em' });
-                delBtn.onclick = () => {
-                    pickerSide.empty();
-                    pickerSide.appendChild(pickerPlaceholder);
-                    colors.splice(index, 1);
-                    void savePalette().then(() => renderPaletteBuilder());
-                };
-            };
-
-            colors.forEach((c, i) => renderRow(c, i));
-
-            if (colors.length === 0) {
-                list.createDiv({ text: 'No colors defined.' }).setCssStyles({ color: 'var(--text-muted)', fontStyle: 'italic', padding: '6px 0' });
-            }
-
-            addColorBtn.onclick = () => {
-                colors.push('#5ebd8e');
-                void savePalette().then(() => renderPaletteBuilder());
+                pickerSide.appendChild(pickerPlaceholder);
+                colors.splice(index, 1);
+                rebuildRows();
+                savePaletteDebounced();
             };
         };
 
+        const rebuildRows = () => {
+            list.empty();
+            colors.forEach((c, i) => renderRow(c, i));
+            if (colors.length === 0) {
+                list.createDiv({ text: 'No colors defined.' }).setCssStyles({ color: 'var(--text-muted)', fontStyle: 'italic', padding: '6px 0' });
+            }
+        };
 
-        renderPaletteBuilder();
+        resetBtn.onclick = () => {
+            pickerSide.empty();
+            pickerSide.setCssStyles({
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '20px'
+            });
+            pickerSide.appendChild(pickerPlaceholder);
+
+            colors = ['#eb6f92', '#f6c177', '#ea9a97', '#c4a7e7', '#9ccfd8', '#31748f']; // Default Pastel Dreams palette
+            rebuildRows();
+            savePaletteDebounced();
+        };
+
+        addColorBtn.onclick = () => {
+            colors.push('#5ebd8e');
+            rebuildRows();
+            savePaletteDebounced();
+        };
+
+        rebuildRows();
 
         new obsidian.Setting(genCard)
             .setName('Folder exclusion list')
