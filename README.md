@@ -1,3 +1,4 @@
+![Downloads](https://img.shields.io/github/downloads/RohitNahar-Offical/colorful-folders-obsidian/total?style=for-the-badge&logo=github&logoColor=white&color=0A66C2&label=Downloads)
 # 🌈 Colorful Folders for Obsidian
 
 <a href="https://github.com/sponsors/RohitNahar-Offical">
