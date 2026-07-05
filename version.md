@@ -1,6 +1,11 @@
 # Updates for Colorful Folders
 
 ## 🚀 4.2.0 - The "Advanced Features & Ultimate Performance" Update
+
+<a href="https://github.com/sponsors/RohitNahar-Offical">
+  <img src="https://img.shields.io/badge/Sponsor-RohitNahar--Offical-ea4aaa?style=for-the-badge&logo=github-sponsors" alt="Sponsor RohitNahar-Offical" />
+</a>
+
 This massive release brings powerful new customization options and resolves one of the most stubborn UI bugs for power users with huge vaults.
 
 ### ⚡ 1. Perfect Scroll & Instant Startup
