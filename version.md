@@ -27,5 +27,6 @@ This massive release brings powerful new customization options and resolves one 
 - **Visual Global Backgrounds**: The global background setting now uses an interactive visual color picker instead of forcing you to type raw hex codes.
 - **Interactive Palette Builder**: The Custom Hex Palette setting has been completely rewritten into a side-by-side interactive builder.
 - **Swatch Previews**: See all your palette colors as real swatches, click them to open a side-panel visual color picker, and manage them effortlessly with new "Add Color" and "Reset to Default" buttons.
+- **Smooth Performance (Debounced Saves)**: Added a 300ms save/build debouncer to prevent database lag and UI stutters when dragging visual color picker sliders.
 
 ---
