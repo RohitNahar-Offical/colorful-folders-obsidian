@@ -3,7 +3,7 @@
     "name": "Colorful Folders",
     "version": "4.2.0",
     "minAppVersion": "1.4.4",
-    "description": "Automatically color-code folders, tags, and your Graph View with premium palettes, and auto-assign smart icons to visualize your structures instantly.",
+    "description": "Automatically adds color-code folders, tags, and your Graph View with premium palettes, and auto-assign smart icons to visualize your structures instantly.",
     "author": "ROHIT-NAHAR",
     "authorUrl": "https://github.com/RohitNahar-Offical",
     "isDesktopOnly": false
