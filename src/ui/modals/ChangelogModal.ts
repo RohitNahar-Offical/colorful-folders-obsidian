@@ -46,8 +46,19 @@ export class ChangelogModal extends obsidian.Modal {
         const footer = contentEl.createDiv({ cls: "cf-changelog-footer" });
         footer.setCssStyles({
             marginTop: "30px",
-            textAlign: "right"
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center"
         });
+
+        const sponsorBtn = footer.createEl("button", { text: "❤️ support the developer" });
+        sponsorBtn.setCssStyles({
+            cursor: "pointer"
+        });
+        sponsorBtn.onclick = () => {
+            window.open("https://github.com/sponsors/RohitNahar-Offical", "_blank");
+        };
+
         const closeBtn = footer.createEl("button", { text: "Got it!", cls: "mod-cta" });
         closeBtn.onclick = () => this.close();
     }
