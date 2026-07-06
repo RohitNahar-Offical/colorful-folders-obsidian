@@ -111,14 +111,16 @@ export default class ColorfulFoldersPlugin
     this.initStyleObservers();
 
     // Initial stealth mode state
-    activeDocument.body.classList.toggle(
-      "cf-show-hidden",
-      this.settings.showHiddenItems,
-    );
-    activeDocument.body.classList.toggle(
-      "cf-wrap-metadata",
-      !!this.settings.wrapMetadata,
-    );
+    this.getOpenDocuments().forEach(doc => {
+      doc.body.classList.toggle(
+        "cf-show-hidden",
+        this.settings.showHiddenItems,
+      );
+      doc.body.classList.toggle(
+        "cf-wrap-metadata",
+        !!this.settings.wrapMetadata,
+      );
+    });
 
     this.app.workspace.onLayoutReady(async () => {
       this.generateStyles();
@@ -772,14 +774,16 @@ export default class ColorfulFoldersPlugin
     if (this.sheet) {
       this.sheet.replaceSync(this.styleGenerator.generateCss());
     }
-    activeDocument.body.classList.toggle(
-      "cf-show-hidden",
-      this.settings.showHiddenItems,
-    );
-    activeDocument.body.classList.toggle(
-      "cf-wrap-metadata",
-      !!this.settings.wrapMetadata,
-    );
+    this.getOpenDocuments().forEach(doc => {
+      doc.body.classList.toggle(
+        "cf-show-hidden",
+        this.settings.showHiddenItems,
+      );
+      doc.body.classList.toggle(
+        "cf-wrap-metadata",
+        !!this.settings.wrapMetadata,
+      );
+    });
     // Ensure parent classes are indexed on startup/refresh
     this.updateActiveParentClasses(this.app.workspace.getActiveFile()?.path || "");
     this.refreshIcons();
@@ -794,19 +798,21 @@ export default class ColorfulFoldersPlugin
   }
 
   updateActiveParentClasses(activePath: string) {
-    activeDocument.querySelectorAll('.cf-active-parent').forEach(el => el.classList.remove('cf-active-parent'));
-    if (!activePath) return;
+    this.getOpenDocuments().forEach(doc => {
+      doc.querySelectorAll('.cf-active-parent').forEach(el => el.classList.remove('cf-active-parent'));
+      if (!activePath) return;
 
-    const segments = activePath.split('/');
-    let current = "";
-    for (let i = 0; i < segments.length - 1; i++) {
-      current += (current ? '/' : '') + segments[i];
-      const safePath = safeEscape(current);
-      activeDocument.querySelectorAll(`.nav-folder-title[data-path="${safePath}"]`).forEach(title => {
-        const folder = title.closest('.nav-folder, .tree-item, .nn-navitem');
-        if (folder) folder.classList.add('cf-active-parent');
-      });
-    }
+      const segments = activePath.split('/');
+      let current = "";
+      for (let i = 0; i < segments.length - 1; i++) {
+        current += (current ? '/' : '') + segments[i];
+        const safePath = safeEscape(current);
+        doc.querySelectorAll(`.nav-folder-title[data-path="${safePath}"]`).forEach(title => {
+          const folder = title.closest('.nav-folder, .tree-item, .nn-navitem');
+          if (folder) folder.classList.add('cf-active-parent');
+        });
+      }
+    });
   }
 
   private isScrolling = false;

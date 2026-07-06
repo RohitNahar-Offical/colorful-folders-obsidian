@@ -127,3 +127,54 @@ To ensure visual parity with third-party integrated views (like Notebook Navigat
 - **Decoupled Scaling**: Icons in integrated views use a dedicated **1.1em** scale constant, separate from the standard explorer's **1.3em**. This maintains visual balance across the different row heights of each view.
 - **Fallback Icon System**: To ensure no item ever appears blank, the bridge implements a mandatory fallback. If an item lacks a manual or auto-assigned icon, it is automatically injected with a professional Lucide folder or file icon via a CSS mask.
 - **Zero-Flicker Virtualization**: By using static CSS rules instead of JavaScript DOM manipulation, the bridge ensures that styles are applied at the browser's hardware-accelerated paint level, making it immune to React row-recycling lag.
+
+---
+
+## 11. Per-Folder Custom Rainbow Gradient Text
+
+Each folder and file can have an **independent custom gradient text** applied from the **Set Custom Style** modal → **Text styling** section.
+
+### 🎨 How it Works
+
+The gradient is powered by the CSS `background-clip: text` technique, injected on the **text content child** element (`.nav-folder-title-content` / `.nav-file-title-content`) — **not** the row container. This is critical: placing `background-image` on the same element as `background-color` would prevent the clip from working.
+
+```css
+/* Folder: textCss injected on .nav-folder-title-content */
+.nav-folder-title[data-path="..."] .nav-folder-title-content {
+    background-image: linear-gradient(90deg, #start, #end, #start);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+}
+
+/* File: fileTextCss injected on .nav-file-title-content */
+.nav-file-title[data-path="..."] .nav-file-title-content {
+    background-image: linear-gradient(90deg, #start, #end, #start);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+}
+```
+
+### ⚙️ FolderStyle Fields
+
+| Field | Type | Description |
+|:---|:---|:---|
+| `textColor` | `string` | Start color of the gradient (hex) |
+| `textGradientEnd` | `string` | End color of the gradient (hex) |
+| `textGradient` | `boolean` | Enables the gradient; requires both `textColor` and `textGradientEnd` |
+| `rainbowBrightness` | `number` | Adjusts brightness of both gradient colors (1–100, default 50) |
+
+### 🔆 Brightness Adjustment Formula
+```
+amount = (brightness - 50) / 50
+// e.g. brightness=75 → amount=0.5 (50% brighter)
+// e.g. brightness=25 → amount=-0.5 (50% darker)
+```
+
+### 🖼️ Live Preview Bar
+The **Color Picker Modal** shows a sticky mini-preview bar at the top (above the scrollable tabs) that renders the gradient text in real-time as colors and brightness are adjusted. The preview uses the **identical gradient formula** as `StyleGenerator.ts` to ensure pixel-perfect consistency between what you see in the modal and what appears in the file explorer.
+
+> [!NOTE]
+> The **Brightness** slider is only shown for root-level folders (depth 0), as these are the primary use case for the global rainbow root text effect. Child folders and files use the raw start/end colors directly.
+

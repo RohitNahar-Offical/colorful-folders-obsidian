@@ -262,3 +262,66 @@ Read before making ANY architectural changes.
 2. **Instant Visual Feedback**: Kept the UI updates (updating the color swatch background and hex text value) fully synchronous and instantaneous, while deferring the heavy database persistence and class style regeneration until dragging ceased.
 3. **Native CSS variables**: Styled the header, pill-style hex inputs (`var(--background-modifier-form-field)`), and delete buttons using theme-aware native tokens so that the layout adapts perfectly to light, dark, or user themes without style leakage.
 **Lesson**: Always debounce setting persistence and style generation when handling visual drag inputs or high-frequency sliders. Maintain immediate visual feedback inside the local UI DOM elements, but delay costly disk I/O and document-wide style adoption.
+
+---
+
+## Incident #20 — Icons and Text Vertically Misaligned After Custom Icon Injection (2026-07-06)
+**What was attempted**: Injecting custom SVG icon wrappers (`cf-icon-wrapper`) via `IconManager.ts` prepended inside the `.nav-folder-title-content` / `.nav-file-title-content` element.
+**Why it was done**: Placing the icon inside the content child keeps it in the correct DOM flow alongside the text label.
+**What broke**:
+- Custom icons appeared on one line, with text dropping **below** them.
+- The content element was forced `display: block !important` globally, so the injected icon wrapper stacked vertically above the text node instead of sitting beside it.
+- A secondary `.cf-icon-active { display: inline-flex }` override fought against the `block` rule but lost in some themes due to equal specificity priority order.
+**Root cause**: `display: block` causes all children to stack vertically. Prepending an icon wrapper inside a block container pushes the text down to the next line. The `.cf-icon-active` inline-flex override was not sufficient to reliably win.
+**Resolution**:
+1. **Content containers always flex row**: Changed `.nav-folder-title-content`, `.nav-file-title-content`, and `.tree-item-inner` from `display: block` to `display: flex; flex-direction: row; align-items: center` globally in `StyleGenerator.generateGlobalBaseCss()`. This ensures icon + text are always side-by-side regardless of theme.
+2. **Centralized icon spacing**: Added a global `.cf-icon-wrapper` CSS rule enforcing `margin-right: 6px`, `align-self: center`, `flex-shrink: 0`. Removed the inline `marginRight` style from `IconManager.ts` to avoid duplication.
+3. **Removed redundant `.cf-icon-active` display override**: No longer needed since all content containers are now flex rows by default.
+**Lesson**: When injecting inline elements into text containers, the container must be a flex row — never block. Set the display mode globally at the base CSS level rather than relying on conditional class-based overrides that may be beaten by specificity wars.
+
+---
+
+## Incident #21 — Gradient Text Not Applied to Files (Preview vs Real Mismatch) (2026-07-06)
+**What was attempted**: Applying custom rainbow gradient text colors to individual files in the file explorer using the `background-clip: text` CSS technique, matching the preview shown in the Color Picker Modal.
+**Why it was done**: Users could set a gradient start and end color from the modal and see it in the live preview bar, but the gradient never appeared in the actual file explorer.
+**What broke**:
+- The gradient appeared correctly in the modal preview bar but showed only a flat color (or no color) in the real file explorer.
+- Folders were working correctly; only files were broken.
+**Root cause**:
+- **Folders** (working): `textCss` (including `background-image: linear-gradient(...)` + `background-clip: text`) was injected into `.nav-folder-title-content` — the inner text child element — which has no background of its own.
+- **Files** (broken): `fileTextCss` was injected directly into `.nav-file-title` — the **row container** — which also had `background-color` set on it. When `background-image` and `background-color` coexist on the same element, the browser renders the `background-color` over the gradient. The `background-clip: text` was clipping a partially-hidden gradient, resulting in either flat color or invisible text.
+**Resolution**:
+1. **Split file CSS into two rules**: Separated the single combined `.nav-file-title` rule into:
+   - A **row rule** targeting `.nav-file-title[data-path="..."]` containing only background-color, border-left, opacity, CSS variables.
+   - A **text-content rule** targeting `.nav-file-title[data-path="..."] .nav-file-title-content` containing only color/gradient CSS.
+2. This mirrors exactly how folders were already correctly handled.
+**Lesson**: `background-clip: text` only functions when the element has **no other background competing on the same layer**. Always inject gradient text CSS on the **text content child**, never on a parent element that also has `background-color`. Folders and files must follow the same CSS injection architecture.
+
+---
+
+## Incident #22 — Preview Bold Weight and Gradient Pattern Mismatch (2026-07-06)
+**What was attempted**: Displaying a live preview of gradient text in the Color Picker Modal that exactly matches what StyleGenerator renders in the file explorer.
+**What broke**: Two subtle visual differences between the preview bar and the real output:
+1. **Bold weight**: Preview bar used `fontWeight: "700"` while StyleGenerator used `font-weight: 800 !important`. Result: preview looked slightly less bold than the real output.
+2. **Gradient pattern**: Preview bar generated `linear-gradient(90deg, start, end)` (two-stop), while StyleGenerator generated `linear-gradient(90deg, start, end, start)` (three-stop looped). Result: the gradient faded out sharply in the preview but transitioned smoothly back in the real output.
+3. **Background-clip reset**: When gradient was disabled, preview set `backgroundClip: "normal"` — an invalid CSS value — instead of `"initial"`, causing inconsistent rendering when toggling gradient off.
+**Resolution**:
+1. Changed preview `fontWeight` from `"700"` to `"800"` in both gradient and non-gradient branches of `updatePreview()`.
+2. Updated preview gradient string from `linear-gradient(90deg, ${startC}, ${endC})` to `linear-gradient(90deg, ${startC}, ${endC}, ${startC})`.
+3. Fixed `backgroundClip: "normal"` → `"initial"` and `webkitBackgroundClip: "normal"` → `"initial"` for the non-gradient reset.
+**Lesson**: The preview bar must use the **identical formula** as `StyleGenerator.ts` — same gradient stop count, same font-weight values, same CSS reset values. Any divergence creates a misleading live preview. Codify a shared utility function for gradient rendering shared between preview and engine.
+
+---
+
+## Incident #23 — ColorPickerModal UI: Toggles Too Small, Gradient Colors Not Auto-Initialized (2026-07-06)
+**What was attempted**: Adding Bold, Italic, and Custom Rainbow Colors toggles to the ColorPickerModal's Text Styling section.
+**What broke**:
+- The original `<input type="checkbox">` HTML checkboxes were very small and visually inconsistent with the rest of Obsidian's interface.
+- When the Custom Rainbow Colors toggle was enabled, the gradient only rendered if **both** Start Color and End Color were already set. If only the End Color had a default and the Start Color (`textColor`) was empty, the `if (textGradient && textColor && textGradientEnd)` guard failed, and no gradient CSS was generated at all.
+- The Reset Text button did not update the visual state of the toggle switches, leaving the UI out of sync with the data.
+**Resolution**:
+1. **Native Obsidian Toggles**: Replaced all `<input type="checkbox">` elements with `new obsidian.Setting(...).addToggle(...)` — the same native switch components used throughout Obsidian's settings page. This makes them large, themed, and consistent.
+2. **Auto-initialize gradient colors**: When the Custom Rainbow Colors toggle is turned on, if `textColor` (Start) is empty, it is automatically set to `#ffffff`; if `textGradientEnd` is empty, it is set to `#00ffff`. Both are added to `modifiedFields` so they are persisted on Apply.
+3. **Reset sync**: Stored references to the `ToggleComponent` instances and reset their visual state via `toggle.setValue(false)` inside the reset button handler.
+**Lesson**: Always auto-initialize all required fields that must coexist when enabling a compound feature (like a gradient that needs both start and end colors). Guard conditions like `&& textColor && textGradientEnd` will silently fail if only one field is populated. Use Obsidian's native UI components for controls to ensure visual consistency and accessibility.
+

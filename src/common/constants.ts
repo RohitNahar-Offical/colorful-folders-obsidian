@@ -126,7 +126,8 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     wrapMetadata: false,
     tagSyncEnabled: false,
     tagSyncMatchFolders: true,
-    tagSyncRules: ""
+    tagSyncRules: "",
+    childItemLegibility: "default"
 };
 
 export const AUTO_ICON_CATEGORIES: AutoIconData[] = [

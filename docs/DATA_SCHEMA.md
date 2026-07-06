@@ -76,7 +76,10 @@ Stored inside `customFolderColors` for specific paths.
 ```typescript
 interface FolderStyle {
     hex?: string;                    // Background color (hex)
-    textColor?: string;              // Label color override (hex)
+    textColor?: string;              // Label color override (hex) — also the gradient Start Color
+    textGradient?: boolean;          // Enables custom rainbow gradient on folder/file text
+    textGradientEnd?: string;        // Gradient end color (hex); used with textGradient
+    rainbowBrightness?: number;      // Gradient brightness override (1–100, default 50)
     iconColor?: string;              // Custom icon color override (hex)
     iconId?: string;                 // Custom icon ID (Lucide, emoji, or Custom)
     opacity?: number;                // Background transparency (0-1)
