@@ -155,7 +155,7 @@ modifiedFields: Set<string>;
         const prevIconWrap = prev.createDiv();
         prevIconWrap.setCssStyles({
             width: "28px", height: "28px", borderRadius: "6px", flexShrink: "0",
-            backgroundColor: this.folderStyle.hex, display: "flex", alignItems: "center", justifyContent: "center"
+            backgroundColor: "transparent", display: "flex", alignItems: "center", justifyContent: "center"
         });
         obsidian.setIcon(prevIconWrap, this.folderStyle.iconId || (this.isFolder ? "folder" : "file"));
 
@@ -165,7 +165,7 @@ modifiedFields: Set<string>;
         if (this.folderStyle.textGradient && initialTextCol && this.folderStyle.textGradientEnd) {
             const startC = getAdjustedColor(initialTextCol, this.folderStyle.rainbowBrightness);
             const endC = getAdjustedColor(this.folderStyle.textGradientEnd, this.folderStyle.rainbowBrightness);
-            initialBgGradient = `linear-gradient(90deg, ${startC}, ${endC})`;
+            initialBgGradient = `linear-gradient(90deg, ${startC}, ${endC}, ${startC})`;
         } else if (!initialTextCol && this.folderStyle.hex) {
             const isDark = activeDocument.body.classList.contains('theme-dark');
             const settings = this.plugin.settings;
@@ -195,13 +195,13 @@ modifiedFields: Set<string>;
                 backgroundClip: "text",
                 webkitBackgroundClip: "text",
                 color: "transparent",
-                fontWeight: this.folderStyle.isBold ? "700" : "400",
+                fontWeight: this.folderStyle.isBold ? "800" : "normal",
                 fontStyle: this.folderStyle.isItalic ? "italic" : "normal",
                 fontSize: "0.9em"
             });
         } else {
             prevLabel.setCssStyles({
-                fontWeight: this.folderStyle.isBold ? "700" : "400",
+                fontWeight: this.folderStyle.isBold ? "800" : "normal",
                 fontStyle: this.folderStyle.isItalic ? "italic" : "normal",
                 color: initialTextCol || "var(--text-normal)",
                 fontSize: "0.9em"
@@ -260,7 +260,7 @@ modifiedFields: Set<string>;
                 const hsvg = this._headerIconWrap.querySelector("svg") as unknown as HTMLElement | null;
                 if (hsvg) hsvg.setCssStyles({ color: effectiveIconColor, width: `${headerIconW}px`, height: `${headerIconW}px` });
                 // Update preview bar
-                this._prevIconWrap.setCssStyles({ backgroundColor: this.folderStyle.hex });
+                this._prevIconWrap.setCssStyles({ backgroundColor: "transparent" });
                 this._prevIconWrap.empty();
                 obsidian.setIcon(this._prevIconWrap, this.folderStyle.iconId || (this.isFolder ? "folder" : "file"));
                 const prevSvg = this._prevIconWrap.querySelector("svg") as unknown as HTMLElement | null;
@@ -326,7 +326,7 @@ modifiedFields: Set<string>;
                         backgroundClip: "text",
                         webkitBackgroundClip: "text",
                         color: "transparent",
-                        fontWeight: this.folderStyle.isBold ? "800" : "400",
+                        fontWeight: this.folderStyle.isBold ? "800" : "normal",
                         fontStyle: this.folderStyle.isItalic ? "italic" : "normal"
                     });
                 } else {
@@ -335,7 +335,7 @@ modifiedFields: Set<string>;
                         backgroundClip: "initial",
                         webkitBackgroundClip: "initial",
                         color: textCol || "var(--text-normal)",
-                        fontWeight: this.folderStyle.isBold ? "800" : "400",
+                        fontWeight: this.folderStyle.isBold ? "800" : "normal",
                         fontStyle: this.folderStyle.isItalic ? "italic" : "normal"
                     });
                 }
