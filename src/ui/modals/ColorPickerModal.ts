@@ -515,58 +515,14 @@ modifiedFields: Set<string>;
         let brightValLabel: HTMLSpanElement | null = null;
         const isRootFolder = this.isFolder && (!this.item.path.includes("/") || this.item.path === "/");
 
-        resetTxtBtn.onclick = () => {
-            this.folderStyle.textColor = '';
-            this.modifiedFields.add('textColor');
-            this.folderStyle.textGradient = false;
-            this.modifiedFields.add('textGradient');
-            this.folderStyle.textGradientEnd = '';
-            this.modifiedFields.add('textGradientEnd');
-            this.folderStyle.rainbowBrightness = 50;
-            this.modifiedFields.add('rainbowBrightness');
-            gradChk.checked = false;
-            gradEndSection.setCssStyles({ display: "none" });
-            textPickerLabel.setText("Text Color");
-            textPicker.setHex('#ffffff');
-            gradEndPicker.setHex('#00ffff');
-            if (brightSlider && brightValLabel) {
-                brightSlider.value = '50';
-                brightValLabel.textContent = '50';
-            }
-            updatePreview();
-        };
-
-        // Inline Typography
-        const typoRow = txtSection.createDiv();
-        typoRow.setCssStyles({ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "8px" });
-        const buildToggle = (lbl: string, key: 'isBold' | 'isItalic') => {
-            const wrap = typoRow.createDiv();
-            wrap.setCssStyles({ display: "flex", alignItems: "center", gap: "4px" });
-            const chk = wrap.createEl("input", { type: "checkbox" });
-            chk.checked = !!this.folderStyle[key];
-            const span = wrap.createSpan({ text: lbl });
-            span.setCssStyles({ fontSize: "0.75em" });
-            chk.onchange = () => {
-                (this.folderStyle as any)[key] = chk.checked;
-                this.modifiedFields.add(key);
-                updatePreview();
-            };
-        };
-        buildToggle("Bold", "isBold");
-        buildToggle("Italic", "isItalic");
-
-        // Gradient text toggle
-        const gradToggleWrap = typoRow.createDiv();
-        gradToggleWrap.setCssStyles({ display: "flex", alignItems: "center", gap: "4px" });
-        const gradChk = gradToggleWrap.createEl("input", { type: "checkbox" });
-        gradChk.checked = !!this.folderStyle.textGradient;
-        const gradSpan = gradToggleWrap.createSpan({ text: "Custom rainbow colors" });
-        gradSpan.setCssStyles({ fontSize: "0.75em" });
+        let boldToggle: obsidian.ToggleComponent | null = null;
+        let italicToggle: obsidian.ToggleComponent | null = null;
+        let gradToggle: obsidian.ToggleComponent | null = null;
 
         // End color picker row
         const gradEndSection = txtSection.createDiv();
         gradEndSection.setCssStyles({
-            marginTop: "10px",
+            marginTop: "12px",
             display: this.folderStyle.textGradient ? "block" : "none"
         });
         const gradEndLabel = gradEndSection.createEl("div", { text: "End Color" });
@@ -606,25 +562,84 @@ modifiedFields: Set<string>;
             });
         }
 
-        gradChk.onchange = () => {
-            this.folderStyle.textGradient = gradChk.checked;
+        resetTxtBtn.onclick = () => {
+            this.folderStyle.textColor = '';
+            this.modifiedFields.add('textColor');
+            this.folderStyle.textGradient = false;
             this.modifiedFields.add('textGradient');
-            gradEndSection.setCssStyles({ display: gradChk.checked ? "block" : "none" });
-            textPickerLabel.setText(gradChk.checked ? "Start Color" : "Text Color");
-            if (gradChk.checked) {
-                if (!this.folderStyle.textColor) {
-                    this.folderStyle.textColor = '#ffffff';
-                    this.modifiedFields.add('textColor');
-                    textPicker.setHex('#ffffff');
-                }
-                if (!this.folderStyle.textGradientEnd) {
-                    this.folderStyle.textGradientEnd = '#00ffff';
-                    this.modifiedFields.add('textGradientEnd');
-                    gradEndPicker.setHex('#00ffff');
-                }
+            this.folderStyle.textGradientEnd = '';
+            this.modifiedFields.add('textGradientEnd');
+            this.folderStyle.rainbowBrightness = 50;
+            this.modifiedFields.add('rainbowBrightness');
+            
+            if (gradToggle) gradToggle.setValue(false);
+            if (boldToggle) boldToggle.setValue(false);
+            if (italicToggle) italicToggle.setValue(false);
+
+            gradEndSection.setCssStyles({ display: "none" });
+            textPickerLabel.setText("Text Color");
+            textPicker.setHex('#ffffff');
+            gradEndPicker.setHex('#00ffff');
+            if (brightSlider && brightValLabel) {
+                brightSlider.value = '50';
+                brightValLabel.textContent = '50';
             }
             updatePreview();
         };
+
+        // Typography settings section using native Obsidian Settings (Toggle Switch components)
+        const typoContainer = txtSection.createDiv();
+        typoContainer.setCssStyles({ marginTop: "12px", borderTop: "1px solid var(--background-modifier-border)", paddingTop: "8px" });
+
+        new obsidian.Setting(typoContainer)
+            .setName("Bold text")
+            .addToggle(toggle => {
+                boldToggle = toggle;
+                toggle.setValue(!!this.folderStyle.isBold)
+                    .onChange(value => {
+                        this.folderStyle.isBold = value;
+                        this.modifiedFields.add('isBold');
+                        updatePreview();
+                    });
+            });
+
+        new obsidian.Setting(typoContainer)
+            .setName("Italic text")
+            .addToggle(toggle => {
+                italicToggle = toggle;
+                toggle.setValue(!!this.folderStyle.isItalic)
+                    .onChange(value => {
+                        this.folderStyle.isItalic = value;
+                        this.modifiedFields.add('isItalic');
+                        updatePreview();
+                    });
+            });
+
+        new obsidian.Setting(typoContainer)
+            .setName("Custom rainbow colors")
+            .addToggle(toggle => {
+                gradToggle = toggle;
+                toggle.setValue(!!this.folderStyle.textGradient)
+                    .onChange(value => {
+                        this.folderStyle.textGradient = value;
+                        this.modifiedFields.add('textGradient');
+                        gradEndSection.setCssStyles({ display: value ? "block" : "none" });
+                        textPickerLabel.setText(value ? "Start Color" : "Text Color");
+                        if (value) {
+                            if (!this.folderStyle.textColor) {
+                                this.folderStyle.textColor = '#ffffff';
+                                this.modifiedFields.add('textColor');
+                                textPicker.setHex('#ffffff');
+                            }
+                            if (!this.folderStyle.textGradientEnd) {
+                                this.folderStyle.textGradientEnd = '#00ffff';
+                                this.modifiedFields.add('textGradientEnd');
+                                gradEndPicker.setHex('#00ffff');
+                            }
+                        }
+                        updatePreview();
+                    });
+            });
 
         // Quick Apply Buttons for Appearance
         // Icon selection tab info...
