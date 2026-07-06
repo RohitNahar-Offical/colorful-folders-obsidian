@@ -773,6 +773,24 @@ export class StyleGenerator {
                 const activeBg = (this.settings.useCustomActiveColor && this.settings.customActiveBg) ? this.settings.customActiveBg : `rgba(${color.rgb}, ${useGlass ? 0.14 : 0.12})`;
                 const activeText = (this.settings.useCustomActiveColor && this.settings.customActiveText) ? this.settings.customActiveText : textNative;
                 
+                let fileTextCss = `
+                    color: var(--cf-file-color, ${textNative}) !important;
+                    font-weight: ${isBold ? '800' : 'normal'} !important;
+                    font-style: ${isItalic ? 'italic' : 'normal'} !important;
+                `;
+                
+                if (activeStyle && activeStyle.textGradient && activeStyle.textColor && activeStyle.textGradientEnd) {
+                    const angle = this.settings.rainbowRootAngle !== undefined ? this.settings.rainbowRootAngle : 90;
+                    fileTextCss = `
+                        background-image: linear-gradient(${angle}deg, ${activeStyle.textColor}, ${activeStyle.textGradientEnd}, ${activeStyle.textColor}) !important;
+                        background-clip: text !important;
+                        -webkit-background-clip: text !important;
+                        color: transparent !important;
+                        font-weight: ${isBold ? '800' : 'normal'} !important;
+                        font-style: ${isItalic ? 'italic' : 'normal'} !important;
+                    `;
+                }
+
                 cssRules.push(`
                     .nav-files-container .nav-file-title[data-path="${safePath}"]:not(.nn-file),
                     .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) {
@@ -785,12 +803,10 @@ export class StyleGenerator {
                             border-left: none !important;
                         `}
                         opacity: 1.0 !important;
-                        color: var(--cf-file-color, ${textNative}) !important;
-                        font-weight: ${isBold ? 'bold' : 'normal'} !important;
-                        font-style: ${isItalic ? 'italic' : 'normal'} !important;
                         border-radius: 4px;
                         --nav-tag-background: var(--cf-tag-bg, rgba(${color.rgb}, 0.15)) !important;
                         --nav-tag-color: var(--cf-tag-color, ${textNative}) !important;
+                        ${fileTextCss}
                     }
 
                     [data-path="${safePath}"] .nav-file-tag,
@@ -1054,21 +1070,52 @@ export class StyleGenerator {
             const isBold = customStyle?.isBold !== undefined ? customStyle.isBold : (inheritedStyle?.isBold !== undefined ? inheritedStyle.isBold : true);
             const isItalic = customStyle?.isItalic !== undefined ? customStyle.isItalic : (inheritedStyle?.isItalic !== undefined ? inheritedStyle.isItalic : false);
 
+            let isUsingGradient = false;
+            let startCol = "";
+            let endCol = "";
+            let gradAngle = this.settings.rainbowRootAngle !== undefined ? this.settings.rainbowRootAngle : 90;
+            let gradWeight = isBold ? '800' : 'normal';
+
+            if (customStyle?.textGradient && customStyle?.textColor && customStyle?.textGradientEnd) {
+                isUsingGradient = true;
+                startCol = customStyle.textColor;
+                endCol = customStyle.textGradientEnd;
+            } else if (this.settings.rainbowRootText && depth === 0 && !customStyle?.textColor) {
+                isUsingGradient = true;
+                const rainbowOpacity = this.settings.rainbowRootOpacity !== undefined ? this.settings.rainbowRootOpacity : 1.0;
+                
+                const nextColor = currentPalette[(i + 1) % currentPalette.length];
+                startCol = color.hex;
+                endCol = nextColor.hex;
+                
+                // Convert hex to rgb string for rgba opacity mix
+                if (startCol.startsWith("#")) {
+                    const rgb = hexToRgbObj(startCol);
+                    if (rgb) startCol = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${rainbowOpacity})`;
+                }
+                if (endCol.startsWith("#")) {
+                    const rgb = hexToRgbObj(endCol);
+                    if (rgb) endCol = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${rainbowOpacity})`;
+                }
+
+                gradAngle = this.settings.rainbowRootAngle !== undefined ? this.settings.rainbowRootAngle : 90;
+                gradWeight = "800"; // hardcoded thick default
+            }
+
             let textCss = `
                 color: var(--cf-folder-color, ${folderStyles.t}) !important;
-                font-weight: ${isBold ? 'bold' : 'normal'} !important;
+                font-weight: ${isBold ? '800' : 'normal'} !important;
                 font-style: ${isItalic ? 'italic' : 'normal'} !important;
             `;
 
-            if (this.settings.rainbowRootText && depth === 0 && !customStyle?.textColor) {
-                const nextColor = currentPalette[(i + 1) % currentPalette.length];
-                const rainbowOpacity = this.settings.rainbowRootOpacity !== undefined ? this.settings.rainbowRootOpacity : 1.0;
+            if (isUsingGradient) {
                 textCss = `
-                    background-image: linear-gradient(90deg, rgba(${color.rgb}, ${rainbowOpacity}), rgba(${nextColor.rgb}, ${rainbowOpacity}), rgba(${color.rgb}, ${rainbowOpacity})) !important;
+                    background-image: linear-gradient(${gradAngle}deg, ${startCol}, ${endCol}, ${startCol}) !important;
                     background-clip: text !important;
                     -webkit-background-clip: text !important;
                     color: transparent !important;
-                    font-weight: 800 !important;
+                    font-weight: ${gradWeight} !important;
+                    font-style: ${isItalic ? 'italic' : 'normal'} !important;
                 `;
             }
 
@@ -1263,6 +1310,8 @@ export class StyleGenerator {
 
         const cssRules: string[] = [];
         cssRules.push(this.generateGlobalBaseCss());
+
+
 
         const baseThick = this.settings.pathLineThickness ?? 2.0;
 

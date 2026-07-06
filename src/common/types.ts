@@ -26,6 +26,8 @@ export interface FolderStyle {
     dividerLinePaddingRight?: number;
     hasDivider?: boolean;
     isHidden?: boolean;
+    textGradient?: boolean;
+    textGradientEnd?: string;
 }
 
 export interface ColorfulFoldersSettings {
@@ -93,6 +95,7 @@ export interface ColorfulFoldersSettings {
     tagSyncRules: string;
     childItemLegibility: 'default' | 'inherit' | 'auto-contrast';
     rainbowRootOpacity: number;
+    rainbowRootAngle: number;
 }
 
 

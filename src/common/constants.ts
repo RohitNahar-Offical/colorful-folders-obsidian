@@ -128,7 +128,8 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     tagSyncMatchFolders: true,
     tagSyncRules: "",
     childItemLegibility: "default",
-    rainbowRootOpacity: 1.0
+    rainbowRootOpacity: 1.0,
+    rainbowRootAngle: 90
 };
 
 export const AUTO_ICON_CATEGORIES: AutoIconData[] = [

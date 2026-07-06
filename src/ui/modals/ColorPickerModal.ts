@@ -183,7 +183,12 @@ modifiedFields: Set<string>;
         obsidian.setIcon(prevIconWrap, this.folderStyle.iconId || (this.isFolder ? "folder" : "file"));
 
         let initialTextCol = this.folderStyle.textColor;
-        if (!initialTextCol && this.folderStyle.hex) {
+        let initialBgGradient = "";
+        
+        if (this.folderStyle.textGradient && initialTextCol && this.folderStyle.textGradientEnd) {
+            const angle = this.plugin.settings.rainbowRootAngle !== undefined ? this.plugin.settings.rainbowRootAngle : 90;
+            initialBgGradient = `linear-gradient(${angle}deg, ${initialTextCol}, ${this.folderStyle.textGradientEnd})`;
+        } else if (!initialTextCol && this.folderStyle.hex) {
             const isDark = activeDocument.body.classList.contains('theme-dark');
             const settings = this.plugin.settings;
             const lightBrightness = (settings.lightModeBrightness || 0) / 100;
@@ -206,11 +211,24 @@ modifiedFields: Set<string>;
         }
 
         const prevLabel = prev.createDiv({ text: this.item.name });
-        prevLabel.setCssStyles({
-            fontWeight: this.folderStyle.isBold ? "700" : "400",
-            fontStyle: this.folderStyle.isItalic ? "italic" : "normal",
-            color: initialTextCol || "var(--text-normal)", fontSize: "0.9em"
-        });
+        if (initialBgGradient) {
+            prevLabel.setCssStyles({
+                backgroundImage: initialBgGradient,
+                backgroundClip: "text",
+                webkitBackgroundClip: "text",
+                color: "transparent",
+                fontWeight: this.folderStyle.isBold ? "700" : "400",
+                fontStyle: this.folderStyle.isItalic ? "italic" : "normal",
+                fontSize: "0.9em"
+            });
+        } else {
+            prevLabel.setCssStyles({
+                fontWeight: this.folderStyle.isBold ? "700" : "400",
+                fontStyle: this.folderStyle.isItalic ? "italic" : "normal",
+                color: initialTextCol || "var(--text-normal)",
+                fontSize: "0.9em"
+            });
+        }
         this._prevIconWrap = prevIconWrap;
         this._prevLabel = prevLabel;
 
@@ -260,7 +278,12 @@ modifiedFields: Set<string>;
                 }
 
                 let textCol = this.folderStyle.textColor;
-                if (!textCol && this.folderStyle.hex) {
+                let bgGradient = "";
+                
+                if (this.folderStyle.textGradient && textCol && this.folderStyle.textGradientEnd) {
+                    const angle = this.plugin.settings.rainbowRootAngle !== undefined ? this.plugin.settings.rainbowRootAngle : 90;
+                    bgGradient = `linear-gradient(${angle}deg, ${textCol}, ${this.folderStyle.textGradientEnd})`;
+                } else if (!textCol && this.folderStyle.hex) {
                     const isDark = activeDocument.body.classList.contains('theme-dark');
                     const settings = this.plugin.settings;
                     const lightBrightness = (settings.lightModeBrightness || 0) / 100;
@@ -282,11 +305,25 @@ modifiedFields: Set<string>;
                     }
                 }
 
-                this._prevLabel.setCssStyles({
-                    fontWeight: this.folderStyle.isBold ? "700" : "400",
-                    fontStyle: this.folderStyle.isItalic ? "italic" : "normal",
-                    color: textCol || "var(--text-normal)"
-                });
+                if (bgGradient) {
+                    this._prevLabel.setCssStyles({
+                        backgroundImage: bgGradient,
+                        backgroundClip: "text",
+                        webkitBackgroundClip: "text",
+                        color: "transparent",
+                        fontWeight: this.folderStyle.isBold ? "700" : "400",
+                        fontStyle: this.folderStyle.isItalic ? "italic" : "normal"
+                    });
+                } else {
+                    this._prevLabel.setCssStyles({
+                        backgroundImage: "none",
+                        backgroundClip: "normal",
+                        webkitBackgroundClip: "normal",
+                        color: textCol || "var(--text-normal)",
+                        fontWeight: this.folderStyle.isBold ? "700" : "400",
+                        fontStyle: this.folderStyle.isItalic ? "italic" : "normal"
+                    });
+                }
 
                 // Hardening: Update the big icon box in the Icon tab if it's active
                 if (this._curIconBox) {
@@ -420,6 +457,13 @@ modifiedFields: Set<string>;
                 if (this.folderStyle.textColor) finalStyle.textColor = this.folderStyle.textColor;
                 else delete finalStyle.textColor;
             }
+            if (this.modifiedFields.has('textGradient')) {
+                finalStyle.textGradient = this.folderStyle.textGradient;
+            }
+            if (this.modifiedFields.has('textGradientEnd')) {
+                if (this.folderStyle.textGradientEnd) finalStyle.textGradientEnd = this.folderStyle.textGradientEnd;
+                else delete finalStyle.textGradientEnd;
+            }
             if (this.modifiedFields.has('isBold')) {
                 finalStyle.isBold = this.folderStyle.isBold;
             }
@@ -442,6 +486,9 @@ modifiedFields: Set<string>;
             this.close();
         };
 
+        const textPickerLabel = txtSection.createEl("div", { text: this.folderStyle.textGradient ? "Start Color" : "Text Color" });
+        textPickerLabel.setCssStyles({ fontSize: "0.78em", fontWeight: "700", color: "var(--text-muted)", marginBottom: "4px" });
+
         const textPickerContainer = txtSection.createDiv();
         const textPicker = createVisualColorPicker(textPickerContainer, this.folderStyle.textColor || '#ffffff', (hex) => {
             this.folderStyle.textColor = hex;
@@ -451,13 +498,21 @@ modifiedFields: Set<string>;
         resetTxtBtn.onclick = () => {
             this.folderStyle.textColor = '';
             this.modifiedFields.add('textColor');
+            this.folderStyle.textGradient = false;
+            this.modifiedFields.add('textGradient');
+            this.folderStyle.textGradientEnd = '';
+            this.modifiedFields.add('textGradientEnd');
+            gradChk.checked = false;
+            gradEndSection.setCssStyles({ display: "none" });
+            textPickerLabel.setText("Text Color");
             textPicker.setHex('#ffffff');
+            gradEndPicker.setHex('#00ffff');
             updatePreview();
         };
 
         // Inline Typography
         const typoRow = txtSection.createDiv();
-        typoRow.setCssStyles({ display: "flex", gap: "10px", marginTop: "8px" });
+        typoRow.setCssStyles({ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "8px" });
         const buildToggle = (lbl: string, key: 'isBold' | 'isItalic') => {
             const wrap = typoRow.createDiv();
             wrap.setCssStyles({ display: "flex", alignItems: "center", gap: "4px" });
@@ -473,6 +528,44 @@ modifiedFields: Set<string>;
         };
         buildToggle("Bold", "isBold");
         buildToggle("Italic", "isItalic");
+
+        // Gradient text toggle
+        const gradToggleWrap = typoRow.createDiv();
+        gradToggleWrap.setCssStyles({ display: "flex", alignItems: "center", gap: "4px" });
+        const gradChk = gradToggleWrap.createEl("input", { type: "checkbox" });
+        gradChk.checked = !!this.folderStyle.textGradient;
+        const gradSpan = gradToggleWrap.createSpan({ text: "Custom rainbow colors" });
+        gradSpan.setCssStyles({ fontSize: "0.75em" });
+
+        // End color picker row
+        const gradEndSection = txtSection.createDiv();
+        gradEndSection.setCssStyles({
+            marginTop: "10px",
+            display: this.folderStyle.textGradient ? "block" : "none"
+        });
+        const gradEndLabel = gradEndSection.createEl("div", { text: "End Color" });
+        gradEndLabel.setCssStyles({
+            fontSize: "0.78em", fontWeight: "700", color: "var(--text-muted)", marginBottom: "4px"
+        });
+        const gradEndPickerWrap = gradEndSection.createDiv();
+        const gradEndPicker = createVisualColorPicker(gradEndPickerWrap, this.folderStyle.textGradientEnd || '#00ffff', (hex) => {
+            this.folderStyle.textGradientEnd = hex;
+            this.modifiedFields.add('textGradientEnd');
+            updatePreview();
+        }, { showAlpha: false });
+
+        gradChk.onchange = () => {
+            this.folderStyle.textGradient = gradChk.checked;
+            this.modifiedFields.add('textGradient');
+            gradEndSection.setCssStyles({ display: gradChk.checked ? "block" : "none" });
+            textPickerLabel.setText(gradChk.checked ? "Start Color" : "Text Color");
+            if (gradChk.checked && !this.folderStyle.textGradientEnd) {
+                this.folderStyle.textGradientEnd = '#00ffff';
+                this.modifiedFields.add('textGradientEnd');
+                gradEndPicker.setHex('#00ffff');
+            }
+            updatePreview();
+        };
 
         // Quick Apply Buttons for Appearance
         // Icon selection tab info...

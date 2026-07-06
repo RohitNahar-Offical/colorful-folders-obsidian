@@ -1506,6 +1506,18 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     }));
 
             new obsidian.Setting(typeCard)
+                .setName('Rainbow effect angle (degrees)')
+                .setDesc('Adjust the gradient direction angle.')
+                .addSlider(slider => slider
+                    .setLimits(0, 360, 5)
+                    .setValue(this.plugin.settings.rainbowRootAngle !== undefined ? this.plugin.settings.rainbowRootAngle : 90)
+                    .onChange(async (value) => {
+                        this.plugin.settings.rainbowRootAngle = value;
+                        await this.plugin.saveSettings();
+                        this.plugin.generateStyles();
+                    }));
+
+            new obsidian.Setting(typeCard)
                 .setName('Transparent root background')
                 .setDesc('Keeps the root text effect but removes the solid/translucent background box.')
                 .addToggle(toggle => toggle
