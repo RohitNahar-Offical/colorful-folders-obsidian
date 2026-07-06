@@ -1006,11 +1006,11 @@ modifiedFields: Set<string>;
             const finalStyle: FolderStyle = { ...existing };
             
             for (const key of this.modifiedFields) {
-                const val = (this.folderStyle as Record<string, unknown>)[key];
+                const val = (this.folderStyle as unknown as Record<string, unknown>)[key];
                 if (val === undefined || val === null || val === '') {
-                    delete (finalStyle as Record<string, unknown>)[key];
+                    delete (finalStyle as unknown as Record<string, unknown>)[key];
                 } else {
-                    (finalStyle as Record<string, unknown>)[key] = val;
+                    (finalStyle as unknown as Record<string, unknown>)[key] = val;
                 }
             }
             
@@ -1054,11 +1054,11 @@ modifiedFields: Set<string>;
             const finalStyle: FolderStyle = { ...existing };
             
             for (const key of this.modifiedFields) {
-                const val = (this.folderStyle as Record<string, unknown>)[key];
+                const val = (this.folderStyle as unknown as Record<string, unknown>)[key];
                 if (val === undefined || val === null || val === '') {
-                    delete (finalStyle as Record<string, unknown>)[key];
+                    delete (finalStyle as unknown as Record<string, unknown>)[key];
                 } else {
-                    (finalStyle as Record<string, unknown>)[key] = val;
+                    (finalStyle as unknown as Record<string, unknown>)[key] = val;
                 }
             }
             
