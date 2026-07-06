@@ -350,8 +350,6 @@ export class StyleGenerator {
                 flex-grow: 1 !important;
                 height: 100% !important;
                 line-height: normal !important;
-                padding: 0 !important;
-                margin: 0 !important;
             }
 
             /* ── ICON ACTIVE: suppress native pseudo-elements ─────────────────── */

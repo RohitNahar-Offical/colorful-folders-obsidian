@@ -283,8 +283,6 @@ body .markdown-rendered a.tag[href="#${t.toUpperCase()}"]:hover {
                 flex-grow: 1 !important;
                 height: 100% !important;
                 line-height: normal !important;
-                padding: 0 !important;
-                margin: 0 !important;
             }
 
             /* \u2500\u2500 ICON ACTIVE: suppress native pseudo-elements \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
