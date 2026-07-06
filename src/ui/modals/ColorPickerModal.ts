@@ -907,7 +907,7 @@ modifiedFields: Set<string>;
             const inh = tabPanels["inherit"];
             new obsidian.Setting(inh).setHeading().setName("Inheritance options");
             new obsidian.Setting(inh).setName("Apply to subfolders")
-                .setDesc("Force nested folders to inherit this style.")
+                .setDesc("Force nested folders to inherit this style with monolithic depth (retains parent opacity).")
                 .addToggle(t => t.setValue(this.folderStyle.applyToSubfolders || false).onChange(v => {
                     this.folderStyle.applyToSubfolders = v;
                     this.modifiedFields.add('applyToSubfolders');

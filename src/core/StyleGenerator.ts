@@ -113,9 +113,9 @@ export class StyleGenerator {
             return cp
                 ? cp[0]
                 : (rgb ? { rgb: `${rgb.r}, ${rgb.g}, ${rgb.b}`, hex: customStyle.hex } : palette[0]);
-        } else if (inheritedStyle && !isFile && passedColor) {
+        } else if (inheritedStyle && inheritedStyle.applyToSubfolders && !isFile && passedColor) {
             return passedColor;
-        } else if (inheritedStyle && inheritedStyle.hex) {
+        } else if (inheritedStyle && inheritedStyle.applyToSubfolders && !isFile && inheritedStyle.hex) {
             const cp = parseCustomPalette(inheritedStyle.hex);
             const rgb = hexToRgbObj(inheritedStyle.hex);
             return cp
@@ -177,7 +177,7 @@ export class StyleGenerator {
             } else {
                 return 0.0;
             }
-        } else if (depth === 0) {
+        } else if (depth === 0 || (inheritedStyle && inheritedStyle.applyToSubfolders)) {
             if (rootStyle === "solid") {
                 return 1.0;
             } else {
@@ -307,9 +307,6 @@ export class StyleGenerator {
                 justify-content: flex-start !important;
                 padding-top: 0 !important;
                 padding-bottom: 0 !important;
-                height: 30px !important;
-                max-height: 30px !important;
-                min-height: 30px !important;
                 overflow: visible !important;
             }
 
@@ -343,13 +340,13 @@ export class StyleGenerator {
                 display: flex !important;
                 flex-direction: row !important;
                 align-items: center !important;
+                gap: 6px !important;
+                margin-left: 2px !important;
                 overflow: hidden !important;
                 text-overflow: ellipsis !important;
                 white-space: nowrap !important;
                 min-width: 0 !important;
                 flex-grow: 1 !important;
-                height: 100% !important;
-                line-height: normal !important;
             }
 
             /* ── ICON ACTIVE: suppress native pseudo-elements ─────────────────── */
@@ -365,14 +362,12 @@ export class StyleGenerator {
                 display: none !important;
             }
 
-            /* ── CF-ICON-WRAPPER: consistent icon sizing and spacing ──────────── */
             .cf-icon-wrapper {
                 display: inline-flex !important;
                 align-items: center !important;
                 justify-content: center !important;
                 align-self: center !important;
                 flex-shrink: 0 !important;
-                margin-right: 6px !important;
                 overflow: visible !important;
             }
 
@@ -698,10 +693,11 @@ export class StyleGenerator {
         const baseThick = this.settings.pathLineThickness ?? 2.0;
         const folderThick = baseThick + 0.5;
         const activeFolderThick = baseThick + 2.0;
-        const CF_FILE_TEXT_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px; margin-right: 6px; opacity: 0.85; vertical-align: middle;"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+        const CF_FILE_TEXT_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px; opacity: 0.85;"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`;
 
         // Process Files
-        if (passedColor || autoColorFiles || autoIcons || (this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground)) {
+        // Gate: process files if there's a parent color (applyToSubfolders), autoColorFiles, autoIcons, applyToFiles on the inheritedStyle, or NN is active.
+        if (passedColor || autoColorFiles || autoIcons || (inheritedStyle && inheritedStyle.applyToFiles) || (this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground)) {
             for (const child of copyFiles) {
                 const safePath = safeEscape(child.path);
                 const fileStyle = this.getStyle(child.path);
@@ -724,7 +720,8 @@ export class StyleGenerator {
                     this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground
                 );
 
-                const isCustomOrInherited = !!(fileStyle && fileStyle.hex) || (inheritedStyle && inheritedStyle.applyToFiles && this.settings.autoColorFiles);
+                // isCustomOrInherited: true when file has a custom style, or a parent explicitly set applyToFiles
+                const isCustomOrInherited = !!(fileStyle && fileStyle.hex) || (!!(inheritedStyle && inheritedStyle.applyToFiles) && this.settings.autoColorFiles);
                 const shouldColorNative = isCustomOrInherited || this.settings.autoColorFiles || !!this.settings.globalBackgroundColor;
                 const shouldColorNN = isCustomOrInherited || (this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground);
 
@@ -759,7 +756,7 @@ export class StyleGenerator {
                     context.brightnessAmount,
                     this.settings.rootStyle,
                     outlineOnly,
-                    shouldColorNative || passedColor !== null
+                    true
                 );
 
                 const textNN = StyleGenerator.resolveTextColor(
@@ -773,7 +770,7 @@ export class StyleGenerator {
                     context.brightnessAmount,
                     this.settings.rootStyle,
                     outlineOnly,
-                    shouldColorNN || passedColor !== null
+                    true
                 );
 
                 const isBold = fileStyle?.isBold !== undefined ? fileStyle.isBold : (inheritedStyle?.applyToFiles ? inheritedStyle.isBold : false);
@@ -889,12 +886,9 @@ export class StyleGenerator {
                                 display: inline-flex !important;
                                 align-items: center !important;
                                 justify-content: center !important;
-                                margin-right: 6px !important;
                                 flex-shrink: 0 !important;
                                 height: ${effFileIconW} !important;
                                 width: ${effFileIconW} !important;
-                                line-height: 1 !important;
-                                vertical-align: text-bottom !important;
                             }
                         `);
                     } else {
@@ -923,7 +917,6 @@ export class StyleGenerator {
                                         -webkit-mask-repeat: no-repeat !important;
                                         -webkit-mask-position: center !important;
                                         -webkit-mask-size: contain !important;
-                                        margin-right: 6px !important;
                                         opacity: 0.85 !important;
                                     }
                                 `);
@@ -944,7 +937,6 @@ export class StyleGenerator {
                             -webkit-mask-repeat: no-repeat !important;
                             -webkit-mask-position: center !important;
                             -webkit-mask-size: contain !important;
-                            margin-right: 6px !important;
                             opacity: 0.85 !important;
                         }
                     `);
@@ -1241,7 +1233,6 @@ export class StyleGenerator {
                             display: inline-flex !important;
                             align-items: center !important;
                             justify-content: center !important;
-                            margin-right: 6px !important;
                             flex-shrink: 0 !important;
                         }
                     `);
@@ -1271,7 +1262,6 @@ export class StyleGenerator {
                                     -webkit-mask-repeat: no-repeat !important;
                                     -webkit-mask-position: center !important;
                                     -webkit-mask-size: contain !important;
-                                    margin-right: 6px !important;
                                 }
                             `);
                         }
@@ -1291,7 +1281,6 @@ export class StyleGenerator {
                         -webkit-mask-repeat: no-repeat !important;
                         -webkit-mask-position: center !important;
                         -webkit-mask-size: contain !important;
-                        margin-right: 6px !important;
                     }
                 `);
             }
@@ -1337,7 +1326,12 @@ export class StyleGenerator {
                 `);
             }
 
-            const nextInherited = customStyle?.applyToSubfolders ? customStyle : inheritedStyle;
+            // Pass customStyle into the next level if applyToSubfolders OR applyToFiles is set.
+            // - applyToSubfolders: files AND sub-folders in child will inherit
+            // - applyToFiles only: files in the IMMEDIATE child folder inherit, but sub-subfolders do NOT (handled below)
+            const nextInherited = (customStyle?.applyToSubfolders || customStyle?.applyToFiles)
+                ? customStyle
+                : (inheritedStyle?.applyToSubfolders ? inheritedStyle : null);
             this.traverse(child, depth + 1, validFolderIndex, (depth === 0 ? validFolderIndex : rootIndex), color, nextInherited, context, cssRules);
             validFolderIndex++;
         }

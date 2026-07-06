@@ -580,7 +580,7 @@ export default class ColorfulFoldersPlugin
         const pStyle = this.getStyle(parent.path);
         if (
           pStyle &&
-          (pStyle.applyToSubfolders || (isFile && pStyle.applyToFiles))
+          ((!isFile && pStyle.applyToSubfolders) || (isFile && pStyle.applyToFiles))
         ) {
           inheritedStyle = pStyle;
           break;
