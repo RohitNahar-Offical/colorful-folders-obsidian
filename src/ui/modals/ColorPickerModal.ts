@@ -133,40 +133,8 @@ modifiedFields: Set<string>;
         const body = contentEl.createDiv({ cls: "cf-tab-body" });
         body.setCssStyles({ padding: "16px 20px 8px", overflowY: "auto", maxHeight: "60vh" });
 
-        const tabPanels: Record<string, HTMLElement> = {};
-        const tabBtns: Record<string, HTMLElement> = {};
-
-        tabs.forEach(t => {
-            const btn = tabBar.createEl("button", { cls: "cf-tab-btn" });
-            btn.setCssStyles({
-                background: "none", border: "none", padding: "7px 13px",
-                borderRadius: "6px 6px 0 0", cursor: "pointer", fontSize: "0.82em",
-                fontWeight: "600", display: "flex", alignItems: "center", gap: "6px",
-                color: "var(--text-muted)", borderBottom: "2px solid transparent",
-                transition: "all 0.15s ease"
-            });
-            const btnIcon = btn.createSpan();
-            obsidian.setIcon(btnIcon, t.icon);
-            const biSvg = btnIcon.querySelector("svg") as unknown as HTMLElement | null;
-            if (biSvg) biSvg.setCssStyles({ width: "13px", height: "13px" });
-            btn.createSpan({ text: t.label });
-
-            const panel = body.createDiv({ cls: "cf-tab-panel" });
-            panel.setCssStyles({ display: "none" });
-            tabPanels[t.id] = panel;
-            tabBtns[t.id] = btn;
-
-            btn.onclick = () => this._switchTab(t.id, tabBtns, tabPanels);
-        });
-
-        this._tabBtns = tabBtns;
-        this._tabPanels = tabPanels;
-
-        // ── APPEARANCE TAB ──────────────────────────────────────────────────
-        const ap = tabPanels["appearance"];
-
-        // Live mini-preview bar
-        const prev = ap.createDiv({ cls: "cf-preview-bar" });
+        // Live mini-preview bar (Sticky at the top, outside scrollable tab panels)
+        const prev = contentEl.createDiv({ cls: "cf-preview-bar" });
         this._prevBar = prev;
         
         let initialBg = "var(--background-secondary)";
@@ -182,7 +150,7 @@ modifiedFields: Set<string>;
         
         prev.setCssStyles({
             display: "flex", alignItems: "center", gap: "10px",
-            padding: "10px 14px", borderRadius: "8px", marginBottom: "14px",
+            padding: "10px 14px", borderRadius: "8px", margin: "12px 20px 4px",
             backgroundColor: initialBg, border: initialBorder
         });
         const prevIconWrap = prev.createDiv();
@@ -242,6 +210,38 @@ modifiedFields: Set<string>;
         }
         this._prevIconWrap = prevIconWrap;
         this._prevLabel = prevLabel;
+
+        const tabPanels: Record<string, HTMLElement> = {};
+        const tabBtns: Record<string, HTMLElement> = {};
+
+        tabs.forEach(t => {
+            const btn = tabBar.createEl("button", { cls: "cf-tab-btn" });
+            btn.setCssStyles({
+                background: "none", border: "none", padding: "7px 13px",
+                borderRadius: "6px 6px 0 0", cursor: "pointer", fontSize: "0.82em",
+                fontWeight: "600", display: "flex", alignItems: "center", gap: "6px",
+                color: "var(--text-muted)", borderBottom: "2px solid transparent",
+                transition: "all 0.15s ease"
+            });
+            const btnIcon = btn.createSpan();
+            obsidian.setIcon(btnIcon, t.icon);
+            const biSvg = btnIcon.querySelector("svg") as unknown as HTMLElement | null;
+            if (biSvg) biSvg.setCssStyles({ width: "13px", height: "13px" });
+            btn.createSpan({ text: t.label });
+
+            const panel = body.createDiv({ cls: "cf-tab-panel" });
+            panel.setCssStyles({ display: "none" });
+            tabPanels[t.id] = panel;
+            tabBtns[t.id] = btn;
+
+            btn.onclick = () => this._switchTab(t.id, tabBtns, tabPanels);
+        });
+
+        this._tabBtns = tabBtns;
+        this._tabPanels = tabPanels;
+
+        // ── APPEARANCE TAB ──────────────────────────────────────────────────
+        const ap = tabPanels["appearance"];
 
         const updatePreview = () => {
             if (!this._headerIconWrap || !this._prevIconWrap || !this._prevLabel) return;
