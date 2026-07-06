@@ -286,6 +286,10 @@ body .markdown-rendered a.tag[href="#${t.toUpperCase()}"]:hover {
                 margin-bottom: 0 !important;
             }
 
+            .cf-icon-active {
+                display: inline-flex !important;
+                align-items: center !important;
+            }
             .cf-icon-active::before {
                 display: none !important;
                 content: none !important;
