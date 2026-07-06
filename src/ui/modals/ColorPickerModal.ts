@@ -528,7 +528,7 @@ modifiedFields: Set<string>;
             marginTop: "12px",
             display: this.folderStyle.textGradient ? "block" : "none"
         });
-        const gradEndLabel = gradEndSection.createEl("div", { text: "End Color" });
+        const gradEndLabel = gradEndSection.createEl("div", { text: "End color" });
         gradEndLabel.setCssStyles({
             fontSize: "0.78em", fontWeight: "700", color: "var(--text-muted)", marginBottom: "4px"
         });
@@ -557,10 +557,10 @@ modifiedFields: Set<string>;
             brightValLabel.textContent = `${brightSlider.value}`;
 
             brightSlider.addEventListener('input', () => {
-                const val = parseInt(brightSlider!.value);
+                const val = parseInt(brightSlider.value);
                 this.folderStyle.rainbowBrightness = val;
                 this.modifiedFields.add('rainbowBrightness');
-                brightValLabel!.textContent = `${val}`;
+                brightValLabel.textContent = `${val}`;
                 updatePreview();
             });
         }
@@ -575,12 +575,12 @@ modifiedFields: Set<string>;
             this.folderStyle.rainbowBrightness = 50;
             this.modifiedFields.add('rainbowBrightness');
             
-            if (gradToggle) gradToggle.setValue(false);
-            if (boldToggle) boldToggle.setValue(false);
-            if (italicToggle) italicToggle.setValue(false);
+            if (gradToggle !== null) gradToggle.setValue(false);
+            if (boldToggle !== null) boldToggle.setValue(false);
+            if (italicToggle !== null) italicToggle.setValue(false);
 
             gradEndSection.setCssStyles({ display: "none" });
-            textPickerLabel.setText("Text Color");
+            textPickerLabel.setText("Text color");
             textPicker.setHex('#ffffff');
             gradEndPicker.setHex('#00ffff');
             if (brightSlider && brightValLabel) {
@@ -1006,11 +1006,11 @@ modifiedFields: Set<string>;
             const finalStyle: FolderStyle = { ...existing };
             
             for (const key of this.modifiedFields) {
-                const val = (this.folderStyle as any)[key];
+                const val = (this.folderStyle as Record<string, unknown>)[key];
                 if (val === undefined || val === null || val === '') {
-                    delete (finalStyle as any)[key];
+                    delete (finalStyle as Record<string, unknown>)[key];
                 } else {
-                    (finalStyle as any)[key] = val;
+                    (finalStyle as Record<string, unknown>)[key] = val;
                 }
             }
             
@@ -1054,11 +1054,11 @@ modifiedFields: Set<string>;
             const finalStyle: FolderStyle = { ...existing };
             
             for (const key of this.modifiedFields) {
-                const val = (this.folderStyle as any)[key];
+                const val = (this.folderStyle as Record<string, unknown>)[key];
                 if (val === undefined || val === null || val === '') {
-                    delete (finalStyle as any)[key];
+                    delete (finalStyle as Record<string, unknown>)[key];
                 } else {
-                    (finalStyle as any)[key] = val;
+                    (finalStyle as Record<string, unknown>)[key] = val;
                 }
             }
             
