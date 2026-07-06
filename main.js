@@ -286,7 +286,9 @@ body .markdown-rendered a.tag[href="#${t.toUpperCase()}"]:hover {
                 margin-bottom: 0 !important;
             }
 
-            .cf-icon-active {
+            body .nav-files-container .nav-folder-title-content.cf-icon-active,
+            body .nav-files-container .nav-file-title-content.cf-icon-active,
+            body .nav-files-container .tree-item-inner.cf-icon-active {
                 display: inline-flex !important;
                 align-items: center !important;
             }
