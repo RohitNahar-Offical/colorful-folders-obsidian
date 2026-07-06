@@ -1102,7 +1102,7 @@ export class StyleGenerator {
                 endCol = eC;
             } else if (this.settings.rainbowRootText && depth === 0 && !customStyle?.textColor) {
                 isUsingGradient = true;
-                const rainbowOpacity = this.settings.rainbowRootOpacity !== undefined ? this.settings.rainbowRootOpacity : 1.0;
+                const rainbowOpacity = 1.0;
                 
                 const nextColor = currentPalette[(i + 1) % currentPalette.length];
                 startCol = color.hex;
