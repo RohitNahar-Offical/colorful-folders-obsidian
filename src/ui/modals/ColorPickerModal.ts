@@ -716,71 +716,7 @@ modifiedFields: Set<string>;
             updatePreview();
         };
 
-        // ── SECTION: Current Icon Box ──
-        const curIconRow = ic.createDiv();
-        curIconRow.setCssStyles({
-            display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px",
-            padding: "8px 10px", borderRadius: "8px", border: "1px solid var(--background-modifier-border)",
-            backgroundColor: "var(--background-secondary)", marginBottom: "12px"
-        });
-        const curIconBox = curIconRow.createDiv();
-        curIconBox.setCssStyles({
-            width: "36px", height: "36px", borderRadius: "8px", background: "var(--interactive-accent)",
-            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: "0"
-        });
-        this._refreshIconSelection(this.folderStyle.iconId, curIconBox);
 
-        const curIconHeader = curIconRow.createDiv();
-        curIconHeader.setCssStyles({ display: "flex", alignItems: "center", justifyContent: "space-between", flex: "1", minWidth: "150px" });
-        
-        const curIconInfo = curIconHeader.createDiv();
-        const ciLabel = curIconInfo.createDiv({ text: "Current icon" });
-        ciLabel.setCssStyles({ fontSize: "0.75em", color: "var(--text-muted)", marginBottom: "0px" });
-        this._curIconNameEl = curIconInfo.createDiv({ text: this.folderStyle.iconId || (this.isFolder ? "folder" : "file") });
-        this._curIconNameEl.setCssStyles({ fontSize: "0.85em", fontWeight: "600", color: "var(--text-normal)" });
-        this._curIconBox = curIconBox;
-
-        const applyIconBtn = curIconHeader.createEl("button", { text: "Apply icon only" });
-        applyIconBtn.setCssStyles({
-            padding: "3px 10px", borderRadius: "5px", fontSize: "0.75em", fontWeight: "600",
-            cursor: "pointer", border: "1px solid var(--interactive-accent)",
-            background: "var(--interactive-accent)", color: "var(--text-on-accent)"
-        });
-        applyIconBtn.onclick = async () => {
-            const path = this.item.path;
-            const existing = (this.plugin.getStyle(path) || {});
-            const finalStyle: FolderStyle = { ...existing };
-            
-            finalStyle.iconId = this.folderStyle.iconId;
-            if (this.modifiedFields.has('iconColor')) {
-                if (this.folderStyle.iconColor) finalStyle.iconColor = this.folderStyle.iconColor;
-                else delete finalStyle.iconColor;
-            }
-            
-            // CLEAR background and text overrides to make it strict "Icon Only"
-            delete finalStyle.hex;
-            delete finalStyle.opacity;
-            delete finalStyle.textColor;
-            delete finalStyle.isBold;
-            delete finalStyle.isItalic;
-
-            if (this.modifiedFields.has('applyToSubfolders')) {
-                finalStyle.applyToSubfolders = this.folderStyle.applyToSubfolders;
-            }
-            if (this.modifiedFields.has('applyToFiles')) {
-                finalStyle.applyToFiles = this.folderStyle.applyToFiles;
-            }
-
-            if (Object.keys(finalStyle).length === 0) {
-                delete this.plugin.settings.customFolderColors[path];
-            } else {
-                this.plugin.settings.customFolderColors[path] = finalStyle;
-            }
-            await this.plugin.saveSettings();
-            this.plugin.generateStyles();
-            new obsidian.Notice(`Icon updated for ${this.item.name}`);
-            this.close();
-        };
 
         // Search & Filter Row
         const searchRow = ic.createDiv();
@@ -879,7 +815,6 @@ modifiedFields: Set<string>;
                 this.folderStyle.iconId = id;
                 this.modifiedFields.add('iconId');
                 void this._addToRecentlyUsed(id);
-                this._refreshIconSelection(id, curIconBox);
                 if (this._updatePreview) this._updatePreview();
                 renderIcons(searchInput.value, filterSelect.value);
             };
