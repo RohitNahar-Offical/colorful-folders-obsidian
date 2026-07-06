@@ -288,7 +288,6 @@ export class IconManager {
                 alignItems: 'center',
                 justifyContent: 'center',
                 alignSelf: 'center',
-                marginRight: '6px',
                 flexShrink: '0',
                 overflow: 'visible'
             });

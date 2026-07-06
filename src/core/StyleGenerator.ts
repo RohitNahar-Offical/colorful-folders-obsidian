@@ -336,29 +336,25 @@ export class StyleGenerator {
                 height: auto !important;
             }
 
+            /* ── CONTENT ELEMENT: always flex row, icon or not ───────────────── */
             body .nav-files-container .nav-folder-title-content,
             body .nav-files-container .nav-file-title-content,
             body .nav-files-container .tree-item-inner {
-                display: block !important;
+                display: flex !important;
+                flex-direction: row !important;
+                align-items: center !important;
                 overflow: hidden !important;
                 text-overflow: ellipsis !important;
                 white-space: nowrap !important;
                 min-width: 0 !important;
                 flex-grow: 1 !important;
-                height: auto !important;
-                line-height: 1.3 !important; /* Proper line height for text truncation */
-                padding-top: 0 !important;
-                padding-bottom: 0 !important;
-                margin-top: 0 !important;
-                margin-bottom: 0 !important;
+                height: 100% !important;
+                line-height: normal !important;
+                padding: 0 !important;
+                margin: 0 !important;
             }
 
-            body .nav-files-container .nav-folder-title-content.cf-icon-active,
-            body .nav-files-container .nav-file-title-content.cf-icon-active,
-            body .nav-files-container .tree-item-inner.cf-icon-active {
-                display: inline-flex !important;
-                align-items: center !important;
-            }
+            /* ── ICON ACTIVE: suppress native pseudo-elements ─────────────────── */
             .cf-icon-active::before {
                 display: none !important;
                 content: none !important;
@@ -369,6 +365,17 @@ export class StyleGenerator {
             .cf-icon-active > .nav-folder-icon,
             .cf-icon-active > .nav-file-icon {
                 display: none !important;
+            }
+
+            /* ── CF-ICON-WRAPPER: consistent icon sizing and spacing ──────────── */
+            .cf-icon-wrapper {
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                align-self: center !important;
+                flex-shrink: 0 !important;
+                margin-right: 6px !important;
+                overflow: visible !important;
             }
 
             /* ── METADATA WRAPPING RULES (FILES WITH WORD COUNT ONLY) ─────────── */
