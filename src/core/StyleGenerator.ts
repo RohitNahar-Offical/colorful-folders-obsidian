@@ -63,6 +63,14 @@ export class StyleGenerator {
         return (activeDocument.body.classList.contains('theme-dark'));
     }
 
+    public static getAutoContrastColor(rgbStr: string): string {
+        if (!rgbStr) return "var(--text-normal)";
+        const parts = rgbStr.split(',').map(p => parseInt(p.trim()));
+        if (parts.length < 3 || parts.some(isNaN)) return "var(--text-normal)";
+        const luminance = 0.299 * parts[0] + 0.587 * parts[1] + 0.114 * parts[2];
+        return luminance > 128 ? "#000000" : "#ffffff";
+    }
+
     public static resolveColor(
         path: string,
         name: string,
@@ -153,10 +161,19 @@ export class StyleGenerator {
             return customStyle.opacity;
         } else if (isFile) {
             const isAutoOn = autoColorFiles || isNNActive;
-            if (isAutoOn || (inheritedStyle && inheritedStyle.applyToFiles)) {
-                return fileBackgroundOpacity !== undefined
-                    ? fileBackgroundOpacity
-                    : isDark ? 0.1 : 0.15;
+            const baseOpacity = fileBackgroundOpacity !== undefined
+                ? fileBackgroundOpacity
+                : (isDark ? 0.1 : 0.15);
+
+            if (inheritedStyle && inheritedStyle.applyToFiles) {
+                // If autoColorFiles is enabled, inherit background color (1 shade lighter)
+                if (autoColorFiles) {
+                    return Math.max(0.04, baseOpacity * 0.65);
+                } else {
+                    return 0.0;
+                }
+            } else if (isAutoOn) {
+                return baseOpacity;
             } else {
                 return 0.0;
             }
@@ -188,7 +205,9 @@ export class StyleGenerator {
         outlineOnly: boolean,
         shouldColor: boolean
     ): string {
-        const effectiveTextColor = customStyle?.textColor || (isFile ? null : inheritedStyle?.textColor) || null;
+        const effectiveTextColor = customStyle?.textColor || 
+            (!isFile ? inheritedStyle?.textColor : (inheritedStyle?.applyToFiles ? inheritedStyle?.textColor : null)) || 
+            null;
         if (effectiveTextColor) return effectiveTextColor;
 
         if (shouldColor) {
@@ -571,7 +590,7 @@ export class StyleGenerator {
                 display: flex !important;
                 align-items: center !important;
                 width: 100% !important;
-                gap: ${this.settings.dividerLinePadding ?? 8}px !important;
+                gap: 0px !important;
             }
             
             .cf-divider-line {
@@ -694,7 +713,7 @@ export class StyleGenerator {
                     this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground
                 );
 
-                const isCustomOrInherited = !!(fileStyle && fileStyle.hex) || (inheritedStyle && inheritedStyle.applyToFiles);
+                const isCustomOrInherited = !!(fileStyle && fileStyle.hex) || (inheritedStyle && inheritedStyle.applyToFiles && this.settings.autoColorFiles);
                 const shouldColorNative = isCustomOrInherited || this.settings.autoColorFiles || !!this.settings.globalBackgroundColor;
                 const shouldColorNN = isCustomOrInherited || (this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground);
 
@@ -807,7 +826,8 @@ export class StyleGenerator {
                         baseThick,
                         this.settings.notebookNavigatorOutlineOnly,
                         false,
-                        context.nnIconW
+                        context.nnIconW,
+                        this.settings.activeGlow !== false
                     ));
                 }
 
@@ -885,19 +905,26 @@ export class StyleGenerator {
                     `);
                 }
 
+                const activeGlowEnabled = this.settings.activeGlow !== false;
                 cssRules.push(`
                     .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file),
                     .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nn-file) {
                         background-color: var(--cf-active-bg, ${activeBg}) !important;
                         color: var(--cf-active-color, ${activeText}) !important;
-                        border: 1px solid rgba(${color.rgb}, 0.3) !important;
-                        ${useGlass ? `
+                        border: 1px solid ${activeGlowEnabled ? `rgba(${color.rgb}, 0.3)` : "transparent"} !important;
+                        ${activeGlowEnabled ? (useGlass ? `
                             backdrop-filter: blur(12px) saturate(160%) !important;
                             -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
                             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 4px 12px rgba(0,0,0,0.2) !important;
                         ` : `
                             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 2px 8px rgba(0,0,0,0.1) !important;
-                        `}
+                        `) : (useGlass ? `
+                            backdrop-filter: blur(12px) saturate(160%) !important;
+                            -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+                            box-shadow: none !important;
+                        ` : `
+                            box-shadow: none !important;
+                        `)}
                     }
 
                     /* Notebook Navigator Active File Glow (Flat Slot) */
@@ -1035,8 +1062,9 @@ export class StyleGenerator {
 
             if (this.settings.rainbowRootText && depth === 0 && !customStyle?.textColor) {
                 const nextColor = currentPalette[(i + 1) % currentPalette.length];
+                const rainbowOpacity = this.settings.rainbowRootOpacity !== undefined ? this.settings.rainbowRootOpacity : 1.0;
                 textCss = `
-                    background-image: linear-gradient(90deg, ${color.hex}, ${nextColor.hex}, ${color.hex}) !important;
+                    background-image: linear-gradient(90deg, rgba(${color.rgb}, ${rainbowOpacity}), rgba(${nextColor.rgb}, ${rainbowOpacity}), rgba(${color.rgb}, ${rainbowOpacity})) !important;
                     background-clip: text !important;
                     -webkit-background-clip: text !important;
                     color: transparent !important;
@@ -1057,6 +1085,25 @@ export class StyleGenerator {
                     ${glassCss}
                 }
             `);
+
+            if (this.settings.childItemLegibility === "inherit") {
+                cssRules.push(`
+                    body .nav-folder-title[data-path="${safePath}"] ~ .nav-folder-children .nav-folder-title:not(.is-active) .nav-folder-title-content,
+                    body .nav-folder-title[data-path="${safePath}"] ~ .nav-folder-children .nav-file-title:not(.is-active) .nav-file-title-content,
+                    body .tree-item-self[data-path="${safePath}"] ~ .tree-item-children .tree-item-self:not(.is-active) .tree-item-inner {
+                        color: ${folderStyles.t} !important;
+                    }
+                `);
+            } else if (this.settings.childItemLegibility === "auto-contrast" && !outlineOnly) {
+                const contrastColor = StyleGenerator.getAutoContrastColor(color.rgb);
+                cssRules.push(`
+                    body .nav-folder-title[data-path="${safePath}"] ~ .nav-folder-children .nav-folder-title:not(.is-active) .nav-folder-title-content,
+                    body .nav-folder-title[data-path="${safePath}"] ~ .nav-folder-children .nav-file-title:not(.is-active) .nav-file-title-content,
+                    body .tree-item-self[data-path="${safePath}"] ~ .tree-item-children .tree-item-self:not(.is-active) .tree-item-inner {
+                        color: ${contrastColor} !important;
+                    }
+                `);
+            }
 
             /* Notebook Navigator Folder Integration (Native-Bridge Architecture) */
             
@@ -1083,7 +1130,8 @@ export class StyleGenerator {
                 baseThick,
                 this.settings.notebookNavigatorOutlineOnly,
                 false, /* useRadiantPath is now managed via cf-active-parent statically */
-                context.nnIconW
+                context.nnIconW,
+                this.settings.activeGlow !== false
             ));
 
             cssRules.push(`
@@ -1257,7 +1305,8 @@ export class StyleGenerator {
                 baseThick,
                 this.settings.notebookNavigatorOutlineOnly,
                 true,
-                context.nnIconW
+                context.nnIconW,
+                this.settings.activeGlow !== false
             ));
             // Also handle potential empty path/slash variants
             if (root.path !== "/") {
@@ -1281,7 +1330,8 @@ export class StyleGenerator {
                     baseThick,
                     this.settings.notebookNavigatorOutlineOnly,
                     true,
-                    context.nnIconW
+                    context.nnIconW,
+                    this.settings.activeGlow !== false
                 ));
             }
         }

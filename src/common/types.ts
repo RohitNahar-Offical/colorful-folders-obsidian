@@ -91,6 +91,8 @@ export interface ColorfulFoldersSettings {
     tagSyncEnabled: boolean;
     tagSyncMatchFolders: boolean;
     tagSyncRules: string;
+    childItemLegibility: 'default' | 'inherit' | 'auto-contrast';
+    rainbowRootOpacity: number;
 }
 
 

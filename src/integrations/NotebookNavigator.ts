@@ -177,7 +177,8 @@ export class NotebookNavigatorIntegration {
         baseThick: number = 2.0,
         outlineOnly: boolean = false,
         useRadiantPath: boolean = false,
-        effIconW: string = '1.3em'
+        effIconW: string = '1.3em',
+        activeGlow: boolean = true
     ): string {
         const nnThick = baseThick + 0.5; // Scaled for NN visibility
         const activeThick = baseThick + 2.0;
@@ -263,10 +264,9 @@ export class NotebookNavigatorIntegration {
 
         const hoverCss = `
             ${base}:hover {
-                transform: translateY(-2px) !important;
-                filter: brightness(1.1) !important;
-                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 0 4px 8px rgba(0, 0, 0, 0.1) !important;
-                z-index: 10 !important;
+                background-color: rgba(${color.rgb}, ${Math.min(1.0, (isFolder ? bgAlpha : (outlineOnly ? Math.max(bgAlpha, 0.12) : Math.max(bgAlpha, 0.18))) + 0.08)}) !important;
+                filter: brightness(1.03) !important;
+                z-index: 2 !important;
             }
         `;
 
@@ -349,10 +349,12 @@ export class NotebookNavigatorIntegration {
             /* Active / Selected Glow (Premium) */
             body .notebook-navigator .is-active[data-path="${safePath}"] {
                 background-color: ${activeBg} !important;
-                box-shadow: 0 0 15px rgba(${color.rgb}, 0.5), 0 0 5px rgba(${color.rgb}, 0.3) !important;
+                ${activeGlow ? `
+                    box-shadow: 0 4px 12px rgba(${color.rgb}, 0.2) !important;
+                ` : `
+                    box-shadow: none !important;
+                `}
                 border-left: ${activeThick}px solid rgba(${color.rgb}, 1.0) !important;
-                transform: scale(1.01) !important;
-                filter: brightness(1.2) !important;
                 --cf-rgb: ${color.rgb};
                 color: ${activeText} !important;
                 z-index: 20 !important;

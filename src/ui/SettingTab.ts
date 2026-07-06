@@ -906,6 +906,17 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         const activeCard = makeCard(generalPanel, "✨", "Active item appearance");
         new obsidian.Setting(activeCard)
+            .setName('Luminous active glow')
+            .setDesc('Apply a modern glowing selection style and subtle scale effect to the active file/folder in the explorer.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.activeGlow !== false)
+                .onChange(async (value) => {
+                    this.plugin.settings.activeGlow = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStyles();
+                }));
+
+        new obsidian.Setting(activeCard)
             .setName('Use custom active file colors')
             .setDesc('Enable this to override the default luminous selection colors with your own.')
             .addToggle(toggle => toggle
@@ -1483,6 +1494,18 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         if (this.plugin.settings.rainbowRootText) {
             new obsidian.Setting(typeCard)
+                .setName('Rainbow effect opacity')
+                .setDesc('Adjust the intensity or transparency of the rainbow gradient text. Range: 0.1 to 1.0.')
+                .addSlider(slider => slider
+                    .setLimits(0.1, 1.0, 0.05)
+                    .setValue(this.plugin.settings.rainbowRootOpacity !== undefined ? this.plugin.settings.rainbowRootOpacity : 1.0)
+                    .onChange(async (value) => {
+                        this.plugin.settings.rainbowRootOpacity = value;
+                        await this.plugin.saveSettings();
+                        this.plugin.generateStyles();
+                    }));
+
+            new obsidian.Setting(typeCard)
                 .setName('Transparent root background')
                 .setDesc('Keeps the root text effect but removes the solid/translucent background box.')
                 .addToggle(toggle => toggle
@@ -1548,6 +1571,22 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     await this.plugin.saveSettings();
                     this.plugin.generateStyles();
                 }));
+
+        const legibilityCard = makeCard(generalPanel, "👁️‍🗨️", "Child item legibility");
+        new obsidian.Setting(legibilityCard)
+            .setName('Child item behavior')
+            .setDesc('Determine how nested files and subfolders should style their text colors to ensure readability on colored backgrounds.')
+            .addDropdown(dropdown => dropdown
+                .addOption('default', 'Default')
+                .addOption('inherit', 'Inherit folder font color')
+                .addOption('auto-contrast', 'Auto-contrast')
+                .setValue(this.plugin.settings.childItemLegibility || 'default')
+                .onChange(async (value) => {
+                    this.plugin.settings.childItemLegibility = value as 'default' | 'inherit' | 'auto-contrast';
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStyles();
+                }));
+
 
 
 
