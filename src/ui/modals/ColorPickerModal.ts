@@ -130,8 +130,7 @@ modifiedFields: Set<string>;
             borderBottom: "1px solid var(--background-modifier-border)"
         });
 
-        const body = contentEl.createDiv({ cls: "cf-tab-body" });
-        body.setCssStyles({ padding: "16px 20px 8px", overflowY: "auto", maxHeight: "60vh" });
+
 
         // Live mini-preview bar (Sticky at the top, outside scrollable tab panels)
         const prev = contentEl.createDiv({ cls: "cf-preview-bar" });
@@ -210,6 +209,9 @@ modifiedFields: Set<string>;
         }
         this._prevIconWrap = prevIconWrap;
         this._prevLabel = prevLabel;
+
+        const body = contentEl.createDiv({ cls: "cf-tab-body" });
+        body.setCssStyles({ padding: "16px 20px 8px", overflowY: "auto", maxHeight: "60vh" });
 
         const tabPanels: Record<string, HTMLElement> = {};
         const tabBtns: Record<string, HTMLElement> = {};
