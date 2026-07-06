@@ -611,10 +611,17 @@ modifiedFields: Set<string>;
             this.modifiedFields.add('textGradient');
             gradEndSection.setCssStyles({ display: gradChk.checked ? "block" : "none" });
             textPickerLabel.setText(gradChk.checked ? "Start Color" : "Text Color");
-            if (gradChk.checked && !this.folderStyle.textGradientEnd) {
-                this.folderStyle.textGradientEnd = '#00ffff';
-                this.modifiedFields.add('textGradientEnd');
-                gradEndPicker.setHex('#00ffff');
+            if (gradChk.checked) {
+                if (!this.folderStyle.textColor) {
+                    this.folderStyle.textColor = '#ffffff';
+                    this.modifiedFields.add('textColor');
+                    textPicker.setHex('#ffffff');
+                }
+                if (!this.folderStyle.textGradientEnd) {
+                    this.folderStyle.textGradientEnd = '#00ffff';
+                    this.modifiedFields.add('textGradientEnd');
+                    gradEndPicker.setHex('#00ffff');
+                }
             }
             updatePreview();
         };
