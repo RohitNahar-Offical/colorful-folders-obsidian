@@ -186,8 +186,7 @@ modifiedFields: Set<string>;
         let initialBgGradient = "";
         
         if (this.folderStyle.textGradient && initialTextCol && this.folderStyle.textGradientEnd) {
-            const angle = this.plugin.settings.rainbowRootAngle !== undefined ? this.plugin.settings.rainbowRootAngle : 90;
-            initialBgGradient = `linear-gradient(${angle}deg, ${initialTextCol}, ${this.folderStyle.textGradientEnd})`;
+            initialBgGradient = `linear-gradient(90deg, ${initialTextCol}, ${this.folderStyle.textGradientEnd})`;
         } else if (!initialTextCol && this.folderStyle.hex) {
             const isDark = activeDocument.body.classList.contains('theme-dark');
             const settings = this.plugin.settings;
@@ -281,8 +280,7 @@ modifiedFields: Set<string>;
                 let bgGradient = "";
                 
                 if (this.folderStyle.textGradient && textCol && this.folderStyle.textGradientEnd) {
-                    const angle = this.plugin.settings.rainbowRootAngle !== undefined ? this.plugin.settings.rainbowRootAngle : 90;
-                    bgGradient = `linear-gradient(${angle}deg, ${textCol}, ${this.folderStyle.textGradientEnd})`;
+                    bgGradient = `linear-gradient(90deg, ${textCol}, ${this.folderStyle.textGradientEnd})`;
                 } else if (!textCol && this.folderStyle.hex) {
                     const isDark = activeDocument.body.classList.contains('theme-dark');
                     const settings = this.plugin.settings;

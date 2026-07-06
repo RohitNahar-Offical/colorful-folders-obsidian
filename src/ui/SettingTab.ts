@@ -1493,29 +1493,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 }));
 
         if (this.plugin.settings.rainbowRootText) {
-            new obsidian.Setting(typeCard)
-                .setName('Rainbow effect opacity')
-                .setDesc('Adjust the intensity or transparency of the rainbow gradient text. Range: 0.1 to 1.0.')
-                .addSlider(slider => slider
-                    .setLimits(0.1, 1.0, 0.05)
-                    .setValue(this.plugin.settings.rainbowRootOpacity !== undefined ? this.plugin.settings.rainbowRootOpacity : 1.0)
-                    .onChange(async (value) => {
-                        this.plugin.settings.rainbowRootOpacity = value;
-                        await this.plugin.saveSettings();
-                        this.plugin.generateStyles();
-                    }));
 
-            new obsidian.Setting(typeCard)
-                .setName('Rainbow effect angle (degrees)')
-                .setDesc('Adjust the gradient direction angle.')
-                .addSlider(slider => slider
-                    .setLimits(0, 360, 5)
-                    .setValue(this.plugin.settings.rainbowRootAngle !== undefined ? this.plugin.settings.rainbowRootAngle : 90)
-                    .onChange(async (value) => {
-                        this.plugin.settings.rainbowRootAngle = value;
-                        await this.plugin.saveSettings();
-                        this.plugin.generateStyles();
-                    }));
 
             new obsidian.Setting(typeCard)
                 .setName('Transparent root background')

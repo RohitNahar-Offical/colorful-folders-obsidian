@@ -780,7 +780,7 @@ export class StyleGenerator {
                 `;
                 
                 if (activeStyle && activeStyle.textGradient && activeStyle.textColor && activeStyle.textGradientEnd) {
-                    const angle = this.settings.rainbowRootAngle !== undefined ? this.settings.rainbowRootAngle : 90;
+                    const angle = 90;
                     fileTextCss = `
                         background-image: linear-gradient(${angle}deg, ${activeStyle.textColor}, ${activeStyle.textGradientEnd}, ${activeStyle.textColor}) !important;
                         background-clip: text !important;
@@ -1073,7 +1073,7 @@ export class StyleGenerator {
             let isUsingGradient = false;
             let startCol = "";
             let endCol = "";
-            let gradAngle = this.settings.rainbowRootAngle !== undefined ? this.settings.rainbowRootAngle : 90;
+            let gradAngle = 90;
             let gradWeight = isBold ? '800' : 'normal';
 
             if (customStyle?.textGradient && customStyle?.textColor && customStyle?.textGradientEnd) {
@@ -1098,7 +1098,7 @@ export class StyleGenerator {
                     if (rgb) endCol = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${rainbowOpacity})`;
                 }
 
-                gradAngle = this.settings.rainbowRootAngle !== undefined ? this.settings.rainbowRootAngle : 90;
+                gradAngle = 90;
                 gradWeight = "800"; // hardcoded thick default
             }
 
