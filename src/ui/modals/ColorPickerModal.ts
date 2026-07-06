@@ -296,7 +296,8 @@ modifiedFields: Set<string>;
                 if (this.folderStyle.textGradient && textCol && this.folderStyle.textGradientEnd) {
                     const startC = getAdjustedColor(textCol, this.folderStyle.rainbowBrightness);
                     const endC = getAdjustedColor(this.folderStyle.textGradientEnd, this.folderStyle.rainbowBrightness);
-                    bgGradient = `linear-gradient(90deg, ${startC}, ${endC})`;
+                    // Matches StyleGenerator: looped gradient start->end->start
+                    bgGradient = `linear-gradient(90deg, ${startC}, ${endC}, ${startC})`;
                 } else if (!textCol && this.folderStyle.hex) {
                     const isDark = activeDocument.body.classList.contains('theme-dark');
                     const settings = this.plugin.settings;
@@ -325,16 +326,16 @@ modifiedFields: Set<string>;
                         backgroundClip: "text",
                         webkitBackgroundClip: "text",
                         color: "transparent",
-                        fontWeight: this.folderStyle.isBold ? "700" : "400",
+                        fontWeight: this.folderStyle.isBold ? "800" : "400",
                         fontStyle: this.folderStyle.isItalic ? "italic" : "normal"
                     });
                 } else {
                     this._prevLabel.setCssStyles({
                         backgroundImage: "none",
-                        backgroundClip: "normal",
-                        webkitBackgroundClip: "normal",
+                        backgroundClip: "initial",
+                        webkitBackgroundClip: "initial",
                         color: textCol || "var(--text-normal)",
-                        fontWeight: this.folderStyle.isBold ? "700" : "400",
+                        fontWeight: this.folderStyle.isBold ? "800" : "400",
                         fontStyle: this.folderStyle.isItalic ? "italic" : "normal"
                     });
                 }
