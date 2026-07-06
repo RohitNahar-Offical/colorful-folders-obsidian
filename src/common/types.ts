@@ -28,6 +28,7 @@ export interface FolderStyle {
     isHidden?: boolean;
     textGradient?: boolean;
     textGradientEnd?: string;
+    rainbowBrightness?: number;
 }
 
 export interface ColorfulFoldersSettings {

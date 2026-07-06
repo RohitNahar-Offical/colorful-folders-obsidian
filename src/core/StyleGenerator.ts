@@ -781,8 +781,18 @@ export class StyleGenerator {
                 
                 if (activeStyle && activeStyle.textGradient && activeStyle.textColor && activeStyle.textGradientEnd) {
                     const angle = 90;
+                    let sC = activeStyle.textColor;
+                    let eC = activeStyle.textGradientEnd;
+                    const bVal = activeStyle.rainbowBrightness !== undefined ? activeStyle.rainbowBrightness : 50;
+                    if (bVal !== 50) {
+                        const amount = (bVal - 50) / 50;
+                        const rgbS = hexToRgbObj(sC);
+                        if (rgbS) sC = `rgb(${adjustBrightnessRgb(`${rgbS.r},${rgbS.g},${rgbS.b}`, amount)})`;
+                        const rgbE = hexToRgbObj(eC);
+                        if (rgbE) eC = `rgb(${adjustBrightnessRgb(`${rgbE.r},${rgbE.g},${rgbE.b}`, amount)})`;
+                    }
                     fileTextCss = `
-                        background-image: linear-gradient(${angle}deg, ${activeStyle.textColor}, ${activeStyle.textGradientEnd}, ${activeStyle.textColor}) !important;
+                        background-image: linear-gradient(${angle}deg, ${sC}, ${eC}, ${sC}) !important;
                         background-clip: text !important;
                         -webkit-background-clip: text !important;
                         color: transparent !important;
@@ -1078,8 +1088,18 @@ export class StyleGenerator {
 
             if (customStyle?.textGradient && customStyle?.textColor && customStyle?.textGradientEnd) {
                 isUsingGradient = true;
-                startCol = customStyle.textColor;
-                endCol = customStyle.textGradientEnd;
+                let sC = customStyle.textColor;
+                let eC = customStyle.textGradientEnd;
+                const bVal = customStyle.rainbowBrightness !== undefined ? customStyle.rainbowBrightness : 50;
+                if (bVal !== 50) {
+                    const amount = (bVal - 50) / 50;
+                    const rgbS = hexToRgbObj(sC);
+                    if (rgbS) sC = `rgb(${adjustBrightnessRgb(`${rgbS.r},${rgbS.g},${rgbS.b}`, amount)})`;
+                    const rgbE = hexToRgbObj(eC);
+                    if (rgbE) eC = `rgb(${adjustBrightnessRgb(`${rgbE.r},${rgbE.g},${rgbE.b}`, amount)})`;
+                }
+                startCol = sC;
+                endCol = eC;
             } else if (this.settings.rainbowRootText && depth === 0 && !customStyle?.textColor) {
                 isUsingGradient = true;
                 const rainbowOpacity = this.settings.rainbowRootOpacity !== undefined ? this.settings.rainbowRootOpacity : 1.0;

@@ -3,6 +3,16 @@ import { FolderStyle, EffectiveStyle, IColorfulFoldersPlugin } from '../../commo
 import { createVisualColorPicker } from '../components/ColorPicker';
 import { hexToRgbObj, adjustBrightnessRgb } from '../../common/utils';
 
+const getAdjustedColor = (hex: string, brightnessVal: number | undefined): string => {
+    if (!hex) return hex;
+    const bVal = brightnessVal !== undefined ? brightnessVal : 50;
+    const amount = (bVal - 50) / 50;
+    if (amount === 0) return hex;
+    const rgb = hexToRgbObj(hex);
+    if (!rgb) return hex;
+    return `rgb(${adjustBrightnessRgb(`${rgb.r},${rgb.g},${rgb.b}`, amount)})`;
+};
+
 export class ColorPickerModal extends obsidian.Modal {
 plugin: IColorfulFoldersPlugin;
 item: obsidian.TAbstractFile;
@@ -186,7 +196,9 @@ modifiedFields: Set<string>;
         let initialBgGradient = "";
         
         if (this.folderStyle.textGradient && initialTextCol && this.folderStyle.textGradientEnd) {
-            initialBgGradient = `linear-gradient(90deg, ${initialTextCol}, ${this.folderStyle.textGradientEnd})`;
+            const startC = getAdjustedColor(initialTextCol, this.folderStyle.rainbowBrightness);
+            const endC = getAdjustedColor(this.folderStyle.textGradientEnd, this.folderStyle.rainbowBrightness);
+            initialBgGradient = `linear-gradient(90deg, ${startC}, ${endC})`;
         } else if (!initialTextCol && this.folderStyle.hex) {
             const isDark = activeDocument.body.classList.contains('theme-dark');
             const settings = this.plugin.settings;
@@ -280,7 +292,9 @@ modifiedFields: Set<string>;
                 let bgGradient = "";
                 
                 if (this.folderStyle.textGradient && textCol && this.folderStyle.textGradientEnd) {
-                    bgGradient = `linear-gradient(90deg, ${textCol}, ${this.folderStyle.textGradientEnd})`;
+                    const startC = getAdjustedColor(textCol, this.folderStyle.rainbowBrightness);
+                    const endC = getAdjustedColor(this.folderStyle.textGradientEnd, this.folderStyle.rainbowBrightness);
+                    bgGradient = `linear-gradient(90deg, ${startC}, ${endC})`;
                 } else if (!textCol && this.folderStyle.hex) {
                     const isDark = activeDocument.body.classList.contains('theme-dark');
                     const settings = this.plugin.settings;
@@ -462,6 +476,10 @@ modifiedFields: Set<string>;
                 if (this.folderStyle.textGradientEnd) finalStyle.textGradientEnd = this.folderStyle.textGradientEnd;
                 else delete finalStyle.textGradientEnd;
             }
+            if (this.modifiedFields.has('rainbowBrightness')) {
+                if (this.folderStyle.rainbowBrightness !== undefined) finalStyle.rainbowBrightness = this.folderStyle.rainbowBrightness;
+                else delete finalStyle.rainbowBrightness;
+            }
             if (this.modifiedFields.has('isBold')) {
                 finalStyle.isBold = this.folderStyle.isBold;
             }
@@ -493,6 +511,10 @@ modifiedFields: Set<string>;
             this.modifiedFields.add('textColor');
             updatePreview();
         }, { showAlpha: false });
+        let brightSlider: HTMLInputElement | null = null;
+        let brightValLabel: HTMLSpanElement | null = null;
+        const isRootFolder = this.isFolder && (!this.path.includes("/") || this.path === "/");
+
         resetTxtBtn.onclick = () => {
             this.folderStyle.textColor = '';
             this.modifiedFields.add('textColor');
@@ -500,11 +522,17 @@ modifiedFields: Set<string>;
             this.modifiedFields.add('textGradient');
             this.folderStyle.textGradientEnd = '';
             this.modifiedFields.add('textGradientEnd');
+            this.folderStyle.rainbowBrightness = 50;
+            this.modifiedFields.add('rainbowBrightness');
             gradChk.checked = false;
             gradEndSection.setCssStyles({ display: "none" });
             textPickerLabel.setText("Text Color");
             textPicker.setHex('#ffffff');
             gradEndPicker.setHex('#00ffff');
+            if (brightSlider && brightValLabel) {
+                brightSlider.value = '50';
+                brightValLabel.textContent = '50';
+            }
             updatePreview();
         };
 
@@ -551,6 +579,32 @@ modifiedFields: Set<string>;
             this.modifiedFields.add('textGradientEnd');
             updatePreview();
         }, { showAlpha: false });
+
+        if (isRootFolder) {
+            const brightRow = gradEndSection.createDiv();
+            brightRow.setCssStyles({
+                display: 'flex', alignItems: 'center', gap: '10px', marginTop: '12px'
+            });
+            const brightLabel = brightRow.createSpan({ text: 'Brightness' });
+            brightLabel.setCssStyles({ fontSize: '0.78em', fontWeight: '700', color: 'var(--text-muted)', whiteSpace: 'nowrap' });
+
+            brightSlider = brightRow.createEl('input', { type: 'range' });
+            brightSlider.min = '1'; brightSlider.max = '100';
+            brightSlider.value = String(this.folderStyle.rainbowBrightness !== undefined ? this.folderStyle.rainbowBrightness : 50);
+            brightSlider.setCssStyles({ flex: '1', cursor: 'pointer' });
+
+            brightValLabel = brightRow.createSpan();
+            brightValLabel.setCssStyles({ fontSize: '0.78em', fontWeight: '700', color: 'var(--text-normal)', minWidth: '34px', textAlign: 'right' });
+            brightValLabel.textContent = `${brightSlider.value}`;
+
+            brightSlider.addEventListener('input', () => {
+                const val = parseInt(brightSlider!.value);
+                this.folderStyle.rainbowBrightness = val;
+                this.modifiedFields.add('rainbowBrightness');
+                brightValLabel!.textContent = `${val}`;
+                updatePreview();
+            });
+        }
 
         gradChk.onchange = () => {
             this.folderStyle.textGradient = gradChk.checked;
