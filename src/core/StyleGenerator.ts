@@ -786,6 +786,21 @@ export class StyleGenerator {
                 const activeBg = (this.settings.useCustomActiveColor && this.settings.customActiveBg) ? this.settings.customActiveBg : `rgba(${color.rgb}, ${useGlass ? 0.14 : 0.12})`;
                 const activeText = (this.settings.useCustomActiveColor && this.settings.customActiveText) ? this.settings.customActiveText : textNative;
                 
+                let fileRowCss = `
+                    ${shouldColorNative ? `
+                        background-color: var(--cf-file-bg, rgba(${color.rgb}, ${fileBgAlpha})) !important;
+                        border-left: ${baseThick}px solid rgba(${color.rgb}, 0.4) !important;
+                        --cf-selection-bg: rgba(${color.rgb}, ${Math.min(1.0, fileBgAlpha + 0.15)});
+                    ` : `
+                        background-color: var(--cf-file-bg, transparent) !important;
+                        border-left: none !important;
+                    `}
+                    opacity: 1.0 !important;
+                    border-radius: 4px;
+                    --nav-tag-background: var(--cf-tag-bg, rgba(${color.rgb}, 0.15)) !important;
+                    --nav-tag-color: var(--cf-tag-color, ${textNative}) !important;
+                `;
+
                 let fileTextCss = `
                     color: var(--cf-file-color, ${textNative}) !important;
                     font-weight: ${isBold ? '800' : 'normal'} !important;
@@ -817,18 +832,11 @@ export class StyleGenerator {
                 cssRules.push(`
                     .nav-files-container .nav-file-title[data-path="${safePath}"]:not(.nn-file),
                     .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) {
-                        ${shouldColorNative ? `
-                            background-color: var(--cf-file-bg, rgba(${color.rgb}, ${fileBgAlpha})) !important;
-                            border-left: ${baseThick}px solid rgba(${color.rgb}, 0.4) !important;
-                            --cf-selection-bg: rgba(${color.rgb}, ${Math.min(1.0, fileBgAlpha + 0.15)});
-                        ` : `
-                            background-color: var(--cf-file-bg, transparent) !important;
-                            border-left: none !important;
-                        `}
-                        opacity: 1.0 !important;
-                        border-radius: 4px;
-                        --nav-tag-background: var(--cf-tag-bg, rgba(${color.rgb}, 0.15)) !important;
-                        --nav-tag-color: var(--cf-tag-color, ${textNative}) !important;
+                        ${fileRowCss}
+                    }
+
+                    body .nav-files-container .nav-file-title[data-path="${safePath}"]:not(.nn-file) .nav-file-title-content,
+                    body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner {
                         ${fileTextCss}
                     }
 
