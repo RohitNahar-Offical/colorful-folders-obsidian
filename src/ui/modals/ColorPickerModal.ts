@@ -513,7 +513,7 @@ modifiedFields: Set<string>;
         }, { showAlpha: false });
         let brightSlider: HTMLInputElement | null = null;
         let brightValLabel: HTMLSpanElement | null = null;
-        const isRootFolder = this.isFolder && (!this.path.includes("/") || this.path === "/");
+        const isRootFolder = this.isFolder && (!this.item.path.includes("/") || this.item.path === "/");
 
         resetTxtBtn.onclick = () => {
             this.folderStyle.textColor = '';
