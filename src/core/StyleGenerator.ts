@@ -1037,44 +1037,41 @@ export class StyleGenerator {
 
             // Emit children container tint here, using this child's OWN resolved color
             // (ensures People's children get yellow tint, not Dots' green tint)
-            if (passedColor || (inheritedStyle && inheritedStyle.applyToSubfolders)) {
-                const childTintColor = color; // child's own resolved color
-                const minOp = depth === 0 ? 0.12 : 0.05;
-                const finalTintOp = Math.max(tintOp, minOp);
-                const bgTint = outlineOnly ? "transparent" : `rgba(${childTintColor.rgb}, ${finalTintOp})`;
+            const minOp = depth === 0 ? 0.12 : 0.05;
+            const finalTintOp = Math.max(tintOp, minOp);
+            const bgTint = outlineOnly ? "transparent" : `rgba(${color.rgb}, ${finalTintOp})`;
 
-                cssRules.push(`
-                    body .nav-folder-title[data-path="${safePath}"] ~ .nav-folder-children,
-                    body .tree-item-self[data-path="${safePath}"] ~ .tree-item-children {
-                        background-color: ${bgTint} !important;
-                        border-left: ${folderThick}px solid rgba(${childTintColor.rgb}, 0.25) !important;
-                        border-bottom: ${folderThick}px solid rgba(${childTintColor.rgb}, 0.25) !important;
-                        border-radius: 4px !important;
-                        border-bottom-left-radius: 8px !important;
-                        padding-bottom: 4px !important;
-                        margin-bottom: 4px !important;
-                        overflow: visible !important;
-                    }
-                `);
-                const childActiveSelector = `.nav-files-container .nav-folder.cf-active-parent > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) ~ .nav-folder-children, .nav-files-container .tree-item.cf-active-parent > .tree-item-self[data-path="${safePath}"]:not(.nn-navitem) ~ .tree-item-children`;
-                cssRules.push(`
-                    ${childActiveSelector} {
-                        border-left: ${folderThick}px solid ${childTintColor.hex} !important;
-                        border-bottom: ${folderThick}px solid ${childTintColor.hex} !important;
-                        border-bottom-left-radius: 8px !important;
-                        box-shadow: -2px 0 10px -2px ${childTintColor.hex}44;
-                        margin-left: 12px !important;
-                        padding-left: 0 !important;
-                        --cf-rgb: ${childTintColor.rgb};
-                    }
+            cssRules.push(`
+                body .nav-folder-title[data-path="${safePath}"] ~ .nav-folder-children,
+                body .tree-item-self[data-path="${safePath}"] ~ .tree-item-children {
+                    background-color: ${bgTint} !important;
+                    border-left: ${folderThick}px solid rgba(${color.rgb}, 0.25) !important;
+                    border-bottom: ${folderThick}px solid rgba(${color.rgb}, 0.25) !important;
+                    border-radius: 4px !important;
+                    border-bottom-left-radius: 8px !important;
+                    padding-bottom: 4px !important;
+                    margin-bottom: 4px !important;
+                    overflow: visible !important;
+                }
+            `);
+            const childActiveSelector = `.nav-files-container .nav-folder.cf-active-parent > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) ~ .nav-folder-children, .nav-files-container .tree-item.cf-active-parent > .tree-item-self[data-path="${safePath}"]:not(.nn-navitem) ~ .tree-item-children`;
+            cssRules.push(`
+                ${childActiveSelector} {
+                    border-left: ${folderThick}px solid ${color.hex} !important;
+                    border-bottom: ${folderThick}px solid ${color.hex} !important;
+                    border-bottom-left-radius: 8px !important;
+                    box-shadow: -2px 0 10px -2px ${color.hex}44;
+                    margin-left: 12px !important;
+                    padding-left: 0 !important;
+                    --cf-rgb: ${color.rgb};
+                }
 
-                    /* Notebook Navigator Folder Active Path (Flat-Glass) */
-                    ${NotebookNavigatorIntegration.getScopedActiveNavSelector(child.path)} {
-                        border-left: ${activeFolderThick}px solid ${childTintColor.hex} !important;
-                        background: linear-gradient(to right, rgba(${childTintColor.rgb}, 0.25), rgba(${childTintColor.rgb}, 0.05)) !important;
-                    }
-                `);
-            }
+                /* Notebook Navigator Folder Active Path (Flat-Glass) */
+                ${NotebookNavigatorIntegration.getScopedActiveNavSelector(child.path)} {
+                    border-left: ${activeFolderThick}px solid ${color.hex} !important;
+                    background: linear-gradient(to right, rgba(${color.rgb}, 0.25), rgba(${color.rgb}, 0.05)) !important;
+                }
+            `);
 
             // Pre-calculate folder icons to avoid warnings
             const autoIconFolder = (this.settings.autoIcons && !customStyle?.iconId && !inheritedStyle?.iconId) ? this.plugin.iconManager.getAutoIconData(child.name) : null;
