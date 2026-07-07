@@ -2,7 +2,10 @@
 
 Use this to instantly know WHICH file to edit for any task.
 
-## "I want to change how colors work"
+## "I want to change how colors or opacity work"
+→ Edit `src/core/StyleGenerator.ts` inside the static methods `resolveColor()`, `resolveOpacity()`, or `resolveTextColor()`.
+
+## "I want to change the rendering traversal logic"
 → Edit `src/core/StyleGenerator.ts` inside the `traverse()` function.
 
 ## "I want to add a new setting"
