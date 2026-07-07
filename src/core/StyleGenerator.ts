@@ -183,16 +183,19 @@ export class StyleGenerator {
             } else {
                 return rootOpacity !== undefined
                     ? rootOpacity
-                    : 0.548;
+                    : 0.50;
             }
         } else {
-            const baseOp = subfolderOpacity !== undefined
-                ? subfolderOpacity
-                : 0.4;
-            // Linear 10% reduction per depth level, hard floor at 0.15 so deep nesting stays visible
-            const scale = Math.max(0.15 / baseOp, 1.0 - (depth - 1) * 0.1);
-            const scaledOp = parseFloat((baseOp * scale).toFixed(3));
-            return Math.max(0.15, scaledOp);
+            const baseOp = rootOpacity !== undefined ? rootOpacity : 0.50;
+            let startOp = baseOp;
+            if (inheritedStyle && inheritedStyle.opacity !== undefined) {
+                startOp = Math.min(baseOp, inheritedStyle.opacity);
+            }
+            let op = startOp - (depth * 0.10);
+            if (op < 0.10) {
+                op = 0.05;
+            }
+            return parseFloat(op.toFixed(3));
         }
     }
 
