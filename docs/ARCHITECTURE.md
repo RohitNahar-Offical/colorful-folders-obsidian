@@ -340,7 +340,7 @@ Previously, a new `StyleGenerator` was allocated on every `generateStyles()` cal
 ### 2. Static Math Resolution
 Core calculations for folder colors, text contrasting, and opacities have been extracted into three static helper functions on `StyleGenerator`:
 * `StyleGenerator.resolveColor(...)`: Standardizes color calculations for all heatmap, cycle, and monochromatic modes.
-* `StyleGenerator.resolveOpacity(...)`: Determines correct folder, file, and subfolder opacities based on settings.
+* `StyleGenerator.resolveOpacity(...)`: Determines correct folder, file, and subfolder opacities based on a fixed depth progression (Root=50%, -10% per level, clamped to 5% minimum).
 * `StyleGenerator.resolveTextColor(...)`: Applies WCAG contrast checks and theme offsets to return optimal text colors.
 
 ### 3. Consolidated Discovery

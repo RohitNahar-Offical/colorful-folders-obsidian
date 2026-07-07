@@ -16,8 +16,8 @@ Representing the entire `data.json` structure. Defined in `src/common/types.ts`.
 | `colorMode` | `string` | `cycle` (sequential), `monochromatic` (fixed root color), or `heatmap` (by age). |
 | `cycleOffset` | `number` | Shifts the starting point of the color cycle. |
 | **Opacity & Accents** | | |
-| `rootOpacity` | `number` | Background transparency of top-level folders (0-1). |
-| `subfolderOpacity` | `number` | Background transparency of nested folders (0-1). |
+| `rootOpacity` | `number` | Background transparency of top-level folders (fallback, currently overridden by 50% fixed logic). |
+| `subfolderOpacity` | `number` | Background transparency of nested folders (fallback, currently overridden by -10% per level logic). |
 | `tintOpacity` | `number` | Global transparency for folder background colors. |
 | `rootTintOpacity` | `number` | Specific tint transparency for root folders. |
 | `fileBackgroundOpacity` | `number` | Transparency for file background highlights. |
