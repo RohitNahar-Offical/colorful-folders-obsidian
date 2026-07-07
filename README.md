@@ -44,7 +44,6 @@ This massive release brings powerful new customization options and resolves stub
 
 * **Color-Coding Hierarchy:** Automatically assigns beautiful, distinct colors to top-level and nested folders.
 * **Visual Wayfinding:** Glowing connector lines create a clear "breadcrumb trail" to your currently active file.
-* **Stunning Built-in Palettes:** Choose from preset themes like *Pastel Dreams* or *Tailwind UI*, or create your own brand-consistent hex palettes.
 * **Smart Rainbow Logic:** Cycle files through your palette for a full rainbow effect, or use the **Adaptive Heatmap** to seamlessly sync with your chosen colors.
 * **Minimalist Modes:** Force subfolders to inherit parent colors, or use **Outline Only Mode** to remove background tints while keeping bright connecting lines.
 
