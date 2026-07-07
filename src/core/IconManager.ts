@@ -2,6 +2,7 @@ import * as obsidian from 'obsidian';
 import { IColorfulFoldersPlugin, FolderStyle, AutoIconData } from '../common/types';
 import { AUTO_ICON_CATEGORIES } from '../common/constants';
 import { hashString } from '../common/utils';
+import { StyleResolver } from './StyleResolver';
 
 export class IconManager {
     plugin: IColorfulFoldersPlugin;
@@ -156,7 +157,7 @@ export class IconManager {
                 const path = (item as HTMLElement).dataset.path;
                 if (!path) return;
 
-                const style = this.plugin.getStyle(path);
+                const style = StyleResolver.getStyle(this.plugin, path);
                 
                 // Toggle cf-hidden class on wrapper
                 const wrapper = item.closest('.nav-folder, .nav-file, .tree-item, .nn-navitem');
@@ -198,7 +199,7 @@ export class IconManager {
             for (const titleEl of candidates) {
                 const path = titleEl.dataset.path;
                 if (!path) continue;
-                const style = this.plugin.getStyle(path);
+                const style = StyleResolver.getStyle(this.plugin, path);
                 
                 // Toggle cf-hidden class on wrapper
                 const wrapper = titleEl.closest('.nav-folder, .nav-file, .tree-item, .nn-navitem');

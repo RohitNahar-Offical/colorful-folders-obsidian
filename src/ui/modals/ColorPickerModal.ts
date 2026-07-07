@@ -1,8 +1,10 @@
+import { StyleResolver } from '../../core/StyleResolver';
 import * as obsidian from 'obsidian';
 import { FolderStyle, EffectiveStyle, IColorfulFoldersPlugin } from '../../common/types';
 import { createVisualColorPicker } from '../components/ColorPicker';
 import { hexToRgbObj, adjustBrightnessRgb } from '../../common/utils';
 import { StyleGenerator } from '../../core/StyleGenerator';
+import { ColorResolver, isDarkMode } from '../../core/ColorResolver';
 
 const getAdjustedColor = (hex: string, brightnessVal: number | undefined): string => {
     if (!hex) return hex;
@@ -44,11 +46,11 @@ modifiedFields: Set<string>;
         this.focusSection = focusSection; // 'icon' | 'color' | 'background' | null
 
         // Initialize style - pre-fill from current appearance if no custom style exists
-        const effective = this.plugin.getEffectiveStyle(this.item) || {
+        const effective = StyleResolver.getEffectiveStyle(this.item, this.plugin) || {
             hex: "#eb6f92", textColor: "", iconColor: "", isBold: this.isFolder, isItalic: false,
             opacity: 1.0, applyToSubfolders: false, applyToFiles: false, iconId: ""
         };
-        const existing = (this.plugin.getStyle(this.item.path) || {});
+        const existing = (StyleResolver.getStyle(this.plugin, this.item.path) || {});
         
         // Merge: effective provides the "live" fallback, existing provides the user's explicit overrides
         this.folderStyle = { ...effective, ...existing };
@@ -168,7 +170,7 @@ modifiedFields: Set<string>;
             const endC = getAdjustedColor(this.folderStyle.textGradientEnd, this.folderStyle.rainbowBrightness);
             initialBgGradient = `linear-gradient(90deg, ${startC}, ${endC}, ${startC})`;
         } else if (!initialTextCol && this.folderStyle.hex) {
-            const isDark = activeDocument.body.classList.contains('theme-dark');
+            const isDark = isDarkMode();
             const settings = this.plugin.settings;
             const lightBrightness = (settings.lightModeBrightness || 0) / 100;
             const darkBrightness = (settings.darkModeBrightness || 0) / 100;
@@ -272,10 +274,10 @@ modifiedFields: Set<string>;
                     if (this.folderStyle.hex) {
                         const rgb = hexToRgbObj(this.folderStyle.hex);
                         if (rgb) {
-                            const isDark = activeDocument.body.classList.contains('theme-dark');
+                            const isDark = isDarkMode();
                             const depth = Math.max(0, this.item.path.split('/').length - 1);
                             
-                            const opacity = StyleGenerator.resolveOpacity(
+                            const opacity = ColorResolver.resolveOpacity(
                                 !this.isFolder,
                                 depth,
                                 this.folderStyle,
@@ -316,7 +318,7 @@ modifiedFields: Set<string>;
                     // Matches StyleGenerator: looped gradient start->end->start
                     bgGradient = `linear-gradient(90deg, ${startC}, ${endC}, ${startC})`;
                 } else if (this.folderStyle.hex) {
-                    const isDark = activeDocument.body.classList.contains('theme-dark');
+                    const isDark = isDarkMode();
                     const settings = this.plugin.settings;
                     const lightBrightness = (settings.lightModeBrightness || 0) / 100;
                     const darkBrightness = (settings.darkModeBrightness || 0) / 100;
@@ -327,7 +329,7 @@ modifiedFields: Set<string>;
                     
                     const depth = Math.max(0, this.item.path.split('/').length - 1);
                     
-                    textCol = StyleGenerator.resolveTextColor(
+                    textCol = ColorResolver.resolveTextColor(
                         !this.isFolder,
                         depth,
                         this.folderStyle.hex,
@@ -398,7 +400,7 @@ modifiedFields: Set<string>;
         });
         applyBgBtn.onclick = async () => {
             const path = this.item.path;
-            const existing = (this.plugin.getStyle(path) || {});
+            const existing = (StyleResolver.getStyle(this.plugin, path) || {});
             const finalStyle: FolderStyle = { ...existing };
             if (this.modifiedFields.has('hex')) {
                 if (this.folderStyle.hex) finalStyle.hex = this.folderStyle.hex;
@@ -488,7 +490,7 @@ modifiedFields: Set<string>;
         });
         applyTxtBtn.onclick = async () => {
             const path = this.item.path;
-            const existing = (this.plugin.getStyle(path) || {});
+            const existing = (StyleResolver.getStyle(this.plugin, path) || {});
             const finalStyle: FolderStyle = { ...existing };
             if (this.modifiedFields.has('textColor')) {
                 if (this.folderStyle.textColor) finalStyle.textColor = this.folderStyle.textColor;
@@ -700,7 +702,7 @@ modifiedFields: Set<string>;
         });
         applyIcBtn.onclick = async () => {
             const path = this.item.path;
-            const existing = (this.plugin.getStyle(path) || {});
+            const existing = (StyleResolver.getStyle(this.plugin, path) || {});
             const finalStyle: FolderStyle = { ...existing };
             if (this.modifiedFields.has('iconId')) {
                 if (this.folderStyle.iconId) finalStyle.iconId = this.folderStyle.iconId;
@@ -1024,7 +1026,7 @@ modifiedFields: Set<string>;
             if (!this.plugin.settings.presets) this.plugin.settings.presets = {};
             
             const path = this.item.path;
-            const existing = (this.plugin.getStyle(path) || {});
+            const existing = (StyleResolver.getStyle(this.plugin, path) || {});
             const finalStyle: FolderStyle = { ...existing };
             
             for (const key of this.modifiedFields) {
@@ -1072,7 +1074,7 @@ modifiedFields: Set<string>;
         });
         saveBtn.onclick = async () => {
             const path = this.item.path;
-            const existing = (this.plugin.getStyle(path) || {});
+            const existing = (StyleResolver.getStyle(this.plugin, path) || {});
             const finalStyle: FolderStyle = { ...existing };
             
             for (const key of this.modifiedFields) {

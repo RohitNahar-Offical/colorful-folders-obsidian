@@ -1,3 +1,4 @@
+import { StyleResolver } from '../core/StyleResolver';
 import { TFolder } from 'obsidian';
 import { IColorfulFoldersPlugin, StyleContext } from '../common/types';
 import { adjustBrightnessRgb, hexToRgbObj } from '../common/utils';
@@ -12,7 +13,7 @@ export class TagColorSync {
         if (plugin.settings.tagSyncMatchFolders) {
             const folders = plugin.app.vault.getAllLoadedFiles().filter((f): f is TFolder => f instanceof TFolder);
             for (const folder of folders) {
-                const effStyle = plugin.getEffectiveStyle(folder);
+                const effStyle = StyleResolver.getEffectiveStyle(folder, plugin);
                 if (effStyle && effStyle.hex) {
                     const name = folder.name;
                     if (name) {

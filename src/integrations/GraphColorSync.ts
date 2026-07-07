@@ -1,3 +1,4 @@
+import { StyleResolver } from '../core/StyleResolver';
 import { TFolder } from 'obsidian';
 import { IColorfulFoldersPlugin } from '../common/types';
 
@@ -86,7 +87,7 @@ export class GraphColorSync {
                 return;
             }
 
-            const style = plugin.getEffectiveStyle(folder);
+            const style = StyleResolver.getEffectiveStyle(folder, plugin);
             const hex = style?.hex;
             if (!hex || hex.length < 4 || hex.startsWith('var(')) {
                 // No valid hex — still walk children for explicitly styled subfolders

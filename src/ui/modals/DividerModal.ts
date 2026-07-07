@@ -1,3 +1,4 @@
+import { StyleResolver } from '../../core/StyleResolver';
 import * as obsidian from 'obsidian';
 import { FolderStyle, IColorfulFoldersPlugin } from '../../common/types';
 import { IconPickerModal } from './IconPickerModal';
@@ -44,7 +45,7 @@ export class DividerModal extends obsidian.Modal {
             existingStyle = this.originalStyle;
         }
 
-        const eff = this.plugin.getEffectiveStyle(item);
+        const eff = StyleResolver.getEffectiveStyle(item, this.plugin);
         const defaultColor = eff.hex;
         
         this.config = {
@@ -427,7 +428,7 @@ export class DividerModal extends obsidian.Modal {
     _liveSync() {
         if (this._liveSyncTimeout) window.clearTimeout(this._liveSyncTimeout);
         this._liveSyncTimeout = window.setTimeout(() => {
-            const style = this.plugin.getStyle(this.path) || {};
+            const style = StyleResolver.getStyle(this.plugin, this.path) || {};
             const tempStyle: FolderStyle = {
                 ...style,
                 dividerText: this.config.name,

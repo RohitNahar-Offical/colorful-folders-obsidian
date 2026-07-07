@@ -153,10 +153,8 @@ export interface IColorfulFoldersPlugin {
         clean(): void;
         buildDividerNode(path: string, conf: FolderStyle, doc: Document): HTMLElement;
     };
-    styleGenerator: { generateCss(): string; getCurrentPalette(): { rgb: string, hex: string }[] };
+    styleGenerator: { generateCss(): string };
     getAllExplorerContainers(): HTMLElement[];
-    getStyle(path: string): FolderStyle | null;
-    getEffectiveStyle(target: TAbstractFile): EffectiveStyle;
     generateStyles(): void;
     refreshIcons(): void;
     initDividerObserver(): void;

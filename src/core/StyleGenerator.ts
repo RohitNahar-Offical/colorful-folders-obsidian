@@ -5,6 +5,11 @@ import * as obsidian from 'obsidian';
 import { NotebookNavigatorIntegration } from '../integrations/NotebookNavigator';
 import { TagColorSync } from '../integrations/TagColorSync';
 
+import { countItems } from '../common/VaultUtils';
+import { isDarkMode, getCurrentPalette, ColorResolver } from './ColorResolver';
+import { generateGlobalBaseCss, generateDividerCss, generateStealthCss } from './BaseCssGenerator';
+
+
 
 export class StyleGenerator {
     plugin: IColorfulFoldersPlugin;
@@ -32,212 +37,21 @@ export class StyleGenerator {
             this.plugin.heatmapCache = new Map<string, number>();
         }
     }
-    getCurrentPalette(): { rgb: string, hex: string }[] {
-        const isDark = this.isDarkMode();
-        const activePaletteName = isDark 
-            ? (this.settings.paletteDark || this.settings.palette || "Pastel Dreams")
-            : (this.settings.paletteLight || this.settings.palette || "Tailwind UI");
 
-        const key = `${activePaletteName}_${this.settings.customPalette}_${isDark}`;
-        if (this._cachedPalette && this._cachedPaletteKey === key) {
-            return this._cachedPalette;
-        }
 
-        let currentPalette = PALETTES[activePaletteName] || PALETTES["Muted Dark Mode"];
-        if (activePaletteName === "Custom") {
-            const custom = parseCustomPalette(this.settings.customPalette);
-            if (custom) currentPalette = custom;
-        }
 
-        if (!isDark) {
-            this._cachedPalette = currentPalette.map(c => {
-                const darker = adjustBrightnessRgb(c.rgb, -0.15);
-                const p = darker.split(',').map(s => parseInt(s.trim()));
-                const hex = "#" + ((1 << 24) + (p[0] << 16) + (p[1] << 8) + p[2]).toString(16).slice(1);
-                return { rgb: darker, hex: hex };
-            });
-        } else {
-            this._cachedPalette = currentPalette;
-        }
-        this._cachedPaletteKey = key;
-        return this._cachedPalette;
-    }
 
-    isDarkMode() {
-        return (activeDocument.body.classList.contains('theme-dark'));
-    }
 
-    public static resolveColor(
-        path: string,
-        name: string,
-        isFile: boolean,
-        depth: number,
-        validIndex: number,
-        rootIndex: number,
-        customStyle: FolderStyle | null,
-        inheritedStyle: FolderStyle | null,
-        passedColor: { rgb: string, hex: string } | null,
-        colorMode: string,
-        cycleOffset: number,
-        palette: { rgb: string, hex: string }[],
-        heatmapMtime: number,
-        globalBackgroundColor: string,
-        autoColorFiles: boolean,
-        isNNActive: boolean
-    ): { rgb: string, hex: string } {
-        const getFolderColor = (vIdx: number, d: number, rIdx: number) => {
-            if (colorMode === "heatmap") {
-                if (!heatmapMtime) return palette[palette.length - 1];
-                const diffDays = (Date.now() - heatmapMtime) / (1000 * 60 * 60 * 24);
-                if (diffDays <= 1) return palette[0];
-                if (diffDays <= 3) return palette[Math.min(2, palette.length - 1)];
-                if (diffDays <= 7) return palette[Math.min(7, palette.length - 1)];
-                if (diffDays <= 15) return palette[Math.min(4, palette.length - 1)];
-                if (diffDays <= 30) return palette[Math.min(10, palette.length - 1)];
-                return palette[palette.length - 1];
-            } else if (colorMode === "monochromatic") {
-                if (d === 0) return palette[vIdx % palette.length];
-                return palette[rIdx % palette.length];
-            } else {
-                return palette[(vIdx + d + rIdx + cycleOffset) % palette.length];
-            }
-        };
 
-        if (customStyle && customStyle.hex) {
-            const cp = parseCustomPalette(customStyle.hex);
-            const rgb = hexToRgbObj(customStyle.hex);
-            return cp
-                ? cp[0]
-                : (rgb ? { rgb: `${rgb.r}, ${rgb.g}, ${rgb.b}`, hex: customStyle.hex } : palette[0]);
-        } else if (inheritedStyle && inheritedStyle.applyToSubfolders && !isFile && passedColor) {
-            return passedColor;
-        } else if (inheritedStyle && inheritedStyle.applyToSubfolders && !isFile && inheritedStyle.hex) {
-            const cp = parseCustomPalette(inheritedStyle.hex);
-            const rgb = hexToRgbObj(inheritedStyle.hex);
-            return cp
-                ? cp[0]
-                : (rgb ? { rgb: `${rgb.r}, ${rgb.g}, ${rgb.b}`, hex: inheritedStyle.hex } : palette[0]);
-        } else if (isFile) {
-            const parentColor = passedColor || (depth > 0 ? getFolderColor(0, depth - 1, rootIndex) : null);
-            if (inheritedStyle && inheritedStyle.applyToFiles && parentColor) {
-                const hObj = hexToRgbObj(inheritedStyle.hex || parentColor.hex) || { r: 235, g: 111, b: 146 };
-                const nameHash = hashString(name);
-                const offset = ((nameHash % 5) - 2) * 5;
-                return {
-                    rgb: `${Math.max(0, Math.min(255, hObj.r + offset))}, ${Math.max(0, Math.min(255, hObj.g + offset))}, ${Math.max(0, Math.min(255, hObj.b + offset))}`,
-                    hex: inheritedStyle.hex || parentColor.hex,
-                };
-            } else if (autoColorFiles || isNNActive) {
-                const nameHash = hashString(name);
-                return palette[(validIndex + nameHash + cycleOffset) % palette.length];
-            } else {
-                const gHex = globalBackgroundColor || "";
-                const gRgb = hexToRgbObj(gHex);
-                return parentColor || (gRgb ? { rgb: `${gRgb.r}, ${gRgb.g}, ${gRgb.b}`, hex: gHex } : { rgb: "var(--text-normal-rgb)", hex: "var(--text-normal)" });
-            }
-        } else {
-            return getFolderColor(validIndex, depth, rootIndex);
-        }
-    }
 
-    public static resolveOpacity(
-        isFile: boolean,
-        depth: number,
-        customStyle: FolderStyle | null,
-        inheritedStyle: FolderStyle | null,
-        fileBackgroundOpacity: number | undefined,
-        rootOpacity: number | undefined,
-        subfolderOpacity: number | undefined,
-        rootStyle: string,
-        autoColorFiles: boolean,
-        isNNActive: boolean,
-        isDark: boolean
-    ): number {
-        if (customStyle && customStyle.opacity !== undefined) {
-            return customStyle.opacity;
-        } else if (isFile) {
-            const isAutoOn = autoColorFiles || isNNActive;
-            const baseOpacity = fileBackgroundOpacity !== undefined
-                ? fileBackgroundOpacity
-                : (isDark ? 0.1 : 0.15);
 
-            if (inheritedStyle && inheritedStyle.applyToFiles) {
-                // If autoColorFiles is enabled, inherit background color (1 shade lighter)
-                if (autoColorFiles) {
-                    return Math.max(0.04, baseOpacity * 0.65);
-                } else {
-                    return 0.0;
-                }
-            } else if (isAutoOn) {
-                return baseOpacity;
-            } else {
-                return 0.0;
-            }
-        } else if (depth === 0) {
-            if (rootStyle === "solid") {
-                return 1.0;
-            } else {
-                return rootOpacity !== undefined
-                    ? rootOpacity
-                    : 0.50;
-            }
-        } else {
-            const baseOp = rootOpacity !== undefined ? rootOpacity : 0.50;
-            let startOp = baseOp;
-            if (inheritedStyle && inheritedStyle.opacity !== undefined) {
-                startOp = Math.min(baseOp, inheritedStyle.opacity);
-            }
-            let op = startOp - (depth * 0.10);
-            if (op < 0.10) {
-                op = 0.05;
-            }
-            return parseFloat(op.toFixed(3));
-        }
-    }
 
-    public static resolveTextColor(
-        isFile: boolean,
-        depth: number,
-        colorHex: string,
-        colorRgb: string,
-        customStyle: FolderStyle | null,
-        inheritedStyle: FolderStyle | null,
-        isDark: boolean,
-        brightnessAmount: number,
-        rootStyle: string,
-        outlineOnly: boolean,
-        shouldColor: boolean
-    ): string {
-        const effectiveTextColor = customStyle?.textColor || 
-            (!isFile ? inheritedStyle?.textColor : (inheritedStyle?.applyToFiles ? inheritedStyle?.textColor : null)) || 
-            null;
-        if (effectiveTextColor) return effectiveTextColor;
-
-        if (shouldColor) {
-            const contrastColor = isDark ? "#ffffff" : "#111111";
-
-            if (!isFile && depth === 0 && rootStyle === "solid" && !outlineOnly) {
-                return contrastColor;
-            }
-
-            const adjust = isDark
-                ? Math.max(brightnessAmount, 0)
-                : brightnessAmount === 0
-                    ? -0.5
-                    : brightnessAmount;
-
-            return isDark && adjust === 0
-                ? colorHex
-                : `rgb(${adjustBrightnessRgb(colorRgb, adjust)})`;
-        }
-        return "var(--text-normal)";
-    }
 
     private prepareContext(): StyleContext | null {
         const root = this.app.vault.getRoot();
         if (!root) return null;
 
-        const isDark = this.isDarkMode();
+        const isDark = isDarkMode();
         const lightBrightness = (this.settings.lightModeBrightness || 0) / 100;
         const darkBrightness = (this.settings.darkModeBrightness || 0) / 100;
         const brightnessAmount = isDark ? darkBrightness : lightBrightness;
@@ -249,7 +63,10 @@ export class StyleGenerator {
         const nnIconScale = this.settings.notebookNavigatorIconScale ?? 0.8;
         const nnIconW = `calc(1.1em * ${nnIconScale * wideScale})`;
 
-        const currentPalette = this.getCurrentPalette();
+        const cpRes = getCurrentPalette(this.settings, this._cachedPalette, this._cachedPaletteKey);
+        const currentPalette = cpRes.palette;
+        this._cachedPalette = currentPalette;
+        this._cachedPaletteKey = cpRes.newKey;
 
         const excludeFolders = this.settings.exclusionList
             .split(',')
@@ -296,165 +113,7 @@ export class StyleGenerator {
         }
         return heatmapData;
     }
-    private generateGlobalBaseCss(): string {
-        return `
 
-            /* ── NUCLEAR SPECIFICITY NAV ITEM LAYOUT ───────────────────────────────
-               We use high-specificity selectors to defeat theme overrides (like Prism).
-            ──────────────────────────────────────────────────────────────────────── */
-            body .nav-files-container .nav-folder-title,
-            body .nav-files-container .nav-file-title,
-            body .nav-files-container .tree-item-self {
-                display: flex !important;
-                align-items: center !important;
-                justify-content: flex-start !important;
-                padding-top: 0 !important;
-                padding-bottom: 0 !important;
-                overflow: visible !important;
-            }
-
-            /* Force all immediate children and pseudo-elements to perfectly center vertically */
-            body .nav-files-container .nav-folder-title > *,
-            body .nav-files-container .nav-file-title > *,
-            body .nav-files-container .tree-item-self > *,
-            body .nav-files-container .nav-folder-title:not(.nn-navitem)::before,
-            body .nav-files-container .nav-file-title:not(.nn-file)::before,
-            body .nav-files-container .tree-item-self:not(.nn-file):not(.nn-navitem)::before,
-            body .nav-files-container .nav-folder-title::after,
-            body .nav-files-container .nav-file-title::after,
-            body .nav-files-container .tree-item-self::after {
-                align-self: center !important;
-                margin-top: 0 !important;
-                margin-bottom: 0 !important;
-            }
-
-            body .nav-files-container .nav-folder-collapse-indicator,
-            body .nav-files-container .tree-item-collapse-indicator {
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                height: auto !important;
-            }
-
-            /* ── CONTENT ELEMENT: always flex row, icon or not ───────────────── */
-            body .nav-files-container .nav-folder-title-content,
-            body .nav-files-container .nav-file-title-content,
-            body .nav-files-container .tree-item-inner {
-                display: flex !important;
-                flex-direction: row !important;
-                align-items: center !important;
-                gap: 6px !important;
-                margin-left: 2px !important;
-                overflow: hidden !important;
-                text-overflow: ellipsis !important;
-                white-space: nowrap !important;
-                min-width: 0 !important;
-                flex-grow: 1 !important;
-            }
-
-            /* ── ICON ACTIVE: suppress native pseudo-elements ─────────────────── */
-            .cf-icon-active::before {
-                display: none !important;
-                content: none !important;
-                width: 0 !important;
-                height: 0 !important;
-            }
-            .cf-icon-active > svg:not(.cf-icon-wrapper svg),
-            .cf-icon-active > .nav-folder-icon,
-            .cf-icon-active > .nav-file-icon {
-                display: none !important;
-            }
-
-            .cf-icon-wrapper {
-                display: inline-flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                align-self: center !important;
-                flex-shrink: 0 !important;
-                overflow: visible !important;
-            }
-
-            /* ── METADATA WRAPPING RULES (FILES WITH WORD COUNT ONLY) ─────────── */
-            body.cf-wrap-metadata .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]),
-            body.cf-wrap-metadata .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title),
-            body.is-mobile .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]),
-            body.is-mobile .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) {
-                flex-wrap: wrap !important;
-                align-items: flex-start !important;
-                height: auto !important;
-                max-height: none !important;
-                min-height: 30px !important;
-                padding-top: 6px !important;
-                padding-bottom: 6px !important;
-                position: relative !important;
-            }
-
-            /* First-line items (indicator, icons) top-align to align with the first-line text */
-            body.cf-wrap-metadata .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) > *:not(::after),
-            body.cf-wrap-metadata .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) > *:not(::after),
-            body.is-mobile .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) > *:not(::after),
-            body.is-mobile .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) > *:not(::after) {
-                align-self: flex-start !important;
-                margin-top: 2px !important;
-            }
-
-            body.cf-wrap-metadata .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) .cf-icon-wrapper,
-            body.cf-wrap-metadata .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) .cf-icon-wrapper,
-            body.is-mobile .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) .cf-icon-wrapper,
-            body.is-mobile .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) .cf-icon-wrapper {
-                align-self: flex-start !important;
-                margin-top: 2px !important;
-            }
-
-            body.cf-wrap-metadata .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) .nav-file-title-content,
-            body.cf-wrap-metadata .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) .tree-item-inner,
-            body.is-mobile .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) .nav-file-title-content,
-            body.is-mobile .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) .tree-item-inner {
-                margin-top: 0 !important;
-                align-self: flex-start !important;
-            }
-
-            /* Force only the ::after pseudo-element (which holds the counts) to wrap to the next line */
-            body.cf-wrap-metadata .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "])::after,
-            body.cf-wrap-metadata .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title)::after,
-            body.is-mobile .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "])::after,
-            body.is-mobile .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title)::after {
-                width: 100% !important;
-                flex: 0 0 100% !important;
-                margin-left: 0 !important;
-                margin-right: 0 !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: flex-start !important;
-                font-size: 0.85em !important;
-                opacity: 0.85 !important;
-                box-sizing: border-box !important;
-                margin-top: 4px !important;
-                padding-left: 0px !important;
-                background-position: 0px center !important;
-            }
-
-            /* Position file tags and flairs on the top right so they never wrap or stretch */
-            body.cf-wrap-metadata .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) .tree-item-flair,
-            body.cf-wrap-metadata .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) .nav-file-tag,
-            body.cf-wrap-metadata .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) .tree-item-flair,
-            body.cf-wrap-metadata .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) .nav-file-tag,
-            body.is-mobile .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) .tree-item-flair,
-            body.is-mobile .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) .nav-file-tag,
-            body.is-mobile .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) .tree-item-flair,
-            body.is-mobile .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) .nav-file-tag {
-                position: absolute !important;
-                right: 14px !important;
-                top: 6px !important;
-                margin: 0 !important;
-                height: 18px !important;
-                line-height: 18px !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-            }
-        `;
-    }
 
 
 
@@ -465,209 +124,9 @@ export class StyleGenerator {
         return style;
     }
 
-    private countItems(folderItem: obsidian.TFolder): { files: number, folders: number } {
-        if (!this.plugin.folderCountCache) {
-            this.plugin.folderCountCache = new Map<string, { files: number, folders: number }>();
-        }
-        const countCache = this.plugin.folderCountCache;
-        const cached = countCache.get(folderItem.path);
-        if (cached) return cached;
 
-        let files = 0;
-        let folders = 0;
-        if (folderItem.children) {
-            for (const child of folderItem.children) {
-                if (child instanceof obsidian.TFile) files++;
-                else if (child instanceof obsidian.TFolder) folders++;
-            }
-        }
-        const res = { files, folders };
-        countCache.set(folderItem.path, res);
-        return res;
-    }
 
-    private generateDividerCss(): string {
-        if (!(this.settings.showFileDivider || Object.values(this.settings.customFolderColors).some((v) => typeof v === 'object' && v !== null && (v).hasDivider))) {
-            return "";
-        }
 
-        const spacing = this.settings.dividerSpacing || 16;
-        const dividerHeight = (spacing * 2) + 20;
-
-        return `
-            /* Stability: Core Divider Container - Now Layout Neutral */
-            .cf-interactive-divider {
-                position: absolute !important;
-                top: 0 !important;
-                left: 0 !important;
-                width: 100% !important;
-                height: ${dividerHeight}px !important;
-                display: flex !important;
-                flex-direction: column !important;
-                align-items: center !important;
-                justify-content: center !important;
-                cursor: pointer !important;
-                user-select: none !important;
-                z-index: 5 !important;
-                padding: 0 !important;
-                margin: 0 !important;
-                pointer-events: all !important;
-            }
-
-            /* Parent item reserves the space for the absolute divider */
-            .cf-has-divider {
-                position: relative !important;
-                padding-top: ${dividerHeight}px !important;
-                display: flex !important;
-                flex-direction: column !important;
-            }
-
-            /* Ensure folder lines/children start below the divider */
-            .cf-has-divider > .nav-folder-title,
-            .cf-has-divider > .nav-folder-children {
-                position: relative !important;
-            }
-
-            .cf-interactive-divider:hover {
-                filter: brightness(1.12);
-            }
-            .cf-interactive-divider:hover .cf-divider-chip {
-                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-                border-color: rgba(var(--mono-rgb-100), 0.3) !important;
-            }
-            
-            .cf-divider-chip {
-                display: flex !important;
-                align-items: center !important;
-                padding: ${this.settings.dividerPillMode ? '6px 20px' : '2px 6px'} !important;
-                font-size: var(--cf-divider-font-size, 10.5px) !important;
-                font-weight: var(--cf-divider-font-weight, 800) !important;
-                letter-spacing: var(--cf-divider-letter-spacing, 0.15em) !important;
-                text-transform: var(--cf-divider-text-transform, uppercase) !important;
-                white-space: nowrap !important;
-                border-radius: 40px !important;
-                width: fit-content !important;
-                max-width: 85% !important;
-                gap: 0 !important;
-                ${this.settings.dividerPillMode ? `
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-                    border: 1px solid rgba(var(--mono-rgb-100), 0.15);
-                ` : `
-                    box-shadow: none;
-                    border: none;
-                    background: transparent;
-                `}
-                z-index: 6 !important;
-            }
-
-            .cf-divider-emoji-icon {
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                width: 24px !important;
-                font-size: 1.2em !important;
-            }
-
-            .cf-divider-icon {
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                width: 24px !important;
-            }
-
-            .cf-divider-label {
-                display: block !important;
-                margin: 0 12px !important;
-                transform: translateX(0.075em) !important;
-            }
-            
-            .cf-interactive-divider.is-collapsed .cf-divider-chip {
-                opacity: 0.6 !important;
-            }
-
-            .cf-divider-collapse-indicator {
-                display: flex !important;
-                align-items: center !important;
-                opacity: 0.6 !important;
-                margin-left: 10px !important;
-            }
-            .cf-interactive-divider.is-collapsed .cf-divider-collapse-indicator {
-                transform: rotate(-90deg);
-            }
-            
-            .cf-divider-bridge {
-                display: flex !important;
-                align-items: center !important;
-                width: 100% !important;
-                gap: 0px !important;
-            }
-            
-            .cf-divider-line {
-                z-index: 4 !important;
-                pointer-events: none !important;
-            }
-            
-            .cf-divider-hidden {
-                display: none !important;
-            }
-
-            /* Fix for folder vertical lines */
-            .cf-has-divider > .nav-folder-children {
-                border-left: none !important;
-            }
-
-            /* Premium Smart Suggester (Glassmorphism) */
-            .cf-suggestion-container {
-                background: rgba(25, 25, 25, 0.75) !important;
-                backdrop-filter: blur(24px) saturate(180%) !important;
-                -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
-                border: 1px solid rgba(255, 255, 255, 0.12) !important;
-                border-radius: 12px !important;
-                box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5) !important;
-                overflow: hidden !important;
-                min-width: 280px !important;
-                animation: cf-suggestion-reveal 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            }
-
-            @keyframes cf-suggestion-reveal {
-                from { opacity: 0; transform: translateY(8px) scale(0.98); }
-                to { opacity: 1; transform: translateY(0) scale(1); }
-            }
-
-            .cf-suggestion {
-                display: flex !important;
-                flex-direction: column !important;
-                padding: 6px !important;
-            }
-
-            .cf-suggestion-item {
-                display: flex !important;
-                align-items: center !important;
-                padding: 10px 14px !important;
-                border-radius: 8px !important;
-                cursor: pointer !important;
-                color: var(--text-normal) !important;
-                font-size: 0.9em !important;
-                transition: all 0.2s ease !important;
-                gap: 10px !important;
-            }
-
-            .cf-suggestion-item:hover {
-                background: rgba(255, 255, 255, 0.08) !important;
-            }
-
-            .cf-suggestion-item.is-selected {
-                background: var(--interactive-accent) !important;
-                color: white !important;
-                box-shadow: 0 4px 12px rgba(var(--interactive-accent-rgb), 0.3) !important;
-            }
-
-            .cf-suggestion-content {
-                flex: 1 !important;
-                font-weight: 500 !important;
-            }
-        `;
-    }
 
     private traverse(folder: obsidian.TFolder, depth: number, validIndex: number, rootIndex: number, passedColor: { rgb: string, hex: string } | null, inheritedStyle: FolderStyle | null, context: StyleContext, cssRules: string[], cumulativeTintOp: number = 0) {
         const copyFolders = folder.children
@@ -704,7 +163,7 @@ export class StyleGenerator {
             for (const child of copyFiles) {
                 const safePath = safeEscape(child.path);
                 const fileStyle = this.getStyle(child.path);
-                const color = StyleGenerator.resolveColor(
+                const color = ColorResolver.resolveColor(
                     child.path,
                     child.name,
                     true,
@@ -731,7 +190,7 @@ export class StyleGenerator {
                 const activeStyle = fileStyle || (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle : null);
                 const iconColor = fileStyle?.iconColor || (inheritedStyle?.applyToFiles && inheritedStyle.iconColor) || null;
                 
-                const op = StyleGenerator.resolveOpacity(
+                const op = ColorResolver.resolveOpacity(
                     true,
                     depth,
                     fileStyle,
@@ -748,7 +207,7 @@ export class StyleGenerator {
                 const autoIconFile = (this.settings.autoIcons && !fileStyle?.iconId && !(inheritedStyle?.applyToFiles && inheritedStyle?.iconId)) ? this.plugin.iconManager.getAutoIconData(child.name) : null;
                 const iconId = fileStyle?.iconId || (inheritedStyle?.applyToFiles ? inheritedStyle.iconId : null) || (autoIconFile ? (this.settings.wideAutoIcons ? autoIconFile.lucide : autoIconFile.emoji) : "");
 
-                const textNative = StyleGenerator.resolveTextColor(
+                const textNative = ColorResolver.resolveTextColor(
                     true,
                     depth,
                     color.hex,
@@ -762,7 +221,7 @@ export class StyleGenerator {
                     true
                 );
 
-                const textNN = StyleGenerator.resolveTextColor(
+                const textNN = ColorResolver.resolveTextColor(
                     true,
                     depth,
                     color.hex,
@@ -998,7 +457,7 @@ export class StyleGenerator {
 
             const customStyle = this.getStyle(child.path);
             const mtime = heatmapData.get(child.path) || 0;
-            const color = StyleGenerator.resolveColor(
+            const color = ColorResolver.resolveColor(
                 child.path,
                 child.name,
                 false,
@@ -1018,7 +477,7 @@ export class StyleGenerator {
             );
 
             const safePath = safeEscape(child.path);
-            const op = StyleGenerator.resolveOpacity(
+            const op = ColorResolver.resolveOpacity(
                 false,
                 depth,
                 customStyle,
@@ -1078,7 +537,7 @@ export class StyleGenerator {
 
             const folderStyles = {
                 b: outlineOnly ? "transparent" : (depth === 0 && this.settings.rootStyle === "solid" ? color.hex : `rgba(${color.rgb}, ${adjustedOp})`),
-                t: StyleGenerator.resolveTextColor(
+                t: ColorResolver.resolveTextColor(
                     false,
                     depth,
                     color.hex,
@@ -1274,7 +733,7 @@ export class StyleGenerator {
             }
 
             if (this.settings.showItemCounters) {
-                const counts = this.countItems(child);
+                const counts = countItems(child, this.plugin);
                 const totalWidth = 80;
 
                 // PERF FIX 3: Rebuild the static SVG template only when color changes.
@@ -1330,7 +789,7 @@ export class StyleGenerator {
         if (!context) return "";
 
         const cssRules: string[] = [];
-        cssRules.push(this.generateGlobalBaseCss());
+        cssRules.push(generateGlobalBaseCss());
 
 
 
@@ -1338,7 +797,7 @@ export class StyleGenerator {
 
 
 
-        cssRules.push(this.generateDividerCss());
+        cssRules.push(generateDividerCss(this.settings));
 
         const root = this.app.vault.getRoot();
         
@@ -1408,38 +867,10 @@ export class StyleGenerator {
 
         this.traverse(root, 0, 0, 0, null, null, context, cssRules);
 
-        cssRules.push(this.generateStealthCss());
+        cssRules.push(generateStealthCss(this.settings));
         cssRules.push(TagColorSync.generateCss(this.plugin, context));
         return cssRules.join('\n');
     }
 
-    generateStealthCss(): string {
-        let stealthCss = "";
-        const styles = this.settings.customFolderColors;
-        
-        for (const path in styles) {
-            const style = styles[path];
-            if (typeof style === 'object' && style.isHidden) {
-                // Notebook Navigator Integration (requires static CSS rules due to React virtual scroll)
-                if (this.settings.notebookNavigatorSupport) {
-                    const nnSelector = NotebookNavigatorIntegration.getScopedNavSelector(path);
-                    const nnFileSelector = NotebookNavigatorIntegration.getScopedFileSelector(path);
-                    
-                    stealthCss += `
-                        body:not(.cf-show-hidden) ${nnSelector},
-                        body:not(.cf-show-hidden) ${nnFileSelector} {
-                            display: none !important;
-                        }
 
-                        body.cf-show-hidden ${nnSelector},
-                        body.cf-show-hidden ${nnFileSelector} {
-                            opacity: 0.3 !important;
-                            filter: grayscale(1) blur(0.5px) !important;
-                        }
-                    `;
-                }
-            }
-        }
-        return stealthCss;
-    }
 }
