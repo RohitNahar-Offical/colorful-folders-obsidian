@@ -156,7 +156,7 @@ depth 4         → rootOpacity - 0.40 (10%)
 depth 5+        → HARD FLOOR: 0.05 (5%) — never goes to zero
 ```
 
-This formula is implemented in `StyleGenerator.resolveOpacity()`. An individual folder can override its own opacity by setting `FolderStyle.opacity`, which bypasses the progression entirely for that specific folder's title row.
+This formula is implemented in `ColorResolver.resolveOpacity()`. An individual folder can override its own opacity by setting `FolderStyle.opacity`, which bypasses the progression entirely for that specific folder's title row.
 
 The **container tint** (`.nav-folder-children` background) uses a separate, simpler formula:
 ```

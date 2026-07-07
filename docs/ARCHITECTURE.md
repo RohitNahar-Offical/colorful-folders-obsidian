@@ -19,10 +19,12 @@ graph TD
     B --> C[generateStyles]
     C --> D[StyleGenerator.prepareContext]
     D --> E[StyleGenerator.generateCss]
-    E --> F1[FocusModeEngine.generateCss]
-    E --> F2[Modular Helper Methods]
+    E --> F1[BaseCssGenerator]
+    E --> F2[ColorResolver]
+    E --> F3[FocusModeEngine.generateCss]
     F1 --> G[Recursive Traverse with Context]
     F2 --> G
+    F3 --> G
     G --> H[Build CSS String]
     H --> I[sheet.replaceSync CSS String]
     I --> J[Browser Reflow / Paint on all windows]
@@ -30,7 +32,7 @@ graph TD
 
 ### The Cycle:
 1.  **Trigger**: User changes a setting or the plugin loads.
-2.  **State Resolution**: `plugin.getEffectiveStyle()` calculates the visual state for every folder/file.
+2.  **State Resolution**: `StyleResolver.getEffectiveStyle(target, plugin)` calculates the visual state for every folder/file.
 3.  **High-Performance CSS Generation**: `StyleGenerator.traverse()` builds a collection of CSS rules. To handle 20,000+ files efficiently, it uses the **"Collect-Join" Pattern** and **Persistent Memoization** (caching item counts and icon category rules) to minimize redundant computations.
 4.  **Injection**: The final joined string is pushed via `plugin.sheet.replaceSync(css)` into all open documents' `adoptedStyleSheets` (including popout windows). No `<style>` element is created. The dynamic styles are dynamically wrapped in standard CSS Custom Properties (e.g. `--cf-folder-bg`), providing a modern hook API for custom user stylesheets and themes to natively override elements.
 5.  **Browser handles the rest**: The browser's CSS engine applies the styles instantly as elements enter the viewport.
@@ -40,13 +42,13 @@ To ensure the native Obsidian UI remains flawlessly smooth even under heavy CSS 
 
 ---
 
-## 2. Color & Opacity Resolution (Static Method Architecture)
+## 2. Color & Opacity Resolution (Modular Architecture)
 
-All color, opacity, and text color math is centralised into three `static` methods on `StyleGenerator`. This guarantees identical results whether called for a folder title, a file row, or a Notebook Navigator card.
+All color, opacity, and text color math is centralised into the `ColorResolver` class (`src/core/ColorResolver.ts`). This guarantees identical results whether called for a folder title, a file row, or a Notebook Navigator card.
 
 ---
 
-### 2.1 `StyleGenerator.resolveColor(...)` — The Color Priority Chain
+### 2.1 `ColorResolver.resolveColor(...)` — The Color Priority Chain
 
 This is the "Brain" of the plugin. Every item's final color is determined by this priority chain:
 
@@ -76,7 +78,7 @@ graph TD
 
 ---
 
-### 2.2 `StyleGenerator.resolveOpacity(...)` — Depth Progression
+### 2.2 `ColorResolver.resolveOpacity(...)` — Depth Progression
 
 Opacity is determined by a fixed mathematical progression, **not** by the legacy slider values alone.
 
@@ -102,7 +104,7 @@ Opacity is determined by a fixed mathematical progression, **not** by the legacy
 
 ---
 
-### 2.3 `StyleGenerator.resolveTextColor(...)` — WCAG Contrast
+### 2.3 `ColorResolver.resolveTextColor(...)` — WCAG Contrast
 
 1. **Custom text color**: If `customStyle.textColor` (or `inheritedStyle.textColor` for non-files) is set, it is returned directly.
 2. **Auto-contrast**: Applies a brightness adjustment via `adjustBrightnessRgb`. In dark mode, colors are lightened by the `darkModeBrightness` setting. In light mode, colors are darkened by `lightModeBrightness` (default -50% if not set).
@@ -133,12 +135,12 @@ graph TD
 ---
 
 ### Modular Generation Pattern:
-To maintain performance and maintainability, `generateCss` is an orchestrator that delegates to task-specific generators and peer modules:
-1. **`generateGlobalBaseCss`**: Foundation layouts and foundational variables.
+To maintain performance and maintainability, `generateCss` is an orchestrator that delegates to task-specific generators in dedicated modules:
+1. **`BaseCssGenerator.generateGlobalBaseCss()`**: Foundation layouts and foundational variables. (`src/core/BaseCssGenerator.ts`)
 2. **`FocusModeEngine.generateCss`**: (External Module) Handles high-performance "Strict Spotlight" effects.
-3. **`generateDividerCss`**: Global divider styles using `.cf-has-divider` parent classes.
-4. **`generateStealthCss`**: Privacy layer rules.
-5. **`traverse`**: The recursive engine that applies local styles to files and folders using the `StyleContext`.
+3. **`BaseCssGenerator.generateDividerCss(settings)`**: Global divider styles using `.cf-has-divider` parent classes. (`src/core/BaseCssGenerator.ts`)
+4. **`BaseCssGenerator.generateStealthCss(settings)`**: Privacy layer rules. (`src/core/BaseCssGenerator.ts`)
+5. **`traverse`**: The recursive engine that applies local styles to files and folders using the `StyleContext`, delegating color math to `ColorResolver`.
 
 ### Traversal Logic:
 The `StyleGenerator` utilizes persistent caches hosted on the main plugin instance to avoid expensive re-computations during traversal.
@@ -156,15 +158,15 @@ FUNCTION traverse(folder, depth, passedColor, inheritedStyle, cumulativeTintOp):
     // --- FILE PASS ---
     // Only runs if: passedColor exists, autoColorFiles, autoIcons, applyToFiles, or NN file-bg is active
     FOR EACH file IN folder.files:
-        color  = resolveColor(file, isFile=true, passedColor, inheritedStyle)
-        op     = resolveOpacity(isFile=true, depth, fileStyle, inheritedStyle)
+        color  = ColorResolver.resolveColor(file, isFile=true, passedColor, inheritedStyle)
+        op     = ColorResolver.resolveOpacity(isFile=true, depth, fileStyle, inheritedStyle)
         emit: file row CSS (background, border, text, tags, icons, active state)
 
     // --- FOLDER PASS ---
     FOR EACH child IN folder.subfolders:
-        customStyle = getStyle(child.path)
-        color  = resolveColor(child, isFile=false, passedColor, inheritedStyle)
-        op     = resolveOpacity(isFile=false, depth, customStyle, inheritedStyle)
+        customStyle = StyleResolver.getStyle(plugin, child.path)
+        color  = ColorResolver.resolveColor(child, isFile=false, passedColor, inheritedStyle)
+        op     = ColorResolver.resolveOpacity(isFile=false, depth, customStyle, inheritedStyle)
         adjustedOp = max(0, op - cumulativeTintOp)
 
         // 1. Emit children CONTAINER tint (using child's OWN resolved color)
@@ -387,18 +389,34 @@ When resolving an icon ID:
 
 ---
 
-## 14. Unified Style Resolution & Singleton Engine (Refactoring 4.2.0)
+## 14. Modular Architecture (Post-4.2.0 Refactoring)
 
-To resolve code duplication, discrepancies, and optimization bottlenecks, version 4.2.0 restructured the dynamic styling engine:
+To eliminate technical debt and enforce the Single Responsibility Principle, the codebase underwent a comprehensive modularization. The previously monolithic `StyleGenerator.ts` (1,446 lines) was broken into focused modules:
 
-### 1. StyleGenerator Singleton
-Previously, a new `StyleGenerator` was allocated on every `generateStyles()` call, discarding cache allocations. The engine now uses a persistent `styleGenerator` instance declared on the main `ColorfulFoldersPlugin` class and initialized in `onload()`. This preserves counter SVGs and category caches throughout the lifetime of the plugin.
+### New Module Map
 
-### 2. Static Math Resolution
-Core calculations for folder colors, text contrasting, and opacities have been extracted into three static helper functions on `StyleGenerator`:
-* `StyleGenerator.resolveColor(...)`: Standardizes color calculations for all heatmap, cycle, and monochromatic modes.
-* `StyleGenerator.resolveOpacity(...)`: Determines correct folder, file, and subfolder opacities based on a fixed depth progression (Root=50%, -10% per level, clamped to 5% minimum).
-* `StyleGenerator.resolveTextColor(...)`: Applies WCAG contrast checks and theme offsets to return optimal text colors.
+| Module | Location | Responsibility |
+|:---|:---|:---|
+| **`ColorResolver`** | `src/core/ColorResolver.ts` | All color, opacity, and text-color math. Contains `resolveColor()`, `resolveOpacity()`, `resolveTextColor()`, `getCurrentPalette()`, and `isDarkMode()`. |
+| **`StyleResolver`** | `src/core/StyleResolver.ts` | Computes the final `EffectiveStyle` for any vault item. Contains `getEffectiveStyle(target, plugin)` and `getStyle(plugin, path)`. Used by modals, integrations, and the main plugin class. |
+| **`BaseCssGenerator`** | `src/core/BaseCssGenerator.ts` | Raw CSS string generation for structural layout (`generateGlobalBaseCss`), interactive dividers (`generateDividerCss`), and stealth/privacy rules (`generateStealthCss`). |
+| **`VaultUtils`** | `src/common/VaultUtils.ts` | Pure helper functions for vault item operations, e.g. `countItems(folder, plugin)`. |
+| **`StyleGenerator`** | `src/core/StyleGenerator.ts` | Reduced to ~778 lines. Solely responsible for recursive folder traversal, CSS string compilation, and the "Collect-Join" rendering loop. Imports and delegates to the modules above. |
 
-### 3. Consolidated Discovery
-Instead of manual leaf iterations in 4+ locations, the engine uses `plugin.getAllExplorerContainers()` to query and return all file explorers (including popout windows and Notebook Navigator virtual containers) in a single shared, cached call.
+```mermaid
+graph TD
+    SG[StyleGenerator] -->|imports| CR[ColorResolver]
+    SG -->|imports| BCG[BaseCssGenerator]
+    SG -->|imports| VU[VaultUtils]
+    Main[main.ts] -->|imports| SR[StyleResolver]
+    SR -->|imports| CR
+    Modals[ColorPickerModal] -->|imports| CR
+    Modals -->|imports| SR
+    Integrations[GraphColorSync / TagColorSync] -->|imports| SR
+```
+
+### Design Principles
+1. **Singleton Engine**: `StyleGenerator` is a persistent instance on the plugin class, preserving counter SVG caches and palette caches across render cycles.
+2. **Static Resolution**: `ColorResolver` methods are static and pure — they take all inputs as parameters and produce deterministic outputs, making them testable in isolation.
+3. **Consolidated Discovery**: `plugin.getAllExplorerContainers()` queries and returns all file explorers (including popout windows and Notebook Navigator virtual containers) in a single shared call.
+4. **Synchronous Startup**: Styles are generated synchronously on `onLayoutReady` (no artificial timeout), ensuring folders are colored the instant the layout is visible.

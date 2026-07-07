@@ -9,7 +9,6 @@
 
 | Method | Purpose | Key Action |
 | :--- | :--- | :--- |
-| `getEffectiveStyle` | Resolves visual state | Inheritance & Fallbacks |
 | `generateStyles` | Main update trigger | CSS Injection |
 | `registerCustomIcons` | Hydrates icon registry | `obsidian.addIcon()` |
 | `toggleStealthMode` | Privacy switching | `PasswordModal` trigger |
@@ -21,17 +20,51 @@ A map of SVG icon name → raw SVG content, populated by `loadLocalIcons()` at s
 
 ---
 
-## 2. `StyleGenerator` (Static Engine)
+## 2. `StyleGenerator` (CSS Traverser Engine)
 
-### `generateCss(plugin: IColorfulFoldersPlugin): string`
-Generates the full CSS bundle for the current vault state.
+### `generateCss(): string`
+Generates the full CSS bundle for the current vault state by calling `BaseCssGenerator` functions and traversing the vault structure.
 
 ### `traverse(folder: TFolder, depth: number, state: TraversalState): void`
 Recursive engine that walks the file tree.
-- **State**: Tracks color indices and parent styles.
+- **State**: Tracks color indices, parent styles, and tint opacity.
 
 ### Counter SVG Template Cache
 Private fields `_counterSvgColor`, `_counterSvgPrefix`, `_counterSvgMid`, `_counterSvgSuffix` cache the pre-encoded static segments of the folder counter SVG. The template is rebuilt only when the folder color changes, reducing per-folder CPU cost from O(N·regex) to O(1).
+
+---
+
+## 2b. `ColorResolver` (Mathematical Resolver)
+
+Centralizes all visual math calculation functions:
+- `resolveColor(...)`: Decides active/inherited/palette colors for items.
+- `resolveOpacity(...)`: Computes linear opacity fade from root depth.
+- `resolveTextColor(...)`: Enforces WCAG text readability against folder colors.
+- `getCurrentPalette(...)`: Resolves the active theme palette and caches it.
+- `isDarkMode()`: Checks body theme to toggle light/dark modes.
+
+---
+
+## 2c. `StyleResolver` (State Abstracter)
+
+Abstracts dynamic settings query loops from `main.ts` and UI views:
+- `getEffectiveStyle(target, plugin)`: Resolves full `EffectiveStyle` (color, opacity, text color, bold/italic, icon) for files/folders.
+- `getStyle(plugin, path)`: Safely fetches local style customizations or overrides.
+
+---
+
+## 2d. `BaseCssGenerator` (Static Stylesheet Builder)
+
+Builds the base CSS declarations injected into adoption sheets:
+- `generateGlobalBaseCss()`: General flex, mask, and metadata wrap overrides.
+- `generateDividerCss(settings)`: Section divider wrapper and spacing layouts.
+- `generateStealthCss(settings)`: Hidden item styles.
+
+---
+
+## 2e. `VaultUtils` (Vault Utility Helpers)
+
+- `countItems(folder, plugin)`: Efficiently counts file and folder children using the plugin instance count cache.
 
 ---
 

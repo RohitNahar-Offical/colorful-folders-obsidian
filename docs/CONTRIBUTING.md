@@ -10,8 +10,8 @@
 If you want to add a mode like "Sort-based Coloring":
 1.  **Modify `types.ts`**: Add the mode to `ColorfulFoldersSettings.colorMode`.
 2.  **Modify `SettingTab.ts`**: Add an option to the "Color generation mode" dropdown.
-3.  **Update `main.ts`**: In `getEffectiveStyle()`, add a handler for your new mode.
-4.  **Update `StyleGenerator.ts`**: If your mode needs special CSS rules, update the `traverse` logic.
+3.  **Update `ColorResolver.ts`**: In `resolveColor()`, add color resolution logic for your new mode.
+4.  **Update `StyleResolver.ts` / `StyleGenerator.ts`**: Pass any new context needed for the mode down to `ColorResolver.resolveColor(...)`.
 
 ---
 
@@ -68,7 +68,11 @@ To add a featured pack (like "Remix Icons"):
 | File | Responsibility |
 | :--- | :--- |
 | `main.ts` | Lifecycle, Events, & High-level state |
-| `StyleGenerator.ts` | Recursive CSS engine & backgrounds |
+| `StyleGenerator.ts` | Recursive CSS engine & traversal |
+| `ColorResolver.ts` | Core mathematical colors, opacity, and text contrast resolving |
+| `StyleResolver.ts` | High-level `EffectiveStyle` compilation and customized overrides helper |
+| `BaseCssGenerator.ts` | Renders base global base, interactive dividers, and stealth CSS properties |
+| `VaultUtils.ts` | Pure functions for Vault traversal caches and item counting |
 | `IconManager.ts` | SVG normalization & Sanitization |
 | `DividerManager.ts` | DOM reconciliation for dividers |
 | `ColorPickerModal.ts` | Primary manual styling UI |

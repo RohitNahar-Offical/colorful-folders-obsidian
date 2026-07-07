@@ -83,6 +83,7 @@ When `dragstart` fires, `plugin.isDragging = true`. All three debouncers check t
 | :--- | :--- | :--- |
 | **Parallel SVG Loading** | `main.ts → loadLocalIcons()` | Local icons in `.obsidian/icons` are read with `Promise.all()` instead of a serial loop. In vaults with 750+ SVGs this saves **200-400ms** of startup time. |
 | **Shallow Settings Clone** | `main.ts → loadSettings()` | The default settings are merged with a direct `Object.assign` spread instead of `JSON.parse(JSON.stringify(...))`, which was wastefully deep-cloning the entire settings schema. |
+| **Synchronous Style Init** | `main.ts → onLayoutReady()` | Styles are generated synchronously the instant the layout is ready — no artificial `setTimeout` delay. This eliminates the intermittent "flash of unstyled content" that occurred when the event loop was congested. |
 | **Deferred Local Icon Load** | `main.ts → onLayoutReady()` | Local icon discovery is deferred by 2 seconds after layout ready to avoid competing with Obsidian's own startup I/O. |
 
 ### Runtime Optimizations
@@ -92,7 +93,7 @@ When `dragstart` fires, `plugin.isDragging = true`. All three debouncers check t
     *   **Icon Category Memoization**: Custom icon regex rules and category lookups are compiled once and cached. The cache is invalidated only when `customIconRules` or `customIcons` changes, not on every `saveSettings()` call.
     *   **SVG Normalization Cache**: The result of `DOMParser` sanitization is cached, ensuring constant SVGs (like folder icons) are only parsed once per session.
     *   **Counter SVG Template Cache**: In `StyleGenerator`, the three static SVG segments of the folder counter icon are pre-encoded with `encodeURIComponent()` once per unique color. Subsequent folders of the same color use O(1) string concatenation instead of re-running the expensive encode + regex chain.
-    *   **Palette Cache**: `getCurrentPalette()` is memoized by a key of `palette + customPalette + isDark`. Light-mode brightness adjustment is only recalculated when this key changes.
+    *   **Palette Cache**: `ColorResolver.getCurrentPalette()` (in `src/core/ColorResolver.ts`) is memoized by a key of `palette + customPalette + isDark`. Light-mode brightness adjustment is only recalculated when this key changes.
 
 2.  **Selective Icon Cache Invalidation** (`main.ts → saveSettings()`):
     Snapshot keys (`_lastIconRulesKey`, `_lastCustomIconsKey`) track the last saved values of icon-relevant settings. The SVG icon cache is **only cleared** when `customIcons` or `customIconRules` actually changes. Toggling unrelated settings (opacity, tag sync, glassmorphism, etc.) no longer evicts the entire cache.
@@ -186,7 +187,7 @@ The color picker uses a standardized range system for perfect UI alignment.
 
 The plugin calculates item counts dynamically during the rendering cycle.
 
-- **Performance**: Uses a **Persistent Count Cache** (`folderCountCache`) to prevent redundant vault traversals. This cache is hosted on the plugin instance and survives multiple render cycles, significantly boosting performance in deep hierarchies.
+- **Performance**: Uses a **Persistent Count Cache** (`folderCountCache`) to prevent redundant vault traversals. The counting logic lives in `VaultUtils.countItems(folder, plugin)` (`src/common/VaultUtils.ts`) and the cache is hosted on the plugin instance, surviving multiple render cycles and significantly boosting performance in deep hierarchies.
 - **Invalidation**: The cache is automatically cleared when the vault triggers a structural event (`create`, `delete`, or `rename`).
 - **Visual Style**: Custom dual-indicator SVG: `Folders / Files`.
 - **Readability**: Numbers use a bold weight (**900**) and are right-aligned via `::after`.
