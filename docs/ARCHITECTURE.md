@@ -40,68 +40,94 @@ To ensure the native Obsidian UI remains flawlessly smooth even under heavy CSS 
 
 ---
 
-## 2. The "Effective Style" Algorithm
+## 2. Color & Opacity Resolution (Static Method Architecture)
 
-The most complex part of the plugin is determining what color a folder should be. This happens in `ColorfulFoldersPlugin.getEffectiveStyle(target)`.
+All color, opacity, and text color math is centralised into three `static` methods on `StyleGenerator`. This guarantees identical results whether called for a folder title, a file row, or a Notebook Navigator card.
 
-### Logic Flow (Simplified):
-```typescript
-function getEffectiveStyle(target) {
-    // 1. Check for Explicit Override
-    if (settings.customFolderColors[target.path]) {
-        return merge(defaults, settings.customFolderColors[target.path]);
-    }
+---
 
-    // 2. Check for Inheritance
-    let parent = target.parent;
-    while (parent) {
-        let parentStyle = settings.customFolderColors[parent.path];
-        if (parentStyle && parentStyle.applyToSubfolders) {
-            return parentStyle; // Inherit
-        }
-        parent = parent.parent;
-    }
+### 2.1 `StyleGenerator.resolveColor(...)` — The Color Priority Chain
 
-    // 3. Fallback to Global Generation Mode
-    if (settings.colorMode === 'heatmap') {
-        return computeHeatmapColor(target);
-    } else if (settings.colorMode === 'monochromatic') {
-        return computeDepthColor(target);
-    } else {
-        return computeSequentialColor(target);
-    }
-}
-```
+This is the "Brain" of the plugin. Every item's final color is determined by this priority chain:
 
-### Detailed Trace: `getEffectiveStyle`
-
-This function is the "Brain" of the plugin. Here is the exact priority order it follows when determining a folder's color:
-
-1.  **Direct Match**: Does `settings.customFolderColors[path]` exist?
-2.  **Parent Inheritance**:
-    *   Walk up the tree: `target.parent` -> `target.parent.parent`...
-    *   For each ancestor, check if it has a custom style with `applyToSubfolders: true`.
-    *   Stop at the first match.
-3.  **Dynamic Modes**:
-    *   **Heatmap**: Calculate `(now - lastModified)`. Map this duration to the palette index.
-    *   **Monochromatic**: Use `depth % palette.length`. Apply lightness shift based on depth.
-    *   **Cycle (Rainbow)**: Use `posIndex % palette.length`.
-4.  **Default Fallback**: Return the primary color from the active palette.
+1. **Custom Style Override**: If the item's path has a `FolderStyle` with a `hex` value set, that color is used unconditionally.
+2. **Inherited Subfolder Color**: If an ancestor has `applyToSubfolders: true` AND a `passedColor` (the ancestor's resolved color) is available, that color is returned directly — ensuring visual consistency across a whole tree.
+3. **Inherited Subfolder Hex**: If inheritance is active but `passedColor` is not yet resolved, falls back to the ancestor's own `hex` value.
+4. **File Color** (when `isFile: true`):
+   - If `applyToFiles` is active on the inherited style, applies a per-name ±5-channel RGB jitter to the parent color for subtle variation.
+   - If `autoColorFiles` or Notebook Navigator file-background is active, uses a hash of the filename against the palette.
+   - Otherwise, falls back to the `globalBackgroundColor` setting.
+5. **Palette Cycle** (default for folders): Uses `(validIndex + depth + rootIndex + cycleOffset) % palette.length`.
 
 ```mermaid
 graph TD
-    Start((Start)) --> Override{Custom Override?}
-    Override -- Yes --> ReturnOverride([Return Style])
-    Override -- No --> Ancestor{Inherited?}
-    Ancestor -- Yes --> ReturnInherit([Return Parent Style])
-    Ancestor -- No --> Mode{Global Mode}
-    Mode -- Heatmap --> CalcHeat[Calc Time Delta]
-    Mode -- Mono --> CalcDepth[Calc Depth]
-    Mode -- Cycle --> CalcPos[Calc Vault Position]
-    CalcHeat --> Finalize
-    CalcDepth --> Finalize
-    CalcPos --> Finalize
-    Finalize([Return Computed Style])
+    A[resolveColor called] --> B{customStyle.hex?}
+    B -- Yes --> Z1[Return custom hex]
+    B -- No --> C{inheritedStyle.applyToSubfolders AND passedColor?}
+    C -- Yes --> Z2[Return passedColor]
+    C -- No --> D{isFile?}
+    D -- Yes --> E{applyToFiles?}
+    E -- Yes --> Z3[Return parent color + per-name jitter]
+    E -- No --> F{autoColorFiles?}
+    F -- Yes --> Z4[Return palette hash of filename]
+    F -- No --> Z5[Return globalBackgroundColor or fallback]
+    D -- No --> Z6[Return palette cycle color]
+```
+
+---
+
+### 2.2 `StyleGenerator.resolveOpacity(...)` — Depth Progression
+
+Opacity is determined by a fixed mathematical progression, **not** by the legacy slider values alone.
+
+**Folder title background opacity:**
+
+| Depth | Opacity | Formula |
+|:---:|:---:|:---|
+| 0 (Root) | **50%** | `rootOpacity ?? 0.50` |
+| 1 | **40%** | `baseOp - (1 × 0.10)` |
+| 2 | **30%** | `baseOp - (2 × 0.10)` |
+| 3 | **20%** | `baseOp - (3 × 0.10)` |
+| 4 | **10%** | `baseOp - (4 × 0.10)` |
+| 5+ | **5%** | Hard floor — never invisible |
+
+> [!NOTE]
+> If `rootStyle === "solid"`, depth-0 folders receive `opacity: 1.0` (fully opaque) regardless of the table above.
+
+**File background opacity:**
+- With `applyToFiles` + `autoColorFiles`: `max(0.04, fileBackgroundOpacity × 0.65)`
+- With `applyToFiles` only (no autoColorFiles): `0.0` (transparent, text-only inherit)
+- With `autoColorFiles` or NN file-background: `fileBackgroundOpacity` (default `0.10` dark / `0.15` light)
+- No inheritance active: `0.0`
+
+---
+
+### 2.3 `StyleGenerator.resolveTextColor(...)` — WCAG Contrast
+
+1. **Custom text color**: If `customStyle.textColor` (or `inheritedStyle.textColor` for non-files) is set, it is returned directly.
+2. **Auto-contrast**: Applies a brightness adjustment via `adjustBrightnessRgb`. In dark mode, colors are lightened by the `darkModeBrightness` setting. In light mode, colors are darkened by `lightModeBrightness` (default -50% if not set).
+3. **Solid root folders**: Returns hard white or black depending on theme mode.
+
+---
+
+### 2.4 `applyToSubfolders` vs `applyToFiles` — Independent Flags
+
+These two flags on a `FolderStyle` are evaluated **independently** and have different propagation depths:
+
+| Flag | What it affects | How deep it propagates |
+|:---|:---|:---|
+| `applyToSubfolders` | Color AND text/icon style of nested *folders* | All descendants (recursive via `nextInherited`) |
+| `applyToFiles` | Color AND text/icon/bold/italic style of *files* | Only immediate children of each level that carries the flag |
+
+> [!IMPORTANT]
+> Setting `applyToFiles` without `applyToSubfolders` means: only the **immediate files** inside that folder inherit the style. Sub-sub-folders do NOT. Setting both means the style cascades indefinitely.
+
+```mermaid
+graph TD
+    P["Parent Folder\n(applyToSubfolders=true, applyToFiles=true)"] --> SF[Subfolder inherits color+style]
+    P --> F1[Files inherit color+style]
+    SF --> SF2[Sub-subfolder inherits color+style]
+    SF --> F2[Files in subfolder inherit color+style]
 ```
 
 ---
@@ -123,27 +149,58 @@ The `StyleGenerator` utilizes persistent caches hosted on the main plugin instan
 ### Structural Foundation (`styles.css`):
 While `StyleGenerator` handles dynamic colors and icons, the core structural integrity is maintained by `styles.css`. This file provides the **Static Grid** (32px row height, 20px icon width) that ensures dynamic coloring doesn't cause layout shivering.
 
-### Traversal Pseudocode:
+### Traversal Pseudocode (Accurate):
 ```text
-FUNCTION traverse(folder, currentDepth):
-    FOR EACH item IN folder.children:
-        style = plugin.getEffectiveStyle(item)
-        generateSelector(item.path, style)
-        
-        IF item IS folder:
-            traverse(item, currentDepth + 1)
+FUNCTION traverse(folder, depth, passedColor, inheritedStyle, cumulativeTintOp):
+
+    // --- FILE PASS ---
+    // Only runs if: passedColor exists, autoColorFiles, autoIcons, applyToFiles, or NN file-bg is active
+    FOR EACH file IN folder.files:
+        color  = resolveColor(file, isFile=true, passedColor, inheritedStyle)
+        op     = resolveOpacity(isFile=true, depth, fileStyle, inheritedStyle)
+        emit: file row CSS (background, border, text, tags, icons, active state)
+
+    // --- FOLDER PASS ---
+    FOR EACH child IN folder.subfolders:
+        customStyle = getStyle(child.path)
+        color  = resolveColor(child, isFile=false, passedColor, inheritedStyle)
+        op     = resolveOpacity(isFile=false, depth, customStyle, inheritedStyle)
+        adjustedOp = max(0, op - cumulativeTintOp)
+
+        // 1. Emit children CONTAINER tint (using child's OWN resolved color)
+        tintOp = max(settings.tintOpacity, depth==0 ? 0.12 : 0.05)
+        emit: child.path ~ .nav-folder-children { background: rgba(color, tintOp) }
+        emit: active-parent border rules using color.hex
+
+        // 2. Emit child FOLDER TITLE background
+        emit: .nav-folder-title[child.path] { background: rgba(color, adjustedOp) }
+
+        // 3. Emit text, icons, NN integration, counters
+
+        // 4. Determine next inherited style
+        nextInherited = customStyle.applyToSubfolders || customStyle.applyToFiles
+                        ? customStyle
+                        : (inheritedStyle.applyToSubfolders ? inheritedStyle : null)
+
+        // 5. Recurse
+        traverse(child, depth+1, color, nextInherited, cumulativeTintOp)
 ```
+
+> [!IMPORTANT]
+> The `.nav-folder-children` container tint is emitted using the **child's own resolved color** — not the grandparent's `passedColor`. This guarantees that each folder's file container shows the correct color even in deeply mixed-color hierarchies.
 
 ### Generated CSS Pattern:
 ```css
 /* Folder Title Tint with CSS Variable Hook */
 .nav-folder-title[data-path="Folder A"] {
-    background-color: var(--cf-folder-bg, rgba(235, 111, 146, 0.548)) !important;
+    background-color: var(--cf-folder-bg, rgba(235, 111, 146, 0.50)) !important;
 }
 
-/* Container Tint (The space behind the files) */
-.nav-folder-title[data-path="Folder A"] + .nav-folder-children {
-    background-color: rgba(235, 111, 146, 0.028) !important;
+/* Container Tint (The space behind nested items, uses child's own color) */
+.nav-folder-title[data-path="Folder A"] ~ .nav-folder-children {
+    background-color: rgba(235, 111, 146, 0.12) !important;  /* depth-0 floor */
+    border-left: 2.5px solid rgba(235, 111, 146, 0.25) !important;
+    border-bottom: 2.5px solid rgba(235, 111, 146, 0.25) !important;
 }
 
 /* Icon Masking */

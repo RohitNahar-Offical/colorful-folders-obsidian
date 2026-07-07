@@ -76,11 +76,27 @@ Achieving the "Frosted Glass" look via `backdrop-filter`.
 - **Bridge Layout**: Flexbox strategy with `flex-grow: 1` lines.
 - **Asymmetrical Spacing**: Independent `Left`/`Right` padding allows for offset designs.
 - **Connectivity**: Supports **negative gaps** (-10px) to let lines intersect the pill.
-- **Inheritance**: Pills inherit parent folder color at **15% opacity** by default.
+- **Tag/Flair Inheritance**: Pills and file tags inherit parent folder color at **15% opacity** (`rgba(color, 0.15)`) by default via the `--nav-tag-background` CSS variable hook.
 
 ---
 
-## 6. Sequential vs. Deterministic Coloring
+## 5b. Folder Container Tint (`.nav-folder-children`)
+
+Every folder emits a background tint on its `.nav-folder-children` container element (the space that holds its nested files and subfolders). This is separate from the folder title's own background.
+
+**Tint opacity formula:**
+```
+finalTintOp = max(settings.tintOpacity, depth === 0 ? 0.12 : 0.05)
+```
+
+- At **depth 0** (root-level folders), the minimum container tint is **12%** opacity.
+- At **all deeper levels**, the minimum is **5%** opacity.
+- The user's `tintOpacity` slider acts as a global minimum and can raise these values, but never lower them below the floor.
+
+> [!IMPORTANT]
+> The container tint color is resolved from the **child folder's own color** — not from the grandparent. This ensures `People` (yellow) shows a yellow tint over its files, even if it is nested inside `Dots` (green).
+
+---
 
 - 🌈 **Sequential (Cycle)**: Uses the item's index in the list. Creates a rainbow flow.
 - 🎯 **Deterministic (File Hashing)**: Uses `hashString(filename) % length`. Ensures a file keeps its color even when moved.

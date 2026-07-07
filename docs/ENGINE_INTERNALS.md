@@ -59,12 +59,31 @@ This ensures that even if a user picks extreme colors, the text remains crisp an
 
 ## 4. Performance & Caching Engine
 
+### Debounced Architecture
+
+All expensive operations are protected by three independent `Debouncer` instances on the plugin class. They ensure that rapid successive events (e.g. theme switches, folder renames, scroll stops) are coalesced into a single operation and that heavy work is suspended entirely during drag-and-drop.
+
+| Debouncer | Delay | Edge | Guard condition | What it calls |
+|:---|:---:|:---:|:---|:---|
+| `generateStylesDebounced` | **300ms** | Leading | `isDragging` | `generateStyles()` — full CSS rebuild |
+| `processDividersDebounced` | **50ms** | Leading | `isSyncingDividers`, `isDragging` | `dividerManager.syncDividers()` |
+| `refreshIconsDebounced` | **100ms** | Leading | `isDragging` | `refreshIcons()` — icon DOM injection |
+
+> [!NOTE]
+> All three debouncers use **leading-edge** execution (Obsidian's `debounce(..., true)`) so the very first event in a burst triggers immediately, then subsequent events within the window are ignored. This provides instant visual feedback without redundant renders.
+
+**Drag-and-Drop Suspension:**
+When `dragstart` fires, `plugin.isDragging = true`. All three debouncers check this flag and return early, completely suspending CSS generation, divider DOM updates, and icon injection. On `dragend`, `isDragging` is reset and a single catch-up render runs.
+
+---
+
 ### Startup Optimizations
 
 | Optimization | Location | Description |
 | :--- | :--- | :--- |
 | **Parallel SVG Loading** | `main.ts → loadLocalIcons()` | Local icons in `.obsidian/icons` are read with `Promise.all()` instead of a serial loop. In vaults with 750+ SVGs this saves **200-400ms** of startup time. |
 | **Shallow Settings Clone** | `main.ts → loadSettings()` | The default settings are merged with a direct `Object.assign` spread instead of `JSON.parse(JSON.stringify(...))`, which was wastefully deep-cloning the entire settings schema. |
+| **Deferred Local Icon Load** | `main.ts → onLayoutReady()` | Local icon discovery is deferred by 2 seconds after layout ready to avoid competing with Obsidian's own startup I/O. |
 
 ### Runtime Optimizations
 
@@ -73,6 +92,7 @@ This ensures that even if a user picks extreme colors, the text remains crisp an
     *   **Icon Category Memoization**: Custom icon regex rules and category lookups are compiled once and cached. The cache is invalidated only when `customIconRules` or `customIcons` changes, not on every `saveSettings()` call.
     *   **SVG Normalization Cache**: The result of `DOMParser` sanitization is cached, ensuring constant SVGs (like folder icons) are only parsed once per session.
     *   **Counter SVG Template Cache**: In `StyleGenerator`, the three static SVG segments of the folder counter icon are pre-encoded with `encodeURIComponent()` once per unique color. Subsequent folders of the same color use O(1) string concatenation instead of re-running the expensive encode + regex chain.
+    *   **Palette Cache**: `getCurrentPalette()` is memoized by a key of `palette + customPalette + isDark`. Light-mode brightness adjustment is only recalculated when this key changes.
 
 2.  **Selective Icon Cache Invalidation** (`main.ts → saveSettings()`):
     Snapshot keys (`_lastIconRulesKey`, `_lastCustomIconsKey`) track the last saved values of icon-relevant settings. The SVG icon cache is **only cleared** when `customIcons` or `customIconRules` actually changes. Toggling unrelated settings (opacity, tag sync, glassmorphism, etc.) no longer evicts the entire cache.

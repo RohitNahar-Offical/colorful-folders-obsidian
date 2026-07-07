@@ -16,9 +16,9 @@ Representing the entire `data.json` structure. Defined in `src/common/types.ts`.
 | `colorMode` | `string` | `cycle` (sequential), `monochromatic` (fixed root color), or `heatmap` (by age). |
 | `cycleOffset` | `number` | Shifts the starting point of the color cycle. |
 | **Opacity & Accents** | | |
-| `rootOpacity` | `number` | Background transparency of top-level folders (fallback, currently overridden by 50% fixed logic). |
-| `subfolderOpacity` | `number` | Background transparency of nested folders (fallback, currently overridden by -10% per level logic). |
-| `tintOpacity` | `number` | Global transparency for folder background colors. |
+| `rootOpacity` | `number` | Starting opacity for depth-0 folder title backgrounds. Default: `0.50`. Used as the base for the depth progression formula. |
+| `subfolderOpacity` | `number` | Legacy setting — currently not used in the depth progression formula. Reserved for future per-level overrides. |
+| `tintOpacity` | `number` | Minimum opacity for `.nav-folder-children` container tints. Default: `0.028`. Floored to `0.12` at depth-0 and `0.05` at deeper levels. |
 | `rootTintOpacity` | `number` | Specific tint transparency for root folders. |
 | `fileBackgroundOpacity` | `number` | Transparency for file background highlights. |
 | `globalBackgroundColor` | `string` | Forces a specific hex/color across all items if set. |
@@ -82,11 +82,11 @@ interface FolderStyle {
     rainbowBrightness?: number;      // Gradient brightness override (1–100, default 50)
     iconColor?: string;              // Custom icon color override (hex)
     iconId?: string;                 // Custom icon ID (Lucide, emoji, or Custom)
-    opacity?: number;                // Background transparency (0-1)
+    opacity?: number;                // Background transparency (0-1). Overrides depth-based progression when set.
     isBold?: boolean;                // Label bold font-weight override
     isItalic?: boolean;              // Label italic style override
-    applyToSubfolders?: boolean;     // Cascade style to nested subfolders
-    applyToFiles?: boolean;          // Cascade style to nested files
+    applyToSubfolders?: boolean;     // Cascade color+style to ALL nested subfolders (recursive)
+    applyToFiles?: boolean;          // Cascade color+style to files in the immediate folder at each inherited level
     hasDivider?: boolean;            // Displays a section divider before this item
     dividerText?: string;            // Text label inside the divider pill
     dividerColor?: string;           // Custom color for the divider line/pill
@@ -143,8 +143,28 @@ Auto-icons use a priority-based regex matching system in `AUTO_ICON_CATEGORIES`.
 
 ---
 
-> [!CAUTION]
-> Never modify `data.json` manually while Obsidian is running, as the plugin keeps a copy in memory and will overwrite your changes upon the next save.
+## 5b. Opacity Depth Progression
+
+The background opacity of folder title rows follows a **fixed linear descent** from the root opacity setting:
+
+```
+depth 0 (root)  → rootOpacity (default 0.50 = 50%)
+depth 1         → rootOpacity - 0.10 (40%)
+depth 2         → rootOpacity - 0.20 (30%)
+depth 3         → rootOpacity - 0.30 (20%)
+depth 4         → rootOpacity - 0.40 (10%)
+depth 5+        → HARD FLOOR: 0.05 (5%) — never goes to zero
+```
+
+This formula is implemented in `StyleGenerator.resolveOpacity()`. An individual folder can override its own opacity by setting `FolderStyle.opacity`, which bypasses the progression entirely for that specific folder's title row.
+
+The **container tint** (`.nav-folder-children` background) uses a separate, simpler formula:
+```
+tintOp = max(settings.tintOpacity, depth === 0 ? 0.12 : 0.05)
+```
+This is always applied using the **child's own resolved color**, not the grandparent's color.
+
+---
 ---
 
 ## 6. Backup & Restore Schema
