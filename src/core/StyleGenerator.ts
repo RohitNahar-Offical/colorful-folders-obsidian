@@ -186,9 +186,10 @@ export class StyleGenerator {
                     : 0.548;
             }
         } else {
-            // color-mix() handles visual hierarchy now; return subfolderOpacity as a flat value
-            // used only for rgba-based active/hover highlights, not folder title backgrounds
-            return subfolderOpacity !== undefined ? subfolderOpacity : 0.4;
+            // Subtractive depth stepping: start at subfolderOpacity, reduce by 0.03 per level.
+            // Hard floor of 0.08 ensures folders never become invisible, even at depth 10+.
+            const baseOp = subfolderOpacity !== undefined ? subfolderOpacity : 0.4;
+            return Math.max(0.08, baseOp - (depth * 0.03));
         }
     }
 
@@ -1029,17 +1030,12 @@ export class StyleGenerator {
                 isDark
             );
 
-            // color-mix() percentage: each depth level is 15% less saturated, floor at 10%
-            // depth 0 = 100%, depth 1 = 85%, depth 2 = 70%, depth 3 = 55%, depth 4 = 40%, depth 5+ = clamp
-            const mixPct = Math.max(10, 100 - (depth * 15));
 
             // Emit children container tint here, using this child's OWN resolved color
-            // Uses color-mix so the tint is a solid shade, never transparent/invisible
+            // Uses user's configured tintOpacity, so settings are fully respected
             if (passedColor || (inheritedStyle && inheritedStyle.applyToSubfolders)) {
                 const childTintColor = color; // child's own resolved color
-                // Tint container uses ~8% mix — subtle solid tint, no background bleed
-                const tintMixPct = 8;
-                const bgTint = outlineOnly ? "transparent" : `color-mix(in srgb, ${childTintColor.hex} ${tintMixPct}%, var(--background-primary))`;
+                const bgTint = outlineOnly ? "transparent" : `rgba(${childTintColor.rgb}, ${tintOp})`;
 
                 cssRules.push(`
                     body .nav-folder-title[data-path="${safePath}"] ~ .nav-folder-children,
@@ -1079,8 +1075,8 @@ export class StyleGenerator {
             const folderIconId = customStyle?.iconId || inheritedStyle?.iconId || (autoIconFolder ? (this.settings.wideAutoIcons ? autoIconFolder.lucide : autoIconFolder.emoji) : "");
 
             const folderStyles = {
-                // Use color-mix for progressive depth shading: solid hierarchy, no transparency bleed
-                b: outlineOnly ? "transparent" : (depth === 0 && this.settings.rootStyle === "solid" ? color.hex : `color-mix(in srgb, ${color.hex} ${mixPct}%, var(--background-primary))`),
+                // Use rgba with depth-stepped opacity: respects user's configured base opacity
+                b: outlineOnly ? "transparent" : (depth === 0 && this.settings.rootStyle === "solid" ? color.hex : `rgba(${color.rgb}, ${op})`),
                 t: StyleGenerator.resolveTextColor(
                     false,
                     depth,
