@@ -186,13 +186,9 @@ export class StyleGenerator {
                     : 0.548;
             }
         } else {
-            const baseOp = subfolderOpacity !== undefined
-                ? subfolderOpacity
-                : 0.4;
-            // Linear 10% reduction per depth level, hard floor at 0.15 so deep nesting stays visible
-            const scale = Math.max(0.15 / baseOp, 1.0 - (depth - 1) * 0.1);
-            const scaledOp = parseFloat((baseOp * scale).toFixed(3));
-            return Math.max(0.15, scaledOp);
+            // color-mix() handles visual hierarchy now; return subfolderOpacity as a flat value
+            // used only for rgba-based active/hover highlights, not folder title backgrounds
+            return subfolderOpacity !== undefined ? subfolderOpacity : 0.4;
         }
     }
 
@@ -670,7 +666,7 @@ export class StyleGenerator {
         `;
     }
 
-    private traverse(folder: obsidian.TFolder, depth: number, validIndex: number, rootIndex: number, passedColor: { rgb: string, hex: string } | null, inheritedStyle: FolderStyle | null, context: StyleContext, cssRules: string[], cumulativeTintOp: number = 0) {
+    private traverse(folder: obsidian.TFolder, depth: number, validIndex: number, rootIndex: number, passedColor: { rgb: string, hex: string } | null, inheritedStyle: FolderStyle | null, context: StyleContext, cssRules: string[]) {
         const copyFolders = folder.children
             .filter((c): c is obsidian.TFolder => c instanceof obsidian.TFolder)
             .sort((a, b) => a.name.localeCompare(b.name));
@@ -993,7 +989,7 @@ export class StyleGenerator {
         for (let i = 0; i < copyFolders.length; i++) {
             const child = copyFolders[i];
             if (excludeFolders.includes(child.name.toLowerCase())) {
-                this.traverse(child, depth + 1, validFolderIndex, (depth === 0 ? validFolderIndex : rootIndex), passedColor, inheritedStyle, context, cssRules, cumulativeTintOp);
+                this.traverse(child, depth + 1, validFolderIndex, (depth === 0 ? validFolderIndex : rootIndex), passedColor, inheritedStyle, context, cssRules);
                 continue;
             }
 
@@ -1033,15 +1029,17 @@ export class StyleGenerator {
                 isDark
             );
 
-            const adjustedOp = Math.max(0, op - cumulativeTintOp);
+            // color-mix() percentage: each depth level is 15% less saturated, floor at 10%
+            // depth 0 = 100%, depth 1 = 85%, depth 2 = 70%, depth 3 = 55%, depth 4 = 40%, depth 5+ = clamp
+            const mixPct = Math.max(10, 100 - (depth * 15));
 
             // Emit children container tint here, using this child's OWN resolved color
-            // (ensures People's children get yellow tint, not Dots' green tint)
+            // Uses color-mix so the tint is a solid shade, never transparent/invisible
             if (passedColor || (inheritedStyle && inheritedStyle.applyToSubfolders)) {
                 const childTintColor = color; // child's own resolved color
-                const minOp = depth === 0 ? 0.12 : 0.05;
-                const finalTintOp = Math.max(tintOp, minOp);
-                const bgTint = outlineOnly ? "transparent" : `rgba(${childTintColor.rgb}, ${finalTintOp})`;
+                // Tint container uses ~8% mix — subtle solid tint, no background bleed
+                const tintMixPct = 8;
+                const bgTint = outlineOnly ? "transparent" : `color-mix(in srgb, ${childTintColor.hex} ${tintMixPct}%, var(--background-primary))`;
 
                 cssRules.push(`
                     body .nav-folder-title[data-path="${safePath}"] ~ .nav-folder-children,
@@ -1081,7 +1079,8 @@ export class StyleGenerator {
             const folderIconId = customStyle?.iconId || inheritedStyle?.iconId || (autoIconFolder ? (this.settings.wideAutoIcons ? autoIconFolder.lucide : autoIconFolder.emoji) : "");
 
             const folderStyles = {
-                b: outlineOnly ? "transparent" : (depth === 0 && this.settings.rootStyle === "solid" ? color.hex : `rgba(${color.rgb}, ${adjustedOp})`),
+                // Use color-mix for progressive depth shading: solid hierarchy, no transparency bleed
+                b: outlineOnly ? "transparent" : (depth === 0 && this.settings.rootStyle === "solid" ? color.hex : `color-mix(in srgb, ${color.hex} ${mixPct}%, var(--background-primary))`),
                 t: StyleGenerator.resolveTextColor(
                     false,
                     depth,
@@ -1166,7 +1165,7 @@ export class StyleGenerator {
                 .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem),
                 .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-navitem):not(.nn-file) {
                     background-color: var(--cf-folder-bg, ${folderStyles.b}) !important;
-                    --cf-selection-bg: rgba(${color.rgb}, ${Math.min(1.0, adjustedOp + 0.15)});
+                    --cf-selection-bg: rgba(${color.rgb}, ${Math.min(1.0, op + 0.15)});
                     opacity: 1.0 !important;
                     border-radius: 6px;
                     ${glassCss}
@@ -1341,7 +1340,7 @@ export class StyleGenerator {
             const nextInherited = (customStyle?.applyToSubfolders || customStyle?.applyToFiles)
                 ? customStyle
                 : (inheritedStyle?.applyToSubfolders ? inheritedStyle : null);
-            this.traverse(child, depth + 1, validFolderIndex, (depth === 0 ? validFolderIndex : rootIndex), color, nextInherited, context, cssRules, cumulativeTintOp);
+            this.traverse(child, depth + 1, validFolderIndex, (depth === 0 ? validFolderIndex : rootIndex), color, nextInherited, context, cssRules);
             validFolderIndex++;
         }
     }
