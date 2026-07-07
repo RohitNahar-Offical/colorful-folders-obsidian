@@ -2,6 +2,7 @@ import * as obsidian from 'obsidian';
 import { FolderStyle, EffectiveStyle, IColorfulFoldersPlugin } from '../../common/types';
 import { createVisualColorPicker } from '../components/ColorPicker';
 import { hexToRgbObj, adjustBrightnessRgb } from '../../common/utils';
+import { StyleGenerator } from '../../core/StyleGenerator';
 
 const getAdjustedColor = (hex: string, brightnessVal: number | undefined): string => {
     if (!hex) return hex;
@@ -271,7 +272,23 @@ modifiedFields: Set<string>;
                     if (this.folderStyle.hex) {
                         const rgb = hexToRgbObj(this.folderStyle.hex);
                         if (rgb) {
-                            const opacity = this.folderStyle.opacity !== undefined ? this.folderStyle.opacity : 0.20;
+                            const isDark = activeDocument.body.classList.contains('theme-dark');
+                            const depth = Math.max(0, this.item.path.split('/').length - 1);
+                            
+                            const opacity = StyleGenerator.resolveOpacity(
+                                !this.isFolder,
+                                depth,
+                                this.folderStyle,
+                                null,
+                                this.plugin.settings.fileBackgroundOpacity,
+                                this.plugin.settings.rootOpacity,
+                                this.plugin.settings.subfolderOpacity,
+                                this.plugin.settings.rootStyle,
+                                this.plugin.settings.autoColorFiles,
+                                !!(this.plugin.settings.notebookNavigatorSupport && this.plugin.settings.notebookNavigatorFileBackground),
+                                isDark
+                            );
+                            
                             this._prevBar.setCssStyles({
                                 backgroundColor: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`,
                                 border: `1px solid rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.25)`
@@ -298,26 +315,31 @@ modifiedFields: Set<string>;
                     const endC = getAdjustedColor(this.folderStyle.textGradientEnd, this.folderStyle.rainbowBrightness);
                     // Matches StyleGenerator: looped gradient start->end->start
                     bgGradient = `linear-gradient(90deg, ${startC}, ${endC}, ${startC})`;
-                } else if (!textCol && this.folderStyle.hex) {
+                } else if (this.folderStyle.hex) {
                     const isDark = activeDocument.body.classList.contains('theme-dark');
                     const settings = this.plugin.settings;
                     const lightBrightness = (settings.lightModeBrightness || 0) / 100;
                     const darkBrightness = (settings.darkModeBrightness || 0) / 100;
                     const brightnessAmount = isDark ? darkBrightness : lightBrightness;
                     
-                    const adjust = isDark
-                        ? Math.max(brightnessAmount, 0)
-                        : brightnessAmount === 0
-                            ? -0.5
-                            : brightnessAmount;
-                            
                     const rgb = hexToRgbObj(this.folderStyle.hex);
-                    if (rgb) {
-                        const rgbStr = `${rgb.r}, ${rgb.g}, ${rgb.b}`;
-                        textCol = isDark && adjust === 0
-                            ? this.folderStyle.hex
-                            : `rgb(${adjustBrightnessRgb(rgbStr, adjust)})`;
-                    }
+                    const rgbStr = rgb ? `${rgb.r}, ${rgb.g}, ${rgb.b}` : "128, 128, 128";
+                    
+                    const depth = Math.max(0, this.item.path.split('/').length - 1);
+                    
+                    textCol = StyleGenerator.resolveTextColor(
+                        !this.isFolder,
+                        depth,
+                        this.folderStyle.hex,
+                        rgbStr,
+                        this.folderStyle,
+                        null,
+                        isDark,
+                        brightnessAmount,
+                        this.plugin.settings.rootStyle,
+                        this.plugin.settings.outlineOnly,
+                        true
+                    );
                 }
 
                 if (bgGradient) {

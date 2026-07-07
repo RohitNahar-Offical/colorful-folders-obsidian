@@ -34,13 +34,17 @@ export class StyleGenerator {
     }
     getCurrentPalette(): { rgb: string, hex: string }[] {
         const isDark = this.isDarkMode();
-        const key = `${this.settings.palette}_${this.settings.customPalette}_${isDark}`;
+        const activePaletteName = isDark 
+            ? (this.settings.paletteDark || this.settings.palette || "Pastel Dreams")
+            : (this.settings.paletteLight || this.settings.palette || "Tailwind UI");
+
+        const key = `${activePaletteName}_${this.settings.customPalette}_${isDark}`;
         if (this._cachedPalette && this._cachedPaletteKey === key) {
             return this._cachedPalette;
         }
 
-        let currentPalette = PALETTES[this.settings.palette] || PALETTES["Muted Dark Mode"];
-        if (this.settings.palette === "Custom") {
+        let currentPalette = PALETTES[activePaletteName] || PALETTES["Muted Dark Mode"];
+        if (activePaletteName === "Custom") {
             const custom = parseCustomPalette(this.settings.customPalette);
             if (custom) currentPalette = custom;
         }
@@ -61,14 +65,6 @@ export class StyleGenerator {
 
     isDarkMode() {
         return (activeDocument.body.classList.contains('theme-dark'));
-    }
-
-    public static getAutoContrastColor(rgbStr: string): string {
-        if (!rgbStr) return "var(--text-normal)";
-        const parts = rgbStr.split(',').map(p => parseInt(p.trim()));
-        if (parts.length < 3 || parts.some(isNaN)) return "var(--text-normal)";
-        const luminance = 0.299 * parts[0] + 0.587 * parts[1] + 0.114 * parts[2];
-        return luminance > 128 ? "#000000" : "#ffffff";
     }
 
     public static resolveColor(
@@ -1173,24 +1169,7 @@ export class StyleGenerator {
                 }
             `);
 
-            if (this.settings.childItemLegibility === "inherit") {
-                cssRules.push(`
-                    body .nav-folder-title[data-path="${safePath}"] ~ .nav-folder-children .nav-folder-title:not(.is-active) .nav-folder-title-content,
-                    body .nav-folder-title[data-path="${safePath}"] ~ .nav-folder-children .nav-file-title:not(.is-active) .nav-file-title-content,
-                    body .tree-item-self[data-path="${safePath}"] ~ .tree-item-children .tree-item-self:not(.is-active) .tree-item-inner {
-                        color: ${folderStyles.t} !important;
-                    }
-                `);
-            } else if (this.settings.childItemLegibility === "auto-contrast" && !outlineOnly) {
-                const contrastColor = StyleGenerator.getAutoContrastColor(color.rgb);
-                cssRules.push(`
-                    body .nav-folder-title[data-path="${safePath}"] ~ .nav-folder-children .nav-folder-title:not(.is-active) .nav-folder-title-content,
-                    body .nav-folder-title[data-path="${safePath}"] ~ .nav-folder-children .nav-file-title:not(.is-active) .nav-file-title-content,
-                    body .tree-item-self[data-path="${safePath}"] ~ .tree-item-children .tree-item-self:not(.is-active) .tree-item-inner {
-                        color: ${contrastColor} !important;
-                    }
-                `);
-            }
+
 
             /* Notebook Navigator Folder Integration (Native-Bridge Architecture) */
             

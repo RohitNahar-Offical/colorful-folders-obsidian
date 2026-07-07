@@ -4,7 +4,7 @@ export const CF_FOLDER_CLOSED = encodeURIComponent('<svg xmlns="http://www.w3.or
 export const CF_FOLDER_OPEN = encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg>');
 export const CF_FILE_DEFAULT = encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>');
 
-export const PALETTES: Record<string, Array<{rgb: string, hex: string}>> = {
+export const PALETTES: Record<string, Array<{ rgb: string, hex: string }>> = {
     "Vibrant Rainbow": [
         { rgb: "235, 111, 146", hex: "#eb6f92" },
         { rgb: "196, 167, 231", hex: "#c4a7e7" },
@@ -47,24 +47,29 @@ export const PALETTES: Record<string, Array<{rgb: string, hex: string}>> = {
         { rgb: "240, 217, 255", hex: "#f0d9ff" },
         { rgb: "255, 217, 236", hex: "#ffd9ec" }
     ],
-    "Neon Cyberpunk": [
-        { rgb: "255, 0, 153", hex: "#ff0099" },
-        { rgb: "0, 255, 255", hex: "#00ffff" },
-        { rgb: "255, 255, 0", hex: "#ffff00" },
-        { rgb: "0, 255, 102", hex: "#00ff66" },
-        { rgb: "153, 0, 255", hex: "#9900ff" },
-        { rgb: "255, 102, 0", hex: "#ff6600" },
-        { rgb: "0, 153, 255", hex: "#0099ff" },
-        { rgb: "255, 0, 85", hex: "#ff0055" },
-        { rgb: "51, 255, 0", hex: "#33ff00" },
-        { rgb: "204, 0, 255", hex: "#cc00ff" },
-        { rgb: "255, 204, 0", hex: "#ffcc00" },
-        { rgb: "0, 255, 204", hex: "#00ffcc" }
+    "Tailwind UI": [
+        { rgb: "59, 130, 246", hex: "#3b82f6" },
+        { rgb: "16, 185, 129", hex: "#10b981" },
+        { rgb: "239, 68, 68", hex: "#ef4444" },
+        { rgb: "139, 92, 246", hex: "#8b5cf6" },
+        { rgb: "245, 158, 11", hex: "#f59e0b" },
+        { rgb: "107, 114, 128", hex: "#6b7280" },
+        { rgb: "236, 72, 153", hex: "#ec4899" }
+    ],
+    "Tailwind UI Dark": [
+        { rgb: "2, 132, 199", hex: "#0284C7" },
+        { rgb: "22, 163, 74", hex: "#16A34A" },
+        { rgb: "220, 38, 38", hex: "#DC2626" },
+        { rgb: "217, 119, 6", hex: "#D97706" },
+        { rgb: "124, 58, 237", hex: "#7C3AED" },
+        { rgb: "75, 85, 99", hex: "#4B5563" },
+        { rgb: "219, 39, 119", hex: "#DB2777" }
     ]
 };
 
 export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
-    palette: "Pastel Dreams",
+    paletteLight: "Tailwind UI",
+    paletteDark: "Pastel Dreams",
     customPalette: "",
     colorMode: "cycle",
     exclusionList: "",
@@ -126,8 +131,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     wrapMetadata: false,
     tagSyncEnabled: false,
     tagSyncMatchFolders: true,
-    tagSyncRules: "",
-    childItemLegibility: "default"
+    tagSyncRules: ""
 };
 
 export const AUTO_ICON_CATEGORIES: AutoIconData[] = [

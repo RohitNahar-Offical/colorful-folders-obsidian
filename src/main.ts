@@ -123,8 +123,11 @@ export default class ColorfulFoldersPlugin
     });
 
     this.app.workspace.onLayoutReady(async () => {
-      this.generateStyles();
-      this.initDividerObserver();
+      // Defer heavy startup tasks to prevent UI lag on plugin load
+      window.setTimeout(() => {
+        this.generateStyles();
+        this.initDividerObserver();
+      }, 50);
 
       try {
         const optimized = await this.optimizeBlueTopazStyleSettings();

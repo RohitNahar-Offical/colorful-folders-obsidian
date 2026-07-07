@@ -32,7 +32,9 @@ export interface FolderStyle {
 }
 
 export interface ColorfulFoldersSettings {
-    palette: string;
+    paletteLight: string;
+    paletteDark: string;
+    palette?: string;
     customPalette: string;
     colorMode: string;
     exclusionList: string;
@@ -94,7 +96,6 @@ export interface ColorfulFoldersSettings {
     tagSyncEnabled: boolean;
     tagSyncMatchFolders: boolean;
     tagSyncRules: string;
-    childItemLegibility: 'default' | 'inherit' | 'auto-contrast';
 }
 
 
