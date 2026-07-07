@@ -177,7 +177,7 @@ export class StyleGenerator {
             } else {
                 return 0.0;
             }
-        } else if (depth === 0 || (inheritedStyle && inheritedStyle.applyToSubfolders)) {
+        } else if (depth === 0) {
             if (rootStyle === "solid") {
                 return 1.0;
             } else {
@@ -186,9 +186,13 @@ export class StyleGenerator {
                     : 0.548;
             }
         } else {
-            return subfolderOpacity !== undefined
+            const baseOp = subfolderOpacity !== undefined
                 ? subfolderOpacity
                 : 0.4;
+            // Linear 10% reduction per depth level, hard floor at 0.15 so deep nesting stays visible
+            const scale = Math.max(0.15 / baseOp, 1.0 - (depth - 1) * 0.1);
+            const scaledOp = parseFloat((baseOp * scale).toFixed(3));
+            return Math.max(0.15, scaledOp);
         }
     }
 
@@ -666,7 +670,7 @@ export class StyleGenerator {
         `;
     }
 
-    private traverse(folder: obsidian.TFolder, depth: number, validIndex: number, rootIndex: number, passedColor: { rgb: string, hex: string } | null, inheritedStyle: FolderStyle | null, context: StyleContext, cssRules: string[]) {
+    private traverse(folder: obsidian.TFolder, depth: number, validIndex: number, rootIndex: number, passedColor: { rgb: string, hex: string } | null, inheritedStyle: FolderStyle | null, context: StyleContext, cssRules: string[], cumulativeTintOp: number = 0) {
         const copyFolders = folder.children
             .filter((c): c is obsidian.TFolder => c instanceof obsidian.TFolder)
             .sort((a, b) => a.name.localeCompare(b.name));
@@ -983,51 +987,13 @@ export class StyleGenerator {
             }
         }
 
-        // Folder logic
-        if (depth > 0 && passedColor) {
-            const safePath = safeEscape(folder.path);
-            const minOp = depth === 1 ? 0.12 : 0.05;
-            const finalTintOp = Math.max(tintOp, minOp);
-            const bgTint = outlineOnly ? "transparent" : `rgba(${passedColor.rgb}, ${finalTintOp})`;
-
-            cssRules.push(`
-                body .nav-folder-title[data-path="${safePath}"] ~ .nav-folder-children,
-                body .tree-item-self[data-path="${safePath}"] ~ .tree-item-children {
-                    background-color: ${bgTint} !important;
-                    border-left: ${folderThick}px solid rgba(${passedColor.rgb}, 0.25) !important;
-                    border-bottom: ${folderThick}px solid rgba(${passedColor.rgb}, 0.25) !important;
-                    border-radius: 4px !important;
-                    border-bottom-left-radius: 8px !important;
-                    padding-bottom: 4px !important;
-                    margin-bottom: 4px !important;
-                    overflow: visible !important;
-                }
-            `);
-            const activeSelector = `.nav-files-container .nav-folder.cf-active-parent > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) ~ .nav-folder-children, .nav-files-container .tree-item.cf-active-parent > .tree-item-self[data-path="${safePath}"]:not(.nn-navitem) ~ .tree-item-children`;
-            cssRules.push(`
-                ${activeSelector} {
-                    border-left: ${folderThick}px solid ${passedColor.hex} !important;
-                    border-bottom: ${folderThick}px solid ${passedColor.hex} !important;
-                    border-bottom-left-radius: 8px !important;
-                    box-shadow: -2px 0 10px -2px ${passedColor.hex}44;
-                    margin-left: 12px !important;
-                    padding-left: 0 !important;
-                    --cf-rgb: ${passedColor.rgb};
-                }
-
-                /* Notebook Navigator Folder Active Path (Flat-Glass) */
-                ${NotebookNavigatorIntegration.getScopedActiveNavSelector(folder.path)} {
-                    border-left: ${activeFolderThick}px solid ${passedColor.hex} !important;
-                    background: linear-gradient(to right, rgba(${passedColor.rgb}, 0.25), rgba(${passedColor.rgb}, 0.05)) !important;
-                }
-            `);
-        }
+        // Folder logic — tint is emitted per-child inside the loop below (using child's own color)
 
         let validFolderIndex = 0;
         for (let i = 0; i < copyFolders.length; i++) {
             const child = copyFolders[i];
             if (excludeFolders.includes(child.name.toLowerCase())) {
-                this.traverse(child, depth + 1, validFolderIndex, (depth === 0 ? validFolderIndex : rootIndex), passedColor, inheritedStyle, context, cssRules);
+                this.traverse(child, depth + 1, validFolderIndex, (depth === 0 ? validFolderIndex : rootIndex), passedColor, inheritedStyle, context, cssRules, cumulativeTintOp);
                 continue;
             }
 
@@ -1067,12 +1033,55 @@ export class StyleGenerator {
                 isDark
             );
 
+            const adjustedOp = Math.max(0, op - cumulativeTintOp);
+
+            // Emit children container tint here, using this child's OWN resolved color
+            // (ensures People's children get yellow tint, not Dots' green tint)
+            if (passedColor || (inheritedStyle && inheritedStyle.applyToSubfolders)) {
+                const childTintColor = color; // child's own resolved color
+                const minOp = depth === 0 ? 0.12 : 0.05;
+                const finalTintOp = Math.max(tintOp, minOp);
+                const bgTint = outlineOnly ? "transparent" : `rgba(${childTintColor.rgb}, ${finalTintOp})`;
+
+                cssRules.push(`
+                    body .nav-folder-title[data-path="${safePath}"] ~ .nav-folder-children,
+                    body .tree-item-self[data-path="${safePath}"] ~ .tree-item-children {
+                        background-color: ${bgTint} !important;
+                        border-left: ${folderThick}px solid rgba(${childTintColor.rgb}, 0.25) !important;
+                        border-bottom: ${folderThick}px solid rgba(${childTintColor.rgb}, 0.25) !important;
+                        border-radius: 4px !important;
+                        border-bottom-left-radius: 8px !important;
+                        padding-bottom: 4px !important;
+                        margin-bottom: 4px !important;
+                        overflow: visible !important;
+                    }
+                `);
+                const childActiveSelector = `.nav-files-container .nav-folder.cf-active-parent > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) ~ .nav-folder-children, .nav-files-container .tree-item.cf-active-parent > .tree-item-self[data-path="${safePath}"]:not(.nn-navitem) ~ .tree-item-children`;
+                cssRules.push(`
+                    ${childActiveSelector} {
+                        border-left: ${folderThick}px solid ${childTintColor.hex} !important;
+                        border-bottom: ${folderThick}px solid ${childTintColor.hex} !important;
+                        border-bottom-left-radius: 8px !important;
+                        box-shadow: -2px 0 10px -2px ${childTintColor.hex}44;
+                        margin-left: 12px !important;
+                        padding-left: 0 !important;
+                        --cf-rgb: ${childTintColor.rgb};
+                    }
+
+                    /* Notebook Navigator Folder Active Path (Flat-Glass) */
+                    ${NotebookNavigatorIntegration.getScopedActiveNavSelector(child.path)} {
+                        border-left: ${activeFolderThick}px solid ${childTintColor.hex} !important;
+                        background: linear-gradient(to right, rgba(${childTintColor.rgb}, 0.25), rgba(${childTintColor.rgb}, 0.05)) !important;
+                    }
+                `);
+            }
+
             // Pre-calculate folder icons to avoid warnings
             const autoIconFolder = (this.settings.autoIcons && !customStyle?.iconId && !inheritedStyle?.iconId) ? this.plugin.iconManager.getAutoIconData(child.name) : null;
             const folderIconId = customStyle?.iconId || inheritedStyle?.iconId || (autoIconFolder ? (this.settings.wideAutoIcons ? autoIconFolder.lucide : autoIconFolder.emoji) : "");
 
             const folderStyles = {
-                b: outlineOnly ? "transparent" : (depth === 0 && this.settings.rootStyle === "solid" ? color.hex : `rgba(${color.rgb}, ${op})`),
+                b: outlineOnly ? "transparent" : (depth === 0 && this.settings.rootStyle === "solid" ? color.hex : `rgba(${color.rgb}, ${adjustedOp})`),
                 t: StyleGenerator.resolveTextColor(
                     false,
                     depth,
@@ -1157,7 +1166,7 @@ export class StyleGenerator {
                 .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem),
                 .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-navitem):not(.nn-file) {
                     background-color: var(--cf-folder-bg, ${folderStyles.b}) !important;
-                    --cf-selection-bg: rgba(${color.rgb}, ${Math.min(1.0, op + 0.15)});
+                    --cf-selection-bg: rgba(${color.rgb}, ${Math.min(1.0, adjustedOp + 0.15)});
                     opacity: 1.0 !important;
                     border-radius: 6px;
                     ${glassCss}
@@ -1332,7 +1341,7 @@ export class StyleGenerator {
             const nextInherited = (customStyle?.applyToSubfolders || customStyle?.applyToFiles)
                 ? customStyle
                 : (inheritedStyle?.applyToSubfolders ? inheritedStyle : null);
-            this.traverse(child, depth + 1, validFolderIndex, (depth === 0 ? validFolderIndex : rootIndex), color, nextInherited, context, cssRules);
+            this.traverse(child, depth + 1, validFolderIndex, (depth === 0 ? validFolderIndex : rootIndex), color, nextInherited, context, cssRules, cumulativeTintOp);
             validFolderIndex++;
         }
     }
