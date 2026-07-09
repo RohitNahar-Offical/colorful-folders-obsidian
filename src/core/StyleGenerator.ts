@@ -410,7 +410,8 @@ export class StyleGenerator {
                     .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nn-file) {
                         background-color: var(--cf-active-bg, ${activeBg}) !important;
                         color: var(--cf-active-color, ${activeText}) !important;
-                        border: 1px solid ${activeGlowEnabled ? `rgba(${color.rgb}, 0.3)` : "transparent"} !important;
+                        outline: 1px solid ${activeGlowEnabled ? `rgba(${color.rgb}, 0.3)` : "transparent"} !important;
+                        outline-offset: -1px !important;
                         ${activeGlowEnabled ? (useGlass ? `
                             backdrop-filter: blur(12px) saturate(160%) !important;
                             -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
@@ -512,15 +513,13 @@ export class StyleGenerator {
                     overflow: visible !important;
                 }
             `);
-            const childActiveSelector = `.nav-files-container .nav-folder.cf-active-parent > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) ~ .nav-folder-children, .nav-files-container .tree-item.cf-active-parent > .tree-item-self[data-path="${safePath}"]:not(.nn-navitem) ~ .tree-item-children`;
+            const childActiveSelector = `.nav-files-container .nav-folder:has(.is-active) > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) ~ .nav-folder-children, .nav-files-container .tree-item:has(.is-active) > .tree-item-self[data-path="${safePath}"]:not(.nn-navitem) ~ .tree-item-children`;
             cssRules.push(`
                 ${childActiveSelector} {
-                    border-left: ${folderThick}px solid ${color.hex} !important;
-                    border-bottom: ${folderThick}px solid ${color.hex} !important;
+                    border-left-color: ${color.hex} !important;
+                    border-bottom-color: ${color.hex} !important;
                     border-bottom-left-radius: 8px !important;
-                    box-shadow: -2px 0 10px -2px ${color.hex}44;
-                    margin-left: 12px !important;
-                    padding-left: 0 !important;
+                    box-shadow: -2px 0 10px -2px ${color.hex}44 !important;
                     --cf-rgb: ${color.rgb};
                 }
 
@@ -654,7 +653,7 @@ export class StyleGenerator {
                 tintOp,
                 baseThick,
                 this.settings.notebookNavigatorOutlineOnly,
-                false, /* useRadiantPath is now managed via cf-active-parent statically */
+                false, /* useRadiantPath is now managed via :has(.is-active) statically */
                 context.nnIconW,
                 this.settings.activeGlow !== false
             ));

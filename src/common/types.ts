@@ -1,4 +1,4 @@
-import { App, Debouncer, MenuItem, Menu, EventRef } from 'obsidian';
+import { App, MenuItem, Menu, EventRef } from 'obsidian';
 
 export interface FolderStyle {
     hex?: string;
@@ -133,7 +133,6 @@ export interface IColorfulFoldersPlugin {
     folderCountCache: Map<string, { files: number, folders: number }> | null;
     iconCache: Map<string, string>;
     iconManager: { 
-        refreshIcons(): void,
         getIconSvg(iconId: string, shouldEncode?: boolean): string,
         getAutoIconData(name: string): AutoIconData | null,
         normalizeSvg(svgStr: string, shouldEncode?: boolean): string,
@@ -142,7 +141,7 @@ export interface IColorfulFoldersPlugin {
     };
     sheet: CSSStyleSheet;
     isSyncingDividers: boolean;
-    processDividersDebounced: Debouncer<[], void>;
+    _dividerTimeout?: number | null;
     saveSettings(): Promise<void>;
     registerCustomIcons(): void;
     cleanUnusedStyles(): Promise<void>;
@@ -156,7 +155,6 @@ export interface IColorfulFoldersPlugin {
     styleGenerator: { generateCss(): string };
     getAllExplorerContainers(): HTMLElement[];
     generateStyles(): void;
-    refreshIcons(): void;
     initDividerObserver(): void;
     processDividers(): void;
     registerEvent(event: EventRef): void;

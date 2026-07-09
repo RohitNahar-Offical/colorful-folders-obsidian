@@ -71,8 +71,8 @@ export class NotebookNavigatorIntegration {
 
     static getScopedActiveNavSelector(path: string): string {
         const safePath = safeEscape(path);
-        return `.notebook-navigator .cf-active-parent.nn-navitem[data-path="${safePath}"]:not(.nn-header), 
-                .notebook-navigator .cf-active-parent.nn-shortcut-item[data-path="${safePath}"]`;
+        return `.notebook-navigator :has(.is-active) > .nn-navitem[data-path="${safePath}"]:not(.nn-header), 
+                .notebook-navigator :has(.is-active) > .nn-shortcut-item[data-path="${safePath}"]`;
     }
 
     static getScopedFileSelector(path: string): string {
@@ -99,7 +99,7 @@ export class NotebookNavigatorIntegration {
 
     static getActiveRadiantPathSelector(path: string): string {
         const safePath = safeEscape(path);
-        return `.notebook-navigator .cf-active-parent[data-path="${safePath}"] ~ .nn-virtual-container`;
+        return `.notebook-navigator :has(.is-active) > [data-path="${safePath}"] ~ .nn-virtual-container`;
     }
 
     static getNavNameSelector(): string {

@@ -5,9 +5,6 @@ import {
   IColorfulFoldersPlugin,
 } from "./common/types";
 import { DEFAULT_SETTINGS } from "./common/constants";
-import {
-  safeEscape,
-} from "./common/utils";
 import { NotebookNavigatorIntegration } from './integrations/NotebookNavigator';
 import { GraphColorSync } from './integrations/GraphColorSync';
 import { ColorPickerModal } from "./ui/modals/ColorPickerModal";
@@ -36,11 +33,11 @@ export default class ColorfulFoldersPlugin
   sheet: CSSStyleSheet;
 
   iconCache: Map<string, string> = new Map();
+  _dividerTimeout: number | null = null;
   heatmapCache: Map<string, number> | null = null;
   folderCountCache: Map<string, { files: number; folders: number }> | null =
     null;
   generateStylesDebounced: obsidian.Debouncer<[], void>;
-  refreshIconsDebounced: obsidian.Debouncer<[], void>;
   localFileSystemIcons: Record<string, string> = {};
   dividerObserver: MutationObserver | null = null;
   styleObservers: MutationObserver[] = [];
@@ -77,23 +74,8 @@ export default class ColorfulFoldersPlugin
       true,
     );
 
-    this.processDividersDebounced = obsidian.debounce(
-      () => {
-        if (this.isSyncingDividers || this.isDragging) return;
-        this.dividerManager.syncDividers();
-      },
-      50,
-      true,
-    );
 
-    this.refreshIconsDebounced = obsidian.debounce(
-      () => {
-        if (this.isDragging) return;
-        this.refreshIcons();
-      },
-      100,
-      true,
-    );
+
 
     this.refreshRibbon();
 
@@ -319,9 +301,7 @@ export default class ColorfulFoldersPlugin
       })
     );
 
-    this.registerEvent(
-      this.app.workspace.on("file-open", (file) => this.updateActiveParentClasses(file?.path || "")),
-    );
+
     this.registerEvent(
       // PERF FIX 5: Debounce css-change. Obsidian fires this event multiple times
       // during theme switches/plugin reloads. The leading-edge debouncer fires
@@ -564,36 +544,12 @@ export default class ColorfulFoldersPlugin
         !!this.settings.wrapMetadata,
       );
     });
-    // Ensure parent classes are indexed on startup/refresh
-    this.updateActiveParentClasses(this.app.workspace.getActiveFile()?.path || "");
-    this.refreshIcons();
     // Sync folder colors to Graph View groups if the feature is enabled
     if (this.settings.graphColorSync) {
       void GraphColorSync.syncGraphColors(this);
     }
   }
 
-  refreshIcons() {
-    this.iconManager.refreshIcons();
-  }
-
-  updateActiveParentClasses(activePath: string) {
-    this.getOpenDocuments().forEach(doc => {
-      doc.querySelectorAll('.cf-active-parent').forEach(el => el.classList.remove('cf-active-parent'));
-      if (!activePath) return;
-
-      const segments = activePath.split('/');
-      let current = "";
-      for (let i = 0; i < segments.length - 1; i++) {
-        current += (current ? '/' : '') + segments[i];
-        const safePath = safeEscape(current);
-        doc.querySelectorAll(`.nav-folder-title[data-path="${safePath}"]`).forEach(title => {
-          const folder = title.closest('.nav-folder, .tree-item, .nn-navitem');
-          if (folder) folder.classList.add('cf-active-parent');
-        });
-      }
-    });
-  }
 
   private isScrolling = false;
   private scrollTimeout: number | null = null;
@@ -607,10 +563,6 @@ export default class ColorfulFoldersPlugin
     this.scrollTimeout = win.setTimeout(() => {
       this.isScrolling = false;
       this.processDividers();
-      // FIX 1: Single catch-up icon refresh after scroll stops.
-      // This ensures any nodes recycled by Obsidian's virtual list
-      // during the scroll are correctly decorated after motion ends.
-      this.refreshIconsDebounced();
     }, 100);
   };
 
@@ -723,24 +675,6 @@ export default class ColorfulFoldersPlugin
 
       if (hasRelevantChange) {
         this.processDividers();
-        // FIX 1: Do NOT call refreshIconsDebounced during scroll.
-        // The scroll handler already queues a catch-up refresh after scroll stops.
-        // FIX 2: For non-scroll mutations (expand/collapse/new file), inject icons
-        // only on the specific nodes that changed (O(N-changed) vs O(N-total)).
-        if (!this.isScrolling) {
-          const addedNodes = mutations
-            .flatMap(m => Array.from(m.addedNodes));
-          if (addedNodes.length > 0) {
-            // Targeted: inject only into the nodes that just appeared
-            const nodelist = {
-              forEach: (cb: (node: Node) => void) => addedNodes.forEach(cb),
-            } as unknown as NodeList;
-            this.iconManager.injectIconsForNodes(nodelist);
-          } else {
-            // Fallback for remove-only mutations (e.g., folder collapse)
-            this.refreshIconsDebounced();
-          }
-        }
       }
     });
 
@@ -754,7 +688,18 @@ export default class ColorfulFoldersPlugin
 
   processDividers() {
     if (this.isSyncingDividers || this.isScrolling) return;
-    if (this.processDividersDebounced) this.processDividersDebounced();
+
+    if (this._dividerTimeout) {
+      window.clearTimeout(this._dividerTimeout);
+    }
+    
+    // Push the heavy DOM reconciliation to the back of the event loop
+    this._dividerTimeout = window.setTimeout(() => {
+      this._dividerTimeout = null;
+      if (!this.isDragging) {
+        this.dividerManager.syncDividers();
+      }
+    }, 100);
   }
 
   async cleanUnusedStyles() {
@@ -803,8 +748,7 @@ export default class ColorfulFoldersPlugin
       this.initDividerObserver();
       
       // Catch-up render after drag finishes
-      if (this.processDividersDebounced) this.processDividersDebounced();
-      if (this.refreshIconsDebounced) this.refreshIconsDebounced();
+      this.processDividers();
     };
     
     this.registerDomEvent(doc, "dragend", handleDragEnd);
