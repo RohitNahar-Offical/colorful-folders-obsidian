@@ -86,7 +86,7 @@ export default class ColorfulFoldersPlugin
     this.registerCustomIcons();
     this.registerEvents();
     this.registerCommands();
-    this.initStyleObservers();
+    // this.initStyleObservers();
 
     // Initial stealth mode state
     this.getOpenDocuments().forEach(doc => {
@@ -104,7 +104,7 @@ export default class ColorfulFoldersPlugin
       // Generate styles immediately on layout ready to prevent a flash of unstyled content.
       // The previous 50ms timeout pushed this to the end of the busy event loop, causing late loads.
       this.generateStyles();
-      this.initDividerObserver();
+      // this.initDividerObserver();
 
       try {
         const optimized = await this.optimizeBlueTopazStyleSettings();
@@ -281,9 +281,9 @@ export default class ColorfulFoldersPlugin
       }),
     );
 
-    this.registerEvent(
-      this.app.workspace.on("layout-change", () => this.initDividerObserver()),
-    );
+    // this.registerEvent(
+    //   this.app.workspace.on("layout-change", () => this.initDividerObserver()),
+    // );
 
     // Performance: Detect drag operations to suspend expensive animations and logic
     this.getOpenDocuments().forEach(doc => {
@@ -623,21 +623,22 @@ export default class ColorfulFoldersPlugin
     });
 
     this.dividerObserver = new MutationObserver((mutations) => {
-      // Suspend all logic during virtualized scroll or drag operations
-      if (this.isSyncingDividers || this.isScrolling || this.isDragging) return;
+      window.requestAnimationFrame(() => {
+        // Suspend all logic during virtualized scroll or drag operations
+        if (this.isSyncingDividers || this.isScrolling || this.isDragging) return;
 
-      let hasRelevantChange = false;
-      for (const m of mutations) {
-        // Ignore any changes inside our own icon wrappers or interactive dividers
-        const target = m.target as HTMLElement;
-        if (target.closest(".cf-icon-wrapper, .cf-interactive-divider"))
-          continue;
+        let hasRelevantChange = false;
+        for (const m of mutations) {
+          // Ignore any changes inside our own icon wrappers or interactive dividers
+          const target = m.target as HTMLElement;
+          if (target.closest(".cf-icon-wrapper, .cf-interactive-divider"))
+            continue;
 
-        if (m.type !== "childList") continue;
+          if (m.type !== "childList") continue;
 
-        const isRelevantNode = (node: Node) => {
-          if (node.nodeType !== Node.ELEMENT_NODE) return false;
-          const el = node as HTMLElement;
+          const isRelevantNode = (node: Node) => {
+            if (node.nodeType !== Node.ELEMENT_NODE) return false;
+            const el = node as HTMLElement;
           
           if (!el.classList.contains("nav-file") && 
               !el.classList.contains("nav-folder") && 
@@ -673,9 +674,10 @@ export default class ColorfulFoldersPlugin
         if (hasRelevantChange) break;
       }
 
-      if (hasRelevantChange) {
-        this.processDividers();
-      }
+        if (hasRelevantChange) {
+          this.processDividers();
+        }
+      });
     });
 
     allContainers.forEach((container) => {
@@ -763,19 +765,20 @@ export default class ColorfulFoldersPlugin
 
     this.getOpenDocuments().forEach(doc => {
       const observer = new MutationObserver((mutations) => {
-        let shouldRegenerate = false;
-        for (const m of mutations) {
-          if (m.type === "attributes" && m.attributeName === "class") {
-            const target = m.target as HTMLElement;
-            const oldClass = m.oldValue || "";
-            const newClass = typeof target.className === 'string' ? target.className : (target.getAttribute('class') || "");
-            
-            if (oldClass === newClass) continue;
-            
-            const relevantClasses = ["theme-dark", "theme-light", "cf-show-hidden", "cf-wrap-metadata"];
-            
-            const oldClasses = oldClass.split(/\s+/);
-            const newClasses = newClass.split(/\s+/);
+        window.requestAnimationFrame(() => {
+          let shouldRegenerate = false;
+          for (const m of mutations) {
+            if (m.type === "attributes" && m.attributeName === "class") {
+              const target = m.target as HTMLElement;
+              const oldClass = m.oldValue || "";
+              const newClass = typeof target.className === 'string' ? target.className : (target.getAttribute('class') || "");
+              
+              if (oldClass === newClass) continue;
+              
+              const relevantClasses = ["theme-dark", "theme-light", "cf-show-hidden", "cf-wrap-metadata"];
+              
+              const oldClasses = oldClass.split(/\s+/);
+              const newClasses = newClass.split(/\s+/);
 
             for (const cls of relevantClasses) {
               const wasPresent = oldClasses.includes(cls);
@@ -789,9 +792,10 @@ export default class ColorfulFoldersPlugin
           }
         }
         
-        if (shouldRegenerate) {
-          this.generateStylesDebounced();
-        }
+          if (shouldRegenerate) {
+            this.generateStylesDebounced();
+          }
+        });
       });
       observer.observe(doc.body, {
         attributes: true,

@@ -322,7 +322,7 @@ export function generateDividerCss(settings: ColorfulFoldersSettings): string {
             cursor: pointer !important;
             color: var(--text-normal) !important;
             font-size: 0.9em !important;
-            transition: all 0.2s ease !important;
+            transition: background-color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, color 0.2s ease !important;
             gap: 10px !important;
         }
 

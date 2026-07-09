@@ -69,12 +69,6 @@ export class NotebookNavigatorIntegration {
                 .notebook-navigator .nn-shortcut-item[data-path="${safePath}"]`;
     }
 
-    static getScopedActiveNavSelector(path: string): string {
-        const safePath = safeEscape(path);
-        return `.notebook-navigator :has(.is-active) > .nn-navitem[data-path="${safePath}"]:not(.nn-header), 
-                .notebook-navigator :has(.is-active) > .nn-shortcut-item[data-path="${safePath}"]`;
-    }
-
     static getScopedFileSelector(path: string): string {
         const safePath = safeEscape(path);
         return `.notebook-navigator .nn-file[data-path="${safePath}"]:not(.nn-header)`;
@@ -94,12 +88,7 @@ export class NotebookNavigatorIntegration {
      */
     static getRadiantPathSelector(path: string): string {
         const safePath = safeEscape(path);
-        return `.notebook-navigator [data-path="${safePath}"] ~ .nn-virtual-container`;
-    }
-
-    static getActiveRadiantPathSelector(path: string): string {
-        const safePath = safeEscape(path);
-        return `.notebook-navigator :has(.is-active) > [data-path="${safePath}"] ~ .nn-virtual-container`;
+        return `.notebook-navigator .nn-navitem:has(> [data-path="${safePath}"]) > .nn-virtual-container`;
     }
 
     static getNavNameSelector(): string {
@@ -292,7 +281,7 @@ export class NotebookNavigatorIntegration {
                     border-radius: 6px !important;
                     ${glassCss}
                     ${tintOp > 0 ? `background-blend-mode: overlay;` : ''}
-                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+                    transition: background-color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
                     margin-bottom: 2px !important;
                 }
                 ${hoverCss}
@@ -313,7 +302,7 @@ export class NotebookNavigatorIntegration {
                     font-weight: ${isBold ? 'bold' : 'normal'} !important;
                     font-style: ${isItalic ? 'italic' : 'normal'} !important;
                     border-radius: 6px;
-                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+                    transition: background-color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, color 0.2s ease !important;
                     margin-bottom: 2px !important;
                 }
                 ${shouldColor ? hoverCss : ''}
@@ -321,21 +310,8 @@ export class NotebookNavigatorIntegration {
             `;
         }
 
-        // Radiant Path for NN
-        let radiantCss = '';
-        if (isFolder) {
-            radiantCss = `
-                ${this.getActiveRadiantPathSelector(path)} {
-                    border-left: ${nnThick}px solid rgba(${color.rgb}, 0.25) !important;
-                    margin-left: 12px !important;
-                    transition: border-color 0.3s ease !important;
-                }
-            `;
-        }
-
         return `
             ${shouldColor ? bgCss : ''}
-            ${radiantCss}
 
             ${base} ${nameSel},
             ${base} ${countSel} {

@@ -501,8 +501,8 @@ export class StyleGenerator {
             const bgTint = outlineOnly ? "transparent" : `rgba(${color.rgb}, ${finalTintOp})`;
 
             cssRules.push(`
-                body .nav-folder-title[data-path="${safePath}"] ~ .nav-folder-children,
-                body .tree-item-self[data-path="${safePath}"] ~ .tree-item-children {
+                body .nav-folder:has(> .nav-folder-title[data-path="${safePath}"]) > .nav-folder-children,
+                body .tree-item:has(> .tree-item-self[data-path="${safePath}"]) > .tree-item-children {
                     background-color: ${bgTint} !important;
                     border-left: ${folderThick}px solid rgba(${color.rgb}, 0.25) !important;
                     border-bottom: ${folderThick}px solid rgba(${color.rgb}, 0.25) !important;
@@ -511,22 +511,6 @@ export class StyleGenerator {
                     padding-bottom: 4px !important;
                     margin-bottom: 4px !important;
                     overflow: visible !important;
-                }
-            `);
-            const childActiveSelector = `.nav-files-container .nav-folder:has(.is-active) > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) ~ .nav-folder-children, .nav-files-container .tree-item:has(.is-active) > .tree-item-self[data-path="${safePath}"]:not(.nn-navitem) ~ .tree-item-children`;
-            cssRules.push(`
-                ${childActiveSelector} {
-                    border-left-color: ${color.hex} !important;
-                    border-bottom-color: ${color.hex} !important;
-                    border-bottom-left-radius: 8px !important;
-                    box-shadow: -2px 0 10px -2px ${color.hex}44 !important;
-                    --cf-rgb: ${color.rgb};
-                }
-
-                /* Notebook Navigator Folder Active Path (Flat-Glass) */
-                ${NotebookNavigatorIntegration.getScopedActiveNavSelector(child.path)} {
-                    border-left: ${activeFolderThick}px solid ${color.hex} !important;
-                    background: linear-gradient(to right, rgba(${color.rgb}, 0.25), rgba(${color.rgb}, 0.05)) !important;
                 }
             `);
 
