@@ -86,7 +86,7 @@ export default class ColorfulFoldersPlugin
     this.registerCustomIcons();
     this.registerEvents();
     this.registerCommands();
-    // this.initStyleObservers();
+    this.initStyleObservers();
 
     // Initial stealth mode state
     this.getOpenDocuments().forEach(doc => {
@@ -104,7 +104,7 @@ export default class ColorfulFoldersPlugin
       // Generate styles immediately on layout ready to prevent a flash of unstyled content.
       // The previous 50ms timeout pushed this to the end of the busy event loop, causing late loads.
       this.generateStyles();
-      // this.initDividerObserver();
+      this.initDividerObserver();
 
       try {
         const optimized = await this.optimizeBlueTopazStyleSettings();
@@ -281,9 +281,9 @@ export default class ColorfulFoldersPlugin
       }),
     );
 
-    // this.registerEvent(
-    //   this.app.workspace.on("layout-change", () => this.initDividerObserver()),
-    // );
+    this.registerEvent(
+      this.app.workspace.on("layout-change", () => this.initDividerObserver()),
+    );
 
     // Performance: Detect drag operations to suspend expensive animations and logic
     this.getOpenDocuments().forEach(doc => {
@@ -301,13 +301,6 @@ export default class ColorfulFoldersPlugin
       })
     );
 
-
-    this.registerEvent(
-      // PERF FIX 5: Debounce css-change. Obsidian fires this event multiple times
-      // during theme switches/plugin reloads. The leading-edge debouncer fires
-      // instantly on the first call, then coalesces all rapid-fire follow-ups.
-      this.app.workspace.on("css-change", () => this.generateStylesDebounced()),
-    );
 
     this.registerEvent(
       this.app.vault.on("create", () => {
