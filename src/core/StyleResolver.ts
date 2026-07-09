@@ -7,7 +7,7 @@ export class StyleResolver {
     public static getStyle(plugin: IColorfulFoldersPlugin, path: string): FolderStyle | null {
         const style = plugin.settings.customFolderColors[path];
         if (!style) return null;
-        if (typeof style === "string") return { hex: style } as FolderStyle;
+        if (typeof style === "string") return { hex: style };
         return style;
     }
 
