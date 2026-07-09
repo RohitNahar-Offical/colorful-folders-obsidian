@@ -571,7 +571,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .addOption('Muted Dark Mode', 'Muted dark mode')
                 .addOption('Pastel Dreams', 'Pastel dreams')
                 .addOption('Tailwind UI', 'Tailwind UI')
-                .addOption('Tailwind UI Dark', 'Tailwind UI Dark')
+                .addOption('Tailwind UI Dark', 'Tailwind UI dark')
                 .addOption('Custom', 'Custom palette')
                 .setValue(this.plugin.settings.paletteLight || this.plugin.settings.palette || 'Tailwind UI')
                 .onChange(async (value) => {
@@ -588,7 +588,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .addOption('Muted Dark Mode', 'Muted dark mode')
                 .addOption('Pastel Dreams', 'Pastel dreams')
                 .addOption('Tailwind UI', 'Tailwind UI')
-                .addOption('Tailwind UI Dark', 'Tailwind UI Dark')
+                .addOption('Tailwind UI Dark', 'Tailwind UI dark')
                 .addOption('Custom', 'Custom palette')
                 .setValue(this.plugin.settings.paletteDark || this.plugin.settings.palette || 'Pastel Dreams')
                 .onChange(async (value) => {

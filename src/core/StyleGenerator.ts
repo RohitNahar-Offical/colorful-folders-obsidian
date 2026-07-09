@@ -1,6 +1,6 @@
 import { ColorfulFoldersSettings, FolderStyle, IColorfulFoldersPlugin, StyleContext } from '../common/types';
 import { PALETTES, CF_FOLDER_CLOSED } from '../common/constants';
-import { hexToRgbObj, adjustBrightnessRgb, safeEscape, parseCustomPalette, hashString } from '../common/utils';
+import { hexToRgbObj, adjustBrightnessRgb, safeEscape } from '../common/utils';
 import * as obsidian from 'obsidian';
 import { NotebookNavigatorIntegration } from '../integrations/NotebookNavigator';
 import { TagColorSync } from '../integrations/TagColorSync';

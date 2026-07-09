@@ -3,7 +3,6 @@ import * as obsidian from 'obsidian';
 import { FolderStyle, EffectiveStyle, IColorfulFoldersPlugin } from '../../common/types';
 import { createVisualColorPicker } from '../components/ColorPicker';
 import { hexToRgbObj, adjustBrightnessRgb } from '../../common/utils';
-import { StyleGenerator } from '../../core/StyleGenerator';
 import { ColorResolver, isDarkMode } from '../../core/ColorResolver';
 
 const getAdjustedColor = (hex: string, brightnessVal: number | undefined): string => {

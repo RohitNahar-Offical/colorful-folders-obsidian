@@ -1,4 +1,4 @@
-import { TAbstractFile, App, Debouncer, MenuItem, Menu, EventRef } from 'obsidian';
+import { App, Debouncer, MenuItem, Menu, EventRef } from 'obsidian';
 
 export interface FolderStyle {
     hex?: string;

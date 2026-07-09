@@ -2,15 +2,10 @@ import { StyleResolver } from './core/StyleResolver';
 import * as obsidian from "obsidian";
 import {
   ColorfulFoldersSettings,
-  FolderStyle,
-  EffectiveStyle,
   IColorfulFoldersPlugin,
 } from "./common/types";
 import { DEFAULT_SETTINGS } from "./common/constants";
 import {
-  hexToRgbObj,
-  anyToHex,
-  parseCustomPalette,
   safeEscape,
 } from "./common/utils";
 import { NotebookNavigatorIntegration } from './integrations/NotebookNavigator';
