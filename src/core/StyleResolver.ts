@@ -20,8 +20,10 @@ export class StyleResolver {
                     : plugin.settings.lightModeBrightness) / 100;
             const cycleOff = plugin.settings.cycleOffset || 0;
 
-            const paletteRes = getCurrentPalette(plugin.settings, null, "");
-            const palette = paletteRes.palette;
+            if (!plugin.activePaletteCache) {
+                plugin.activePaletteCache = getCurrentPalette(plugin.settings, null, "");
+            }
+            const palette = plugin.activePaletteCache.palette;
 
             const isFile = target instanceof obsidian.TFile;
             const path = target.path;
@@ -52,52 +54,54 @@ export class StyleResolver {
             const segments = path.split("/").filter((s) => s.length > 0);
             const depth = segments.length - 1;
 
-            const excludeFolders = (plugin.settings.exclusionList || "")
-                .toLowerCase()
-                .split(",")
-                .map((s) => s.trim())
-                .filter((s) => s.length > 0);
+            if (!plugin.parsedExclusionList) {
+                plugin.parsedExclusionList = new Set(
+                    (plugin.settings.exclusionList || "")
+                        .toLowerCase()
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter((s) => s.length > 0)
+                );
+            }
+            const excludeFolders = plugin.parsedExclusionList;
 
             const parentFolder = target.parent;
             let validIndex = 0;
             if (parentFolder) {
-                const siblings = parentFolder.children
-                    .filter((c): c is obsidian.TFolder => c instanceof obsidian.TFolder)
-                    .filter((c) => !excludeFolders.includes(c.name.toLowerCase()))
-                    .sort((a, b) => a.name.localeCompare(b.name));
-
-                if (!isFile) {
-                    validIndex = siblings.findIndex((s) => s.path === path);
-                    if (validIndex < 0) validIndex = 0;
-                } else {
-                    const gp = parentFolder.parent;
-                    if (gp) {
-                        const parentSiblings = gp.children
-                            .filter(
-                                (c): c is obsidian.TFolder => c instanceof obsidian.TFolder,
-                            )
-                            .filter((c) => !excludeFolders.includes(c.name.toLowerCase()))
-                            .sort((a, b) => a.name.localeCompare(b.name));
-                        validIndex = parentSiblings.findIndex(
-                            (s) => s.path === parentFolder.path,
-                        );
-                        if (validIndex < 0) validIndex = 0;
-                    } else {
-                        validIndex = 0;
-                    }
-                }
+                const getFolderIndex = (folder: obsidian.TFolder): number => {
+                    if (!folder.parent) return 0;
+                    if (!plugin.folderSortCache) plugin.folderSortCache = new Map();
+                    if (plugin.folderSortCache.has(folder.path)) return plugin.folderSortCache.get(folder.path) || 0;
+                    
+                    const siblings = folder.parent.children
+                        .filter((c): c is obsidian.TFolder => c instanceof obsidian.TFolder)
+                        .filter((c) => !excludeFolders.has(c.name.toLowerCase()))
+                        .sort((a, b) => a.name.localeCompare(b.name));
+                    
+                    siblings.forEach((s, idx) => plugin.folderSortCache!.set(s.path, idx));
+                    return plugin.folderSortCache.get(folder.path) || 0;
+                };
+                
+                validIndex = getFolderIndex(isFile ? parentFolder : target as obsidian.TFolder);
             }
 
             let rootIndex = 0;
             if (depth > 0) {
                 const rootFolder = plugin.app.vault.getRoot();
                 const rootSegment = segments[0];
-                const rootSiblings = rootFolder.children
-                    .filter((c): c is obsidian.TFolder => c instanceof obsidian.TFolder)
-                    .filter((c) => !excludeFolders.includes(c.name.toLowerCase()))
-                    .sort((a, b) => a.name.localeCompare(b.name));
-                rootIndex = rootSiblings.findIndex((s) => s.name === rootSegment);
-                if (rootIndex < 0) rootIndex = 0;
+                
+                if (!plugin.rootSortCache) plugin.rootSortCache = new Map();
+                if (plugin.rootSortCache.has(rootSegment)) {
+                    rootIndex = plugin.rootSortCache.get(rootSegment) || 0;
+                } else {
+                    const rootSiblings = rootFolder.children
+                        .filter((c): c is obsidian.TFolder => c instanceof obsidian.TFolder)
+                        .filter((c) => !excludeFolders.has(c.name.toLowerCase()))
+                        .sort((a, b) => a.name.localeCompare(b.name));
+                        
+                    rootSiblings.forEach((s, idx) => plugin.rootSortCache!.set(s.name, idx));
+                    rootIndex = plugin.rootSortCache.get(rootSegment) || 0;
+                }
             }
 
             const heatmapCache = plugin.heatmapCache || new Map<string, number>();

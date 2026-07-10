@@ -325,3 +325,14 @@ Read before making ANY architectural changes.
 3. **Reset sync**: Stored references to the `ToggleComponent` instances and reset their visual state via `toggle.setValue(false)` inside the reset button handler.
 **Lesson**: Always auto-initialize all required fields that must coexist when enabling a compound feature (like a gradient that needs both start and end colors). Guard conditions like `&& textColor && textGradientEnd` will silently fail if only one field is populated. Use Obsidian's native UI components for controls to ensure visual consistency and accessibility.
 
+---
+
+## Incident #24 — Layout-Change Spam & DOM Observer Debounce Collision (2026-07-10)
+**What was attempted**: Listening to Obsidian's workspace `layout-change` event to re-initialize the `MutationObserver` (`initDividerObserver`) and keep file dividers synced when panes open or close.
+**What broke**: 
+- Rapidly clicking files in the explorer (or holding arrow keys) caused the UI to completely freeze and lag.
+- Obsidian fires a `layout-change` event every time the active leaf changes (e.g., when a file is selected).
+- The plugin was synchronously trapping this event, tearing down its `MutationObserver`, scanning all workspace leaves, and instantiating a new observer 5-10 times a second.
+- The resulting DOM mutations triggered overlapping `setTimeout(..., 100)` callbacks inside `processDividers`, starving the main thread.
+**Resolution**: Wrapped `initDividerObserver` in a 500ms `obsidian.debounce`. The `layout-change` event now triggers the debounced version, ensuring the heavy DOM traversal and observer initialization only run once the user stops rapidly clicking.
+**Lesson**: Never unconditionally bind synchronous, heavy DOM traversal or observer setup functions to high-frequency workspace events like `layout-change` or `active-leaf-change`. Always isolate heavy setup/teardown logic from rapid-fire events using `obsidian.debounce` to prevent main-thread freezing and callback overlapping.

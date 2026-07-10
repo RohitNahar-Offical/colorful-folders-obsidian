@@ -37,7 +37,12 @@ export default class ColorfulFoldersPlugin
   heatmapCache: Map<string, number> | null = null;
   folderCountCache: Map<string, { files: number; folders: number }> | null =
     null;
+  folderSortCache: Map<string, number> | null = null;
+  rootSortCache: Map<string, number> | null = null;
+  parsedExclusionList: Set<string> | null = null;
+  activePaletteCache: { palette: { rgb: string; hex: string }[] } | null = null;
   generateStylesDebounced: obsidian.Debouncer<[], void>;
+  initDividerObserverDebounced: obsidian.Debouncer<[], void>;
   localFileSystemIcons: Record<string, string> = {};
   dividerObserver: MutationObserver | null = null;
   styleObservers: MutationObserver[] = [];
@@ -71,6 +76,14 @@ export default class ColorfulFoldersPlugin
         // P2 fix: initDividerObserver re-inits on layout-change; no need here
       },
       300,
+      true,
+    );
+
+    this.initDividerObserverDebounced = obsidian.debounce(
+      () => {
+        this.initDividerObserver();
+      },
+      500,
       true,
     );
 
@@ -242,6 +255,14 @@ export default class ColorfulFoldersPlugin
     // loadedData from disk always provides complete values for any keys it defines,
     // making a deep clone of DEFAULT_SETTINGS unnecessary and wasteful.
     this.settings = Object.assign({} as ColorfulFoldersSettings, DEFAULT_SETTINGS, loadedData);
+    this.activePaletteCache = null;
+    this.parsedExclusionList = new Set(
+        (this.settings.exclusionList || "")
+            .toLowerCase()
+            .split(",")
+            .map((s) => s.trim())
+            .filter((s) => s.length > 0)
+    );
   }
 
   // PERF FIX 3: Selective icon cache invalidation.
@@ -264,6 +285,14 @@ export default class ColorfulFoldersPlugin
       this._lastIconRulesKey = this.settings.customIconRules || '';
       this._lastCustomIconsKey = JSON.stringify(this.settings.customIcons || {});
     }
+    this.activePaletteCache = null;
+    this.parsedExclusionList = new Set(
+        (this.settings.exclusionList || "")
+            .toLowerCase()
+            .split(",")
+            .map((s) => s.trim())
+            .filter((s) => s.length > 0)
+    );
 
     this.generateStylesDebounced();
   }
@@ -282,7 +311,7 @@ export default class ColorfulFoldersPlugin
     );
 
     this.registerEvent(
-      this.app.workspace.on("layout-change", () => this.initDividerObserver()),
+      this.app.workspace.on("layout-change", () => this.initDividerObserverDebounced()),
     );
 
     // Performance: Detect drag operations to suspend expensive animations and logic
@@ -306,6 +335,8 @@ export default class ColorfulFoldersPlugin
       this.app.vault.on("create", () => {
         this.heatmapCache = null;
         this.folderCountCache = null; // P1: invalidate counter cache
+        this.folderSortCache = null;
+        this.rootSortCache = null;
         this.generateStylesDebounced();
       }),
     );
@@ -313,6 +344,8 @@ export default class ColorfulFoldersPlugin
       this.app.vault.on("delete", () => {
         this.heatmapCache = null;
         this.folderCountCache = null; // P1: invalidate counter cache
+        this.folderSortCache = null;
+        this.rootSortCache = null;
         this.generateStylesDebounced();
       }),
     );
@@ -320,6 +353,8 @@ export default class ColorfulFoldersPlugin
       this.app.vault.on("rename", async (file, oldPath) => {
         this.heatmapCache = null;
         this.folderCountCache = null; // P1: invalidate counter cache
+        this.folderSortCache = null;
+        this.rootSortCache = null;
         if (this.settings.customFolderColors[oldPath]) {
           const style = this.settings.customFolderColors[oldPath];
           this.settings.customFolderColors[file.path] = style;

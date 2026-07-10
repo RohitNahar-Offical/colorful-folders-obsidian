@@ -132,6 +132,10 @@ export interface IColorfulFoldersPlugin {
     heatmapCache: Map<string, number> | null;
     folderCountCache: Map<string, { files: number, folders: number }> | null;
     iconCache: Map<string, string>;
+    folderSortCache?: Map<string, number> | null;
+    rootSortCache?: Map<string, number> | null;
+    parsedExclusionList?: Set<string> | null;
+    activePaletteCache?: { palette: { rgb: string; hex: string }[] } | null;
     iconManager: { 
         getIconSvg(iconId: string, shouldEncode?: boolean): string,
         getAutoIconData(name: string): AutoIconData | null,
