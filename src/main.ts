@@ -43,6 +43,7 @@ export default class ColorfulFoldersPlugin
   activePaletteCache: { palette: { rgb: string; hex: string }[] } | null = null;
   generateStylesDebounced: obsidian.Debouncer<[], void>;
   initDividerObserverDebounced: obsidian.Debouncer<[], void>;
+  syncGraphColorsDebounced: obsidian.Debouncer<[], void>;
   localFileSystemIcons: Record<string, string> = {};
   dividerObserver: MutationObserver | null = null;
   styleObservers: MutationObserver[] = [];
@@ -64,7 +65,7 @@ export default class ColorfulFoldersPlugin
       // Defer loading of local icons to keep initial startup fast
       window.setTimeout(() => {
         void this.loadLocalIcons();
-      }, 2000);
+      }, 10000);
     });
 
     this.addSettingTab(new ColorfulFoldersSettingTab(this.app, this));
@@ -84,6 +85,14 @@ export default class ColorfulFoldersPlugin
         this.initDividerObserver();
       },
       500,
+      true,
+    );
+
+    this.syncGraphColorsDebounced = obsidian.debounce(
+      () => {
+        void GraphColorSync.syncGraphColors(this);
+      },
+      3000,
       true,
     );
 
@@ -202,6 +211,9 @@ export default class ColorfulFoldersPlugin
         for (const [name, content] of [...rootEntries, ...subEntries.flat()]) {
           this.localFileSystemIcons[name] = content;
         }
+
+        // Trigger style generation now that local icons are ready
+        this.generateStylesDebounced();
       }
     } catch(e) {
       console.error("Colorful Folders: Failed to load local icons", e);
@@ -574,7 +586,7 @@ export default class ColorfulFoldersPlugin
     });
     // Sync folder colors to Graph View groups if the feature is enabled
     if (this.settings.graphColorSync) {
-      void GraphColorSync.syncGraphColors(this);
+      this.syncGraphColorsDebounced();
     }
   }
 
