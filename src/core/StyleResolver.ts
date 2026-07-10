@@ -29,7 +29,7 @@ export class StyleResolver {
             const getStyle = (p: string) => {
                 const style = plugin.settings.customFolderColors[p];
                 if (!style) return null;
-                if (typeof style === "string") return { hex: style } as FolderStyle;
+                if (typeof style === "string") return { hex: style };
                 return style;
             };
 
