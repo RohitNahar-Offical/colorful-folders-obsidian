@@ -125,6 +125,13 @@ interface FolderStyle {
 
 Palettes are defined in `src/common/constants.ts` under `PALETTES`. 
 
+The current built-in standard palettes include:
+- `Vibrant Rainbow`
+- `Muted Dark Mode`
+- `Pastel Dreams`
+- `Tailwind UI`
+- `Tailwind UI Dark`
+
 ```mermaid
 graph LR
     P[Palette Name] --> C1[Color 1]
