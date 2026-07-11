@@ -164,13 +164,21 @@ export class StyleGenerator {
         // Gate: process files if there's a parent color (applyToSubfolders), autoColorFiles, autoIcons, applyToFiles on the inheritedStyle, or NN is active.
         if (passedColor || autoColorFiles || autoIcons || (inheritedStyle && inheritedStyle.applyToFiles) || (this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground)) {
             for (const child of copyFiles) {
+                const fileStyle = this.getStyle(child.path);
+                const hasCustomStyle = !!(fileStyle && (fileStyle.hex || fileStyle.iconId || fileStyle.textColor || fileStyle.isBold || fileStyle.isItalic));
+                const hasInherited = !!(inheritedStyle && inheritedStyle.applyToFiles);
+                const needsProcessing = hasCustomStyle || hasInherited || autoColorFiles || autoIcons || (passedColor !== null) || (this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground) || !!this.settings.globalBackgroundColor;
+
+                if (!needsProcessing) {
+                    continue;
+                }
+
                 if (performance.now() - yieldState.lastYield > 50) {
                     await new Promise(r => window.setTimeout(r, 0));
                     yieldState.lastYield = performance.now();
                 }
 
                 const safePath = safeEscape(child.path);
-                const fileStyle = this.getStyle(child.path);
                 const color = ColorResolver.resolveColor(
                     child.path,
                     child.name,

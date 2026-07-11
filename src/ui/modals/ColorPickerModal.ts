@@ -247,6 +247,7 @@ modifiedFields: Set<string>;
         // ── APPEARANCE TAB ──────────────────────────────────────────────────
         const ap = tabPanels["appearance"];
 
+        let lastPreviewIconId = "";
         const updatePreview = () => {
             if (!this._headerIconWrap || !this._prevIconWrap || !this._prevLabel) return;
             try {
@@ -257,14 +258,20 @@ modifiedFields: Set<string>;
                 const effectiveIconColor = this.folderStyle.iconColor || this.folderStyle.hex || "#fff";
                 // Update header icon
                 this._headerIconWrap.setCssStyles({ backgroundColor: this.folderStyle.hex });
-                this._headerIconWrap.empty();
-                obsidian.setIcon(this._headerIconWrap, this.folderStyle.iconId || (this.isFolder ? "folder" : "file"));
+                
+                const currentIconId = this.folderStyle.iconId || (this.isFolder ? "folder" : "file");
+                if (currentIconId !== lastPreviewIconId) {
+                    this._headerIconWrap.empty();
+                    obsidian.setIcon(this._headerIconWrap, currentIconId);
+                    this._prevIconWrap.empty();
+                    obsidian.setIcon(this._prevIconWrap, currentIconId);
+                    lastPreviewIconId = currentIconId;
+                }
+
                 const hsvg = this._headerIconWrap.querySelector("svg") as unknown as HTMLElement | null;
                 if (hsvg) hsvg.setCssStyles({ color: effectiveIconColor, width: `${headerIconW}px`, height: `${headerIconW}px` });
                 // Update preview bar
                 this._prevIconWrap.setCssStyles({ backgroundColor: "transparent" });
-                this._prevIconWrap.empty();
-                obsidian.setIcon(this._prevIconWrap, this.folderStyle.iconId || (this.isFolder ? "folder" : "file"));
                 const prevSvg = this._prevIconWrap.querySelector("svg") as unknown as HTMLElement | null;
                 if (prevSvg) prevSvg.setCssStyles({ color: effectiveIconColor, width: `${previewIconW}px`, height: `${previewIconW}px` });
                 

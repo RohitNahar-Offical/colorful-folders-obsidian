@@ -698,10 +698,10 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         if (colors.length === 0) colors = ['#eb6f92'];
 
         // Debounce saving/generating to prevent lag during color picking drag events
-        const savePaletteDebounced = obsidian.debounce(() => {
+        const savePaletteDebounced = () => {
             this.plugin.settings.customPalette = colors.join(', ');
             void this.plugin.saveSettings().then(() => this.plugin.generateStylesDebounced());
-        }, 300, true);
+        };
 
         const renderRow = (hex: string, index: number) => {
             const row = list.createDiv();

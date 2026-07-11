@@ -11,9 +11,9 @@ Colorful Folders automatically applies premium color palettes, smart icons, and 
 
 ---
 
-## 🚀 Latest: 4.2.5 - The "Ultimate Performance" Update
+## 🚀 Latest: 4.2.6 - The "Ultimate Performance" Update
 
-This hyper-optimized release brings unprecedented speed and stability to massive vaults, alongside a highly-requested fix for folder color inheritance! [Read the Full Changelog](https://www.google.com/search?q=Version/VERSION_4_2_5.md)
+This hyper-optimized release brings unprecedented speed and stability to massive vaults, alongside highly-requested features and fixes! [Read the Full Changelog](https://www.google.com/search?q=Version/VERSION_4_2_6.md)
 
 ### 🌟 Highlight: The Smart Icon Manager
 
@@ -29,6 +29,8 @@ This hyper-optimized release brings unprecedented speed and stability to massive
 
 ### 🎨 New Features, Fixes & Integrations
 
+* **Custom Rainbow Texts:** You can now enable and customize gorgeous rainbow gradient text on ANY individual file or folder in your vault via the right-click menu!
+* **Accurate Custom Opacity:** Setting a custom folder/file color now locks in the perfect background opacity (50% for folders, 15% for files) instead of improperly fading out based on folder depth. The UI slider now also perfectly reflects these defaults!
 * **New Tailwind UI Palettes:** Added two beautiful new built-in color palettes (`Tailwind UI` and `Tailwind UI Dark`) to bring modern, punchy web-design colors directly into your vault.
 * **Inheritance Problem SOLVED!:** Fixed a stubborn bug where subfolders and files were not correctly inheriting colors from their parent folders. Your entire tree will now flawlessly inherit and display the correct colors!
 * **Flawless Integrations:** Re-architected how third-party plugins (like Notebook Navigator) interact with our colors. Everything is now perfectly synchronized, eliminating duplicate styles and boosting overall speed.
