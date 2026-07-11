@@ -67,7 +67,9 @@ To add a featured pack (like "Remix Icons"):
 
 | File | Responsibility |
 | :--- | :--- |
-| `main.ts` | Lifecycle, Events, & High-level state |
+| `main.ts` | Orchestrator & Plugin instance |
+| `DOMObserverService.ts` | UI layout observation (file explorer) & DOM mutations |
+| `EventTrackerService.ts` | Workspace/Vault event registration and cleanup |
 | `StyleGenerator.ts` | Recursive CSS engine & traversal |
 | `ColorResolver.ts` | Core mathematical colors, opacity, and text contrast resolving |
 | `StyleResolver.ts` | High-level `EffectiveStyle` compilation and customized overrides helper |

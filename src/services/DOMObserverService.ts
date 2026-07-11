@@ -10,18 +10,13 @@ export class DOMObserverService {
     
     public isScrolling = false;
     public initDividerObserverDebounced: Debouncer<[], void>;
-    public processDividersDebounced: Debouncer<[], void>;
 
     constructor(plugin: ColorfulFoldersPlugin) {
         this.plugin = plugin;
         
         this.initDividerObserverDebounced = debounce(() => {
             this.initDividerObserver();
-        }, 500, true);
-
-        this.processDividersDebounced = debounce(() => {
-            this.processDividers();
-        }, 100, true);
+        }, 50, true);
     }
 
     public initStyleObservers() {
@@ -151,7 +146,7 @@ export class DOMObserverService {
         });
     }
 
-    private processDividers() {
+    public processDividers() {
         if (this.plugin.isSyncingDividers || this.isScrolling) return;
 
         if (this.plugin._dividerTimeout) {
@@ -191,7 +186,6 @@ export class DOMObserverService {
         });
         
         this.initDividerObserverDebounced.cancel();
-        this.processDividersDebounced.cancel();
         if (this.scrollTimeout) window.clearTimeout(this.scrollTimeout);
     }
 }

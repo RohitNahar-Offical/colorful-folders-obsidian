@@ -11,14 +11,17 @@ Colorful Folders hooks into the Obsidian event bus to stay reactive.
 
 | Event | Handler | Rationale |
 | :--- | :--- | :--- |
-| `layout-change` | `initDividerObserver` | UI recalculation on pane resizing/moving; re-attaches DOM observers. |
-| `css-change` | `generateStyles` | Theme changes (Light/Dark) invalidate contrast calculations. |
-| `file-open` | `updateActiveParentClasses` | Updates the active parent/ancestor folder classes (`.cf-active-parent`) dynamically for active folder path highlighting, bypassing CSS generation. |
-| `dragstart` | `Logic Freeze` | **Performance**: Disconnects observers and suspends all styling logic during drag. |
-| `dragend` | `Logic Reconnect` | **Performance**: Restores observers and performs a clean 'catch-up' sync. |
-| `create` / `delete` / `rename` | `generateStyles` | Vault structure changes; invalidates item count and heatmap caches. |
-| `scroll` (container) | `handleScroll` | Repositions interactive dividers and suppresses heavy DOM injections (like icons) mid-scroll. Queues a single catch-up render via `refreshIconsDebounced` after scrolling stops. Unbound on plugin disable. |
-| `generateStyles` (post-render) | `GraphColorSync.syncGraphColors` | **Graph View**: After CSS injection, syncs folder hex colors to `.obsidian/graph.json` colorGroups if `graphColorSync` is enabled. Runs async to avoid blocking the render cycle. |
+| `layout-change` | `DOMObserverService` | UI recalculation on pane resizing/moving; re-attaches DOM observers. |
+| `css-change` | `EventTrackerService` | Theme changes (Light/Dark) invalidate contrast calculations. |
+| `file-open` | `EventTrackerService` | Updates the active parent/ancestor folder classes (`.cf-active-parent`) dynamically for active folder path highlighting, bypassing CSS generation. |
+| `dragstart` | `EventTrackerService` | **Performance**: Sets `plugin.isDragging = true` and suspends all styling logic during drag. |
+| `dragend` | `EventTrackerService` | **Performance**: Restores observers and performs a clean 'catch-up' sync. |
+| `create` / `delete` / `rename` | `EventTrackerService` | Vault structure changes; invalidates item count and heatmap caches. |
+| `scroll` (container) | `DOMObserverService` | Repositions interactive dividers and suppresses heavy DOM injections (like icons) mid-scroll. Queues a single catch-up render via `refreshIconsDebounced` after scrolling stops. Unbound on plugin disable. |
+| `generateStyles` (post-render) | `main.ts / GraphColorSync` | **Graph View**: After CSS injection, syncs folder hex colors to `.obsidian/graph.json` colorGroups if `graphColorSync` is enabled. Runs async to avoid blocking the render cycle. |
+
+### Service Architecture
+To maintain a strict separation of concerns, global event lifecycles are explicitly managed by the **`EventTrackerService`** and the **`DOMObserverService`**. `main.ts` acts merely as the central orchestrator orchestrating these specialized classes, ensuring all observers and events are cleanly detached on unload to prevent memory leaks.
 
 
 ---
@@ -106,8 +109,10 @@ When `dragstart` fires, `plugin.isDragging = true`. All three debouncers check t
 4.  **RAF-Batched DOM Injection**: 
     The `IconManager` routes all synchronous DOM injections (`injectIcon`) through a `requestAnimationFrame` batching queue (`_queueInjection`). This eliminates layout thrashing caused by interleaved DOM reads and writes during bulk renders. It also employs a version-stamp early-exit mechanism (`dataset.cfIconId`) to make repeat render requests virtually cost-free.
 
----
+5.  **Defensive Programming / Null Safety**: 
+    UI loops in `DOMObserverService` and `main.ts` explicitly guard against missing or uninitialized nodes (`doc.body`, `containerEl`). This prevents unexpected crashes when interacting with transient Obsidian UI states, such as detached popout windows or heavily customized workspaces.
 
+---
 
 ## 5. Virtual DOM Reconciliation (Dividers)
 
@@ -218,6 +223,7 @@ To avoid shipping large binary files, we fetch release notes directly from GitHu
 
 > [!IMPORTANT]
 > If you implement new low-level logic, ensure it is added to the **Global Event Lifecycle** table in Section 1.
+
 ---
 
 ## 13. Backup & Restore Logic

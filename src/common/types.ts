@@ -1,4 +1,4 @@
-import { App, MenuItem, Menu, EventRef } from 'obsidian';
+import { App, MenuItem, Menu, EventRef, Debouncer } from 'obsidian';
 
 export interface FolderStyle {
     hex?: string;
@@ -157,9 +157,10 @@ export interface IColorfulFoldersPlugin {
         clean(): void;
         buildDividerNode(path: string, conf: FolderStyle, doc: Document): HTMLElement;
     };
-    styleGenerator: { generateCss(): string };
+    styleGenerator: { generateCss(): Promise<string> };
     getAllExplorerContainers(): HTMLElement[];
-    generateStyles(): void;
+    generateStyles(): Promise<void>;
+    generateStylesDebounced: Debouncer<[], void>;
 
     registerEvent(event: EventRef): void;
 }

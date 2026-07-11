@@ -241,7 +241,7 @@ export class DividerManager {
                                     };
                                 }
                                 await this.plugin.saveSettings();
-                                this.plugin.generateStyles();
+                                void this.plugin.generateStyles();
                                 this.syncDividers();
                             })();
                         }).open();
@@ -272,7 +272,7 @@ export class DividerManager {
                             }
                         }
                         await this.plugin.saveSettings();
-                        this.plugin.generateStyles();
+                        void this.plugin.generateStyles();
                         this.syncDividers();
                     });
             });

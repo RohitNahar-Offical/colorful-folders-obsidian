@@ -20,6 +20,11 @@ export class IconManager {
     private _parsedIcons: ParsedIcon[] | null = null;
     private _resolvedIconIdCache: Map<string, string | null> = new Map();
     private _lastIconIdsCheckTime: number = 0;
+    
+    // --- O(1) Fast Lookup Indexes ---
+    private _keywordToIcon = new Map<string, { custom: string | null, lucide: string | null }>();
+    private _exactIconMap = new Map<string, string>();
+    private _suffixToIcon = new Map<string, { custom: string | null, lucide: string | null }>();
 
 
 
@@ -150,6 +155,12 @@ export class IconManager {
             return this._resolvedIconIdCache.get(requestedIcon) || null;
         }
 
+        // Fast-bail for things that are definitely file names (e.g. spaces, sentences) to save CPU
+        if (sanitized.includes(' ') || sanitized.length > 30) {
+            this._resolvedIconIdCache.set(requestedIcon, null);
+            return null;
+        }
+
         // Ensure available icons are populated and parsed once (or re-parsed if new icons were registered)
         const now = Date.now();
         if (!this._parsedIcons || (now - this._lastIconIdsCheckTime > 5000)) {
@@ -159,58 +170,73 @@ export class IconManager {
             if (!this._parsedIcons || this._parsedIcons.length !== currentRawIds.length) {
                 const genericModifiers = new Set(['fill', 'line', 'solid', 'regular', 'thin', 'light', 'bold', 'duotone', 'brands']);
                 
+                this._keywordToIcon.clear();
+                this._exactIconMap.clear();
+                this._suffixToIcon.clear();
+
                 this._parsedIcons = currentRawIds.map(id => {
                     const parts = id.split('-');
-                return {
-                    id,
-                    isLucide: id.startsWith('lucide-'),
-                    suffix: parts[parts.length - 1],
-                    significantParts: new Set(parts.filter(p => p !== parts[0] && !genericModifiers.has(p)))
-                };
-            });
+                    const isLucide = id.startsWith('lucide-');
+                    const suffix = parts[parts.length - 1];
+                    const significantParts = new Set(parts.filter(p => p !== parts[0] && !genericModifiers.has(p)));
+                    
+                    this._exactIconMap.set(id, id);
+
+                    if (!this._suffixToIcon.has(suffix)) {
+                        this._suffixToIcon.set(suffix, { custom: null, lucide: null });
+                    }
+                    const sEntry = this._suffixToIcon.get(suffix);
+                    if (isLucide && !sEntry.lucide) sEntry.lucide = id;
+                    if (!isLucide && !sEntry.custom) sEntry.custom = id;
+
+                    for (const part of significantParts) {
+                        if (!this._keywordToIcon.has(part)) {
+                            this._keywordToIcon.set(part, { custom: null, lucide: null });
+                        }
+                        const kEntry = this._keywordToIcon.get(part);
+                        if (isLucide && !kEntry.lucide) kEntry.lucide = id;
+                        if (!isLucide && !kEntry.custom) kEntry.custom = id;
+                    }
+
+                    return { id, isLucide, suffix, significantParts };
+                });
 
                 // If we just discovered new icons, our previous "not found" caches might be invalid now.
                 this._resolvedIconIdCache.clear();
             }
         }
 
+        // (Sanitization was already done at the top of the function)
+
         // Priority 1: Exact global match on the sanitized string
-        const exactMatch = this._parsedIcons.find(icon => icon.id === sanitized);
-        if (exactMatch) {
+        if (this._exactIconMap.has(sanitized)) {
             this._resolvedIconIdCache.set(requestedIcon, sanitized);
             return sanitized;
         }
 
+        const exactLucideMatch = this._exactIconMap.has(`lucide-${sanitized}`) ? `lucide-${sanitized}` : null;
         let customSuffixMatch: string | null = null;
-        let customContainsMatch: string | null = null;
         let lucideSuffixMatch: string | null = null;
+        let customContainsMatch: string | null = null;
         let lucideContainsMatch: string | null = null;
-        const exactLucide = `lucide-${sanitized}`;
-        let exactLucideMatch: string | null = null;
 
-        for (const icon of this._parsedIcons) {
-            if (icon.id === exactLucide) {
-                exactLucideMatch = icon.id;
-            }
+        const sEntry = this._suffixToIcon.get(sanitized);
+        if (sEntry) {
+            customSuffixMatch = sEntry.custom;
+            lucideSuffixMatch = sEntry.lucide;
+        }
 
-            // Check suffix match
-            if (icon.suffix === sanitized) {
-                if (!icon.isLucide && !customSuffixMatch) customSuffixMatch = icon.id;
-                else if (icon.isLucide && !lucideSuffixMatch) lucideSuffixMatch = icon.id;
-            }
-
-            // Smart Inclusion
-            if (icon.id.includes(`-${sanitized}-`) || icon.id.startsWith(`${sanitized}-`) || icon.id.includes(sanitized)) {
-                if (!icon.isLucide && !customContainsMatch) customContainsMatch = icon.id;
-                else if (icon.isLucide && !lucideContainsMatch) lucideContainsMatch = icon.id;
-            }
+        const kEntry = this._keywordToIcon.get(sanitized);
+        if (kEntry) {
+            customContainsMatch = kEntry.custom;
+            lucideContainsMatch = kEntry.lucide;
         }
 
         // Top Priority: Custom Suffix > Custom Contains
         // Fallback Priority: Exact Lucide > Lucide Suffix > Lucide Contains
         let resolved = customSuffixMatch || customContainsMatch || exactLucideMatch || lucideSuffixMatch || lucideContainsMatch || null;
         
-        // --- Keyword Fallback ---
+        // --- Keyword Fallback (O(1) lookups per word) ---
         if (!resolved && sanitized.includes('-')) {
             const keywords = sanitized.split('-').filter(w => w.length >= 4);
 
@@ -218,18 +244,11 @@ export class IconManager {
             let bestLucideMatch: string | null = null;
 
             for (const keyword of keywords) {
-                let kwCustomMatch: string | null = null;
-                let kwLucideMatch: string | null = null;
-
-                for (const icon of this._parsedIcons) {
-                    if (icon.significantParts.has(keyword)) {
-                        if (!icon.isLucide && !kwCustomMatch) kwCustomMatch = icon.id;
-                        else if (icon.isLucide && !kwLucideMatch) kwLucideMatch = icon.id;
-                    }
+                const kwEntry = this._keywordToIcon.get(keyword);
+                if (kwEntry) {
+                    if (kwEntry.custom && !bestCustomMatch) bestCustomMatch = kwEntry.custom;
+                    if (kwEntry.lucide && !bestLucideMatch) bestLucideMatch = kwEntry.lucide;
                 }
-                
-                if (kwCustomMatch && !bestCustomMatch) bestCustomMatch = kwCustomMatch;
-                if (kwLucideMatch && !bestLucideMatch) bestLucideMatch = kwLucideMatch;
             }
             
             resolved = bestCustomMatch || bestLucideMatch || null;

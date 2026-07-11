@@ -43,7 +43,7 @@ export default class ColorfulFoldersPlugin
   parsedExclusionList: Set<string> | null = null;
   activePaletteCache: { palette: { rgb: string; hex: string }[] } | null = null;
   generateStylesDebounced: obsidian.Debouncer<[], void>;
-  syncGraphColorsDebounced: obsidian.Debouncer<[], void>;
+  saveDataDebounced: obsidian.Debouncer<[], void>;
   localFileSystemIcons: Record<string, string> = {};
   
   domObserverService: DOMObserverService;
@@ -52,6 +52,7 @@ export default class ColorfulFoldersPlugin
   styleGenerator: StyleGenerator;
   isSyncingDividers: boolean = false;
   isDragging: boolean = false;
+  isGeneratingStyles: boolean = false;
   ribbonEl: HTMLElement | null = null;
 
   async onload() {
@@ -74,20 +75,22 @@ export default class ColorfulFoldersPlugin
 
     this.generateStylesDebounced = obsidian.debounce(
       () => {
-        if (this.isDragging) return;
-        this.generateStyles();
+        if (!this.isDragging) {
+          void this.generateStyles();
+        }
       },
       300,
-      true,
+      true
     );
 
-    this.syncGraphColorsDebounced = obsidian.debounce(
+    this.saveDataDebounced = obsidian.debounce(
       () => {
-        void GraphColorSync.syncGraphColors(this);
+        void this.saveData(this.settings);
       },
-      3000,
-      true,
+      1000, // 1-second trailing edge debounce for disk I/O
+      false
     );
+
 
 
 
@@ -116,10 +119,15 @@ export default class ColorfulFoldersPlugin
     });
 
     this.app.workspace.onLayoutReady(async () => {
-      // Generate styles immediately on layout ready to prevent a flash of unstyled content.
-      // The previous 50ms timeout pushed this to the end of the busy event loop, causing late loads.
-      this.generateStyles();
-      this.domObserverService.initDividerObserver();
+      // Defer heavy rendering to yield the main thread to Obsidian's initial layout paint engine
+      // requestAnimationFrame + setTimeout(0) guarantees the browser paints the UI *before* we block the thread
+      window.requestAnimationFrame(() => {
+        window.setTimeout(() => {
+          void this.generateStyles();
+          this.domObserverService.initDividerObserver();
+          this.dividerManager.syncDividers();
+        }, 0);
+      });
 
       try {
         const optimized = await this.optimizeBlueTopazStyleSettings();
@@ -228,7 +236,7 @@ export default class ColorfulFoldersPlugin
 
     // Cancel all debouncers to prevent ghost execution
     this.generateStylesDebounced.cancel();
-    this.syncGraphColorsDebounced.cancel();
+    this.saveDataDebounced.cancel();
 
     // Explicitly clear memory-heavy global caches
     this.iconCache.clear();
@@ -288,7 +296,7 @@ export default class ColorfulFoldersPlugin
     const customIconsChanged = JSON.stringify(this.settings.customIcons || {}) !== this._lastCustomIconsKey;
     const shouldClearIconCache = iconRulesChanged || customIconsChanged;
 
-    await this.saveData(this.settings);
+    this.saveDataDebounced();
 
     if (shouldClearIconCache) {
       this.iconCache.clear();
@@ -374,7 +382,7 @@ export default class ColorfulFoldersPlugin
             if (!checking) {
               style.hasDivider = false;
               void this.saveSettings();
-              this.generateStyles();
+              void this.generateStyles();
               this.dividerManager.syncDividers();
               new obsidian.Notice(`Removed divider for ${file.name}`);
             }
@@ -397,7 +405,7 @@ export default class ColorfulFoldersPlugin
     const applyToggle = async () => {
       this.settings.showHiddenItems = !this.settings.showHiddenItems;
       await this.saveSettings();
-      this.generateStyles();
+      void this.generateStyles();
       new obsidian.Notice(
         `Stealth mode: ${this.settings.showHiddenItems ? "Ghost" : "Hidden"}`,
       );
@@ -498,25 +506,32 @@ export default class ColorfulFoldersPlugin
 
 
 
-  generateStyles() {
-    window.requestAnimationFrame(() => {
-      if (this.sheet) {
-        this.sheet.replaceSync(this.styleGenerator.generateCss());
-      }
-      this.getOpenDocuments().forEach(doc => {
-        doc.body.classList.toggle(
-          "cf-show-hidden",
-          this.settings.showHiddenItems,
-        );
-        doc.body.classList.toggle(
-          "cf-wrap-metadata",
-          !!this.settings.wrapMetadata,
-        );
+  async generateStyles() {
+    if (this.isGeneratingStyles) return;
+    this.isGeneratingStyles = true;
+    try {
+      const css = await this.styleGenerator.generateCss();
+      window.requestAnimationFrame(() => {
+        if (this.sheet) {
+          this.sheet.replaceSync(css);
+        }
+        this.getOpenDocuments().forEach(doc => {
+          doc.body.classList.toggle(
+            "cf-show-hidden",
+            this.settings.showHiddenItems,
+          );
+          doc.body.classList.toggle(
+            "cf-wrap-metadata",
+            !!this.settings.wrapMetadata,
+          );
+        });
       });
-    });
-    // Sync folder colors to Graph View groups if the feature is enabled
-    if (this.settings.graphColorSync) {
-      this.syncGraphColorsDebounced();
+      // Sync folder colors to Graph View groups if the feature is enabled
+      if (this.settings.graphColorSync && !this.isDragging) {
+        void GraphColorSync.syncGraphColors(this);
+      }
+    } finally {
+      this.isGeneratingStyles = false;
     }
   }
 

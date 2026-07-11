@@ -421,7 +421,7 @@ modifiedFields: Set<string>;
                 this.plugin.settings.customFolderColors[path] = finalStyle;
             }
             await this.plugin.saveSettings();
-            this.plugin.generateStyles();
+            void this.plugin.generateStyles();
             this.close();
         };
 
@@ -524,7 +524,7 @@ modifiedFields: Set<string>;
                 this.plugin.settings.customFolderColors[path] = finalStyle;
             }
             await this.plugin.saveSettings();
-            this.plugin.generateStyles();
+            void this.plugin.generateStyles();
             this.close();
         };
 
@@ -723,7 +723,7 @@ modifiedFields: Set<string>;
                 this.plugin.settings.customFolderColors[path] = finalStyle;
             }
             await this.plugin.saveSettings();
-            this.plugin.generateStyles();
+            void this.plugin.generateStyles();
             this.close();
         };
 
@@ -1060,7 +1060,7 @@ modifiedFields: Set<string>;
         clearBtn.onclick = async () => {
             delete this.plugin.settings.customFolderColors[this.item.path];
             await this.plugin.saveSettings();
-            this.plugin.generateStyles();
+            void this.plugin.generateStyles();
             new obsidian.Notice(`Cleared styling for ${this.item.name}`);
             this.close();
         };
@@ -1091,7 +1091,7 @@ modifiedFields: Set<string>;
                 this.plugin.settings.customFolderColors[path] = finalStyle;
             }
             await this.plugin.saveSettings();
-            this.plugin.generateStyles();
+            void this.plugin.generateStyles();
             new obsidian.Notice(`Updated styling for ${this.item.name}`);
             this.close();
         };

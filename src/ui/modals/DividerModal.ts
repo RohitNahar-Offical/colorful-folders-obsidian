@@ -380,7 +380,7 @@ export class DividerModal extends obsidian.Modal {
 
             this.plugin.settings.customFolderColors[this.path] = styleObj;
             await this.plugin.saveSettings();
-            this.plugin.generateStyles();
+            void this.plugin.generateStyles();
             this.plugin.dividerManager.syncDividers();
             this.close();
         };
@@ -419,7 +419,7 @@ export class DividerModal extends obsidian.Modal {
 
             this.plugin.settings.customFolderColors[this.path] = styleObj;
             await this.plugin.saveSettings();
-            this.plugin.generateStyles();
+            void this.plugin.generateStyles();
             this.plugin.dividerManager.syncDividers();
             this.close();
         };

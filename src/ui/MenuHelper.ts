@@ -36,7 +36,7 @@ export class MenuHelper {
                         }
                         
                         await plugin.saveSettings();
-                        plugin.generateStyles();
+                        void plugin.generateStyles();
                         plugin.dividerManager.syncDividers();
                         new obsidian.Notice(`Removed divider for: ${file.name}`);
                     });
@@ -63,7 +63,7 @@ export class MenuHelper {
                     }
                     s.isHidden = !s.isHidden;
                     await plugin.saveSettings();
-                    plugin.generateStyles();
+                    void plugin.generateStyles();
                     new obsidian.Notice(`${s.isHidden ? 'Hidden' : 'Revealed'}: ${file.name}`);
                 });
         });
@@ -105,7 +105,7 @@ export class MenuHelper {
                         .onClick(async () => {
                             delete plugin.settings.customFolderColors[file.path];
                             await plugin.saveSettings();
-                            plugin.generateStyles();
+                            void plugin.generateStyles();
                             new obsidian.Notice(`Cleared style for ${file.name}`);
                         });
                 });
@@ -151,7 +151,7 @@ export class MenuHelper {
                             .onClick(async () => {
                                 delete plugin.settings.customFolderColors[file.path];
                                 await plugin.saveSettings();
-                                plugin.generateStyles();
+                                void plugin.generateStyles();
                                 new obsidian.Notice(`Cleared style for ${file.name}`);
                             });
                     });

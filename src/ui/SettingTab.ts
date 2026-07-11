@@ -100,7 +100,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.notebookNavigatorSupport = value;
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                 }));
 
         new obsidian.Setting(intCard)
@@ -111,7 +111,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.notebookNavigatorFileBackground = value;
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                 }));
 
         new obsidian.Setting(intCard)
@@ -122,7 +122,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.notebookNavigatorOutlineOnly = value;
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                 }));
 
         let sliderComp_notebookNavigatorIconScale: obsidian.SliderComponent;
@@ -139,7 +139,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.notebookNavigatorIconScale = value;
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                 });
                 return slider;
             })
@@ -147,7 +147,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 this.plugin.settings.notebookNavigatorIconScale = DEFAULT_SETTINGS.notebookNavigatorIconScale;
                 sliderComp_notebookNavigatorIconScale.setValue(DEFAULT_SETTINGS.notebookNavigatorIconScale);
                 await this.plugin.saveSettings();
-                this.plugin.generateStyles();
+                this.plugin.generateStylesDebounced();
             }));
 
         // ──────────────────────────────────────────────────────────────────────
@@ -167,7 +167,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.tagSyncEnabled = value;
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                 }));
 
         new obsidian.Setting(tagCard)
@@ -178,7 +178,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.tagSyncMatchFolders = value;
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                 }));
 
         new obsidian.Setting(tagCard)
@@ -209,7 +209,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             const saveTagRules = async () => {
                 this.plugin.settings.tagSyncRules = rules.join('\n');
                 await this.plugin.saveSettings();
-                this.plugin.generateStyles();
+                this.plugin.generateStylesDebounced();
             };
 
             rules.forEach((rule, index) => {
@@ -513,7 +513,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         this.plugin.settings.customIcons = {};
                         this.plugin.registerCustomIcons();
                         await this.plugin.saveSettings();
-                        this.plugin.generateStyles();
+                        this.plugin.generateStylesDebounced();
                         new obsidian.Notice("Icon library cleared.");
 
                         (this as unknown as { display: () => void }).display();
@@ -589,7 +589,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.paletteLight = value;
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                 }));
 
         new obsidian.Setting(genCard)
@@ -606,7 +606,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.paletteDark = value;
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                 }));
 
         new obsidian.Setting(genCard)
@@ -700,7 +700,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         // Debounce saving/generating to prevent lag during color picking drag events
         const savePaletteDebounced = obsidian.debounce(() => {
             this.plugin.settings.customPalette = colors.join(', ');
-            void this.plugin.saveSettings().then(() => this.plugin.generateStyles());
+            void this.plugin.saveSettings().then(() => this.plugin.generateStylesDebounced());
         }, 300, true);
 
         const renderRow = (hex: string, index: number) => {
@@ -837,7 +837,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.exclusionList = value;
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                 }));
 
         new obsidian.Setting(genCard)
@@ -851,7 +851,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.colorMode = value;
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                 }));
 
         new obsidian.Setting(genCard)
@@ -872,7 +872,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         this.plugin.settings.globalBackgroundColor = hex;
                         globalBgTextComp.setValue(hex);
                         globalBgSwatch.setCssStyles({ backgroundColor: hex });
-                        void this.plugin.saveSettings().then(() => this.plugin.generateStyles());
+                        void this.plugin.saveSettings().then(() => this.plugin.generateStylesDebounced());
                     }, { showAlpha: false });
                 }))
             .addText(text => {
@@ -883,7 +883,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         this.plugin.settings.globalBackgroundColor = value;
                         globalBgSwatch.setCssStyles({ backgroundColor: value || 'transparent' });
                         await this.plugin.saveSettings();
-                        this.plugin.generateStyles();
+                        this.plugin.generateStylesDebounced();
                     });
                 globalBgSwatch = text.inputEl.parentElement?.createDiv() ?? text.inputEl.insertAdjacentElement('afterend', this.containerEl.createDiv()) as HTMLElement;
                 globalBgSwatch.setCssStyles({
@@ -908,7 +908,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                         this.plugin.settings.cycleOffset = value;
                         await this.plugin.saveSettings();
-                        this.plugin.generateStyles();
+                        this.plugin.generateStylesDebounced();
                     });
                 return slider;
             })
@@ -916,7 +916,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 this.plugin.settings.cycleOffset = DEFAULT_SETTINGS.cycleOffset;
                 sliderComp_cycleOffset.setValue(DEFAULT_SETTINGS.cycleOffset);
                 await this.plugin.saveSettings();
-                this.plugin.generateStyles();
+                this.plugin.generateStylesDebounced();
             }));
         }
 
@@ -931,7 +931,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.rootStyle = value;
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                 }));
 
 
@@ -943,7 +943,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.glassmorphism = value;
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                 }));
 
         const activeCard = makeCard(generalPanel, "✨", "Active item appearance");
@@ -955,7 +955,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.activeGlow = value;
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                 }));
 
         new obsidian.Setting(activeCard)
@@ -966,7 +966,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.useCustomActiveColor = value;
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
 
                     (this as unknown as { display: () => void }).display(); // Refresh to show/hide sub-settings
                 }));
@@ -996,7 +996,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                             this.plugin.settings.customActiveBg = rgba;
                             bgTextComp.setValue(rgba);
                             bgColorBox.setCssStyles({ backgroundColor: rgba });
-                            void this.plugin.saveSettings().then(() => this.plugin.generateStyles());
+                            void this.plugin.saveSettings().then(() => this.plugin.generateStylesDebounced());
                         }, { showAlpha: true, initialAlpha: current.alpha });
                     }))
                 .addText(text => {
@@ -1006,7 +1006,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         .onChange(async (value) => {
                             this.plugin.settings.customActiveBg = value;
                             await this.plugin.saveSettings();
-                            this.plugin.generateStyles();
+                            this.plugin.generateStylesDebounced();
                             bgColorBox.setCssStyles({ backgroundColor: value || 'transparent' });
                         });
                     bgColorBox = text.inputEl.parentElement.createDiv();
@@ -1040,7 +1040,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                             this.plugin.settings.customActiveText = rgba;
                             textColorTextComp.setValue(rgba);
                             textColorBox.setCssStyles({ backgroundColor: rgba });
-                            void this.plugin.saveSettings().then(() => this.plugin.generateStyles());
+                            void this.plugin.saveSettings().then(() => this.plugin.generateStylesDebounced());
                         }, { showAlpha: true, initialAlpha: current.alpha });
                     }))
                 .addText(text => {
@@ -1050,7 +1050,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         .onChange(async (value) => {
                             this.plugin.settings.customActiveText = value;
                             await this.plugin.saveSettings();
-                            this.plugin.generateStyles();
+                            this.plugin.generateStylesDebounced();
                             textColorBox.setCssStyles({ backgroundColor: value || 'transparent' });
                         });
                     textColorBox = text.inputEl.parentElement.createDiv();
@@ -1074,7 +1074,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.lightModeBrightness = value;
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                 });
                 return slider;
             })
@@ -1082,7 +1082,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 this.plugin.settings.lightModeBrightness = DEFAULT_SETTINGS.lightModeBrightness;
                 sliderComp_lightModeBrightness.setValue(DEFAULT_SETTINGS.lightModeBrightness);
                 await this.plugin.saveSettings();
-                this.plugin.generateStyles();
+                this.plugin.generateStylesDebounced();
             }));
 
         let sliderComp_darkModeBrightness: obsidian.SliderComponent;
@@ -1097,7 +1097,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.darkModeBrightness = value;
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                 });
                 return slider;
             })
@@ -1105,7 +1105,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 this.plugin.settings.darkModeBrightness = DEFAULT_SETTINGS.darkModeBrightness;
                 sliderComp_darkModeBrightness.setValue(DEFAULT_SETTINGS.darkModeBrightness);
                 await this.plugin.saveSettings();
-                this.plugin.generateStyles();
+                this.plugin.generateStylesDebounced();
             }));
 
         new obsidian.Setting(visCard)
@@ -1115,7 +1115,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.outlineOnly = value;
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                 }));
 
         new obsidian.Setting(visCard)
@@ -1126,7 +1126,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.autoColorFiles = value;
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                 }));
 
         let sliderComp_iconScale: obsidian.SliderComponent;
@@ -1143,7 +1143,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.iconScale = value;
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                 });
                 return slider;
             })
@@ -1151,7 +1151,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 this.plugin.settings.iconScale = DEFAULT_SETTINGS.iconScale;
                 sliderComp_iconScale.setValue(DEFAULT_SETTINGS.iconScale);
                 await this.plugin.saveSettings();
-                this.plugin.generateStyles();
+                this.plugin.generateStylesDebounced();
             }));
 
         new obsidian.Setting(visCard)
@@ -1172,7 +1172,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.wrapMetadata = value;
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                 }));
 
 
@@ -1186,7 +1186,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.autoIcons = value;
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
 
                     (this as unknown as { display: () => void }).display();
                 }));
@@ -1199,7 +1199,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     .onChange(async (value) => {
                         this.plugin.settings.wideAutoIcons = value;
                         await this.plugin.saveSettings();
-                        this.plugin.generateStyles();
+                        this.plugin.generateStylesDebounced();
                     }));
 
             new obsidian.Setting(autoCard)
@@ -1211,7 +1211,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         this.plugin.settings.autoIconVariety = value;
                         await this.plugin.saveSettings();
                         (this as unknown as { display: () => void }).display();
-                        this.plugin.generateStyles();
+                        this.plugin.generateStylesDebounced();
                     }));
 
             if (this.plugin.settings.autoIconVariety) {
@@ -1223,7 +1223,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         .onClick(async () => {
                             this.plugin.settings.varietySeed = Math.floor(Math.random() * 1000000);
                             await this.plugin.saveSettings();
-                            this.plugin.generateStyles();
+                            this.plugin.generateStylesDebounced();
                         }));
             }
 
@@ -1262,7 +1262,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 const saveRules = async () => {
                     this.plugin.settings.customIconRules = rules.join('\n');
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                 };
 
                 rules.forEach((rule, index) => {
@@ -1417,7 +1417,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.dividerPillMode = value;
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                     updatePreview();
                 }));
 
@@ -1451,7 +1451,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                             textComp.setValue(rgba);
                             colorBox.setCssStyles({ backgroundColor: rgba });
                             this.plugin.saveSettings().then(() => {
-                                this.plugin.generateStyles();
+                                this.plugin.generateStylesDebounced();
                                 updatePreview();
                             }).catch(err => console.error("Failed to save settings from color picker:", err));
                         }, { showAlpha: true, initialAlpha: current.alpha });
@@ -1464,7 +1464,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     .onChange(async (value) => {
                         this.plugin.settings.dividerPillColor = value;
                         await this.plugin.saveSettings();
-                        this.plugin.generateStyles();
+                        this.plugin.generateStylesDebounced();
                         updatePreview();
                         colorBox.setCssStyles({ backgroundColor: value || 'transparent' });
                     });
@@ -1500,7 +1500,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 this.plugin.settings.dividerSpacing = DEFAULT_SETTINGS.dividerSpacing;
                 sliderComp_dividerSpacing.setValue(DEFAULT_SETTINGS.dividerSpacing);
                 await this.plugin.saveSettings();
-                this.plugin.generateStyles();
+                this.plugin.generateStylesDebounced();
             }));
         let sliderComp_dividerThickness: obsidian.SliderComponent;
         new obsidian.Setting(divCard)
@@ -1524,7 +1524,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 this.plugin.settings.dividerThickness = DEFAULT_SETTINGS.dividerThickness;
                 sliderComp_dividerThickness.setValue(DEFAULT_SETTINGS.dividerThickness);
                 await this.plugin.saveSettings();
-                this.plugin.generateStyles();
+                this.plugin.generateStylesDebounced();
             }));
 
         let sliderComp_dividerLinePaddingLeft: obsidian.SliderComponent;
@@ -1541,7 +1541,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.dividerLinePaddingLeft = value;
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                     updatePreview();
                 });
                 return slider;
@@ -1550,7 +1550,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 this.plugin.settings.dividerLinePaddingLeft = DEFAULT_SETTINGS.dividerLinePaddingLeft;
                 sliderComp_dividerLinePaddingLeft.setValue(DEFAULT_SETTINGS.dividerLinePaddingLeft);
                 await this.plugin.saveSettings();
-                this.plugin.generateStyles();
+                this.plugin.generateStylesDebounced();
             }));
 
         let sliderComp_dividerLinePaddingRight: obsidian.SliderComponent;
@@ -1567,7 +1567,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.dividerLinePaddingRight = value;
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                     updatePreview();
                 });
                 return slider;
@@ -1576,7 +1576,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 this.plugin.settings.dividerLinePaddingRight = DEFAULT_SETTINGS.dividerLinePaddingRight;
                 sliderComp_dividerLinePaddingRight.setValue(DEFAULT_SETTINGS.dividerLinePaddingRight);
                 await this.plugin.saveSettings();
-                this.plugin.generateStyles();
+                this.plugin.generateStylesDebounced();
             }));
 
         new obsidian.Setting(divCard)
@@ -1608,7 +1608,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.pathLineThickness = value;
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                 });
                 return slider;
             })
@@ -1616,7 +1616,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 this.plugin.settings.pathLineThickness = DEFAULT_SETTINGS.pathLineThickness;
                 sliderComp_pathLineThickness.setValue(DEFAULT_SETTINGS.pathLineThickness);
                 await this.plugin.saveSettings();
-                this.plugin.generateStyles();
+                this.plugin.generateStylesDebounced();
             }));
 
         new obsidian.Setting(typeCard)
@@ -1627,7 +1627,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.showItemCounters = value;
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                 }));
 
         new obsidian.Setting(typeCard)
@@ -1638,7 +1638,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.rainbowRootText = value;
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
 
                     (this as unknown as { display: () => void }).display();
                 }));
@@ -1654,7 +1654,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     .onChange(async (value) => {
                         this.plugin.settings.rainbowRootBgTransparent = value;
                         await this.plugin.saveSettings();
-                        this.plugin.generateStyles();
+                        this.plugin.generateStylesDebounced();
                     }));
         }
 
@@ -1674,7 +1674,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.rootOpacity = parseFloat((value / 100).toFixed(3));
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                 });
                 return slider;
             })
@@ -1682,7 +1682,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 this.plugin.settings.rootOpacity = DEFAULT_SETTINGS.rootOpacity;
                 sliderComp_rootOpacity.setValue(DEFAULT_SETTINGS.rootOpacity);
                 await this.plugin.saveSettings();
-                this.plugin.generateStyles();
+                this.plugin.generateStylesDebounced();
             }));
 
         let sliderComp_subfolderOpacity: obsidian.SliderComponent;
@@ -1699,7 +1699,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.subfolderOpacity = parseFloat((value / 100).toFixed(3));
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                 });
                 return slider;
             })
@@ -1707,7 +1707,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 this.plugin.settings.subfolderOpacity = DEFAULT_SETTINGS.subfolderOpacity;
                 sliderComp_subfolderOpacity.setValue(DEFAULT_SETTINGS.subfolderOpacity);
                 await this.plugin.saveSettings();
-                this.plugin.generateStyles();
+                this.plugin.generateStylesDebounced();
             }));
 
         let sliderComp_tintOpacity: obsidian.SliderComponent;
@@ -1724,7 +1724,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.tintOpacity = parseFloat((value / 100).toFixed(3));
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                 });
                 return slider;
             })
@@ -1732,7 +1732,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 this.plugin.settings.tintOpacity = DEFAULT_SETTINGS.tintOpacity;
                 sliderComp_tintOpacity.setValue(DEFAULT_SETTINGS.tintOpacity);
                 await this.plugin.saveSettings();
-                this.plugin.generateStyles();
+                this.plugin.generateStylesDebounced();
             }));
 
 
@@ -1750,7 +1750,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.fileBackgroundOpacity = parseFloat((value / 100).toFixed(3));
                     await this.plugin.saveSettings();
-                    this.plugin.generateStyles();
+                    this.plugin.generateStylesDebounced();
                 });
                 return slider;
             })
@@ -1758,7 +1758,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 this.plugin.settings.fileBackgroundOpacity = DEFAULT_SETTINGS.fileBackgroundOpacity;
                 sliderComp_fileBackgroundOpacity.setValue(DEFAULT_SETTINGS.fileBackgroundOpacity);
                 await this.plugin.saveSettings();
-                this.plugin.generateStyles();
+                this.plugin.generateStylesDebounced();
             }));
 
         const stealthCard = makeCard(sysPanel, "🔏", "Privacy and stealth");
@@ -1819,7 +1819,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     .onChange(async (value) => {
                         this.plugin.settings.showHiddenItems = value;
                         await this.plugin.saveSettings();
-                        this.plugin.generateStyles();
+                        this.plugin.generateStylesDebounced();
                     }));
 
             new obsidian.Setting(stealthCard)
@@ -1891,7 +1891,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         if (typeof style === 'object') {
                             style.isHidden = false;
                             await this.plugin.saveSettings();
-                            this.plugin.generateStyles();
+                            this.plugin.generateStylesDebounced();
 
                             (this as unknown as { display: () => void }).display();
                         }
@@ -2072,7 +2072,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                                     return;
                                 }
                                 await this.plugin.saveSettings();
-                                this.plugin.generateStyles();
+                                this.plugin.generateStylesDebounced();
                                 this.plugin.dividerManager.syncDividers();
 
                                 (this as unknown as { display: () => void }).display();
@@ -2101,7 +2101,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         this.plugin.settings.customFolderColors = {};
                         this.plugin.settings.presets = {};
                         await this.plugin.saveSettings();
-                        this.plugin.generateStyles();
+                        this.plugin.generateStylesDebounced();
                         new obsidian.Notice("Styles and presets have been reset.");
 
                         (this as unknown as { display: () => void }).display();
@@ -2119,7 +2119,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     new ConfirmModal(this.app, "Factory reset", "Are you sure you want to restore all settings to default? This will wipe ALL your customization!", async () => {
                         this.plugin.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS)) as ColorfulFoldersSettings;
                         await this.plugin.saveSettings();
-                        this.plugin.generateStyles();
+                        this.plugin.generateStylesDebounced();
                         this.plugin.dividerManager.clean();
                         this.plugin.dividerManager.syncDividers();
                         new obsidian.Notice("All settings have been restored to defaults.");

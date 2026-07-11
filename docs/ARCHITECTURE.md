@@ -15,26 +15,28 @@ We use the native browser `CSSStyleSheet` API (Constructable Stylesheets) via `d
 
 ```mermaid
 graph TD
-    A[User Action / Plugin Load] --> B{Trigger Debouncer}
-    B --> C[generateStyles]
-    C --> D[StyleGenerator.prepareContext]
-    D --> E[StyleGenerator.generateCss]
-    E --> F1[BaseCssGenerator]
-    E --> F2[ColorResolver]
-    E --> F3[FocusModeEngine.generateCss]
-    F1 --> G[Recursive Traverse with Context]
-    F2 --> G
-    F3 --> G
-    G --> H[Build CSS String]
-    H --> I[sheet.replaceSync CSS String]
-    I --> J[Browser Reflow / Paint on all windows]
+    A[User Action / Plugin Load] --> B{DOMObserverService / EventTrackerService}
+    B --> C[Debouncer Trigger]
+    C --> D[main.generateStyles]
+    D --> E[StyleGenerator.prepareContext]
+    E --> F[StyleGenerator.generateCss]
+    F --> G1[BaseCssGenerator]
+    F --> G2[ColorResolver]
+    F --> G3[FocusModeEngine.generateCss]
+    G1 --> H[Recursive Traverse with Context]
+    G2 --> H
+    G3 --> H
+    H --> I[Build CSS String]
+    I --> J[requestAnimationFrame Batching]
+    J --> K[sheet.replaceSync CSS String]
+    K --> L[Browser Reflow / Paint on all windows]
 ```
 
 ### The Cycle:
 1.  **Trigger**: User changes a setting or the plugin loads.
 2.  **State Resolution**: `StyleResolver.getEffectiveStyle(target, plugin)` calculates the visual state for every folder/file.
-3.  **High-Performance CSS Generation**: `StyleGenerator.traverse()` builds a collection of CSS rules. To handle 20,000+ files efficiently, it uses the **"Collect-Join" Pattern** and **Persistent Memoization** (caching item counts and icon category rules) to minimize redundant computations.
-4.  **Injection**: The final joined string is pushed via `plugin.sheet.replaceSync(css)` into all open documents' `adoptedStyleSheets` (including popout windows). No `<style>` element is created. The dynamic styles are dynamically wrapped in standard CSS Custom Properties (e.g. `--cf-folder-bg`), providing a modern hook API for custom user stylesheets and themes to natively override elements.
+3.  **High-Performance CSS Generation**: `StyleGenerator.traverse()` builds a collection of CSS rules. To handle 20,000+ files efficiently, it uses a **Single-Loop Array Flattener**, the **"Collect-Join" Pattern**, and **Persistent Memoization** (caching item counts, O(1) Sets for exclusions, and icon category rules) to minimize redundant computations.
+4.  **Injection**: The final joined string is pushed via `plugin.sheet.replaceSync(css)` inside a `requestAnimationFrame` block into all open documents' `adoptedStyleSheets` (including popout windows) to prevent layout thrashing. No `<style>` element is created. The dynamic styles are wrapped in standard CSS Custom Properties (e.g. `--cf-folder-bg`), providing a modern hook API for custom user stylesheets and themes to natively override elements.
 5.  **Browser handles the rest**: The browser's CSS engine applies the styles instantly as elements enter the viewport.
 
 ### High-Performance Modifiers:

@@ -3,6 +3,7 @@ import { ColorfulFoldersSettings, IColorfulFoldersPlugin } from '../common/types
 import { CF_FOLDER_CLOSED, CF_FILE_DEFAULT } from '../common/constants';
 import { MenuHelper } from '../ui/MenuHelper';
 import { safeEscape } from '../common/utils';
+import { CssGrouper } from '../core/CssGrouper';
 
 interface NNPlugin {
     registerFileMenu?: (cb: (menu: obsidian.Menu, file: obsidian.TAbstractFile) => void) => void;
@@ -147,6 +148,7 @@ export class NotebookNavigatorIntegration {
      */
 
     static generateIntegratedStyles(
+        grouper: CssGrouper,
         path: string, 
         isFolder: boolean, 
         color: { rgb: string, hex: string },
@@ -168,7 +170,7 @@ export class NotebookNavigatorIntegration {
         useRadiantPath: boolean = false,
         effIconW: string = '1.3em',
         activeGlow: boolean = true
-    ): string {
+    ): void {
         const nnThick = baseThick + 0.5; // Scaled for NN visibility
         const activeThick = baseThick + 2.0;
         const safePath = safeEscape(path);
@@ -186,164 +188,140 @@ export class NotebookNavigatorIntegration {
         // CSS-Based Icon Injection (Match 4.1.4 for Zero-Flicker stability)
         let iconCss = '';
         if (iconId) {
-            // Target the native NN icon container directly to swap its contents with ours
             const target = `body .notebook-navigator [data-path="${safePath}"] :is(${_iconSel})`;
-
             if (isEmoji) {
-                iconCss = `
-                    ${target} {
-                        display: inline-flex !important;
-                        align-items: center !important;
-                        justify-content: center !important;
-                        width: ${effIconW} !important;
-                        height: ${effIconW} !important;
-                        content: "${iconId}" !important;
-                        font-style: normal !important;
-                        background: none !important;
-                        -webkit-mask-image: none !important;
-                        visibility: visible !important;
-                    }
-                    ${target} * { display: none !important; }
-                `;
+                grouper.add(`
+                    display: inline-flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    width: ${effIconW} !important;
+                    height: ${effIconW} !important;
+                    content: "${iconId}" !important;
+                    font-style: normal !important;
+                    background: none !important;
+                    -webkit-mask-image: none !important;
+                    visibility: visible !important;
+                `, [target], `nnEmoji_${iconId}_${effIconW}`);
+                grouper.add(`display: none !important;`, [`${target} *`], `nnDisplayNone`);
             } else if (iconSvg) {
-                iconCss = `
-                    ${target} {
-                        display: inline-flex !important;
-                        align-items: center !important;
-                        justify-content: center !important;
-                        width: ${effIconW} !important;
-                        height: ${effIconW} !important;
-                        background-color: ${iconColor || color.hex || textCol} !important;
-                        -webkit-mask-image: url("data:image/svg+xml,${iconSvg}") !important;
-                        -webkit-mask-repeat: no-repeat !important;
-                        -webkit-mask-position: center !important;
-                        -webkit-mask-size: contain !important;
-                        content: "" !important;
-                        opacity: 0.85 !important;
-                        visibility: visible !important;
-                    }
-                    ${target} * { display: none !important; }
-                `;
-            }
-        } else {
-            // FALLBACK: Use default icons if none matched (Ensures no items are blank)
-            const target = `body .notebook-navigator [data-path="${safePath}"] :is(${_iconSel})`;
-            const fallbackSvg = isFolder ? CF_FOLDER_CLOSED : CF_FILE_DEFAULT;
-            // Note: CF_FOLDER_CLOSED and CF_FILE_DEFAULT are already URL-encoded
-            
-            iconCss = `
-                ${target} {
+                grouper.add(`
                     display: inline-flex !important;
                     align-items: center !important;
                     justify-content: center !important;
                     width: ${effIconW} !important;
                     height: ${effIconW} !important;
                     background-color: ${iconColor || color.hex || textCol} !important;
-                    -webkit-mask-image: url("data:image/svg+xml,${fallbackSvg}") !important;
+                    -webkit-mask-image: url("data:image/svg+xml,${iconSvg}") !important;
                     -webkit-mask-repeat: no-repeat !important;
                     -webkit-mask-position: center !important;
                     -webkit-mask-size: contain !important;
                     content: "" !important;
-                    opacity: 0.5 !important;
+                    opacity: 0.85 !important;
                     visibility: visible !important;
-                }
-                ${target} * { display: none !important; }
-            `;
+                `, [target], `nnSvg_${iconColor || color.hex || textCol}_${iconSvg}_${effIconW}`);
+                grouper.add(`display: none !important;`, [`${target} *`], `nnDisplayNone`);
+            }
+        } else {
+            const target = `body .notebook-navigator [data-path="${safePath}"] :is(${_iconSel})`;
+            const fallbackSvg = isFolder ? CF_FOLDER_CLOSED : CF_FILE_DEFAULT;
+            grouper.add(`
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                width: ${effIconW} !important;
+                height: ${effIconW} !important;
+                background-color: ${iconColor || color.hex || textCol} !important;
+                -webkit-mask-image: url("data:image/svg+xml,${fallbackSvg}") !important;
+                -webkit-mask-repeat: no-repeat !important;
+                -webkit-mask-position: center !important;
+                -webkit-mask-size: contain !important;
+                content: "" !important;
+                opacity: 0.5 !important;
+                visibility: visible !important;
+            `, [target], `nnFallback_${fallbackSvg}_${effIconW}`);
+            grouper.add(`display: none !important;`, [`${target} *`], `nnDisplayNone`);
         }
 
-        const hoverCss = `
-            ${base}:hover {
-                background-color: rgba(${color.rgb}, ${Math.min(1.0, (isFolder ? bgAlpha : (outlineOnly ? Math.max(bgAlpha, 0.12) : Math.max(bgAlpha, 0.18))) + 0.08)}) !important;
-                filter: brightness(1.03) !important;
-                z-index: 2 !important;
-            }
+        const hoverBody = `
+            background-color: rgba(${color.rgb}, ${Math.min(1.0, (isFolder ? bgAlpha : (outlineOnly ? Math.max(bgAlpha, 0.12) : Math.max(bgAlpha, 0.18))) + 0.08)}) !important;
+            filter: brightness(1.03) !important;
+            z-index: 2 !important;
+            ${glassCss}
         `;
+        grouper.add(hoverBody, [`${base}:hover`], `nnHover_${color.hex}_${bgAlpha}_${isFolder}_${outlineOnly}_${useGlass}`);
 
         const metadataCol = `rgba(${color.rgb}, 0.65)`;
-        const metadataCss = `
-            ${base} .nn-navitem-date,
-            ${base} .nn-navitem-subtitle,
-            ${base} .nn-navitem-description,
-            ${base} .nn-file-date {
-                color: ${metadataCol} !important;
-                transition: color 0.2s ease !important;
-            }
-        `;
+        const metadataSels = [
+            `${base} .nn-navitem-date`,
+            `${base} .nn-navitem-subtitle`,
+            `${base} .nn-navitem-description`,
+            `${base} .nn-file-date`
+        ];
+        grouper.add(`color: ${metadataCol} !important; transition: color 0.2s ease !important;`, metadataSels, `nnMeta_${color.hex}`);
 
-        let bgCss = '';
         if (isFolder) {
             const finalBgAlpha = outlineOnly ? 0 : bgAlpha;
             const finalBorderAlpha = outlineOnly ? 0.9 : 0.8;
-            bgCss = `
-                ${base} {
-                    background-color: rgba(${color.rgb}, ${finalBgAlpha}) !important;
-                    border-left: ${nnThick}px solid rgba(${color.rgb}, ${finalBorderAlpha}) !important;
-                    border-radius: 6px !important;
-                    ${glassCss}
-                    ${tintOp > 0 ? `background-blend-mode: overlay;` : ''}
-                    transition: background-color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
-                    margin-bottom: 2px !important;
-                }
-                ${hoverCss}
-                ${metadataCss}
-            `;
-        } else {
-            // Files retain background if shouldColor is true, ignoring global outlineOnly 
-            // because file backgrounds are specifically requested via a separate toggle.
+            grouper.add(`
+                background-color: rgba(${color.rgb}, ${finalBgAlpha}) !important;
+                border-left: ${nnThick}px solid rgba(${color.rgb}, ${finalBorderAlpha}) !important;
+                border-radius: 6px !important;
+                ${glassCss}
+                ${tintOp > 0 ? `background-blend-mode: overlay;` : ''}
+                transition: background-color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
+                margin-bottom: 2px !important;
+            `, [base], `nnFolderBg_${color.hex}_${finalBgAlpha}_${finalBorderAlpha}_${tintOp}_${useGlass}`);
+        } else if (shouldColor) {
             const fileBg = outlineOnly ? Math.max(bgAlpha, 0.12) : Math.max(bgAlpha, 0.18);
-            bgCss = `
-                ${base} {
-                    ${shouldColor ? `
-                        background-color: rgba(${color.rgb}, ${fileBg}) !important;
-                        border-left: ${nnThick}px solid rgba(${color.rgb}, 0.6) !important;
-                    ` : ''}
-                    opacity: 1.0 !important;
-                    color: ${textCol} !important;
-                    font-weight: ${isBold ? 'bold' : 'normal'} !important;
-                    font-style: ${isItalic ? 'italic' : 'normal'} !important;
-                    border-radius: 6px;
-                    transition: background-color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, color 0.2s ease !important;
-                    margin-bottom: 2px !important;
-                }
-                ${shouldColor ? hoverCss : ''}
-                ${shouldColor ? metadataCss : ''}
-            `;
-        }
-
-        return `
-            ${shouldColor ? bgCss : ''}
-
-            ${base} ${nameSel},
-            ${base} ${countSel} {
+            grouper.add(`
+                background-color: rgba(${color.rgb}, ${fileBg}) !important;
+                border-left: ${nnThick}px solid rgba(${color.rgb}, 0.6) !important;
+                opacity: 1.0 !important;
                 color: ${textCol} !important;
                 font-weight: ${isBold ? 'bold' : 'normal'} !important;
                 font-style: ${isItalic ? 'italic' : 'normal'} !important;
-            }
+                border-radius: 6px;
+                transition: background-color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, color 0.2s ease !important;
+                margin-bottom: 2px !important;
+            `, [base], `nnFileBg_${color.hex}_${fileBg}_${textCol}_${isBold}_${isItalic}`);
+        }
 
-            ${iconCss}
+        if (shouldColor) {
+            grouper.add(`
+                background-color: transparent !important;
+                border-left: ${outlineOnly ? 0 : nnThick}px solid rgba(${color.rgb}, ${outlineOnly ? 0 : tintOp}) !important;
+                ${!outlineOnly ? 'padding-left: 4px !important;' : ''}
+                margin-left: 2px !important;
+            `, [`body ${base}`], `nnBase_${color.hex}_${outlineOnly}_${tintOp}`);
 
-            /* Active / Selected Glow (Premium) */
-            body .notebook-navigator .is-active[data-path="${safePath}"] {
-                background-color: ${activeBg} !important;
-                ${activeGlow ? `
-                    box-shadow: 0 4px 12px rgba(${color.rgb}, 0.2) !important;
-                ` : `
-                    box-shadow: none !important;
-                `}
-                border-left: ${activeThick}px solid rgba(${color.rgb}, 1.0) !important;
-                --cf-rgb: ${color.rgb};
-                color: ${activeText} !important;
-                z-index: 20 !important;
-            }
-            
-            body .notebook-navigator .is-active[data-path="${safePath}"] ${nameSel},
-            body .notebook-navigator .is-active[data-path="${safePath}"] ${countSel} {
-                color: ${activeText} !important;
-            }
-        `;
+            grouper.add(`
+                color: ${textCol} !important;
+                ${isBold ? 'font-weight: bold !important;' : ''}
+                ${isItalic ? 'font-style: italic !important;' : ''}
+            `, [`body ${base} ${nameSel}`, `body ${base} ${countSel}`], `nnName_${textCol}_${isBold}_${isItalic}`);
+        }
+
+        // Active / Selected Glow (Premium)
+        const activeSel = `body .notebook-navigator .is-active[data-path="${safePath}"]`;
+        
+        grouper.add(`
+            background-color: ${activeBg} !important;
+            ${activeGlow ? `box-shadow: 0 4px 12px rgba(${color.rgb}, 0.2) !important;` : `box-shadow: none !important;`}
+            border-left: ${activeThick}px solid rgba(${color.rgb}, 1.0) !important;
+            --cf-rgb: ${color.rgb};
+            color: ${activeText} !important;
+            z-index: 20 !important;
+        `, [activeSel], `nnActive_${activeBg}_${activeText}_${activeGlow}_${color.hex}`);
+        
+        grouper.add(`
+            color: ${activeText} !important;
+            ${isBold ? 'font-weight: bold !important;' : ''}
+        `, [`${activeSel} ${nameSel}`], `nnActiveName_${activeText}_${isBold}`);
+        
+        grouper.add(`
+            color: ${activeText} !important;
+        `, [`${activeSel} ${countSel}`], `nnActiveCount_${activeText}`);
     }
-
-
 
     static registerMenuExtensions(plugin: IColorfulFoldersPlugin) {
         let attempts = 0;
