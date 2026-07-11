@@ -186,7 +186,6 @@ export class NotebookNavigatorIntegration {
         ` : '';
 
         // CSS-Based Icon Injection (Match 4.1.4 for Zero-Flicker stability)
-        let iconCss = '';
         if (iconId) {
             const target = `body .notebook-navigator [data-path="${safePath}"] :is(${_iconSel})`;
             if (isEmoji) {

@@ -164,7 +164,7 @@ export class StyleGenerator {
         // Gate: process files if there's a parent color (applyToSubfolders), autoColorFiles, autoIcons, applyToFiles on the inheritedStyle, or NN is active.
         if (passedColor || autoColorFiles || autoIcons || (inheritedStyle && inheritedStyle.applyToFiles) || (this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground)) {
             for (const child of copyFiles) {
-                if (performance.now() - yieldState.lastYield > 16) {
+                if (performance.now() - yieldState.lastYield > 50) {
                     await new Promise(r => window.setTimeout(r, 0));
                     yieldState.lastYield = performance.now();
                 }
@@ -304,7 +304,7 @@ export class StyleGenerator {
                     `body .nav-files-container .nav-file-title[data-path="${safePath}"]:not(.nn-file) .nav-file-title-content`,
                     `body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner`
                 ];
-                grouper.add(fileTextCss, fileTextSels, `fileText_${!!activeStyle?.textGradient ? 'grad' : 'norm'}_${isBold}_${isItalic}_${color.hex}`);
+                grouper.add(fileTextCss, fileTextSels, `fileText_${activeStyle?.textGradient ? 'grad' : 'norm'}_${isBold}_${isItalic}_${color.hex}`);
 
                 const fileTagSels = [
                     `[data-path="${safePath}"] .nav-file-tag`,
@@ -455,7 +455,7 @@ export class StyleGenerator {
 
         let validFolderIndex = 0;
         for (let i = 0; i < copyFolders.length; i++) {
-            if (performance.now() - yieldState.lastYield > 16) {
+            if (performance.now() - yieldState.lastYield > 50) {
                 await new Promise(r => window.setTimeout(r, 0));
                 yieldState.lastYield = performance.now();
             }

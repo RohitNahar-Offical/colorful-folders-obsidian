@@ -79,7 +79,7 @@ export default class ColorfulFoldersPlugin
           void this.generateStyles();
         }
       },
-      300,
+      100,
       true
     );
 
