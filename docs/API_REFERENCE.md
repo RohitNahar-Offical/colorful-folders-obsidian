@@ -103,7 +103,13 @@ Clears the category memoization and normalization caches. Called **only** when i
 
 ---
 
-## 5. UI Modals
+## 5. UI Modals & Views
+
+### `ColorfulFoldersSettingTab`
+- **Purpose**: Global configuration interface.
+- **UX Patterns**:
+  - **Dynamic Tooltips**: All numerical sliders implement `.setDynamicTooltip()` to show precise values during interaction.
+  - **Reset Buttons**: Settings include an `.addExtraButton` configured as a reset action, reverting the value to `DEFAULT_SETTINGS` and re-rendering instantly.
 
 ### `DividerModal`
 - **Purpose**: Per-divider configuration (text, icon, padding).

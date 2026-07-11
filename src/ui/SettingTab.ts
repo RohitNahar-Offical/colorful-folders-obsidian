@@ -1210,9 +1210,22 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     .onChange(async (value) => {
                         this.plugin.settings.autoIconVariety = value;
                         await this.plugin.saveSettings();
+                        (this as unknown as { display: () => void }).display();
                         this.plugin.generateStyles();
                     }));
 
+            if (this.plugin.settings.autoIconVariety) {
+                new obsidian.Setting(autoCard)
+                    .setName('Shuffle variety icons')
+                    .setDesc('Randomize the global seed used for assigning variety icons. If you dislike the current distribution, click this to re-roll them all!')
+                    .addButton(button => button
+                        .setButtonText('Shuffle Icons')
+                        .onClick(async () => {
+                            this.plugin.settings.varietySeed = Math.floor(Math.random() * 1000000);
+                            await this.plugin.saveSettings();
+                            this.plugin.generateStyles();
+                        }));
+            }
 
             const rulesDesc = autoCard.createDiv();
             rulesDesc.setCssStyles({

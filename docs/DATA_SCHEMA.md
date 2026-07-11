@@ -11,7 +11,9 @@ Representing the entire `data.json` structure. Defined in `src/common/types.ts`.
 | Key | Type | Description |
 | :--- | :--- | :--- |
 | **Visual Palette** | | |
-| `palette` | `string` | Active palette name (e.g., "Neon Cyberpunk"). |
+| `paletteLight` | `string` | Active palette name for Light Mode. |
+| `paletteDark` | `string` | Active palette name for Dark Mode. |
+| `palette` | `string` | Legacy active palette name. |
 | `customPalette` | `string` | Comma-separated hex list for the "Custom" palette mode. |
 | `colorMode` | `string` | `cycle` (sequential), `monochromatic` (fixed root color), or `heatmap` (by age). |
 | `cycleOffset` | `number` | Shifts the starting point of the color cycle. |
@@ -22,9 +24,10 @@ Representing the entire `data.json` structure. Defined in `src/common/types.ts`.
 | `rootTintOpacity` | `number` | Specific tint transparency for root folders. |
 | `fileBackgroundOpacity` | `number` | Transparency for file background highlights. |
 | `globalBackgroundColor` | `string` | Forces a specific hex/color across all items if set. |
+| `glassmorphism` | `boolean` | Toggles glassmorphism effect (frosted glass). |
 | **Radiant Path & Active Highlighting** | | |
 | `activeGlow` | `boolean` | Applies a luminous box-shadow and gradient sheen to the active item. |
-| `pathLineThickness` | `number` | Dynamic stroke width for Radiant Path indentation lines and active highlights. |
+| `pathLineThickness` | `number` | Dynamic stroke width for Radiant Path indentation lines and active highlights. Default: `3`. |
 | `useCustomActiveColor` | `boolean` | Enables the UI-driven active file color picker. |
 | `customActiveBg` | `string` | User-defined background for the active file. |
 | `customActiveText` | `string` | User-defined text color for the active file. |
@@ -34,20 +37,28 @@ Representing the entire `data.json` structure. Defined in `src/common/types.ts`.
 | `wideAutoIcons` | `boolean` | Prefers Lucide icons over emojis for automatic assignment. |
 | `customIconRules` | `string` | Simple pattern match string (e.g., `Work = briefcase @200`). |
 | `iconScale` | `number` | Multiplier for all folder/file icons. |
+| `customIcons` | `Record<string, string>` | Custom SVG icons mapping (ID to SVG content). |
+| `iconDebugMode` | `boolean` | Enables debug logging for icon selection logic. |
 | **Typography & Structure** | | |
 | `rootStyle` | `string` | `translucent` or `solid` design for root folders. |
 | `rainbowRootText` | `boolean` | Applies horizontal rainbow gradients to root folder text. |
 | `rainbowRootBgTransparent`| `boolean` | Removes root background box when rainbow text is active. |
 | `showItemCounters` | `boolean` | Displays recursive item counts next to folders. |
 | `autoColorFiles` | `boolean` | Automatically assigns colors to files based on parent or name. |
+| `wrapMetadata` | `boolean` | Wraps file metadata to ensure readability. |
 | **Section Dividers** | | |
+| `showFileDivider` | `boolean` | Toggles the dedicated files separator in folders. |
+| `fileDividerText` | `string` | Text label for the files section divider. |
 | `dividerThickness` | `number` | Stroke width for section divider lines. |
 | `dividerSpacing` | `number` | Vertical padding above/below dividers. |
 | `dividerLineStyle` | `string` | `solid`, `dashed`, or `dotted`. |
+| `separatorColor` | `string` | Custom color applied to the section separators. |
+| `dividerLinePadding` | `number` | General gap between line and text. |
 | `dividerLinePaddingLeft` | `number` | Gap between line and text (Left). |
 | `dividerLinePaddingRight` | `number` | Gap between line and text (Right). |
 | `dividerPillMode` | `boolean` | Enables/Disables the "Modern Pill" design wrapper. |
 | `dividerPillColor` | `string` | Universal background color for all divider pills. |
+| `dividerIconPosition` | `string` | Universal position for divider icons (`left`, `right`, or `both`). |
 | **Integrations** | | |
 | `notebookNavigatorSupport` | `boolean` | Enables styling for Notebook Navigator items. |
 | `notebookNavigatorFileBackground` | `boolean` | Applies background colors to NN file items. |
@@ -58,6 +69,8 @@ Representing the entire `data.json` structure. Defined in `src/common/types.ts`.
 | `tagSyncMatchFolders` | `boolean` | Auto-syncs tags that perfectly match a styled folder name. |
 | `tagSyncRules` | `string` | Custom line-by-line mapping rules (`#tag = /path`). |
 | **System & Privacy** | | |
+| `presets` | `Record<string, FolderStyle>` | User-saved custom folder styles templates. |
+| `recentlyUsedIcons` | `string[]` | List of recently chosen icon IDs. |
 | `showHiddenItems` | `boolean` | Toggles "Stealth Mode" visibility. |
 | `showRibbonIcon` | `boolean` | Displays the Stealth Mode eye icon in the sidebar. |
 | `vaultPassword` | `string` | Hashed password for privacy lock. |

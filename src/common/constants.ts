@@ -86,6 +86,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
 
     autoIcons: true,
     autoIconVariety: true,
+    varietySeed: 0,
     wideAutoIcons: true,
     rainbowRootText: true,
     rainbowRootBgTransparent: false,
@@ -142,7 +143,7 @@ export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
     { rex: /setting|config|pref|options|setup|tool/i, emoji: "⚙️", lucide: "settings", priority: 100 },
     { rex: /read|book|paper|article|literature|lib/i, emoji: "📚", lucide: "book-open", priority: 100 },
     { rex: /archive|old|past|backup|history|dump/i, emoji: "📦", lucide: "archive", priority: 100 },
-    { rex: /idea|brain|thought|note|learn|insight|study/i, emoji: "💡", lucide: "lightbulb", priority: 100 },
+
     { rex: /personal|me|self|profile|account|bio/i, emoji: "👤", lucide: "user", priority: 100 },
     { rex: /finance|money|bank|pay|cost|bill|price|tax|wallet/i, emoji: "💸", lucide: "banknote", priority: 100 },
     { rex: /health|fit|exercise|diet|gym|doctor|med|sport/i, emoji: "🥗", lucide: "activity", priority: 100 },

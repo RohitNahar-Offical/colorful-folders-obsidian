@@ -3,6 +3,13 @@ import { IColorfulFoldersPlugin, AutoIconData } from '../common/types';
 import { AUTO_ICON_CATEGORIES } from '../common/constants';
 import { hashString } from '../common/utils';
 
+interface ParsedIcon {
+    id: string;
+    isLucide: boolean;
+    suffix: string;
+    significantParts: Set<string>;
+}
+
 export class IconManager {
     plugin: IColorfulFoldersPlugin;
 
@@ -10,6 +17,9 @@ export class IconManager {
     private _categoryCache: AutoIconData[] | null = null;
     private _customRulesKey: string = '';
     private _normCache: Map<string, string> = new Map();
+    private _parsedIcons: ParsedIcon[] | null = null;
+    private _resolvedIconIdCache: Map<string, string | null> = new Map();
+    private _lastIconIdsCheckTime: number = 0;
 
 
 
@@ -17,7 +27,7 @@ export class IconManager {
         this.plugin = plugin;
     }
 
-    getAutoIconData(name: string): AutoIconData | null {
+    getAutoIconData(name: string, path?: string): AutoIconData | null {
         const lName = name.toLowerCase();
         const settings = this.plugin.settings;
         const currentKey = settings.customIconRules || '';
@@ -58,17 +68,34 @@ export class IconManager {
             this._customRulesKey = currentKey;
         }
 
+        // 1. Get Fuzzy Name Match
+        const fuzzyIconId = this.findIconId(lName);
+        const hasCustomFuzzy = fuzzyIconId && !fuzzyIconId.startsWith('lucide-');
+        
+        const escapeRegExp = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+
+        // 2. Standard Regex Match
         const matches = this._categoryCache.filter(cat => cat.rex.test(lName));
         matches.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
-        if (settings.iconDebugMode && matches.length > 0) {
-            console.debug(`Colorful Folders [Debug]: Match for "${name}" ->`, matches[0]);
-        }
+        let finalMatch: AutoIconData | null = null;
 
-        if (matches.length > 0) {
+        // 3. Priority Resolution
+        if (hasCustomFuzzy) {
+            // Ultimate priority: Custom Icon exact/fuzzy match
+            finalMatch = {
+                rex: new RegExp(`^${escapeRegExp(lName)}$`, 'i'),
+                emoji: fuzzyIconId!,
+                lucide: fuzzyIconId!,
+                priority: 2000
+            };
+        } else if (matches.length > 0) {
+            // Fallback 1: Curated Regex rules (with variants)
             const match = { ...matches[0] };
             if (settings.autoIconVariety) {
-                const h = hashString(name);
+                const targetToHash = (path || name) + (settings.varietySeed || 0).toString();
+                const h = hashString(targetToHash);
                 if (match.emojis && match.emojis.length > 0) {
                     match.emoji = match.emojis[h % match.emojis.length];
                 }
@@ -76,10 +103,152 @@ export class IconManager {
                     match.lucide = match.lucides[h % match.lucides.length];
                 }
             }
-            return match;
+            finalMatch = match;
+            
+            // Smart Icon Resolution
+            if (finalMatch && finalMatch.lucide && !this.isEmojiIcon(finalMatch.lucide)) {
+                finalMatch.lucide = this.resolveIconId(finalMatch.lucide);
+            }
+        } else if (fuzzyIconId) {
+            // Fallback 2: Lucide generic fuzzy match
+            finalMatch = {
+                rex: new RegExp(`^${escapeRegExp(lName)}$`, 'i'),
+                emoji: fuzzyIconId,
+                lucide: fuzzyIconId,
+                priority: 1000
+            };
         }
 
-        return null;
+        if (settings.iconDebugMode && finalMatch) {
+            console.debug(`Colorful Folders [Debug]: Match for "${name}" ->`, finalMatch);
+        }
+
+        return finalMatch;
+    }
+
+    /**
+     * Searches installed packs for an icon matching the request.
+     * Returns null if no match is found anywhere. Uses O(1) cache.
+     */
+    findIconId(requestedIcon: string): string | null {
+        if (!requestedIcon) return null;
+
+        // Sanitize the name
+        let sanitized = requestedIcon.toLowerCase().trim();
+        
+        // Strip file extensions if present (e.g., 'amazon.md' -> 'amazon')
+        const dotIdx = sanitized.lastIndexOf('.');
+        if (dotIdx > 0 && sanitized.length - dotIdx <= 5) {
+            sanitized = sanitized.substring(0, dotIdx);
+        }
+        
+        // Replace spaces or special characters with hyphens to match icon naming conventions
+        sanitized = sanitized.replace(/[\s_]+/g, '-').replace(/[^a-z0-9\-]/g, '');
+
+        if (!sanitized) return null;
+
+        // O(1) Cache Lookup (using the original requested string)
+        if (this._resolvedIconIdCache.has(requestedIcon)) {
+            return this._resolvedIconIdCache.get(requestedIcon) || null;
+        }
+
+        // Ensure available icons are populated and parsed once (or re-parsed if new icons were registered)
+        const now = Date.now();
+        if (!this._parsedIcons || (now - this._lastIconIdsCheckTime > 5000)) {
+            this._lastIconIdsCheckTime = now;
+            const currentRawIds = obsidian.getIconIds();
+            
+            if (!this._parsedIcons || this._parsedIcons.length !== currentRawIds.length) {
+                const genericModifiers = new Set(['fill', 'line', 'solid', 'regular', 'thin', 'light', 'bold', 'duotone', 'brands']);
+                
+                this._parsedIcons = currentRawIds.map(id => {
+                    const parts = id.split('-');
+                return {
+                    id,
+                    isLucide: id.startsWith('lucide-'),
+                    suffix: parts[parts.length - 1],
+                    significantParts: new Set(parts.filter(p => p !== parts[0] && !genericModifiers.has(p)))
+                };
+            });
+
+                // If we just discovered new icons, our previous "not found" caches might be invalid now.
+                this._resolvedIconIdCache.clear();
+            }
+        }
+
+        // Priority 1: Exact global match on the sanitized string
+        const exactMatch = this._parsedIcons.find(icon => icon.id === sanitized);
+        if (exactMatch) {
+            this._resolvedIconIdCache.set(requestedIcon, sanitized);
+            return sanitized;
+        }
+
+        let customSuffixMatch: string | null = null;
+        let customContainsMatch: string | null = null;
+        let lucideSuffixMatch: string | null = null;
+        let lucideContainsMatch: string | null = null;
+        const exactLucide = `lucide-${sanitized}`;
+        let exactLucideMatch: string | null = null;
+
+        for (const icon of this._parsedIcons) {
+            if (icon.id === exactLucide) {
+                exactLucideMatch = icon.id;
+            }
+
+            // Check suffix match
+            if (icon.suffix === sanitized) {
+                if (!icon.isLucide && !customSuffixMatch) customSuffixMatch = icon.id;
+                else if (icon.isLucide && !lucideSuffixMatch) lucideSuffixMatch = icon.id;
+            }
+
+            // Smart Inclusion
+            if (icon.id.includes(`-${sanitized}-`) || icon.id.startsWith(`${sanitized}-`) || icon.id.includes(sanitized)) {
+                if (!icon.isLucide && !customContainsMatch) customContainsMatch = icon.id;
+                else if (icon.isLucide && !lucideContainsMatch) lucideContainsMatch = icon.id;
+            }
+        }
+
+        // Top Priority: Custom Suffix > Custom Contains
+        // Fallback Priority: Exact Lucide > Lucide Suffix > Lucide Contains
+        let resolved = customSuffixMatch || customContainsMatch || exactLucideMatch || lucideSuffixMatch || lucideContainsMatch || null;
+        
+        // --- Keyword Fallback ---
+        if (!resolved && sanitized.includes('-')) {
+            const keywords = sanitized.split('-').filter(w => w.length >= 4);
+
+            let bestCustomMatch: string | null = null;
+            let bestLucideMatch: string | null = null;
+
+            for (const keyword of keywords) {
+                let kwCustomMatch: string | null = null;
+                let kwLucideMatch: string | null = null;
+
+                for (const icon of this._parsedIcons) {
+                    if (icon.significantParts.has(keyword)) {
+                        if (!icon.isLucide && !kwCustomMatch) kwCustomMatch = icon.id;
+                        else if (icon.isLucide && !kwLucideMatch) kwLucideMatch = icon.id;
+                    }
+                }
+                
+                if (kwCustomMatch && !bestCustomMatch) bestCustomMatch = kwCustomMatch;
+                if (kwLucideMatch && !bestLucideMatch) bestLucideMatch = kwLucideMatch;
+            }
+            
+            resolved = bestCustomMatch || bestLucideMatch || null;
+        }
+
+        // Cache and return
+        this._resolvedIconIdCache.set(requestedIcon, resolved);
+        return resolved;
+    }
+
+    /**
+     * Resolves a generic requested icon (e.g., "github") to a concrete installed pack ID
+     * (e.g., "remix-github-fill"). Returns the original string if not found.
+     */
+    resolveIconId(requestedIcon: string): string {
+        const found = this.findIconId(requestedIcon);
+        return found || requestedIcon;
     }
 
     /** Clears the category and normalization caches — call when icon settings change. */
@@ -87,6 +256,9 @@ export class IconManager {
         this._categoryCache = null;
         this._customRulesKey = '';
         this._normCache.clear();
+        this._parsedIcons = null;
+        this._lastIconIdsCheckTime = 0;
+        this._resolvedIconIdCache.clear();
     }
 
     /**

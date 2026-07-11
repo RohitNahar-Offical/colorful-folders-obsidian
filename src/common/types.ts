@@ -51,6 +51,7 @@ export interface ColorfulFoldersSettings {
 
     autoIcons: boolean;
     autoIconVariety: boolean;
+    varietySeed: number;
     wideAutoIcons: boolean;
     rainbowRootText: boolean;
     rainbowRootBgTransparent: boolean;
@@ -138,7 +139,7 @@ export interface IColorfulFoldersPlugin {
     activePaletteCache?: { palette: { rgb: string; hex: string }[] } | null;
     iconManager: { 
         getIconSvg(iconId: string, shouldEncode?: boolean): string,
-        getAutoIconData(name: string): AutoIconData | null,
+        getAutoIconData(name: string, path?: string): AutoIconData | null,
         normalizeSvg(svgStr: string, shouldEncode?: boolean): string,
         invalidateCategoryCache(): void,
         isEmojiIcon(iconId: string): boolean
