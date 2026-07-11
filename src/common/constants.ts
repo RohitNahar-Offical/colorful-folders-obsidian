@@ -127,7 +127,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     useCustomActiveColor: false,
     customActiveBg: "",
     customActiveText: "",
-    pathLineThickness: 2.0,
+    pathLineThickness: 3,
     wrapMetadata: false,
     tagSyncEnabled: false,
     tagSyncMatchFolders: true,

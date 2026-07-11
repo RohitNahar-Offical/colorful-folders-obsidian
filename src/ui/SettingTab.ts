@@ -125,18 +125,30 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     this.plugin.generateStyles();
                 }));
 
+        let sliderComp_notebookNavigatorIconScale: obsidian.SliderComponent;
         new obsidian.Setting(intCard)
             .setName('Navigator icon scaling')
             .setDesc('Multiplies the size of icons strictly within Notebook Navigator (default 0.8). Range: 0.5 to 2.5.')
-            .addSlider(slider => slider
+            .addSlider(slider => {
+                sliderComp_notebookNavigatorIconScale = slider;
+                slider
                 .setLimits(0.5, 2.5, 0.1)
                 .setValue(this.plugin.settings.notebookNavigatorIconScale ?? 0.8)
 
+                .setDynamicTooltip()
                 .onChange(async (value) => {
                     this.plugin.settings.notebookNavigatorIconScale = value;
                     await this.plugin.saveSettings();
                     this.plugin.generateStyles();
-                }));
+                });
+                return slider;
+            })
+            .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
+                this.plugin.settings.notebookNavigatorIconScale = DEFAULT_SETTINGS.notebookNavigatorIconScale;
+                sliderComp_notebookNavigatorIconScale.setValue(DEFAULT_SETTINGS.notebookNavigatorIconScale as number);
+                await this.plugin.saveSettings();
+                this.plugin.generateStyles();
+            }));
 
         // ──────────────────────────────────────────────────────────────────────
         // ── TAG SYNC CARD ─────────────────────────────────────────────────────
@@ -882,18 +894,30 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             });
 
         if (this.plugin.settings.colorMode === 'cycle') {
-            new obsidian.Setting(genCard)
+            let sliderComp_cycleOffset: obsidian.SliderComponent;
+        new obsidian.Setting(genCard)
                 .setName('Rainbow cycle offset')
                 .setDesc('Shift the starting color index for the rainbow cycle.')
-                .addSlider(slider => slider
+                .addSlider(slider => {
+                sliderComp_cycleOffset = slider;
+                slider
                     .setLimits(0, 20, 1)
                     .setValue(this.plugin.settings.cycleOffset || 0)
 
-                    .onChange(async (value) => {
+                    .setDynamicTooltip()
+                .onChange(async (value) => {
                         this.plugin.settings.cycleOffset = value;
                         await this.plugin.saveSettings();
                         this.plugin.generateStyles();
-                    }));
+                    });
+                return slider;
+            })
+            .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
+                this.plugin.settings.cycleOffset = DEFAULT_SETTINGS.cycleOffset;
+                sliderComp_cycleOffset.setValue(DEFAULT_SETTINGS.cycleOffset as number);
+                await this.plugin.saveSettings();
+                this.plugin.generateStyles();
+            }));
         }
 
 
@@ -1038,27 +1062,51 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         }
 
         const visCard = makeCard(generalPanel, "👁️", "Appearance and visibility");
+        let sliderComp_lightModeBrightness: obsidian.SliderComponent;
         new obsidian.Setting(visCard)
             .setName('Light mode brightness (%)')
-            .addSlider(slider => slider
+            .addSlider(slider => {
+                sliderComp_lightModeBrightness = slider;
+                slider
                 .setLimits(-100, 100, 1)
                 .setValue(this.plugin.settings.lightModeBrightness || 0)
+                .setDynamicTooltip()
                 .onChange(async (value) => {
                     this.plugin.settings.lightModeBrightness = value;
                     await this.plugin.saveSettings();
                     this.plugin.generateStyles();
-                }));
+                });
+                return slider;
+            })
+            .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
+                this.plugin.settings.lightModeBrightness = DEFAULT_SETTINGS.lightModeBrightness;
+                sliderComp_lightModeBrightness.setValue(DEFAULT_SETTINGS.lightModeBrightness as number);
+                await this.plugin.saveSettings();
+                this.plugin.generateStyles();
+            }));
 
+        let sliderComp_darkModeBrightness: obsidian.SliderComponent;
         new obsidian.Setting(visCard)
             .setName('Dark mode brightness (%)')
-            .addSlider(slider => slider
+            .addSlider(slider => {
+                sliderComp_darkModeBrightness = slider;
+                slider
                 .setLimits(-100, 100, 1)
                 .setValue(this.plugin.settings.darkModeBrightness || 0)
+                .setDynamicTooltip()
                 .onChange(async (value) => {
                     this.plugin.settings.darkModeBrightness = value;
                     await this.plugin.saveSettings();
                     this.plugin.generateStyles();
-                }));
+                });
+                return slider;
+            })
+            .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
+                this.plugin.settings.darkModeBrightness = DEFAULT_SETTINGS.darkModeBrightness;
+                sliderComp_darkModeBrightness.setValue(DEFAULT_SETTINGS.darkModeBrightness as number);
+                await this.plugin.saveSettings();
+                this.plugin.generateStyles();
+            }));
 
         new obsidian.Setting(visCard)
             .setName('Outline only mode')
@@ -1081,18 +1129,30 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     this.plugin.generateStyles();
                 }));
 
+        let sliderComp_iconScale: obsidian.SliderComponent;
         new obsidian.Setting(visCard)
             .setName('Global icon scaling')
             .setDesc('Multiplies the size of all folder and file icons (default 1.0). Range: 0.5 to 2.5.')
-            .addSlider(slider => slider
+            .addSlider(slider => {
+                sliderComp_iconScale = slider;
+                slider
                 .setLimits(0.5, 2.5, 0.1)
                 .setValue(this.plugin.settings.iconScale || 1.0)
 
+                .setDynamicTooltip()
                 .onChange(async (value) => {
                     this.plugin.settings.iconScale = value;
                     await this.plugin.saveSettings();
                     this.plugin.generateStyles();
-                }));
+                });
+                return slider;
+            })
+            .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
+                this.plugin.settings.iconScale = DEFAULT_SETTINGS.iconScale;
+                sliderComp_iconScale.setValue(DEFAULT_SETTINGS.iconScale as number);
+                await this.plugin.saveSettings();
+                this.plugin.generateStyles();
+            }));
 
         new obsidian.Setting(visCard)
             .setName('Icon debug mode')
@@ -1404,59 +1464,107 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 });
             });
 
+        let sliderComp_dividerSpacing: obsidian.SliderComponent;
         new obsidian.Setting(divCard)
             .setName('Vertical spacing')
             .setDesc('Adjust the empty space above and below dividers.')
-            .addSlider(slider => slider
+            .addSlider(slider => {
+                sliderComp_dividerSpacing = slider;
+                slider
                 .setLimits(4, 40, 2)
                 .setValue(this.plugin.settings.dividerSpacing || 16)
 
+                .setDynamicTooltip()
                 .onChange(async (value) => {
                     this.plugin.settings.dividerSpacing = value;
                     await this.plugin.saveSettings();
                     this.plugin.dividerManager.syncDividers();
                     updatePreview();
-                }));
+                });
+                return slider;
+            })
+            .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
+                this.plugin.settings.dividerSpacing = DEFAULT_SETTINGS.dividerSpacing;
+                sliderComp_dividerSpacing.setValue(DEFAULT_SETTINGS.dividerSpacing as number);
+                await this.plugin.saveSettings();
+                this.plugin.generateStyles();
+            }));
+        let sliderComp_dividerThickness: obsidian.SliderComponent;
         new obsidian.Setting(divCard)
             .setName('Line thickness')
-            .addSlider(slider => slider
+            .addSlider(slider => {
+                sliderComp_dividerThickness = slider;
+                slider
                 .setLimits(1, 10, 0.5)
                 .setValue(this.plugin.settings.dividerThickness || 1.5)
 
+                .setDynamicTooltip()
                 .onChange(async (value) => {
                     this.plugin.settings.dividerThickness = value;
                     await this.plugin.saveSettings();
                     this.plugin.dividerManager.syncDividers();
                     updatePreview();
-                }));
+                });
+                return slider;
+            })
+            .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
+                this.plugin.settings.dividerThickness = DEFAULT_SETTINGS.dividerThickness;
+                sliderComp_dividerThickness.setValue(DEFAULT_SETTINGS.dividerThickness as number);
+                await this.plugin.saveSettings();
+                this.plugin.generateStyles();
+            }));
 
+        let sliderComp_dividerLinePaddingLeft: obsidian.SliderComponent;
         new obsidian.Setting(divCard)
             .setName('Line gap (left)')
             .setDesc('Adjust horizontal space between the left divider line and the central label.')
-            .addSlider(slider => slider
+            .addSlider(slider => {
+                sliderComp_dividerLinePaddingLeft = slider;
+                slider
                 .setLimits(-10, 40, 1)
                 .setValue(this.plugin.settings.dividerLinePaddingLeft ?? 8)
 
+                .setDynamicTooltip()
                 .onChange(async (value) => {
                     this.plugin.settings.dividerLinePaddingLeft = value;
                     await this.plugin.saveSettings();
                     this.plugin.generateStyles();
                     updatePreview();
-                }));
+                });
+                return slider;
+            })
+            .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
+                this.plugin.settings.dividerLinePaddingLeft = DEFAULT_SETTINGS.dividerLinePaddingLeft;
+                sliderComp_dividerLinePaddingLeft.setValue(DEFAULT_SETTINGS.dividerLinePaddingLeft as number);
+                await this.plugin.saveSettings();
+                this.plugin.generateStyles();
+            }));
 
+        let sliderComp_dividerLinePaddingRight: obsidian.SliderComponent;
         new obsidian.Setting(divCard)
             .setName('Line gap (right)')
             .setDesc('Adjust horizontal space between the right divider line and the central label.')
-            .addSlider(slider => slider
+            .addSlider(slider => {
+                sliderComp_dividerLinePaddingRight = slider;
+                slider
                 .setLimits(-10, 40, 1)
                 .setValue(this.plugin.settings.dividerLinePaddingRight ?? 8)
 
+                .setDynamicTooltip()
                 .onChange(async (value) => {
                     this.plugin.settings.dividerLinePaddingRight = value;
                     await this.plugin.saveSettings();
                     this.plugin.generateStyles();
                     updatePreview();
-                }));
+                });
+                return slider;
+            })
+            .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
+                this.plugin.settings.dividerLinePaddingRight = DEFAULT_SETTINGS.dividerLinePaddingRight;
+                sliderComp_dividerLinePaddingRight.setValue(DEFAULT_SETTINGS.dividerLinePaddingRight as number);
+                await this.plugin.saveSettings();
+                this.plugin.generateStyles();
+            }));
 
         new obsidian.Setting(divCard)
             .setName('Default line style')
@@ -1473,18 +1581,30 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 }));
 
         const typeCard = makeCard(generalPanel, "Aa", "Path and typography");
+        let sliderComp_pathLineThickness: obsidian.SliderComponent;
         new obsidian.Setting(typeCard)
             .setName('Path line thickness')
             .setDesc('Adjust the thickness of vertical indentation lines and active borders.')
-            .addSlider(slider => slider
+            .addSlider(slider => {
+                sliderComp_pathLineThickness = slider;
+                slider
                 .setLimits(1, 10, 0.5)
-                .setValue(this.plugin.settings.pathLineThickness ?? 2.0)
+                .setValue(this.plugin.settings.pathLineThickness ?? 3)
 
+                .setDynamicTooltip()
                 .onChange(async (value) => {
                     this.plugin.settings.pathLineThickness = value;
                     await this.plugin.saveSettings();
                     this.plugin.generateStyles();
-                }));
+                });
+                return slider;
+            })
+            .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
+                this.plugin.settings.pathLineThickness = DEFAULT_SETTINGS.pathLineThickness;
+                sliderComp_pathLineThickness.setValue(DEFAULT_SETTINGS.pathLineThickness as number);
+                await this.plugin.saveSettings();
+                this.plugin.generateStyles();
+            }));
 
         new obsidian.Setting(typeCard)
             .setName('Show item counters')
@@ -1527,58 +1647,106 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         const tuneCard = makeCard(generalPanel, "🎛️", "Advanced tuning");
 
+        let sliderComp_rootOpacity: obsidian.SliderComponent;
         new obsidian.Setting(tuneCard)
             .setName('Root opacity (%)')
             .setDesc('Transparency of top-level folders in file explorer.')
-            .addSlider(slider => slider
+            .addSlider(slider => {
+                sliderComp_rootOpacity = slider;
+                slider
                 .setLimits(1, 100, 1)
                 .setValue(this.plugin.settings.rootOpacity * 100)
 
+                .setDynamicTooltip()
                 .onChange(async (value) => {
                     this.plugin.settings.rootOpacity = parseFloat((value / 100).toFixed(3));
                     await this.plugin.saveSettings();
                     this.plugin.generateStyles();
-                }));
+                });
+                return slider;
+            })
+            .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
+                this.plugin.settings.rootOpacity = DEFAULT_SETTINGS.rootOpacity;
+                sliderComp_rootOpacity.setValue(DEFAULT_SETTINGS.rootOpacity as number);
+                await this.plugin.saveSettings();
+                this.plugin.generateStyles();
+            }));
 
+        let sliderComp_subfolderOpacity: obsidian.SliderComponent;
         new obsidian.Setting(tuneCard)
             .setName('Subfolder opacity (%)')
             .setDesc('Transparency of nested subfolders.')
-            .addSlider(slider => slider
+            .addSlider(slider => {
+                sliderComp_subfolderOpacity = slider;
+                slider
                 .setLimits(1, 100, 1)
                 .setValue(this.plugin.settings.subfolderOpacity * 100)
 
+                .setDynamicTooltip()
                 .onChange(async (value) => {
                     this.plugin.settings.subfolderOpacity = parseFloat((value / 100).toFixed(3));
                     await this.plugin.saveSettings();
                     this.plugin.generateStyles();
-                }));
+                });
+                return slider;
+            })
+            .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
+                this.plugin.settings.subfolderOpacity = DEFAULT_SETTINGS.subfolderOpacity;
+                sliderComp_subfolderOpacity.setValue(DEFAULT_SETTINGS.subfolderOpacity as number);
+                await this.plugin.saveSettings();
+                this.plugin.generateStyles();
+            }));
 
+        let sliderComp_tintOpacity: obsidian.SliderComponent;
         new obsidian.Setting(tuneCard)
             .setName('Opened folder backing tint (%)')
             .setDesc('Controls how highly tinted the background content space becomes when you open a directory.')
-            .addSlider(slider => slider
+            .addSlider(slider => {
+                sliderComp_tintOpacity = slider;
+                slider
                 .setLimits(0, 100, 1)
                 .setValue(this.plugin.settings.tintOpacity * 100)
 
+                .setDynamicTooltip()
                 .onChange(async (value) => {
                     this.plugin.settings.tintOpacity = parseFloat((value / 100).toFixed(3));
                     await this.plugin.saveSettings();
                     this.plugin.generateStyles();
-                }));
+                });
+                return slider;
+            })
+            .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
+                this.plugin.settings.tintOpacity = DEFAULT_SETTINGS.tintOpacity;
+                sliderComp_tintOpacity.setValue(DEFAULT_SETTINGS.tintOpacity as number);
+                await this.plugin.saveSettings();
+                this.plugin.generateStyles();
+            }));
 
 
+        let sliderComp_fileBackgroundOpacity: obsidian.SliderComponent;
         new obsidian.Setting(tuneCard)
             .setName('File background opacity (%)')
             .setDesc('Global transparency for all auto-colored files (default 10%).')
-            .addSlider(slider => slider
+            .addSlider(slider => {
+                sliderComp_fileBackgroundOpacity = slider;
+                slider
                 .setLimits(0, 100, 1)
                 .setValue((this.plugin.settings.fileBackgroundOpacity !== undefined ? this.plugin.settings.fileBackgroundOpacity : 0.1) * 100)
 
+                .setDynamicTooltip()
                 .onChange(async (value) => {
                     this.plugin.settings.fileBackgroundOpacity = parseFloat((value / 100).toFixed(3));
                     await this.plugin.saveSettings();
                     this.plugin.generateStyles();
-                }));
+                });
+                return slider;
+            })
+            .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
+                this.plugin.settings.fileBackgroundOpacity = DEFAULT_SETTINGS.fileBackgroundOpacity;
+                sliderComp_fileBackgroundOpacity.setValue(DEFAULT_SETTINGS.fileBackgroundOpacity as number);
+                await this.plugin.saveSettings();
+                this.plugin.generateStyles();
+            }));
 
         const stealthCard = makeCard(sysPanel, "🔏", "Privacy and stealth");
         const isLocked = !!(this.plugin.settings.vaultPassword && this.plugin.settings.isVaultLocked);
