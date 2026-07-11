@@ -78,7 +78,7 @@ export class StyleResolver {
                         .filter((c) => !excludeFolders.has(c.name.toLowerCase()))
                         .sort((a, b) => a.name.localeCompare(b.name));
                     
-                    siblings.forEach((s, idx) => plugin.folderSortCache!.set(s.path, idx));
+                    siblings.forEach((s, idx) => plugin.folderSortCache.set(s.path, idx));
                     return plugin.folderSortCache.get(folder.path) || 0;
                 };
                 
@@ -99,7 +99,7 @@ export class StyleResolver {
                         .filter((c) => !excludeFolders.has(c.name.toLowerCase()))
                         .sort((a, b) => a.name.localeCompare(b.name));
                         
-                    rootSiblings.forEach((s, idx) => plugin.rootSortCache!.set(s.name, idx));
+                    rootSiblings.forEach((s, idx) => plugin.rootSortCache.set(s.name, idx));
                     rootIndex = plugin.rootSortCache.get(rootSegment) || 0;
                 }
             }
