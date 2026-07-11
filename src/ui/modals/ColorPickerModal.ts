@@ -528,7 +528,7 @@ modifiedFields: Set<string>;
             this.close();
         };
 
-        const textPickerLabel = txtSection.createEl("div", { text: this.folderStyle.textGradient ? "Start Color" : "Text Color" });
+        const textPickerLabel = txtSection.createDiv({ text: this.folderStyle.textGradient ? "Start Color" : "Text Color" });
         textPickerLabel.setCssStyles({ fontSize: "0.78em", fontWeight: "700", color: "var(--text-muted)", marginBottom: "4px" });
 
         const textPickerContainer = txtSection.createDiv();
@@ -551,7 +551,7 @@ modifiedFields: Set<string>;
             marginTop: "12px",
             display: this.folderStyle.textGradient ? "block" : "none"
         });
-        const gradEndLabel = gradEndSection.createEl("div", { text: "End color" });
+        const gradEndLabel = gradEndSection.createDiv({ text: "End color" });
         gradEndLabel.setCssStyles({
             fontSize: "0.78em", fontWeight: "700", color: "var(--text-muted)", marginBottom: "4px"
         });

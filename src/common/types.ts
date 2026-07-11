@@ -175,7 +175,7 @@ export interface StyleContext {
     isDark: boolean;
     brightnessAmount: number;
     heatmapData: Map<string, number>;
-    excludeFolders: string[];
+    excludeFolders: Set<string>;
     effFileIconW: string;
     folderIconW: string;
     nnIconW: string;

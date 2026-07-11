@@ -17,7 +17,6 @@ import { DividerManager } from "./core/DividerManager";
 import { DOMObserverService } from "./services/DOMObserverService";
 import { EventTrackerService } from "./services/EventTrackerService";
 
-import { MenuHelper } from "./ui/MenuHelper";
 import { IconManager } from "./core/IconManager";
 
 declare module "obsidian" {
@@ -527,14 +526,17 @@ export default class ColorfulFoldersPlugin
   getAllExplorerContainers(): HTMLElement[] {
     const explorers: HTMLElement[] = [];
     this.app.workspace.iterateAllLeaves((leaf) => {
+      if (!leaf || !leaf.view) return;
       const view = leaf.view as obsidian.View & {
         getViewType(): string;
         containerEl: HTMLElement;
       };
       if (
-        view.getViewType() === "file-explorer" ||
-        view.getViewType() === "nav-files"
+        typeof view.getViewType === 'function' &&
+        (view.getViewType() === "file-explorer" ||
+         view.getViewType() === "nav-files")
       ) {
+        if (!view.containerEl) return;
         const container = view.containerEl.querySelector(
           ".nav-files-container",
         );

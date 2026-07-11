@@ -135,7 +135,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .setLimits(0.5, 2.5, 0.1)
                 .setValue(this.plugin.settings.notebookNavigatorIconScale ?? 0.8)
 
-                .setDynamicTooltip()
+
                 .onChange(async (value) => {
                     this.plugin.settings.notebookNavigatorIconScale = value;
                     await this.plugin.saveSettings();
@@ -145,7 +145,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             })
             .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
                 this.plugin.settings.notebookNavigatorIconScale = DEFAULT_SETTINGS.notebookNavigatorIconScale;
-                sliderComp_notebookNavigatorIconScale.setValue(DEFAULT_SETTINGS.notebookNavigatorIconScale as number);
+                sliderComp_notebookNavigatorIconScale.setValue(DEFAULT_SETTINGS.notebookNavigatorIconScale);
                 await this.plugin.saveSettings();
                 this.plugin.generateStyles();
             }));
@@ -628,7 +628,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             alignItems: 'center',
             marginBottom: '16px'
         });
-        header.createEl('span', { text: 'Palette colors' }).setCssStyles({
+        header.createSpan({ text: 'Palette colors' }).setCssStyles({
             fontWeight: '600',
             fontSize: '1.0em',
             color: 'var(--text-normal)'
@@ -885,7 +885,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         await this.plugin.saveSettings();
                         this.plugin.generateStyles();
                     });
-                globalBgSwatch = text.inputEl.parentElement?.createDiv() ?? text.inputEl.insertAdjacentElement('afterend', activeDocument.createElement('div')) as HTMLElement;
+                globalBgSwatch = text.inputEl.parentElement?.createDiv() ?? text.inputEl.insertAdjacentElement('afterend', this.containerEl.createDiv()) as HTMLElement;
                 globalBgSwatch.setCssStyles({
                     width: '24px', height: '24px', borderRadius: '6px',
                     border: '1px solid var(--background-modifier-border)',
@@ -904,7 +904,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     .setLimits(0, 20, 1)
                     .setValue(this.plugin.settings.cycleOffset || 0)
 
-                    .setDynamicTooltip()
+    
                 .onChange(async (value) => {
                         this.plugin.settings.cycleOffset = value;
                         await this.plugin.saveSettings();
@@ -914,7 +914,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             })
             .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
                 this.plugin.settings.cycleOffset = DEFAULT_SETTINGS.cycleOffset;
-                sliderComp_cycleOffset.setValue(DEFAULT_SETTINGS.cycleOffset as number);
+                sliderComp_cycleOffset.setValue(DEFAULT_SETTINGS.cycleOffset);
                 await this.plugin.saveSettings();
                 this.plugin.generateStyles();
             }));
@@ -1070,7 +1070,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 slider
                 .setLimits(-100, 100, 1)
                 .setValue(this.plugin.settings.lightModeBrightness || 0)
-                .setDynamicTooltip()
+
                 .onChange(async (value) => {
                     this.plugin.settings.lightModeBrightness = value;
                     await this.plugin.saveSettings();
@@ -1080,7 +1080,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             })
             .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
                 this.plugin.settings.lightModeBrightness = DEFAULT_SETTINGS.lightModeBrightness;
-                sliderComp_lightModeBrightness.setValue(DEFAULT_SETTINGS.lightModeBrightness as number);
+                sliderComp_lightModeBrightness.setValue(DEFAULT_SETTINGS.lightModeBrightness);
                 await this.plugin.saveSettings();
                 this.plugin.generateStyles();
             }));
@@ -1093,7 +1093,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 slider
                 .setLimits(-100, 100, 1)
                 .setValue(this.plugin.settings.darkModeBrightness || 0)
-                .setDynamicTooltip()
+
                 .onChange(async (value) => {
                     this.plugin.settings.darkModeBrightness = value;
                     await this.plugin.saveSettings();
@@ -1103,7 +1103,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             })
             .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
                 this.plugin.settings.darkModeBrightness = DEFAULT_SETTINGS.darkModeBrightness;
-                sliderComp_darkModeBrightness.setValue(DEFAULT_SETTINGS.darkModeBrightness as number);
+                sliderComp_darkModeBrightness.setValue(DEFAULT_SETTINGS.darkModeBrightness);
                 await this.plugin.saveSettings();
                 this.plugin.generateStyles();
             }));
@@ -1139,7 +1139,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .setLimits(0.5, 2.5, 0.1)
                 .setValue(this.plugin.settings.iconScale || 1.0)
 
-                .setDynamicTooltip()
+
                 .onChange(async (value) => {
                     this.plugin.settings.iconScale = value;
                     await this.plugin.saveSettings();
@@ -1149,7 +1149,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             })
             .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
                 this.plugin.settings.iconScale = DEFAULT_SETTINGS.iconScale;
-                sliderComp_iconScale.setValue(DEFAULT_SETTINGS.iconScale as number);
+                sliderComp_iconScale.setValue(DEFAULT_SETTINGS.iconScale);
                 await this.plugin.saveSettings();
                 this.plugin.generateStyles();
             }));
@@ -1216,10 +1216,10 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
             if (this.plugin.settings.autoIconVariety) {
                 new obsidian.Setting(autoCard)
-                    .setName('Shuffle variety icons')
+                    .setName('Shuffle icons')
                     .setDesc('Randomize the global seed used for assigning variety icons. If you dislike the current distribution, click this to re-roll them all!')
                     .addButton(button => button
-                        .setButtonText('Shuffle Icons')
+                        .setButtonText('Shuffle icons')
                         .onClick(async () => {
                             this.plugin.settings.varietySeed = Math.floor(Math.random() * 1000000);
                             await this.plugin.saveSettings();
@@ -1487,7 +1487,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .setLimits(4, 40, 2)
                 .setValue(this.plugin.settings.dividerSpacing || 16)
 
-                .setDynamicTooltip()
+
                 .onChange(async (value) => {
                     this.plugin.settings.dividerSpacing = value;
                     await this.plugin.saveSettings();
@@ -1498,7 +1498,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             })
             .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
                 this.plugin.settings.dividerSpacing = DEFAULT_SETTINGS.dividerSpacing;
-                sliderComp_dividerSpacing.setValue(DEFAULT_SETTINGS.dividerSpacing as number);
+                sliderComp_dividerSpacing.setValue(DEFAULT_SETTINGS.dividerSpacing);
                 await this.plugin.saveSettings();
                 this.plugin.generateStyles();
             }));
@@ -1511,7 +1511,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .setLimits(1, 10, 0.5)
                 .setValue(this.plugin.settings.dividerThickness || 1.5)
 
-                .setDynamicTooltip()
+
                 .onChange(async (value) => {
                     this.plugin.settings.dividerThickness = value;
                     await this.plugin.saveSettings();
@@ -1522,7 +1522,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             })
             .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
                 this.plugin.settings.dividerThickness = DEFAULT_SETTINGS.dividerThickness;
-                sliderComp_dividerThickness.setValue(DEFAULT_SETTINGS.dividerThickness as number);
+                sliderComp_dividerThickness.setValue(DEFAULT_SETTINGS.dividerThickness);
                 await this.plugin.saveSettings();
                 this.plugin.generateStyles();
             }));
@@ -1537,7 +1537,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .setLimits(-10, 40, 1)
                 .setValue(this.plugin.settings.dividerLinePaddingLeft ?? 8)
 
-                .setDynamicTooltip()
+
                 .onChange(async (value) => {
                     this.plugin.settings.dividerLinePaddingLeft = value;
                     await this.plugin.saveSettings();
@@ -1548,7 +1548,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             })
             .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
                 this.plugin.settings.dividerLinePaddingLeft = DEFAULT_SETTINGS.dividerLinePaddingLeft;
-                sliderComp_dividerLinePaddingLeft.setValue(DEFAULT_SETTINGS.dividerLinePaddingLeft as number);
+                sliderComp_dividerLinePaddingLeft.setValue(DEFAULT_SETTINGS.dividerLinePaddingLeft);
                 await this.plugin.saveSettings();
                 this.plugin.generateStyles();
             }));
@@ -1563,7 +1563,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .setLimits(-10, 40, 1)
                 .setValue(this.plugin.settings.dividerLinePaddingRight ?? 8)
 
-                .setDynamicTooltip()
+
                 .onChange(async (value) => {
                     this.plugin.settings.dividerLinePaddingRight = value;
                     await this.plugin.saveSettings();
@@ -1574,7 +1574,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             })
             .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
                 this.plugin.settings.dividerLinePaddingRight = DEFAULT_SETTINGS.dividerLinePaddingRight;
-                sliderComp_dividerLinePaddingRight.setValue(DEFAULT_SETTINGS.dividerLinePaddingRight as number);
+                sliderComp_dividerLinePaddingRight.setValue(DEFAULT_SETTINGS.dividerLinePaddingRight);
                 await this.plugin.saveSettings();
                 this.plugin.generateStyles();
             }));
@@ -1604,7 +1604,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .setLimits(1, 10, 0.5)
                 .setValue(this.plugin.settings.pathLineThickness ?? 3)
 
-                .setDynamicTooltip()
+
                 .onChange(async (value) => {
                     this.plugin.settings.pathLineThickness = value;
                     await this.plugin.saveSettings();
@@ -1614,7 +1614,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             })
             .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
                 this.plugin.settings.pathLineThickness = DEFAULT_SETTINGS.pathLineThickness;
-                sliderComp_pathLineThickness.setValue(DEFAULT_SETTINGS.pathLineThickness as number);
+                sliderComp_pathLineThickness.setValue(DEFAULT_SETTINGS.pathLineThickness);
                 await this.plugin.saveSettings();
                 this.plugin.generateStyles();
             }));
@@ -1670,7 +1670,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .setLimits(1, 100, 1)
                 .setValue(this.plugin.settings.rootOpacity * 100)
 
-                .setDynamicTooltip()
+
                 .onChange(async (value) => {
                     this.plugin.settings.rootOpacity = parseFloat((value / 100).toFixed(3));
                     await this.plugin.saveSettings();
@@ -1680,7 +1680,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             })
             .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
                 this.plugin.settings.rootOpacity = DEFAULT_SETTINGS.rootOpacity;
-                sliderComp_rootOpacity.setValue(DEFAULT_SETTINGS.rootOpacity as number);
+                sliderComp_rootOpacity.setValue(DEFAULT_SETTINGS.rootOpacity);
                 await this.plugin.saveSettings();
                 this.plugin.generateStyles();
             }));
@@ -1695,7 +1695,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .setLimits(1, 100, 1)
                 .setValue(this.plugin.settings.subfolderOpacity * 100)
 
-                .setDynamicTooltip()
+
                 .onChange(async (value) => {
                     this.plugin.settings.subfolderOpacity = parseFloat((value / 100).toFixed(3));
                     await this.plugin.saveSettings();
@@ -1705,7 +1705,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             })
             .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
                 this.plugin.settings.subfolderOpacity = DEFAULT_SETTINGS.subfolderOpacity;
-                sliderComp_subfolderOpacity.setValue(DEFAULT_SETTINGS.subfolderOpacity as number);
+                sliderComp_subfolderOpacity.setValue(DEFAULT_SETTINGS.subfolderOpacity);
                 await this.plugin.saveSettings();
                 this.plugin.generateStyles();
             }));
@@ -1720,7 +1720,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .setLimits(0, 100, 1)
                 .setValue(this.plugin.settings.tintOpacity * 100)
 
-                .setDynamicTooltip()
+
                 .onChange(async (value) => {
                     this.plugin.settings.tintOpacity = parseFloat((value / 100).toFixed(3));
                     await this.plugin.saveSettings();
@@ -1730,7 +1730,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             })
             .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
                 this.plugin.settings.tintOpacity = DEFAULT_SETTINGS.tintOpacity;
-                sliderComp_tintOpacity.setValue(DEFAULT_SETTINGS.tintOpacity as number);
+                sliderComp_tintOpacity.setValue(DEFAULT_SETTINGS.tintOpacity);
                 await this.plugin.saveSettings();
                 this.plugin.generateStyles();
             }));
@@ -1746,7 +1746,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .setLimits(0, 100, 1)
                 .setValue((this.plugin.settings.fileBackgroundOpacity !== undefined ? this.plugin.settings.fileBackgroundOpacity : 0.1) * 100)
 
-                .setDynamicTooltip()
+
                 .onChange(async (value) => {
                     this.plugin.settings.fileBackgroundOpacity = parseFloat((value / 100).toFixed(3));
                     await this.plugin.saveSettings();
@@ -1756,7 +1756,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             })
             .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
                 this.plugin.settings.fileBackgroundOpacity = DEFAULT_SETTINGS.fileBackgroundOpacity;
-                sliderComp_fileBackgroundOpacity.setValue(DEFAULT_SETTINGS.fileBackgroundOpacity as number);
+                sliderComp_fileBackgroundOpacity.setValue(DEFAULT_SETTINGS.fileBackgroundOpacity);
                 await this.plugin.saveSettings();
                 this.plugin.generateStyles();
             }));
@@ -1917,7 +1917,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
             const url = URL.createObjectURL(blob);
             const doc = this.containerEl.ownerDocument;
-            const a = doc.createElement("a");
+            const a = this.containerEl.createEl("a");
             a.setCssStyles({ display: 'none' });
             a.href = url;
             a.download = filename;
@@ -2001,7 +2001,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .setButtonText('Restore')
                 .onClick(() => {
                     const doc = this.containerEl.ownerDocument;
-                    const input = doc.createElement('input');
+                    const input = this.containerEl.createEl('input');
                     input.type = 'file';
                     input.accept = '.json';
                     input.setCssStyles({ display: 'none' });
@@ -2137,7 +2137,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         const iframeWrap = sponsorCard.createDiv();
         iframeWrap.setCssStyles({ display: 'flex', justifyContent: 'center', padding: '8px 0' });
 
-        const iframe = activeDocument.createElement('iframe');
+        const iframe = iframeWrap.createEl('iframe');
         iframe.src = 'https://github.com/sponsors/RohitNahar-Offical/button';
         iframe.title = 'Sponsor rohitnahar-offical';
         iframe.height = '32';

@@ -68,10 +68,7 @@ export class StyleGenerator {
         this._cachedPalette = currentPalette;
         this._cachedPaletteKey = cpRes.newKey;
 
-        const excludeFolders = this.settings.exclusionList
-            .split(',')
-            .map((s: string) => s.trim().toLowerCase())
-            .filter((s: string) => s.length > 0);
+        const excludeFolders = this.plugin.parsedExclusionList || new Set<string>();
 
         return {
             isDark,
@@ -129,13 +126,18 @@ export class StyleGenerator {
 
 
     private traverse(folder: obsidian.TFolder, depth: number, validIndex: number, rootIndex: number, passedColor: { rgb: string, hex: string } | null, inheritedStyle: FolderStyle | null, context: StyleContext, cssRules: string[], cumulativeTintOp: number = 0) {
-        const copyFolders = folder.children
-            .filter((c): c is obsidian.TFolder => c instanceof obsidian.TFolder)
-            .sort((a, b) => a.name.localeCompare(b.name));
-
-        const copyFiles = folder.children
-            .filter((c): c is obsidian.TFile => c instanceof obsidian.TFile)
-            .sort((a, b) => a.name.localeCompare(b.name));
+        const copyFolders: obsidian.TFolder[] = [];
+        const copyFiles: obsidian.TFile[] = [];
+        for (let i = 0; i < folder.children.length; i++) {
+            const child = folder.children[i];
+            if (child instanceof obsidian.TFolder) {
+                copyFolders.push(child);
+            } else if (child instanceof obsidian.TFile) {
+                copyFiles.push(child);
+            }
+        }
+        copyFolders.sort((a, b) => a.name.localeCompare(b.name));
+        copyFiles.sort((a, b) => a.name.localeCompare(b.name));
 
         const currentPalette = context.currentPalette;
         const isDark = context.isDark;
@@ -451,7 +453,7 @@ export class StyleGenerator {
         let validFolderIndex = 0;
         for (let i = 0; i < copyFolders.length; i++) {
             const child = copyFolders[i];
-            if (excludeFolders.includes(child.name.toLowerCase())) {
+            if (excludeFolders.has(child.name.toLowerCase())) {
                 this.traverse(child, depth + 1, validFolderIndex, (depth === 0 ? validFolderIndex : rootIndex), passedColor, inheritedStyle, context, cssRules, cumulativeTintOp);
                 continue;
             }

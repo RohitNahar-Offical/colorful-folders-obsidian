@@ -1,9 +1,6 @@
 import { EventRef } from "obsidian";
 import type ColorfulFoldersPlugin from "../main";
 import { MenuHelper } from "../ui/MenuHelper";
-import { PasswordModal } from "../ui/modals/PasswordModal";
-import * as obsidian from "obsidian";
-
 export class EventTrackerService {
     private plugin: ColorfulFoldersPlugin;
     private eventRefs: EventRef[] = [];
@@ -91,7 +88,7 @@ export class EventTrackerService {
     }
 
     private registerDomEvent(element: HTMLElement | Document | Window, event: string, callback: EventListenerOrEventListenerObject) {
-        this.plugin.registerDomEvent(element as any, event as any, callback as any);
+        element.addEventListener(event, callback);
         this.domEvents.push({ element, event, callback });
     }
 
@@ -119,6 +116,9 @@ export class EventTrackerService {
         // Obsidian automatically unregisters events via plugin.registerEvent during unload, 
         // but tracking them explicitly here ensures safety for sub-services.
         this.eventRefs = [];
+        this.domEvents.forEach(e => {
+            e.element.removeEventListener(e.event, e.callback);
+        });
         this.domEvents = [];
     }
 }

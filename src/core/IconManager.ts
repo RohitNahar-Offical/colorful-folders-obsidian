@@ -1,7 +1,7 @@
 import * as obsidian from 'obsidian';
 import { IColorfulFoldersPlugin, AutoIconData } from '../common/types';
 import { AUTO_ICON_CATEGORIES } from '../common/constants';
-import { hashString } from '../common/utils';
+import { hashString, escapeRegExp } from '../common/utils';
 
 interface ParsedIcon {
     id: string;
@@ -72,8 +72,6 @@ export class IconManager {
         const fuzzyIconId = this.findIconId(lName);
         const hasCustomFuzzy = fuzzyIconId && !fuzzyIconId.startsWith('lucide-');
         
-        const escapeRegExp = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
 
         // 2. Standard Regex Match
         const matches = this._categoryCache.filter(cat => cat.rex.test(lName));
@@ -82,12 +80,12 @@ export class IconManager {
         let finalMatch: AutoIconData | null = null;
 
         // 3. Priority Resolution
-        if (hasCustomFuzzy) {
+        if (hasCustomFuzzy && fuzzyIconId) {
             // Ultimate priority: Custom Icon exact/fuzzy match
             finalMatch = {
                 rex: new RegExp(`^${escapeRegExp(lName)}$`, 'i'),
-                emoji: fuzzyIconId!,
-                lucide: fuzzyIconId!,
+                emoji: fuzzyIconId,
+                lucide: fuzzyIconId,
                 priority: 2000
             };
         } else if (matches.length > 0) {
@@ -143,7 +141,7 @@ export class IconManager {
         }
         
         // Replace spaces or special characters with hyphens to match icon naming conventions
-        sanitized = sanitized.replace(/[\s_]+/g, '-').replace(/[^a-z0-9\-]/g, '');
+        sanitized = sanitized.replace(/[\s_]+/g, '-').replace(/[^a-z0-9-]/g, '');
 
         if (!sanitized) return null;
 

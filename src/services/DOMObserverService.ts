@@ -63,12 +63,14 @@ export class DOMObserverService {
                     }
                 });
             });
-            observer.observe(doc.body, {
-                attributes: true,
-                attributeFilter: ["class"],
-                attributeOldValue: true,
-            });
-            this.styleObservers.push(observer);
+            if (doc && doc.body) {
+                observer.observe(doc.body, {
+                    attributes: true,
+                    attributeFilter: ["class"],
+                    attributeOldValue: true,
+                });
+                this.styleObservers.push(observer);
+            }
         });
     }
 
