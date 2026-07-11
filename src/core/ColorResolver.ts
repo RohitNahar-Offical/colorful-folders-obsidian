@@ -128,6 +128,8 @@ export class ColorResolver {
     ): number {
         if (customStyle?.opacity !== undefined) {
             return customStyle.opacity;
+        } else if (customStyle?.hex) {
+            return isFile ? (fileBackgroundOpacity ?? (isDark ? 0.1 : 0.15)) : (rootOpacity ?? 0.50);
         } else if (isFile) {
             const isAutoOn = autoColorFiles || isNNActive;
             const baseOpacity = fileBackgroundOpacity ?? (isDark ? 0.1 : 0.15);

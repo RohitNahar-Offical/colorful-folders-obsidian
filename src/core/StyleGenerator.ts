@@ -146,7 +146,7 @@ export class StyleGenerator {
         const excludeFolders = context.excludeFolders;
         const effFileIconW = context.effFileIconW;
         const folderIconW = context.folderIconW;
-        
+
         const useGlass = this.settings.glassmorphism;
         const glassCss = useGlass ? `backdrop-filter: blur(8px) saturate(120%); -webkit-backdrop-filter: blur(8px) saturate(120%);` : '';
         const cycleOff = this.settings.cycleOffset || 0;
@@ -197,7 +197,7 @@ export class StyleGenerator {
 
                 const activeStyle = fileStyle || (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle : null);
                 const iconColor = fileStyle?.iconColor || (inheritedStyle?.applyToFiles && inheritedStyle.iconColor) || null;
-                
+
                 const op = ColorResolver.resolveOpacity(
                     true,
                     depth,
@@ -247,10 +247,10 @@ export class StyleGenerator {
                 const isItalic = fileStyle?.isItalic !== undefined ? fileStyle.isItalic : (inheritedStyle?.applyToFiles ? inheritedStyle.isItalic : false);
 
                 const fileBgAlpha = op;
-                
+
                 const activeBg = (this.settings.useCustomActiveColor && this.settings.customActiveBg) ? this.settings.customActiveBg : `rgba(${color.rgb}, ${useGlass ? 0.14 : 0.12})`;
                 const activeText = (this.settings.useCustomActiveColor && this.settings.customActiveText) ? this.settings.customActiveText : textNative;
-                
+
                 let fileRowCss = `
                     ${shouldColorNative ? `
                         background-color: var(--cf-file-bg, rgba(${color.rgb}, ${fileBgAlpha})) !important;
@@ -271,7 +271,7 @@ export class StyleGenerator {
                     font-weight: ${isBold ? '800' : 'normal'} !important;
                     font-style: ${isItalic ? 'italic' : 'normal'} !important;
                 `;
-                
+
                 if (activeStyle && activeStyle.textGradient && activeStyle.textColor && activeStyle.textGradientEnd) {
                     const angle = 90;
                     let sC = activeStyle.textColor;
@@ -285,13 +285,18 @@ export class StyleGenerator {
                         if (rgbE) eC = `rgb(${adjustBrightnessRgb(`${rgbE.r},${rgbE.g},${rgbE.b}`, amount)})`;
                     }
                     fileTextCss = `
-                        background-image: linear-gradient(${angle}deg, ${sC}, ${eC}, ${sC}) !important;
-                        background-clip: text !important;
-                        -webkit-background-clip: text !important;
-                        color: transparent !important;
-                        font-weight: ${isBold ? '800' : 'normal'} !important;
-                        font-style: ${isItalic ? 'italic' : 'normal'} !important;
-                    `;
+                    background-image: linear-gradient(${angle}deg, ${sC}, ${eC}, ${sC}) !important;
+                    background-clip: text !important;
+                    -webkit-background-clip: text !important;
+                    -webkit-text-fill-color: transparent !important;
+                    color: transparent !important;
+                    font-weight: ${isBold ? '800' : 'normal'} !important;
+                    font-style: ${isItalic ? 'italic' : 'normal'} !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    width: fit-content !important;
+                    flex: 0 1 auto !important;
+                `;
                 }
 
                 const fileRowSels = [
@@ -320,7 +325,7 @@ export class StyleGenerator {
                 if (nnFileBgActive) {
                     const isEmoji = this.plugin.iconManager.isEmojiIcon(iconId);
                     const iconSvg = !isEmoji && iconId ? this.plugin.iconManager.getIconSvg(iconId, true) : "";
-                    
+
                     NotebookNavigatorIntegration.generateIntegratedStyles(
                         grouper,
                         child.path,
@@ -361,34 +366,29 @@ export class StyleGenerator {
                             flex-shrink: 0 !important;
                             height: ${effFileIconW} !important;
                             width: ${effFileIconW} !important;
+                            vertical-align: middle !important;
+                            margin-right: 4px !important;
+                            transform: translateY(-1px) !important;
                         `, fileTextSels.map(s => s + '::before'));
                     } else {
-                        const isManualCustom = !!(activeStyle && activeStyle.iconId);
-                        if (isManualCustom) {
+                        const svgStr = this.plugin.iconManager.getIconSvg(iconId, true);
+                        if (svgStr) {
                             grouper.add(`
-                                display: none !important;
-                                content: none !important;
-                            `, [
-                                `body .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
-                                `body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
-                            ]);
-                        } else {
-                            const svgStr = this.plugin.iconManager.getIconSvg(iconId, true);
-                            if (svgStr) {
-                                grouper.add(`
-                                    content: '' !important;
-                                    display: inline-flex !important;
-                                    flex-shrink: 0 !important;
-                                    width: ${effFileIconW} !important;
-                                    height: ${effFileIconW} !important;
-                                    background-color: ${iconColor || color.hex || textNative} !important;
-                                    -webkit-mask-image: url("data:image/svg+xml,${svgStr}") !important;
-                                    -webkit-mask-repeat: no-repeat !important;
-                                    -webkit-mask-position: center !important;
-                                    -webkit-mask-size: contain !important;
-                                    opacity: 0.85 !important;
-                                `, fileTextSels.map(s => s + '::before'));
-                            }
+                                content: '' !important;
+                                display: inline-flex !important;
+                                flex-shrink: 0 !important;
+                                width: ${effFileIconW} !important;
+                                height: ${effFileIconW} !important;
+                                vertical-align: middle !important;
+                                margin-right: 4px !important;
+                                transform: translateY(-1px) !important;
+                                background-color: ${iconColor || color.hex || textNative} !important;
+                                -webkit-mask-image: url("data:image/svg+xml,${svgStr}") !important;
+                                -webkit-mask-repeat: no-repeat !important;
+                                -webkit-mask-position: center !important;
+                                -webkit-mask-size: contain !important;
+                                opacity: 0.85 !important;
+                            `, fileTextSels.map(s => s + '::before'));
                         }
                     }
                 } else if (autoIcons) {
@@ -571,11 +571,11 @@ export class StyleGenerator {
             } else if (this.settings.rainbowRootText && depth === 0 && !customStyle?.textColor) {
                 isUsingGradient = true;
                 const rainbowOpacity = 1.0;
-                
+
                 const nextColor = currentPalette[(i + 1) % currentPalette.length];
                 startCol = color.hex;
                 endCol = nextColor.hex;
-                
+
                 // Convert hex to rgb string for rgba opacity mix
                 if (startCol.startsWith("#")) {
                     const rgb = hexToRgbObj(startCol);
@@ -601,9 +601,14 @@ export class StyleGenerator {
                     background-image: linear-gradient(${gradAngle}deg, ${startCol}, ${endCol}, ${startCol}) !important;
                     background-clip: text !important;
                     -webkit-background-clip: text !important;
+                    -webkit-text-fill-color: transparent !important;
                     color: transparent !important;
                     font-weight: ${gradWeight} !important;
                     font-style: ${isItalic ? 'italic' : 'normal'} !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    width: fit-content !important;
+                    flex: 0 1 auto !important;
                 `;
             }
 
@@ -624,7 +629,7 @@ export class StyleGenerator {
 
 
             /* Notebook Navigator Folder Integration (Native-Bridge Architecture) */
-            
+
             const isEmoji = this.plugin.iconManager.isEmojiIcon(folderIconId);
             const iconSvg = !isEmoji && folderIconId ? this.plugin.iconManager.getIconSvg(folderIconId, true) : "";
 
@@ -653,11 +658,15 @@ export class StyleGenerator {
                 this.settings.activeGlow !== false
             );
 
+            const nnNavSel = NotebookNavigatorIntegration.getScopedNavSelector(child.path);
+            const nnNavNameSel = NotebookNavigatorIntegration.getNavNameSelector();
+            const nnSelectors = nnNavSel.split(',').map(s => `body ${s.trim()} ${nnNavNameSel}`);
+
             grouper.add(textCss, [
                 `body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content`,
                 `body .tree-item-self[data-path="${safePath}"] .tree-item-inner`,
-                `body ${NotebookNavigatorIntegration.getScopedNavSelector(child.path)} ${NotebookNavigatorIntegration.getNavNameSelector()}`
-            ], `folderText_${isUsingGradient ? 'grad' : 'norm'}_${isBold}_${isItalic}_${folderStyles.t}`);
+                ...nnSelectors
+            ], `folderText_${isUsingGradient ? 'grad_' + startCol.replace(/\s+/g, '') + '_' + endCol.replace(/\s+/g, '') : 'norm_' + folderStyles.t}_${isBold}_${isItalic}`);
 
             if (folderIconId) {
                 const isCustomEmoji = !obsidian.getIconIds?.().includes(`lucide-${folderIconId}`) &&
@@ -671,39 +680,34 @@ export class StyleGenerator {
                         align-items: center !important;
                         justify-content: center !important;
                         flex-shrink: 0 !important;
+                        vertical-align: middle !important;
+                        margin-right: 4px !important;
+                        transform: translateY(-1px) !important;
                     `, [
                         `body .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
                         `body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
                     ]);
                 } else {
-                    const isManualCustom = !!(customStyle && customStyle.iconId);
-                    if (isManualCustom) {
+                    const svgStr = this.plugin.iconManager.getIconSvg(folderIconId, true);
+                    if (svgStr) {
                         grouper.add(`
-                            display: none !important;
-                            content: none !important;
+                            content: '' !important;
+                            display: inline-flex !important;
+                            flex-shrink: 0 !important;
+                            width: ${folderIconW} !important;
+                            height: ${folderIconW} !important;
+                            vertical-align: middle !important;
+                            margin-right: 4px !important;
+                            transform: translateY(-1px) !important;
+                            background-color: ${customStyle?.iconColor || color.hex || folderStyles.t} !important;
+                            -webkit-mask-image: url("data:image/svg+xml,${svgStr}") !important;
+                            -webkit-mask-repeat: no-repeat !important;
+                            -webkit-mask-position: center !important;
+                            -webkit-mask-size: contain !important;
                         `, [
-                            `body .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
-                            `body .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
+                            `body .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
+                            `body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
                         ]);
-                    } else {
-                        const svgStr = this.plugin.iconManager.getIconSvg(folderIconId, true);
-                        if (svgStr) {
-                            grouper.add(`
-                                content: '' !important;
-                                display: inline-flex !important;
-                                flex-shrink: 0 !important;
-                                width: ${folderIconW} !important;
-                                height: ${folderIconW} !important;
-                                background-color: ${customStyle?.iconColor || color.hex || folderStyles.t} !important;
-                                -webkit-mask-image: url("data:image/svg+xml,${svgStr}") !important;
-                                -webkit-mask-repeat: no-repeat !important;
-                                -webkit-mask-position: center !important;
-                                -webkit-mask-size: contain !important;
-                            `, [
-                                `body .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
-                                `body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
-                            ]);
-                        }
                     }
                 }
             } else if (autoIcons) {
@@ -713,6 +717,9 @@ export class StyleGenerator {
                     flex-shrink: 0 !important;
                     width: ${folderIconW} !important;
                     height: ${folderIconW} !important;
+                    vertical-align: middle !important;
+                    margin-right: 4px !important;
+                    transform: translateY(-1px) !important;
                     background-color: ${customStyle?.iconColor || color.hex || folderStyles.t} !important;
                     -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(decodeURIComponent(CF_FOLDER_CLOSED))}") !important;
                     -webkit-mask-repeat: no-repeat !important;
@@ -793,7 +800,7 @@ export class StyleGenerator {
 
 
         rawRules.push(generateDividerCss(this.settings));
-        
+
         // Support for styling the vault root in Notebook Navigator
         const rootStyle = this.getStyle(root.path) || this.getStyle("/");
         if (rootStyle && this.settings.notebookNavigatorSupport) {
@@ -833,7 +840,7 @@ export class StyleGenerator {
             );
             // Also handle potential empty path/slash variants
             if (root.path !== "/") {
-                 NotebookNavigatorIntegration.generateIntegratedStyles(
+                NotebookNavigatorIntegration.generateIntegratedStyles(
                     grouper,
                     "/",
                     true,
@@ -862,7 +869,7 @@ export class StyleGenerator {
 
         rawRules.push(generateStealthCss(this.settings));
         rawRules.push(TagColorSync.generateCss(this.plugin, context));
-        
+
         rawRules.push(grouper.build());
         return rawRules.join('\n');
     }
