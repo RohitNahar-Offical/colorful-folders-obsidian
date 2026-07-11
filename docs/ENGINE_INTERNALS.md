@@ -68,7 +68,7 @@ All expensive operations are protected by three independent `Debouncer` instance
 
 | Debouncer | Delay | Edge | Guard condition | What it calls |
 |:---|:---:|:---:|:---|:---|
-| `generateStylesDebounced` | **300ms** | Leading | `isDragging` | `generateStyles()` — full CSS rebuild |
+| `generateStylesDebounced` | **100ms** | Leading | `isDragging` | `generateStyles()` — full CSS rebuild |
 | `processDividersDebounced` | **50ms** | Leading | `isSyncingDividers`, `isDragging` | `dividerManager.syncDividers()` |
 | `refreshIconsDebounced` | **100ms** | Leading | `isDragging` | `refreshIcons()` — icon DOM injection |
 
@@ -97,6 +97,8 @@ When `dragstart` fires, `plugin.isDragging = true`. All three debouncers check t
     *   **SVG Normalization Cache**: The result of `DOMParser` sanitization is cached, ensuring constant SVGs (like folder icons) are only parsed once per session.
     *   **Counter SVG Template Cache**: In `StyleGenerator`, the three static SVG segments of the folder counter icon are pre-encoded with `encodeURIComponent()` once per unique color. Subsequent folders of the same color use O(1) string concatenation instead of re-running the expensive encode + regex chain.
     *   **Palette Cache**: `ColorResolver.getCurrentPalette()` (in `src/core/ColorResolver.ts`) is memoized by a key of `palette + customPalette + isDark`. Light-mode brightness adjustment is only recalculated when this key changes.
+    *   **O(1) CSS Grouping (CssGrouper)**: Instead of string-hashing massive 500-character CSS blocks to group identical styles, the engine uses tiny, deterministic signature keys (e.g. `fileRow_#ff0000`). This completely eliminates hash computation bottlenecks in large vaults (10,000+ files), transforming O(N * string_length) lookup times into pure O(1).
+    *   **Asynchronous Yielding (50ms Window)**: During tree traversal, `StyleGenerator` yields back to the browser's main thread every 50ms using a `setTimeout(0)`. This guarantees the UI remains interactive while calculating styles for massive vaults, but limits sleep frequency to ensure near-instantaneous load times.
 
 2.  **Selective Icon Cache Invalidation** (`main.ts → saveSettings()`):
     Snapshot keys (`_lastIconRulesKey`, `_lastCustomIconsKey`) track the last saved values of icon-relevant settings. The SVG icon cache is **only cleared** when `customIcons` or `customIconRules` actually changes. Toggling unrelated settings (opacity, tag sync, glassmorphism, etc.) no longer evicts the entire cache.

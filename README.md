@@ -11,32 +11,28 @@ Colorful Folders automatically applies premium color palettes, smart icons, and 
 
 ---
 
-## 🚀 Latest: 4.2.0 - The "Advanced Features & Ultimate Performance" Update
+## 🚀 Latest: 4.2.5 - The "Ultimate Performance" Update
 
-This massive release brings powerful new customization options and resolves stubborn UI bugs for power users with huge vaults. [Read the Full Changelog](https://www.google.com/search?q=Version/VERSION_4_2_0.md)
+This hyper-optimized release brings unprecedented speed and stability to massive vaults, alongside a highly-requested fix for folder color inheritance! [Read the Full Changelog](https://www.google.com/search?q=Version/VERSION_4_2_5.md)
 
-### ⚡ Performance & Speed
+### 🌟 Highlight: The Smart Icon Manager
 
-* **Instant Startup:** Folder styles and settings load instantly the second you open your vault.
-* **Smooth Scrolling:** A rewritten background styling engine ensures buttery smooth scrolling through thousands of folders with zero lag.
-* **Smart Background Loading:** Custom icons load gently in the background (waiting 2 seconds after startup) to prevent app freezing.
-* **Cached Colors:** Styles are calculated once and stored in memory, significantly reducing your CPU usage.
+* **Local Icon Packs Support:** You can now drop any custom SVG icon pack directly into your `.obsidian/icons` folder! The plugin automatically detects and loads them using a blazingly fast parallel scanner, meaning even thousands of custom icons won't slow down your startup.
+* **Completely Optimized Caching:** The Icon Manager has been completely rebuilt! The plugin now intelligently caches your custom SVG icons and strictly reloads them *only* when you change your icon settings. This completely eliminates unnecessary lag when tweaking other options, giving you a lightning-fast customization experience!
 
-### 🎨 Synchronization & Ecosystem
+### ⚡ Lightning Fast & Butter Smooth
 
-* **Tag Color Sync:** Automatically color tags that perfectly match a styled folder's name (e.g., styling the folder "Work" styles `#Work`).
-* **Custom Tag Rules:** Manually map specific tags to any styled folder path (e.g., `#todo = /Projects/Active`).
-* **Graph View Sync:** Your beautiful folder colors now sync directly into Obsidian's built-in Graph View as color groups for a unified vault aesthetic.
+* **Instant Load Times:** The plugin now uses a highly optimized grouping engine to calculate styles instantly. No more waiting 10 seconds for colors to appear when you open Obsidian!
+* **Zero UI Freezing:** We've completely rewritten how the plugin processes huge folder trees in the background. It now gracefully pauses to let the app breathe, meaning you can scroll and click without any stuttering.
+* **Ultra-Snappy Responsiveness:** We slashed the refresh delay by 3x! When you change a setting or move a file, the UI updates almost instantaneously.
+* **Lighter Memory Footprint:** We streamlined the core engine to prevent memory bloat, keeping your Obsidian workspace incredibly light and fast.
 
-### 🧩 Smart Icons & UI Enhancements
+### 🎨 New Features, Fixes & Integrations
 
-* **Regex Icon Matching:** Use powerful Regular Expressions to instantly match and auto-assign icons to multiple folders at once.
-* **Local `.obsidian/icons` Support:** Automatically detects and parallel-loads SVG icons placed in your standard icons directory for near-instant startups.
-* **Interactive Palette Builder:** A totally rewritten, side-by-side visual builder for custom hex palettes.
-* **Visual Color Pickers:** Ditch raw hex codes. Use interactive sliders and swatch previews to build your aesthetic.
-* **Debounced Saves:** A 300ms save delay prevents database lag and UI stutters when dragging color sliders.
-
----
+* **New Tailwind UI Palettes:** Added two beautiful new built-in color palettes (`Tailwind UI` and `Tailwind UI Dark`) to bring modern, punchy web-design colors directly into your vault.
+* **Inheritance Problem SOLVED!:** Fixed a stubborn bug where subfolders and files were not correctly inheriting colors from their parent folders. Your entire tree will now flawlessly inherit and display the correct colors!
+* **Flawless Integrations:** Re-architected how third-party plugins (like Notebook Navigator) interact with our colors. Everything is now perfectly synchronized, eliminating duplicate styles and boosting overall speed.
+* **Squeaky Clean Codebase:** Cleared out all underlying code warnings and strict errors for a rock-solid, crash-free experience.
 
 ## ✨ Core Features
 
@@ -67,6 +63,12 @@ This massive release brings powerful new customization options and resolves stub
 * **Section Dividers:** Group files with vertical visual dividers. Supports Markdown glassmorphic popovers, asymmetrical spacing, and solid/dashed/dotted lines.
 * **Dynamic Item Counters:** Display recursive statistics showing the total folder and file count inside a directory, perfectly color-matched.
 * **Exclusion Lists:** Keep utility directories (like `attachments` or `templates`) standard and unaffected by plugin styling.
+
+### 🎨 Synchronization & Ecosystem
+
+* **Tag Color Sync:** Automatically color tags that perfectly match a styled folder's name (e.g., styling the folder "Work" styles `#Work`).
+* **Custom Tag Rules:** Manually map specific tags to any styled folder path (e.g., `#todo = /Projects/Active`).
+* **Graph View Sync:** Your beautiful folder colors now sync directly into Obsidian's built-in Graph View as color groups for a unified vault aesthetic.
 
 ### 🕵️ Stealth & Privacy Engine
 

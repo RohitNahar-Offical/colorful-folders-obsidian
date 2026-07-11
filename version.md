@@ -1,6 +1,28 @@
 # Updates for Colorful Folders
 
-## 🚀 4.2.0 - The "Advanced Features & Ultimate Performance" Update
+## 🚀 4.2.5 - The "Ultimate Performance" Update
+
+This hyper-optimized release brings unprecedented speed and stability to massive vaults, alongside a highly-requested fix for folder color inheritance!
+
+### 🌟 Highlight: The Smart Icon Manager
+- **Local Icon Packs Support**: You can now drop any custom SVG icon pack directly into your `.obsidian/icons` folder! The plugin automatically detects and loads them using a blazingly fast parallel scanner, meaning even thousands of custom icons won't slow down your startup.
+- **Completely Optimized Caching**: The Icon Manager has been completely rebuilt! The plugin now intelligently caches your custom SVG icons and strictly reloads them *only* when you change your icon settings. This completely eliminates unnecessary lag when tweaking other options, giving you a lightning-fast customization experience!
+
+### ⚡ Lightning Fast & Butter Smooth
+- **Instant Load Times**: The plugin now uses a highly optimized grouping engine to calculate styles instantly. No more waiting 10 seconds for colors to appear when you open Obsidian!
+- **Zero UI Freezing**: We've completely rewritten how the plugin processes huge folder trees in the background. It now gracefully pauses to let the app breathe, meaning you can scroll and click without any stuttering.
+- **Ultra-Snappy Responsiveness**: We slashed the refresh delay by 3x! When you change a setting or move a file, the UI updates almost instantaneously.
+- **Lighter Memory Footprint**: We streamlined the core engine to prevent memory bloat, keeping your Obsidian workspace incredibly light and fast.
+
+### 🎨 New Features, Fixes & Integrations
+- **New Tailwind UI Palettes**: Added two beautiful new built-in color palettes (`Tailwind UI` and `Tailwind UI Dark`) to bring modern, punchy web-design colors directly into your vault.
+- **Inheritance Problem SOLVED!**: Fixed a stubborn bug where subfolders and files were not correctly inheriting colors from their parent folders. Your entire tree will now flawlessly inherit and display the correct colors!
+- **Flawless Integrations**: Re-architected how third-party plugins (like Notebook Navigator) interact with our colors. Everything is now perfectly synchronized, eliminating duplicate styles and boosting overall speed.
+- **Squeaky Clean Codebase**: Cleared out all underlying code warnings and strict errors for a rock-solid, crash-free experience.
+
+---
+
+## 🌟 4.2.0 - The "Advanced Features" Update
 
 <a href="https://github.com/sponsors/RohitNahar-Offical">
   <img src="https://img.shields.io/badge/Sponsor-RohitNahar--Offical-ea4aaa?style=for-the-badge&logo=github-sponsors" alt="Sponsor RohitNahar-Offical" />
