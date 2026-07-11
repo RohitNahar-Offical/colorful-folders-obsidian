@@ -160,8 +160,7 @@ export interface IColorfulFoldersPlugin {
     styleGenerator: { generateCss(): string };
     getAllExplorerContainers(): HTMLElement[];
     generateStyles(): void;
-    initDividerObserver(): void;
-    processDividers(): void;
+
     registerEvent(event: EventRef): void;
 }
 

@@ -14,6 +14,8 @@ import { PasswordModal } from "./ui/modals/PasswordModal";
 import { ChangelogModal } from "./ui/modals/ChangelogModal";
 import { StyleGenerator } from "./core/StyleGenerator";
 import { DividerManager } from "./core/DividerManager";
+import { DOMObserverService } from "./services/DOMObserverService";
+import { EventTrackerService } from "./services/EventTrackerService";
 
 import { MenuHelper } from "./ui/MenuHelper";
 import { IconManager } from "./core/IconManager";
@@ -42,16 +44,15 @@ export default class ColorfulFoldersPlugin
   parsedExclusionList: Set<string> | null = null;
   activePaletteCache: { palette: { rgb: string; hex: string }[] } | null = null;
   generateStylesDebounced: obsidian.Debouncer<[], void>;
-  initDividerObserverDebounced: obsidian.Debouncer<[], void>;
   syncGraphColorsDebounced: obsidian.Debouncer<[], void>;
   localFileSystemIcons: Record<string, string> = {};
-  dividerObserver: MutationObserver | null = null;
-  styleObservers: MutationObserver[] = [];
+  
+  domObserverService: DOMObserverService;
+  eventTrackerService: EventTrackerService;
   dividerManager: DividerManager;
   styleGenerator: StyleGenerator;
   isSyncingDividers: boolean = false;
   isDragging: boolean = false;
-  processDividersDebounced: obsidian.Debouncer<[], void>;
   ribbonEl: HTMLElement | null = null;
 
   async onload() {
@@ -59,6 +60,8 @@ export default class ColorfulFoldersPlugin
     this.styleGenerator = new StyleGenerator(this);
     this.iconManager = new IconManager(this);
     this.dividerManager = new DividerManager(this);
+    this.domObserverService = new DOMObserverService(this);
+    this.eventTrackerService = new EventTrackerService(this);
     // Register Notebook Navigator extensions
     this.app.workspace.onLayoutReady(() => {
       NotebookNavigatorIntegration.registerMenuExtensions(this);
@@ -74,17 +77,8 @@ export default class ColorfulFoldersPlugin
       () => {
         if (this.isDragging) return;
         this.generateStyles();
-        // P2 fix: initDividerObserver re-inits on layout-change; no need here
       },
       300,
-      true,
-    );
-
-    this.initDividerObserverDebounced = obsidian.debounce(
-      () => {
-        this.initDividerObserver();
-      },
-      500,
       true,
     );
 
@@ -106,9 +100,9 @@ export default class ColorfulFoldersPlugin
     this.initializeStyles();
 
     this.registerCustomIcons();
-    this.registerEvents();
+    this.eventTrackerService.registerEvents();
     this.registerCommands();
-    this.initStyleObservers();
+    this.domObserverService.initStyleObservers();
 
     // Initial stealth mode state
     this.getOpenDocuments().forEach(doc => {
@@ -126,7 +120,7 @@ export default class ColorfulFoldersPlugin
       // Generate styles immediately on layout ready to prevent a flash of unstyled content.
       // The previous 50ms timeout pushed this to the end of the busy event loop, causing late loads.
       this.generateStyles();
-      this.initDividerObserver();
+      this.domObserverService.initDividerObserver();
 
       try {
         const optimized = await this.optimizeBlueTopazStyleSettings();
@@ -226,18 +220,24 @@ export default class ColorfulFoldersPlugin
         doc.adoptedStyleSheets = doc.adoptedStyleSheets.filter((s) => s !== this.sheet);
       }
     });
-    if (this.dividerObserver) this.dividerObserver.disconnect();
-    this.styleObservers.forEach(obs => obs.disconnect());
 
-    // Clean up scroll listeners
-    const allContainers = this.getAllExplorerContainers();
-
-    allContainers.forEach((container) => {
-      container.removeEventListener("scroll", this.handleScroll);
-      delete (container as HTMLElement & { cfHasScrollListener?: boolean }).cfHasScrollListener;
-    });
+    // Cleanly destroy observers and events
+    this.domObserverService.destroy();
+    this.eventTrackerService.destroy();
 
     this.cleanDividers();
+
+    // Cancel all debouncers to prevent ghost execution
+    this.generateStylesDebounced.cancel();
+    this.syncGraphColorsDebounced.cancel();
+
+    // Explicitly clear memory-heavy global caches
+    this.iconCache.clear();
+    if (this.heatmapCache) this.heatmapCache.clear();
+    if (this.folderCountCache) this.folderCountCache.clear();
+    if (this.folderSortCache) this.folderSortCache.clear();
+    if (this.rootSortCache) this.rootSortCache.clear();
+    if (this.parsedExclusionList) this.parsedExclusionList.clear();
 
     // Remove CF-generated graph groups on plugin unload
     void GraphColorSync.clearGraphColors(this);
@@ -315,78 +315,7 @@ export default class ColorfulFoldersPlugin
     }
   }
 
-  registerEvents() {
-    this.registerEvent(
-      this.app.workspace.on("file-menu", (menu, file) => {
-        MenuHelper.addContextMenuItems(menu, file, this);
-      }),
-    );
 
-    this.registerEvent(
-      this.app.workspace.on("layout-change", () => this.initDividerObserverDebounced()),
-    );
-
-    // Performance: Detect drag operations to suspend expensive animations and logic
-    this.getOpenDocuments().forEach(doc => {
-      this.registerDragEventsForDoc(doc);
-    });
-
-    this.registerEvent(
-      this.app.workspace.on("window-open", (win: unknown, doc: Document) => {
-        if (this.sheet && !doc.adoptedStyleSheets.includes(this.sheet)) {
-          doc.adoptedStyleSheets = [...doc.adoptedStyleSheets, this.sheet];
-        }
-        this.registerDragEventsForDoc(doc);
-        this.initStyleObservers();
-        this.generateStylesDebounced();
-      })
-    );
-
-
-    this.registerEvent(
-      this.app.vault.on("create", () => {
-        this.heatmapCache = null;
-        this.folderCountCache = null; // P1: invalidate counter cache
-        this.folderSortCache = null;
-        this.rootSortCache = null;
-        this.generateStylesDebounced();
-      }),
-    );
-    this.registerEvent(
-      this.app.vault.on("delete", () => {
-        this.heatmapCache = null;
-        this.folderCountCache = null; // P1: invalidate counter cache
-        this.folderSortCache = null;
-        this.rootSortCache = null;
-        this.generateStylesDebounced();
-      }),
-    );
-    this.registerEvent(
-      this.app.vault.on("rename", async (file, oldPath) => {
-        this.heatmapCache = null;
-        this.folderCountCache = null; // P1: invalidate counter cache
-        this.folderSortCache = null;
-        this.rootSortCache = null;
-        if (this.settings.customFolderColors[oldPath]) {
-          const style = this.settings.customFolderColors[oldPath];
-          this.settings.customFolderColors[file.path] = style;
-          delete this.settings.customFolderColors[oldPath];
-
-          for (const key of Object.keys(this.settings.customFolderColors)) {
-            if (key.startsWith(oldPath + "/")) {
-              const newKey = file.path + key.slice(oldPath.length);
-              this.settings.customFolderColors[newKey] =
-                this.settings.customFolderColors[key];
-              delete this.settings.customFolderColors[key];
-            }
-          }
-          await this.saveSettings();
-        } else {
-          this.generateStylesDebounced();
-        }
-      }),
-    );
-  }
 
   registerCommands() {
     this.addCommand({
@@ -571,18 +500,20 @@ export default class ColorfulFoldersPlugin
 
 
   generateStyles() {
-    if (this.sheet) {
-      this.sheet.replaceSync(this.styleGenerator.generateCss());
-    }
-    this.getOpenDocuments().forEach(doc => {
-      doc.body.classList.toggle(
-        "cf-show-hidden",
-        this.settings.showHiddenItems,
-      );
-      doc.body.classList.toggle(
-        "cf-wrap-metadata",
-        !!this.settings.wrapMetadata,
-      );
+    window.requestAnimationFrame(() => {
+      if (this.sheet) {
+        this.sheet.replaceSync(this.styleGenerator.generateCss());
+      }
+      this.getOpenDocuments().forEach(doc => {
+        doc.body.classList.toggle(
+          "cf-show-hidden",
+          this.settings.showHiddenItems,
+        );
+        doc.body.classList.toggle(
+          "cf-wrap-metadata",
+          !!this.settings.wrapMetadata,
+        );
+      });
     });
     // Sync folder colors to Graph View groups if the feature is enabled
     if (this.settings.graphColorSync) {
@@ -591,20 +522,7 @@ export default class ColorfulFoldersPlugin
   }
 
 
-  private isScrolling = false;
-  private scrollTimeout: number | null = null;
 
-  handleScroll = (e: Event) => {
-    const container = e.currentTarget as HTMLElement;
-    const doc = container.ownerDocument;
-    const win = doc.defaultView || activeWindow;
-    this.isScrolling = true;
-    win.clearTimeout(this.scrollTimeout || undefined);
-    this.scrollTimeout = win.setTimeout(() => {
-      this.isScrolling = false;
-      this.processDividers();
-    }, 100);
-  };
 
   getAllExplorerContainers(): HTMLElement[] {
     const explorers: HTMLElement[] = [];
@@ -637,112 +555,7 @@ export default class ColorfulFoldersPlugin
     return allContainers;
   }
 
-  initDividerObserver() {
-    if (this.isDragging) return; // Prevent layout-change from reactivating observer mid-drag
 
-    if (this.dividerObserver) {
-      this.dividerObserver.disconnect();
-    }
-
-    const allContainers = this.getAllExplorerContainers();
-
-    if (allContainers.length === 0) return;
-
-    allContainers.forEach((container) => {
-      // Check if we already have a scroll listener (using a custom property to track)
-      if (
-        (container as HTMLElement & { cfHasScrollListener?: boolean })
-          .cfHasScrollListener
-      )
-        return;
-      (
-        container as HTMLElement & { cfHasScrollListener?: boolean }
-      ).cfHasScrollListener = true;
-
-      container.addEventListener("scroll", this.handleScroll, { passive: true });
-    });
-
-    this.dividerObserver = new MutationObserver((mutations) => {
-      window.requestAnimationFrame(() => {
-        // Suspend all logic during virtualized scroll or drag operations
-        if (this.isSyncingDividers || this.isScrolling || this.isDragging) return;
-
-        let hasRelevantChange = false;
-        for (const m of mutations) {
-          // Ignore any changes inside our own icon wrappers or interactive dividers
-          const target = m.target as HTMLElement;
-          if (target.closest(".cf-icon-wrapper, .cf-interactive-divider"))
-            continue;
-
-          if (m.type !== "childList") continue;
-
-          const isRelevantNode = (node: Node) => {
-            if (node.nodeType !== Node.ELEMENT_NODE) return false;
-            const el = node as HTMLElement;
-          
-          if (!el.classList.contains("nav-file") && 
-              !el.classList.contains("nav-folder") && 
-              !el.classList.contains("tree-item") && 
-              !el.classList.contains("nn-navitem") &&
-              !el.classList.contains("nav-file-title") &&
-              !el.classList.contains("nav-folder-title")) {
-            return false;
-          }
-
-          return (
-            !el.classList.contains("cf-interactive-divider") &&
-            !el.classList.contains("cf-icon-wrapper") &&
-            !el.classList.contains("nav-file-ghost") &&
-            !el.classList.contains("nav-folder-ghost") &&
-            !el.closest(".cf-icon-wrapper")
-          );
-        };
-
-        for (const node of Array.from(m.addedNodes)) {
-          if (isRelevantNode(node)) {
-            hasRelevantChange = true;
-            break;
-          }
-        }
-        if (hasRelevantChange) break;
-        for (const node of Array.from(m.removedNodes)) {
-          if (isRelevantNode(node)) {
-            hasRelevantChange = true;
-            break;
-          }
-        }
-        if (hasRelevantChange) break;
-      }
-
-        if (hasRelevantChange) {
-          this.processDividers();
-        }
-      });
-    });
-
-    allContainers.forEach((container) => {
-      this.dividerObserver?.observe(container, {
-        childList: true,
-        subtree: true,
-      });
-    });
-  }
-
-  processDividers() {
-    if (this.isSyncingDividers || this.isScrolling) return;
-
-    if (this._dividerTimeout) {
-      window.clearTimeout(this._dividerTimeout);
-    }
-    
-    // Push the heavy DOM reconciliation to the back of the event loop
-    this._dividerTimeout = window.setTimeout(() => {
-      this._dividerTimeout = null;
-      if (!this.isDragging) {
-        this.dividerManager.syncDividers();
-      }
-    }, 100);
-  }
 
   async cleanUnusedStyles() {
     let count = 0;
@@ -774,75 +587,5 @@ export default class ColorfulFoldersPlugin
     return Array.from(docs);
   }
 
-  registerDragEventsForDoc(doc: Document) {
-    this.registerDomEvent(doc, "dragstart", () => {
-      this.isDragging = true;
-      if (this.dividerObserver) {
-          this.dividerObserver.disconnect();
-      }
-    });
-    
-    const handleDragEnd = () => {
-      if (!this.isDragging) return;
-      this.isDragging = false;
-      
-      // Physically reconnect the observer
-      this.initDividerObserver();
-      
-      // Catch-up render after drag finishes
-      this.processDividers();
-    };
-    
-    this.registerDomEvent(doc, "dragend", handleDragEnd);
-    this.registerDomEvent(doc, "drop", handleDragEnd);
-  }
 
-  initStyleObservers() {
-    if (this.styleObservers) {
-      this.styleObservers.forEach(obs => obs.disconnect());
-    }
-    this.styleObservers = [];
-
-    this.getOpenDocuments().forEach(doc => {
-      const observer = new MutationObserver((mutations) => {
-        window.requestAnimationFrame(() => {
-          let shouldRegenerate = false;
-          for (const m of mutations) {
-            if (m.type === "attributes" && m.attributeName === "class") {
-              const target = m.target as HTMLElement;
-              const oldClass = m.oldValue || "";
-              const newClass = typeof target.className === 'string' ? target.className : (target.getAttribute('class') || "");
-              
-              if (oldClass === newClass) continue;
-              
-              const relevantClasses = ["theme-dark", "theme-light", "cf-show-hidden", "cf-wrap-metadata"];
-              
-              const oldClasses = oldClass.split(/\s+/);
-              const newClasses = newClass.split(/\s+/);
-
-            for (const cls of relevantClasses) {
-              const wasPresent = oldClasses.includes(cls);
-              const isPresent = newClasses.includes(cls);
-              if (wasPresent !== isPresent) {
-                shouldRegenerate = true;
-                break;
-              }
-            }
-            if (shouldRegenerate) break;
-          }
-        }
-        
-          if (shouldRegenerate) {
-            this.generateStylesDebounced();
-          }
-        });
-      });
-      observer.observe(doc.body, {
-        attributes: true,
-        attributeFilter: ["class"],
-        attributeOldValue: true,
-      });
-      this.styleObservers.push(observer);
-    });
-  }
 }
