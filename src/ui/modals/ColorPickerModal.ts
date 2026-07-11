@@ -443,7 +443,7 @@ modifiedFields: Set<string>;
 
         const opSlider = opRow.createEl('input', { type: 'range' });
         opSlider.min = '0'; opSlider.max = '100';
-        const isDark = document.body.classList.contains("theme-dark");
+        const isDark = activeDocument.body.classList.contains("theme-dark");
         const defaultOp = this.isFolder ? (this.plugin.settings.rootOpacity ?? 0.5) : (this.plugin.settings.fileBackgroundOpacity ?? (isDark ? 0.1 : 0.15));
         opSlider.value = String(Math.round((this.folderStyle.opacity ?? defaultOp) * 100));
         opSlider.setCssStyles({ flex: '1', cursor: 'pointer' });
