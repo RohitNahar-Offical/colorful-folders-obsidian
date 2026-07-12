@@ -98,6 +98,8 @@ export interface ColorfulFoldersSettings {
     tagSyncMatchFolders: boolean;
     tagSyncRules: string;
     spacedTextMode: string;
+    indentSubfolderPills: boolean;
+    folderSpacing: boolean;
 }
 
 

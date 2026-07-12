@@ -133,7 +133,9 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     tagSyncEnabled: false,
     tagSyncMatchFolders: true,
     tagSyncRules: "",
-    spacedTextMode: "folders"
+    spacedTextMode: "folders",
+    indentSubfolderPills: false,
+    folderSpacing: false
 };
 
 export const AUTO_ICON_CATEGORIES: AutoIconData[] = [

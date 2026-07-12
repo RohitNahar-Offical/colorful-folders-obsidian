@@ -86,6 +86,39 @@ export class DOMObserverService {
         });
 
         this.dividerObserver = new MutationObserver((mutations) => {
+            // SYNC INTERCEPTOR: We must process inline styles immediately, even during scroll
+            if (this.plugin.settings.indentSubfolderPills) {
+                for (const m of mutations) {
+                    if (m.type === "attributes") {
+                        const target = m.target as HTMLElement;
+                        if (target.classList && target.classList.contains('tree-item-self')) {
+                            if (target.style.getPropertyValue('margin-inline-start') && target.style.getPropertyValue('margin-inline-start') !== '0px') {
+                                target.style.setProperty('margin-inline-start', '0px', 'important');
+                                target.style.setProperty('padding-inline-start', '30px', 'important');
+                            }
+                        }
+                    } else if (m.type === "childList") {
+                        for (const node of Array.from(m.addedNodes)) {
+                            if (node.nodeType === Node.ELEMENT_NODE) {
+                                const el = node as HTMLElement;
+                                if (el.style && el.style.getPropertyValue('margin-inline-start')) {
+                                    el.style.setProperty('margin-inline-start', '0px', 'important');
+                                    el.style.setProperty('padding-inline-start', '30px', 'important');
+                                }
+                                const children = el.querySelectorAll<HTMLElement>('.tree-item-self');
+                                for (let i = 0; i < children.length; i++) {
+                                    if (children[i].style.getPropertyValue('margin-inline-start')) {
+                                        children[i].style.setProperty('margin-inline-start', '0px', 'important');
+                                        children[i].style.setProperty('padding-inline-start', '30px', 'important');
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ASYNC DIVIDER PROCESSING
             window.requestAnimationFrame(() => {
                 if (this.plugin.isSyncingDividers || this.isScrolling || this.plugin.isDragging) return;
 
@@ -93,6 +126,7 @@ export class DOMObserverService {
                 for (const m of mutations) {
                     const target = m.target as HTMLElement;
                     if (target.closest(".cf-icon-wrapper, .cf-interactive-divider")) continue;
+                    
                     if (m.type !== "childList") continue;
 
                     const isRelevantNode = (node: Node) => {
@@ -139,9 +173,22 @@ export class DOMObserverService {
         });
 
         allContainers.forEach((container) => {
+            // Apply immediately to existing items
+            if (this.plugin.settings.indentSubfolderPills) {
+                const items = container.querySelectorAll<HTMLElement>('.tree-item-self');
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].style.getPropertyValue('margin-inline-start')) {
+                        items[i].style.setProperty('margin-inline-start', '0px', 'important');
+                        items[i].style.setProperty('padding-inline-start', '30px', 'important');
+                    }
+                }
+            }
+
             this.dividerObserver?.observe(container, {
                 childList: true,
                 subtree: true,
+                attributes: this.plugin.settings.indentSubfolderPills, // listen for style updates if enabled
+                attributeFilter: ['style']
             });
         });
     }

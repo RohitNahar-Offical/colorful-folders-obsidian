@@ -1,7 +1,7 @@
 import { ColorfulFoldersSettings } from '../common/types';
 import { NotebookNavigatorIntegration } from '../integrations/NotebookNavigator';
 
-export function generateGlobalBaseCss(): string {
+export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string {
     return `
         /* ── NUCLEAR SPECIFICITY NAV ITEM LAYOUT ───────────────────────────────
            We use high-specificity selectors to defeat theme overrides (like Prism).
@@ -157,6 +157,29 @@ export function generateGlobalBaseCss(): string {
             align-items: center !important;
             justify-content: center !important;
         }
+
+        ${settings.indentSubfolderPills ? `
+        /* Overriding inline !important styles requires a CSS animation in Chromium */
+        @keyframes cf-override-indent {
+            100% {
+                margin-inline-start: 0px !important;
+                padding-inline-start: 30px !important;
+            }
+        }
+        body .nav-files-container .nav-folder-children .nav-folder-title,
+        body .nav-files-container .nav-folder-children .tree-item-self {
+            animation: cf-override-indent 0s forwards !important;
+        }
+        ` : ''}
+
+        ${settings.folderSpacing ? `
+        /* Add spacing between folders */
+        body .nav-files-container .nav-folder-title,
+        body .nav-files-container .tree-item-self {
+            margin-top: 2px !important;
+            margin-bottom: 2px !important;
+        }
+        ` : ''}
     `;
 }
 
