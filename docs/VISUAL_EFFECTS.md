@@ -93,6 +93,20 @@ finalTintOp = max(settings.tintOpacity, depth === 0 ? 0.12 : 0.05)
 - At **all deeper levels**, the minimum is **5%** opacity.
 - The user's `tintOpacity` slider acts as a global minimum and can raise these values, but never lower them below the floor.
 
+### 📉 Depth-Based Opacity Fading (The "10% Drop" Ceiling)
+
+By default, the plugin applies a **10% opacity reduction** for each step deeper you navigate into the folder hierarchy. Assuming a default root folder opacity of **50% (0.50)**, the mathematical fade chart looks like this:
+
+*   **Root Folder (Depth 0):** `50%` opacity
+*   **1st Level Subfolder:** `40%` opacity (-10%)
+*   **2nd Level Subfolder:** `30%` opacity (-10%)
+*   **3rd Level Subfolder:** `20%` opacity (-10%)
+*   **4th Level Subfolder:** `10%` opacity (-10%)
+*   **5th Level Subfolder & Deeper:** `5%` opacity *(Hits the hard floor limit to prevent invisibility)*
+
+> [!NOTE]
+> **Inheritance:** If you manually set a parent folder's opacity lower than 50% (e.g., 30%), the subfolders will start fading from that 30% mark instead, dropping by 10% each level until they hit the 5% floor.
+
 > [!IMPORTANT]
 > The container tint color is resolved from the **child folder's own color** — not from the grandparent. This ensures `People` (yellow) shows a yellow tint over its files, even if it is nested inside `Dots` (green).
 
