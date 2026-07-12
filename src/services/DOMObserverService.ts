@@ -3,17 +3,17 @@ import type ColorfulFoldersPlugin from "../main";
 
 export class DOMObserverService {
     private plugin: ColorfulFoldersPlugin;
-    
+
     private dividerObserver: MutationObserver | null = null;
     private styleObservers: MutationObserver[] = [];
     private scrollTimeout: number | null = null;
-    
+
     public isScrolling = false;
     public initDividerObserverDebounced: Debouncer<[], void>;
 
     constructor(plugin: ColorfulFoldersPlugin) {
         this.plugin = plugin;
-        
+
         this.initDividerObserverDebounced = debounce(() => {
             this.initDividerObserver();
         }, 50, true);
@@ -34,9 +34,9 @@ export class DOMObserverService {
                             const target = m.target as HTMLElement;
                             const oldClass = m.oldValue || "";
                             const newClass = typeof target.className === 'string' ? target.className : (target.getAttribute('class') || "");
-                            
+
                             if (oldClass === newClass) continue;
-                            
+
                             const relevantClasses = ["theme-dark", "theme-light", "cf-show-hidden", "cf-wrap-metadata"];
                             const oldClasses = oldClass.split(/\s+/);
                             const newClasses = newClass.split(/\s+/);
@@ -52,7 +52,7 @@ export class DOMObserverService {
                             if (shouldRegenerate) break;
                         }
                     }
-                    
+
                     if (shouldRegenerate) {
                         this.plugin.generateStylesDebounced();
                     }
@@ -126,15 +126,15 @@ export class DOMObserverService {
                 for (const m of mutations) {
                     const target = m.target as HTMLElement;
                     if (target.closest(".cf-icon-wrapper, .cf-interactive-divider")) continue;
-                    
+
                     if (m.type !== "childList") continue;
 
                     const isRelevantNode = (node: Node) => {
                         if (node.nodeType !== Node.ELEMENT_NODE) return false;
                         const el = node as HTMLElement;
-                        if (!el.classList.contains("nav-file") && 
-                            !el.classList.contains("nav-folder") && 
-                            !el.classList.contains("tree-item") && 
+                        if (!el.classList.contains("nav-file") &&
+                            !el.classList.contains("nav-folder") &&
+                            !el.classList.contains("tree-item") &&
                             !el.classList.contains("nn-navitem") &&
                             !el.classList.contains("nav-file-title") &&
                             !el.classList.contains("nav-folder-title")) {
@@ -156,7 +156,7 @@ export class DOMObserverService {
                         }
                     }
                     if (hasRelevantChange) break;
-                    
+
                     for (const node of Array.from(m.removedNodes)) {
                         if (isRelevantNode(node)) {
                             hasRelevantChange = true;
@@ -199,7 +199,7 @@ export class DOMObserverService {
         if (this.plugin._dividerTimeout) {
             window.clearTimeout(this.plugin._dividerTimeout);
         }
-        
+
         this.plugin._dividerTimeout = window.setTimeout(() => {
             this.plugin._dividerTimeout = null;
             if (!this.plugin.isDragging) {
@@ -225,13 +225,13 @@ export class DOMObserverService {
             this.dividerObserver.disconnect();
         }
         this.styleObservers.forEach(obs => obs.disconnect());
-        
+
         const allContainers = this.plugin.getAllExplorerContainers();
         allContainers.forEach((container) => {
             container.removeEventListener("scroll", this.handleScroll);
             delete (container as HTMLElement & { cfHasScrollListener?: boolean }).cfHasScrollListener;
         });
-        
+
         this.initDividerObserverDebounced.cancel();
         if (this.scrollTimeout) window.clearTimeout(this.scrollTimeout);
     }

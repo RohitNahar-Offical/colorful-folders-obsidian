@@ -1,4 +1,5 @@
 import { App, MenuItem, Menu, EventRef, Debouncer } from 'obsidian';
+import { DOMObserverService } from '../services/DOMObserverService';
 
 export interface FolderStyle {
     hex?: string;
@@ -161,6 +162,7 @@ export interface IColorfulFoldersPlugin {
         buildDividerNode(path: string, conf: FolderStyle, doc: Document): HTMLElement;
     };
     styleGenerator: { generateCss(): Promise<string> };
+    domObserverService: DOMObserverService;
     getAllExplorerContainers(): HTMLElement[];
     generateStyles(): Promise<void>;
     generateStylesDebounced: Debouncer<[], void>;
