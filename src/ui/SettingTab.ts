@@ -1631,6 +1631,21 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 }));
 
         new obsidian.Setting(typeCard)
+            .setName('Spaced text (monofont feel)')
+            .setDesc('Adds slight letter and word spacing for a structured, monospaced layout feel.')
+            .addDropdown(dropdown => dropdown
+                .addOption('none', 'None')
+                .addOption('both', 'Both folders and files')
+                .addOption('folders', 'Folders only')
+                .addOption('files', 'Files only')
+                .setValue(this.plugin.settings.spacedTextMode ?? 'folders')
+                .onChange(async (value) => {
+                    this.plugin.settings.spacedTextMode = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStylesDebounced();
+                }));
+
+        new obsidian.Setting(typeCard)
             .setName('Rainbow root text')
             .setDesc('Applies a vivid rainbow-text horizontal gradient to all top-level folders.')
             .addToggle(toggle => toggle

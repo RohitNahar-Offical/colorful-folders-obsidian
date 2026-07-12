@@ -97,6 +97,7 @@ export interface ColorfulFoldersSettings {
     tagSyncEnabled: boolean;
     tagSyncMatchFolders: boolean;
     tagSyncRules: string;
+    spacedTextMode: string;
 }
 
 

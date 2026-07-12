@@ -133,6 +133,7 @@ export default class ColorfulFoldersPlugin
         const optimized = await this.optimizeBlueTopazStyleSettings();
         if (optimized) {
           new obsidian.Notice("Colorful Folders: Conflicting Blue Topaz theme settings in Style Settings have been automatically disabled.");
+          void this.generateStyles();
         }
       } catch (err) {
         console.error("Colorful Folders: Failed to optimize Blue Topaz settings", err);
@@ -465,8 +466,9 @@ export default class ColorfulFoldersPlugin
     }
 
     const customApp = this.app as unknown as CustomApp;
-    const currentTheme = customApp.customCss?.theme;
-    if (currentTheme !== "Blue Topaz") return false;
+    const vault = this.app.vault as unknown as { getConfig?(key: string): string | null };
+    const currentTheme = (typeof vault.getConfig === "function" ? vault.getConfig("cssTheme") : null) || customApp.customCss?.theme;
+    if (!currentTheme || currentTheme.toLowerCase() !== "blue topaz") return false;
 
     if (!customApp.plugins) return false;
     const styleSettingsPlugin = customApp.plugins.getPlugin("obsidian-style-settings") as unknown as StyleSettingsPlugin | null;
@@ -477,8 +479,8 @@ export default class ColorfulFoldersPlugin
 
     let changed = false;
 
-    if (manager.settings["blue-topaz-theme@@remove-file-icons"] !== false) {
-      manager.settings["blue-topaz-theme@@remove-file-icons"] = false;
+    if (manager.settings["blue-topaz-theme@@remove-file-icons"] !== true) {
+      manager.settings["blue-topaz-theme@@remove-file-icons"] = true;
       changed = true;
     }
 
@@ -489,6 +491,11 @@ export default class ColorfulFoldersPlugin
 
     if (manager.settings["blue-topaz-theme@@bt-toggle-colorful-folder"] !== false) {
       manager.settings["blue-topaz-theme@@bt-toggle-colorful-folder"] = false;
+      changed = true;
+    }
+
+    if (manager.settings["blue-topaz-theme@@remove-arrow"] !== false) {
+      manager.settings["blue-topaz-theme@@remove-arrow"] = false;
       changed = true;
     }
 

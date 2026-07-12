@@ -160,9 +160,17 @@ export class StyleGenerator {
         const activeFolderThick = baseThick + 2.0;
         const CF_FILE_TEXT_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px; opacity: 0.85;"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`;
 
+        const SPACED_TEXT_CSS = `
+            letter-spacing: 1px !important;
+            word-spacing: 2px !important;
+        `;
+        const extraTypographyCssFiles = (this.settings.spacedTextMode === 'both' || this.settings.spacedTextMode === 'files') ? SPACED_TEXT_CSS : '';
+        const extraTypographyCssFolders = (this.settings.spacedTextMode === 'both' || this.settings.spacedTextMode === 'folders') ? SPACED_TEXT_CSS : '';
+
         // Process Files
         // Gate: process files if there's a parent color (applyToSubfolders), autoColorFiles, autoIcons, applyToFiles on the inheritedStyle, or NN is active.
         if (passedColor || autoColorFiles || autoIcons || (inheritedStyle && inheritedStyle.applyToFiles) || (this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground)) {
+
             for (const child of copyFiles) {
                 const fileStyle = this.getStyle(child.path);
                 const hasCustomStyle = !!(fileStyle && (fileStyle.hex || fileStyle.iconId || fileStyle.textColor || fileStyle.isBold || fileStyle.isItalic));
@@ -278,6 +286,7 @@ export class StyleGenerator {
                     color: var(--cf-file-color, ${textNative}) !important;
                     font-weight: ${isBold ? '800' : 'normal'} !important;
                     font-style: ${isItalic ? 'italic' : 'normal'} !important;
+                    ${extraTypographyCssFiles}
                 `;
 
                 if (activeStyle && activeStyle.textGradient && activeStyle.textColor && activeStyle.textGradientEnd) {
@@ -300,6 +309,7 @@ export class StyleGenerator {
                     color: transparent !important;
                     font-weight: ${isBold ? '800' : 'normal'} !important;
                     font-style: ${isItalic ? 'italic' : 'normal'} !important;
+                    ${extraTypographyCssFiles}
                     display: flex !important;
                     align-items: center !important;
                     width: fit-content !important;
@@ -314,8 +324,8 @@ export class StyleGenerator {
                 grouper.add(fileRowCss, fileRowSels, `fileRow_${color.hex}_${fileBgAlpha}`);
 
                 const fileTextSels = [
-                    `body .nav-files-container .nav-file-title[data-path="${safePath}"]:not(.nn-file) .nav-file-title-content`,
-                    `body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner`
+                    `body .nav-file-title[data-path="${safePath}"]:not(.nn-file) .nav-file-title-content`,
+                    `body .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner`
                 ];
                 grouper.add(fileTextCss, fileTextSels, `fileText_${activeStyle?.textGradient ? 'grad' : 'norm'}_${isBold}_${isItalic}_${color.hex}`);
 
@@ -371,12 +381,11 @@ export class StyleGenerator {
                             display: inline-flex !important;
                             align-items: center !important;
                             justify-content: center !important;
+                            align-self: center !important;
                             flex-shrink: 0 !important;
                             height: ${effFileIconW} !important;
                             width: ${effFileIconW} !important;
-                            vertical-align: middle !important;
                             margin-right: 4px !important;
-                            transform: translateY(-1px) !important;
                         `, fileTextSels.map(s => s + '::before'));
                     } else {
                         const svgStr = this.plugin.iconManager.getIconSvg(iconId, true);
@@ -384,12 +393,11 @@ export class StyleGenerator {
                             grouper.add(`
                                 content: '' !important;
                                 display: inline-flex !important;
+                                align-self: center !important;
                                 flex-shrink: 0 !important;
                                 width: ${effFileIconW} !important;
                                 height: ${effFileIconW} !important;
-                                vertical-align: middle !important;
                                 margin-right: 4px !important;
-                                transform: translateY(-1px) !important;
                                 background-color: ${iconColor || color.hex || textNative} !important;
                                 -webkit-mask-image: url("data:image/svg+xml,${svgStr}") !important;
                                 -webkit-mask-repeat: no-repeat !important;
@@ -602,6 +610,7 @@ export class StyleGenerator {
                 color: var(--cf-folder-color, ${folderStyles.t}) !important;
                 font-weight: ${isBold ? '800' : 'normal'} !important;
                 font-style: ${isItalic ? 'italic' : 'normal'} !important;
+                ${extraTypographyCssFolders}
             `;
 
             if (isUsingGradient) {
@@ -613,6 +622,7 @@ export class StyleGenerator {
                     color: transparent !important;
                     font-weight: ${gradWeight} !important;
                     font-style: ${isItalic ? 'italic' : 'normal'} !important;
+                    ${extraTypographyCssFolders}
                     display: flex !important;
                     align-items: center !important;
                     width: fit-content !important;
@@ -687,10 +697,9 @@ export class StyleGenerator {
                         display: inline-flex !important;
                         align-items: center !important;
                         justify-content: center !important;
+                        align-self: center !important;
                         flex-shrink: 0 !important;
-                        vertical-align: middle !important;
                         margin-right: 4px !important;
-                        transform: translateY(-1px) !important;
                     `, [
                         `body .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
                         `body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
@@ -701,12 +710,11 @@ export class StyleGenerator {
                         grouper.add(`
                             content: '' !important;
                             display: inline-flex !important;
+                            align-self: center !important;
                             flex-shrink: 0 !important;
                             width: ${folderIconW} !important;
                             height: ${folderIconW} !important;
-                            vertical-align: middle !important;
                             margin-right: 4px !important;
-                            transform: translateY(-1px) !important;
                             background-color: ${customStyle?.iconColor || color.hex || folderStyles.t} !important;
                             -webkit-mask-image: url("data:image/svg+xml,${svgStr}") !important;
                             -webkit-mask-repeat: no-repeat !important;
@@ -722,12 +730,11 @@ export class StyleGenerator {
                 grouper.add(`
                     content: '' !important;
                     display: inline-flex !important;
+                    align-self: center !important;
                     flex-shrink: 0 !important;
                     width: ${folderIconW} !important;
                     height: ${folderIconW} !important;
-                    vertical-align: middle !important;
                     margin-right: 4px !important;
-                    transform: translateY(-1px) !important;
                     background-color: ${customStyle?.iconColor || color.hex || folderStyles.t} !important;
                     -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(decodeURIComponent(CF_FOLDER_CLOSED))}") !important;
                     -webkit-mask-repeat: no-repeat !important;
