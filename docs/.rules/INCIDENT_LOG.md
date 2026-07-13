@@ -336,3 +336,21 @@ Read before making ANY architectural changes.
 - The resulting DOM mutations triggered overlapping `setTimeout(..., 100)` callbacks inside `processDividers`, starving the main thread.
 **Resolution**: Wrapped `initDividerObserver` in a 500ms `obsidian.debounce`. The `layout-change` event now triggers the debounced version, ensuring the heavy DOM traversal and observer initialization only run once the user stops rapidly clicking.
 **Lesson**: Never unconditionally bind synchronous, heavy DOM traversal or observer setup functions to high-frequency workspace events like `layout-change` or `active-leaf-change`. Always isolate heavy setup/teardown logic from rapid-fire events using `obsidian.debounce` to prevent main-thread freezing and callback overlapping.
+
+
+### How it works:
+1. **Dynamic Depth Parsing**: In `DOMObserverService.ts`, the new private helper `applySubfolderIndent(el)` extracts the `data-path` attribute, splits it by `/` to count the path segments, and calculates the exact nesting depth:
+   ```typescript
+   const depth = dataPath ? dataPath.split('/').filter(Boolean).length - 1 : 0;
+   ```
+2. **Padding Increment Step**: We use a `basePadding` of `30px` and add `8px` of indentation for every level of nesting:
+   ```typescript
+   const basePadding = 30;
+   const step = 8;
+   const computedPadding = basePadding + (depth * step);
+   ```
+3. **API & Linter Compliance**: The calculated padding is assigned using `el.setCssProps({ '--cf-padding-override': '${computedPadding}px' })`.
+   - Both `npm run lint` and `npm run build` finish successfully with **0 warnings and 0 errors**.
+   - Because the padding is calculated relative to its path depth and injected through dynamic CSS variables, it is fully compliant, visually stable, and won't clash with Obsidian's virtual DOM engine.
+
+Rebuild is complete. Please reload the plugin in Obsidian to see the nested folders indent dynamically!
