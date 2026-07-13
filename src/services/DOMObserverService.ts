@@ -88,29 +88,26 @@ export class DOMObserverService {
         this.dividerObserver = new MutationObserver((mutations) => {
             // SYNC INTERCEPTOR: We must process inline styles immediately, even during scroll
             if (this.plugin.settings.indentSubfolderPills) {
+                const processAlignment = (el: HTMLElement) => {
+                    this.applySubfolderIndent(el);
+                };
+
                 for (const m of mutations) {
                     if (m.type === "attributes") {
                         const target = m.target as HTMLElement;
                         if (target.classList && target.classList.contains('tree-item-self')) {
-                            if (target.style.getPropertyValue('margin-inline-start') && target.style.getPropertyValue('margin-inline-start') !== '0px') {
-                                target.style.setProperty('margin-inline-start', '0px', 'important');
-                                target.style.setProperty('padding-inline-start', '30px', 'important');
-                            }
+                            processAlignment(target);
                         }
                     } else if (m.type === "childList") {
                         for (const node of Array.from(m.addedNodes)) {
                             if (node.nodeType === Node.ELEMENT_NODE) {
                                 const el = node as HTMLElement;
-                                if (el.style && el.style.getPropertyValue('margin-inline-start')) {
-                                    el.style.setProperty('margin-inline-start', '0px', 'important');
-                                    el.style.setProperty('padding-inline-start', '30px', 'important');
+                                if (el.classList.contains('tree-item-self')) {
+                                    processAlignment(el);
                                 }
                                 const children = el.querySelectorAll<HTMLElement>('.tree-item-self');
                                 for (let i = 0; i < children.length; i++) {
-                                    if (children[i].style.getPropertyValue('margin-inline-start')) {
-                                        children[i].style.setProperty('margin-inline-start', '0px', 'important');
-                                        children[i].style.setProperty('padding-inline-start', '30px', 'important');
-                                    }
+                                    processAlignment(children[i]);
                                 }
                             }
                         }
@@ -177,19 +174,16 @@ export class DOMObserverService {
             if (this.plugin.settings.indentSubfolderPills) {
                 const items = container.querySelectorAll<HTMLElement>('.tree-item-self');
                 for (let i = 0; i < items.length; i++) {
-                    if (items[i].style.getPropertyValue('margin-inline-start')) {
-                        items[i].style.setProperty('margin-inline-start', '0px', 'important');
-                        items[i].style.setProperty('padding-inline-start', '30px', 'important');
-                    }
+                    this.applySubfolderIndent(items[i]);
                 }
             }
-
-            this.dividerObserver?.observe(container, {
+            const observerOptions: MutationObserverInit = {
                 childList: true,
                 subtree: true,
-                attributes: this.plugin.settings.indentSubfolderPills, // listen for style updates if enabled
+                attributes: true,
                 attributeFilter: ['style']
-            });
+            };
+            this.dividerObserver?.observe(container, observerOptions);
         });
     }
 
@@ -234,5 +228,21 @@ export class DOMObserverService {
 
         this.initDividerObserverDebounced.cancel();
         if (this.scrollTimeout) window.clearTimeout(this.scrollTimeout);
+    }
+
+    private applySubfolderIndent(el: HTMLElement) {
+        const dataPath = el.getAttribute('data-path') || '';
+        // Count path segments to determine depth (e.g. "Atlas/Dots/People" -> 2)
+        const depth = dataPath ? dataPath.split('/').filter(Boolean).length - 1 : 0;
+        
+        // Base padding (e.g., 30px) and a nesting indent step (e.g., 8px per depth level)
+        const basePadding = 30;
+        const step = 8;
+        const computedPadding = basePadding + (depth * step);
+
+        el.setCssProps({
+            '--cf-margin-override': '0px',
+            '--cf-padding-override': `${computedPadding}px`
+        });
     }
 }

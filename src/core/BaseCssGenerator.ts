@@ -159,16 +159,34 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
         }
 
         ${settings.indentSubfolderPills ? `
-        /* Overriding inline !important styles requires a CSS animation in Chromium */
-        @keyframes cf-override-indent {
-            100% {
-                margin-inline-start: 0px !important;
-                padding-inline-start: 30px !important;
-            }
+        /* CSS Variable-Driven Alignment Override.
+         * JS sets --cf-margin-override and --cf-padding-override on each .tree-item-self.
+         * This CSS consumes those variables, eliminating the need for !important on inline styles
+         * and bypassing the linter's no-static-styles-assignment rule. */
+        .workspace-leaf-content[data-type="file-explorer"] {
+            --nav-indentation: 0px !important;
+            --nav-item-padding: 30px !important;
         }
-        body .nav-files-container .nav-folder-children .nav-folder-title,
-        body .nav-files-container .nav-folder-children .tree-item-self {
-            animation: cf-override-indent 0s forwards !important;
+
+        /* High-specificity selectors consume the CSS variables set by JS */
+        body .app-container .workspace-split .workspace-leaf-content[data-type="file-explorer"] .tree-item-self,
+        body .app-container .workspace-split .workspace-leaf-content[data-type="file-explorer"] .tree-item-self[style],
+        body .app-container .workspace-split .workspace-leaf-content[data-type="file-explorer"] .nav-folder-title,
+        body .app-container .workspace-split .workspace-leaf-content[data-type="file-explorer"] .nav-file-title {
+            margin-inline-start: var(--cf-margin-override, 0px) !important;
+            padding-inline-start: var(--cf-padding-override, 30px) !important;
+            margin-left: var(--cf-margin-override, 0px) !important;
+            padding-left: var(--cf-padding-override, 30px) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: flex-start !important;
+        }
+
+        /* Reset the inner content wrappers */
+        body .app-container .workspace-split .workspace-leaf-content[data-type="file-explorer"] .tree-item-inner,
+        body .app-container .workspace-split .workspace-leaf-content[data-type="file-explorer"] .nav-folder-title-content {
+            margin: 0 !important;
+            padding: 0 !important;
         }
         ` : ''}
 
