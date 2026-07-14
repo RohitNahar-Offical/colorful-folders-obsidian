@@ -158,37 +158,53 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             justify-content: center !important;
         }
 
-        ${settings.indentSubfolderPills ? `
-        /* CSS Variable-Driven Alignment Override.
-         * JS sets --cf-margin-override and --cf-padding-override on each .tree-item-self.
-         * This CSS consumes those variables, eliminating the need for !important on inline styles
-         * and bypassing the linter's no-static-styles-assignment rule. */
+        ${(() => {
+            if (!settings.indentSubfolderPills) return '';
+            let css = `
+        /* Pure CSS Variable-Driven Alignment Override.
+         * We generate 20 levels of nesting to guarantee high specificity 
+         * and bypass React engine re-renders wiping our styles. */
         .workspace-leaf-content[data-type="file-explorer"] {
             --nav-indentation: 0px !important;
             --nav-item-padding: 30px !important;
         }
-
-        /* High-specificity selectors consume the CSS variables set by JS */
-        body .app-container .workspace-split .workspace-leaf-content[data-type="file-explorer"] .tree-item-self,
-        body .app-container .workspace-split .workspace-leaf-content[data-type="file-explorer"] .tree-item-self[style],
-        body .app-container .workspace-split .workspace-leaf-content[data-type="file-explorer"] .nav-folder-title,
-        body .app-container .workspace-split .workspace-leaf-content[data-type="file-explorer"] .nav-file-title {
-            margin-inline-start: var(--cf-margin-override, 0px) !important;
-            padding-inline-start: var(--cf-padding-override, 30px) !important;
-            margin-left: var(--cf-margin-override, 0px) !important;
-            padding-left: var(--cf-padding-override, 30px) !important;
+`;
+            const maxDepth = 20;
+            const basePadding = 30;
+            const step = 8;
+            for (let depth = 0; depth <= maxDepth; depth++) {
+                const computedPadding = basePadding + (depth * step);
+                const nesting = Array(depth).fill('.nav-folder-children').join(' ');
+                const prefix = nesting ? nesting + ' > ' : '';
+                
+                css += `
+        body .app-container .workspace-split .workspace-leaf-content[data-type="file-explorer"] ${prefix}.nav-folder > .nav-folder-title,
+        body .app-container .workspace-split .workspace-leaf-content[data-type="file-explorer"] ${prefix}.nav-folder > .nav-folder-title[style],
+        body .app-container .workspace-split .workspace-leaf-content[data-type="file-explorer"] ${prefix}.nav-file > .nav-file-title,
+        body .app-container .workspace-split .workspace-leaf-content[data-type="file-explorer"] ${prefix}.nav-file > .nav-file-title[style],
+        body .app-container .workspace-split .workspace-leaf-content[data-type="file-explorer"] ${prefix}.tree-item > .tree-item-self,
+        body .app-container .workspace-split .workspace-leaf-content[data-type="file-explorer"] ${prefix}.tree-item > .tree-item-self[style] {
+            margin-inline-start: 0px !important;
+            padding-inline-start: ${computedPadding}px !important;
+            margin-left: 0px !important;
+            padding-left: ${computedPadding}px !important;
             display: flex !important;
             align-items: center !important;
             justify-content: flex-start !important;
         }
+`;
+            }
 
+            css += `
         /* Reset the inner content wrappers */
         body .app-container .workspace-split .workspace-leaf-content[data-type="file-explorer"] .tree-item-inner,
         body .app-container .workspace-split .workspace-leaf-content[data-type="file-explorer"] .nav-folder-title-content {
             margin: 0 !important;
             padding: 0 !important;
         }
-        ` : ''}
+`;
+            return css;
+        })()}
 
         ${settings.folderSpacing ? `
         /* Add spacing between folders */

@@ -86,28 +86,30 @@ export class DOMObserverService {
         });
 
         this.dividerObserver = new MutationObserver((mutations) => {
-            // SYNC INTERCEPTOR: We must process inline styles immediately, even during scroll
+            // SYNC INTERCEPTOR: Aggressively strip style attributes
             if (this.plugin.settings.indentSubfolderPills) {
-                const processAlignment = (el: HTMLElement) => {
-                    this.applySubfolderIndent(el);
+                const stripStyle = (el: HTMLElement) => {
+                    if (el.hasAttribute('style')) {
+                        el.removeAttribute('style');
+                    }
                 };
 
                 for (const m of mutations) {
-                    if (m.type === "attributes") {
+                    if (m.type === "attributes" && m.attributeName === "style") {
                         const target = m.target as HTMLElement;
                         if (target.classList && target.classList.contains('tree-item-self')) {
-                            processAlignment(target);
+                            stripStyle(target);
                         }
                     } else if (m.type === "childList") {
                         for (const node of Array.from(m.addedNodes)) {
                             if (node.nodeType === Node.ELEMENT_NODE) {
                                 const el = node as HTMLElement;
                                 if (el.classList.contains('tree-item-self')) {
-                                    processAlignment(el);
+                                    stripStyle(el);
                                 }
                                 const children = el.querySelectorAll<HTMLElement>('.tree-item-self');
                                 for (let i = 0; i < children.length; i++) {
-                                    processAlignment(children[i]);
+                                    stripStyle(children[i]);
                                 }
                             }
                         }
@@ -174,9 +176,12 @@ export class DOMObserverService {
             if (this.plugin.settings.indentSubfolderPills) {
                 const items = container.querySelectorAll<HTMLElement>('.tree-item-self');
                 for (let i = 0; i < items.length; i++) {
-                    this.applySubfolderIndent(items[i]);
+                    if (items[i].hasAttribute('style')) {
+                        items[i].removeAttribute('style');
+                    }
                 }
             }
+
             const observerOptions: MutationObserverInit = {
                 childList: true,
                 subtree: true,
@@ -230,19 +235,5 @@ export class DOMObserverService {
         if (this.scrollTimeout) window.clearTimeout(this.scrollTimeout);
     }
 
-    private applySubfolderIndent(el: HTMLElement) {
-        const dataPath = el.getAttribute('data-path') || '';
-        // Count path segments to determine depth (e.g. "Atlas/Dots/People" -> 2)
-        const depth = dataPath ? dataPath.split('/').filter(Boolean).length - 1 : 0;
-        
-        // Base padding (e.g., 30px) and a nesting indent step (e.g., 8px per depth level)
-        const basePadding = 30;
-        const step = 8;
-        const computedPadding = basePadding + (depth * step);
 
-        el.setCssProps({
-            '--cf-margin-override': '0px',
-            '--cf-padding-override': `${computedPadding}px`
-        });
-    }
 }
