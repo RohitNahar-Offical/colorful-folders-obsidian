@@ -1237,7 +1237,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         await this.plugin.saveSettings();
                         this.plugin.generateStylesDebounced();
                     });
-                    const btn = new obsidian.ButtonComponent(text.inputEl.parentElement!);
+                    const btn = new obsidian.ButtonComponent(text.inputEl.parentElement);
                     btn.setButtonText("Choose").onClick(() => {
                         new IconPickerModal(this.app, this.plugin, text.getValue(), async (iconId) => {
                             text.setValue(iconId);
@@ -1259,7 +1259,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         await this.plugin.saveSettings();
                         this.plugin.generateStylesDebounced();
                     });
-                    const btn = new obsidian.ButtonComponent(text.inputEl.parentElement!);
+                    const btn = new obsidian.ButtonComponent(text.inputEl.parentElement);
                     btn.setButtonText("Choose").onClick(() => {
                         new IconPickerModal(this.app, this.plugin, text.getValue(), async (iconId) => {
                             text.setValue(iconId);

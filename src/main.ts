@@ -690,12 +690,10 @@ export default class ColorfulFoldersPlugin
 
   async autoDownloadPack(url: string, prefix: string) {
     try {
-      console.log(`Colorful Folders: Auto-downloading ${prefix} featured pack...`);
       const res = await obsidian.requestUrl({ url });
-      const data = res.json as Record<string, any>;
+      const data = res.json as Record<string, unknown>;
       if (!data) return;
 
-      let count = 0;
       const icons = data.icons as Record<string, { width?: number; height?: number; left?: number; top?: number; body?: string }> | undefined;
       if (icons && (data.prefix || data.info)) {
         const packPrefix = (data.prefix as string) || prefix;
@@ -717,7 +715,7 @@ export default class ColorfulFoldersPlugin
         };
 
         for (const [name, iconData] of Object.entries(icons)) {
-          if (processIcon(name, iconData)) count++;
+          processIcon(name, iconData);
         }
 
         const aliases = data.aliases as Record<string, { parent: string; width?: number; height?: number; left?: number; top?: number; body?: string }> | undefined;
@@ -727,7 +725,7 @@ export default class ColorfulFoldersPlugin
             const targetData = icons[targetName];
             if (targetData) {
               const merged = { ...targetData, ...aliasData };
-              if (processIcon(aliasName, merged)) count++;
+              processIcon(aliasName, merged);
             }
           }
         }
@@ -735,7 +733,6 @@ export default class ColorfulFoldersPlugin
 
       this.registerCustomIcons();
       await this.saveSettings();
-      console.log(`Colorful Folders: Successfully auto-downloaded and imported ${count} ${prefix} icons!`);
       void this.generateStyles();
     } catch (e) {
       console.error(`Colorful Folders: Failed to auto-download ${prefix} icons`, e);
