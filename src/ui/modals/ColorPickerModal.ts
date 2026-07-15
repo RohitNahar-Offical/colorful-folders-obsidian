@@ -196,6 +196,7 @@ modifiedFields: Set<string>;
                 backgroundImage: initialBgGradient,
                 backgroundClip: "text",
                 webkitBackgroundClip: "text",
+                webkitTextFillColor: "transparent",
                 color: "transparent",
                 fontWeight: this.folderStyle.isBold ? "800" : "normal",
                 fontStyle: this.folderStyle.isItalic ? "italic" : "normal",
@@ -355,6 +356,7 @@ modifiedFields: Set<string>;
                         backgroundImage: bgGradient,
                         backgroundClip: "text",
                         webkitBackgroundClip: "text",
+                        webkitTextFillColor: "transparent",
                         color: "transparent",
                         fontWeight: this.folderStyle.isBold ? "800" : "normal",
                         fontStyle: this.folderStyle.isItalic ? "italic" : "normal"
@@ -364,6 +366,7 @@ modifiedFields: Set<string>;
                         backgroundImage: "none",
                         backgroundClip: "initial",
                         webkitBackgroundClip: "initial",
+                        webkitTextFillColor: "initial",
                         color: textCol || "var(--text-normal)",
                         fontWeight: this.folderStyle.isBold ? "800" : "normal",
                         fontStyle: this.folderStyle.isItalic ? "italic" : "normal"
