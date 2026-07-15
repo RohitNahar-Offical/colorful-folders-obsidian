@@ -545,8 +545,9 @@ export class StyleGenerator {
             const folderIconId = customStyle?.iconId || inheritedStyle?.iconId || (autoIconFolder ? (this.settings.wideAutoIcons ? autoIconFolder.lucide : autoIconFolder.emoji) : "");
             const folderExpandedIconId = customStyle?.expandedIconId || inheritedStyle?.expandedIconId || "";
 
+            const isRainbowBgTransparent = depth === 0 && this.settings.rainbowRootText && this.settings.rainbowRootBgTransparent;
             const folderStyles = {
-                b: outlineOnly ? "transparent" : (depth === 0 && this.settings.rootStyle === "solid" ? color.hex : `rgba(${color.rgb}, ${adjustedOp})`),
+                b: outlineOnly || isRainbowBgTransparent ? "transparent" : (depth === 0 && this.settings.rootStyle === "solid" ? color.hex : `rgba(${color.rgb}, ${adjustedOp})`),
                 t: ColorResolver.resolveTextColor(
                     false,
                     depth,

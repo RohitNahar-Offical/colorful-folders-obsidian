@@ -1645,28 +1645,8 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     this.plugin.generateStylesDebounced();
                 }));
 
-        new obsidian.Setting(typeCard)
-            .setName('Indent subfolder backgrounds')
-            .setDesc('Pushes the colored background pill for subfolders inward, creating a stepped visual hierarchy.')
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.indentSubfolderPills)
-                .onChange(async (value) => {
-                    this.plugin.settings.indentSubfolderPills = value;
-                    await this.plugin.saveSettings();
-                    this.plugin.generateStylesDebounced();
-                    this.plugin.domObserverService.initDividerObserverDebounced();
-                }));
 
-        new obsidian.Setting(typeCard)
-            .setName('Folder spacing (1mm gap)')
-            .setDesc('Adds a small vertical gap between folders for a more airy layout.')
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.folderSpacing)
-                .onChange(async (value) => {
-                    this.plugin.settings.folderSpacing = value;
-                    await this.plugin.saveSettings();
-                    this.plugin.generateStylesDebounced();
-                }));
+
 
         new obsidian.Setting(typeCard)
             .setName('Rainbow root text')

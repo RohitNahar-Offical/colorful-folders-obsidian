@@ -47,7 +47,7 @@ modifiedFields: Set<string>;
         // Initialize style - pre-fill from current appearance if no custom style exists
         const effective = StyleResolver.getEffectiveStyle(this.item, this.plugin) || {
             hex: "#eb6f92", textColor: "", iconColor: "", isBold: this.isFolder, isItalic: false,
-            opacity: 1.0, applyToSubfolders: false, applyToFiles: false, iconId: ""
+            opacity: 1.0, applyToSubfolders: false, applyToFiles: false, iconId: "", expandedIconId: ""
         };
         const existing = (StyleResolver.getStyle(this.plugin, this.item.path) || {});
         
@@ -716,6 +716,10 @@ modifiedFields: Set<string>;
                 if (this.folderStyle.iconId) finalStyle.iconId = this.folderStyle.iconId;
                 else delete finalStyle.iconId;
             }
+            if (this.modifiedFields.has('expandedIconId')) {
+                if (this.folderStyle.expandedIconId) finalStyle.expandedIconId = this.folderStyle.expandedIconId;
+                else delete finalStyle.expandedIconId;
+            }
             if (this.modifiedFields.has('iconColor')) {
                 if (this.folderStyle.iconColor) finalStyle.iconColor = this.folderStyle.iconColor;
                 else delete finalStyle.iconColor;
@@ -752,6 +756,56 @@ modifiedFields: Set<string>;
 
 
         // Search & Filter Row
+        let targetIconField: 'iconId' | 'expandedIconId' = 'iconId';
+        
+        if (this.isFolder) {
+            const stateSelector = ic.createDiv();
+            stateSelector.setCssStyles({
+                display: "flex", gap: "10px", marginBottom: "12px", background: "var(--background-secondary)",
+                padding: "4px", borderRadius: "8px", border: "1px solid var(--background-modifier-border)"
+            });
+
+            const makeBtn = (label: string) => {
+                const btn = stateSelector.createEl("button", { text: label });
+                btn.setCssStyles({
+                    flex: "1", padding: "6px 0", background: "transparent", border: "none",
+                    borderRadius: "6px", cursor: "pointer", fontSize: "0.85em",
+                    color: "var(--text-muted)", transition: "all 0.15s ease"
+                });
+                return btn;
+            };
+
+            const collapsedBtn = makeBtn("Collapsed Icon");
+            const expandedBtn = makeBtn("Expanded Icon");
+            
+            const updateStateBtns = () => {
+                collapsedBtn.setCssStyles({
+                    background: targetIconField === 'iconId' ? "var(--background-modifier-active)" : "transparent",
+                    color: targetIconField === 'iconId' ? "var(--text-normal)" : "var(--text-muted)",
+                    fontWeight: targetIconField === 'iconId' ? "600" : "normal"
+                });
+                expandedBtn.setCssStyles({
+                    background: targetIconField === 'expandedIconId' ? "var(--background-modifier-active)" : "transparent",
+                    color: targetIconField === 'expandedIconId' ? "var(--text-normal)" : "var(--text-muted)",
+                    fontWeight: targetIconField === 'expandedIconId' ? "600" : "normal"
+                });
+            };
+            
+            collapsedBtn.onclick = () => {
+                targetIconField = 'iconId';
+                updateStateBtns();
+                renderIcons(searchInput.value, filterSelect.value);
+            };
+            
+            expandedBtn.onclick = () => {
+                targetIconField = 'expandedIconId';
+                updateStateBtns();
+                renderIcons(searchInput.value, filterSelect.value);
+            };
+            
+            updateStateBtns();
+        }
+
         const searchRow = ic.createDiv();
         searchRow.setCssStyles({ display: "flex", gap: "8px", marginBottom: "12px", alignItems: "center" });
         
@@ -824,8 +878,8 @@ modifiedFields: Set<string>;
                 width: `${cellSize}px`, height: `${cellSize}px`, borderRadius: "7px",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 cursor: "pointer", transition: "all 0.12s ease",
-                backgroundColor: this.folderStyle.iconId === id ? "var(--interactive-accent)" : "transparent",
-                border: "2px solid " + (this.folderStyle.iconId === id ? "var(--interactive-accent)" : "transparent")
+                backgroundColor: this.folderStyle[targetIconField] === id ? "var(--interactive-accent)" : "transparent",
+                border: "2px solid " + (this.folderStyle[targetIconField] === id ? "var(--interactive-accent)" : "transparent")
             });
             obsidian.setIcon(cell, id);
             const cellSvg = cell.querySelector("svg") as unknown as HTMLElement | null;
@@ -834,19 +888,19 @@ modifiedFields: Set<string>;
                 cellSvg.removeAttribute('height');
                 cellSvg.setCssStyles({
                     width: `${gridIconW}px`, height: `${gridIconW}px`,
-                    color: this.folderStyle.iconId === id ? "#fff" : "var(--text-normal)"
+                    color: this.folderStyle[targetIconField] === id ? "#fff" : "var(--text-normal)"
                 });
             }
             cell.title = id;
             cell.onmouseenter = () => {
-                if (this.folderStyle.iconId !== id) cell.setCssStyles({ backgroundColor: "var(--background-modifier-hover)" });
+                if (this.folderStyle[targetIconField] !== id) cell.setCssStyles({ backgroundColor: "var(--background-modifier-hover)" });
             };
             cell.onmouseleave = () => {
-                if (this.folderStyle.iconId !== id) cell.setCssStyles({ backgroundColor: "transparent" });
+                if (this.folderStyle[targetIconField] !== id) cell.setCssStyles({ backgroundColor: "transparent" });
             };
             cell.onclick = () => {
-                this.folderStyle.iconId = id;
-                this.modifiedFields.add('iconId');
+                this.folderStyle[targetIconField] = id;
+                this.modifiedFields.add(targetIconField);
                 void this._addToRecentlyUsed(id);
                 if (this._updatePreview) this._updatePreview();
                 renderIcons(searchInput.value, filterSelect.value);

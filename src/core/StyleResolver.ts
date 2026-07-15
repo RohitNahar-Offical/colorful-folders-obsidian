@@ -192,6 +192,7 @@ export class StyleResolver {
                 textColor: effText ? anyToHex(effText) : "",
                 iconColor: anyToHex(effIconColor || color.hex),
                 iconId: iconId,
+                expandedIconId: customStyle?.expandedIconId || "",
                 opacity: op,
                 isBold:
                     customStyle?.isBold !== undefined
@@ -215,6 +216,7 @@ export class StyleResolver {
                 textColor: "#000000",
                 iconColor: "#000000",
                 iconId: "",
+                expandedIconId: "",
                 opacity: 1,
                 isBold: true,
                 isItalic: false,
