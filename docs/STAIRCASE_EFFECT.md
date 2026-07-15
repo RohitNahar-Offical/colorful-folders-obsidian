@@ -18,7 +18,7 @@ This observer's sole job is to aggressively watch every `.tree-item-self` elemen
 
 This completely neutralizes Obsidian's native indentation calculations and collapses all file explorer items to a `0px` baseline.
 
-### Part 2: The Visual Offset CSS Hack (e.g. `nuke.css`)
+### Part 2: The Visual Offset CSS Hack
 With the native padding stripped, all items are flush-left. To restore the staircase effect, a CSS snippet must be applied that manually shifts the *inner* text/icon elements back into a staircase shape, without affecting the `.tree-item-self` background wrapper.
 
 ```css

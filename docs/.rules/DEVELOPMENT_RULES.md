@@ -140,7 +140,7 @@ While `read` is sufficient for building and attesting, `write` is mandatory for 
 Obsidian's React engine forces inline padding on `.tree-item-self` elements (e.g., `padding-inline-start: 61px`) to enforce its native staircase effect. When creating full-width colorful backgrounds, this native padding prevents the background from filling the space. To have both a full-width background and an indented staircase text effect, we use a two-part synergistic hack:
 
 1. **The Stripper Script (`main.ts`)**: A `MutationObserver` inside a 5-second `setTimeout` aggressively calls `removeAttribute('style')` on `.tree-item-self` elements to constantly neutralize Obsidian's inline padding styles.
-2. **The Visual Offset (`nuke.css`)**: A CSS snippet sets a baseline padding (e.g., `30px`), and the inner content (`.tree-item-icon` and `.tree-item-inner`) is shifted negatively using `position: relative !important; left: -20px !important;`.
+2. **The Visual Offset**: A CSS snippet or dynamic styles sets a baseline padding (e.g., `30px`), and the inner content (`.tree-item-icon` and `.tree-item-inner`) is shifted negatively using `position: relative !important; left: -20px !important;`.
 
 > **IMPORTANT**: Never try to fight Obsidian's inline padding using `MutationObserver` without pairing it with an offset CSS visual hack, otherwise all indentation will be destroyed. Full documentation: `docs/STAIRCASE_EFFECT.md`.
 
