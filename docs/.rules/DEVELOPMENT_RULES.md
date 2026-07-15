@@ -1,260 +1,152 @@
-# 📋 COLORFUL FOLDERS — DEVELOPMENT RULES & GUIDELINES
+# Colorful Folders: Core Development Rules & Post-Mortems
 
-> **⚠️ MANDATORY: Read ALL rules and core mechanics in this file BEFORE making any code changes, edits, or GitHub pushes.**
-> Last updated: 2026-06-25
-
----
-
-## 🌟 THE ESSENCE OF COLORFUL FOLDERS & HOW IT WORKS
-
-`Colorful Folders` is a premium customization engine for Obsidian that allows users to color-code folders and files, assign custom icons, and insert styled interactive dividers in their file explorer. To build and maintain the plugin safely, you must understand its core mechanics:
-
-### 1. The Dynamic Styling Engine (CSSStyleSheet API)
-To comply with the Obsidian Store linter rule `obsidianmd/no-forbidden-elements` (which strictly bans dynamic `<style>` tags), the plugin uses the modern **Constructable Stylesheet** API:
-* **Initialization**: `initializeStyles()` in `src/main.ts` creates a new instance of `CSSStyleSheet` and registers it directly to `activeDocument.adoptedStyleSheets`.
-* **Generation**: `StyleGenerator.ts` compiles the active plugin configuration, theme settings, and file explorer traversal indices into a single, highly optimized CSS string.
-* **Updates**: `generateStyles()` in `src/main.ts` updates the styles in real-time by calling `this.sheet.replaceSync(cssString)`. This runs in O(1) time without forcing browser layout collapses or causing scrolling flicker.
-* **Cleanup**: On plugin unload, the stylesheet is systematically filtered out of the document's adopted style sheets.
-
-### 2. Zero-Specificity Customization & CSS Variable Hooks
-To ensure robust, non-destructive styling that plays nicely with custom user CSS snippets and third-party themes, the generated styles wrap variables inside standard CSS custom properties:
-* **Variables**: `--cf-file-bg`, `--cf-file-color`, `--cf-folder-bg`, `--cf-folder-color`, `--cf-active-bg`, `--cf-active-color`, `--cf-tag-bg`, `--cf-tag-color`, and `--cf-selection-bg`.
-* **Zero-Specificity Overrides**: Users and third-party themes can override file/folder backgrounds, texts, and active highlights inside custom stylesheets without using a single `!important` rule, ensuring theme stability.
-* **Color-Matched Multi-Selections**: The `--cf-selection-bg` hook automatically shades multi-selected explorer items with a translucent hue matching the parent folder's color, falling back to the native accent color.
-
-### 3. Hierarchical Traversal & O(1) Performance
-To prevent performance degradation on large vaults, the plugin avoids binding recursive JavaScript listeners. Instead, `StyleGenerator.ts` traverses the vault hierarchy:
-* **Traversal (`traverse()`)**: Traverses folders recursively, calculating colors based on active color modes (Vibrant, Pastel, Monochromatic, Custom, or Heatmap).
-* **Positional Indexing**: Colors are assigned to folders based on parent/sibling positions, ensuring a deterministic "cycle" or gradient flow. Excluded folders are skipped during index calculations.
-* **Inheritance Model**: Styles can be forced down to subfolders (`applyToSubfolders`) and files (`applyToFiles`) through hierarchical lookups.
-* **Pure CSS Targeting**: Compiled CSS rules target specific explorer nodes via `[data-path="..."]` selectors. This provides O(1) browser rendering speeds, preventing the flickering commonly associated with virtualized DOM lists.
-
-### 4. Dual-Path Icon Rendering
-Because Obsidian's file explorer and virtualized panes (like Notebook Navigator) render elements differently, the plugin decouples its icon rendering:
-* **Explorer View (DOM Injection)**: For the standard explorer, `IconManager.ts` dynamically inserts `.cf-icon-wrapper` elements containing inline SVG structures directly into titles. It hides native explorer icons (`.nav-folder-icon`, `.nav-file-icon`) while active.
-* **Virtualized Panes (Surgical CSS Masking)**: For React-based virtualized lists (like Notebook Navigator) that recycle DOM elements rapidly, DOM manipulation fails. The plugin uses pure CSS rules inside `StyleGenerator.ts` to inject icons via `-webkit-mask-image` targeting `[data-path]`.
-* **CSS Firewall**: Rules for the explorer use `:not(.nn-file):not(.nn-navitem)` to prevent leakage, ensuring that virtualized panes use only their dedicated rendering path.
-
-### 5. SVG Normalization & Sanitization
-To prevent XSS vulnerabilities and layout breakages when users upload or register custom icons:
-* **Sanitization**: `IconManager.ts` parses raw SVG strings using `DOMParser`, systematically removing forbidden tags (`script`, `iframe`, `object`, `embed`, `foreignObject`) and event handler attributes (`on*` / `javascript:`).
-* **Normalization**: Strips hardcoded `width`, `height`, `style`, and background rectangles. Standardizes `viewBox` and sets `preserveAspectRatio`.
-* **Color Compatibility**: Inspects the SVG structure. If a stroke outline exists without fills, it assigns `fill="none"` and `stroke="currentColor"`. Otherwise, it assigns `fill="currentColor"`. This guarantees the SVG dynamically responds to theme colorization.
-
-### 6. Interactive Divider Bridge & Adaptive Markdown Popovers
-The divider system splits folder/file listings with absolute-positioned dividers:
-* **Divider Bridge**: Reconciles dividers across both standard explorers and Notebook Navigator containers. The parent container gets dynamic vertical padding to hold the absolute-positioned `.cf-interactive-divider` container.
-* **Chip Customization**: Supports label alignments, uppercase styling, line patterns (solid, dotted, dashed), custom line margins, and pill styles (including glassmorphic backgrounds and auto-faded colors).
-* **Adaptive Popovers**: Dividers with descriptions render rich Markdown using `MarkdownRenderer` inside a custom popup (`.cf-premium-popover`).
-  * **Adaptive Positioning**: Automatically flips the popover position (above/below/left/right) depending on viewport constraints.
-  * **Interactiveness**: Internal page links (`.internal-link`) and tags (`.tag`) are bound to workspace actions (opening documents, initiating global searches).
-  * **Touch Compatibility**: Dismisses smoothly via tap-outside events on mobile and hover-bridge timers on desktop.
-
-### 7. Performance Guardrails (Drag state & Debouncing)
-* **Drag-and-Drop Suspension**: During workspace drag-and-drop operations, the body is tagged with `.cf-is-dragging`. This instantly disables transitions, blurs, backdrops, and active styling, ensuring butter-smooth native dragging.
-* **Debounced Updates**: `generateStylesDebounced` and `processDividersDebounced` queue heavy CSS compiles and divider reconciliations, preventing frame drops during rapid system updates.
-
-### 8. Theme Compatibility Engine
-* **Style Settings Optimization**: To avoid collisions with third-party themes (specifically **Blue Topaz**), `optimizeBlueTopazStyleSettings()` automatically detects the active theme and deactivates conflicting folder/icon overrides in the *Style Settings* plugin, saving user settings and reloading cleanly.
+> This document is the consolidated **'source of truth'** for developing this plugin. It was generated after battling **25 distinct incidents** involving severe performance bottlenecks, virtualized DOM rendering, and Obsidian's aggressive React engine.
+>
+> **ALL AGENTS AND DEVELOPERS MUST ADHERE TO THESE RULES TO PREVENT REGRESSIONS.**
 
 ---
 
-## 🏗️ RULE 1 — ARCHITECTURE: NEVER BREAK THE STYLING ENGINE
+## 1. CSS & DOM Styling (The Virtualized List Rules)
 
-### The Core Engine (DO NOT REPLACE)
-The plugin uses the `CSSStyleSheet` API to inject generated CSS. This is the modern, linter-compliant replacement for a `<style>` tag.
+**RULE 1.1: Never style virtualized lists with JS inline styles.**
+Obsidian (and Notebook Navigator) recycle DOM rows instantly during scrolling. Inline styles injected by JS will be wiped out or flicker. *(Incident #1, #7)*
 
-* **File**: [StyleGenerator.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/StyleGenerator.ts)
-* **Key method**: `generateCss(): string`
-* **Injected by**: `initializeStyles()` in [main.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/main.ts)
-* **Applied by**: `generateStyles()` → `this.sheet.replaceSync(css)` in [main.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/main.ts)
+**RULE 1.2: Use `CSSStyleSheet` for dynamic CSS, NEVER `<style>`.**
+To pass Obsidian's `no-forbidden-elements` linter rule, you must inject dynamic CSS using `new CSSStyleSheet()` and `document.adoptedStyleSheets`. *(Incident #5)*
 
-### ❌ NEVER DO THIS:
-* Do NOT replace `generateCss()` with a "CSS variable" system that applies styles directly to DOM elements.
-* Do NOT remove the `sheet.replaceSync()` call in `main.ts`.
-* Do NOT try to use `MutationObserver` to replace the style engine.
-* Do NOT change the traversal logic inside `StyleGenerator.ts` unless you are 100% sure it won't break existing colors.
+**RULE 1.3: Strip React's inline styles instead of fighting them.**
+If Obsidian's React engine forces unwanted inline styles (e.g., `padding-inline-start`), do not fight it with `!important` CSS overrides. Use a `MutationObserver` to actively call `el.removeAttribute('style')` on `.tree-item-self` elements, and re-apply layouts using static CSS. *(Incident #24, #25 — see `docs/STAIRCASE_EFFECT.md`)*
 
-### ✅ ALWAYS DO THIS:
-* Add new CSS rules as additional strings inside `cssRules.push(...)` inside `generateCss()`.
-* Keep the `traverse()` function intact. Add logic inside it, do not replace it.
-* Test with a vault that has at least 3 levels of nested folders before pushing.
+**RULE 1.4: Scope all global CSS.**
+Any generic CSS rules (e.g., `display: flex`) must be strictly scoped to `.nav-files-container` to prevent layout collapse in the rest of the Obsidian UI. *(Incident #4)*
 
----
+**RULE 1.5: `background-clip: text` isolation.**
+Gradients must be applied directly to the text-content child (e.g., `.nav-folder-title-content`, `.nav-file-title-content`), NEVER to a parent row container that also has a `background-color`. If both coexist on the same element, the browser renders the background-color over the gradient. *(Incident #21)*
 
-## 🎨 RULE 2 — FEATURES: ALL PREMIUM FEATURES MUST BE PRESERVED
+**RULE 1.6: Injecting inline icons requires Flexbox.**
+When injecting custom SVG icon wrappers next to text, the content container (`.nav-folder-title-content`, `.nav-file-title-content`, `.tree-item-inner`) must be set to `display: flex; flex-direction: row; align-items: center` globally at the base CSS level — never `display: block`. Set spacing via CSS class rules, not inline styles. *(Incident #20)*
 
-The following features MUST work at all times. Test each one before pushing:
+**RULE 1.7: Use `[data-path]` selectors for virtualized list styling.**
+For virtualized lists (Obsidian file explorer and Notebook Navigator), use direct high-specificity CSS selectors targeting `[data-path="..."]` for O(1) rendering. Never rely on JavaScript to inject classes or styles per-row during scroll. *(Incident #7)*
 
-| Feature | Setting Key | Where It Is Generated |
-|---|---|---|
-| **Folder Background Colors** | `customFolderColors` | `traverse()` → `cssRules.push()` |
-| **Auto Color Files** | `autoColorFiles` | `copyFiles` loop in `traverse()` |
-| **Focus Mode** | `focusMode` | Top of `generateCss()`, before traverse |
-| **Radiant Path** | (always on) | `depth > 0` block in `traverse()` |
-| **Rainbow Root Text** | `rainbowRootText` | `textCss` block in folder loop |
-| **Heatmap Colors** | `colorMode === "heatmap"` | `getHeatmapColor()` function |
-| **Glassmorphism** | `glassmorphism` | `glassCss` variable, applied per folder |
-| **Auto Icons (SVG)** | `autoIcons` | `autoLucideId` block in folder loop |
-| **Auto Icons (Emoji)** | `autoIcons` | `isEmoji` block in folder loop |
-| **Custom Icons (per folder)** | `iconId` in `FolderStyle` | `activeStyle.iconId` block |
-| **Item Counters** | `showItemCounters` | `countItems()` + `::after` CSS |
-| **Hidden Items (Stealth)** | `isHidden` in `FolderStyle` | `generateStealthCss()` |
-| **Notebook Navigator** | `notebookNavigatorSupport` | `nnActive` checks throughout |
-| **Path Line Thickness** | `pathLineThickness` | `generateGlobalBaseCss` & `traverse` |
-| **Decoupled Icon Scaling** | (Internal Logic) | `nnIconW` (1.1em) vs `effFileIconW` (1.3em) |
+**RULE 1.8: CSS Firewall for third-party plugin isolation.**
+When generating CSS that could leak into Notebook Navigator or other file-tree plugins, append `:not(.nn-file):not(.nn-navitem)` to general icon/layout selectors. Never mix JS DOM injection + CSS styling for the same visual element in virtualized contexts — choose one path only. *(Incident #9)*
+
+**RULE 1.9: Target native classes, not wrapper classes, in Notebook Navigator.**
+Do not target NN's wrapper classes (`.nn-navitem`) for layout mechanics. Rely on the native classes it injects (`.nav-folder-title`, `.nav-file-title`) and elevate specificity safely using the `body` prefix. *(Incident #8)*
 
 ---
 
-## 🚫 RULE 3 — LINTER COMPLIANCE (OBSIDIAN STORE SUBMISSION)
+## 2. Main Thread Performance (Scroll, Drag, & Startup Lag)
 
-### Known Linter Issues & How To Handle Them
+**RULE 2.1: NO Dynamic `:has()` for high-traffic states.**
+Never use CSS `:has()` for drag, hover, or active states (e.g., `.nav-folder:has(.is-active)`). Replace with O(1) JavaScript class toggles (e.g., `.cf-has-divider`, `.cf-hidden`, `.cf-active-parent`). *(Incident #15)*
 
-#### Issue 1: `obsidianmd/no-forbidden-elements` (RESOLVED ✅)
-* **Status**: The `<style>` tag has been replaced with the native `CSSStyleSheet` API.
-* **Current Fix**: `initializeStyles()` now uses `new CSSStyleSheet()` + `document.adoptedStyleSheets`.
-* **No `eslint-disable` needed**: The new approach does not trigger this linter rule at all.
-* ❌ NEVER reintroduce `createEl("style")` — this will re-trigger the store rejection.
+**RULE 2.2: Observer Scroll Guards & RAF Batching.**
+Never run full `querySelectorAll` or synchronous DOM injections inside observers attached to the file explorer. Use `!this.isScrolling` guards to pause during scroll, pass `addedNodes` directly instead of full-container scans, and batch DOM writes in `requestAnimationFrame`. *(Incident #14)*
 
-#### Issue 2: UI Text Must Be Sentence Case
-* All `.setName()` and `.setDesc()` text in [SettingTab.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/ui/SettingTab.ts) must use **sentence case**.
-* ✅ Correct: `"Show item counters"`
-* ❌ Wrong: `"Show Item Counters"`
+**RULE 2.3: Debounce Observer initialization on rapid events.**
+Never bind synchronous observer setup/teardown logic directly to high-frequency events like `layout-change`. Wrap the initialization in a 500ms `obsidian.debounce`. *(Incident #24)*
 
-#### Issue 3: No Bare `eslint-disable` Comments
-* Every `eslint-disable` MUST have a description after `--`.
-* ✅ Correct: `// eslint-disable-next-line rule-name -- Reason here.`
-* ❌ Wrong: `// eslint-disable-next-line rule-name`
+**RULE 2.4: Guard observer init during drag operations.**
+Add `if (this.isDragging) return;` at the start of observer re-initialization functions. Obsidian's mid-drag hover events fire `layout-change`, which can re-create observers and cause layout thrashing. *(Incident #15)*
 
----
+**RULE 2.5: Chunk heavy I/O and defer initialization.**
+Defer layout queries to `app.workspace.onLayoutReady()`, and chunk file I/O using `setTimeout(..., 0)` to prevent startup freezes. Batch large filesystem operations (e.g., custom SVG file reads) in chunks of 50. *(Incident #18)*
 
-## 📁 RULE 4 — FILE RESPONSIBILITIES (DO NOT CROSS BOUNDARIES)
+**RULE 2.6: Debounce Settings Persistence.**
+Aggressively debounce disk writes (`saveData()`) and stylesheet generation when the user is interacting with UI sliders or color pickers. Keep visual feedback synchronous but defer persistence to a 300ms+ trailing edge. *(Incident #19)*
 
-| File | Responsibility | Do NOT |
-|---|---|---|
-| [StyleGenerator.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/StyleGenerator.ts) | Generate ALL CSS as a string | Add DOM manipulation here |
-| [IconManager.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/IconManager.ts) | Inject SVG icons into DOM elements (Standard Explorer) | Generate CSS or touch Notebook Navigator |
-| [DividerManager.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/DividerManager.ts) | Create/manage divider DOM elements | Touch folder colors |
-| [main.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/main.ts) | Orchestrate: load, observers, apply CSS | Put CSS generation logic here |
-| [SettingTab.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/ui/SettingTab.ts) | UI settings panel only | Apply styles directly |
-| [styles.css](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/styles.css) | **Static** base styles only | Put per-folder dynamic CSS here |
-| [types.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/common/types.ts) | TypeScript interfaces/types | Put logic here |
-| [constants.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/common/constants.ts) | Static data (palettes, icons) | Put settings here |
-| [utils.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/common/utils.ts) | Pure utility functions | Put plugin state here |
+**RULE 2.7: Version-stamp injected DOM elements.**
+Add `data-cf-icon-id` and `data-cf-icon-color` attributes to wrapper elements. Before re-rendering, check these stamps to skip elements that haven't changed. This drops O(N-total) work to O(N-changed). *(Incident #14)*
+
+**RULE 2.8: Whitelist MutationObserver class filters.**
+Never bind `MutationObserver` to high-traffic elements like `document.body` without extreme filtering. Always whitelist the specific classes you care about (e.g., `theme-dark`, `theme-light`, `cf-show-hidden`) and ignore noisy interaction classes (`is-dragging`, `is-focused`, `workspace-leaf-active`). *(Incident #13)*
+
+**RULE 2.9: Cache expensive computations.**
+Cache color palette lookups (`_cachedPalette`, `_cachedPaletteKey`), hex-to-RGB parsing (`rgbCache`), and other frequently-called utility results. Avoid rebuilding palettes on every `getEffectiveStyle()` call. *(Incident #18)*
 
 ---
 
-## 🔄 RULE 5 — THE CORRECT WORKFLOW FOR CHANGES
+## 3. Multi-Window & Ecosystem Compatibility
 
-### Before ANY code change:
-1. Read these rules.
-2. Identify which file needs changing.
-3. Check that the feature you are changing is listed in Rule 2.
-4. Make the change in the correct file (Rule 4).
+**RULE 3.1: Architect for Popout Windows.**
+Do not assume the plugin only runs in `activeDocument`. Bind stylesheets, drag events, and observers to ALL open documents using a `getOpenDocuments()` helper, and hook into `"window-open"` to dynamically adopt sheets and register hooks on new windows. *(Incident #16)*
 
-### Before pushing to GitHub:
-1. Run `node esbuild.config.mjs production` — build MUST succeed with 0 errors.
-2. Verify in Obsidian that the following still work:
-   * Folder colors appear correctly.
-   * Auto icons show on "Templates", "Images", "Projects" folders.
-   * Focus mode dims non-active items.
-   * Radiant path glows when a file is active.
-3. Run `git add . && git commit -m "..."` with a clear message.
-4. Run `git push origin main`.
+**RULE 3.2: Always provide a neutral UI fallback.**
+When overriding UI elements in third-party plugins, always provide a default fallback (e.g., a Lucide folder/file icon at 50% opacity) to prevent blank items. *(Incident #10)*
 
-### Commit message format:
-```
-<type>: <short description>
-
-Types: fix | feat | refactor | docs | style | chore
-```
-Examples:
-* `fix: restore radiant path after observer refactor`
-* `feat: add custom active file color picker`
-* `docs: update CUSTOMIZATION.md with new CSS variables`
+**RULE 3.3: Use `activeDocument` instead of `document`.**
+Always use `activeDocument` (or iterate `getOpenDocuments()`) for DOM queries. Using bare `document` will fail silently in popout windows and trigger the `obsidianmd/prefer-active-doc` linter rule. *(Incident #6, #16)*
 
 ---
 
-## ⚠️ RULE 6 — KNOWN DANGER ZONES (THINGS THAT HAVE BROKEN BEFORE)
+## 4. TypeScript, Build Integrity & Code Quality
 
-### ❌ Danger #1: Replacing the style tag with CSS variables
-* **Root cause**: DOM-based styling cannot handle Obsidian's virtual scroll list. When rows are recycled during scroll, inline styles are lost, causing flickering and vanished colors.
-* **Lesson**: NEVER use DOM-based styling for the color engine.
+**RULE 4.1: ALWAYS run `npm run build`.**
+TypeScript does not run natively in Obsidian. If you modify `.ts` files, you **must** compile the `main.js` bundle before testing. This single oversight caused hours of wasted debugging. *(Incident #25)*
 
-### ❌ Danger #2: Removing `getEffectiveStyle()` from `main.ts`
-* **Root cause**: Removed helper method during a refactor.
-* **Lesson**: Do not remove any public or private methods from `main.ts` without checking all call sites.
+**RULE 4.2: Describe all Linter disables.**
+Always use `// eslint-disable-next-line rule-name -- Reason here`. Bare `eslint-disable` comments without descriptions will be rejected by the Obsidian store automated scanner. *(Incident #3)*
 
-### ❌ Danger #3: Touching the global layout in `styles.css`
-* **Root cause**: Unscoped global layout styles affected non-plugin sidebar elements.
-* **Lesson**: All layout changes must be scoped to `.nav-files-container` or specific data-path selectors.
+**RULE 4.3: Safely parse JSON.**
+`JSON.parse` returns `any`. Use strict interfaces (e.g., `BackupData`) to type it. Replace property destructuring with explicit `delete` loops on shallow clones to avoid unused variables. *(Incident #6)*
 
-### ❌ Danger #4: Changing `IColorfulFoldersPlugin` interface without updating all implementors
-* **Root cause**: Class mismatches after types refactor.
-* **Lesson**: Any interface change in `types.ts` must be reflected in `main.ts` AND all mock/test implementations.
+**RULE 4.4: Keep core math single-sourced (DRY).**
+Do not duplicate color calculation or opacity math. Export static calculations (`resolveColor`, `resolveOpacity`, `resolveTextColor`) as shared utility functions. Use a singleton `StyleGenerator` instance, not dynamic reinstantiation. *(Incident #17)*
 
-### ❌ Danger #5: Bare `eslint-disable` without a description
-* **Root cause**: Failed automated submission scanners.
-* **Lesson**: ALL `eslint-disable` comments must include a `-- Description` explaining why.
+**RULE 4.5: Always verify interface ↔ class alignment after refactors.**
+After removing or renaming properties in `types.ts`, verify the implementing class in `main.ts` still satisfies the interface contract. TypeScript will surface this as a build error, but only if you actually build. *(Incident #2)*
 
-### ❌ Danger #6: Styling virtualized lists with JavaScript
-* **Root cause**: React recycles DOM elements faster than JS can track, creating severe flickering.
-* **Lesson**: Use **Pure CSS targeting `data-path`** for virtualized views to achieve O(1) performance.
+**RULE 4.6: Consolidate shared DOM queries.**
+Do not have 4+ different container query blocks scattered across files. Consolidate into a single shared helper (e.g., `getAllExplorerContainers()`) used by `main.ts`, `DividerManager.ts`, and `DOMObserverService.ts`. *(Incident #17)*
 
-### ❌ Danger #7: Over-engineering wrapper classes in integrations
-* **Root cause**: Layout collapsed by targeting `.nn-navitem` wrapper classes in Notebook Navigator.
-* **Lesson**: Rely on the native classes it injects (`.nav-folder-title`) and elevate specificity safely using `body`.
-
-### ❌ Danger #8: Double Icons in Virtualized Lists
-* **Root cause**: Used both DOM injection (`IconManager`) and CSS masking (`StyleGenerator`) for Notebook Navigator.
-* **Lesson**: Virtualized views must use a SINGLE rendering path. All NN icons must be handled by the **Surgical Container Replacement** (CSS) strategy.
-
-### ❌ Danger #9: Broad Selector Leakage
-* **Root cause**: Applied `::before` icons to `.tree-item-inner` without exclusions, leaking icons into NN rows.
-* **Lesson**: ALWAYS use the CSS Firewall: add `:not(.nn-file):not(.nn-navitem)` to all general explorer rules.
-
-### ❌ Danger #10: Blank Items in Integrated Panes
-* **Root cause**: Suppressing native icons left unmatched rows blank.
-* **Lesson**: Integrated views must have fallbacks. Inject a default Lucide folder/file icon via CSS mask when no icon matches.
-
-### ❌ Danger #11: Unsafe color parsing & leaking event listeners
-* **Root cause**: Call parsing on shorthand hex values caused TypeErrors. Neglected to remove scroll listener on unload.
-* **Lesson**: Defend against `null` returns when parsing color strings, and ensure all dynamic DOM event listeners are matched with cleanup in `onunload`.
+**RULE 4.7: Run the linter before pushing.**
+Always run `npm run lint` (or `node node_modules/eslint/bin/eslint.js`) before committing, especially after adding features that use generic objects or DOM manipulation. *(Incident #6)*
 
 ---
 
-## 🧪 RULE 7 — TESTING CHECKLIST BEFORE EVERY PUSH
+## 5. UI/UX Standards & Edge Cases
 
-Run through this list manually in Obsidian:
+**RULE 5.1: Use Native Obsidian UI Components.**
+Use `new obsidian.Setting().addToggle()` instead of raw `<input type="checkbox">` to ensure visual consistency, correct scaling across themes, and accessibility. *(Incident #23)*
 
-- [ ] Folder colors appear at root level.
-- [ ] Subfolder colors inherit correctly from parent.
-- [ ] Auto icons appear on "Templates", "Images", "Calendar" folders.
-- [ ] Custom icons (set via settings) show correctly.
-- [ ] Item counters appear as `::after` on folder titles.
-- [ ] Dividers show between folder groups.
-- [ ] Focus Mode: non-active folders/files are dimmed.
-- [ ] Radiant Path: active folder's border glows.
-- [ ] Rainbow Text: root folder names use gradient text.
-- [ ] Heatmap: recently modified folders are brighter.
-- [ ] Hidden items: folders marked as hidden are not shown.
-- [ ] Notebook Navigator (if installed): colors apply there too.
-- [ ] Dark mode and Light mode both render correctly.
-- [ ] No broken borders or unexpected lines appear.
-- [ ] Build runs with 0 errors: `node esbuild.config.mjs production`
+**RULE 5.2: Previews must share the exact rendering engine.**
+A UI preview must use the identical utility functions, gradient stop counts, font-weight values, and CSS reset values (e.g., `"initial"` not `"normal"`) as the actual renderer. Codify shared utility functions for gradient rendering. *(Incident #22)*
+
+**RULE 5.3: Normalize User Inputs & Auto-Initialize.**
+Validate and expand all user inputs (e.g., converting `#f00` to `#ff0000`). When enabling a compound feature (like a gradient), auto-initialize all required fields — guard conditions like `&& textColor && textGradientEnd` will silently fail if only one field is populated. *(Incident #12, #23)*
+
+**RULE 5.4: Always Mirror Event Listeners.**
+Any event listener registered on an element MUST be explicitly unregistered in the `onunload()` lifecycle. Use class-level bound methods to ensure the same reference is used for both `addEventListener` and `removeEventListener`. *(Incident #12)*
+
+**RULE 5.5: Reset UI state on Reset buttons.**
+When providing "Reset" buttons in modals, store references to `ToggleComponent` and other interactive UI elements, and explicitly call `.setValue(false)` (or equivalent) to keep the UI in sync with the data model. *(Incident #23)*
 
 ---
 
-## 📦 RULE 8 — VERSION & RELEASE MANAGEMENT
+## 6. CI/CD & Release Pipeline
 
-* Version is tracked in: `manifest.json`, `package.json`, `versions.json`
-* All three files MUST have the same version number before release.
-* Version format: `MAJOR.MINOR.PATCH` (e.g., `4.1.7`)
-* Only increment the version when you are ready for a store submission.
+**RULE 6.1: GitHub Attestation requires explicit predicate configuration.**
+`actions/attest@v1` requires both an explicit `predicate-type` (matching SLSA spec, e.g., `https://slsa.dev/provenance/v1.0`) AND a `predicate-path`. *(Incident #11)*
+
+**RULE 6.2: Release creation requires `contents: write` permission.**
+While `read` is sufficient for building and attesting, `write` is mandatory for creating GitHub Releases and generating notes. Standardize release tags to semantic version only (e.g., `4.1.5`). *(Incident #11)*
 
 ---
 
-## 🗂️ RULE 9 — FILE STRUCTURE REFERENCE
+## 7. The Staircase Effect (React Bypass)
+
+Obsidian's React engine forces inline padding on `.tree-item-self` elements (e.g., `padding-inline-start: 61px`) to enforce its native staircase effect. When creating full-width colorful backgrounds, this native padding prevents the background from filling the space. To have both a full-width background and an indented staircase text effect, we use a two-part synergistic hack:
+
+1. **The Stripper Script (`main.ts`)**: A `MutationObserver` inside a 5-second `setTimeout` aggressively calls `removeAttribute('style')` on `.tree-item-self` elements to constantly neutralize Obsidian's inline padding styles.
+2. **The Visual Offset (`nuke.css`)**: A CSS snippet sets a baseline padding (e.g., `30px`), and the inner content (`.tree-item-icon` and `.tree-item-inner`) is shifted negatively using `position: relative !important; left: -20px !important;`.
+
+> **IMPORTANT**: Never try to fight Obsidian's inline padding using `MutationObserver` without pairing it with an offset CSS visual hack, otherwise all indentation will be destroyed. Full documentation: `docs/STAIRCASE_EFFECT.md`.
+
+---
+
+## 8. File Structure Reference
 
 ```
 colorful-folders/
@@ -263,17 +155,22 @@ colorful-folders/
 │   │   ├── DEVELOPMENT_RULES.md
 │   │   ├── FEATURE_FILE_MAP.md
 │   │   └── INCIDENT_LOG.md
-│   └── ARCHITECTURE.md        ← Details of style engine architecture
+│   ├── ARCHITECTURE.md        ← Details of style engine architecture
+│   ├── STAIRCASE_EFFECT.md    ← How the React bypass staircase hack works
+│   └── ...
 ├── src/
-│   ├── main.ts                ← Plugin lifecycle, style application
+│   ├── main.ts                ← Plugin lifecycle, style application, stripper script
 │   ├── common/
 │   │   ├── types.ts           ← All TypeScript interfaces
 │   │   ├── constants.ts       ← Palettes, icon data, defaults
 │   │   └── utils.ts           ← Pure helper functions
 │   ├── core/
 │   │   ├── StyleGenerator.ts  ← THE BRAIN — CSS generation
+│   │   ├── BaseCssGenerator.ts ← Base layout CSS generation
 │   │   ├── IconManager.ts     ← SVG icon injection
 │   │   └── DividerManager.ts  ← Divider DOM management
+│   ├── services/
+│   │   └── DOMObserverService.ts ← MutationObserver & scroll handling
 │   ├── ui/
 │   │   ├── SettingTab.ts      ← Settings panel UI
 │   │   └── modals/            ← All interactive UI modals
@@ -287,16 +184,59 @@ colorful-folders/
 
 ---
 
-## 🤖 RULE 10 — FOR THE AI (ANTIGRAVITY) — CONTEXT PRESERVATION
+## 9. For the AI (Antigravity) — Context Preservation
 
 When starting a new session on this plugin, do the following **before writing any code**:
 
 1. Read `docs/.rules/DEVELOPMENT_RULES.md` (this file).
 2. Read `src/core/StyleGenerator.ts` lines 1–50 to confirm the engine is intact.
-3. Read `src/main.ts` lines 135–150 to confirm the adopted stylesheet setup is in place.
+3. Read `src/main.ts` lines 130–190 to confirm the stripper script and adopted stylesheet setup is in place.
 4. Check the current git status: `git log --oneline -5` to see recent changes.
 5. Identify what the user is asking to change and which Rule applies.
-6. **Never make changes that violate Rules 1, 2, or 3.**
+6. **Never make changes that violate Rules 1, 2, or 4.**
 
 ### Golden Rule:
 > **When in doubt, do LESS. A stable plugin that looks great is always better than a broken plugin with a "safe" architecture.**
+
+---
+
+## Appendix: Incident Cross-Reference
+
+| Rule | Incident(s) |
+|------|-------------|
+| 1.1 | #1, #7 |
+| 1.2 | #5 |
+| 1.3 | #24, #25 |
+| 1.4 | #4 |
+| 1.5 | #21 |
+| 1.6 | #20 |
+| 1.7 | #7 |
+| 1.8 | #9 |
+| 1.9 | #8 |
+| 2.1 | #15 |
+| 2.2 | #14 |
+| 2.3 | #24 |
+| 2.4 | #15 |
+| 2.5 | #18 |
+| 2.6 | #19 |
+| 2.7 | #14 |
+| 2.8 | #13 |
+| 2.9 | #18 |
+| 3.1 | #16 |
+| 3.2 | #10 |
+| 3.3 | #6, #16 |
+| 4.1 | #25 |
+| 4.2 | #3 |
+| 4.3 | #6 |
+| 4.4 | #17 |
+| 4.5 | #2 |
+| 4.6 | #17 |
+| 4.7 | #6 |
+| 5.1 | #23 |
+| 5.2 | #22 |
+| 5.3 | #12, #23 |
+| 5.4 | #12 |
+| 5.5 | #23 |
+| 6.1 | #11 |
+| 6.2 | #11 |
+| 7 (Staircase) | #24, #25 |
