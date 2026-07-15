@@ -42,15 +42,15 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         sysPanel.setCssStyles({ display: 'none' });
 
         const btnGen = tabBar.createEl("button", { text: "General", cls: 'cf-tab-btn' });
-        const btnInt = tabBar.createEl("button", { text: "Integrations", cls: 'cf-tab-btn' });
-        const btnIcon = tabBar.createEl("button", { text: "Icon packs", cls: 'cf-tab-btn' });
-        const btnSys = tabBar.createEl("button", { text: "System", cls: 'cf-tab-btn' });
+        const btnInt = tabBar.createEl("button", { text: "Features", cls: 'cf-tab-btn' });
+        const btnIcon = tabBar.createEl("button", { text: "Icons", cls: 'cf-tab-btn' });
+        const btnSys = tabBar.createEl("button", { text: "Privacy", cls: 'cf-tab-btn' });
 
         const setHeroInfo = (t: string) => {
             if (t === "gen") { heroTitle.setText("Visual design"); heroSubtitle.setText("Tailor your vault's interface with premium palettes and refined structural aesthetics."); }
-            if (t === "int") { heroTitle.setText("Integrations"); heroSubtitle.setText("Seamlessly connect with external extensions and optimize your workflow."); }
-            if (t === "icon") { heroTitle.setText("Icon logic"); heroSubtitle.setText("Command a vast library of symbols with intelligent automation rules."); }
-            if (t === "sys") { heroTitle.setText("System"); heroSubtitle.setText("Maintain peak performance and manage your styling engine's core."); }
+            if (t === "int") { heroTitle.setText("Features"); heroSubtitle.setText("Unlock powerful custom features and connect with external extensions."); }
+            if (t === "icon") { heroTitle.setText("Icon management"); heroSubtitle.setText("Command a vast library of symbols with intelligent automation rules."); }
+            if (t === "sys") { heroTitle.setText("Privacy"); heroSubtitle.setText("Configure telemetry preferences and data management settings."); }
         };
 
         const setTab = (t: string) => {
@@ -86,69 +86,269 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         // ──────────────────────────────────────────────────────────────────────
         // ── INTEGRATIONS PANEL ────────────────────────────────────────────────
         // ──────────────────────────────────────────────────────────────────────
-        const intCard = makeCard(intPanel, "🔗", "Notebook navigator");
-        intCard.createEl('p', {
-            text: '💡 Tip: To change icons in notebook navigator, simply use the colorful folders menu in the standard explorer. All changes are automatically synchronized.',
-            cls: 'setting-item-description'
-        }).setCssStyles({ fontSize: '0.85em', fontStyle: 'italic', marginBottom: '12px', color: 'var(--text-accent)' });
+        const divCard = makeCard(intPanel, "➖", "Dividers and sections");
 
-        new obsidian.Setting(intCard)
-            .setName('Enable notebook navigator support')
-            .setDesc('Allows colorful folders to safely style the icons and text of notebook navigator items.')
+        const divGuide = divCard.createDiv();
+        divGuide.setCssStyles({
+            marginBottom: '20px',
+            background: 'var(--background-secondary-alt)',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            borderLeft: '4px solid var(--interactive-accent)',
+            lineHeight: '1.4'
+        });
+        const divGuideTitle = divGuide.createDiv({ text: '💡 Quick guide: How to add dividers' });
+        divGuideTitle.setCssStyles({ fontWeight: '700', fontSize: '0.95em', marginBottom: '4px' });
+        const divGuideText = divGuide.createEl('p', {
+            text: 'Right-click any folder or file in the sidebar explorer and select "add divider" to insert a section separator below it. You can also run the command "add/edit divider for current file" from the command palette.'
+        });
+        divGuideText.setCssStyles({ fontSize: '0.85em', color: 'var(--text-muted)', margin: '0' });
+
+        // --- Divider Live Preview ---
+        const previewWrap = divCard.createDiv({ cls: 'cf-divider-preview-wrap' });
+        previewWrap.setCssStyles({
+            padding: '40px 24px',
+            background: 'var(--background-secondary-alt)',
+            borderRadius: '12px',
+            marginBottom: '24px',
+            border: '1px solid var(--background-modifier-border)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '120px',
+            position: 'relative',
+            overflow: 'hidden'
+        });
+
+        previewWrap.createEl('small', { text: 'Live preview', cls: 'cf-preview-label' }).setCssStyles({
+            position: 'absolute', top: '8px', left: '12px', opacity: '0.4', fontSize: '0.7em', letterSpacing: '0.1em', fontWeight: '700'
+        });
+
+        const dividerContainer = previewWrap.createDiv();
+        dividerContainer.setCssStyles({ width: '100%' });
+
+        const updatePreview = () => {
+            dividerContainer.empty();
+            const previewEl = this.plugin.dividerManager.buildDividerNode('preview-path', {
+                dividerText: 'Preview section',
+                dividerColor: 'var(--interactive-accent)',
+                hasDivider: true
+            }, activeDocument);
+
+            previewEl.setCssStyles({
+                position: 'relative', top: '0', left: '0', width: '100%', margin: '0', pointerEvents: 'none'
+            });
+            dividerContainer.appendChild(previewEl);
+        };
+        updatePreview();
+        // --- End Preview ---
+
+        // Divider overrides merged into divCard
+        new obsidian.Setting(divCard)
+            .setName('Modern pill design')
+            .setDesc('When enabled, dividers use the rounded "pill" background and border. When disabled, only text and lines are shown.')
             .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.notebookNavigatorSupport)
+                .setValue(this.plugin.settings.dividerPillMode !== false)
                 .onChange(async (value) => {
-                    this.plugin.settings.notebookNavigatorSupport = value;
+                    this.plugin.settings.dividerPillMode = value;
                     await this.plugin.saveSettings();
                     this.plugin.generateStylesDebounced();
+                    updatePreview();
                 }));
 
-        new obsidian.Setting(intCard)
-            .setName('Apply background colors to files')
-            .setDesc('Injects the faint background block and left border to file cards. Disable this to keep the cards strictly native.')
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.notebookNavigatorFileBackground)
-                .onChange(async (value) => {
-                    this.plugin.settings.notebookNavigatorFileBackground = value;
-                    await this.plugin.saveSettings();
-                    this.plugin.generateStylesDebounced();
-                }));
+        const pillColorRow = divCard.createDiv();
+        let pickerWrap: HTMLElement | null = null;
+        let colorBox: HTMLElement;
+        let textComp: obsidian.TextComponent;
 
-        new obsidian.Setting(intCard)
-            .setName('Outline only mode (navigator)')
-            .setDesc('Removes solid backgrounds from notebook navigator items, showing only the left accent border.')
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.notebookNavigatorOutlineOnly)
-                .onChange(async (value) => {
-                    this.plugin.settings.notebookNavigatorOutlineOnly = value;
-                    await this.plugin.saveSettings();
-                    this.plugin.generateStylesDebounced();
-                }));
+        new obsidian.Setting(pillColorRow)
+            .setName('Global pill background color')
+            .setDesc('Optional. Set a universal background color for all pills (rgba supported). Leave empty to inherit folder colors automatically.')
+            .addButton(btn => {
+                btn.setIcon('palette')
+                    .setTooltip('Open visual color picker')
+                    .onClick(() => {
+                        if (pickerWrap) {
+                            pickerWrap.remove();
+                            pickerWrap = null;
+                            return;
+                        }
+                        pickerWrap = pillColorRow.createDiv();
+                        pickerWrap.setCssStyles({
+                            marginTop: '12px', padding: '16px', background: 'var(--background-secondary-alt)',
+                            borderRadius: '8px', border: '1px solid var(--background-modifier-border)'
+                        });
+                        createVisualColorPicker(pickerWrap, this.plugin.settings.dividerPillColor || "#5ebd8e", (color) => {
+                            this.plugin.settings.dividerPillColor = color;
+                            textComp.setValue(color);
+                            colorBox.setCssStyles({ backgroundColor: color });
+                            void this.plugin.saveSettings().then(() => {
+                                this.plugin.generateStylesDebounced();
+                                updatePreview();
+                            });
+                        });
+                    });
+            })
+            .addText(text => {
+                textComp = text;
+                text.setValue(this.plugin.settings.dividerPillColor || "")
+                    .setPlaceholder('Example: #5ebd8e or rgba(...)')
+                    .onChange(async (value) => {
+                        this.plugin.settings.dividerPillColor = value;
+                        colorBox.setCssStyles({ backgroundColor: value || 'transparent' });
+                        await this.plugin.saveSettings();
+                        this.plugin.generateStylesDebounced();
+                        updatePreview();
+                    });
+            })
+            .addExtraButton(btn => {
+                btn.setIcon('reset')
+                    .setTooltip('Reset color')
+                    .onClick(async () => {
+                        this.plugin.settings.dividerPillColor = "";
+                        textComp.setValue("");
+                        colorBox.setCssStyles({ backgroundColor: 'transparent' });
+                        await this.plugin.saveSettings();
+                        this.plugin.generateStylesDebounced();
+                        updatePreview();
+                    });
+            });
 
-        let sliderComp_notebookNavigatorIconScale: obsidian.SliderComponent;
-        new obsidian.Setting(intCard)
-            .setName('Navigator icon scaling')
-            .setDesc('Multiplies the size of icons strictly within Notebook Navigator (default 0.8). Range: 0.5 to 2.5.')
+        const colorBoxContainer = pillColorRow.createDiv();
+        colorBoxContainer.setCssStyles({ display: 'inline-flex', alignItems: 'center', marginLeft: '10px' });
+        colorBox = colorBoxContainer.createDiv();
+        colorBox.setCssStyles({
+            width: '20px', height: '20px', borderRadius: '4px',
+            border: '1px solid var(--background-modifier-border)',
+            backgroundColor: this.plugin.settings.dividerPillColor || 'transparent'
+        });
+
+        let sliderComp_dividerSpacing: obsidian.SliderComponent;
+        new obsidian.Setting(divCard)
+            .setName('Vertical spacing')
+            .setDesc('Adjust the empty space above and below dividers.')
             .addSlider(slider => {
-                sliderComp_notebookNavigatorIconScale = slider;
+                sliderComp_dividerSpacing = slider;
                 slider
-                .setLimits(0.5, 2.5, 0.1)
-                .setValue(this.plugin.settings.notebookNavigatorIconScale ?? 0.8)
+                .setLimits(5, 50, 1)
+                .setValue(this.plugin.settings.dividerSpacing ?? 15)
 
 
                 .onChange(async (value) => {
-                    this.plugin.settings.notebookNavigatorIconScale = value;
+                    this.plugin.settings.dividerSpacing = value;
                     await this.plugin.saveSettings();
                     this.plugin.generateStylesDebounced();
+                    this.plugin.dividerManager.syncDividers();
+                    updatePreview();
                 });
                 return slider;
             })
             .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
-                this.plugin.settings.notebookNavigatorIconScale = DEFAULT_SETTINGS.notebookNavigatorIconScale;
-                sliderComp_notebookNavigatorIconScale.setValue(DEFAULT_SETTINGS.notebookNavigatorIconScale);
+                this.plugin.settings.dividerSpacing = DEFAULT_SETTINGS.dividerSpacing;
+                sliderComp_dividerSpacing.setValue(DEFAULT_SETTINGS.dividerSpacing);
+                await this.plugin.saveSettings();
+                this.plugin.generateStylesDebounced();
+                this.plugin.dividerManager.syncDividers();
+                updatePreview();
+            }));
+
+        let sliderComp_dividerThickness: obsidian.SliderComponent;
+        new obsidian.Setting(divCard)
+            .setName('Line thickness')
+            .setDesc('Adjust the vertical line weight of the dividers.')
+            .addSlider(slider => {
+                sliderComp_dividerThickness = slider;
+                slider
+                .setLimits(1, 10, 0.5)
+                .setValue(this.plugin.settings.dividerThickness ?? 1.5)
+
+
+                .onChange(async (value) => {
+                    this.plugin.settings.dividerThickness = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStylesDebounced();
+                    this.plugin.dividerManager.syncDividers();
+                    updatePreview();
+                });
+                return slider;
+            })
+            .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
+                this.plugin.settings.dividerThickness = DEFAULT_SETTINGS.dividerThickness;
+                sliderComp_dividerThickness.setValue(DEFAULT_SETTINGS.dividerThickness);
+                await this.plugin.saveSettings();
+                this.plugin.generateStylesDebounced();
+                this.plugin.dividerManager.syncDividers();
+                updatePreview();
+            }));
+
+        let sliderComp_dividerLinePaddingLeft: obsidian.SliderComponent;
+        new obsidian.Setting(divCard)
+            .setName('Line gap (left)')
+            .setDesc('Adjust horizontal space between the left divider line and the central label.')
+            .addSlider(slider => {
+                sliderComp_dividerLinePaddingLeft = slider;
+                slider
+                .setLimits(0, 40, 1)
+                .setValue(this.plugin.settings.dividerLinePaddingLeft ?? 8)
+
+
+                .onChange(async (value) => {
+                    this.plugin.settings.dividerLinePaddingLeft = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStylesDebounced();
+                    updatePreview();
+                });
+                return slider;
+            })
+            .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
+                this.plugin.settings.dividerLinePaddingLeft = DEFAULT_SETTINGS.dividerLinePaddingLeft;
+                sliderComp_dividerLinePaddingLeft.setValue(DEFAULT_SETTINGS.dividerLinePaddingLeft);
                 await this.plugin.saveSettings();
                 this.plugin.generateStylesDebounced();
             }));
+
+        let sliderComp_dividerLinePaddingRight: obsidian.SliderComponent;
+        new obsidian.Setting(divCard)
+            .setName('Line gap (right)')
+            .setDesc('Adjust horizontal space between the right divider line and the central label.')
+            .addSlider(slider => {
+                sliderComp_dividerLinePaddingRight = slider;
+                slider
+                .setLimits(0, 40, 1)
+                .setValue(this.plugin.settings.dividerLinePaddingRight ?? 8)
+
+
+                .onChange(async (value) => {
+                    this.plugin.settings.dividerLinePaddingRight = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStylesDebounced();
+                    updatePreview();
+                });
+                return slider;
+            })
+            .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
+                this.plugin.settings.dividerLinePaddingRight = DEFAULT_SETTINGS.dividerLinePaddingRight;
+                sliderComp_dividerLinePaddingRight.setValue(DEFAULT_SETTINGS.dividerLinePaddingRight);
+                await this.plugin.saveSettings();
+                this.plugin.generateStylesDebounced();
+            }));
+
+        new obsidian.Setting(divCard)
+            .setName('Default line style')
+            .addDropdown(drop => drop
+                .addOption("solid", "Solid")
+                .addOption("dashed", "Dashed")
+                .addOption("dotted", "Dotted")
+                .setValue(this.plugin.settings.dividerLineStyle || "solid")
+                .onChange(async (value) => {
+                    this.plugin.settings.dividerLineStyle = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.dividerManager.syncDividers();
+                    updatePreview();
+                }));
+
+
 
         // ──────────────────────────────────────────────────────────────────────
         // ── TAG SYNC CARD ─────────────────────────────────────────────────────
@@ -341,6 +541,70 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     await GraphColorSync.syncGraphColors(this.plugin);
                     new obsidian.Notice('Graph View colors synced! Re-open your Graph View to see the changes.');
                 }));
+
+        const intCard = makeCard(intPanel, "🔗", "Notebook navigator");
+        intCard.createEl('p', {
+            text: '💡 Tip: To change icons in notebook navigator, simply use the colorful folders menu in the standard explorer. All changes are automatically synchronized.',
+            cls: 'setting-item-description'
+        }).setCssStyles({ fontSize: '0.85em', fontStyle: 'italic', marginBottom: '12px', color: 'var(--text-accent)' });
+
+        new obsidian.Setting(intCard)
+            .setName('Enable notebook navigator support')
+            .setDesc('Allows colorful folders to safely style the icons and text of notebook navigator items.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.notebookNavigatorSupport)
+                .onChange(async (value) => {
+                    this.plugin.settings.notebookNavigatorSupport = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStylesDebounced();
+                }));
+
+        new obsidian.Setting(intCard)
+            .setName('Apply background colors to files')
+            .setDesc('Injects the faint background block and left border to file cards. Disable this to keep the cards strictly native.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.notebookNavigatorFileBackground)
+                .onChange(async (value) => {
+                    this.plugin.settings.notebookNavigatorFileBackground = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStylesDebounced();
+                }));
+
+        new obsidian.Setting(intCard)
+            .setName('Outline only mode (navigator)')
+            .setDesc('Removes solid backgrounds from notebook navigator items, showing only the left accent border.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.notebookNavigatorOutlineOnly)
+                .onChange(async (value) => {
+                    this.plugin.settings.notebookNavigatorOutlineOnly = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStylesDebounced();
+                }));
+
+        let sliderComp_notebookNavigatorIconScale: obsidian.SliderComponent;
+        new obsidian.Setting(intCard)
+            .setName('Navigator icon scaling')
+            .setDesc('Multiplies the size of icons strictly within Notebook Navigator (default 0.8). Range: 0.5 to 2.5.')
+            .addSlider(slider => {
+                sliderComp_notebookNavigatorIconScale = slider;
+                slider
+                .setLimits(0.5, 2.5, 0.1)
+                .setValue(this.plugin.settings.notebookNavigatorIconScale ?? 0.8)
+
+
+                .onChange(async (value) => {
+                    this.plugin.settings.notebookNavigatorIconScale = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStylesDebounced();
+                });
+                return slider;
+            })
+            .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
+                this.plugin.settings.notebookNavigatorIconScale = DEFAULT_SETTINGS.notebookNavigatorIconScale;
+                sliderComp_notebookNavigatorIconScale.setValue(DEFAULT_SETTINGS.notebookNavigatorIconScale);
+                await this.plugin.saveSettings();
+                this.plugin.generateStylesDebounced();
+            }));
 
         // ──────────────────────────────────────────────────────────────────────
         // ── ICON PACKS PANEL ──────────────────────────────────────────────────
@@ -568,7 +832,9 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         const infoText = infoContent.createEl('p');
         infoText.appendText('Right-click any folder or file in the explorer and click ');
         infoText.createEl('strong', { text: '"set custom style"' });
-        infoText.appendText(' to assign specific unique colors or icons!');
+        infoText.appendText(' to assign specific unique colors or icons, or click ');
+        infoText.createEl('strong', { text: '"add divider"' });
+        infoText.appendText(' to insert horizontal section separators!');
 
         const genCard = makeCard(generalPanel, "🎨", "Global visual palette");
         let globalBgPickerWrap: HTMLElement | null = null;
@@ -959,8 +1225,8 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 }));
 
         new obsidian.Setting(activeCard)
-            .setName('Use custom active file colors')
-            .setDesc('Enable this to override the default luminous selection colors with your own.')
+            .setName('Use custom active file box colors')
+            .setDesc('Enable this to override the background and text color of the active (currently selected) file box.')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.useCustomActiveColor)
                 .onChange(async (value) => {
@@ -1177,7 +1443,6 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
 
 
-
         const autoCard = makeCard(iconPanel, "🤖", "Automation engine");
         new obsidian.Setting(autoCard)
             .setName('Enable automatic icons')
@@ -1226,6 +1491,50 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                             this.plugin.generateStylesDebounced();
                         }));
             }
+
+            new obsidian.Setting(autoCard)
+                .setName('Default closed folder icon')
+                .setDesc('Customize the default icon shown for closed folders when auto-icons are enabled.')
+                .addText(text => {
+                    text.setValue(this.plugin.settings.defaultClosedFolderIcon || "lucide-folder");
+                    text.onChange(async (val) => {
+                        this.plugin.settings.defaultClosedFolderIcon = val;
+                        await this.plugin.saveSettings();
+                        this.plugin.generateStylesDebounced();
+                    });
+                    const btn = new obsidian.ButtonComponent(text.inputEl.parentElement);
+                    btn.setButtonText("Choose").onClick(() => {
+                        new IconPickerModal(this.app, this.plugin, text.getValue(), async (iconId) => {
+                            text.setValue(iconId);
+                            this.plugin.settings.defaultClosedFolderIcon = iconId;
+                            await this.plugin.saveSettings();
+                            this.plugin.generateStylesDebounced();
+                        }).open();
+                    });
+                    btn.buttonEl.setCssStyles({ marginLeft: "8px" });
+                });
+
+            new obsidian.Setting(autoCard)
+                .setName('Default open folder icon')
+                .setDesc('Customize the default icon shown for open folders when auto-icons are enabled.')
+                .addText(text => {
+                    text.setValue(this.plugin.settings.defaultOpenFolderIcon || "lucide-folder-open");
+                    text.onChange(async (val) => {
+                        this.plugin.settings.defaultOpenFolderIcon = val;
+                        await this.plugin.saveSettings();
+                        this.plugin.generateStylesDebounced();
+                    });
+                    const btn = new obsidian.ButtonComponent(text.inputEl.parentElement);
+                    btn.setButtonText("Choose").onClick(() => {
+                        new IconPickerModal(this.app, this.plugin, text.getValue(), async (iconId) => {
+                            text.setValue(iconId);
+                            this.plugin.settings.defaultOpenFolderIcon = iconId;
+                            await this.plugin.saveSettings();
+                            this.plugin.generateStylesDebounced();
+                        }).open();
+                    });
+                    btn.buttonEl.setCssStyles({ marginLeft: "8px" });
+                });
 
             const rulesDesc = autoCard.createDiv();
             rulesDesc.setCssStyles({
@@ -1366,234 +1675,44 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             renderRulesUI();
         }
 
-        const divCard = makeCard(generalPanel, "➖", "Dividers and sections");
 
-        // --- Divider Live Preview ---
-        const previewWrap = divCard.createDiv({ cls: 'cf-divider-preview-wrap' });
-        previewWrap.setCssStyles({
-            padding: '40px 24px',
-            background: 'var(--background-secondary-alt)',
-            borderRadius: '12px',
-            marginBottom: '24px',
-            border: '1px solid var(--background-modifier-border)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: '120px',
-            position: 'relative',
-            overflow: 'hidden'
-        });
-
-        previewWrap.createEl('small', { text: 'Live preview', cls: 'cf-preview-label' }).setCssStyles({
-            position: 'absolute', top: '8px', left: '12px', opacity: '0.4', fontSize: '0.7em', letterSpacing: '0.1em', fontWeight: '700'
-        });
-
-        const dividerContainer = previewWrap.createDiv();
-        dividerContainer.setCssStyles({ width: '100%' });
-
-        const updatePreview = () => {
-            dividerContainer.empty();
-            const previewEl = this.plugin.dividerManager.buildDividerNode('preview-path', {
-                dividerText: 'Preview section',
-                dividerColor: 'var(--interactive-accent)',
-                hasDivider: true
-            }, activeDocument);
-
-            previewEl.setCssStyles({
-                position: 'relative', top: '0', left: '0', width: '100%', margin: '0', pointerEvents: 'none'
-            });
-            dividerContainer.appendChild(previewEl);
-        };
-        updatePreview();
-        // --- End Preview ---
-
-        // Divider overrides merged into divCard
-        new obsidian.Setting(divCard)
-            .setName('Modern pill design')
-            .setDesc('When enabled, dividers use the rounded "pill" background and border. When disabled, only text and lines are shown.')
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.dividerPillMode !== false)
-                .onChange(async (value) => {
-                    this.plugin.settings.dividerPillMode = value;
-                    await this.plugin.saveSettings();
-                    this.plugin.generateStylesDebounced();
-                    updatePreview();
-                }));
-
-        const pillColorRow = divCard.createDiv();
-        let pickerWrap: HTMLElement | null = null;
-        let colorBox: HTMLElement;
-        let textComp: obsidian.TextComponent;
-
-        new obsidian.Setting(pillColorRow)
-            .setName('Global pill background color')
-            .setDesc('Optional. Set a universal background color for all pills (rgba supported). Leave empty to inherit folder colors automatically.')
-            .addButton(btn => {
-                btn.setIcon('palette')
-                    .setTooltip('Open visual color picker')
-                    .onClick(() => {
-                        if (pickerWrap) {
-                            pickerWrap.remove();
-                            pickerWrap = null;
-                            return;
-                        }
-                        pickerWrap = pillColorRow.createDiv();
-                        pickerWrap.setCssStyles({
-                            marginTop: '12px', padding: '16px', background: 'var(--background-secondary-alt)',
-                            borderRadius: '8px', border: '1px solid var(--background-modifier-border)'
-                        });
-
-                        const current = parseColorToHexAlpha(this.plugin.settings.dividerPillColor);
-                        createVisualColorPicker(pickerWrap, current.hex, (hex, alpha) => {
-                            const rgba = hexAlphaToRgba(hex, alpha);
-                            this.plugin.settings.dividerPillColor = rgba;
-                            textComp.setValue(rgba);
-                            colorBox.setCssStyles({ backgroundColor: rgba });
-                            this.plugin.saveSettings().then(() => {
-                                this.plugin.generateStylesDebounced();
-                                updatePreview();
-                            }).catch(err => console.error("Failed to save settings from color picker:", err));
-                        }, { showAlpha: true, initialAlpha: current.alpha });
-                    });
-            })
-            .addText(text => {
-                textComp = text;
-                text.setPlaceholder('E.g., rgba(255, 255, 255, 0.1)')
-                    .setValue(this.plugin.settings.dividerPillColor || "")
-                    .onChange(async (value) => {
-                        this.plugin.settings.dividerPillColor = value;
-                        await this.plugin.saveSettings();
-                        this.plugin.generateStylesDebounced();
-                        updatePreview();
-                        colorBox.setCssStyles({ backgroundColor: value || 'transparent' });
-                    });
-
-                colorBox = text.inputEl.parentElement.createDiv();
-                colorBox.setCssStyles({
-                    width: '24px', height: '24px', borderRadius: '4px', border: '1px solid var(--background-modifier-border)',
-                    marginLeft: '12px', backgroundColor: this.plugin.settings.dividerPillColor || 'transparent',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                });
-            });
-
-        let sliderComp_dividerSpacing: obsidian.SliderComponent;
-        new obsidian.Setting(divCard)
-            .setName('Vertical spacing')
-            .setDesc('Adjust the empty space above and below dividers.')
-            .addSlider(slider => {
-                sliderComp_dividerSpacing = slider;
-                slider
-                .setLimits(4, 40, 2)
-                .setValue(this.plugin.settings.dividerSpacing || 16)
-
-
-                .onChange(async (value) => {
-                    this.plugin.settings.dividerSpacing = value;
-                    await this.plugin.saveSettings();
-                    this.plugin.dividerManager.syncDividers();
-                    updatePreview();
-                });
-                return slider;
-            })
-            .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
-                this.plugin.settings.dividerSpacing = DEFAULT_SETTINGS.dividerSpacing;
-                sliderComp_dividerSpacing.setValue(DEFAULT_SETTINGS.dividerSpacing);
-                await this.plugin.saveSettings();
-                this.plugin.generateStylesDebounced();
-            }));
-        let sliderComp_dividerThickness: obsidian.SliderComponent;
-        new obsidian.Setting(divCard)
-            .setName('Line thickness')
-            .addSlider(slider => {
-                sliderComp_dividerThickness = slider;
-                slider
-                .setLimits(1, 10, 0.5)
-                .setValue(this.plugin.settings.dividerThickness || 1.5)
-
-
-                .onChange(async (value) => {
-                    this.plugin.settings.dividerThickness = value;
-                    await this.plugin.saveSettings();
-                    this.plugin.dividerManager.syncDividers();
-                    updatePreview();
-                });
-                return slider;
-            })
-            .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
-                this.plugin.settings.dividerThickness = DEFAULT_SETTINGS.dividerThickness;
-                sliderComp_dividerThickness.setValue(DEFAULT_SETTINGS.dividerThickness);
-                await this.plugin.saveSettings();
-                this.plugin.generateStylesDebounced();
-            }));
-
-        let sliderComp_dividerLinePaddingLeft: obsidian.SliderComponent;
-        new obsidian.Setting(divCard)
-            .setName('Line gap (left)')
-            .setDesc('Adjust horizontal space between the left divider line and the central label.')
-            .addSlider(slider => {
-                sliderComp_dividerLinePaddingLeft = slider;
-                slider
-                .setLimits(-10, 40, 1)
-                .setValue(this.plugin.settings.dividerLinePaddingLeft ?? 8)
-
-
-                .onChange(async (value) => {
-                    this.plugin.settings.dividerLinePaddingLeft = value;
-                    await this.plugin.saveSettings();
-                    this.plugin.generateStylesDebounced();
-                    updatePreview();
-                });
-                return slider;
-            })
-            .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
-                this.plugin.settings.dividerLinePaddingLeft = DEFAULT_SETTINGS.dividerLinePaddingLeft;
-                sliderComp_dividerLinePaddingLeft.setValue(DEFAULT_SETTINGS.dividerLinePaddingLeft);
-                await this.plugin.saveSettings();
-                this.plugin.generateStylesDebounced();
-            }));
-
-        let sliderComp_dividerLinePaddingRight: obsidian.SliderComponent;
-        new obsidian.Setting(divCard)
-            .setName('Line gap (right)')
-            .setDesc('Adjust horizontal space between the right divider line and the central label.')
-            .addSlider(slider => {
-                sliderComp_dividerLinePaddingRight = slider;
-                slider
-                .setLimits(-10, 40, 1)
-                .setValue(this.plugin.settings.dividerLinePaddingRight ?? 8)
-
-
-                .onChange(async (value) => {
-                    this.plugin.settings.dividerLinePaddingRight = value;
-                    await this.plugin.saveSettings();
-                    this.plugin.generateStylesDebounced();
-                    updatePreview();
-                });
-                return slider;
-            })
-            .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
-                this.plugin.settings.dividerLinePaddingRight = DEFAULT_SETTINGS.dividerLinePaddingRight;
-                sliderComp_dividerLinePaddingRight.setValue(DEFAULT_SETTINGS.dividerLinePaddingRight);
-                await this.plugin.saveSettings();
-                this.plugin.generateStylesDebounced();
-            }));
-
-        new obsidian.Setting(divCard)
-            .setName('Default line style')
-            .addDropdown(drop => drop
-                .addOption("solid", "Solid")
-                .addOption("dashed", "Dashed")
-                .addOption("dotted", "Dotted")
-                .setValue(this.plugin.settings.dividerLineStyle || "solid")
-                .onChange(async (value) => {
-                    this.plugin.settings.dividerLineStyle = value;
-                    await this.plugin.saveSettings();
-                    this.plugin.dividerManager.syncDividers();
-                    updatePreview();
-                }));
 
         const typeCard = makeCard(generalPanel, "Aa", "Path and typography");
+
+        new obsidian.Setting(typeCard)
+            .setName('Show collapse indicator')
+            .setDesc('Toggle the visibility of folder collapse indicators (arrows) in the file explorer.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.showCollapseIndicator !== false)
+                .onChange(async (value) => {
+                    this.plugin.settings.showCollapseIndicator = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStylesDebounced();
+                }));
+
+        let sliderComp_folderBorderRadius: obsidian.SliderComponent;
+        new obsidian.Setting(typeCard)
+            .setName('Folder border radius')
+            .setDesc('Adjust the corner roundness of folder backgrounds in the explorer (default 6px).')
+            .addSlider(slider => {
+                sliderComp_folderBorderRadius = slider;
+                slider
+                .setLimits(0, 40, 1)
+                .setValue(this.plugin.settings.folderBorderRadius ?? 6)
+                .onChange(async (value) => {
+                    this.plugin.settings.folderBorderRadius = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStylesDebounced();
+                });
+                return slider;
+            })
+            .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
+                this.plugin.settings.folderBorderRadius = DEFAULT_SETTINGS.folderBorderRadius;
+                sliderComp_folderBorderRadius.setValue(DEFAULT_SETTINGS.folderBorderRadius);
+                await this.plugin.saveSettings();
+                this.plugin.generateStylesDebounced();
+            }));
+
         let sliderComp_pathLineThickness: obsidian.SliderComponent;
         new obsidian.Setting(typeCard)
             .setName('Path line thickness')
@@ -1645,28 +1764,10 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     this.plugin.generateStylesDebounced();
                 }));
 
-        new obsidian.Setting(typeCard)
-            .setName('Indent subfolder backgrounds')
-            .setDesc('Pushes the colored background pill for subfolders inward, creating a stepped visual hierarchy.')
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.indentSubfolderPills)
-                .onChange(async (value) => {
-                    this.plugin.settings.indentSubfolderPills = value;
-                    await this.plugin.saveSettings();
-                    this.plugin.generateStylesDebounced();
-                    this.plugin.domObserverService.initDividerObserverDebounced();
-                }));
 
-        new obsidian.Setting(typeCard)
-            .setName('Folder spacing (1mm gap)')
-            .setDesc('Adds a small vertical gap between folders for a more airy layout.')
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.folderSpacing)
-                .onChange(async (value) => {
-                    this.plugin.settings.folderSpacing = value;
-                    await this.plugin.saveSettings();
-                    this.plugin.generateStylesDebounced();
-                }));
+
+
+
 
         new obsidian.Setting(typeCard)
             .setName('Rainbow root text')

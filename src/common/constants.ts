@@ -99,7 +99,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     iconDebugMode: false,
     notebookNavigatorSupport: true,
     notebookNavigatorFileBackground: true,
-    iconScale: 1.0,
+    iconScale: 1.1,
     notebookNavigatorIconScale: 0.8,
     customIcons: {},
     cycleOffset: 0,
@@ -135,7 +135,11 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     tagSyncRules: "",
     spacedTextMode: "folders",
     indentSubfolderPills: false,
-    folderSpacing: false
+    folderSpacing: false,
+    defaultClosedFolderIcon: "lucide-folder",
+    defaultOpenFolderIcon: "lucide-folder-open",
+    showCollapseIndicator: true,
+    folderBorderRadius: 10
 };
 
 export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
@@ -241,7 +245,22 @@ export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
 
     // --- Entertainment & Social ---
     { rex: /game|steam|play|console|gaming/i, emoji: "🎮", lucide: "gamepad-2", priority: 85, emojis: ["🎮", "🕹️", "🎲"], lucides: ["gamepad-2", "dices", "sword"] },
-    { rex: /social|twitter|x|facebook|insta|reddit|discord/i, emoji: "🌐", lucide: "globe", priority: 85, emojis: ["🌐", "📱", "🗨️"], lucides: ["globe", "share", "at-sign"] },
+    { rex: /twitter|x\.com|tweet/i, emoji: "🐦", lucide: "simple-icons-twitter", priority: 110 },
+    { rex: /facebook|\bfb\b/i, emoji: "👥", lucide: "simple-icons-facebook", priority: 110 },
+    { rex: /instagram|insta|\big\b/i, emoji: "📸", lucide: "simple-icons-instagram", priority: 110 },
+    { rex: /youtube|\byt\b/i, emoji: "📺", lucide: "simple-icons-youtube", priority: 110 },
+    { rex: /discord/i, emoji: "💬", lucide: "simple-icons-discord", priority: 110 },
+    { rex: /reddit/i, emoji: "🤖", lucide: "simple-icons-reddit", priority: 110 },
+    { rex: /whatsapp|\bwa\b/i, emoji: "💬", lucide: "simple-icons-whatsapp", priority: 110 },
+    { rex: /telegram|\btg\b/i, emoji: "✈️", lucide: "simple-icons-telegram", priority: 110 },
+    { rex: /slack/i, emoji: "💬", lucide: "simple-icons-slack", priority: 110 },
+    { rex: /github|\bgit\b/i, emoji: "🐙", lucide: "simple-icons-github", priority: 110 },
+    { rex: /linkedin/i, emoji: "💼", lucide: "simple-icons-linkedin", priority: 110 },
+    { rex: /tiktok/i, emoji: "🎵", lucide: "simple-icons-tiktok", priority: 110 },
+    { rex: /pinterest|\bpin\b/i, emoji: "📌", lucide: "simple-icons-pinterest", priority: 110 },
+    { rex: /snapchat|\bsnap\b/i, emoji: "👻", lucide: "simple-icons-snapchat", priority: 110 },
+    { rex: /twitch/i, emoji: "🎮", lucide: "simple-icons-twitch", priority: 110 },
+    { rex: /social/i, emoji: "🌐", lucide: "globe", priority: 85, emojis: ["🌐", "📱", "🗨️"], lucides: ["globe", "share", "at-sign"] },
     { rex: /stream|twitch|netflix|disney|movie|film/i, emoji: "🎬", lucide: "clapperboard", priority: 85, emojis: ["🎬", "🍿", "📺"], lucides: ["clapperboard", "play", "film"] },
 
     // --- Newly Added Diverse Categories ---

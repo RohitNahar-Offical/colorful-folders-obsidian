@@ -1,5 +1,5 @@
 import { ColorfulFoldersSettings, FolderStyle, IColorfulFoldersPlugin, StyleContext } from '../common/types';
-import { PALETTES, CF_FOLDER_CLOSED } from '../common/constants';
+import { PALETTES, CF_FOLDER_CLOSED, CF_FOLDER_OPEN } from '../common/constants';
 import { hexToRgbObj, adjustBrightnessRgb, safeEscape } from '../common/utils';
 import * as obsidian from 'obsidian';
 import { NotebookNavigatorIntegration } from '../integrations/NotebookNavigator';
@@ -543,9 +543,11 @@ export class StyleGenerator {
             // Pre-calculate folder icons to avoid warnings
             const autoIconFolder = (this.settings.autoIcons && !customStyle?.iconId && !inheritedStyle?.iconId) ? this.plugin.iconManager.getAutoIconData(child.name, child.path) : null;
             const folderIconId = customStyle?.iconId || inheritedStyle?.iconId || (autoIconFolder ? (this.settings.wideAutoIcons ? autoIconFolder.lucide : autoIconFolder.emoji) : "");
+            const folderExpandedIconId = customStyle?.expandedIconId || inheritedStyle?.expandedIconId || "";
 
+            const isRainbowBgTransparent = depth === 0 && this.settings.rainbowRootText && this.settings.rainbowRootBgTransparent;
             const folderStyles = {
-                b: outlineOnly ? "transparent" : (depth === 0 && this.settings.rootStyle === "solid" ? color.hex : `rgba(${color.rgb}, ${adjustedOp})`),
+                b: outlineOnly || isRainbowBgTransparent ? "transparent" : (depth === 0 && this.settings.rootStyle === "solid" ? color.hex : `rgba(${color.rgb}, ${adjustedOp})`),
                 t: ColorResolver.resolveTextColor(
                     false,
                     depth,
@@ -633,11 +635,13 @@ export class StyleGenerator {
             const activeBg = (this.settings.useCustomActiveColor && this.settings.customActiveBg) ? this.settings.customActiveBg : `rgba(${color.rgb}, ${useGlass ? 0.14 : 0.12})`;
             const activeText = (this.settings.useCustomActiveColor && this.settings.customActiveText) ? this.settings.customActiveText : folderStyles.t;
 
+            const folderBr = customStyle?.borderRadius !== undefined ? customStyle.borderRadius : (inheritedStyle?.borderRadius !== undefined ? inheritedStyle.borderRadius : (this.settings.folderBorderRadius ?? 6));
+
             grouper.add(`
                 background-color: var(--cf-folder-bg, ${folderStyles.b}) !important;
                 --cf-selection-bg: rgba(${color.rgb}, ${Math.min(1.0, adjustedOp + 0.15)});
                 opacity: 1.0 !important;
-                border-radius: 6px;
+                border-radius: ${folderBr}px;
                 ${glassCss}
             `, [
                 `.nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem)`,
@@ -686,26 +690,48 @@ export class StyleGenerator {
                 ...nnSelectors
             ], `folderText_${isUsingGradient ? 'grad_' + startCol.replace(/\s+/g, '') + '_' + endCol.replace(/\s+/g, '') : 'norm_' + folderStyles.t}_${isBold}_${isItalic}`);
 
-            if (folderIconId) {
-                const isCustomEmoji = !obsidian.getIconIds?.().includes(`lucide-${folderIconId}`) &&
-                    !obsidian.getIconIds?.().includes(folderIconId) &&
-                    !(this.settings.customIcons && this.settings.customIcons[folderIconId]);
+            const generateIconCss = (iconIdToUse: string, isExpandedState: boolean | null) => {
+                const isCustomEmoji = !obsidian.getIconIds?.().includes(`lucide-${iconIdToUse}`) &&
+                    !obsidian.getIconIds?.().includes(iconIdToUse) &&
+                    !(this.settings.customIcons && this.settings.customIcons[iconIdToUse]);
+
+                const getSels = (expanded: boolean | null) => {
+                    const baseNav = `body .nav-files-container .nav-folder`;
+                    const baseTree = `body .nav-files-container .tree-item`;
+                    
+                    if (expanded === true) {
+                        return [
+                            `${baseNav}:not(.is-collapsed) > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
+                            `${baseTree}:not(.is-collapsed) > .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
+                        ];
+                    } else if (expanded === false) {
+                        return [
+                            `${baseNav}.is-collapsed > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
+                            `${baseTree}.is-collapsed > .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
+                        ];
+                    }
+                    return [
+                        `body .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
+                        `body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
+                    ];
+                };
+
+                const sels = getSels(isExpandedState);
 
                 if (isCustomEmoji) {
                     grouper.add(`
-                        content: "${folderIconId} " !important;
+                        content: "${iconIdToUse} " !important;
                         display: inline-flex !important;
                         align-items: center !important;
                         justify-content: center !important;
                         align-self: center !important;
                         flex-shrink: 0 !important;
                         margin-right: 4px !important;
-                    `, [
-                        `body .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
-                        `body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
-                    ]);
+                        background-color: transparent !important;
+                        -webkit-mask-image: none !important;
+                    `, sels);
                 } else {
-                    const svgStr = this.plugin.iconManager.getIconSvg(folderIconId, true);
+                    const svgStr = this.plugin.iconManager.getIconSvg(iconIdToUse, true);
                     if (svgStr) {
                         grouper.add(`
                             content: '' !important;
@@ -720,13 +746,28 @@ export class StyleGenerator {
                             -webkit-mask-repeat: no-repeat !important;
                             -webkit-mask-position: center !important;
                             -webkit-mask-size: contain !important;
-                        `, [
-                            `body .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
-                            `body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
-                        ]);
+                        `, sels);
                     }
                 }
+            };
+
+            if (folderIconId || folderExpandedIconId) {
+                if (folderExpandedIconId && folderIconId) {
+                    generateIconCss(folderIconId, false);
+                    generateIconCss(folderExpandedIconId, true);
+                } else if (folderExpandedIconId) {
+                    generateIconCss(folderExpandedIconId, true);
+                } else if (folderIconId) {
+                    generateIconCss(folderIconId, null);
+                }
             } else if (autoIcons) {
+                const closedSvg = this.plugin.iconManager.getIconSvg(this.settings.defaultClosedFolderIcon || "lucide-folder", true) || decodeURIComponent(CF_FOLDER_CLOSED);
+                const openSvg = this.plugin.iconManager.getIconSvg(this.settings.defaultOpenFolderIcon || "lucide-folder-open", true) || decodeURIComponent(CF_FOLDER_OPEN);
+                
+                const baseNav = `body .nav-files-container .nav-folder`;
+                const baseTree = `body .nav-files-container .tree-item`;
+
+                // Closed State
                 grouper.add(`
                     content: '' !important;
                     display: inline-flex !important;
@@ -736,13 +777,32 @@ export class StyleGenerator {
                     height: ${folderIconW} !important;
                     margin-right: 4px !important;
                     background-color: ${customStyle?.iconColor || color.hex || folderStyles.t} !important;
-                    -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(decodeURIComponent(CF_FOLDER_CLOSED))}") !important;
+                    -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(closedSvg)}") !important;
                     -webkit-mask-repeat: no-repeat !important;
                     -webkit-mask-position: center !important;
                     -webkit-mask-size: contain !important;
                 `, [
-                    `body .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
-                    `body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
+                    `${baseNav}.is-collapsed > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
+                    `${baseTree}.is-collapsed > .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
+                ]);
+
+                // Open State
+                grouper.add(`
+                    content: '' !important;
+                    display: inline-flex !important;
+                    align-self: center !important;
+                    flex-shrink: 0 !important;
+                    width: ${folderIconW} !important;
+                    height: ${folderIconW} !important;
+                    margin-right: 4px !important;
+                    background-color: ${customStyle?.iconColor || color.hex || folderStyles.t} !important;
+                    -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(openSvg)}") !important;
+                    -webkit-mask-repeat: no-repeat !important;
+                    -webkit-mask-position: center !important;
+                    -webkit-mask-size: contain !important;
+                `, [
+                    `${baseNav}:not(.is-collapsed) > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
+                    `${baseTree}:not(.is-collapsed) > .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
                 ]);
             }
 

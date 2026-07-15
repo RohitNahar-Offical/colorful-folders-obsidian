@@ -128,6 +128,8 @@ export default class ColorfulFoldersPlugin
         }, 0);
       });
 
+
+
       // 🚨 USER'S AUTOMATED CONSOLE SCRIPT BLOCK 🚨
       // This will run exactly 5 seconds after Obsidian's layout is ready
       window.setTimeout(() => {
@@ -203,6 +205,20 @@ export default class ColorfulFoldersPlugin
       // Check for version update and show changelog
       const currentVersion = this.manifest.version;
       if (this.settings.lastVersion !== currentVersion) {
+        const hasSimpleIcons = Object.keys(this.settings.customIcons || {}).some(k => k.startsWith('simple-icons-'));
+        if (!hasSimpleIcons) {
+          window.setTimeout(() => {
+            void this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/simple-icons.json", "simple-icons");
+          }, 6000);
+        }
+
+        const hasFeatherIcons = Object.keys(this.settings.customIcons || {}).some(k => k.startsWith('feather-'));
+        if (!hasFeatherIcons) {
+          window.setTimeout(() => {
+            void this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/feather.json", "feather");
+          }, 12000);
+        }
+
         this.settings.lastVersion = currentVersion;
         await this.saveSettings();
 
@@ -672,5 +688,55 @@ export default class ColorfulFoldersPlugin
     return Array.from(docs);
   }
 
+  async autoDownloadPack(url: string, prefix: string) {
+    try {
+      const res = await obsidian.requestUrl({ url });
+      const data = res.json as Record<string, unknown>;
+      if (!data) return;
+
+      const icons = data.icons as Record<string, { width?: number; height?: number; left?: number; top?: number; body?: string }> | undefined;
+      if (icons && (data.prefix || data.info)) {
+        const packPrefix = (data.prefix as string) || prefix;
+        const commonW = (data.width as number) || 24;
+        const commonH = (data.height as number) || 24;
+
+        const processIcon = (name: string, iconData: { width?: number; height?: number; left?: number; top?: number; body?: string }) => {
+          const id = `${packPrefix}-${name}`;
+          const w = iconData.width || commonW;
+          const h = iconData.height || commonH;
+          const l = iconData.left || 0;
+          const t = iconData.top || 0;
+          const body = iconData.body;
+          if (!body) return false;
+
+          const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${l} ${t} ${w} ${h}">${body}</svg>`;
+          this.settings.customIcons[id] = svg;
+          return true;
+        };
+
+        for (const [name, iconData] of Object.entries(icons)) {
+          processIcon(name, iconData);
+        }
+
+        const aliases = data.aliases as Record<string, { parent: string; width?: number; height?: number; left?: number; top?: number; body?: string }> | undefined;
+        if (aliases) {
+          for (const [aliasName, aliasData] of Object.entries(aliases)) {
+            const targetName = aliasData.parent;
+            const targetData = icons[targetName];
+            if (targetData) {
+              const merged = { ...targetData, ...aliasData };
+              processIcon(aliasName, merged);
+            }
+          }
+        }
+      }
+
+      this.registerCustomIcons();
+      await this.saveSettings();
+      void this.generateStyles();
+    } catch (e) {
+      console.error(`Colorful Folders: Failed to auto-download ${prefix} icons`, e);
+    }
+  }
 
 }

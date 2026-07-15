@@ -33,8 +33,12 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
         }
 
         body .nav-files-container .nav-folder-collapse-indicator,
-        body .nav-files-container .tree-item-collapse-indicator {
-            display: flex !important;
+        body .nav-files-container .tree-item-collapse-indicator,
+        body .nav-files-container .collapse-indicator,
+        body .nav-files-container .tree-item-icon.collapse-indicator,
+        body .nav-files-container .collapse-icon,
+        body .nav-files-container .tree-item-icon.collapse-icon {
+            display: ${settings.showCollapseIndicator !== false ? 'flex' : 'none'} !important;
             align-items: center !important;
             justify-content: center !important;
             height: auto !important;
@@ -158,39 +162,19 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             justify-content: center !important;
         }
 
-        ${(() => {
-            if (!settings.indentSubfolderPills) return '';
-            let css = `
-        /* Pure CSS Variable-Driven Alignment Override.
-         * We generate 20 levels of nesting to guarantee high specificity 
-         * and bypass React engine re-renders wiping our styles. */
-        .workspace-leaf-content[data-type="file-explorer"] {
-            --nav-indentation: 0px !important;
-            --nav-item-padding: 30px !important;
-        }
-`;
-
-
-            css += `
         /* Reset the inner content wrappers */
         body .app-container .workspace-split .workspace-leaf-content[data-type="file-explorer"] .tree-item-inner,
         body .app-container .workspace-split .workspace-leaf-content[data-type="file-explorer"] .nav-folder-title-content {
             margin: 0 !important;
             padding: 0 !important;
         }
-`;
-            return css;
-        })()}
 
-
-        ${settings.folderSpacing ? `
         /* Add spacing between folders */
         body .nav-files-container .nav-folder-title,
         body .nav-files-container .tree-item-self {
             margin-top: 2px !important;
             margin-bottom: 2px !important;
         }
-        ` : ''}
     `;
 }
 

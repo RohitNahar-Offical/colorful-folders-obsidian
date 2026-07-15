@@ -128,6 +128,8 @@ export class IconPickerModal extends obsidian.Modal {
                 obsidian.setIcon(cell, id);
                 const cellSvg = cell.querySelector("svg") as unknown as HTMLElement | null;
                 if (cellSvg) {
+                    cellSvg.removeAttribute('width');
+                    cellSvg.removeAttribute('height');
                     cellSvg.setCssStyles({
                         width: "24px", height: "24px",
                         color: isSelected ? "white" : "var(--text-normal)"

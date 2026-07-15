@@ -6,6 +6,7 @@ export interface FolderStyle {
     textColor?: string;
     iconColor?: string;
     iconId?: string;
+    expandedIconId?: string;
     opacity?: number;
     isBold?: boolean;
     isItalic?: boolean;
@@ -30,6 +31,7 @@ export interface FolderStyle {
     textGradient?: boolean;
     textGradientEnd?: string;
     rainbowBrightness?: number;
+    borderRadius?: number;
 }
 
 export interface ColorfulFoldersSettings {
@@ -101,6 +103,10 @@ export interface ColorfulFoldersSettings {
     spacedTextMode: string;
     indentSubfolderPills: boolean;
     folderSpacing: boolean;
+    defaultClosedFolderIcon: string;
+    defaultOpenFolderIcon: string;
+    showCollapseIndicator: boolean;
+    folderBorderRadius: number;
 }
 
 
@@ -119,6 +125,7 @@ export interface EffectiveStyle {
     textColor: string;
     iconColor: string;
     iconId: string;
+    expandedIconId: string;
     opacity: number;
     isBold: boolean;
     isItalic: boolean;

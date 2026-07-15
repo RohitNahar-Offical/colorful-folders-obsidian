@@ -11,9 +11,26 @@ Colorful Folders automatically applies premium color palettes, smart icons, and 
 
 ---
 
-## 🚀 Latest: 4.2.6 - The "Ultimate Performance" Update
+# Updates for Colorful Folders
 
-This hyper-optimized release brings unprecedented speed and stability to massive vaults, alongside highly-requested features and fixes! [Read the Full Changelog](https://www.google.com/search?q=Version/VERSION_4_2_6.md)
+## 🚀 4.2.7 - Collapse Indicators Update
+
+This release introduces control over folder collapse indicators:
+
+### 🌟 New Features & Fixes
+- **Individual Folder Border Radius**: Set a custom border-radius with a range slider for individual folders/files inside the **"Set Custom File Style"** context menu modal.
+
+- **Toggle Collapse Indicators**: Added a new setting toggle **Show collapse indicator** under the "Appearance and visibility" section in settings to let you hide or show folder collapse arrows in the file explorer.
+
+- **Custom Default Open/Closed Folder Icons**: You can now define custom global defaults for both closed and open folder icons directly in the settings. Additionally, you can override these icons individually for any folder via the **"Set Custom File Style"** context menu modal.
+
+- **Centered Icon and Text Alignment**: Fine-tuned visual alignment to ensure folder/file explorer items, their custom icons, collapse chevrons, and text titles are perfectly centered vertically and look extremely polished.
+
+- **Minor Fixes**: Fixed styling inconsistencies and optimized background settings.
+
+---
+
+## 🌟 4.2.6 - The "Ultimate Performance" Update
 
 ### 🌟 Highlight: The Smart Icon Manager
 

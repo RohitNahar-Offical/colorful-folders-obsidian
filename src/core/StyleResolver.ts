@@ -179,19 +179,25 @@ export class StyleResolver {
                 color.hex;
 
             const autoIcon = plugin.iconManager.getAutoIconData(target.name, target.path);
-            const iconId =
-                customStyle?.iconId ??
-                (plugin.settings.autoIcons && autoIcon
-                    ? plugin.settings.wideAutoIcons
-                        ? autoIcon.lucide
-                        : autoIcon.emoji
-                    : "");
+            let iconId = "";
+            if (customStyle?.iconId) {
+                iconId = customStyle.iconId;
+            } else if (plugin.settings.autoIcons && autoIcon) {
+                const lucideId = autoIcon.lucide;
+                const isCustom = lucideId.includes('-') && !lucideId.startsWith('lucide-');
+                if (isCustom && (!plugin.settings.customIcons || !plugin.settings.customIcons[lucideId])) {
+                    iconId = autoIcon.emoji;
+                } else {
+                    iconId = plugin.settings.wideAutoIcons ? autoIcon.lucide : autoIcon.emoji;
+                }
+            }
 
             return {
                 hex: anyToHex(color.hex),
                 textColor: effText ? anyToHex(effText) : "",
                 iconColor: anyToHex(effIconColor || color.hex),
                 iconId: iconId,
+                expandedIconId: customStyle?.expandedIconId || "",
                 opacity: op,
                 isBold:
                     customStyle?.isBold !== undefined
@@ -215,6 +221,7 @@ export class StyleResolver {
                 textColor: "#000000",
                 iconColor: "#000000",
                 iconId: "",
+                expandedIconId: "",
                 opacity: 1,
                 isBold: true,
                 isItalic: false,
