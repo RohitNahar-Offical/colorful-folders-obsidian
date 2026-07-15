@@ -33,8 +33,12 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
         }
 
         body .nav-files-container .nav-folder-collapse-indicator,
-        body .nav-files-container .tree-item-collapse-indicator {
-            display: flex !important;
+        body .nav-files-container .tree-item-collapse-indicator,
+        body .nav-files-container .collapse-indicator,
+        body .nav-files-container .tree-item-icon.collapse-indicator,
+        body .nav-files-container .collapse-icon,
+        body .nav-files-container .tree-item-icon.collapse-icon {
+            display: ${settings.showCollapseIndicator !== false ? 'flex' : 'none'} !important;
             align-items: center !important;
             justify-content: center !important;
             height: auto !important;

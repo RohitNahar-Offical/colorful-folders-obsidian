@@ -104,6 +104,8 @@ export interface ColorfulFoldersSettings {
     folderSpacing: boolean;
     defaultClosedFolderIcon: string;
     defaultOpenFolderIcon: string;
+    showCollapseIndicator: boolean;
+    folderBorderRadius: number;
 }
 
 

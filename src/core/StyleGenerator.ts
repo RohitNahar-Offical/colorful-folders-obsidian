@@ -639,7 +639,7 @@ export class StyleGenerator {
                 background-color: var(--cf-folder-bg, ${folderStyles.b}) !important;
                 --cf-selection-bg: rgba(${color.rgb}, ${Math.min(1.0, adjustedOp + 0.15)});
                 opacity: 1.0 !important;
-                border-radius: 6px;
+                border-radius: ${this.settings.folderBorderRadius ?? 6}px;
                 ${glassCss}
             `, [
                 `.nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem)`,

@@ -137,7 +137,9 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     indentSubfolderPills: false,
     folderSpacing: false,
     defaultClosedFolderIcon: "lucide-folder",
-    defaultOpenFolderIcon: "lucide-folder-open"
+    defaultOpenFolderIcon: "lucide-folder-open",
+    showCollapseIndicator: true,
+    folderBorderRadius: 6
 };
 
 export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
