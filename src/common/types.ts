@@ -102,6 +102,8 @@ export interface ColorfulFoldersSettings {
     spacedTextMode: string;
     indentSubfolderPills: boolean;
     folderSpacing: boolean;
+    defaultClosedFolderIcon: string;
+    defaultOpenFolderIcon: string;
 }
 
 

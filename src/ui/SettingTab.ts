@@ -1227,6 +1227,50 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         }));
             }
 
+            new obsidian.Setting(autoCard)
+                .setName('Default closed folder icon')
+                .setDesc('Customize the default icon shown for closed folders when auto-icons are enabled.')
+                .addText(text => {
+                    text.setValue(this.plugin.settings.defaultClosedFolderIcon || "lucide-folder");
+                    text.onChange(async (val) => {
+                        this.plugin.settings.defaultClosedFolderIcon = val;
+                        await this.plugin.saveSettings();
+                        this.plugin.generateStylesDebounced();
+                    });
+                    const btn = new obsidian.ButtonComponent(text.inputEl.parentElement!);
+                    btn.setButtonText("Choose").onClick(() => {
+                        new IconPickerModal(this.app, this.plugin, text.getValue(), async (iconId) => {
+                            text.setValue(iconId);
+                            this.plugin.settings.defaultClosedFolderIcon = iconId;
+                            await this.plugin.saveSettings();
+                            this.plugin.generateStylesDebounced();
+                        }).open();
+                    });
+                    btn.buttonEl.setCssStyles({ marginLeft: "8px" });
+                });
+
+            new obsidian.Setting(autoCard)
+                .setName('Default open folder icon')
+                .setDesc('Customize the default icon shown for open folders when auto-icons are enabled.')
+                .addText(text => {
+                    text.setValue(this.plugin.settings.defaultOpenFolderIcon || "lucide-folder-open");
+                    text.onChange(async (val) => {
+                        this.plugin.settings.defaultOpenFolderIcon = val;
+                        await this.plugin.saveSettings();
+                        this.plugin.generateStylesDebounced();
+                    });
+                    const btn = new obsidian.ButtonComponent(text.inputEl.parentElement!);
+                    btn.setButtonText("Choose").onClick(() => {
+                        new IconPickerModal(this.app, this.plugin, text.getValue(), async (iconId) => {
+                            text.setValue(iconId);
+                            this.plugin.settings.defaultOpenFolderIcon = iconId;
+                            await this.plugin.saveSettings();
+                            this.plugin.generateStylesDebounced();
+                        }).open();
+                    });
+                    btn.buttonEl.setCssStyles({ marginLeft: "8px" });
+                });
+
             const rulesDesc = autoCard.createDiv();
             rulesDesc.setCssStyles({
                 fontSize: "0.8em", color: "var(--text-muted)", marginBottom: "12px",
