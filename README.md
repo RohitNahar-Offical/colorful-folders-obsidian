@@ -15,7 +15,6 @@ Colorful Folders automatically applies premium color palettes, smart icons, and 
 
 This release introduces control over folder collapse indicators:
 - **Toggle Collapse Indicators**: Added a new setting toggle **Show collapse indicator** under the "Appearance and visibility" section in settings to let you hide or show folder collapse arrows in the file explorer.
-- **Robust Theme Compatibility**: Dynamically targets all variations of collapse indicator CSS classes (`.nav-folder-collapse-indicator`, `.tree-item-collapse-indicator`, `.collapse-indicator`, `.collapse-icon`, and `.tree-item-icon.collapse-icon`) to ensure compatibility with all Obsidian themes and custom versions.
 - **Custom Default Open/Closed Folder Icons**: You can now define custom global defaults for both closed and open folder icons directly in the settings. Additionally, you can override these icons individually for any folder via the **"Set Custom File Style"** context menu modal.
 - **Centered Icon and Text Alignment**: Fine-tuned visual alignment to ensure folder/file explorer items, their custom icons, collapse chevrons, and text titles are perfectly centered vertically and look extremely polished.
 - **Individual Folder Border Radius**: Set a custom border-radius with a range slider for individual folders/files inside the **"Set Custom File Style"** context menu modal.
