@@ -76,41 +76,37 @@ export class DOMObserverService {
             this.dividerObserver.disconnect();
         }
 
-        const allContainers = this.plugin.getAllExplorerContainers();
-        if (allContainers.length === 0) return;
+        const explorers = Array.from(activeDocument.querySelectorAll<HTMLElement>('.workspace-leaf-content[data-type="file-explorer"]'));
+        if (explorers.length === 0) {
+            window.setTimeout(() => {
+                this.initDividerObserver();
+            }, 500);
+            return;
+        }
 
-        allContainers.forEach((container) => {
-            if ((container as HTMLElement & { cfHasScrollListener?: boolean }).cfHasScrollListener) return;
-            (container as HTMLElement & { cfHasScrollListener?: boolean }).cfHasScrollListener = true;
-            container.addEventListener("scroll", this.handleScroll, { passive: true });
-        });
+        const stripStyle = (el: HTMLElement) => {
+            // NUCLEAR AND DIRECT ATTEMPT - Unconditional
+            el.removeAttribute('style');
+        };
 
         this.dividerObserver = new MutationObserver((mutations) => {
             // SYNC INTERCEPTOR: Aggressively strip style attributes
-            if (this.plugin.settings.indentSubfolderPills) {
-                const stripStyle = (el: HTMLElement) => {
-                    if (el.hasAttribute('style')) {
-                        el.removeAttribute('style');
+            for (const m of mutations) {
+                if (m.type === "attributes" && m.attributeName === "style") {
+                    const target = m.target as HTMLElement;
+                    if (target.classList && target.classList.contains('tree-item-self')) {
+                        stripStyle(target);
                     }
-                };
-
-                for (const m of mutations) {
-                    if (m.type === "attributes" && m.attributeName === "style") {
-                        const target = m.target as HTMLElement;
-                        if (target.classList && target.classList.contains('tree-item-self')) {
-                            stripStyle(target);
-                        }
-                    } else if (m.type === "childList") {
-                        for (const node of Array.from(m.addedNodes)) {
-                            if (node.nodeType === Node.ELEMENT_NODE) {
-                                const el = node as HTMLElement;
-                                if (el.classList.contains('tree-item-self')) {
-                                    stripStyle(el);
-                                }
-                                const children = el.querySelectorAll<HTMLElement>('.tree-item-self');
-                                for (let i = 0; i < children.length; i++) {
-                                    stripStyle(children[i]);
-                                }
+                } else if (m.type === "childList") {
+                    for (const node of Array.from(m.addedNodes)) {
+                        if (node.nodeType === Node.ELEMENT_NODE) {
+                            const el = node as HTMLElement;
+                            if (el.classList.contains('tree-item-self')) {
+                                stripStyle(el);
+                            }
+                            const children = el.querySelectorAll<HTMLElement>('.tree-item-self');
+                            for (let i = 0; i < children.length; i++) {
+                                stripStyle(children[i]);
                             }
                         }
                     }
@@ -171,15 +167,18 @@ export class DOMObserverService {
             });
         });
 
-        allContainers.forEach((container) => {
+        explorers.forEach((container) => {
+            const extContainer = container as HTMLElement & { cfHasScrollListener?: boolean };
+            if (!extContainer.cfHasScrollListener) {
+                extContainer.cfHasScrollListener = true;
+                container.addEventListener("scroll", this.handleScroll, { passive: true });
+            }
+
             // Apply immediately to existing items
-            if (this.plugin.settings.indentSubfolderPills) {
-                const items = container.querySelectorAll<HTMLElement>('.tree-item-self');
-                for (let i = 0; i < items.length; i++) {
-                    if (items[i].hasAttribute('style')) {
-                        items[i].removeAttribute('style');
-                    }
-                }
+            const items = container.querySelectorAll<HTMLElement>('.tree-item-self');
+            for (let i = 0; i < items.length; i++) {
+                // NUCLEAR AND DIRECT ATTEMPT - Unconditional
+                items[i].removeAttribute('style');
             }
 
             const observerOptions: MutationObserverInit = {

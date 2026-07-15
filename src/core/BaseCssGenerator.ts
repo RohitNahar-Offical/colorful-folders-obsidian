@@ -169,31 +169,7 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             --nav-item-padding: 30px !important;
         }
 `;
-            const maxDepth = 20;
-            const basePadding = 30;
-            const step = 8;
-            for (let depth = 0; depth <= maxDepth; depth++) {
-                const computedPadding = basePadding + (depth * step);
-                const nesting = Array(depth).fill('.nav-folder-children').join(' ');
-                const prefix = nesting ? nesting + ' > ' : '';
-                
-                css += `
-        body .app-container .workspace-split .workspace-leaf-content[data-type="file-explorer"] ${prefix}.nav-folder > .nav-folder-title,
-        body .app-container .workspace-split .workspace-leaf-content[data-type="file-explorer"] ${prefix}.nav-folder > .nav-folder-title[style],
-        body .app-container .workspace-split .workspace-leaf-content[data-type="file-explorer"] ${prefix}.nav-file > .nav-file-title,
-        body .app-container .workspace-split .workspace-leaf-content[data-type="file-explorer"] ${prefix}.nav-file > .nav-file-title[style],
-        body .app-container .workspace-split .workspace-leaf-content[data-type="file-explorer"] ${prefix}.tree-item > .tree-item-self,
-        body .app-container .workspace-split .workspace-leaf-content[data-type="file-explorer"] ${prefix}.tree-item > .tree-item-self[style] {
-            margin-inline-start: 0px !important;
-            padding-inline-start: ${computedPadding}px !important;
-            margin-left: 0px !important;
-            padding-left: ${computedPadding}px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: flex-start !important;
-        }
-`;
-            }
+
 
             css += `
         /* Reset the inner content wrappers */
@@ -205,6 +181,7 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
 `;
             return css;
         })()}
+
 
         ${settings.folderSpacing ? `
         /* Add spacing between folders */

@@ -27,8 +27,7 @@ declare module "obsidian" {
 
 export default class ColorfulFoldersPlugin
   extends obsidian.Plugin
-  implements IColorfulFoldersPlugin
-{
+  implements IColorfulFoldersPlugin {
   declare settings: ColorfulFoldersSettings;
   iconManager: IconManager;
   sheet: CSSStyleSheet;
@@ -45,7 +44,7 @@ export default class ColorfulFoldersPlugin
   generateStylesDebounced: obsidian.Debouncer<[], void>;
   saveDataDebounced: obsidian.Debouncer<[], void>;
   localFileSystemIcons: Record<string, string> = {};
-  
+
   domObserverService: DOMObserverService;
   eventTrackerService: EventTrackerService;
   dividerManager: DividerManager;
@@ -128,6 +127,80 @@ export default class ColorfulFoldersPlugin
           this.dividerManager.syncDividers();
         }, 0);
       });
+
+      // 🚨 USER'S AUTOMATED CONSOLE SCRIPT BLOCK 🚨
+      // This will run exactly 5 seconds after Obsidian's layout is ready
+      window.setTimeout(() => {
+        try {
+          console.log("Colorful Folders: Running 5-second automated console script...");
+          
+          (function() {
+              console.log("Starting style-stripper script...");
+
+              // Stop any existing tester observers if you run this multiple times
+              // @ts-ignore
+              if (window._testerObserver) {
+                  // @ts-ignore
+                  window._testerObserver.disconnect();
+                  console.log("Disconnected previous observer.");
+              }
+
+              const stripStyle = (el: Element) => {
+                  // Just completely destroy the style attribute so Obsidian's inline padding dies
+                  if (el.hasAttribute('style')) {
+                      el.removeAttribute('style');
+                  }
+              };
+
+              // 1. Initial Pass: Strip immediately from all current items
+              const items = document.querySelectorAll('.workspace-leaf-content[data-type="file-explorer"] .tree-item-self');
+              items.forEach(stripStyle);
+              console.log(`Stripped styles from ${items.length} existing items.`);
+
+              // 2. Mutation Observer: Aggressively watch and re-strip if Obsidian's React engine tries to put it back
+              // @ts-ignore
+              window._testerObserver = new MutationObserver((mutations) => {
+                  for (const m of mutations) {
+                      if (m.type === "attributes" && m.attributeName === "style") {
+                          const target = m.target as HTMLElement;
+                          if (target.classList && target.classList.contains('tree-item-self')) {
+                              stripStyle(target);
+                          }
+                      } else if (m.type === "childList") {
+                          for (const node of Array.from(m.addedNodes)) {
+                              if (node.nodeType === Node.ELEMENT_NODE) {
+                                  const el = node as HTMLElement;
+                                  if (el.classList.contains('tree-item-self')) {
+                                      stripStyle(el);
+                                  }
+                                  const children = el.querySelectorAll('.tree-item-self');
+                                  children.forEach(stripStyle);
+                              }
+                          }
+                      }
+                  }
+              });
+
+              // Start observing the file explorer container
+              const explorer = document.querySelector('.workspace-leaf-content[data-type="file-explorer"]');
+              if (explorer) {
+                  // @ts-ignore
+                  window._testerObserver.observe(explorer, {
+                      childList: true,
+                      subtree: true,
+                      attributes: true,
+                      attributeFilter: ['style']
+                  });
+                  console.log("Observer is running and stripping inline styles continuously.");
+              } else {
+                  console.warn("Could not find the file explorer container. Is it open?");
+              }
+          })();
+          
+        } catch (err) {
+          console.error("Colorful Folders: Automated script failed", err);
+        }
+      }, 5000);
 
       try {
         const optimized = await this.optimizeBlueTopazStyleSettings();
@@ -217,7 +290,7 @@ export default class ColorfulFoldersPlugin
         // Trigger style generation now that local icons are ready
         this.generateStylesDebounced();
       }
-    } catch(e) {
+    } catch (e) {
       console.error("Colorful Folders: Failed to load local icons", e);
     }
   }
@@ -277,11 +350,11 @@ export default class ColorfulFoldersPlugin
     this.settings = Object.assign({} as ColorfulFoldersSettings, DEFAULT_SETTINGS, loadedData);
     this.activePaletteCache = null;
     this.parsedExclusionList = new Set(
-        (this.settings.exclusionList || "")
-            .toLowerCase()
-            .split(",")
-            .map((s) => s.trim())
-            .filter((s) => s.length > 0)
+      (this.settings.exclusionList || "")
+        .toLowerCase()
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0)
     );
   }
 
@@ -307,11 +380,11 @@ export default class ColorfulFoldersPlugin
     }
     this.activePaletteCache = null;
     this.parsedExclusionList = new Set(
-        (this.settings.exclusionList || "")
-            .toLowerCase()
-            .split(",")
-            .map((s) => s.trim())
-            .filter((s) => s.length > 0)
+      (this.settings.exclusionList || "")
+        .toLowerCase()
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0)
     );
 
     this.generateStylesDebounced();
@@ -556,7 +629,7 @@ export default class ColorfulFoldersPlugin
       if (
         typeof view.getViewType === 'function' &&
         (view.getViewType() === "file-explorer" ||
-         view.getViewType() === "nav-files")
+          view.getViewType() === "nav-files")
       ) {
         if (!view.containerEl) return;
         const container = view.containerEl.querySelector(

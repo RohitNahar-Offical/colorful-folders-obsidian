@@ -1,17 +1,17 @@
-# 🚨 INCIDENT LOG — THINGS THAT BROKE & WHY
+# ðŸš¨ INCIDENT LOG â€” THINGS THAT BROKE & WHY
 
 This file records real bugs that happened during development.
 Read before making ANY architectural changes.
 
 ---
 
-## Incident #1 — CSS Variable Refactor (2026-05-06)
+## Incident #1 â€” CSS Variable Refactor (2026-05-06)
 **What was attempted**: Replace `<style>` tag with CSS variables applied directly to DOM elements.
 **Why it was done**: To pass Obsidian store linter rule `obsidianmd/no-forbidden-elements`.
 **What broke**:
 - Random vertical lines appeared in the file explorer.
 - Colors disappeared after scrolling (DOM virtualization issue).
-- Icons misaligned — floated outside folder rows.
+- Icons misaligned â€” floated outside folder rows.
 - Top-level folder colors vanished after subfolder was expanded.
 **Root cause**: DOM-based styling cannot handle Obsidian's virtual scroll list. When rows are recycled during scroll, the inline styles are lost.
 **Resolution**: Reverted to `<style>` tag. Added linter comment with description.
@@ -19,16 +19,16 @@ Read before making ANY architectural changes.
 
 ---
 
-## Incident #2 — Interface Mismatch (2026-05-06)
+## Incident #2 â€” Interface Mismatch (2026-05-06)
 **What was attempted**: Remove `styleTag` property from `IColorfulFoldersPlugin`.
 **Why it was done**: Seen as "obsolete" after a refactor.
-**What broke**: TypeScript build error — `Class 'ColorfulFoldersPlugin' incorrectly implements interface`.
+**What broke**: TypeScript build error â€” `Class 'ColorfulFoldersPlugin' incorrectly implements interface`.
 **Resolution**: Kept the property in the interface or ensured the class matched.
 **Lesson**: ALWAYS check `types.ts` interface against `main.ts` class after any refactor.
 
 ---
 
-## Incident #3 — Bare eslint-disable (2026-05-05)
+## Incident #3 â€” Bare eslint-disable (2026-05-05)
 **What was attempted**: Add `// eslint-disable-next-line obsidianmd/no-forbidden-elements` without a description.
 **Why it was done**: Quick fix to suppress the linter.
 **What broke**: Obsidian store automated scanner rejected the submission with: "Unexpected undescribed directive comment."
@@ -37,7 +37,7 @@ Read before making ANY architectural changes.
 
 ---
 
-## Incident #4 — Global Flex Layout in styles.css (2026-05-06)
+## Incident #4 â€” Global Flex Layout in styles.css (2026-05-06)
 **What was attempted**: Add `display: flex; align-items: center;` globally for `.nav-folder-title-content`.
 **Why it was done**: To fix icon alignment.
 **What broke**: Unscoped global styles affected non-plugin elements in Obsidian's interface.
@@ -46,19 +46,19 @@ Read before making ANY architectural changes.
 
 ---
 
-## Incident #5 — Store Rejection: no-forbidden-elements (2026-05-06)
+## Incident #5 â€” Store Rejection: no-forbidden-elements (2026-05-06)
 **What was attempted**: Submitting plugin to Obsidian store with `createEl("style")` + `eslint-disable` comment.
 **Why it was done**: This was the original stable architecture for CSS injection.
-**What broke**: The Obsidian store bot rejected the submission — disabling the `no-forbidden-elements` rule is never permitted, even with a description.
+**What broke**: The Obsidian store bot rejected the submission â€” disabling the `no-forbidden-elements` rule is never permitted, even with a description.
 **Resolution**: Replaced `createEl("style")` with the native `CSSStyleSheet` API:
-- `initializeStyles()` → `new CSSStyleSheet()` + `document.adoptedStyleSheets`
-- `generateStyles()` → `this.sheet.replaceSync(css)`
-- `onunload()` → filter the sheet out of `adoptedStyleSheets`
-- `StyleGenerator.ts` was **not touched** — same CSS string, different delivery
+- `initializeStyles()` â†’ `new CSSStyleSheet()` + `document.adoptedStyleSheets`
+- `generateStyles()` â†’ `this.sheet.replaceSync(css)`
+- `onunload()` â†’ filter the sheet out of `adoptedStyleSheets`
+- `StyleGenerator.ts` was **not touched** â€” same CSS string, different delivery
 **Lesson**: The `CSSStyleSheet` API is the correct, linter-compliant way to inject dynamic CSS in Obsidian plugins. It is functionally identical to a `<style>` tag for virtualised lists and never triggers `no-forbidden-elements`.
 ---
 
-## Incident #6 — Store Rejection: Unsafe any & Unused Variables (2026-05-07)
+## Incident #6 â€” Store Rejection: Unsafe any & Unused Variables (2026-05-07)
 **What was attempted**: Implementing Backup/Restore functionality with standard JSON parsing and object destructuring.
 **Why it was done**: To allow users to export and import their folder/divider configurations.
 **What broke**: The Obsidian store bot rejected the submission with "Unexpected any. Specify a different type." and "Async arrow function has no 'await' expression."
@@ -75,7 +75,7 @@ Read before making ANY architectural changes.
 
 ---
 
-## Incident #7 — Notebook Navigator Flickering (2026-05-12)
+## Incident #7 â€” Notebook Navigator Flickering (2026-05-12)
 **What was attempted**: Implementing Notebook Navigator backgrounds and icons via DOM manipulation (`IconManager` adding classes and inline styles).
 **Why it was done**: To create a cleaner "CSS Variable Bridge" between plugins.
 **What broke**: 
@@ -88,7 +88,7 @@ Read before making ANY architectural changes.
 
 ---
 
-## Incident #8 — Native File Explorer Layout Collapse (2026-05-15)
+## Incident #8 â€” Native File Explorer Layout Collapse (2026-05-15)
 **What was attempted**: Creating a universal "Perfect Alignment Engine" in `styles.css` using broad selectors like `.nn-navitem` and `display: flex !important;`.
 **Why it was done**: To enforce strict 32px heights and fix text truncation across both native Obsidian and Notebook Navigator without needing user snippets.
 **What broke**: 
@@ -100,7 +100,7 @@ Read before making ANY architectural changes.
 
 ---
 
-## Incident #9 — Double Icons & Selector Leakage (2026-05-16)
+## Incident #9 â€” Double Icons & Selector Leakage (2026-05-16)
 **What was attempted**: Finalizing icon synchronization for Notebook Navigator.
 **What broke**: 
 - Side-by-side "double icons" appeared in the NN pane.
@@ -117,7 +117,7 @@ Read before making ANY architectural changes.
 
 ---
 
-## Incident #10 — Blank Items in Integrated Views (2026-05-16)
+## Incident #10 â€” Blank Items in Integrated Views (2026-05-16)
 **What was attempted**: Implementing the Pure CSS bridge for Notebook Navigator.
 **What broke**: 
 - Items that didn't match a custom icon appeared completely blank (no folder/file icons).
@@ -129,7 +129,7 @@ Read before making ANY architectural changes.
 
 ---
 
-## Incident #11 — GitHub Attestation Failure (2026-05-16)
+## Incident #11 â€” GitHub Attestation Failure (2026-05-16)
 **What was attempted**: Adding `actions/attest@v1` to the GitHub Actions workflow for build provenance.
 **Why it was done**: To secure the release pipeline and provide verifiable build artifacts.
 **What broke**: 
@@ -145,7 +145,7 @@ Read before making ANY architectural changes.
 
 ---
 
-## Incident #12 — Color Parsing Crashes & Scroll Listener Leak (2026-05-24)
+## Incident #12 â€” Color Parsing Crashes & Scroll Listener Leak (2026-05-24)
 **What was attempted**: Adding support for 3-character hex colors (e.g., `#f00`) and optimizing scroll-based divider positioning.
 **Why it was done**: To improve shorthand color support, prevent TypeErrors from invalid color inputs, and resolve memory leaks.
 **What broke**: 
@@ -159,7 +159,7 @@ Read before making ANY architectural changes.
 
 ---
 
-## Incident #13 — MutationObserver Layout Thrashing (2026-06-25)
+## Incident #13 â€” MutationObserver Layout Thrashing (2026-06-25)
 **What was attempted**: Using `MutationObserver` on `activeDocument.body` to listen for class changes (like theme toggles) and `.nav-files-container` to sync dividers.
 **Why it was done**: To react automatically when users switch between Dark/Light mode or change layout density, and to sync dividers when folders expand.
 **What broke**: 
@@ -173,7 +173,7 @@ Read before making ANY architectural changes.
 
 ---
 
-## Incident #14 — Virtualized List Scroll Lag (2026-07-03)
+## Incident #14 â€” Virtualized List Scroll Lag (2026-07-03)
 **What was attempted**: Ensuring icons stay visible when scrolling rapidly in the file explorer.
 **What broke**: Severe scroll lag and UI blocking. As Obsidian's virtualized list recycled DOM nodes during scroll, it triggered the `MutationObserver`, which blindly queued `refreshIconsDebounced`. This caused a full `querySelectorAll` across the entire container and synchronous DOM read/write interleaving for every icon, causing massive layout thrashing on every scroll event.
 **Root cause**: 
@@ -189,7 +189,7 @@ Read before making ANY architectural changes.
 
 ---
 
-## Incident #15 — Drag Lag & Style Recalculation Thrashing (2026-07-03)
+## Incident #15 â€” Drag Lag & Style Recalculation Thrashing (2026-07-03)
 **What was attempted**: Optimizing dragging performance in the file explorer.
 **Why it was done**: Dragging files/folders caused severe frame lag, stuttering, and mouse tracing lag.
 **What broke**: 
@@ -206,7 +206,7 @@ Read before making ANY architectural changes.
 
 ---
 
-## Incident #16 — Popout Window Drag Lag & Style Invalidation (2026-07-03)
+## Incident #16 â€” Popout Window Drag Lag & Style Invalidation (2026-07-03)
 **What was attempted**: Validating drag lag fixes across all window contexts.
 **Why it was done**: Dragging inside native Obsidian popout windows still caused severe style invalidation lag and the layout remained completely unstyled.
 **What broke**: 
@@ -221,7 +221,7 @@ Read before making ANY architectural changes.
 
 ---
 
-## Incident #17 — Antigravity Style Engine Refactoring & Deduplication (2026-07-04)
+## Incident #17 â€” Antigravity Style Engine Refactoring & Deduplication (2026-07-04)
 **What was attempted**: Perform a critical analysis of the folder style engine and refactor to eliminate massive code duplication between `getEffectiveStyle` and `StyleGenerator.traverse`.
 **Why it was done**: Code duplication created structural risks, maintenance overhead, and discrepancy glitches (e.g. file offsets missing or mismatching).
 **What was done/fixed**:
@@ -234,7 +234,7 @@ Read before making ANY architectural changes.
 
 ---
 
-## Incident #18 — Startup & Reload Performance Regression (2026-07-04)
+## Incident #18 â€” Startup & Reload Performance Regression (2026-07-04)
 **What was attempted**: Optimizing loading and reloading speed after refactoring.
 **Why it was done**: The plugin loading time was increased due to repetitive color calculations, premature observer layout queries, and I/O saturation from parallel custom SVG file reads.
 **What broke**: 
@@ -250,7 +250,7 @@ Read before making ANY architectural changes.
 
 ---
 
-## Incident #19 — High-frequency Settings Persistence Lag in Palette Builder (2026-07-05)
+## Incident #19 â€” High-frequency Settings Persistence Lag in Palette Builder (2026-07-05)
 **What was attempted**: Rebuilding the "Palette colors" settings UI into a modern, side-by-side two-column layout matching the target mockup design.
 **Why it was done**: To provide a clean, premium visual palette editor using native Obsidian CSS variables instead of hardcoded/inconsistent styles.
 **What broke**: 
@@ -265,7 +265,7 @@ Read before making ANY architectural changes.
 
 ---
 
-## Incident #20 — Icons and Text Vertically Misaligned After Custom Icon Injection (2026-07-06)
+## Incident #20 â€” Icons and Text Vertically Misaligned After Custom Icon Injection (2026-07-06)
 **What was attempted**: Injecting custom SVG icon wrappers (`cf-icon-wrapper`) via `IconManager.ts` prepended inside the `.nav-folder-title-content` / `.nav-file-title-content` element.
 **Why it was done**: Placing the icon inside the content child keeps it in the correct DOM flow alongside the text label.
 **What broke**:
@@ -277,19 +277,19 @@ Read before making ANY architectural changes.
 1. **Content containers always flex row**: Changed `.nav-folder-title-content`, `.nav-file-title-content`, and `.tree-item-inner` from `display: block` to `display: flex; flex-direction: row; align-items: center` globally in `StyleGenerator.generateGlobalBaseCss()`. This ensures icon + text are always side-by-side regardless of theme.
 2. **Centralized icon spacing**: Added a global `.cf-icon-wrapper` CSS rule enforcing `margin-right: 6px`, `align-self: center`, `flex-shrink: 0`. Removed the inline `marginRight` style from `IconManager.ts` to avoid duplication.
 3. **Removed redundant `.cf-icon-active` display override**: No longer needed since all content containers are now flex rows by default.
-**Lesson**: When injecting inline elements into text containers, the container must be a flex row — never block. Set the display mode globally at the base CSS level rather than relying on conditional class-based overrides that may be beaten by specificity wars.
+**Lesson**: When injecting inline elements into text containers, the container must be a flex row â€” never block. Set the display mode globally at the base CSS level rather than relying on conditional class-based overrides that may be beaten by specificity wars.
 
 ---
 
-## Incident #21 — Gradient Text Not Applied to Files (Preview vs Real Mismatch) (2026-07-06)
+## Incident #21 â€” Gradient Text Not Applied to Files (Preview vs Real Mismatch) (2026-07-06)
 **What was attempted**: Applying custom rainbow gradient text colors to individual files in the file explorer using the `background-clip: text` CSS technique, matching the preview shown in the Color Picker Modal.
 **Why it was done**: Users could set a gradient start and end color from the modal and see it in the live preview bar, but the gradient never appeared in the actual file explorer.
 **What broke**:
 - The gradient appeared correctly in the modal preview bar but showed only a flat color (or no color) in the real file explorer.
 - Folders were working correctly; only files were broken.
 **Root cause**:
-- **Folders** (working): `textCss` (including `background-image: linear-gradient(...)` + `background-clip: text`) was injected into `.nav-folder-title-content` — the inner text child element — which has no background of its own.
-- **Files** (broken): `fileTextCss` was injected directly into `.nav-file-title` — the **row container** — which also had `background-color` set on it. When `background-image` and `background-color` coexist on the same element, the browser renders the `background-color` over the gradient. The `background-clip: text` was clipping a partially-hidden gradient, resulting in either flat color or invisible text.
+- **Folders** (working): `textCss` (including `background-image: linear-gradient(...)` + `background-clip: text`) was injected into `.nav-folder-title-content` â€” the inner text child element â€” which has no background of its own.
+- **Files** (broken): `fileTextCss` was injected directly into `.nav-file-title` â€” the **row container** â€” which also had `background-color` set on it. When `background-image` and `background-color` coexist on the same element, the browser renders the `background-color` over the gradient. The `background-clip: text` was clipping a partially-hidden gradient, resulting in either flat color or invisible text.
 **Resolution**:
 1. **Split file CSS into two rules**: Separated the single combined `.nav-file-title` rule into:
    - A **row rule** targeting `.nav-file-title[data-path="..."]` containing only background-color, border-left, opacity, CSS variables.
@@ -299,35 +299,35 @@ Read before making ANY architectural changes.
 
 ---
 
-## Incident #22 — Preview Bold Weight and Gradient Pattern Mismatch (2026-07-06)
+## Incident #22 â€” Preview Bold Weight and Gradient Pattern Mismatch (2026-07-06)
 **What was attempted**: Displaying a live preview of gradient text in the Color Picker Modal that exactly matches what StyleGenerator renders in the file explorer.
 **What broke**: Two subtle visual differences between the preview bar and the real output:
 1. **Bold weight**: Preview bar used `fontWeight: "700"` while StyleGenerator used `font-weight: 800 !important`. Result: preview looked slightly less bold than the real output.
 2. **Gradient pattern**: Preview bar generated `linear-gradient(90deg, start, end)` (two-stop), while StyleGenerator generated `linear-gradient(90deg, start, end, start)` (three-stop looped). Result: the gradient faded out sharply in the preview but transitioned smoothly back in the real output.
-3. **Background-clip reset**: When gradient was disabled, preview set `backgroundClip: "normal"` — an invalid CSS value — instead of `"initial"`, causing inconsistent rendering when toggling gradient off.
+3. **Background-clip reset**: When gradient was disabled, preview set `backgroundClip: "normal"` â€” an invalid CSS value â€” instead of `"initial"`, causing inconsistent rendering when toggling gradient off.
 **Resolution**:
 1. Changed preview `fontWeight` from `"700"` to `"800"` in both gradient and non-gradient branches of `updatePreview()`.
 2. Updated preview gradient string from `linear-gradient(90deg, ${startC}, ${endC})` to `linear-gradient(90deg, ${startC}, ${endC}, ${startC})`.
-3. Fixed `backgroundClip: "normal"` → `"initial"` and `webkitBackgroundClip: "normal"` → `"initial"` for the non-gradient reset.
-**Lesson**: The preview bar must use the **identical formula** as `StyleGenerator.ts` — same gradient stop count, same font-weight values, same CSS reset values. Any divergence creates a misleading live preview. Codify a shared utility function for gradient rendering shared between preview and engine.
+3. Fixed `backgroundClip: "normal"` â†’ `"initial"` and `webkitBackgroundClip: "normal"` â†’ `"initial"` for the non-gradient reset.
+**Lesson**: The preview bar must use the **identical formula** as `StyleGenerator.ts` â€” same gradient stop count, same font-weight values, same CSS reset values. Any divergence creates a misleading live preview. Codify a shared utility function for gradient rendering shared between preview and engine.
 
 ---
 
-## Incident #23 — ColorPickerModal UI: Toggles Too Small, Gradient Colors Not Auto-Initialized (2026-07-06)
+## Incident #23 â€” ColorPickerModal UI: Toggles Too Small, Gradient Colors Not Auto-Initialized (2026-07-06)
 **What was attempted**: Adding Bold, Italic, and Custom Rainbow Colors toggles to the ColorPickerModal's Text Styling section.
 **What broke**:
 - The original `<input type="checkbox">` HTML checkboxes were very small and visually inconsistent with the rest of Obsidian's interface.
 - When the Custom Rainbow Colors toggle was enabled, the gradient only rendered if **both** Start Color and End Color were already set. If only the End Color had a default and the Start Color (`textColor`) was empty, the `if (textGradient && textColor && textGradientEnd)` guard failed, and no gradient CSS was generated at all.
 - The Reset Text button did not update the visual state of the toggle switches, leaving the UI out of sync with the data.
 **Resolution**:
-1. **Native Obsidian Toggles**: Replaced all `<input type="checkbox">` elements with `new obsidian.Setting(...).addToggle(...)` — the same native switch components used throughout Obsidian's settings page. This makes them large, themed, and consistent.
+1. **Native Obsidian Toggles**: Replaced all `<input type="checkbox">` elements with `new obsidian.Setting(...).addToggle(...)` â€” the same native switch components used throughout Obsidian's settings page. This makes them large, themed, and consistent.
 2. **Auto-initialize gradient colors**: When the Custom Rainbow Colors toggle is turned on, if `textColor` (Start) is empty, it is automatically set to `#ffffff`; if `textGradientEnd` is empty, it is set to `#00ffff`. Both are added to `modifiedFields` so they are persisted on Apply.
 3. **Reset sync**: Stored references to the `ToggleComponent` instances and reset their visual state via `toggle.setValue(false)` inside the reset button handler.
 **Lesson**: Always auto-initialize all required fields that must coexist when enabling a compound feature (like a gradient that needs both start and end colors). Guard conditions like `&& textColor && textGradientEnd` will silently fail if only one field is populated. Use Obsidian's native UI components for controls to ensure visual consistency and accessibility.
 
 ---
 
-## Incident #24 — Layout-Change Spam & DOM Observer Debounce Collision (2026-07-10)
+## Incident #24 â€” Layout-Change Spam & DOM Observer Debounce Collision (2026-07-10)
 **What was attempted**: Listening to Obsidian's workspace `layout-change` event to re-initialize the `MutationObserver` (`initDividerObserver`) and keep file dividers synced when panes open or close.
 **What broke**: 
 - Rapidly clicking files in the explorer (or holding arrow keys) caused the UI to completely freeze and lag.
@@ -338,19 +338,28 @@ Read before making ANY architectural changes.
 **Lesson**: Never unconditionally bind synchronous, heavy DOM traversal or observer setup functions to high-frequency workspace events like `layout-change` or `active-leaf-change`. Always isolate heavy setup/teardown logic from rapid-fire events using `obsidian.debounce` to prevent main-thread freezing and callback overlapping.
 
 
-### How it works:
-1. **Dynamic Depth Parsing**: In `DOMObserverService.ts`, the new private helper `applySubfolderIndent(el)` extracts the `data-path` attribute, splits it by `/` to count the path segments, and calculates the exact nesting depth:
-   ```typescript
-   const depth = dataPath ? dataPath.split('/').filter(Boolean).length - 1 : 0;
-   ```
-2. **Padding Increment Step**: We use a `basePadding` of `30px` and add `8px` of indentation for every level of nesting:
-   ```typescript
-   const basePadding = 30;
-   const step = 8;
-   const computedPadding = basePadding + (depth * step);
-   ```
-3. **API & Linter Compliance**: The calculated padding is assigned using `el.setCssProps({ '--cf-padding-override': '${computedPadding}px' })`.
-   - Both `npm run lint` and `npm run build` finish successfully with **0 warnings and 0 errors**.
-   - Because the padding is calculated relative to its path depth and injected through dynamic CSS variables, it is fully compliant, visually stable, and won't clash with Obsidian's virtual DOM engine.
+### Final Update (2026-07-14): Obsidian React Style Wiping
+Even after using `setCssProps` and dynamic CSS variables, Obsidian's React engine continuously wiped out our variables during scroll re-renders. When attempting to use external CSS styles with `!important` as a fallback, Obsidian fought back with its own inline `!important` styles causing severe flickering.
+**Ultimate Resolution:**
+1. **Aggressive Style Stripping**: Implemented a `MutationObserver` in `DOMObserverService.ts` that aggressively calls `el.removeAttribute('style')` on `.tree-item-self` nodes whenever Obsidian attempts to inject inline styling. This completely deletes Obsidian's inline `!important` styles without triggering a flashing war.
+2. **Static CSS Loop**: Moved the math logic out of JavaScript and into `BaseCssGenerator.ts`, using a TypeScript `for` loop to statically generate 20 levels of `.nav-folder-children` nested descendant selectors. Because CSS specificity naturally increases with each descendant layer, this calculates exact indentation depths natively in pure CSS, ensuring it can never be wiped out by React's rendering engine.
+---
 
-Rebuild is complete. Please reload the plugin in Obsidian to see the nested folders indent dynamically!
+## Incident #25 — Phantom TypeScript Fixes & Missing Compilation (2026-07-15)
+**What was attempted**: Modifying the TypeScript source files (BaseCssGenerator.ts and DOMObserverService.ts) to fix the staircase layout effect that was being wiped out by Obsidian's React engine.
+**What broke**: 
+- The user repeatedly reported that the fixes were not working ("this also didt work do any thing to get stair case effect").
+- We abandoned the elegant native TypeScript/CSS loop solutions and resorted to embedding a raw user-provided JavaScript snippet inside a 5-second setTimeout directly in main.ts.
+- The root cause was entirely procedural: the TypeScript source files were being edited and saved, but the plugin was never re-compiled. Obsidian runs the compiled main.js file, so the live vault was still executing the old, broken version of the plugin regardless of how perfect the .ts changes were.
+**Resolution**: 
+1. Realized the compilation oversight and finally ran 
+pm run build.
+2. The plugin compiled, and the embedded setTimeout script successfully executed in the live environment.
+3. Added a strict workspace rule to ALWAYS run 
+pm run build immediately after modifying .ts source files.
+**Lesson**: Never assume TypeScript source modifications are active in a compiled environment (like an Obsidian vault). Always run the build command (`npm run build`) before asking the user to test or verifying the fix. If changes appear to do absolutely nothing, check the build process first before abandoning the solution.
+
+**How the Staircase Effect Worked (The Final Solution)**:
+The final working solution relied on two synergistic parts:
+1. **The Stripper Script (in `main.ts`)**: The embedded 5-second script uses a `MutationObserver` to aggressively strip the inline `style` attribute (e.g., `style="padding-inline-start: 61px"`) from all `.tree-item-self` elements. This completely neutralizes Obsidian's React engine, which uses those inline styles to enforce its own indentation calculations.
+2. **The Visual Hack (in `nuke.css`)**: With Obsidian's native inline padding stripped away, the user's custom CSS snippet takes over. It applies a baseline padding, and then physically shifts the inner text and icons leftward using `position: relative !important; left: -20px !important;`. This visually creates the indented "staircase" effect for the text, while allowing the background row (the hover/active state) to remain flat and span the full width of the container.
