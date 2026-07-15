@@ -1441,39 +1441,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     this.plugin.generateStylesDebounced();
                 }));
 
-        new obsidian.Setting(visCard)
-            .setName('Show collapse indicator')
-            .setDesc('Toggle the visibility of folder collapse indicators (arrows) in the file explorer.')
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.showCollapseIndicator !== false)
-                .onChange(async (value) => {
-                    this.plugin.settings.showCollapseIndicator = value;
-                    await this.plugin.saveSettings();
-                    this.plugin.generateStylesDebounced();
-                }));
 
-        let sliderComp_folderBorderRadius: obsidian.SliderComponent;
-        new obsidian.Setting(visCard)
-            .setName('Folder border radius')
-            .setDesc('Adjust the corner roundness of folder backgrounds in the explorer (default 6px).')
-            .addSlider(slider => {
-                sliderComp_folderBorderRadius = slider;
-                slider
-                .setLimits(0, 40, 1)
-                .setValue(this.plugin.settings.folderBorderRadius ?? 6)
-                .onChange(async (value) => {
-                    this.plugin.settings.folderBorderRadius = value;
-                    await this.plugin.saveSettings();
-                    this.plugin.generateStylesDebounced();
-                });
-                return slider;
-            })
-            .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
-                this.plugin.settings.folderBorderRadius = DEFAULT_SETTINGS.folderBorderRadius;
-                sliderComp_folderBorderRadius.setValue(DEFAULT_SETTINGS.folderBorderRadius);
-                await this.plugin.saveSettings();
-                this.plugin.generateStylesDebounced();
-            }));
 
         const autoCard = makeCard(iconPanel, "🤖", "Automation engine");
         new obsidian.Setting(autoCard)
@@ -1710,6 +1678,41 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
 
         const typeCard = makeCard(generalPanel, "Aa", "Path and typography");
+
+        new obsidian.Setting(typeCard)
+            .setName('Show collapse indicator')
+            .setDesc('Toggle the visibility of folder collapse indicators (arrows) in the file explorer.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.showCollapseIndicator !== false)
+                .onChange(async (value) => {
+                    this.plugin.settings.showCollapseIndicator = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStylesDebounced();
+                }));
+
+        let sliderComp_folderBorderRadius: obsidian.SliderComponent;
+        new obsidian.Setting(typeCard)
+            .setName('Folder border radius')
+            .setDesc('Adjust the corner roundness of folder backgrounds in the explorer (default 6px).')
+            .addSlider(slider => {
+                sliderComp_folderBorderRadius = slider;
+                slider
+                .setLimits(0, 40, 1)
+                .setValue(this.plugin.settings.folderBorderRadius ?? 6)
+                .onChange(async (value) => {
+                    this.plugin.settings.folderBorderRadius = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStylesDebounced();
+                });
+                return slider;
+            })
+            .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
+                this.plugin.settings.folderBorderRadius = DEFAULT_SETTINGS.folderBorderRadius;
+                sliderComp_folderBorderRadius.setValue(DEFAULT_SETTINGS.folderBorderRadius);
+                await this.plugin.saveSettings();
+                this.plugin.generateStylesDebounced();
+            }));
+
         let sliderComp_pathLineThickness: obsidian.SliderComponent;
         new obsidian.Setting(typeCard)
             .setName('Path line thickness')
@@ -1760,6 +1763,8 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     await this.plugin.saveSettings();
                     this.plugin.generateStylesDebounced();
                 }));
+
+
 
 
 

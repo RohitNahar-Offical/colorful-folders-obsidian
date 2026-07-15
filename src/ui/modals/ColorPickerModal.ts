@@ -149,9 +149,10 @@ modifiedFields: Set<string>;
             }
         }
         
+        const initialBr = this.folderStyle.borderRadius !== undefined ? this.folderStyle.borderRadius : (this.plugin.settings.folderBorderRadius ?? 6);
         prev.setCssStyles({
             display: "flex", alignItems: "center", gap: "10px",
-            padding: "10px 14px", borderRadius: "8px", margin: "12px 20px 4px",
+            padding: "10px 14px", borderRadius: `${initialBr}px`, margin: "12px 20px 4px",
             backgroundColor: initialBg, border: initialBorder
         });
         const prevIconWrap = prev.createDiv();
@@ -298,20 +299,26 @@ modifiedFields: Set<string>;
                                 isDark
                             );
                             
+                            const br = this.folderStyle.borderRadius !== undefined ? this.folderStyle.borderRadius : (this.plugin.settings.folderBorderRadius ?? 6);
                             this._prevBar.setCssStyles({
                                 backgroundColor: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`,
-                                border: `1px solid rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.25)`
+                                border: `1px solid rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.25)`,
+                                borderRadius: `${br}px`
                             });
                         } else {
+                            const br = this.folderStyle.borderRadius !== undefined ? this.folderStyle.borderRadius : (this.plugin.settings.folderBorderRadius ?? 6);
                             this._prevBar.setCssStyles({
                                 backgroundColor: "var(--background-secondary)",
-                                border: "1px solid var(--background-modifier-border)"
+                                border: "1px solid var(--background-modifier-border)",
+                                borderRadius: `${br}px`
                             });
                         }
                     } else {
+                        const br = this.folderStyle.borderRadius !== undefined ? this.folderStyle.borderRadius : (this.plugin.settings.folderBorderRadius ?? 6);
                         this._prevBar.setCssStyles({
                             backgroundColor: "var(--background-secondary)",
-                            border: "1px solid var(--background-modifier-border)"
+                            border: "1px solid var(--background-modifier-border)",
+                            borderRadius: `${br}px`
                         });
                     }
                 }
@@ -425,6 +432,10 @@ modifiedFields: Set<string>;
             if (this.modifiedFields.has('applyToFiles')) {
                 finalStyle.applyToFiles = this.folderStyle.applyToFiles;
             }
+            if (this.modifiedFields.has('borderRadius')) {
+                if (this.folderStyle.borderRadius !== undefined) finalStyle.borderRadius = this.folderStyle.borderRadius;
+                else delete finalStyle.borderRadius;
+            }
             if (Object.keys(finalStyle).length === 0) {
                 delete this.plugin.settings.customFolderColors[path];
             } else {
@@ -466,6 +477,33 @@ modifiedFields: Set<string>;
             this.folderStyle.opacity = parseInt(opSlider.value) / 100;
             this.modifiedFields.add('opacity');
             opValLabel.textContent = `${opSlider.value}%`;
+            updatePreview();
+        });
+
+        // ── Custom Border Radius Slider ──
+        const brRow = bgSection.createDiv();
+        brRow.setCssStyles({
+            display: 'flex', alignItems: 'center', gap: '10px',
+            marginTop: '10px', padding: '8px 4px'
+        });
+
+        const brLabel = brRow.createSpan({ text: 'Border radius' });
+        brLabel.setCssStyles({ fontSize: '0.78em', fontWeight: '700', color: 'var(--text-muted)', whiteSpace: 'nowrap' });
+
+        const brSlider = brRow.createEl('input', { type: 'range' });
+        brSlider.min = '0'; brSlider.max = '50';
+        const defaultBr = this.plugin.settings.folderBorderRadius ?? 6;
+        brSlider.value = String(this.folderStyle.borderRadius ?? defaultBr);
+        brSlider.setCssStyles({ flex: '1', cursor: 'pointer' });
+
+        const brValLabel = brRow.createSpan();
+        brValLabel.setCssStyles({ fontSize: '0.78em', fontWeight: '700', color: 'var(--text-normal)', minWidth: '34px', textAlign: 'right' });
+        brValLabel.textContent = `${brSlider.value}px`;
+
+        brSlider.addEventListener('input', () => {
+            this.folderStyle.borderRadius = parseInt(brSlider.value);
+            this.modifiedFields.add('borderRadius');
+            brValLabel.textContent = `${brSlider.value}px`;
             updatePreview();
         });
 

@@ -31,6 +31,7 @@ export interface FolderStyle {
     textGradient?: boolean;
     textGradientEnd?: string;
     rainbowBrightness?: number;
+    borderRadius?: number;
 }
 
 export interface ColorfulFoldersSettings {

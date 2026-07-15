@@ -635,11 +635,13 @@ export class StyleGenerator {
             const activeBg = (this.settings.useCustomActiveColor && this.settings.customActiveBg) ? this.settings.customActiveBg : `rgba(${color.rgb}, ${useGlass ? 0.14 : 0.12})`;
             const activeText = (this.settings.useCustomActiveColor && this.settings.customActiveText) ? this.settings.customActiveText : folderStyles.t;
 
+            const folderBr = customStyle?.borderRadius !== undefined ? customStyle.borderRadius : (inheritedStyle?.borderRadius !== undefined ? inheritedStyle.borderRadius : (this.settings.folderBorderRadius ?? 6));
+
             grouper.add(`
                 background-color: var(--cf-folder-bg, ${folderStyles.b}) !important;
                 --cf-selection-bg: rgba(${color.rgb}, ${Math.min(1.0, adjustedOp + 0.15)});
                 opacity: 1.0 !important;
-                border-radius: ${this.settings.folderBorderRadius ?? 6}px;
+                border-radius: ${folderBr}px;
                 ${glassCss}
             `, [
                 `.nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem)`,

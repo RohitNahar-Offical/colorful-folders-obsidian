@@ -99,7 +99,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     iconDebugMode: false,
     notebookNavigatorSupport: true,
     notebookNavigatorFileBackground: true,
-    iconScale: 1.0,
+    iconScale: 1.1,
     notebookNavigatorIconScale: 0.8,
     customIcons: {},
     cycleOffset: 0,
@@ -139,7 +139,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     defaultClosedFolderIcon: "lucide-folder",
     defaultOpenFolderIcon: "lucide-folder-open",
     showCollapseIndicator: true,
-    folderBorderRadius: 6
+    folderBorderRadius: 10
 };
 
 export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
