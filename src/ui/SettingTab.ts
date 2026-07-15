@@ -959,8 +959,8 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 }));
 
         new obsidian.Setting(activeCard)
-            .setName('Use custom active file colors')
-            .setDesc('Enable this to override the default luminous selection colors with your own.')
+            .setName('Use custom active file box colors')
+            .setDesc('Enable this to override the background and text color of the active (currently selected) file box.')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.useCustomActiveColor)
                 .onChange(async (value) => {
