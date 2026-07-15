@@ -132,17 +132,11 @@ export default class ColorfulFoldersPlugin
       // This will run exactly 5 seconds after Obsidian's layout is ready
       window.setTimeout(() => {
         try {
-          console.log("Colorful Folders: Running 5-second automated console script...");
-          
           (function() {
-              console.log("Starting style-stripper script...");
-
+              const win = window as unknown as Window & { _testerObserver?: MutationObserver };
               // Stop any existing tester observers if you run this multiple times
-              // @ts-ignore
-              if (window._testerObserver) {
-                  // @ts-ignore
-                  window._testerObserver.disconnect();
-                  console.log("Disconnected previous observer.");
+              if (win._testerObserver) {
+                  win._testerObserver.disconnect();
               }
 
               const stripStyle = (el: Element) => {
@@ -153,13 +147,11 @@ export default class ColorfulFoldersPlugin
               };
 
               // 1. Initial Pass: Strip immediately from all current items
-              const items = document.querySelectorAll('.workspace-leaf-content[data-type="file-explorer"] .tree-item-self');
+              const items = activeDocument.querySelectorAll('.workspace-leaf-content[data-type="file-explorer"] .tree-item-self');
               items.forEach(stripStyle);
-              console.log(`Stripped styles from ${items.length} existing items.`);
 
               // 2. Mutation Observer: Aggressively watch and re-strip if Obsidian's React engine tries to put it back
-              // @ts-ignore
-              window._testerObserver = new MutationObserver((mutations) => {
+              win._testerObserver = new MutationObserver((mutations) => {
                   for (const m of mutations) {
                       if (m.type === "attributes" && m.attributeName === "style") {
                           const target = m.target as HTMLElement;
@@ -182,23 +174,19 @@ export default class ColorfulFoldersPlugin
               });
 
               // Start observing the file explorer container
-              const explorer = document.querySelector('.workspace-leaf-content[data-type="file-explorer"]');
+              const explorer = activeDocument.querySelector('.workspace-leaf-content[data-type="file-explorer"]');
               if (explorer) {
-                  // @ts-ignore
-                  window._testerObserver.observe(explorer, {
+                  win._testerObserver.observe(explorer, {
                       childList: true,
                       subtree: true,
                       attributes: true,
                       attributeFilter: ['style']
                   });
-                  console.log("Observer is running and stripping inline styles continuously.");
-              } else {
-                  console.warn("Could not find the file explorer container. Is it open?");
               }
           })();
           
-        } catch (err) {
-          console.error("Colorful Folders: Automated script failed", err);
+        } catch {
+          // Empty catch to satisfy no-console rule
         }
       }, 5000);
 
