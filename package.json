@@ -1,6 +1,6 @@
 {
   "name": "colorful-folders",
-  "version": "4.2.6",
+  "version": "4.2.7",
   "description": "Automatically adds color-code folders, tags, and your Graph View with premium palettes, and auto-assign smart icons to visualize your structures instantly.",
   "main": "main.js",
   "scripts": {
