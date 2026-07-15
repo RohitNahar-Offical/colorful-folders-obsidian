@@ -543,6 +543,7 @@ export class StyleGenerator {
             // Pre-calculate folder icons to avoid warnings
             const autoIconFolder = (this.settings.autoIcons && !customStyle?.iconId && !inheritedStyle?.iconId) ? this.plugin.iconManager.getAutoIconData(child.name, child.path) : null;
             const folderIconId = customStyle?.iconId || inheritedStyle?.iconId || (autoIconFolder ? (this.settings.wideAutoIcons ? autoIconFolder.lucide : autoIconFolder.emoji) : "");
+            const folderExpandedIconId = customStyle?.expandedIconId || inheritedStyle?.expandedIconId || "";
 
             const folderStyles = {
                 b: outlineOnly ? "transparent" : (depth === 0 && this.settings.rootStyle === "solid" ? color.hex : `rgba(${color.rgb}, ${adjustedOp})`),
@@ -686,26 +687,48 @@ export class StyleGenerator {
                 ...nnSelectors
             ], `folderText_${isUsingGradient ? 'grad_' + startCol.replace(/\s+/g, '') + '_' + endCol.replace(/\s+/g, '') : 'norm_' + folderStyles.t}_${isBold}_${isItalic}`);
 
-            if (folderIconId) {
-                const isCustomEmoji = !obsidian.getIconIds?.().includes(`lucide-${folderIconId}`) &&
-                    !obsidian.getIconIds?.().includes(folderIconId) &&
-                    !(this.settings.customIcons && this.settings.customIcons[folderIconId]);
+            const generateIconCss = (iconIdToUse: string, isExpandedState: boolean | null) => {
+                const isCustomEmoji = !obsidian.getIconIds?.().includes(`lucide-${iconIdToUse}`) &&
+                    !obsidian.getIconIds?.().includes(iconIdToUse) &&
+                    !(this.settings.customIcons && this.settings.customIcons[iconIdToUse]);
+
+                const getSels = (expanded: boolean | null) => {
+                    const baseNav = `body .nav-files-container .nav-folder`;
+                    const baseTree = `body .nav-files-container .tree-item`;
+                    
+                    if (expanded === true) {
+                        return [
+                            `${baseNav}:not(.is-collapsed) > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
+                            `${baseTree}:not(.is-collapsed) > .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
+                        ];
+                    } else if (expanded === false) {
+                        return [
+                            `${baseNav}.is-collapsed > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
+                            `${baseTree}.is-collapsed > .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
+                        ];
+                    }
+                    return [
+                        `body .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
+                        `body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
+                    ];
+                };
+
+                const sels = getSels(isExpandedState);
 
                 if (isCustomEmoji) {
                     grouper.add(`
-                        content: "${folderIconId} " !important;
+                        content: "${iconIdToUse} " !important;
                         display: inline-flex !important;
                         align-items: center !important;
                         justify-content: center !important;
                         align-self: center !important;
                         flex-shrink: 0 !important;
                         margin-right: 4px !important;
-                    `, [
-                        `body .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
-                        `body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
-                    ]);
+                        background-color: transparent !important;
+                        -webkit-mask-image: none !important;
+                    `, sels);
                 } else {
-                    const svgStr = this.plugin.iconManager.getIconSvg(folderIconId, true);
+                    const svgStr = this.plugin.iconManager.getIconSvg(iconIdToUse, true);
                     if (svgStr) {
                         grouper.add(`
                             content: '' !important;
@@ -720,11 +743,19 @@ export class StyleGenerator {
                             -webkit-mask-repeat: no-repeat !important;
                             -webkit-mask-position: center !important;
                             -webkit-mask-size: contain !important;
-                        `, [
-                            `body .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
-                            `body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
-                        ]);
+                        `, sels);
                     }
+                }
+            };
+
+            if (folderIconId || folderExpandedIconId) {
+                if (folderExpandedIconId && folderIconId) {
+                    generateIconCss(folderIconId, false);
+                    generateIconCss(folderExpandedIconId, true);
+                } else if (folderExpandedIconId) {
+                    generateIconCss(folderExpandedIconId, true);
+                } else if (folderIconId) {
+                    generateIconCss(folderIconId, null);
                 }
             } else if (autoIcons) {
                 grouper.add(`
