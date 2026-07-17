@@ -1113,6 +1113,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .addOption('cycle', 'Rainbow cycle')
                 .addOption('monochromatic', 'Monochromatic depth')
                 .addOption('heatmap', 'Activity heatmap')
+                .addOption('hierarchy', 'Hierarchy level')
                 .setValue(this.plugin.settings.colorMode)
                 .onChange(async (value) => {
                     this.plugin.settings.colorMode = value;
@@ -1159,7 +1160,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 });
             });
 
-        if (this.plugin.settings.colorMode === 'cycle') {
+        if (this.plugin.settings.colorMode === 'cycle' || this.plugin.settings.colorMode === 'hierarchy') {
             let sliderComp_cycleOffset: obsidian.SliderComponent;
         new obsidian.Setting(genCard)
                 .setName('Rainbow cycle offset')

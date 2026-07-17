@@ -71,6 +71,8 @@ export class ColorResolver {
             } else if (colorMode === "monochromatic") {
                 if (d === 0) return palette[vIdx % palette.length];
                 return palette[rIdx % palette.length];
+            } else if (colorMode === "hierarchy") {
+                return palette[(d + cycleOffset) % palette.length];
             } else {
                 return palette[(vIdx + d + rIdx + cycleOffset) % palette.length];
             }
