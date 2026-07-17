@@ -242,7 +242,7 @@ export class StyleGenerator {
                     context.brightnessAmount,
                     this.settings.rootStyle,
                     outlineOnly,
-                    true
+                    this.settings.colorText === 'all' || this.settings.colorText === 'files' || this.settings.colorText === true || this.settings.colorText === undefined
                 );
 
                 const textNN = ColorResolver.resolveTextColor(
@@ -256,7 +256,7 @@ export class StyleGenerator {
                     context.brightnessAmount,
                     this.settings.rootStyle,
                     outlineOnly,
-                    true
+                    this.settings.colorText === 'all' || this.settings.colorText === 'files' || this.settings.colorText === true || this.settings.colorText === undefined
                 );
 
                 const isBold = fileStyle?.isBold !== undefined ? fileStyle.isBold : (inheritedStyle?.applyToFiles ? inheritedStyle.isBold : false);
@@ -559,7 +559,7 @@ export class StyleGenerator {
                     context.brightnessAmount,
                     this.settings.rootStyle,
                     outlineOnly,
-                    true
+                    this.settings.colorText === 'all' || this.settings.colorText === 'folders' || this.settings.colorText === true || this.settings.colorText === undefined
                 )
             };
 

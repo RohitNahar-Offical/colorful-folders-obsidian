@@ -59,6 +59,7 @@ export interface ColorfulFoldersSettings {
     rainbowRootText: boolean;
     rainbowRootBgTransparent: boolean;
     autoColorFiles: boolean;
+    colorText?: string | boolean;
     showItemCounters: boolean;
     rootTintOpacity: number;
     lightModeBrightness: number;

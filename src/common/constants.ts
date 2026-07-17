@@ -91,6 +91,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     rainbowRootText: true,
     rainbowRootBgTransparent: false,
     autoColorFiles: false,
+    colorText: "all",
     showItemCounters: true,
     rootTintOpacity: 0.06,
     lightModeBrightness: 0,

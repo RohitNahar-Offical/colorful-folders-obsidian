@@ -1122,6 +1122,21 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 }));
 
         new obsidian.Setting(genCard)
+            .setName('Color text')
+            .setDesc('Select which items should have colored text. Choose "none" to only color icons.')
+            .addDropdown(drop => drop
+                .addOption('all', 'Folders and files')
+                .addOption('folders', 'Folders only')
+                .addOption('files', 'Files only')
+                .addOption('none', 'None (icons only)')
+                .setValue((this.plugin.settings.colorText === true || this.plugin.settings.colorText === undefined) ? 'all' : (this.plugin.settings.colorText === false ? 'none' : this.plugin.settings.colorText))
+                .onChange(async (value) => {
+                    this.plugin.settings.colorText = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStylesDebounced();
+                }));
+
+        new obsidian.Setting(genCard)
             .setName('Global default background')
             .setDesc('Set a universal background color for all folders/files that do not have a custom style. Leave empty for theme-default (transparent).')
             .addButton(btn => btn
