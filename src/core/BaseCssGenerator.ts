@@ -6,9 +6,9 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
         /* ── NUCLEAR SPECIFICITY NAV ITEM LAYOUT ───────────────────────────────
            We use high-specificity selectors to defeat theme overrides (like Prism).
         ──────────────────────────────────────────────────────────────────────── */
-        body .nav-files-container .nav-folder-title,
-        body .nav-files-container .nav-file-title,
-        body .nav-files-container .tree-item-self {
+        body .nav-folder-title,
+        body .nav-file-title,
+        body .tree-item-self {
             display: flex !important;
             align-items: center !important;
             justify-content: flex-start !important;
@@ -18,26 +18,26 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
         }
 
         /* Force all immediate children and pseudo-elements to perfectly center vertically */
-        body .nav-files-container .nav-folder-title > *,
-        body .nav-files-container .nav-file-title > *,
-        body .nav-files-container .tree-item-self > *,
-        body .nav-files-container .nav-folder-title:not(.nn-navitem)::before,
-        body .nav-files-container .nav-file-title:not(.nn-file)::before,
-        body .nav-files-container .tree-item-self:not(.nn-file):not(.nn-navitem)::before,
-        body .nav-files-container .nav-folder-title::after,
-        body .nav-files-container .nav-file-title::after,
-        body .nav-files-container .tree-item-self::after {
+        body .nav-folder-title > *,
+        body .nav-file-title > *,
+        body .tree-item-self > *,
+        body .nav-folder-title:not(.nn-navitem)::before,
+        body .nav-file-title:not(.nn-file)::before,
+        body .tree-item-self:not(.nn-file):not(.nn-navitem)::before,
+        body .nav-folder-title::after,
+        body .nav-file-title::after,
+        body .tree-item-self::after {
             align-self: center !important;
             margin-top: 0 !important;
             margin-bottom: 0 !important;
         }
 
-        body .nav-files-container .nav-folder-collapse-indicator,
-        body .nav-files-container .tree-item-collapse-indicator,
-        body .nav-files-container .collapse-indicator,
-        body .nav-files-container .tree-item-icon.collapse-indicator,
-        body .nav-files-container .collapse-icon,
-        body .nav-files-container .tree-item-icon.collapse-icon {
+        body .nav-folder-collapse-indicator,
+        body .tree-item-collapse-indicator,
+        body .collapse-indicator,
+        body .tree-item-icon.collapse-indicator,
+        body .collapse-icon,
+        body .tree-item-icon.collapse-icon {
             display: ${settings.showCollapseIndicator !== false ? 'flex' : 'none'} !important;
             align-items: center !important;
             justify-content: center !important;
@@ -45,9 +45,9 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
         }
 
         /* ── CONTENT ELEMENT: always flex row, icon or not ───────────────── */
-        body .nav-files-container .nav-folder-title-content,
-        body .nav-files-container .nav-file-title-content,
-        body .nav-files-container .tree-item-inner {
+        body .nav-folder-title-content,
+        body .nav-file-title-content,
+        body .tree-item-inner {
             display: flex !important;
             flex-direction: row !important;
             align-items: center !important;
@@ -83,10 +83,10 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
         }
 
         /* ── METADATA WRAPPING RULES (FILES WITH WORD COUNT ONLY) ─────────── */
-        body.cf-wrap-metadata .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]),
-        body.cf-wrap-metadata .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title),
-        body.is-mobile .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]),
-        body.is-mobile .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) {
+        body.cf-wrap-metadata .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]),
+        body.cf-wrap-metadata .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title),
+        body.is-mobile .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]),
+        body.is-mobile .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) {
             flex-wrap: wrap !important;
             align-items: flex-start !important;
             height: auto !important;
@@ -98,35 +98,35 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
         }
 
         /* First-line items (indicator, icons) top-align to align with the first-line text */
-        body.cf-wrap-metadata .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) > *:not(::after),
-        body.cf-wrap-metadata .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) > *:not(::after),
-        body.is-mobile .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) > *:not(::after),
-        body.is-mobile .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) > *:not(::after) {
+        body.cf-wrap-metadata .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) > *:not(::after),
+        body.cf-wrap-metadata .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) > *:not(::after),
+        body.is-mobile .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) > *:not(::after),
+        body.is-mobile .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) > *:not(::after) {
             align-self: flex-start !important;
             margin-top: 2px !important;
         }
 
-        body.cf-wrap-metadata .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) .cf-icon-wrapper,
-        body.cf-wrap-metadata .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) .cf-icon-wrapper,
-        body.is-mobile .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) .cf-icon-wrapper,
-        body.is-mobile .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) .cf-icon-wrapper {
+        body.cf-wrap-metadata .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) .cf-icon-wrapper,
+        body.cf-wrap-metadata .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) .cf-icon-wrapper,
+        body.is-mobile .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) .cf-icon-wrapper,
+        body.is-mobile .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) .cf-icon-wrapper {
             align-self: flex-start !important;
             margin-top: 2px !important;
         }
 
-        body.cf-wrap-metadata .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) .nav-file-title-content,
-        body.cf-wrap-metadata .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) .tree-item-inner,
-        body.is-mobile .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) .nav-file-title-content,
-        body.is-mobile .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) .tree-item-inner {
+        body.cf-wrap-metadata .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) .nav-file-title-content,
+        body.cf-wrap-metadata .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) .tree-item-inner,
+        body.is-mobile .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) .nav-file-title-content,
+        body.is-mobile .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) .tree-item-inner {
             margin-top: 0 !important;
             align-self: flex-start !important;
         }
 
         /* Force only the ::after pseudo-element (which holds the counts) to wrap to the next line */
-        body.cf-wrap-metadata .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "])::after,
-        body.cf-wrap-metadata .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title)::after,
-        body.is-mobile .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "])::after,
-        body.is-mobile .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title)::after {
+        body.cf-wrap-metadata .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "])::after,
+        body.cf-wrap-metadata .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title)::after,
+        body.is-mobile .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "])::after,
+        body.is-mobile .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title)::after {
             width: 100% !important;
             flex: 0 0 100% !important;
             margin-left: 0 !important;
@@ -143,14 +143,14 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
         }
 
         /* Position file tags and flairs on the top right so they never wrap or stretch */
-        body.cf-wrap-metadata .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) .tree-item-flair,
-        body.cf-wrap-metadata .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) .nav-file-tag,
-        body.cf-wrap-metadata .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) .tree-item-flair,
-        body.cf-wrap-metadata .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) .nav-file-tag,
-        body.is-mobile .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) .tree-item-flair,
-        body.is-mobile .nav-files-container .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) .nav-file-tag,
-        body.is-mobile .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) .tree-item-flair,
-        body.is-mobile .nav-files-container .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) .nav-file-tag {
+        body.cf-wrap-metadata .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) .tree-item-flair,
+        body.cf-wrap-metadata .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) .nav-file-tag,
+        body.cf-wrap-metadata .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) .tree-item-flair,
+        body.cf-wrap-metadata .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) .nav-file-tag,
+        body.is-mobile .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) .tree-item-flair,
+        body.is-mobile .nav-file-title[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]) .nav-file-tag,
+        body.is-mobile .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) .tree-item-flair,
+        body.is-mobile .tree-item-self[data-novel-word-count-plugin]:not([data-novel-word-count-plugin=""]):not([data-novel-word-count-plugin=" "]):not(.nav-folder-title) .nav-file-tag {
             position: absolute !important;
             right: 14px !important;
             top: 6px !important;
@@ -170,8 +170,8 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
         }
 
         /* Add spacing between folders */
-        body .nav-files-container .nav-folder-title,
-        body .nav-files-container .tree-item-self {
+        body .nav-folder-title,
+        body .tree-item-self {
             margin-top: 2px !important;
             margin-bottom: 2px !important;
         }

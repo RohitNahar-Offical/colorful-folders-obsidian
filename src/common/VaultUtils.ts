@@ -13,6 +13,7 @@ export function countItems(folderItem: obsidian.TFolder, plugin: IColorfulFolder
     let folders = 0;
     if (folderItem.children) {
         for (const child of folderItem.children) {
+            if (child.name.startsWith('.')) continue;
             if (child instanceof obsidian.TFile) files++;
             else if (child instanceof obsidian.TFolder) folders++;
         }

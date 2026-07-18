@@ -363,3 +363,16 @@ pm run build immediately after modifying .ts source files.
 The final working solution relied on two synergistic parts:
 1. **The Stripper Script (in `main.ts`)**: The embedded 5-second script uses a `MutationObserver` to aggressively strip the inline `style` attribute (e.g., `style="padding-inline-start: 61px"`) from all `.tree-item-self` elements. This completely neutralizes Obsidian's React engine, which uses those inline styles to enforce its own indentation calculations.
 2. **The Visual Hack**: With Obsidian's native inline padding stripped away, the user's custom CSS snippet takes over. It applies a baseline padding, and then physically shifts the inner text and icons leftward using `position: relative !important; left: -20px !important;`. This visually creates the indented "staircase" effect for the text, while allowing the background row (the hover/active state) to remain flat and span the full width of the container.
+
+---
+
+## Incident #26 — Massive Freeze & Stylesheet Bloat with Smart Connections (2026-07-18)
+**What was attempted**: Using the plugin in a vault where the "Smart Connections" plugin was active.
+**What broke**: The plugin completely froze Obsidian. The issue did not exist in version 4.2.0 but started in newer versions.
+**Root cause**: 
+- Smart Connections creates a massive hidden folder (`.smart-env`) containing thousands of data files. 
+- Version 4.2.7 introduced asynchronous tree traversal with `setTimeout` yields to "prevent UI locking," along with a new `DOMObserverService`. 
+- When the plugin attempted to asynchronously generate CSS rules for the 10,000+ hidden files in `.smart-env`, the `setTimeout` yields compounded, creating a massive queue that stalled the UI. The DOM observer worsened the issue by continually triggering debounced style regenerations.
+- Version 4.2.0 didn't freeze only because its traversal was fully synchronous and instantaneous, even though it was still inefficiently generating ~6MB of useless CSS.
+**Resolution**: Modified `StyleGenerator.ts` and `VaultUtils.ts` to immediately exclude any file or folder starting with a dot (`.`) at the very top of their loops.
+**Lesson**: Never iterate over or generate visual styles for hidden dot-folders (`.smart-env`, `.git`, `.obsidian`). File tree walkers must explicitly exclude them at the root level to prevent catastrophic performance degradation when third-party plugins or version control systems generate massive internal datasets.

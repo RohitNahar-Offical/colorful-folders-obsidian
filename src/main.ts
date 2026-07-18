@@ -52,6 +52,7 @@ export default class ColorfulFoldersPlugin
   isSyncingDividers: boolean = false;
   isDragging: boolean = false;
   isGeneratingStyles: boolean = false;
+
   ribbonEl: HTMLElement | null = null;
 
   async onload() {
@@ -301,9 +302,7 @@ export default class ColorfulFoldersPlugin
 
   onunload() {
     this.getOpenDocuments().forEach(doc => {
-      if (this.sheet) {
-        doc.adoptedStyleSheets = doc.adoptedStyleSheets.filter((s) => s !== this.sheet);
-      }
+      doc.adoptedStyleSheets = doc.adoptedStyleSheets.filter(s => s !== this.sheet);
     });
 
     // Cleanly destroy observers and events
@@ -596,9 +595,7 @@ export default class ColorfulFoldersPlugin
     try {
       const css = await this.styleGenerator.generateCss();
       window.requestAnimationFrame(() => {
-        if (this.sheet) {
-          this.sheet.replaceSync(css);
-        }
+        this.sheet.replaceSync(css);
         this.getOpenDocuments().forEach(doc => {
           doc.body.classList.toggle(
             "cf-show-hidden",

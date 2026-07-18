@@ -131,6 +131,10 @@ export class StyleGenerator {
         const copyFiles: obsidian.TFile[] = [];
         for (let i = 0; i < folder.children.length; i++) {
             const child = folder.children[i];
+            
+            // Exclude hidden folders and files (like .smart-env, .git, .obsidian)
+            if (child.name.startsWith('.')) continue;
+
             if (child instanceof obsidian.TFolder) {
                 copyFolders.push(child);
             } else if (child instanceof obsidian.TFile) {
@@ -318,8 +322,8 @@ export class StyleGenerator {
                 }
 
                 const fileRowSels = [
-                    `.nav-files-container .nav-file-title[data-path="${safePath}"]:not(.nn-file)`,
-                    `.nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem)`
+                    `.nav-file-title[data-path="${safePath}"]:not(.nn-file)`,
+                    `.tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem)`
                 ];
                 grouper.add(fileRowCss, fileRowSels, `fileRow_${color.hex}_${fileBgAlpha}`);
 
@@ -443,8 +447,8 @@ export class StyleGenerator {
                         box-shadow: none !important;
                     `)}
                 `, [
-                    `.nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file)`,
-                    `.nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nn-file)`
+                    `.nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file)`,
+                    `.tree-item-self.is-active[data-path="${safePath}"]:not(.nn-file)`
                 ]);
 
                 // Notebook Navigator Active File Glow (Flat Slot)
@@ -460,8 +464,8 @@ export class StyleGenerator {
                 grouper.add(`
                     background-color: var(--cf-active-color, ${activeText}) !important;
                 `, [
-                    `.nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file)::before`,
-                    `.nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem)::before`
+                    `.nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file)::before`,
+                    `.tree-item-self.is-active[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem)::before`
                 ]);
                 // Increment skipped as fileIndex is unused
             }
@@ -644,8 +648,8 @@ export class StyleGenerator {
                 border-radius: ${folderBr}px;
                 ${glassCss}
             `, [
-                `.nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem)`,
-                `.nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-navitem):not(.nn-file)`
+                `.nav-folder-title[data-path="${safePath}"]:not(.nn-navitem)`,
+                `.tree-item-self[data-path="${safePath}"]:not(.nn-navitem):not(.nn-file)`
             ], `folderRow_${color.hex}_${folderStyles.b}_${adjustedOp}`);
 
 
@@ -696,8 +700,8 @@ export class StyleGenerator {
                     !(this.settings.customIcons && this.settings.customIcons[iconIdToUse]);
 
                 const getSels = (expanded: boolean | null) => {
-                    const baseNav = `body .nav-files-container .nav-folder`;
-                    const baseTree = `body .nav-files-container .tree-item`;
+                    const baseNav = `body .nav-folder`;
+                    const baseTree = `body .tree-item`;
                     
                     if (expanded === true) {
                         return [
@@ -711,8 +715,8 @@ export class StyleGenerator {
                         ];
                     }
                     return [
-                        `body .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
-                        `body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
+                        `body .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
+                        `body .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
                     ];
                 };
 
@@ -764,8 +768,8 @@ export class StyleGenerator {
                 const closedSvg = this.plugin.iconManager.getIconSvg(this.settings.defaultClosedFolderIcon || "lucide-folder", true) || decodeURIComponent(CF_FOLDER_CLOSED);
                 const openSvg = this.plugin.iconManager.getIconSvg(this.settings.defaultOpenFolderIcon || "lucide-folder-open", true) || decodeURIComponent(CF_FOLDER_OPEN);
                 
-                const baseNav = `body .nav-files-container .nav-folder`;
-                const baseTree = `body .nav-files-container .tree-item`;
+                const baseNav = `body .nav-folder`;
+                const baseTree = `body .tree-item`;
 
                 // Closed State
                 grouper.add(`
@@ -827,8 +831,8 @@ export class StyleGenerator {
                 const combinedIconUrl = `url("data:image/svg+xml,${this._counterSvgPrefix}${counts.folders}${this._counterSvgMid}${counts.files}${this._counterSvgSuffix}")`;
 
                 grouper.addRaw(`
-                    body .nav-files-container .nav-folder-title[data-path="${safePath}"]::after,
-                    body .nav-files-container .tree-item-self[data-path="${safePath}"]::after {
+                    body .nav-folder-title[data-path="${safePath}"]::after,
+                    body .tree-item-self[data-path="${safePath}"]::after {
                         content: "" !important;
                         background-image: ${combinedIconUrl} !important;
                         background-repeat: no-repeat !important;

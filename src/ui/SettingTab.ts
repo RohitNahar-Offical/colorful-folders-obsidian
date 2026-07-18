@@ -1458,7 +1458,6 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 }));
 
 
-
         const autoCard = makeCard(iconPanel, "🤖", "Automation engine");
         new obsidian.Setting(autoCard)
             .setName('Enable automatic icons')
