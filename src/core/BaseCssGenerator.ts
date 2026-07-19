@@ -9,7 +9,7 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
         body .nav-folder-title,
         body .nav-file-title,
         body .tree-item-self {
-            display: flex !important;
+            display: flex;
             align-items: center !important;
             justify-content: flex-start !important;
             padding-top: 0 !important;

@@ -200,6 +200,8 @@ export class StyleGenerator {
                 }
 
                 const safePath = safeEscape(child.path);
+                const parentName = child.parent?.name;
+                const isFolderNote = !!(parentName && (child.basename === parentName || child.basename === 'index' || child.basename === '_about_'));
                 const color = ColorResolver.resolveColor(
                     child.path,
                     child.name,
@@ -437,45 +439,112 @@ export class StyleGenerator {
                 }
 
                 const activeGlowEnabled = this.settings.activeGlow !== false;
-                grouper.add(`
-                    background-color: var(--cf-active-bg, ${activeBg}) !important;
-                    color: var(--cf-active-color, ${activeText}) !important;
-                    outline: 1px solid ${activeGlowEnabled ? `rgba(${color.rgb}, 0.3)` : "transparent"} !important;
-                    outline-offset: -1px !important;
-                    ${activeGlowEnabled ? (useGlass ? `
-                        backdrop-filter: blur(12px) saturate(160%) !important;
-                        -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
-                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 4px 12px rgba(0,0,0,0.2) !important;
-                    ` : `
-                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 2px 8px rgba(0,0,0,0.1) !important;
-                    `) : (useGlass ? `
-                        backdrop-filter: blur(12px) saturate(160%) !important;
-                        -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
-                        box-shadow: none !important;
-                    ` : `
-                        box-shadow: none !important;
-                    `)}
-                `, [
-                    `body .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file)`,
-                    `body .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nn-file)`
-                ]);
+                if (isFolderNote) {
+                    const parentFolderStyle = this.getStyle(folder.path);
+                    const parentFolderColor = passedColor || ColorResolver.resolveColor(
+                        folder.path,
+                        folder.name,
+                        false,
+                        depth,
+                        depth === 1 ? rootIndex : 0,
+                        0,
+                        parentFolderStyle,
+                        null,
+                        null,
+                        this.settings.colorMode,
+                        cycleOff,
+                        currentPalette,
+                        0,
+                        this.settings.globalBackgroundColor || "",
+                        false,
+                        false
+                    );
+                    const parentActiveBg = (this.settings.useCustomActiveColor && this.settings.customActiveBg) ? this.settings.customActiveBg : `rgba(${parentFolderColor.rgb}, ${useGlass ? 0.14 : 0.12})`;
+                    const parentActiveText = (this.settings.useCustomActiveColor && this.settings.customActiveText) ? this.settings.customActiveText : (parentFolderStyle?.textColor || parentFolderColor.hex);
 
-                // Notebook Navigator Active File Glow (Flat Slot)
-                grouper.add(`
-                    background-color: var(--cf-active-bg, ${activeBg}) !important;
-                    color: var(--cf-active-color, ${activeText}) !important;
-                    border-left: ${activeFolderThick}px solid var(--cf-active-color, ${activeText}) !important;
-                    box-sizing: border-box !important;
-                    box-shadow: none !important;
-                    border-radius: 0 !important;
-                `, [`${NotebookNavigatorIntegration.getScopedFileSelector(child.path)}.is-active`]);
+                    grouper.add(`
+                        background-color: var(--cf-active-bg, ${parentActiveBg}) !important;
+                        color: var(--cf-active-color, ${parentActiveText}) !important;
+                        outline: 1px solid ${activeGlowEnabled ? `rgba(${parentFolderColor.rgb}, 0.3)` : "transparent"} !important;
+                        outline-offset: -1px !important;
+                        ${activeGlowEnabled ? (useGlass ? `
+                            backdrop-filter: blur(12px) saturate(160%) !important;
+                            -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+                            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 4px 12px rgba(0,0,0,0.2) !important;
+                        ` : `
+                            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 2px 8px rgba(0,0,0,0.1) !important;
+                        `) : (useGlass ? `
+                            backdrop-filter: blur(12px) saturate(160%) !important;
+                            -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+                            box-shadow: none !important;
+                        ` : `
+                            box-shadow: none !important;
+                        `)}
+                    `, [
+                        `body .nav-files-container .nav-folder:has([data-path="${safePath}"].is-active) > .nav-folder-title`,
+                        `body .nav-files-container .tree-item:has([data-path="${safePath}"].is-active) > .tree-item-self`
+                    ]);
 
-                grouper.add(`
-                    background-color: var(--cf-active-color, ${activeText}) !important;
-                `, [
-                    `body .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file)::before`,
-                    `body .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem)::before`
-                ]);
+                    grouper.add(`
+                        background-color: var(--cf-active-color, ${parentActiveText}) !important;
+                    `, [
+                        `body .nav-files-container .nav-folder:has([data-path="${safePath}"].is-active) > .nav-folder-title::before`,
+                        `body .nav-files-container .tree-item:has([data-path="${safePath}"].is-active) > .tree-item-self:not(.nn-navitem)::before`
+                    ]);
+
+                    if (this.settings.notebookNavigatorSupport) {
+                        grouper.add(`
+                            background-color: var(--cf-active-bg, ${parentActiveBg}) !important;
+                            color: var(--cf-active-color, ${parentActiveText}) !important;
+                            border-left: ${activeFolderThick}px solid var(--cf-active-color, ${parentActiveText}) !important;
+                            box-sizing: border-box !important;
+                            box-shadow: none !important;
+                            border-radius: 0 !important;
+                        `, [
+                            `.notebook-navigator .nn-navitem:has([data-path="${safePath}"].is-active)`
+                        ]);
+                    }
+                } else {
+                    grouper.add(`
+                        background-color: var(--cf-active-bg, ${activeBg}) !important;
+                        color: var(--cf-active-color, ${activeText}) !important;
+                        outline: 1px solid ${activeGlowEnabled ? `rgba(${color.rgb}, 0.3)` : "transparent"} !important;
+                        outline-offset: -1px !important;
+                        ${activeGlowEnabled ? (useGlass ? `
+                            backdrop-filter: blur(12px) saturate(160%) !important;
+                            -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+                            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 4px 12px rgba(0,0,0,0.2) !important;
+                        ` : `
+                            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 2px 8px rgba(0,0,0,0.1) !important;
+                        `) : (useGlass ? `
+                            backdrop-filter: blur(12px) saturate(160%) !important;
+                            -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+                            box-shadow: none !important;
+                        ` : `
+                            box-shadow: none !important;
+                        `)}
+                    `, [
+                        `body .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file)`,
+                        `body .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nn-file)`
+                    ]);
+
+                    // Notebook Navigator Active File Glow (Flat Slot)
+                    grouper.add(`
+                        background-color: var(--cf-active-bg, ${activeBg}) !important;
+                        color: var(--cf-active-color, ${activeText}) !important;
+                        border-left: ${activeFolderThick}px solid var(--cf-active-color, ${activeText}) !important;
+                        box-sizing: border-box !important;
+                        box-shadow: none !important;
+                        border-radius: 0 !important;
+                    `, [`${NotebookNavigatorIntegration.getScopedFileSelector(child.path)}.is-active`]);
+
+                    grouper.add(`
+                        background-color: var(--cf-active-color, ${activeText}) !important;
+                    `, [
+                        `body .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file)::before`,
+                        `body .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem)::before`
+                    ]);
+                }
                 // Increment skipped as fileIndex is unused
             }
         }
