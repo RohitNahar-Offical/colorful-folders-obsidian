@@ -108,6 +108,8 @@ export interface ColorfulFoldersSettings {
     defaultOpenFolderIcon: string;
     showCollapseIndicator: boolean;
     folderBorderRadius: number;
+    enableStaircaseHack: boolean;
+    heatmapData?: Record<string, number>;
 }
 
 
@@ -176,6 +178,8 @@ export interface IColorfulFoldersPlugin {
     generateStylesDebounced: Debouncer<[], void>;
 
     registerEvent(event: EventRef): void;
+    cachedDocuments: Set<Document>;
+    _abortStartupRender: boolean;
 }
 
 declare global {

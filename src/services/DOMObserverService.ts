@@ -4,7 +4,7 @@ import type ColorfulFoldersPlugin from "../main";
 export class DOMObserverService {
     private plugin: ColorfulFoldersPlugin;
 
-    private dividerObserver: MutationObserver | null = null;
+    public dividerObserver: MutationObserver | null = null;
     private styleObservers: MutationObserver[] = [];
     private scrollTimeout: number | null = null;
 
@@ -130,9 +130,13 @@ export class DOMObserverService {
                         if (!el.classList.contains("nav-file") &&
                             !el.classList.contains("nav-folder") &&
                             !el.classList.contains("tree-item") &&
+                            !el.classList.contains("tree-item-self") &&
+                            !el.classList.contains("tree-item-inner") &&
                             !el.classList.contains("nn-navitem") &&
                             !el.classList.contains("nav-file-title") &&
-                            !el.classList.contains("nav-folder-title")) {
+                            !el.classList.contains("nav-folder-title") &&
+                            !el.classList.contains("nav-file-title-content") &&
+                            !el.classList.contains("nav-folder-title-content")) {
                             return false;
                         }
                         return (

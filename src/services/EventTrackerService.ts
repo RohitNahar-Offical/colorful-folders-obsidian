@@ -29,12 +29,24 @@ export class EventTrackerService {
 
         this.registerEvent(
             this.plugin.app.workspace.on("window-open", (win: unknown, doc: Document) => {
+                this.plugin.cachedDocuments.add(doc);
                 if (this.plugin.sheet && !doc.adoptedStyleSheets.includes(this.plugin.sheet)) {
                     doc.adoptedStyleSheets = [...doc.adoptedStyleSheets, this.plugin.sheet];
                 }
+                
+                doc.body.classList.toggle("cf-show-hidden", this.plugin.settings.showHiddenItems);
+                doc.body.classList.toggle("cf-wrap-metadata", !!this.plugin.settings.wrapMetadata);
+                
                 this.registerDragEventsForDoc(doc);
                 this.plugin.domObserverService.initStyleObservers();
                 this.plugin.generateStylesDebounced();
+            })
+        );
+
+        this.registerEvent(
+            // @ts-ignore - window-close is an internal Obsidian API event
+            this.plugin.app.workspace.on("window-close", (win: unknown, doc: Document) => {
+                this.plugin.cachedDocuments.delete(doc);
             })
         );
 
@@ -98,6 +110,7 @@ export class EventTrackerService {
             // The DOMObserverService will handle its own logic
             if (this.plugin.domObserverService) {
                 // Pause divider sync during drag
+                this.plugin.domObserverService.dividerObserver?.disconnect();
             }
         });
         

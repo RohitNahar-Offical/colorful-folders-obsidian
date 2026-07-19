@@ -44,6 +44,8 @@ export default class ColorfulFoldersPlugin
   generateStylesDebounced: obsidian.Debouncer<[], void>;
   saveDataDebounced: obsidian.Debouncer<[], void>;
   localFileSystemIcons: Record<string, string> = {};
+  cachedDocuments: Set<Document> = new Set();
+  _abortStartupRender: boolean = false;
 
   domObserverService: DOMObserverService;
   eventTrackerService: EventTrackerService;
@@ -62,13 +64,32 @@ export default class ColorfulFoldersPlugin
     this.dividerManager = new DividerManager(this);
     this.domObserverService = new DOMObserverService(this);
     this.eventTrackerService = new EventTrackerService(this);
+
+    // Initial document cache state
+    this.cachedDocuments.add(activeDocument);
+    this.app.workspace.iterateAllLeaves((leaf) => {
+      const doc = leaf.view?.containerEl?.ownerDocument;
+      if (doc) this.cachedDocuments.add(doc);
+    });
+
+    this.initializeStyles();
+    this.registerCustomIcons();
+    this.registerCommands();
+
     // Register Notebook Navigator extensions
     this.app.workspace.onLayoutReady(() => {
       NotebookNavigatorIntegration.registerMenuExtensions(this);
       // Defer loading of local icons to keep initial startup fast
-      window.setTimeout(() => {
-        void this.loadLocalIcons();
-      }, 10000);
+      const win = window as unknown as Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void };
+      if (typeof win.requestIdleCallback === 'function') {
+        win.requestIdleCallback(() => {
+          void this.loadLocalIcons();
+        }, { timeout: 60000 });
+      } else {
+        window.setTimeout(() => {
+          void this.loadLocalIcons();
+        }, 10000);
+      }
     });
 
     this.addSettingTab(new ColorfulFoldersSettingTab(this.app, this));
@@ -99,15 +120,11 @@ export default class ColorfulFoldersPlugin
 
     // UI styles moved to styles.css to comply with obsidianmd/no-forbidden-elements
 
-    this.initializeStyles();
-
-    this.registerCustomIcons();
+    this.refreshRibbon();
     this.eventTrackerService.registerEvents();
-    this.registerCommands();
     this.domObserverService.initStyleObservers();
 
-    // Initial stealth mode state
-    this.getOpenDocuments().forEach(doc => {
+    this.cachedDocuments.forEach(doc => {
       doc.body.classList.toggle(
         "cf-show-hidden",
         this.settings.showHiddenItems,
@@ -123,6 +140,7 @@ export default class ColorfulFoldersPlugin
       // requestAnimationFrame + setTimeout(0) guarantees the browser paints the UI *before* we block the thread
       window.requestAnimationFrame(() => {
         window.setTimeout(() => {
+          if (this._abortStartupRender) return;
           void this.generateStyles();
           this.domObserverService.initDividerObserver();
           this.dividerManager.syncDividers();
@@ -133,65 +151,67 @@ export default class ColorfulFoldersPlugin
 
       // 🚨 USER'S AUTOMATED CONSOLE SCRIPT BLOCK 🚨
       // This will run exactly 5 seconds after Obsidian's layout is ready
-      window.setTimeout(() => {
-        try {
-          (function() {
-              const win = window as unknown as Window & { _testerObserver?: MutationObserver };
-              // Stop any existing tester observers if you run this multiple times
-              if (win._testerObserver) {
-                  win._testerObserver.disconnect();
-              }
+      if (this.settings.enableStaircaseHack) {
+        window.setTimeout(() => {
+          try {
+            (function() {
+                const win = window as unknown as Window & { _testerObserver?: MutationObserver };
+                // Stop any existing tester observers if you run this multiple times
+                if (win._testerObserver) {
+                    win._testerObserver.disconnect();
+                }
 
-              const stripStyle = (el: Element) => {
-                  // Just completely destroy the style attribute so Obsidian's inline padding dies
-                  if (el.hasAttribute('style')) {
-                      el.removeAttribute('style');
-                  }
-              };
+                const stripStyle = (el: Element) => {
+                    // Just completely destroy the style attribute so Obsidian's inline padding dies
+                    if (el.hasAttribute('style')) {
+                        el.removeAttribute('style');
+                    }
+                };
 
-              // 1. Initial Pass: Strip immediately from all current items
-              const items = activeDocument.querySelectorAll('.workspace-leaf-content[data-type="file-explorer"] .tree-item-self');
-              items.forEach(stripStyle);
+                // 1. Initial Pass: Strip immediately from all current items
+                const items = activeDocument.querySelectorAll('.workspace-leaf-content[data-type="file-explorer"] .tree-item-self');
+                items.forEach(stripStyle);
 
-              // 2. Mutation Observer: Aggressively watch and re-strip if Obsidian's React engine tries to put it back
-              win._testerObserver = new MutationObserver((mutations) => {
-                  for (const m of mutations) {
-                      if (m.type === "attributes" && m.attributeName === "style") {
-                          const target = m.target as HTMLElement;
-                          if (target.classList && target.classList.contains('tree-item-self')) {
-                              stripStyle(target);
-                          }
-                      } else if (m.type === "childList") {
-                          for (const node of Array.from(m.addedNodes)) {
-                              if (node.nodeType === Node.ELEMENT_NODE) {
-                                  const el = node as HTMLElement;
-                                  if (el.classList.contains('tree-item-self')) {
-                                      stripStyle(el);
-                                  }
-                                  const children = el.querySelectorAll('.tree-item-self');
-                                  children.forEach(stripStyle);
-                              }
-                          }
-                      }
-                  }
-              });
+                // 2. Mutation Observer: Aggressively watch and re-strip if Obsidian's React engine tries to put it back
+                win._testerObserver = new MutationObserver((mutations) => {
+                    for (const m of mutations) {
+                        if (m.type === "attributes" && m.attributeName === "style") {
+                            const target = m.target as HTMLElement;
+                            if (target.classList && target.classList.contains('tree-item-self')) {
+                                stripStyle(target);
+                            }
+                        } else if (m.type === "childList") {
+                            for (const node of Array.from(m.addedNodes)) {
+                                if (node.nodeType === Node.ELEMENT_NODE) {
+                                    const el = node as HTMLElement;
+                                    if (el.classList.contains('tree-item-self')) {
+                                        stripStyle(el);
+                                    }
+                                    const children = el.querySelectorAll('.tree-item-self');
+                                    children.forEach(stripStyle);
+                                }
+                            }
+                        }
+                    }
+                });
 
-              // Start observing the file explorer container
-              const explorer = activeDocument.querySelector('.workspace-leaf-content[data-type="file-explorer"]');
-              if (explorer) {
-                  win._testerObserver.observe(explorer, {
-                      childList: true,
-                      subtree: true,
-                      attributes: true,
-                      attributeFilter: ['style']
-                  });
-              }
-          })();
-          
-        } catch {
-          // Empty catch to satisfy no-console rule
-        }
-      }, 5000);
+                // Start observing the file explorer container
+                const explorer = activeDocument.querySelector('.workspace-leaf-content[data-type="file-explorer"]');
+                if (explorer) {
+                    win._testerObserver.observe(explorer, {
+                        childList: true,
+                        subtree: true,
+                        attributes: true,
+                        attributeFilter: ['style']
+                    });
+                }
+            })();
+            
+          } catch {
+            // Empty catch to satisfy no-console rule
+          }
+        }, 5000);
+      }
 
       try {
         const optimized = await this.optimizeBlueTopazStyleSettings();
@@ -351,6 +371,9 @@ export default class ColorfulFoldersPlugin
     // loadedData from disk always provides complete values for any keys it defines,
     // making a deep clone of DEFAULT_SETTINGS unnecessary and wasteful.
     this.settings = Object.assign({} as ColorfulFoldersSettings, DEFAULT_SETTINGS, loadedData);
+    if (this.settings.heatmapData) {
+        this.heatmapCache = new Map(Object.entries(this.settings.heatmapData));
+    }
     this.activePaletteCache = null;
     this.parsedExclusionList = new Set(
       (this.settings.exclusionList || "")
@@ -373,6 +396,10 @@ export default class ColorfulFoldersPlugin
     const customIconsChanged = JSON.stringify(this.settings.customIcons || {}) !== this._lastCustomIconsKey;
     const shouldClearIconCache = iconRulesChanged || customIconsChanged;
 
+    if (this.heatmapCache) {
+      this.settings.heatmapData = Object.fromEntries(this.heatmapCache);
+    }
+    
     this.saveDataDebounced();
 
     if (shouldClearIconCache) {
@@ -596,16 +623,6 @@ export default class ColorfulFoldersPlugin
       const css = await this.styleGenerator.generateCss();
       window.requestAnimationFrame(() => {
         this.sheet.replaceSync(css);
-        this.getOpenDocuments().forEach(doc => {
-          doc.body.classList.toggle(
-            "cf-show-hidden",
-            this.settings.showHiddenItems,
-          );
-          doc.body.classList.toggle(
-            "cf-wrap-metadata",
-            !!this.settings.wrapMetadata,
-          );
-        });
       });
       // Sync folder colors to Graph View groups if the feature is enabled
       if (this.settings.graphColorSync && !this.isDragging) {
@@ -676,13 +693,7 @@ export default class ColorfulFoldersPlugin
   }
 
   getOpenDocuments(): Document[] {
-    const docs = new Set<Document>();
-    docs.add(activeDocument);
-    this.app.workspace.iterateAllLeaves((leaf) => {
-      const doc = leaf.view?.containerEl?.ownerDocument;
-      if (doc) docs.add(doc);
-    });
-    return Array.from(docs);
+    return Array.from(this.cachedDocuments);
   }
 
   async autoDownloadPack(url: string, prefix: string) {

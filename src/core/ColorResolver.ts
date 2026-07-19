@@ -16,7 +16,7 @@ export function getCurrentPalette(
         ? (settings.paletteDark ?? settings.palette ?? "Pastel Dreams")
         : (settings.paletteLight ?? settings.palette ?? "Tailwind UI");
 
-    const key = `${activePaletteName}_${settings.customPalette}_${isDark}`;
+    const key = `${activePaletteName}_${settings.customPalette}_${isDark}_${settings.rootStyle}_${settings.lightModeBrightness}_${settings.darkModeBrightness}`;
     if (cachedPalette && cachedPaletteKey === key) {
         return { palette: cachedPalette, newKey: key };
     }

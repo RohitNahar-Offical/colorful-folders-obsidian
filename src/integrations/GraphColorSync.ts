@@ -66,18 +66,18 @@ export class GraphColorSync {
             if (seen.has(folder.path)) return;
             seen.add(folder.path);
 
-            // Skip root itself — iterate its children instead
             if (folder.path === '/') {
                 for (const child of folder.children) {
+                    if (child.name.startsWith('.')) continue;
                     if (child instanceof TFolder) processFolder(child);
                 }
                 return;
             }
 
-            // Skip folders with names that are unsafe as Obsidian query tokens
             if (!isSafeQueryPath(folder.name)) {
                 // Still walk children in case they have explicit custom styles
                 for (const child of folder.children) {
+                    if (child.name.startsWith('.')) continue;
                     if (child instanceof TFolder) {
                         if (plugin.settings.customFolderColors[child.path]) {
                             processFolder(child);
@@ -92,6 +92,7 @@ export class GraphColorSync {
             if (!hex || hex.length < 4 || hex.startsWith('var(')) {
                 // No valid hex — still walk children for explicitly styled subfolders
                 for (const child of folder.children) {
+                    if (child.name.startsWith('.')) continue;
                     if (child instanceof TFolder && plugin.settings.customFolderColors[child.path]) {
                         processFolder(child);
                     }
@@ -111,6 +112,7 @@ export class GraphColorSync {
 
             // Recurse into children that have explicit custom styles
             for (const child of folder.children) {
+                if (child.name.startsWith('.')) continue;
                 if (child instanceof TFolder && plugin.settings.customFolderColors[child.path]) {
                     processFolder(child);
                 }
@@ -118,6 +120,7 @@ export class GraphColorSync {
         };
 
         for (const child of root.children) {
+            if (child.name.startsWith('.')) continue;
             if (child instanceof TFolder) processFolder(child);
         }
 

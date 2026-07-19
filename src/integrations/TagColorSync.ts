@@ -11,7 +11,7 @@ export class TagColorSync {
 
         // 1. Folders Matching
         if (plugin.settings.tagSyncMatchFolders) {
-            const folders = plugin.app.vault.getAllLoadedFiles().filter((f): f is TFolder => f instanceof TFolder);
+            const folders = plugin.app.vault.getAllLoadedFiles().filter((f): f is TFolder => f instanceof TFolder && !f.path.startsWith('.') && !f.path.includes('/.'));
             for (const folder of folders) {
                 const effStyle = StyleResolver.getEffectiveStyle(folder, plugin);
                 if (effStyle && effStyle.hex) {

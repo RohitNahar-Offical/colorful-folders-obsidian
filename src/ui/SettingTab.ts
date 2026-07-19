@@ -2054,6 +2054,16 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             }
         }
 
+        const advCard = makeCard(sysPanel, "⚙️", "Advanced configuration");
+        new obsidian.Setting(advCard)
+            .setName('Enable staircase hack')
+            .setDesc('Strips inline styling forced by certain themes (like blue topaz) to prevent the "staircase effect" on folder indents. Keep off unless needed.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.enableStaircaseHack)
+                .onChange(async (value) => {
+                    this.plugin.settings.enableStaircaseHack = value;
+                    await this.plugin.saveSettings();
+                }));
 
         const dbCard = makeCard(sysPanel, "🗄️", "Database management");
         new obsidian.Setting(dbCard)

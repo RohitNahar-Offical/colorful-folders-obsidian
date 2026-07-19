@@ -97,6 +97,7 @@ export class StyleGenerator {
                 const files = this.app.vault.getFiles();
                 for (let i = 0, len = files.length; i < len; i++) {
                     const f = files[i];
+                    if (f.path.startsWith('.') || f.path.includes('/.')) continue;
                     let p = f.parent;
                     const mtime = f.stat.mtime;
                     while (p) {
@@ -322,14 +323,14 @@ export class StyleGenerator {
                 }
 
                 const fileRowSels = [
-                    `.nav-file-title[data-path="${safePath}"]:not(.nn-file)`,
-                    `.tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem)`
+                    `body .nav-files-container .nav-file-title[data-path="${safePath}"]:not(.nn-file)`,
+                    `body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem)`
                 ];
                 grouper.add(fileRowCss, fileRowSels, `fileRow_${color.hex}_${fileBgAlpha}`);
 
                 const fileTextSels = [
-                    `body .nav-file-title[data-path="${safePath}"]:not(.nn-file) .nav-file-title-content`,
-                    `body .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner`
+                    `body .nav-files-container .nav-file-title[data-path="${safePath}"]:not(.nn-file) .nav-file-title-content`,
+                    `body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner`
                 ];
                 grouper.add(fileTextCss, fileTextSels, `fileText_${activeStyle?.textGradient ? 'grad' : 'norm'}_${isBold}_${isItalic}_${color.hex}`);
 
@@ -447,8 +448,8 @@ export class StyleGenerator {
                         box-shadow: none !important;
                     `)}
                 `, [
-                    `.nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file)`,
-                    `.tree-item-self.is-active[data-path="${safePath}"]:not(.nn-file)`
+                    `body .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file)`,
+                    `body .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nn-file)`
                 ]);
 
                 // Notebook Navigator Active File Glow (Flat Slot)
@@ -464,8 +465,8 @@ export class StyleGenerator {
                 grouper.add(`
                     background-color: var(--cf-active-color, ${activeText}) !important;
                 `, [
-                    `.nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file)::before`,
-                    `.tree-item-self.is-active[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem)::before`
+                    `body .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file)::before`,
+                    `body .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem)::before`
                 ]);
                 // Increment skipped as fileIndex is unused
             }
@@ -540,8 +541,8 @@ export class StyleGenerator {
                 margin-bottom: 4px !important;
                 overflow: visible !important;
             `, [
-                `body .nav-folder:has(> .nav-folder-title[data-path="${safePath}"]) > .nav-folder-children`,
-                `body .tree-item:has(> .tree-item-self[data-path="${safePath}"]) > .tree-item-children`
+                `body .nav-files-container .nav-folder:has(> .nav-folder-title[data-path="${safePath}"]) > .nav-folder-children`,
+                `body .nav-files-container .tree-item:has(> .tree-item-self[data-path="${safePath}"]) > .tree-item-children`
             ], `folderBgTint_${color.hex}_${finalTintOp}_${outlineOnly}`);
 
             // Pre-calculate folder icons to avoid warnings
@@ -648,8 +649,8 @@ export class StyleGenerator {
                 border-radius: ${folderBr}px;
                 ${glassCss}
             `, [
-                `.nav-folder-title[data-path="${safePath}"]:not(.nn-navitem)`,
-                `.tree-item-self[data-path="${safePath}"]:not(.nn-navitem):not(.nn-file)`
+                `body .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem)`,
+                `body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-navitem):not(.nn-file)`
             ], `folderRow_${color.hex}_${folderStyles.b}_${adjustedOp}`);
 
 
@@ -689,8 +690,8 @@ export class StyleGenerator {
             const nnSelectors = nnNavSel.split(',').map(s => `body ${s.trim()} ${nnNavNameSel}`);
 
             grouper.add(textCss, [
-                `body .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content`,
-                `body .tree-item-self[data-path="${safePath}"] .tree-item-inner`,
+                `body .nav-files-container .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content`,
+                `body .nav-files-container .tree-item-self[data-path="${safePath}"] .tree-item-inner`,
                 ...nnSelectors
             ], `folderText_${isUsingGradient ? 'grad_' + startCol.replace(/\s+/g, '') + '_' + endCol.replace(/\s+/g, '') : 'norm_' + folderStyles.t}_${isBold}_${isItalic}`);
 
@@ -700,8 +701,8 @@ export class StyleGenerator {
                     !(this.settings.customIcons && this.settings.customIcons[iconIdToUse]);
 
                 const getSels = (expanded: boolean | null) => {
-                    const baseNav = `body .nav-folder`;
-                    const baseTree = `body .tree-item`;
+                    const baseNav = `body .nav-files-container .nav-folder`;
+                    const baseTree = `body .nav-files-container .tree-item`;
                     
                     if (expanded === true) {
                         return [
@@ -715,8 +716,8 @@ export class StyleGenerator {
                         ];
                     }
                     return [
-                        `body .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
-                        `body .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
+                        `body .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
+                        `body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
                     ];
                 };
 
@@ -768,8 +769,8 @@ export class StyleGenerator {
                 const closedSvg = this.plugin.iconManager.getIconSvg(this.settings.defaultClosedFolderIcon || "lucide-folder", true) || decodeURIComponent(CF_FOLDER_CLOSED);
                 const openSvg = this.plugin.iconManager.getIconSvg(this.settings.defaultOpenFolderIcon || "lucide-folder-open", true) || decodeURIComponent(CF_FOLDER_OPEN);
                 
-                const baseNav = `body .nav-folder`;
-                const baseTree = `body .tree-item`;
+                const baseNav = `body .nav-files-container .nav-folder`;
+                const baseTree = `body .nav-files-container .tree-item`;
 
                 // Closed State
                 grouper.add(`

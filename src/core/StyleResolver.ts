@@ -75,6 +75,7 @@ export class StyleResolver {
                     
                     const siblings = folder.parent.children
                         .filter((c): c is obsidian.TFolder => c instanceof obsidian.TFolder)
+                        .filter((c) => !c.name.startsWith('.'))
                         .filter((c) => !excludeFolders.has(c.name.toLowerCase()))
                         .sort((a, b) => a.name.localeCompare(b.name));
                     
@@ -96,6 +97,7 @@ export class StyleResolver {
                 } else {
                     const rootSiblings = rootFolder.children
                         .filter((c): c is obsidian.TFolder => c instanceof obsidian.TFolder)
+                        .filter((c) => !c.name.startsWith('.'))
                         .filter((c) => !excludeFolders.has(c.name.toLowerCase()))
                         .sort((a, b) => a.name.localeCompare(b.name));
                         
