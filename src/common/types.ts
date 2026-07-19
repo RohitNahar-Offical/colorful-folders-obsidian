@@ -180,6 +180,7 @@ export interface IColorfulFoldersPlugin {
     registerEvent(event: EventRef): void;
     cachedDocuments: Set<Document>;
     _abortStartupRender: boolean;
+    _isUnloading?: boolean;
 }
 
 declare global {

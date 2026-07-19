@@ -337,6 +337,10 @@ export class IconManager {
         if (svgStr) {
             const normalized = this.normalizeSvg(svgStr, shouldEncode);
             this.plugin.iconCache.set(cacheKey, normalized);
+            if (this.plugin.iconCache.size > 1000) {
+                const firstKey = this.plugin.iconCache.keys().next().value as string | undefined;
+                if (firstKey !== undefined) this.plugin.iconCache.delete(firstKey);
+            }
             return normalized;
         }
 
@@ -438,6 +442,10 @@ export class IconManager {
         } catch { result = svgStr; }
 
         this._normCache.set(cacheKey, result);
+        if (this._normCache.size > 1000) {
+            const firstKey = this._normCache.keys().next().value as string | undefined;
+            if (firstKey !== undefined) this._normCache.delete(firstKey);
+        }
         return result;
     }
 

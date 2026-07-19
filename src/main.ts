@@ -46,6 +46,7 @@ export default class ColorfulFoldersPlugin
   localFileSystemIcons: Record<string, string> = {};
   cachedDocuments: Set<Document> = new Set();
   _abortStartupRender: boolean = false;
+  _isUnloading: boolean = false;
 
   domObserverService: DOMObserverService;
   eventTrackerService: EventTrackerService;
@@ -301,8 +302,10 @@ export default class ColorfulFoldersPlugin
   }
 
   onunload() {
+    this._isUnloading = true;
     this.getOpenDocuments().forEach(doc => {
       doc.adoptedStyleSheets = doc.adoptedStyleSheets.filter(s => s !== this.sheet);
+      doc.body.classList.remove("cf-show-hidden", "cf-wrap-metadata");
     });
 
     // Cleanly destroy observers and events
@@ -597,7 +600,7 @@ export default class ColorfulFoldersPlugin
 
 
   async generateStyles() {
-    if (this.isGeneratingStyles) return;
+    if (this.isGeneratingStyles || this._isUnloading) return;
     this.isGeneratingStyles = true;
     try {
       const css = await this.styleGenerator.generateCss();
