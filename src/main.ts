@@ -278,41 +278,21 @@ export default class ColorfulFoldersPlugin
       if (await adapter.exists(iconsPath)) {
         const list = await adapter.list(iconsPath);
 
-        // Read files in chunks of 50 to avoid I/O / threadpool saturation (Electron freeze)
-        const buildEntries = async (files: string[]): Promise<[string, string][]> => {
-          const svgFiles = files.filter(f => f.toLowerCase().endsWith('.svg'));
-          const results: [string, string][] = [];
-          const chunkSize = 50;
-
-          for (let i = 0; i < svgFiles.length; i += chunkSize) {
-            const chunk = svgFiles.slice(i, i + chunkSize);
-            const chunkResults = await Promise.all(
-              chunk.map(async (file): Promise<[string, string]> => {
-                const content = await adapter.read(file);
-                const parts = file.split('/');
-                const name = parts[parts.length - 1].slice(0, -4); // strip .svg
-                return [name, content];
-              })
-            );
-            results.push(...chunkResults);
-          }
-          return results;
-        };
-
-        // Process root-level files and all immediate subfolders in parallel
-        const [rootEntries, ...subEntries] = await Promise.all([
-          buildEntries(list.files),
-          ...list.folders.map(async (folder) => {
-            const sublist = await adapter.list(folder);
-            return buildEntries(sublist.files);
-          })
-        ]);
-
-        for (const [name, content] of [...rootEntries, ...subEntries.flat()]) {
-          this.localFileSystemIcons[name] = content;
+        const svgFiles = list.files.filter(f => f.toLowerCase().endsWith('.svg'));
+        
+        for (const folder of list.folders) {
+          const sublist = await adapter.list(folder);
+          svgFiles.push(...sublist.files.filter(f => f.toLowerCase().endsWith('.svg')));
         }
 
-        // Trigger style generation now that local icons are ready
+        this.localFileSystemIcons = {};
+        for (const file of svgFiles) {
+          const parts = file.split('/');
+          const name = parts[parts.length - 1].slice(0, -4); // strip .svg
+          this.localFileSystemIcons[name] = file; // Store the vault-relative path for lazy-loading
+        }
+
+        // Trigger style generation now that we know what icons exist
         this.generateStylesDebounced();
       }
     } catch (e) {

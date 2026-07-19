@@ -165,7 +165,7 @@ export interface IColorfulFoldersPlugin {
     registerCustomIcons(): void;
     cleanUnusedStyles(): Promise<void>;
     refreshRibbon(): void;
-    localFileSystemIcons?: Record<string, string>;
+    localFileSystemIcons?: Record<string, string | null>;
     dividerManager: {
         syncDividers(): void;
         clean(): void;

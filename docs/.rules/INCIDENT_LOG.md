@@ -374,5 +374,10 @@ The final working solution relied on two synergistic parts:
 - Version 4.2.7 introduced asynchronous tree traversal with `setTimeout` yields to "prevent UI locking," along with a new `DOMObserverService`. 
 - When the plugin attempted to asynchronously generate CSS rules for the 10,000+ hidden files in `.smart-env`, the `setTimeout` yields compounded, creating a massive queue that stalled the UI. The DOM observer worsened the issue by continually triggering debounced style regenerations.
 - Version 4.2.0 didn't freeze only because its traversal was fully synchronous and instantaneous, even though it was still inefficiently generating ~6MB of useless CSS.
-**Resolution**: Modified `StyleGenerator.ts` and `VaultUtils.ts` to immediately exclude any file or folder starting with a dot (`.`) at the very top of their loops.
-**Lesson**: Never iterate over or generate visual styles for hidden dot-folders (`.smart-env`, `.git`, `.obsidian`). File tree walkers must explicitly exclude them at the root level to prevent catastrophic performance degradation when third-party plugins or version control systems generate massive internal datasets.
+- **The Staircase Hack**: The embedded `MutationObserver` (the "stripper script") added in Incident #25 was aggressively observing the entire file explorer and stripping inline styles. When thousands of hidden items were rendered by Smart Connections, this observer fired uncontrollably, locking the main thread.
+**Resolution**: 
+1. Modified `StyleGenerator.ts` and `VaultUtils.ts` to immediately exclude any file or folder starting with a dot (`.`) at the very top of their loops.
+2. Gated the "stripper script" behind a new `enableStaircaseHack` Advanced Setting. The script is now strictly opt-in, protecting users with large vaults from the massive layout thrashing it causes.
+**Lesson**: 
+1. Never iterate over or generate visual styles for hidden dot-folders (`.smart-env`, `.git`, `.obsidian`). File tree walkers must explicitly exclude them at the root level to prevent catastrophic performance degradation when third-party plugins or version control systems generate massive internal datasets.
+2. Extremely aggressive DOM-mutating observers (like the staircase hack) must always be gated behind user-configurable toggles. Never force hacky, expensive DOM observers on all users by default.

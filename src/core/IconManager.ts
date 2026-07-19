@@ -304,7 +304,22 @@ export class IconManager {
             svgStr = this.plugin.settings.customIcons[iconId];
         } else if (this.plugin.localFileSystemIcons && this.plugin.localFileSystemIcons[iconId]) {
             // 2. Try Local Filesystem Icons (from .obsidian/icons)
-            svgStr = this.plugin.localFileSystemIcons[iconId];
+            const val = this.plugin.localFileSystemIcons[iconId];
+            if (val === "__LOADING__") {
+                return "";
+            } else if (val?.toLowerCase().endsWith('.svg')) {
+                this.plugin.localFileSystemIcons[iconId] = "__LOADING__";
+                this.plugin.app.vault.adapter.read(val).then(content => {
+                    this.plugin.localFileSystemIcons[iconId] = content;
+                    this.plugin.generateStylesDebounced();
+                }).catch(e => {
+                    console.error("Failed to load lazy icon:", val, e);
+                    this.plugin.localFileSystemIcons[iconId] = "";
+                });
+                return "";
+            } else {
+                svgStr = val;
+            }
         } else {
             // 3. Try Lucide Icons
             const tempEl = activeDocument.createElementNS('http://www.w3.org/1999/xhtml', 'div') as HTMLDivElement;

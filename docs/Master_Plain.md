@@ -135,7 +135,7 @@ Check for retained `Map` entries, `MutationObserver` instances, and detached DOM
 
 **Implementation target**: `main.ts` `generateStyles()` and `getOpenDocuments()`.
 
-### Strategy 2.8: Startup Sequence Reordering (Low)
+### Strategy 2.8: Startup Sequence Reordering (Low) [Done]
 **Problem**: The plugin does too much work in `onload()` before `onLayoutReady()`. Obsidian's own UI paint is delayed, and the plugin competes for the same main thread.
 
 **Fix**:
@@ -171,8 +171,8 @@ Check for retained `Map` entries, `MutationObserver` instances, and detached DOM
 | **2.1** Implement priority-queue CSS generation | `StyleGenerator.ts` | Split `traverse()` into `traverseVisible()` (depth 0–2, synchronous) + `traverseDeep()` (depth 3+, idle) | Medium |
 | **2.2** Add incremental stylesheet diffing | `StyleDiffEngine.ts` (new), `main.ts` | Diff old vs new CSS rules; use `insertRule()`/`deleteRule()` for deltas | High |
 | **2.3** Lazy-load local icons | `IconManager.ts`, `main.ts` | Priority-load referenced icons first; lazy-load rest on demand | Low |
-| **2.4** Cache palette with settings hash | `StyleGenerator.ts` | Extend `_cachedPaletteKey` to include `brightnessAmount + rootStyle` | Low |
-| **2.5** Persist heatmap cache with TTL | `main.ts`, `VaultUtils.ts` | Save heatmap to `loadData()`; invalidate on `vault.on('modify')` | Low |
+| **2.4** Cache palette with settings hash | `StyleGenerator.ts` | Extend `_cachedPaletteKey` to include `brightnessAmount + rootStyle` | **Done** |
+| **2.5** Persist heatmap cache with TTL | `main.ts`, `VaultUtils.ts` | Save heatmap to `loadData()`; invalidate on `vault.on('modify')` | **Done** |
 
 **Milestone**: `v4.3.0-alpha` — no freezing on medium vaults, CSS generation <100ms.
 
@@ -186,8 +186,8 @@ Check for retained `Map` entries, `MutationObserver` instances, and detached DOM
 | **3.1** Velocity-aware scroll debounce | `DOMObserverService.ts` | `handleScroll` timeout = `Math.min(300, scrollDelta * 2)` | Low |
 | **3.2** Coalesced `layout-change` observer init | `DOMObserverService.ts` | Replace `debounce(..., 50)` with `debounce(..., 300, trailing: true)` + queue coalescing | Low |
 | **3.3** Batch post-scroll work | `DOMObserverService.ts` | Combine `syncDividers` + `refreshIcons` into single rAF | Low |
-| **3.4** Re-add drag-disconnect safety | `EventTrackerService.ts` | Explicitly disconnect `dividerObserver` on `dragstart` (restore v4.2.0 behavior) | Low |
-| **3.5** Document set caching | `main.ts` | Cache `getOpenDocuments()` result; re-enumerate only on `window-open`/`window-close` | Low |
+| **3.4** Re-add drag-disconnect safety | `EventTrackerService.ts` | Explicitly disconnect `dividerObserver` on `dragstart` (restore v4.2.0 behavior) | **Done** |
+| **3.5** Document set caching | `main.ts` | Cache `getOpenDocuments()` result; re-enumerate only on `window-open`/`window-close` | **Done** |
 
 **Milestone**: `v4.4.0-alpha` — zero observer callbacks during drag; <5 callbacks/sec during idle.
 

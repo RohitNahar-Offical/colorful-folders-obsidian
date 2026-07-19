@@ -16,7 +16,7 @@ export class DOMObserverService {
 
         this.initDividerObserverDebounced = debounce(() => {
             this.initDividerObserver();
-        }, 50, true);
+        }, 300, true);
     }
 
     public initStyleObservers() {
@@ -205,21 +205,31 @@ export class DOMObserverService {
         this.plugin._dividerTimeout = window.setTimeout(() => {
             this.plugin._dividerTimeout = null;
             if (!this.plugin.isDragging) {
-                this.plugin.dividerManager.syncDividers();
+                window.requestAnimationFrame(() => {
+                    this.plugin.dividerManager.syncDividers();
+                });
             }
         }, 100);
     }
+
+    private lastScrollTop: number = 0;
 
     private handleScroll = (e: Event) => {
         const container = e.currentTarget as HTMLElement;
         const doc = container.ownerDocument;
         const win = doc.defaultView || activeWindow;
         this.isScrolling = true;
+
+        const currentScrollTop = container.scrollTop;
+        const scrollDelta = Math.abs(currentScrollTop - this.lastScrollTop);
+        this.lastScrollTop = currentScrollTop;
+        const timeoutMs = Math.min(300, scrollDelta * 2);
+
         win.clearTimeout(this.scrollTimeout || undefined);
         this.scrollTimeout = win.setTimeout(() => {
             this.isScrolling = false;
             this.processDividers();
-        }, 100);
+        }, Math.max(100, timeoutMs));
     };
 
     public destroy() {

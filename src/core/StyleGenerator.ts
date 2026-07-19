@@ -186,8 +186,16 @@ export class StyleGenerator {
                     continue;
                 }
 
-                if (performance.now() - yieldState.lastYield > 50) {
-                    await new Promise(r => window.setTimeout(r, 0));
+                if (performance.now() - yieldState.lastYield > 16) {
+                    const win = window as unknown as Window & { requestIdleCallback?: (cb: () => void) => void };
+                    if (depth > 3 && typeof win.requestIdleCallback === 'function') {
+                        const cb = win.requestIdleCallback;
+                        await new Promise<void>(r => cb(r));
+                    } else if (depth > 1) {
+                        await new Promise<void>(r => window.requestAnimationFrame(() => r()));
+                    } else {
+                        await new Promise<void>(r => window.setTimeout(r, 0));
+                    }
                     yieldState.lastYield = performance.now();
                 }
 
@@ -476,8 +484,16 @@ export class StyleGenerator {
 
         let validFolderIndex = 0;
         for (let i = 0; i < copyFolders.length; i++) {
-            if (performance.now() - yieldState.lastYield > 50) {
-                await new Promise(r => window.setTimeout(r, 0));
+            if (performance.now() - yieldState.lastYield > 16) {
+                const win = window as unknown as Window & { requestIdleCallback?: (cb: () => void) => void };
+                if (depth > 3 && typeof win.requestIdleCallback === 'function') {
+                    const cb = win.requestIdleCallback;
+                    await new Promise<void>(r => cb(r));
+                } else if (depth > 1) {
+                    await new Promise<void>(r => window.requestAnimationFrame(() => r()));
+                } else {
+                    await new Promise<void>(r => window.setTimeout(r, 0));
+                }
                 yieldState.lastYield = performance.now();
             }
 
