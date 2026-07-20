@@ -142,7 +142,6 @@ export default class ColorfulFoldersPlugin
       window.requestAnimationFrame(() => {
         window.setTimeout(() => {
           if (this._abortStartupRender) return;
-          void this.generateStyles();
           this.domObserverService.initDividerObserver();
           this.dividerManager.syncDividers();
         }, 0);
@@ -151,67 +150,65 @@ export default class ColorfulFoldersPlugin
 
 
       // 🚨 USER'S AUTOMATED CONSOLE SCRIPT BLOCK 🚨
-      // This will run exactly 5 seconds after Obsidian's layout is ready
+      // This will run immediately after Obsidian's layout is ready
       if (this.settings.enableStaircaseHack) {
-        window.setTimeout(() => {
-          try {
-            (function() {
-                const win = window as unknown as Window & { _testerObserver?: MutationObserver };
-                // Stop any existing tester observers if you run this multiple times
-                if (win._testerObserver) {
-                    win._testerObserver.disconnect();
-                }
+        try {
+          (function () {
+            const win = window as unknown as Window & { _testerObserver?: MutationObserver };
+            // Stop any existing tester observers if you run this multiple times
+            if (win._testerObserver) {
+              win._testerObserver.disconnect();
+            }
 
-                const stripStyle = (el: Element) => {
-                    // Just completely destroy the style attribute so Obsidian's inline padding dies
-                    if (el.hasAttribute('style')) {
-                        el.removeAttribute('style');
+            const stripStyle = (el: Element) => {
+              const style = el.getAttribute('style') || '';
+              if (style.includes('padding-inline-start') || style.includes('padding-left') || style.includes('margin-left')) {
+                el.removeAttribute('style');
+              }
+            };
+
+            // 1. Initial Pass: Strip immediately from all current items
+            const items = activeDocument.querySelectorAll('.workspace-leaf-content[data-type="file-explorer"] .tree-item-self');
+            items.forEach(stripStyle);
+
+            // 2. Mutation Observer: Aggressively watch and re-strip if Obsidian's React engine tries to put it back
+            win._testerObserver = new MutationObserver((mutations) => {
+              for (const m of mutations) {
+                if (m.type === "attributes" && m.attributeName === "style") {
+                  const target = m.target as HTMLElement;
+                  if (target.classList && target.classList.contains('tree-item-self')) {
+                    stripStyle(target);
+                  }
+                } else if (m.type === "childList") {
+                  for (const node of Array.from(m.addedNodes)) {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                      const el = node as HTMLElement;
+                      if (el.classList.contains('tree-item-self')) {
+                        stripStyle(el);
+                      }
+                      const children = el.querySelectorAll('.tree-item-self');
+                      children.forEach(stripStyle);
                     }
-                };
-
-                // 1. Initial Pass: Strip immediately from all current items
-                const items = activeDocument.querySelectorAll('.workspace-leaf-content[data-type="file-explorer"] .tree-item-self');
-                items.forEach(stripStyle);
-
-                // 2. Mutation Observer: Aggressively watch and re-strip if Obsidian's React engine tries to put it back
-                win._testerObserver = new MutationObserver((mutations) => {
-                    for (const m of mutations) {
-                        if (m.type === "attributes" && m.attributeName === "style") {
-                            const target = m.target as HTMLElement;
-                            if (target.classList && target.classList.contains('tree-item-self')) {
-                                stripStyle(target);
-                            }
-                        } else if (m.type === "childList") {
-                            for (const node of Array.from(m.addedNodes)) {
-                                if (node.nodeType === Node.ELEMENT_NODE) {
-                                    const el = node as HTMLElement;
-                                    if (el.classList.contains('tree-item-self')) {
-                                        stripStyle(el);
-                                    }
-                                    const children = el.querySelectorAll('.tree-item-self');
-                                    children.forEach(stripStyle);
-                                }
-                            }
-                        }
-                    }
-                });
-
-                // Start observing the file explorer container
-                const explorer = activeDocument.querySelector('.workspace-leaf-content[data-type="file-explorer"]');
-                if (explorer) {
-                    win._testerObserver.observe(explorer, {
-                        childList: true,
-                        subtree: true,
-                        attributes: true,
-                        attributeFilter: ['style']
-                    });
+                  }
                 }
-            })();
-            
-          } catch {
-            // Empty catch to satisfy no-console rule
-          }
-        }, 5000);
+              }
+            });
+
+            // Start observing the file explorer container
+            const explorer = activeDocument.querySelector('.workspace-leaf-content[data-type="file-explorer"]');
+            if (explorer) {
+              win._testerObserver.observe(explorer, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['style']
+              });
+            }
+          })();
+
+        } catch {
+          // Empty catch to satisfy no-console rule
+        }
       }
 
       try {
@@ -280,7 +277,7 @@ export default class ColorfulFoldersPlugin
         const list = await adapter.list(iconsPath);
 
         const svgFiles = list.files.filter(f => f.toLowerCase().endsWith('.svg'));
-        
+
         for (const folder of list.folders) {
           const sublist = await adapter.list(folder);
           svgFiles.push(...sublist.files.filter(f => f.toLowerCase().endsWith('.svg')));
@@ -290,7 +287,8 @@ export default class ColorfulFoldersPlugin
         for (const file of svgFiles) {
           const parts = file.split('/');
           const name = parts[parts.length - 1].slice(0, -4); // strip .svg
-          this.localFileSystemIcons[name] = file; // Store the vault-relative path for lazy-loading
+          const content = await adapter.read(file);
+          this.localFileSystemIcons[name] = content; // Store the vault-relative path for lazy-loading
         }
 
         // Trigger style generation now that we know what icons exist
@@ -355,7 +353,7 @@ export default class ColorfulFoldersPlugin
     // making a deep clone of DEFAULT_SETTINGS unnecessary and wasteful.
     this.settings = Object.assign({} as ColorfulFoldersSettings, DEFAULT_SETTINGS, loadedData);
     if (this.settings.heatmapData) {
-        this.heatmapCache = new Map(Object.entries(this.settings.heatmapData));
+      this.heatmapCache = new Map(Object.entries(this.settings.heatmapData));
     }
     this.activePaletteCache = null;
     this.parsedExclusionList = new Set(
@@ -382,7 +380,7 @@ export default class ColorfulFoldersPlugin
     if (this.heatmapCache) {
       this.settings.heatmapData = Object.fromEntries(this.heatmapCache);
     }
-    
+
     this.saveDataDebounced();
 
     if (shouldClearIconCache) {

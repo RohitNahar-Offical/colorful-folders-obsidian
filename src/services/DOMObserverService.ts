@@ -85,8 +85,10 @@ export class DOMObserverService {
         }
 
         const stripStyle = (el: HTMLElement) => {
-            // NUCLEAR AND DIRECT ATTEMPT - Unconditional
-            el.removeAttribute('style');
+            const style = el.getAttribute('style') || '';
+            if (style.includes('padding-inline-start') || style.includes('padding-left') || style.includes('margin-left')) {
+                el.removeAttribute('style');
+            }
         };
 
         this.dividerObserver = new MutationObserver((mutations) => {
@@ -178,11 +180,13 @@ export class DOMObserverService {
                 container.addEventListener("scroll", this.handleScroll, { passive: true });
             }
 
-            // Apply immediately to existing items
+            // Apply selectively to existing items
             const items = container.querySelectorAll<HTMLElement>('.tree-item-self');
             for (let i = 0; i < items.length; i++) {
-                // NUCLEAR AND DIRECT ATTEMPT - Unconditional
-                items[i].removeAttribute('style');
+                const style = items[i].getAttribute('style') || '';
+                if (style.includes('padding-inline-start') || style.includes('padding-left') || style.includes('margin-left')) {
+                    items[i].removeAttribute('style');
+                }
             }
 
             const observerOptions: MutationObserverInit = {

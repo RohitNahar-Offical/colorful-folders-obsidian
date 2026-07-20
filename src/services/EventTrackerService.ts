@@ -20,6 +20,13 @@ export class EventTrackerService {
         this.registerEvent(
             this.plugin.app.workspace.on("layout-change", () => {
                 this.plugin.domObserverService.initDividerObserverDebounced();
+                this.updateActiveFolderClasses();
+            }),
+        );
+        
+        this.registerEvent(
+            this.plugin.app.workspace.on("file-open", () => {
+                this.updateActiveFolderClasses();
             }),
         );
 
@@ -40,6 +47,7 @@ export class EventTrackerService {
                 this.registerDragEventsForDoc(doc);
                 this.plugin.domObserverService.initStyleObservers();
                 this.plugin.generateStylesDebounced();
+                this.updateActiveFolderClasses();
             })
         );
 
@@ -51,14 +59,16 @@ export class EventTrackerService {
         );
 
         this.registerEvent(
-            this.plugin.app.vault.on("create", () => {
+            this.plugin.app.vault.on("create", (file) => {
+                if (file && (file.path.startsWith('.') || file.path.includes('/.'))) return;
                 this.invalidateCaches();
                 this.plugin.generateStylesDebounced();
             }),
         );
 
         this.registerEvent(
-            this.plugin.app.vault.on("delete", () => {
+            this.plugin.app.vault.on("delete", (file) => {
+                if (file && (file.path.startsWith('.') || file.path.includes('/.'))) return;
                 this.invalidateCaches();
                 this.plugin.generateStylesDebounced();
             }),
@@ -66,6 +76,7 @@ export class EventTrackerService {
 
         this.registerEvent(
             this.plugin.app.vault.on("rename", async (file, oldPath) => {
+                if (file && (file.path.startsWith('.') || file.path.includes('/.'))) return;
                 this.invalidateCaches();
                 if (this.plugin.settings.customFolderColors[oldPath]) {
                     const style = this.plugin.settings.customFolderColors[oldPath];
@@ -92,6 +103,26 @@ export class EventTrackerService {
         this.plugin.folderCountCache = null;
         this.plugin.folderSortCache = null;
         this.plugin.rootSortCache = null;
+    }
+
+    public updateActiveFolderClasses() {
+        const docs = this.plugin.getOpenDocuments();
+        docs.forEach(doc => {
+            // Remove from previously active elements
+            const oldParents = doc.querySelectorAll('.cf-active-parent, .cf-is-active');
+            for (let i = 0; i < oldParents.length; i++) {
+                oldParents[i].classList.remove('cf-active-parent', 'cf-is-active');
+            }
+            
+            // Add to currently active elements
+            const activeItems = doc.querySelectorAll('.is-active');
+            for (let i = 0; i < activeItems.length; i++) {
+                if (activeItems[i].parentElement) {
+                    activeItems[i].parentElement!.classList.add('cf-active-parent');
+                }
+                activeItems[i].classList.add('cf-is-active');
+            }
+        });
     }
 
     private registerEvent(ref: EventRef) {

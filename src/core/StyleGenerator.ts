@@ -481,15 +481,15 @@ export class StyleGenerator {
                             box-shadow: none !important;
                         `)}
                     `, [
-                        `body .nav-files-container .nav-folder:has([data-path="${safePath}"].is-active) > .nav-folder-title`,
-                        `body .nav-files-container .tree-item:has([data-path="${safePath}"].is-active) > .tree-item-self`
+                        `body .nav-files-container .nav-folder-title.cf-is-active[data-path="${safePath}"]`,
+                        `body .nav-files-container .tree-item-self.cf-is-active[data-path="${safePath}"]`
                     ]);
 
                     grouper.add(`
                         background-color: var(--cf-active-color, ${parentActiveText}) !important;
                     `, [
-                        `body .nav-files-container .nav-folder:has([data-path="${safePath}"].is-active) > .nav-folder-title::before`,
-                        `body .nav-files-container .tree-item:has([data-path="${safePath}"].is-active) > .tree-item-self:not(.nn-navitem)::before`
+                        `body .nav-files-container .nav-folder.cf-active-parent > .nav-folder-title[data-path="${safePath}"]::before`,
+                        `body .nav-files-container .tree-item.cf-active-parent > .tree-item-self[data-path="${safePath}"]:not(.nn-navitem)::before`
                     ]);
 
                     if (this.settings.notebookNavigatorSupport) {
@@ -501,7 +501,7 @@ export class StyleGenerator {
                             box-shadow: none !important;
                             border-radius: 0 !important;
                         `, [
-                            `.notebook-navigator .nn-navitem:has([data-path="${safePath}"].is-active)`
+                            `.notebook-navigator .nn-navitem.cf-active-parent > .nn-virtual-container[data-path="${safePath}"]`
                         ]);
                     }
                 } else {
@@ -626,8 +626,8 @@ export class StyleGenerator {
                 margin-bottom: 4px !important;
                 overflow: visible !important;
             `, [
-                `body .nav-files-container .nav-folder:has(> .nav-folder-title[data-path="${safePath}"]) > .nav-folder-children`,
-                `body .nav-files-container .tree-item:has(> .tree-item-self[data-path="${safePath}"]) > .tree-item-children`
+                `body .nav-files-container .nav-folder-title[data-path="${safePath}"] + .nav-folder-children`,
+                `body .nav-files-container .tree-item-self[data-path="${safePath}"] + .tree-item-children`
             ], `folderBgTint_${color.hex}_${finalTintOp}_${outlineOnly}`);
 
             // Pre-calculate folder icons to avoid warnings
@@ -738,6 +738,22 @@ export class StyleGenerator {
                 `body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-navitem):not(.nn-file)`
             ], `folderRow_${color.hex}_${folderStyles.b}_${adjustedOp}`);
 
+            grouper.add(`
+                background-color: var(--cf-active-color, ${bgTint}) !important;
+                border-radius: 4px !important;
+                ${(isDark && !useGlass) ? (`
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 2px 8px rgba(0,0,0,0.1) !important;
+                `) : (useGlass ? `
+                    backdrop-filter: blur(12px) saturate(160%) !important;
+                    -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+                    box-shadow: none !important;
+                ` : `
+                    box-shadow: none !important;
+                `)}
+            `, [
+                `body .nav-files-container .nav-folder.cf-active-parent > .nav-folder-title[data-path="${safePath}"]`,
+                `body .nav-files-container .tree-item.cf-active-parent > .tree-item-self[data-path="${safePath}"]`
+            ]);
 
 
             /* Notebook Navigator Folder Integration (Native-Bridge Architecture) */
