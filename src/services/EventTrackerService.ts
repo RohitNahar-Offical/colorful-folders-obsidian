@@ -118,7 +118,7 @@ export class EventTrackerService {
             const activeItems = doc.querySelectorAll('.is-active');
             for (let i = 0; i < activeItems.length; i++) {
                 if (activeItems[i].parentElement) {
-                    activeItems[i].parentElement!.classList.add('cf-active-parent');
+                    activeItems[i].parentElement.classList.add('cf-active-parent');
                 }
                 activeItems[i].classList.add('cf-is-active');
             }

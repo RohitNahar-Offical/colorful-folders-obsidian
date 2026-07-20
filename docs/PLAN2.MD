@@ -1,93 +1,77 @@
-I found the remaining bugs. You fixed some things but **two critical issues remain** that directly cause the Smart Connections breakage.
+I found the actual remaining bug. The startup fix was **not applied correctly**.
 
 ---
 
-## BUG STILL EXISTS: Nuclear Initial Pass in `initDividerObserver()`
+## The Real Issue: `generateStyles()` Is Still Missing from `onLayoutReady`
 
-**File**: `src/services/DOMObserverService.ts` lines 184-188
+You said you added `this.generateStyles()` at the start of `onLayoutReady()`, but **it is not present in the actual code**. Look at the current `onLayoutReady`:
 
 ```typescript
-// Apply immediately to existing items
-const items = container.querySelectorAll<HTMLElement>('.tree-item-self');
-for (let i = 0; i < items.length; i++) {
-    // NUCLEAR AND DIRECT ATTEMPT - Unconditional
-    items[i].removeAttribute('style');
-}
+this.app.workspace.onLayoutReady(async () => {
+    // ← NO generateStyles() call here!
+    
+    window.requestAnimationFrame(() => {
+        window.setTimeout(() => {
+            if (this._abortStartupRender) return;
+            this.domObserverService.initDividerObserver();  // ← Observer starts FIRST
+            this.dividerManager.syncDividers();
+        }, 0);
+    });
+    
+    // ... rest of onLayoutReady
+});
 ```
 
-This runs **every single time** `initDividerObserver()` is called. And `initDividerObserver()` is called:
-- On layout ready (line 145)
-- On every `layout-change` event (debounced 300ms via line 22)
-- On drag end (line 150)
+**The observer starts before the stylesheet has any content.** This is the exact same root cause as before.
 
-With Smart Connections and `.smart-env` visible, `layout-change` fires **constantly** due to virtualized list recycling. Each call strips **ALL** inline styles from **ALL** `.tree-item-self` elements — not just padding.
+### What Happens on Restart with Smart Connections:
 
-**This is the direct cause of your "colors but no icons" mismatch.** The MutationObserver callback (lines 87-92) is now selective, but this initial pass is still nuclear.
+1. **`onload()`** → Creates empty `CSSStyleSheet`, adopts it into documents
+2. **`onLayoutReady()`** → Starts `dividerObserver` immediately (via rAF + setTimeout)
+3. **`loadLocalIcons()`** → Called directly, takes time to read SVGs
+4. **File explorer renders** → Must display `.smart-env` nodes (1,800+ extra if visible)
+5. **`dividerObserver` fires constantly** → Strips inline styles from ALL `.tree-item-self` elements
+6. **But stylesheet is EMPTY** → Elements get stripped with no CSS to apply
+7. **Virtualized list recycling** → More nodes = more mutations = more stripping
+8. **`loadLocalIcons()` finally completes** → `generateStylesDebounced()` fires
+9. **Stylesheet populates** → But many elements were already processed in inconsistent state
+10. **Result**: First folder OK (processed early), second folder broken (processed during observer storm)
 
-**Fix**:
-```typescript
-// Apply selectively to existing items
-const items = container.querySelectorAll<HTMLElement>('.tree-item-self');
-for (let i = 0; i < items.length; i++) {
-    const style = items[i].getAttribute('style') || '';
-    if (style.includes('padding-inline-start') || style.includes('padding-left') || style.includes('margin-left')) {
-        items[i].removeAttribute('style');
-    }
-}
-```
+### Why It Matches Your Exact Symptom:
+
+| Observation | Explanation |
+|-------------|-------------|
+| "First folder perfect" | Processed before observer storm peaked |
+| "Second folder broken" | Processed during observer storm with empty stylesheet |
+| "Subfolders lose icon/text combos" | Inherited styles overwritten by race condition |
+| "Works without Smart Connections" | Smaller DOM = observer processes faster |
+| "Works when enabling at runtime" | Stylesheet already populated |
+| "Breaks after restart" | Observer starts before stylesheet is populated |
 
 ---
 
-## BUG STILL EXISTS: `:has()` Selectors in StyleGenerator.ts
+## The Fix
 
-**File**: `src/core/StyleGenerator.ts` lines 484-485
-
-```typescript
-`body .nav-files-container .nav-folder:has([data-path="${safePath}"].is-active) > .nav-folder-title`,
-`body .nav-files-container .tree-item:has([data-path="${safePath}"].is-active) > .tree-item-self`
-```
-
-These `:has()` selectors are **still present** for the active file/folder glow effect. You added `.cf-active-parent` for the parent folder's `::before` pseudo-element (lines 491-492), but the active file's own row styling still uses `:has()`.
-
-With `.smart-env` visible, the browser evaluates these `:has()` selectors across 1,800+ extra elements on every active-state change, causing the freezing.
-
-**Fix**: Replace with a simple class selector. Add `.cf-is-active` to the active file/folder element itself:
+Add `this.generateStyles();` at the very beginning of `onLayoutReady()` in `src/main.ts`:
 
 ```typescript
-// In EventTrackerService.ts updateActiveFolderClasses(), also add:
-const activeItems = doc.querySelectorAll('.is-active');
-for (let i = 0; i < activeItems.length; i++) {
-    if (activeItems[i].parentElement) {
-        activeItems[i].parentElement!.classList.add('cf-active-parent');
-    }
-    // Also mark the active item itself
-    activeItems[i].classList.add('cf-is-active');
-}
+this.app.workspace.onLayoutReady(async () => {
+    // 1. Generate styles FIRST - before any observers start
+    this.generateStyles();
+    
+    // 2. THEN start the divider observer
+    window.requestAnimationFrame(() => {
+        window.setTimeout(() => {
+            if (this._abortStartupRender) return;
+            this.domObserverService.initDividerObserver();
+            this.dividerManager.syncDividers();
+        }, 0);
+    });
+    
+    // ... rest of onLayoutReady
+});
 ```
 
-Then in `StyleGenerator.ts`, replace lines 484-485 with:
-```typescript
-`body .nav-files-container .nav-folder-title.cf-is-active[data-path="${safePath}"]`,
-`body .nav-files-container .tree-item-self.cf-is-active[data-path="${safePath}"]`
-```
+This ensures the stylesheet is fully populated **before** the observer starts stripping inline styles. The observer will then only strip padding from elements that already have their CSS applied, preventing the inconsistent state.
 
----
-
-## Summary: What You Fixed vs What Remains
-
-| Fix | Status | Location |
-|-----|--------|----------|
-| Selective stripper in MutationObserver callback | ✅ Fixed | `DOMObserverService.ts:87-92` |
-| Vault event filtering for hidden folders | ✅ Fixed | `EventTrackerService.ts:62-71` |
-| Local icon loading stores content | ✅ Fixed | `main.ts:290-291` |
-| `.cf-active-parent` class toggling | ✅ Fixed | `EventTrackerService.ts:108-125` |
-| **Nuclear initial pass in `initDividerObserver()`** | ❌ **STILL BROKEN** | `DOMObserverService.ts:184-188` |
-| **`:has()` selectors for active state** | ❌ **STILL PRESENT** | `StyleGenerator.ts:484-485` |
-
----
-
-## Why the Bug Persists
-
-The nuclear initial pass (lines 184-188) is **not** inside the `enableStaircaseHack` conditional block. It runs **unconditionally** every time `initDividerObserver()` fires, regardless of settings. With Smart Connections amplifying `layout-change` events, this strips all inline styles from hundreds of nodes per second, creating the exact partial-application state you're seeing.
-
-**Fix lines 184-188 in `DOMObserverService.ts` and rebuild. That single change will likely resolve the Smart Connections incompatibility.**
+Rebuild and test. This single change should resolve the restart-time glitch with Smart Connections.

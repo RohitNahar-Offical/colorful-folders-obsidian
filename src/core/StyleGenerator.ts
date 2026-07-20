@@ -336,7 +336,7 @@ export class StyleGenerator {
                     `body .nav-files-container .nav-file-title[data-path="${safePath}"]:not(.nn-file)`,
                     `body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem)`
                 ];
-                grouper.add(fileRowCss, fileRowSels, `fileRow_${color.hex}_${fileBgAlpha}`);
+                grouper.add(fileRowCss, fileRowSels, `fileRow_${color.hex}_${fileBgAlpha}_${shouldColorNative ? 1 : 0}_${baseThick}`);
 
                 const fileTextSels = [
                     `body .nav-files-container .nav-file-title[data-path="${safePath}"]:not(.nn-file) .nav-file-title-content`,
@@ -569,6 +569,7 @@ export class StyleGenerator {
             const child = copyFolders[i];
             if (excludeFolders.has(child.name.toLowerCase())) {
                 await this.traverse(child, depth + 1, validFolderIndex, (depth === 0 ? validFolderIndex : rootIndex), passedColor, inheritedStyle, context, grouper, cumulativeTintOp, yieldState);
+                validFolderIndex++;
                 continue;
             }
 
@@ -628,7 +629,7 @@ export class StyleGenerator {
             `, [
                 `body .nav-files-container .nav-folder-title[data-path="${safePath}"] + .nav-folder-children`,
                 `body .nav-files-container .tree-item-self[data-path="${safePath}"] + .tree-item-children`
-            ], `folderBgTint_${color.hex}_${finalTintOp}_${outlineOnly}`);
+            ], `folderBgTint_${color.hex}_${finalTintOp}_${outlineOnly}_${folderThick}`);
 
             // Pre-calculate folder icons to avoid warnings
             const autoIconFolder = (this.settings.autoIcons && !customStyle?.iconId && !inheritedStyle?.iconId) ? this.plugin.iconManager.getAutoIconData(child.name, child.path) : null;
@@ -736,7 +737,7 @@ export class StyleGenerator {
             `, [
                 `body .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem)`,
                 `body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-navitem):not(.nn-file)`
-            ], `folderRow_${color.hex}_${folderStyles.b}_${adjustedOp}`);
+            ], `folderRow_${color.hex}_${folderStyles.b}_${adjustedOp}_${folderBr}_${useGlass ? 1 : 0}`);
 
             grouper.add(`
                 background-color: var(--cf-active-color, ${bgTint}) !important;
@@ -835,7 +836,7 @@ export class StyleGenerator {
                         margin-right: 4px !important;
                         background-color: transparent !important;
                         -webkit-mask-image: none !important;
-                    `, sels);
+                    `, sels, `icon_${iconIdToUse}_emoji_${folderIconW}`);
                 } else {
                     const svgStr = this.plugin.iconManager.getIconSvg(iconIdToUse, true);
                     if (svgStr) {
@@ -852,7 +853,7 @@ export class StyleGenerator {
                             -webkit-mask-repeat: no-repeat !important;
                             -webkit-mask-position: center !important;
                             -webkit-mask-size: contain !important;
-                        `, sels);
+                        `, sels, `icon_${iconIdToUse}_svg_${folderIconW}_${isExpandedState ? 'expanded' : 'collapsed'}`);
                     }
                 }
             };
@@ -890,7 +891,7 @@ export class StyleGenerator {
                 `, [
                     `${baseNav}.is-collapsed > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
                     `${baseTree}.is-collapsed > .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
-                ]);
+                ], `icon_closed_folder_${folderIconW}`);
 
                 // Open State
                 grouper.add(`
@@ -909,7 +910,7 @@ export class StyleGenerator {
                 `, [
                     `${baseNav}:not(.is-collapsed) > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
                     `${baseTree}:not(.is-collapsed) > .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
-                ]);
+                ], `icon_open_folder_${folderIconW}`);
             }
 
             if (this.settings.showItemCounters) {

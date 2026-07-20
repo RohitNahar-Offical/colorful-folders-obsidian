@@ -77,22 +77,6 @@ export default class ColorfulFoldersPlugin
     this.registerCustomIcons();
     this.registerCommands();
 
-    // Register Notebook Navigator extensions
-    this.app.workspace.onLayoutReady(() => {
-      NotebookNavigatorIntegration.registerMenuExtensions(this);
-      // Defer loading of local icons to keep initial startup fast
-      const win = window as unknown as Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void };
-      if (typeof win.requestIdleCallback === 'function') {
-        win.requestIdleCallback(() => {
-          void this.loadLocalIcons();
-        }, { timeout: 60000 });
-      } else {
-        window.setTimeout(() => {
-          void this.loadLocalIcons();
-        }, 10000);
-      }
-    });
-
     this.addSettingTab(new ColorfulFoldersSettingTab(this.app, this));
 
     this.generateStylesDebounced = obsidian.debounce(
@@ -132,11 +116,17 @@ export default class ColorfulFoldersPlugin
       );
       doc.body.classList.toggle(
         "cf-wrap-metadata",
-        !!this.settings.wrapMetadata,
+        Boolean(this.settings.wrapMetadata),
       );
     });
 
     this.app.workspace.onLayoutReady(async () => {
+      NotebookNavigatorIntegration.registerMenuExtensions(this);
+      await this.loadLocalIcons();
+
+      // 1. Generate styles FIRST - before observers start
+      await this.generateStyles();
+
       // Defer heavy rendering to yield the main thread to Obsidian's initial layout paint engine
       // requestAnimationFrame + setTimeout(0) guarantees the browser paints the UI *before* we block the thread
       window.requestAnimationFrame(() => {
@@ -603,14 +593,19 @@ export default class ColorfulFoldersPlugin
     try {
       const css = await this.styleGenerator.generateCss();
       window.requestAnimationFrame(() => {
-        this.sheet.replaceSync(css);
+        try {
+          this.sheet.replaceSync(css);
+        } finally {
+          this.isGeneratingStyles = false;
+        }
       });
       // Sync folder colors to Graph View groups if the feature is enabled
       if (this.settings.graphColorSync && !this.isDragging) {
         void GraphColorSync.syncGraphColors(this);
       }
-    } finally {
+    } catch (e) {
       this.isGeneratingStyles = false;
+      throw e;
     }
   }
 
