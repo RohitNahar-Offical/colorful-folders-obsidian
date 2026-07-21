@@ -381,3 +381,21 @@ The final working solution relied on two synergistic parts:
 **Lesson**: 
 1. Never iterate over or generate visual styles for hidden dot-folders (`.smart-env`, `.git`, `.obsidian`). File tree walkers must explicitly exclude them at the root level to prevent catastrophic performance degradation when third-party plugins or version control systems generate massive internal datasets.
 2. Extremely aggressive DOM-mutating observers (like the staircase hack) must always be gated behind user-configurable toggles. Never force hacky, expensive DOM observers on all users by default.
+
+---
+
+## Incident #27 — DOM Duplication & Mutation Race Condition with Smart Connections (2026-07-22)
+**What was attempted**: Running Colorful Folders alongside third-party DOM-editing plugins like `Smart Connections`.
+**What broke**: 
+- Overlapping background colors and duplicated divider/icon elements in the file explorer.
+- Rapid UI glitches, layout thrashing, and high CPU usage when interacting with items in the tree.
+**Root cause**: 
+- `Smart Connections` continuously inspects and mutates DOM nodes and attributes in the file tree (e.g., adding score indicators or tags).
+- In the unguarded implementation, every external DOM mutation triggered our plugin's `MutationObserver` (`DOMObserverService`), which synchronously tore down and re-injected DOM wrappers (`.cf-icon-wrapper`, `.cf-interactive-divider`).
+- This injection triggered *another* mutation event, creating an infinite observer feedback loop that duplicated DOM elements and thrashed the main thread.
+**Resolution**:
+1. **Version-Stamp Early Exit Guard (`dataset.cfIconId` & `dataset.cfIconColor`)**: In `IconManager._doInjectIcon()`, before touching the DOM, we inspect if `.cf-icon-wrapper` already exists and if its dataset properties match the target icon and color. If they match, the function exits immediately in O(1) time with ZERO DOM reads/writes, breaking the feedback loop dead in its tracks.
+2. **RequestAnimationFrame (RAF) Queueing**: All DOM injection requests are queued into an array (`_pendingInjections`) and processed in bulk during the next animation frame via `_flushInjections()`, grouping DOM writes together.
+3. **Mutation Scope Filtering & Node Targeting**: `DOMObserverService` ignores mutations targeting `.cf-icon-wrapper` or `.cf-interactive-divider` and passes only newly added nodes from `m.addedNodes` to `iconManager.injectIconsForNodes(nodelist)`, operating in O(N_changed) time instead of rescanning the entire file tree.
+4. **Scroll State Guarding**: Suspends divider resync and icon injection during active scrolling (`isScrolling = true`), executing a single debounced catch-up sync 100ms after scrolling stops.
+**Lesson**: When injecting elements into a shared DOM managed by multiple third-party observers, ALWAYS stamp rendered state into HTML `data-*` attributes (`dataset.cfIconId`) and use an idempotency check to early-exit. Never perform DOM writes inside an observer callback without an idempotency guard.

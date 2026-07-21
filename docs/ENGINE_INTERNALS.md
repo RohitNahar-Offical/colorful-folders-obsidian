@@ -250,8 +250,42 @@ To ensure full compatibility with Obsidian **Popout Windows**, the backup and re
 
 1.  **Context Binding**: Temporary elements (`<a>` for downloads, `<input>` for uploads) are created using the `ownerDocument` of the settings tab container.
 2.  **DOM Attachment**: Elements are explicitly appended to the `body` of that specific window before `.click()` is called, satisfying modern browser security policies for programmatic interaction.
-3.  **Safety Delays**: `URL.revokeObjectURL` is deferred by 1000ms to guarantee the browser's download manager has successfully initiated the stream.
+---
+
+## 14. DOM Observer Idempotency & RAF Queueing Engine
+
+To maintain compatibility with third-party plugins that mutate the file explorer DOM (such as **Smart Connections** or **Notebook Navigator**), `DOMObserverService` and `IconManager` employ a **zero-mutation idempotency pattern**:
+
+### 1. Version-Stamp Early Exit (`dataset.cfIconId` & `dataset.cfIconColor`)
+Before creating or updating an icon wrapper (`.cf-icon-wrapper`), `IconManager._doInjectIcon()` inspects the existing wrapper's dataset attributes:
+```typescript
+const existingWrapper = el.querySelector<HTMLElement>('.cf-icon-wrapper');
+if (existingWrapper &&
+    existingWrapper.dataset.cfIconId === style.iconId &&
+    existingWrapper.dataset.cfIconColor === color) {
+    return; // Early exit in O(1) time - 0 DOM mutations!
+}
+```
+If an external plugin causes a DOM mutation event on a tree item that already has its correct icon rendered, `IconManager` exits immediately. This prevents infinite mutation observer feedback loops.
+
+### 2. RequestAnimationFrame (RAF) Queueing
+Icon injection operations are not executed synchronously inside observer callbacks. Instead, calls are queued into `_pendingInjections` and processed in a single batch during the next animation frame:
+```typescript
+private _queueInjection(el: HTMLElement, style: FolderStyle) {
+    this._pendingInjections.push({ el, style });
+    if (!this._rafPending) {
+        this._rafPending = true;
+        window.requestAnimationFrame(() => {
+            this._flushInjections();
+            this._rafPending = false;
+        });
+    }
+}
+```
+
+### 3. Target Node Filtering & Targeted Injections
+- **Scope Guarding**: `DOMObserverService` ignores mutations targeting or contained within `.cf-icon-wrapper` or `.cf-interactive-divider`.
+- **Node-Level Processing**: When items are added to the DOM during scrolling or virtual list recycling, `DOMObserverService` extracts newly added nodes from `MutationRecord.addedNodes` and calls `iconManager.injectIconsForNodes(nodelist)`, operating in $O(N_{\text{changed}})$ time rather than rescanning the full tree ($O(N_{\text{total}})$).
 
 ---
 
-> [!IMPORTANT]
