@@ -1,88 +1,71 @@
-import { debounce, Debouncer } from "obsidian";
-import type ColorfulFoldersPlugin from "../main";
+import { IColorfulFoldersPlugin } from '../common/types';
 
 export class DOMObserverService {
-    private plugin: ColorfulFoldersPlugin;
-
-    public dividerObserver: MutationObserver | null = null;
+    plugin: IColorfulFoldersPlugin;
     private styleObservers: MutationObserver[] = [];
+    private dividerObserver: MutationObserver | null = null;
+    private isScrolling = false;
+    public isScrollingPublic = false;
     private scrollTimeout: number | null = null;
 
-    public isScrolling = false;
-    public initDividerObserverDebounced: Debouncer<[], void>;
-
-    constructor(plugin: ColorfulFoldersPlugin) {
+    constructor(plugin: IColorfulFoldersPlugin) {
         this.plugin = plugin;
-
-        this.initDividerObserverDebounced = debounce(() => {
-            this.initDividerObserver();
-        }, 300, true);
     }
 
-    public initStyleObservers() {
-        if (this.styleObservers.length > 0) {
-            this.styleObservers.forEach(obs => obs.disconnect());
-        }
+    initStyleObservers() {
+        this.disposeStyleObservers();
         this.styleObservers = [];
 
         this.plugin.getOpenDocuments().forEach(doc => {
             const observer = new MutationObserver((mutations) => {
-                window.requestAnimationFrame(() => {
-                    let shouldRegenerate = false;
-                    for (const m of mutations) {
-                        if (m.type === "attributes" && m.attributeName === "class") {
-                            const target = m.target as HTMLElement;
-                            const oldClass = m.oldValue || "";
-                            const newClass = typeof target.className === 'string' ? target.className : (target.getAttribute('class') || "");
+                let shouldRegenerate = false;
+                for (const m of mutations) {
+                    if (m.type === 'attributes' && m.attributeName === 'class') {
+                        const target = m.target as HTMLElement;
+                        const oldClass = m.oldValue || '';
+                        const newClass = typeof target.className === 'string' ? target.className : (target.getAttribute('class') || '');
+                        
+                        if (oldClass === newClass) continue;
+                        
+                        const relevantClasses = ['theme-dark', 'theme-light', 'cf-show-hidden', 'cf-wrap-metadata'];
+                        
+                        const oldClasses = oldClass.split(/\s+/);
+                        const newClasses = newClass.split(/\s+/);
 
-                            if (oldClass === newClass) continue;
-
-                            const relevantClasses = ["theme-dark", "theme-light", "cf-show-hidden", "cf-wrap-metadata"];
-                            const oldClasses = oldClass.split(/\s+/);
-                            const newClasses = newClass.split(/\s+/);
-
-                            for (const cls of relevantClasses) {
-                                const wasPresent = oldClasses.includes(cls);
-                                const isPresent = newClasses.includes(cls);
-                                if (wasPresent !== isPresent) {
-                                    shouldRegenerate = true;
-                                    break;
-                                }
+                        for (const cls of relevantClasses) {
+                            const wasPresent = oldClasses.includes(cls);
+                            const isPresent = newClasses.includes(cls);
+                            if (wasPresent !== isPresent) {
+                                shouldRegenerate = true;
+                                break;
                             }
-                            if (shouldRegenerate) break;
                         }
+                        if (shouldRegenerate) break;
                     }
-
-                    if (shouldRegenerate) {
-                        this.plugin.generateStylesDebounced();
-                    }
-                });
+                }
+                
+                if (shouldRegenerate) {
+                    this.plugin.generateStylesDebounced?.();
+                }
             });
-            if (doc && doc.body) {
-                observer.observe(doc.body, {
-                    attributes: true,
-                    attributeFilter: ["class"],
-                    attributeOldValue: true,
-                });
-                this.styleObservers.push(observer);
-            }
+            observer.observe(doc.body, {
+                attributes: true,
+                attributeFilter: ['class'],
+                attributeOldValue: true,
+            });
+            this.styleObservers.push(observer);
         });
     }
 
-    public initDividerObserver() {
+    initDividerObserver() {
         if (this.plugin.isDragging) return;
 
         if (this.dividerObserver) {
             this.dividerObserver.disconnect();
         }
 
-        const explorers = Array.from(activeDocument.querySelectorAll<HTMLElement>('.workspace-leaf-content[data-type="file-explorer"]'));
-        if (explorers.length === 0) {
-            window.setTimeout(() => {
-                this.initDividerObserver();
-            }, 500);
-            return;
-        }
+        const allContainers = this.plugin.getAllExplorerContainers();
+        if (allContainers.length === 0) return;
 
         const stripStyle = (el: HTMLElement) => {
             const style = el.getAttribute('style') || '';
@@ -91,156 +74,128 @@ export class DOMObserverService {
             }
         };
 
-        this.dividerObserver = new MutationObserver((mutations) => {
-            // SYNC INTERCEPTOR: Aggressively strip style attributes
-            for (const m of mutations) {
-                if (m.type === "attributes" && m.attributeName === "style") {
-                    const target = m.target as HTMLElement;
-                    if (target.classList && target.classList.contains('tree-item-self')) {
-                        stripStyle(target);
-                    }
-                } else if (m.type === "childList") {
-                    for (const node of Array.from(m.addedNodes)) {
-                        if (node.nodeType === Node.ELEMENT_NODE) {
-                            const el = node as HTMLElement;
-                            if (el.classList.contains('tree-item-self')) {
-                                stripStyle(el);
-                            }
-                            const children = el.querySelectorAll<HTMLElement>('.tree-item-self');
-                            for (let i = 0; i < children.length; i++) {
-                                stripStyle(children[i]);
-                            }
-                        }
-                    }
-                }
-            }
+        allContainers.forEach((container) => {
+            if (
+                (container as HTMLElement & { cfHasScrollListener?: boolean })
+                  .cfHasScrollListener
+            )
+                return;
+            (container as HTMLElement & { cfHasScrollListener?: boolean }).cfHasScrollListener = true;
 
-            // ASYNC DIVIDER PROCESSING
-            window.requestAnimationFrame(() => {
-                if (this.plugin.isSyncingDividers || this.isScrolling || this.plugin.isDragging) return;
+            container.addEventListener('scroll', this.handleScroll, { passive: true });
 
-                let hasRelevantChange = false;
-                for (const m of mutations) {
-                    const target = m.target as HTMLElement;
-                    if (target.closest(".cf-icon-wrapper, .cf-interactive-divider")) continue;
-
-                    if (m.type !== "childList") continue;
-
-                    const isRelevantNode = (node: Node) => {
-                        if (node.nodeType !== Node.ELEMENT_NODE) return false;
-                        const el = node as HTMLElement;
-                        if (!el.classList.contains("nav-file") &&
-                            !el.classList.contains("nav-folder") &&
-                            !el.classList.contains("tree-item") &&
-                            !el.classList.contains("tree-item-self") &&
-                            !el.classList.contains("tree-item-inner") &&
-                            !el.classList.contains("nn-navitem") &&
-                            !el.classList.contains("nav-file-title") &&
-                            !el.classList.contains("nav-folder-title") &&
-                            !el.classList.contains("nav-file-title-content") &&
-                            !el.classList.contains("nav-folder-title-content")) {
-                            return false;
-                        }
-                        return (
-                            !el.classList.contains("cf-interactive-divider") &&
-                            !el.classList.contains("cf-icon-wrapper") &&
-                            !el.classList.contains("nav-file-ghost") &&
-                            !el.classList.contains("nav-folder-ghost") &&
-                            !el.closest(".cf-icon-wrapper")
-                        );
-                    };
-
-                    for (const node of Array.from(m.addedNodes)) {
-                        if (isRelevantNode(node)) {
-                            hasRelevantChange = true;
-                            break;
-                        }
-                    }
-                    if (hasRelevantChange) break;
-
-                    for (const node of Array.from(m.removedNodes)) {
-                        if (isRelevantNode(node)) {
-                            hasRelevantChange = true;
-                            break;
-                        }
-                    }
-                    if (hasRelevantChange) break;
-                }
-
-                if (hasRelevantChange) {
-                    this.processDividers();
-                }
-            });
-        });
-
-        explorers.forEach((container) => {
-            const extContainer = container as HTMLElement & { cfHasScrollListener?: boolean };
-            if (!extContainer.cfHasScrollListener) {
-                extContainer.cfHasScrollListener = true;
-                container.addEventListener("scroll", this.handleScroll, { passive: true });
-            }
-
-            // Apply selectively to existing items
             const items = container.querySelectorAll<HTMLElement>('.tree-item-self');
             for (let i = 0; i < items.length; i++) {
-                const style = items[i].getAttribute('style') || '';
-                if (style.includes('padding-inline-start') || style.includes('padding-left') || style.includes('margin-left')) {
-                    items[i].removeAttribute('style');
+                stripStyle(items[i]);
+            }
+        });
+
+        this.dividerObserver = new MutationObserver((mutations) => {
+            if (this.plugin.isSyncingDividers || this.isScrolling || this.plugin.isDragging) return;
+
+            let hasRelevantChange = false;
+            for (const m of mutations) {
+                const target = m.target as HTMLElement;
+                if (target.closest('.cf-icon-wrapper, .cf-interactive-divider'))
+                    continue;
+
+                if (m.type !== 'childList') continue;
+
+                const isRelevantNode = (node: Node) => {
+                    if (node.nodeType !== Node.ELEMENT_NODE) return false;
+                    const el = node as HTMLElement;
+                    
+                    if (!el.classList.contains('nav-file') && 
+                        !el.classList.contains('nav-folder') && 
+                        !el.classList.contains('tree-item') && 
+                        !el.classList.contains('nn-navitem') &&
+                        !el.classList.contains('nav-file-title') &&
+                        !el.classList.contains('nav-folder-title')) {
+                        return false;
+                    }
+
+                    return (
+                        !el.classList.contains('cf-interactive-divider') &&
+                        !el.classList.contains('cf-icon-wrapper') &&
+                        !el.classList.contains('nav-file-ghost') &&
+                        !el.classList.contains('nav-folder-ghost') &&
+                        !el.closest('.cf-icon-wrapper')
+                    );
+                };
+
+                for (const node of Array.from(m.addedNodes)) {
+                    if (isRelevantNode(node)) {
+                        hasRelevantChange = true;
+                        break;
+                    }
                 }
+                if (hasRelevantChange) break;
+                for (const node of Array.from(m.removedNodes)) {
+                    if (isRelevantNode(node)) {
+                        hasRelevantChange = true;
+                        break;
+                    }
+                }
+                if (hasRelevantChange) break;
             }
 
-            const observerOptions: MutationObserverInit = {
+            if (hasRelevantChange) {
+                this.plugin.processDividers();
+                if (!this.isScrolling) {
+                    const addedNodes = mutations
+                        .flatMap(m => Array.from(m.addedNodes));
+                    if (addedNodes.length > 0) {
+                        const nodelist = {
+                            forEach: (cb: (node: Node) => void) => addedNodes.forEach(cb),
+                        } as unknown as NodeList;
+                        this.plugin.iconManager.injectIconsForNodes(nodelist);
+                    } else {
+                        this.plugin.refreshIconsDebounced?.();
+                    }
+                }
+            }
+        });
+
+        allContainers.forEach((container) => {
+            this.dividerObserver?.observe(container, {
                 childList: true,
                 subtree: true,
                 attributes: true,
                 attributeFilter: ['style']
-            };
-            this.dividerObserver?.observe(container, observerOptions);
+            });
         });
     }
 
-    public processDividers() {
-        if (this.plugin.isSyncingDividers || this.isScrolling) return;
-
-        if (this.plugin._dividerTimeout) {
-            window.clearTimeout(this.plugin._dividerTimeout);
-        }
-
-        this.plugin._dividerTimeout = window.setTimeout(() => {
-            this.plugin._dividerTimeout = null;
-            if (!this.plugin.isDragging) {
-                window.requestAnimationFrame(() => {
-                    this.plugin.dividerManager.syncDividers();
-                });
-            }
-        }, 100);
-    }
-
-    private lastScrollTop: number = 0;
-
-    private handleScroll = (e: Event) => {
+    handleScroll = (e: Event) => {
         const container = e.currentTarget as HTMLElement;
         const doc = container.ownerDocument;
-        const win = doc.defaultView || activeWindow;
+        const win = doc.defaultView || window;
         this.isScrolling = true;
-
-        const currentScrollTop = container.scrollTop;
-        const scrollDelta = Math.abs(currentScrollTop - this.lastScrollTop);
-        this.lastScrollTop = currentScrollTop;
-        const timeoutMs = Math.min(300, scrollDelta * 2);
-
+        this.isScrollingPublic = true;
         win.clearTimeout(this.scrollTimeout || undefined);
         this.scrollTimeout = win.setTimeout(() => {
             this.isScrolling = false;
-            this.processDividers();
-        }, Math.max(100, timeoutMs));
+            this.isScrollingPublic = false;
+            this.plugin.processDividers();
+            this.plugin.refreshIconsDebounced?.();
+        }, 100);
     };
 
-    public destroy() {
+    disposeStyleObservers() {
+        this.styleObservers.forEach(obs => obs.disconnect());
+        this.styleObservers = [];
+    }
+
+    disposeDividerObserver() {
         if (this.dividerObserver) {
             this.dividerObserver.disconnect();
+            this.dividerObserver = null;
         }
-        this.styleObservers.forEach(obs => obs.disconnect());
+    }
+
+    destroy() {
+        this.disposeStyleObservers();
+        this.disposeDividerObserver();
 
         const allContainers = this.plugin.getAllExplorerContainers();
         allContainers.forEach((container) => {
@@ -248,9 +203,6 @@ export class DOMObserverService {
             delete (container as HTMLElement & { cfHasScrollListener?: boolean }).cfHasScrollListener;
         });
 
-        this.initDividerObserverDebounced.cancel();
         if (this.scrollTimeout) window.clearTimeout(this.scrollTimeout);
     }
-
-
 }
