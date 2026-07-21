@@ -122,7 +122,6 @@ export class DOMObserverService {
                 if (this.plugin.isSyncingDividers || this.isScrolling || this.plugin.isDragging) return;
 
                 let hasRelevantChange = false;
-                const nodesToProcess: NodeList[] = [];
 
                 for (const m of mutations) {
                     const target = m.target as HTMLElement;
@@ -159,16 +158,13 @@ export class DOMObserverService {
                         );
                     };
 
-                    if (m.addedNodes.length > 0) {
-                        nodesToProcess.push(m.addedNodes);
-                    }
-
                     for (const node of Array.from(m.addedNodes)) {
                         if (isRelevantNode(node)) {
                             hasRelevantChange = true;
                             break;
                         }
                     }
+                    if (hasRelevantChange) break;
 
                     for (const node of Array.from(m.removedNodes)) {
                         if (isRelevantNode(node)) {
@@ -176,16 +172,11 @@ export class DOMObserverService {
                             break;
                         }
                     }
+                    if (hasRelevantChange) break;
                 }
 
                 if (hasRelevantChange) {
                     this.processDividers();
-                }
-
-                if (nodesToProcess.length > 0) {
-                    nodesToProcess.forEach(nodelist => {
-                        this.plugin.iconManager.injectIconsForNodes(nodelist);
-                    });
                 }
             });
         });

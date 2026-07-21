@@ -130,7 +130,6 @@ export default class ColorfulFoldersPlugin
       // Register layout-change listener to handle re-renders from third-party plugins like Smart Connections
       this.registerEvent(
         this.app.workspace.on('layout-change', () => {
-          this.iconManager.refreshIcons();
           this.domObserverService.initDividerObserver();
         })
       );
