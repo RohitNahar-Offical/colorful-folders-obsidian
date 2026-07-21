@@ -127,10 +127,16 @@ export default class ColorfulFoldersPlugin
       // 1. Generate styles FIRST - before observers start
       await this.generateStyles();
 
-      // Register layout-change listener to handle re-renders from third-party plugins like Smart Connections
+      // Register layout-change & active-leaf-change listeners to handle async timing shifts and leaf re-creations from background-heavy plugins (Smart Connections)
       this.registerEvent(
         this.app.workspace.on('layout-change', () => {
-          this.domObserverService.initDividerObserver();
+          this.domObserverService.initDividerObserverDebounced();
+          this.generateStylesDebounced();
+        })
+      );
+      this.registerEvent(
+        this.app.workspace.on('active-leaf-change', () => {
+          this.domObserverService.initDividerObserverDebounced();
         })
       );
 

@@ -33,6 +33,7 @@ export class IconManager {
     }
 
     getAutoIconData(name: string, path?: string): AutoIconData | null {
+        if (!name) return null;
         const lName = name.toLowerCase();
         const settings = this.plugin.settings;
         const currentKey = settings.customIconRules || '';

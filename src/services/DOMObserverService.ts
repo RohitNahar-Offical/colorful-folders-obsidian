@@ -69,20 +69,36 @@ export class DOMObserverService {
         });
     }
 
+    private observerRetryCount = 0;
+    private readonly MAX_OBSERVER_RETRIES = 15; // Allows up to ~7.5 seconds of heavy startup load before giving up
+
+    /**
+     * Initializes MutationObservers on all File Explorer leaves.
+     * Includes a robust debounced retry loop to handle heavy startup delays from background processing plugins (e.g. Smart Connections).
+     */
     public initDividerObserver() {
         if (this.plugin.isDragging) return;
 
         if (this.dividerObserver) {
             this.dividerObserver.disconnect();
+            this.dividerObserver = null;
         }
 
         const explorers = Array.from(activeDocument.querySelectorAll<HTMLElement>('.workspace-leaf-content[data-type="file-explorer"]'));
         if (explorers.length === 0) {
-            window.setTimeout(() => {
-                this.initDividerObserver();
-            }, 500);
+            if (this.observerRetryCount < this.MAX_OBSERVER_RETRIES) {
+                this.observerRetryCount++;
+                // Debounce retry attempts using exponential/staggered backoff to avoid hammering thread during heavy boot
+                const delay = Math.min(500 * Math.pow(1.2, this.observerRetryCount - 1), 2000);
+                window.setTimeout(() => {
+                    this.initDividerObserver();
+                }, delay);
+            }
             return;
         }
+
+        // Reset retry count once leaves are successfully discovered
+        this.observerRetryCount = 0;
 
         const stripStyle = (el: HTMLElement) => {
             if (!this.plugin.settings.enableStaircaseHack) return;
