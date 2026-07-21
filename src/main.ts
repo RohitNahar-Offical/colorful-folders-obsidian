@@ -2,6 +2,7 @@ import { StyleResolver } from './core/StyleResolver';
 import * as obsidian from "obsidian";
 import {
   ColorfulFoldersSettings,
+  FolderStyle,
   IColorfulFoldersPlugin,
 } from "./common/types";
 import { DEFAULT_SETTINGS } from "./common/constants";
@@ -250,6 +251,14 @@ export default class ColorfulFoldersPlugin
     });
   }
 
+  getStyle(path: string): FolderStyle | null {
+    return StyleResolver.getStyle(this, path);
+  }
+
+  processDividers(): void {
+    this.dividerManager.syncDividers();
+  }
+
   initializeStyles() {
     this.sheet = new CSSStyleSheet();
     this.getOpenDocuments().forEach(doc => {
@@ -259,26 +268,74 @@ export default class ColorfulFoldersPlugin
     });
   }
 
+  private async getAllSvgFiles(dir: string): Promise<string[]> {
+    const adapter = this.app.vault.adapter;
+    const results: string[] = [];
+    if (!(await adapter.exists(dir))) return results;
+    
+    const list = await adapter.list(dir);
+    for (const file of list.files) {
+      if (file.toLowerCase().endsWith('.svg')) {
+        results.push(file);
+      }
+    }
+    for (const folder of list.folders) {
+      const subFiles = await this.getAllSvgFiles(folder);
+      results.push(...subFiles);
+    }
+    return results;
+  }
+
   async loadLocalIcons() {
     try {
       const adapter = this.app.vault.adapter;
       const iconsPath = `${this.app.vault.configDir}/icons`;
       if (await adapter.exists(iconsPath)) {
-        const list = await adapter.list(iconsPath);
-
-        const svgFiles = list.files.filter(f => f.toLowerCase().endsWith('.svg'));
-
-        for (const folder of list.folders) {
-          const sublist = await adapter.list(folder);
-          svgFiles.push(...sublist.files.filter(f => f.toLowerCase().endsWith('.svg')));
-        }
+        const svgFiles = await this.getAllSvgFiles(iconsPath);
 
         this.localFileSystemIcons = {};
         for (const file of svgFiles) {
-          const parts = file.split('/');
-          const name = parts[parts.length - 1].slice(0, -4); // strip .svg
+          const relPath = file.substring(iconsPath.length + 1);
           const content = await adapter.read(file);
-          this.localFileSystemIcons[name] = content; // Store the vault-relative path for lazy-loading
+          
+          const parts = relPath.split('/');
+          const filename = parts[parts.length - 1].slice(0, -4);
+          
+          if (!this.localFileSystemIcons[filename]) {
+            this.localFileSystemIcons[filename] = content;
+          }
+          
+          if (parts.length > 1) {
+            const packName = parts[0].toLowerCase().replace(/[\s_]+/g, '-');
+            const lowerFilename = filename.toLowerCase();
+            const packFilename = `${packName}-${lowerFilename}`;
+            this.localFileSystemIcons[packFilename] = content;
+
+            if (packName.includes('simple') || packName === 'si') {
+              this.localFileSystemIcons[`si-${lowerFilename}`] = content;
+              this.localFileSystemIcons[`simple-${lowerFilename}`] = content;
+            }
+            if (packName.includes('font') || packName.includes('awesome') || packName.startsWith('fa')) {
+              this.localFileSystemIcons[`fa-${lowerFilename}`] = content;
+              this.localFileSystemIcons[`fas-${lowerFilename}`] = content;
+              this.localFileSystemIcons[`far-${lowerFilename}`] = content;
+              this.localFileSystemIcons[`fab-${lowerFilename}`] = content;
+            }
+            if (packName.includes('remix') || packName.startsWith('ri')) {
+              this.localFileSystemIcons[`ri-${lowerFilename}`] = content;
+              this.localFileSystemIcons[`remix-${lowerFilename}`] = content;
+            }
+            if (packName.includes('tabler') || packName.startsWith('tb')) {
+              this.localFileSystemIcons[`tb-${lowerFilename}`] = content;
+            }
+            if (packName.includes('material') || packName.startsWith('mdi')) {
+              this.localFileSystemIcons[`mdi-${lowerFilename}`] = content;
+            }
+          }
+
+          const relNoExt = relPath.slice(0, -4);
+          const hyphenated = relNoExt.toLowerCase().replace(/[\s_]+/g, '-').replace(/\//g, '-');
+          this.localFileSystemIcons[hyphenated] = content;
         }
 
         // Trigger style generation now that we know what icons exist

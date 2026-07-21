@@ -1,5 +1,6 @@
 import { App, MenuItem, Menu, EventRef, Debouncer } from 'obsidian';
 import { DOMObserverService } from '../services/DOMObserverService';
+import type { IconManager } from '../core/IconManager';
 
 export interface FolderStyle {
     hex?: string;
@@ -151,15 +152,10 @@ export interface IColorfulFoldersPlugin {
     rootSortCache?: Map<string, number> | null;
     parsedExclusionList?: Set<string> | null;
     activePaletteCache?: { palette: { rgb: string; hex: string }[] } | null;
-    iconManager: { 
-        getIconSvg(iconId: string, shouldEncode?: boolean): string,
-        getAutoIconData(name: string, path?: string): AutoIconData | null,
-        normalizeSvg(svgStr: string, shouldEncode?: boolean): string,
-        invalidateCategoryCache(): void,
-        isEmojiIcon(iconId: string): boolean
-    };
+    iconManager: IconManager;
     sheet: CSSStyleSheet;
     isSyncingDividers: boolean;
+    isDragging: boolean;
     _dividerTimeout?: number | null;
     saveSettings(): Promise<void>;
     registerCustomIcons(): void;
@@ -174,8 +170,12 @@ export interface IColorfulFoldersPlugin {
     styleGenerator: { generateCss(): Promise<string> };
     domObserverService: DOMObserverService;
     getAllExplorerContainers(): HTMLElement[];
+    getOpenDocuments(): Document[];
+    getStyle(path: string): FolderStyle | null;
+    processDividers(): void;
     generateStyles(): Promise<void>;
     generateStylesDebounced: Debouncer<[], void>;
+    refreshIconsDebounced?: Debouncer<[], void>;
 
     registerEvent(event: EventRef): void;
     cachedDocuments: Set<Document>;

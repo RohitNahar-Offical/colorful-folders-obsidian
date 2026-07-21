@@ -103,9 +103,9 @@ export class IconPickerModal extends obsidian.Modal {
                 if (packFilter === "lucide") {
                     filtered = lucideIcons;
                 } else {
-                    filtered = customIds.filter(id => {
+                    filtered = [...customIds, ...localIds].filter(id => {
                         if (packFilter === "custom") return !id.includes("-");
-                        return id.startsWith(packFilter + "-");
+                        return id.startsWith(packFilter + "-") || id.startsWith(packFilter + "/");
                     });
                 }
             }

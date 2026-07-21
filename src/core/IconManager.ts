@@ -22,7 +22,7 @@ export class IconManager {
         this.plugin = plugin;
     }
 
-    getAutoIconData(name: string): AutoIconData | null {
+    getAutoIconData(name: string, path?: string): AutoIconData | null {
         const lName = name.toLowerCase();
         const settings = this.plugin.settings;
         const currentKey = settings.customIconRules || '';
@@ -63,6 +63,60 @@ export class IconManager {
             this._customRulesKey = currentKey;
         }
 
+        // Check if any loaded local filesystem icon pack or custom icon has a matching icon name
+        let sanitized = lName.trim();
+        const dotIdx = sanitized.lastIndexOf('.');
+        if (dotIdx > 0 && sanitized.length - dotIdx <= 5) {
+            sanitized = sanitized.substring(0, dotIdx);
+        }
+        const fullHyphenated = sanitized.replace(/[\s_]+/g, '-');
+
+        let exactMatchedIconId = this.findIconInPacks(fullHyphenated);
+
+        // For multi-word file/folder names (e.g. "Nintendo Switch 2 thoughts"), match word pairs or individual brand/tool words against installed packs
+        if (!exactMatchedIconId) {
+            const stopWords = new Set(['and', 'the', 'for', 'with', 'about', 'from', 'into', 'notes', 'thoughts', 'draft', 'list', 'page', 'doc', 'text', 'file', 'folder']);
+            const words = sanitized.split(/[\s_.-]+/).filter(w => w.length >= 3 && !stopWords.has(w.toLowerCase()));
+
+            // 1. Try 2-word combinations (e.g. "nintendo-switch", "nintendoswitch")
+            for (let i = 0; i < words.length - 1; i++) {
+                const pair = `${words[i]}-${words[i + 1]}`;
+                const matched = this.findIconInPacks(pair);
+                if (matched) {
+                    exactMatchedIconId = matched;
+                    break;
+                }
+                const pairNoDash = `${words[i]}${words[i + 1]}`;
+                const matchedNoDash = this.findIconInPacks(pairNoDash);
+                if (matchedNoDash) {
+                    exactMatchedIconId = matchedNoDash;
+                    break;
+                }
+            }
+
+            // 2. Try single words (e.g. "nintendo")
+            if (!exactMatchedIconId) {
+                for (const word of words) {
+                    const matched = this.findIconInPacks(word);
+                    if (matched) {
+                        exactMatchedIconId = matched;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (exactMatchedIconId) {
+            const safeRexStr = sanitized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            return {
+                rex: new RegExp(`^${safeRexStr}$`, 'i'),
+                emoji: exactMatchedIconId,
+                lucide: exactMatchedIconId,
+                priority: 2000,
+                isCustom: true
+            };
+        }
+
         const matches = this._categoryCache.filter(cat => cat.rex.test(lName));
         matches.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
@@ -87,6 +141,30 @@ export class IconManager {
         return null;
     }
 
+    findIconInPacks(searchKey: string): string | null {
+        if (!searchKey || searchKey.length < 3) return null;
+        const local = this.plugin.localFileSystemIcons;
+        const custom = this.plugin.settings.customIcons;
+
+        const s = searchKey.toLowerCase().replace(/[\s_:]+/g, '-').replace(/\//g, '-');
+        const cleanS = s.replace(/^(si|simple|simple-icons|simpleicons|fa|fas|far|fab|fontawesome|ri|remix|remixicons|tb|tabler|mdi|material|oct|octicons|lucide)[-_:]/, '');
+
+        if (local) {
+            if (local[s]) return s;
+            if (local[cleanS]) return cleanS;
+            for (const key of Object.keys(local)) {
+                if (key === s || key === cleanS || key.endsWith(`-${s}`) || key.endsWith(`-${cleanS}`) || key.endsWith(`/${cleanS}`)) {
+                    return key;
+                }
+            }
+        }
+        if (custom) {
+            if (custom[s]) return s;
+            if (custom[cleanS]) return cleanS;
+        }
+        return null;
+    }
+
     /** Clears the category and normalization caches — call when icon settings change. */
     invalidateCategoryCache() {
         this._categoryCache = null;
@@ -99,10 +177,27 @@ export class IconManager {
      * Lucide and custom icon IDs only contain a-z, 0-9, dashes and underscores.
      * Anything with non-standard characters (or very short) is an emoji.
      */
-    isEmojiIcon(iconId: string): boolean {
+    isEmojiIcon(iconId?: string | null): boolean {
         if (!iconId) return false;
-        if (iconId.length <= 2) return true; // Single/double char emojis
-        return /[^a-zA-Z0-9\-_]/.test(iconId); // Contains non-standard chars
+        if (this.plugin.localFileSystemIcons) {
+            const lId = iconId.toLowerCase();
+            const cleanId = lId.replace(/^lucide-/, '');
+            const hyphenated = lId.replace(/[\s_]+/g, '-').replace(/\//g, '-');
+            if (this.plugin.localFileSystemIcons[iconId] || 
+                this.plugin.localFileSystemIcons[lId] || 
+                this.plugin.localFileSystemIcons[cleanId] || 
+                this.plugin.localFileSystemIcons[hyphenated]) {
+                return false;
+            }
+        }
+        if (this.plugin.settings.customIcons && (this.plugin.settings.customIcons[iconId] || this.plugin.settings.customIcons[iconId.toLowerCase()])) {
+            return false;
+        }
+        if (obsidian.getIconIds?.().includes(`lucide-${iconId}`) || obsidian.getIconIds?.().includes(iconId)) {
+            return false;
+        }
+        if (iconId.length <= 2) return true;
+        return /[^a-zA-Z0-9\-_/.]/.test(iconId);
     }
 
 
@@ -110,34 +205,71 @@ export class IconManager {
      * Gets a normalized SVG string, handling cache.
      */
     getIconSvg(iconId: string, shouldEncode = true): string {
+        if (!iconId) return "";
         const cacheKey = `${iconId}-${shouldEncode ? 'enc' : 'raw'}`;
-        let cached = this.plugin.iconCache.get(cacheKey);
-        if (cached) return cached;
+        if (this.plugin.iconCache) {
+            const cached = this.plugin.iconCache.get(cacheKey);
+            if (cached) return cached;
+        }
 
         let svgStr = "";
-        // 1. Try Custom Icons
-        if (this.plugin.settings.customIcons[iconId]) {
-            svgStr = this.plugin.settings.customIcons[iconId];
-        } else if (this.plugin.localFileSystemIcons && this.plugin.localFileSystemIcons[iconId]) {
-            // 2. Try Local Filesystem Icons (from .obsidian/icons)
-            svgStr = this.plugin.localFileSystemIcons[iconId];
-        } else {
-            // 3. Try Lucide Icons
-            const tempEl = activeDocument.createElementNS('http://www.w3.org/1999/xhtml', 'div') as HTMLDivElement;
-            obsidian.setIcon(tempEl, iconId);
-            if (!tempEl.querySelector('svg') && !iconId.startsWith('lucide-')) {
-                obsidian.setIcon(tempEl, `lucide-${iconId}`);
+        const custom = this.plugin.settings.customIcons;
+        const local = this.plugin.localFileSystemIcons;
+
+        // 1. Try Custom Settings Icons
+        if (custom) {
+            svgStr = custom[iconId] || custom[iconId.toLowerCase()] || "";
+        }
+        
+        // 2. Try Local Filesystem Icons (from .obsidian/icons and all pack subfolders)
+        if (!svgStr && local) {
+            const lId = iconId.toLowerCase();
+            const cleanId = lId.replace(/^lucide-/, '');
+            const hyphenated = lId.replace(/[\s_:]+/g, '-').replace(/\//g, '-');
+
+            svgStr = local[iconId] || local[lId] || local[cleanId] || local[hyphenated] || "";
+            
+            if (!svgStr) {
+                const baseName = lId.replace(/^(si|simple|simple-icons|simpleicons|fa|fas|far|fab|fontawesome|ri|remix|remixicons|tb|tabler|mdi|material|oct|octicons|lucide)[-_:]/, '');
+
+                if (local[baseName]) {
+                    svgStr = local[baseName];
+                } else {
+                    for (const key of Object.keys(local)) {
+                        if (key === baseName || key.endsWith(`-${baseName}`) || key.endsWith(`/${baseName}`)) {
+                            svgStr = local[key] || "";
+                            if (svgStr) break;
+                        }
+                    }
+                }
             }
-            const svgEl = tempEl.querySelector('svg');
-            if (svgEl) {
-                svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-                svgStr = svgEl.outerHTML;
+        }
+
+        // 3. Try Obsidian Registered Icons (Lucide, Iconize, IconFolder, SimpleIcons, FontAwesome, etc.)
+        if (!svgStr) {
+            const candidateIds = [
+                iconId,
+                iconId.toLowerCase(),
+                iconId.replace(/^lucide-/, ''),
+                `lucide-${iconId}`,
+                iconId.replace(/:/g, '-'),
+                iconId.replace(/-/g, ':')
+            ];
+            for (const cand of candidateIds) {
+                const svgEl = obsidian.getIcon(cand);
+                if (svgEl) {
+                    svgEl.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                    svgStr = svgEl.outerHTML;
+                    break;
+                }
             }
         }
 
         if (svgStr) {
             const normalized = this.normalizeSvg(svgStr, shouldEncode);
-            this.plugin.iconCache.set(cacheKey, normalized);
+            if (this.plugin.iconCache) {
+                this.plugin.iconCache.set(cacheKey, normalized);
+            }
             return normalized;
         }
 

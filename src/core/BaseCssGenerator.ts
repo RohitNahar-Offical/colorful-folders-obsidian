@@ -60,17 +60,27 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             flex-grow: 1 !important;
         }
 
-        /* ── ICON ACTIVE: suppress native pseudo-elements ─────────────────── */
-        .cf-icon-active::before {
+        /* ── ICON SUPPRESSION & CONFLICT PREVENTION ─────────────────────── */
+        body .nav-folder-title-content > svg:not(.cf-icon-wrapper svg),
+        body .nav-file-title-content > svg:not(.cf-icon-wrapper svg),
+        body .tree-item-inner > svg:not(.cf-icon-wrapper svg),
+        body .nav-folder-title-content > .nav-folder-icon,
+        body .nav-file-title-content > .nav-file-icon {
+            display: none !important;
+        }
+
+        body .nav-folder-title-content.cf-icon-active::before,
+        body .nav-file-title-content.cf-icon-active::before,
+        body .tree-item-inner.cf-icon-active::before,
+        body .nav-folder-title-content:has(.cf-icon-wrapper)::before,
+        body .nav-file-title-content:has(.cf-icon-wrapper)::before,
+        body .tree-item-inner:has(.cf-icon-wrapper)::before {
             display: none !important;
             content: none !important;
+            -webkit-mask-image: none !important;
+            mask-image: none !important;
             width: 0 !important;
             height: 0 !important;
-        }
-        .cf-icon-active > svg:not(.cf-icon-wrapper svg),
-        .cf-icon-active > .nav-folder-icon,
-        .cf-icon-active > .nav-file-icon {
-            display: none !important;
         }
 
         .cf-icon-wrapper {

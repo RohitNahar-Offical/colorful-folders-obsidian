@@ -19,7 +19,7 @@ export class EventTrackerService {
 
         this.registerEvent(
             this.plugin.app.workspace.on("layout-change", () => {
-                this.plugin.domObserverService.initDividerObserverDebounced();
+                this.plugin.domObserverService.initDividerObserver();
                 this.updateActiveFolderClasses();
             }),
         );
@@ -149,7 +149,7 @@ export class EventTrackerService {
             if (!this.plugin.isDragging) return;
             this.plugin.isDragging = false;
             this.plugin.domObserverService.initDividerObserver();
-            this.plugin.domObserverService.processDividers();
+            this.plugin.dividerManager.syncDividers();
         };
         
         this.registerDomEvent(doc, "dragend", handleDragEnd);

@@ -386,9 +386,7 @@ export class StyleGenerator {
                 }
 
                 if (iconId) {
-                    const isCustomEmoji = !obsidian.getIconIds?.().includes(`lucide-${iconId}`) &&
-                        !obsidian.getIconIds?.().includes(iconId) &&
-                        !(this.settings.customIcons && this.settings.customIcons[iconId]);
+                    const isCustomEmoji = this.plugin.iconManager.isEmojiIcon(iconId);
 
                     if (isCustomEmoji) {
                         grouper.add(`
@@ -798,9 +796,7 @@ export class StyleGenerator {
             ], `folderText_${isUsingGradient ? 'grad_' + startCol.replace(/\s+/g, '') + '_' + endCol.replace(/\s+/g, '') : 'norm_' + folderStyles.t}_${isBold}_${isItalic}`);
 
             const generateIconCss = (iconIdToUse: string, isExpandedState: boolean | null) => {
-                const isCustomEmoji = !obsidian.getIconIds?.().includes(`lucide-${iconIdToUse}`) &&
-                    !obsidian.getIconIds?.().includes(iconIdToUse) &&
-                    !(this.settings.customIcons && this.settings.customIcons[iconIdToUse]);
+                const isCustomEmoji = this.plugin.iconManager.isEmojiIcon(iconIdToUse);
 
                 const getSels = (expanded: boolean | null) => {
                     const baseNav = `body .nav-files-container .nav-folder`;

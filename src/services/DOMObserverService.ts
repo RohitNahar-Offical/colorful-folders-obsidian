@@ -140,7 +140,7 @@ export class DOMObserverService {
             }
 
             if (hasRelevantChange) {
-                this.plugin.processDividers();
+                this.plugin.dividerManager.syncDividers();
                 if (!this.isScrolling) {
                     const addedNodes = mutations
                         .flatMap(m => Array.from(m.addedNodes));
@@ -176,7 +176,7 @@ export class DOMObserverService {
         this.scrollTimeout = win.setTimeout(() => {
             this.isScrolling = false;
             this.isScrollingPublic = false;
-            this.plugin.processDividers();
+            this.plugin.dividerManager.syncDividers();
             this.plugin.refreshIconsDebounced?.();
         }, 100);
     };
