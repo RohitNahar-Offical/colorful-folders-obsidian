@@ -1,14 +1,7 @@
 import * as obsidian from 'obsidian';
-import { IColorfulFoldersPlugin, AutoIconData } from '../common/types';
+import { IColorfulFoldersPlugin, FolderStyle, AutoIconData } from '../common/types';
 import { AUTO_ICON_CATEGORIES } from '../common/constants';
-import { hashString, escapeRegExp } from '../common/utils';
-
-interface ParsedIcon {
-    id: string;
-    isLucide: boolean;
-    suffix: string;
-    significantParts: Set<string>;
-}
+import { hashString } from '../common/utils';
 
 export class IconManager {
     plugin: IColorfulFoldersPlugin;
@@ -17,22 +10,19 @@ export class IconManager {
     private _categoryCache: AutoIconData[] | null = null;
     private _customRulesKey: string = '';
     private _normCache: Map<string, string> = new Map();
-    private _parsedIcons: ParsedIcon[] | null = null;
-    private _resolvedIconIdCache: Map<string, string | null> = new Map();
-    private _lastIconIdsCheckTime: number = 0;
-    
-    // --- O(1) Fast Lookup Indexes ---
-    private _keywordToIcon = new Map<string, { custom: string | null, lucide: string | null }>();
-    private _exactIconMap = new Map<string, string>();
-    private _suffixToIcon = new Map<string, { custom: string | null, lucide: string | null }>();
 
-
+    // --- FIX 3: RAF-batched injection queue ---
+    // Pending icon injections are collected synchronously and flushed
+    // in a single requestAnimationFrame to avoid interleaved read/write
+    // layout thrashing when many icons need to be rendered at once.
+    private _pendingInjections: Array<{ el: HTMLElement; style: FolderStyle }> = [];
+    private _rafPending = false;
 
     constructor(plugin: IColorfulFoldersPlugin) {
         this.plugin = plugin;
     }
 
-    getAutoIconData(name: string, path?: string): AutoIconData | null {
+    getAutoIconData(name: string): AutoIconData | null {
         const lName = name.toLowerCase();
         const settings = this.plugin.settings;
         const currentKey = settings.customIconRules || '';
@@ -73,32 +63,17 @@ export class IconManager {
             this._customRulesKey = currentKey;
         }
 
-        // 1. Get Fuzzy Name Match
-        const fuzzyIconId = this.findIconId(lName);
-        const hasCustomFuzzy = fuzzyIconId && !fuzzyIconId.startsWith('lucide-');
-        
-
-        // 2. Standard Regex Match
         const matches = this._categoryCache.filter(cat => cat.rex.test(lName));
         matches.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
-        let finalMatch: AutoIconData | null = null;
+        if (settings.iconDebugMode && matches.length > 0) {
+            console.debug(`Colorful Folders [Debug]: Match for "${name}" ->`, matches[0]);
+        }
 
-        // 3. Priority Resolution
-        if (hasCustomFuzzy && fuzzyIconId) {
-            // Ultimate priority: Custom Icon exact/fuzzy match
-            finalMatch = {
-                rex: new RegExp(`^${escapeRegExp(lName)}$`, 'i'),
-                emoji: fuzzyIconId,
-                lucide: fuzzyIconId,
-                priority: 2000
-            };
-        } else if (matches.length > 0) {
-            // Fallback 1: Curated Regex rules (with variants)
+        if (matches.length > 0) {
             const match = { ...matches[0] };
             if (settings.autoIconVariety) {
-                const targetToHash = (path || name) + (settings.varietySeed || 0).toString();
-                const h = hashString(targetToHash);
+                const h = hashString(name);
                 if (match.emojis && match.emojis.length > 0) {
                     match.emoji = match.emojis[h % match.emojis.length];
                 }
@@ -106,166 +81,10 @@ export class IconManager {
                     match.lucide = match.lucides[h % match.lucides.length];
                 }
             }
-            finalMatch = match;
-            
-            // Smart Icon Resolution
-            if (finalMatch && finalMatch.lucide && !this.isEmojiIcon(finalMatch.lucide)) {
-                finalMatch.lucide = this.resolveIconId(finalMatch.lucide);
-            }
-        } else if (fuzzyIconId) {
-            // Fallback 2: Lucide generic fuzzy match
-            finalMatch = {
-                rex: new RegExp(`^${escapeRegExp(lName)}$`, 'i'),
-                emoji: fuzzyIconId,
-                lucide: fuzzyIconId,
-                priority: 1000
-            };
+            return match;
         }
 
-        if (settings.iconDebugMode && finalMatch) {
-            console.debug(`Colorful Folders [Debug]: Match for "${name}" ->`, finalMatch);
-        }
-
-        return finalMatch;
-    }
-
-    /**
-     * Searches installed packs for an icon matching the request.
-     * Returns null if no match is found anywhere. Uses O(1) cache.
-     */
-    findIconId(requestedIcon: string): string | null {
-        if (!requestedIcon) return null;
-
-        // Sanitize the name
-        let sanitized = requestedIcon.toLowerCase().trim();
-        
-        // Strip file extensions if present (e.g., 'amazon.md' -> 'amazon')
-        const dotIdx = sanitized.lastIndexOf('.');
-        if (dotIdx > 0 && sanitized.length - dotIdx <= 5) {
-            sanitized = sanitized.substring(0, dotIdx);
-        }
-        
-        // Replace spaces or special characters with hyphens to match icon naming conventions
-        sanitized = sanitized.replace(/[\s_]+/g, '-').replace(/[^a-z0-9-]/g, '');
-
-        if (!sanitized) return null;
-
-        // O(1) Cache Lookup (using the original requested string)
-        if (this._resolvedIconIdCache.has(requestedIcon)) {
-            return this._resolvedIconIdCache.get(requestedIcon) || null;
-        }
-
-        // Fast-bail for things that are definitely file names (e.g. spaces, sentences) to save CPU
-        if (sanitized.includes(' ') || sanitized.length > 30) {
-            this._resolvedIconIdCache.set(requestedIcon, null);
-            return null;
-        }
-
-        // Ensure available icons are populated and parsed once (or re-parsed if new icons were registered)
-        const now = Date.now();
-        if (!this._parsedIcons || (now - this._lastIconIdsCheckTime > 5000)) {
-            this._lastIconIdsCheckTime = now;
-            const currentRawIds = obsidian.getIconIds();
-            
-            if (!this._parsedIcons || this._parsedIcons.length !== currentRawIds.length) {
-                const genericModifiers = new Set(['fill', 'line', 'solid', 'regular', 'thin', 'light', 'bold', 'duotone', 'brands']);
-                
-                this._keywordToIcon.clear();
-                this._exactIconMap.clear();
-                this._suffixToIcon.clear();
-
-                this._parsedIcons = currentRawIds.map(id => {
-                    const parts = id.split('-');
-                    const isLucide = id.startsWith('lucide-');
-                    const suffix = parts[parts.length - 1];
-                    const significantParts = new Set(parts.filter(p => p !== parts[0] && !genericModifiers.has(p)));
-                    
-                    this._exactIconMap.set(id, id);
-
-                    if (!this._suffixToIcon.has(suffix)) {
-                        this._suffixToIcon.set(suffix, { custom: null, lucide: null });
-                    }
-                    const sEntry = this._suffixToIcon.get(suffix);
-                    if (isLucide && !sEntry.lucide) sEntry.lucide = id;
-                    if (!isLucide && !sEntry.custom) sEntry.custom = id;
-
-                    for (const part of significantParts) {
-                        if (!this._keywordToIcon.has(part)) {
-                            this._keywordToIcon.set(part, { custom: null, lucide: null });
-                        }
-                        const kEntry = this._keywordToIcon.get(part);
-                        if (isLucide && !kEntry.lucide) kEntry.lucide = id;
-                        if (!isLucide && !kEntry.custom) kEntry.custom = id;
-                    }
-
-                    return { id, isLucide, suffix, significantParts };
-                });
-
-                // If we just discovered new icons, our previous "not found" caches might be invalid now.
-                this._resolvedIconIdCache.clear();
-            }
-        }
-
-        // (Sanitization was already done at the top of the function)
-
-        // Priority 1: Exact global match on the sanitized string
-        if (this._exactIconMap.has(sanitized)) {
-            this._resolvedIconIdCache.set(requestedIcon, sanitized);
-            return sanitized;
-        }
-
-        const exactLucideMatch = this._exactIconMap.has(`lucide-${sanitized}`) ? `lucide-${sanitized}` : null;
-        let customSuffixMatch: string | null = null;
-        let lucideSuffixMatch: string | null = null;
-        let customContainsMatch: string | null = null;
-        let lucideContainsMatch: string | null = null;
-
-        const sEntry = this._suffixToIcon.get(sanitized);
-        if (sEntry) {
-            customSuffixMatch = sEntry.custom;
-            lucideSuffixMatch = sEntry.lucide;
-        }
-
-        const kEntry = this._keywordToIcon.get(sanitized);
-        if (kEntry) {
-            customContainsMatch = kEntry.custom;
-            lucideContainsMatch = kEntry.lucide;
-        }
-
-        // Top Priority: Custom Suffix > Custom Contains
-        // Fallback Priority: Exact Lucide > Lucide Suffix > Lucide Contains
-        let resolved = customSuffixMatch || customContainsMatch || exactLucideMatch || lucideSuffixMatch || lucideContainsMatch || null;
-        
-        // --- Keyword Fallback (O(1) lookups per word) ---
-        if (!resolved && sanitized.includes('-')) {
-            const keywords = sanitized.split('-').filter(w => w.length >= 4);
-
-            let bestCustomMatch: string | null = null;
-            let bestLucideMatch: string | null = null;
-
-            for (const keyword of keywords) {
-                const kwEntry = this._keywordToIcon.get(keyword);
-                if (kwEntry) {
-                    if (kwEntry.custom && !bestCustomMatch) bestCustomMatch = kwEntry.custom;
-                    if (kwEntry.lucide && !bestLucideMatch) bestLucideMatch = kwEntry.lucide;
-                }
-            }
-            
-            resolved = bestCustomMatch || bestLucideMatch || null;
-        }
-
-        // Cache and return
-        this._resolvedIconIdCache.set(requestedIcon, resolved);
-        return resolved;
-    }
-
-    /**
-     * Resolves a generic requested icon (e.g., "github") to a concrete installed pack ID
-     * (e.g., "remix-github-fill"). Returns the original string if not found.
-     */
-    resolveIconId(requestedIcon: string): string {
-        const found = this.findIconId(requestedIcon);
-        return found || requestedIcon;
+        return null;
     }
 
     /** Clears the category and normalization caches — call when icon settings change. */
@@ -273,9 +92,6 @@ export class IconManager {
         this._categoryCache = null;
         this._customRulesKey = '';
         this._normCache.clear();
-        this._parsedIcons = null;
-        this._lastIconIdsCheckTime = 0;
-        this._resolvedIconIdCache.clear();
     }
 
     /**
@@ -304,22 +120,7 @@ export class IconManager {
             svgStr = this.plugin.settings.customIcons[iconId];
         } else if (this.plugin.localFileSystemIcons && this.plugin.localFileSystemIcons[iconId]) {
             // 2. Try Local Filesystem Icons (from .obsidian/icons)
-            const val = this.plugin.localFileSystemIcons[iconId];
-            if (val === "__LOADING__") {
-                return "";
-            } else if (val?.toLowerCase().endsWith('.svg')) {
-                this.plugin.localFileSystemIcons[iconId] = "__LOADING__";
-                this.plugin.app.vault.adapter.read(val).then(content => {
-                    this.plugin.localFileSystemIcons[iconId] = content;
-                    this.plugin.generateStylesDebounced();
-                }).catch(e => {
-                    console.error("Failed to load lazy icon:", val, e);
-                    this.plugin.localFileSystemIcons[iconId] = "";
-                });
-                return "";
-            } else {
-                svgStr = val;
-            }
+            svgStr = this.plugin.localFileSystemIcons[iconId];
         } else {
             // 3. Try Lucide Icons
             const tempEl = activeDocument.createElementNS('http://www.w3.org/1999/xhtml', 'div') as HTMLDivElement;
@@ -337,17 +138,206 @@ export class IconManager {
         if (svgStr) {
             const normalized = this.normalizeSvg(svgStr, shouldEncode);
             this.plugin.iconCache.set(cacheKey, normalized);
-            if (this.plugin.iconCache.size > 1000) {
-                const firstKey = this.plugin.iconCache.keys().next().value as string | undefined;
-                if (firstKey !== undefined) this.plugin.iconCache.delete(firstKey);
-            }
             return normalized;
         }
 
         return "";
     }
 
+    refreshIcons() {
+        const containers: Element[] = [];
+        this.plugin.app.workspace.getLeavesOfType('file-explorer').forEach(leaf => {
+            containers.push(leaf.view.containerEl);
+        });
 
+        containers.forEach(container => {
+            const items = container.querySelectorAll('.nav-folder-title, .nav-file-title, .tree-item-self');
+            items.forEach(item => {
+                const path = (item as HTMLElement).dataset.path;
+                if (!path) return;
+
+                const style = this.plugin.getStyle(path);
+                
+                // Toggle cf-hidden class on wrapper
+                const wrapper = item.closest('.nav-folder, .nav-file, .tree-item, .nn-navitem');
+                if (wrapper) {
+                    wrapper.classList.toggle('cf-hidden', !!(style && typeof style === 'object' && style.isHidden));
+                }
+
+                if (style && style.iconId) {
+                    // FIX 3: Route through RAF queue so bulk renders don't thrash layout
+                    this._queueInjection(item as HTMLElement, style);
+                } else {
+                    this.removeInjectedIcon(item as HTMLElement);
+                }
+            });
+        });
+    }
+
+    /**
+     * FIX 2: Targeted injection for specific nodes from a MutationRecord.
+     * Instead of re-scanning the entire explorer container (O(N-total)),
+     * this only processes the nodes that actually changed (O(N-changed)),
+     * which is typically 1-5 nodes during a virtual-list scroll recycle.
+     */
+    injectIconsForNodes(nodes: NodeList) {
+        nodes.forEach(node => {
+            if (node.nodeType !== Node.ELEMENT_NODE) return;
+            const el = node as HTMLElement;
+
+            // The added node could be the title element itself, or a parent wrapper.
+            // Check the node and its direct title child.
+            const titleSelectors = '.nav-folder-title, .nav-file-title, .tree-item-self';
+            const candidates: HTMLElement[] = [];
+            if (el.matches(titleSelectors)) {
+                candidates.push(el);
+            } else {
+                el.querySelectorAll<HTMLElement>(titleSelectors).forEach(c => candidates.push(c));
+            }
+
+            for (const titleEl of candidates) {
+                const path = titleEl.dataset.path;
+                if (!path) continue;
+                const style = this.plugin.getStyle(path);
+                
+                // Toggle cf-hidden class on wrapper
+                const wrapper = titleEl.closest('.nav-folder, .nav-file, .tree-item, .nn-navitem');
+                if (wrapper) {
+                    wrapper.classList.toggle('cf-hidden', !!(style && typeof style === 'object' && style.isHidden));
+                }
+
+                if (style && style.iconId) {
+                    this._queueInjection(titleEl, style);
+                } else {
+                    this.removeInjectedIcon(titleEl);
+                }
+            }
+        });
+    }
+
+    /** FIX 3: Enqueue an icon injection to be flushed on the next animation frame. */
+    private _queueInjection(el: HTMLElement, style: FolderStyle) {
+        this._pendingInjections.push({ el, style });
+        if (!this._rafPending) {
+            this._rafPending = true;
+            window.requestAnimationFrame(() => {
+                this._flushInjections();
+                this._rafPending = false;
+            });
+        }
+    }
+
+    /** FIX 3: Execute all queued injections in one batch. */
+    private _flushInjections() {
+        const batch = this._pendingInjections.splice(0);
+        for (const { el, style } of batch) {
+            this._doInjectIcon(el, style);
+        }
+    }
+
+    /**
+     * Public entry point: routes through the RAF queue for scroll-safe rendering.
+     */
+    injectIcon(el: HTMLElement, style: FolderStyle) {
+        this._queueInjection(el, style);
+    }
+
+    /**
+     * FIX 3 + 4: The actual synchronous injection work, called only from _flushInjections.
+     * Contains the FIX 4 version-stamp early-exit guard.
+     */
+    private _doInjectIcon(el: HTMLElement, style: FolderStyle) {
+        if (!style.iconId) return;
+
+        // Get RAW cleaned SVG
+        const svgStr = this.getIconSvg(style.iconId, false);
+        if (!svgStr) {
+            this.removeInjectedIcon(el);
+            return;
+        }
+
+        const color = style.iconColor || style.hex || style.textColor || 'var(--text-normal)';
+
+        // FIX 4: Version-stamp early-exit. If the wrapper already shows the correct
+        // icon and color, skip ALL DOM work — this makes repeat refreshIcons() calls
+        // essentially free for already-rendered elements.
+        const existingWrapper = el.querySelector<HTMLElement>('.cf-icon-wrapper');
+        if (existingWrapper &&
+            existingWrapper.dataset.cfIconId === style.iconId &&
+            existingWrapper.dataset.cfIconColor === color) {
+            return;
+        }
+
+        // Prepare or find wrapper
+        const doc = el.ownerDocument || activeDocument;
+        const content = el.querySelector('.nav-folder-title-content, .nav-file-title-content, .tree-item-inner');
+        if (content) {
+            content.addClass('cf-icon-active');
+            // Proactively hide any existing default SVG icons or tags
+            content.querySelectorAll(':scope > svg:not(.cf-icon-wrapper svg), :scope > .nav-folder-icon, :scope > .nav-file-icon').forEach((s: HTMLElement) => {
+                s.setCssStyles({ display: 'none' });
+            });
+        }
+
+        let wrapper = el.querySelector<HTMLElement>('.cf-icon-wrapper');
+        if (!wrapper) {
+            wrapper = doc.createElement('span');
+            wrapper.classList.add('cf-icon-wrapper');
+            wrapper.setCssStyles({
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                alignSelf: 'center',
+                marginRight: '6px',
+                flexShrink: '0',
+                overflow: 'visible'
+            });
+            if (content) content.prepend(wrapper);
+        }
+
+        const wideScale = this.plugin.settings.wideAutoIcons ? 1.05 : 1.0;
+        const scale = (this.plugin.settings.iconScale || 1.0) * wideScale;
+
+        wrapper.setCssStyles({
+            width: `calc(1.3em * ${scale})`,
+            height: `calc(1.3em * ${scale})`
+        });
+        
+        const coloredSvg = this.colorizeSvg(svgStr, color);
+        wrapper.empty();
+        // eslint-disable-next-line no-unsanitized/method -- contextual fragment is safe here as coloredSvg is derived from sanitized/built-in icons
+        const frag = doc.createRange().createContextualFragment(coloredSvg);
+        
+        // Ensure the SVG perfectly fills our responsive wrapper
+        const svgEl = frag.querySelector('svg');
+        if (svgEl) {
+            (svgEl as unknown as HTMLElement).setCssStyles({
+                width: '100%',
+                height: '100%',
+                display: 'block'
+            });
+        }
+        
+        wrapper.appendChild(frag);
+
+        // FIX 4: Stamp the rendered icon ID and color so repeat calls can early-exit
+        wrapper.dataset.cfIconId = style.iconId;
+        wrapper.dataset.cfIconColor = color;
+    }
+
+    removeInjectedIcon(el: HTMLElement) {
+        const wrapper = el.querySelector('.cf-icon-wrapper');
+        if (wrapper) wrapper.remove();
+        
+        const content = el.querySelector('.nav-folder-title-content, .nav-file-title-content, .tree-item-inner');
+        if (content) {
+            content.removeClass('cf-icon-active');
+            // Restore hidden SVGs if they were hidden by us
+            content.querySelectorAll(':scope > svg:not(.cf-icon-wrapper svg), :scope > .nav-folder-icon, :scope > .nav-file-icon').forEach((s: HTMLElement) => {
+                s.setCssStyles({ display: '' });
+            });
+        }
+    }
 
     /**
      * Cleans and standardizes SVG strings.
@@ -442,10 +432,6 @@ export class IconManager {
         } catch { result = svgStr; }
 
         this._normCache.set(cacheKey, result);
-        if (this._normCache.size > 1000) {
-            const firstKey = this._normCache.keys().next().value as string | undefined;
-            if (firstKey !== undefined) this._normCache.delete(firstKey);
-        }
         return result;
     }
 
