@@ -84,12 +84,46 @@ export class DOMObserverService {
             return;
         }
 
+        const stripStyle = (el: HTMLElement) => {
+            if (!this.plugin.settings.enableStaircaseHack) return;
+            const style = el.getAttribute('style') || '';
+            if (style.includes('padding-inline-start') || style.includes('padding-left') || style.includes('margin-left')) {
+                el.removeAttribute('style');
+            }
+        };
+
         this.dividerObserver = new MutationObserver((mutations) => {
-            // ASYNC DIVIDER PROCESSING
+            if (this.plugin.settings.enableStaircaseHack) {
+                for (const m of mutations) {
+                    if (m.type === "attributes" && m.attributeName === "style") {
+                        const target = m.target as HTMLElement;
+                        if (target.classList && target.classList.contains('tree-item-self')) {
+                            stripStyle(target);
+                        }
+                    } else if (m.type === "childList") {
+                        for (const node of Array.from(m.addedNodes)) {
+                            if (node.nodeType === Node.ELEMENT_NODE) {
+                                const el = node as HTMLElement;
+                                if (el.classList.contains('tree-item-self')) {
+                                    stripStyle(el);
+                                }
+                                const children = el.querySelectorAll<HTMLElement>('.tree-item-self');
+                                for (let i = 0; i < children.length; i++) {
+                                    stripStyle(children[i]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ASYNC DIVIDER & ICON PROCESSING
             window.requestAnimationFrame(() => {
                 if (this.plugin.isSyncingDividers || this.isScrolling || this.plugin.isDragging) return;
 
                 let hasRelevantChange = false;
+                const nodesToProcess: NodeList[] = [];
+
                 for (const m of mutations) {
                     const target = m.target as HTMLElement;
                     if (target.closest(".cf-icon-wrapper, .cf-interactive-divider, .sc-container, [class*='smart-connection']")) continue;
@@ -125,13 +159,16 @@ export class DOMObserverService {
                         );
                     };
 
+                    if (m.addedNodes.length > 0) {
+                        nodesToProcess.push(m.addedNodes);
+                    }
+
                     for (const node of Array.from(m.addedNodes)) {
                         if (isRelevantNode(node)) {
                             hasRelevantChange = true;
                             break;
                         }
                     }
-                    if (hasRelevantChange) break;
 
                     for (const node of Array.from(m.removedNodes)) {
                         if (isRelevantNode(node)) {
@@ -139,11 +176,16 @@ export class DOMObserverService {
                             break;
                         }
                     }
-                    if (hasRelevantChange) break;
                 }
 
                 if (hasRelevantChange) {
                     this.processDividers();
+                }
+
+                if (nodesToProcess.length > 0) {
+                    nodesToProcess.forEach(nodelist => {
+                        this.plugin.iconManager.injectIconsForNodes(nodelist);
+                    });
                 }
             });
         });
@@ -157,7 +199,9 @@ export class DOMObserverService {
 
             const observerOptions: MutationObserverInit = {
                 childList: true,
-                subtree: true
+                subtree: true,
+                attributes: this.plugin.settings.enableStaircaseHack,
+                attributeFilter: this.plugin.settings.enableStaircaseHack ? ['style'] : undefined
             };
             this.dividerObserver?.observe(container, observerOptions);
         });
