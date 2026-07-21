@@ -69,39 +69,22 @@ export class DOMObserverService {
         });
     }
 
-    private observerRetryCount = 0;
-    private readonly MAX_OBSERVER_RETRIES = 15; // Allows up to ~7.5 seconds of heavy startup load before giving up
-
-    /**
-     * Initializes MutationObservers on all File Explorer leaves.
-     * Includes a robust debounced retry loop to handle heavy startup delays from background processing plugins (e.g. Smart Connections).
-     */
     public initDividerObserver() {
         if (this.plugin.isDragging) return;
 
         if (this.dividerObserver) {
             this.dividerObserver.disconnect();
-            this.dividerObserver = null;
         }
 
         const explorers = Array.from(activeDocument.querySelectorAll<HTMLElement>('.workspace-leaf-content[data-type="file-explorer"]'));
         if (explorers.length === 0) {
-            if (this.observerRetryCount < this.MAX_OBSERVER_RETRIES) {
-                this.observerRetryCount++;
-                // Debounce retry attempts using exponential/staggered backoff to avoid hammering thread during heavy boot
-                const delay = Math.min(500 * Math.pow(1.2, this.observerRetryCount - 1), 2000);
-                window.setTimeout(() => {
-                    this.initDividerObserver();
-                }, delay);
-            }
+            window.setTimeout(() => {
+                this.initDividerObserver();
+            }, 500);
             return;
         }
 
-        // Reset retry count once leaves are successfully discovered
-        this.observerRetryCount = 0;
-
         const stripStyle = (el: HTMLElement) => {
-            if (!this.plugin.settings.enableStaircaseHack) return;
             const style = el.getAttribute('style') || '';
             if (style.includes('padding-inline-start') || style.includes('padding-left') || style.includes('margin-left')) {
                 el.removeAttribute('style');
@@ -109,50 +92,43 @@ export class DOMObserverService {
         };
 
         this.dividerObserver = new MutationObserver((mutations) => {
-            if (this.plugin.settings.enableStaircaseHack) {
-                for (const m of mutations) {
-                    if (m.type === "attributes" && m.attributeName === "style") {
-                        const target = m.target as HTMLElement;
-                        if (target.classList && target.classList.contains('tree-item-self')) {
-                            stripStyle(target);
-                        }
-                    } else if (m.type === "childList") {
-                        for (const node of Array.from(m.addedNodes)) {
-                            if (node.nodeType === Node.ELEMENT_NODE) {
-                                const el = node as HTMLElement;
-                                if (el.classList.contains('tree-item-self')) {
-                                    stripStyle(el);
-                                }
-                                const children = el.querySelectorAll<HTMLElement>('.tree-item-self');
-                                for (let i = 0; i < children.length; i++) {
-                                    stripStyle(children[i]);
-                                }
+            // SYNC INTERCEPTOR: Aggressively strip style attributes
+            for (const m of mutations) {
+                if (m.type === "attributes" && m.attributeName === "style") {
+                    const target = m.target as HTMLElement;
+                    if (target.classList && target.classList.contains('tree-item-self')) {
+                        stripStyle(target);
+                    }
+                } else if (m.type === "childList") {
+                    for (const node of Array.from(m.addedNodes)) {
+                        if (node.nodeType === Node.ELEMENT_NODE) {
+                            const el = node as HTMLElement;
+                            if (el.classList.contains('tree-item-self')) {
+                                stripStyle(el);
+                            }
+                            const children = el.querySelectorAll<HTMLElement>('.tree-item-self');
+                            for (let i = 0; i < children.length; i++) {
+                                stripStyle(children[i]);
                             }
                         }
                     }
                 }
             }
 
-            // ASYNC DIVIDER & ICON PROCESSING
+            // ASYNC DIVIDER PROCESSING
             window.requestAnimationFrame(() => {
                 if (this.plugin.isSyncingDividers || this.isScrolling || this.plugin.isDragging) return;
 
                 let hasRelevantChange = false;
-
                 for (const m of mutations) {
                     const target = m.target as HTMLElement;
-                    if (target.closest(".cf-icon-wrapper, .cf-interactive-divider, .sc-container, [class*='smart-connection']")) continue;
+                    if (target.closest(".cf-icon-wrapper, .cf-interactive-divider")) continue;
 
                     if (m.type !== "childList") continue;
 
                     const isRelevantNode = (node: Node) => {
                         if (node.nodeType !== Node.ELEMENT_NODE) return false;
                         const el = node as HTMLElement;
-
-                        // Ignore Smart Connections nodes
-                        const className = typeof el.className === 'string' ? el.className : (el.getAttribute('class') || '');
-                        if (className.includes('sc-') || className.includes('smart-connection')) return false;
-
                         if (!el.classList.contains("nav-file") &&
                             !el.classList.contains("nav-folder") &&
                             !el.classList.contains("tree-item") &&
@@ -204,11 +180,20 @@ export class DOMObserverService {
                 container.addEventListener("scroll", this.handleScroll, { passive: true });
             }
 
+            // Apply selectively to existing items
+            const items = container.querySelectorAll<HTMLElement>('.tree-item-self');
+            for (let i = 0; i < items.length; i++) {
+                const style = items[i].getAttribute('style') || '';
+                if (style.includes('padding-inline-start') || style.includes('padding-left') || style.includes('margin-left')) {
+                    items[i].removeAttribute('style');
+                }
+            }
+
             const observerOptions: MutationObserverInit = {
                 childList: true,
                 subtree: true,
-                attributes: this.plugin.settings.enableStaircaseHack,
-                attributeFilter: this.plugin.settings.enableStaircaseHack ? ['style'] : undefined
+                attributes: true,
+                attributeFilter: ['style']
             };
             this.dividerObserver?.observe(container, observerOptions);
         });
