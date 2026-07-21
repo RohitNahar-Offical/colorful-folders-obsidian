@@ -84,37 +84,7 @@ export class DOMObserverService {
             return;
         }
 
-        const stripStyle = (el: HTMLElement) => {
-            const style = el.getAttribute('style') || '';
-            if (style.includes('padding-inline-start') || style.includes('padding-left') || style.includes('margin-left')) {
-                el.removeAttribute('style');
-            }
-        };
-
         this.dividerObserver = new MutationObserver((mutations) => {
-            // SYNC INTERCEPTOR: Aggressively strip style attributes
-            for (const m of mutations) {
-                if (m.type === "attributes" && m.attributeName === "style") {
-                    const target = m.target as HTMLElement;
-                    if (target.classList && target.classList.contains('tree-item-self')) {
-                        stripStyle(target);
-                    }
-                } else if (m.type === "childList") {
-                    for (const node of Array.from(m.addedNodes)) {
-                        if (node.nodeType === Node.ELEMENT_NODE) {
-                            const el = node as HTMLElement;
-                            if (el.classList.contains('tree-item-self')) {
-                                stripStyle(el);
-                            }
-                            const children = el.querySelectorAll<HTMLElement>('.tree-item-self');
-                            for (let i = 0; i < children.length; i++) {
-                                stripStyle(children[i]);
-                            }
-                        }
-                    }
-                }
-            }
-
             // ASYNC DIVIDER PROCESSING
             window.requestAnimationFrame(() => {
                 if (this.plugin.isSyncingDividers || this.isScrolling || this.plugin.isDragging) return;
@@ -122,13 +92,18 @@ export class DOMObserverService {
                 let hasRelevantChange = false;
                 for (const m of mutations) {
                     const target = m.target as HTMLElement;
-                    if (target.closest(".cf-icon-wrapper, .cf-interactive-divider")) continue;
+                    if (target.closest(".cf-icon-wrapper, .cf-interactive-divider, .sc-container, [class*='smart-connection']")) continue;
 
                     if (m.type !== "childList") continue;
 
                     const isRelevantNode = (node: Node) => {
                         if (node.nodeType !== Node.ELEMENT_NODE) return false;
                         const el = node as HTMLElement;
+
+                        // Ignore Smart Connections nodes
+                        const className = typeof el.className === 'string' ? el.className : (el.getAttribute('class') || '');
+                        if (className.includes('sc-') || className.includes('smart-connection')) return false;
+
                         if (!el.classList.contains("nav-file") &&
                             !el.classList.contains("nav-folder") &&
                             !el.classList.contains("tree-item") &&
@@ -180,20 +155,9 @@ export class DOMObserverService {
                 container.addEventListener("scroll", this.handleScroll, { passive: true });
             }
 
-            // Apply selectively to existing items
-            const items = container.querySelectorAll<HTMLElement>('.tree-item-self');
-            for (let i = 0; i < items.length; i++) {
-                const style = items[i].getAttribute('style') || '';
-                if (style.includes('padding-inline-start') || style.includes('padding-left') || style.includes('margin-left')) {
-                    items[i].removeAttribute('style');
-                }
-            }
-
             const observerOptions: MutationObserverInit = {
                 childList: true,
-                subtree: true,
-                attributes: true,
-                attributeFilter: ['style']
+                subtree: true
             };
             this.dividerObserver?.observe(container, observerOptions);
         });

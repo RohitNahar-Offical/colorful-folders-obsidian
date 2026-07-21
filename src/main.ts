@@ -127,6 +127,14 @@ export default class ColorfulFoldersPlugin
       // 1. Generate styles FIRST - before observers start
       await this.generateStyles();
 
+      // Register layout-change listener to handle re-renders from third-party plugins like Smart Connections
+      this.registerEvent(
+        this.app.workspace.on('layout-change', () => {
+          this.iconManager.refreshIcons();
+          this.domObserverService.initDividerObserver();
+        })
+      );
+
       // Defer heavy rendering to yield the main thread to Obsidian's initial layout paint engine
       // requestAnimationFrame + setTimeout(0) guarantees the browser paints the UI *before* we block the thread
       window.requestAnimationFrame(() => {
