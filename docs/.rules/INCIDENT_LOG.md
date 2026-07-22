@@ -399,3 +399,17 @@ The final working solution relied on two synergistic parts:
 3. **Mutation Scope Filtering & Node Targeting**: `DOMObserverService` ignores mutations targeting `.cf-icon-wrapper` or `.cf-interactive-divider` and passes only newly added nodes from `m.addedNodes` to `iconManager.injectIconsForNodes(nodelist)`, operating in O(N_changed) time instead of rescanning the entire file tree.
 4. **Scroll State Guarding**: Suspends divider resync and icon injection during active scrolling (`isScrolling = true`), executing a single debounced catch-up sync 100ms after scrolling stops.
 **Lesson**: When injecting elements into a shared DOM managed by multiple third-party observers, ALWAYS stamp rendered state into HTML `data-*` attributes (`dataset.cfIconId`) and use an idempotency check to early-exit. Never perform DOM writes inside an observer callback without an idempotency guard.
+
+---
+
+## Incident #28 — Architectural Overhaul: Complete Zero-DOM & AdoptedStyleSheet Migration (2026-07-22)
+**What was attempted**: Complete migration from physical DOM element injections (`.cf-icon-wrapper`, `.cf-interactive-divider`, `<div>`, `<svg>`) to a pure Zero-DOM / `document.adoptedStyleSheets` architecture.
+**What broke / Why we migrated**: 
+- Even with idempotency guards (Incident #27), physically prepending HTML elements into Obsidian's virtualized file explorer DOM tree caused friction with third-party plugins that observe `childList` mutations.
+- Iterating over DOM elements during scrolling added main-thread overhead in 10,000+ file heavy vaults.
+**Resolution**:
+1. **Zero-DOM Dataset Attribute Tagging (`DOMObserverService.ts`)**: `DOMObserverService` was refactored to perform dataset attribute tagging (`data-cf-path="<path>"`) only. Because attribute updates do NOT fire `childList` mutation events, third-party observer race conditions with plugins like *Smart Connections* are 100% physically impossible.
+2. **Programmatic Stylesheet Adoption (`AdoptedStyleSheetService.ts`)**: Created a dedicated service managing a programmatic `CSSStyleSheet` attached directly to `document.adoptedStyleSheets` across all workspace windows.
+3. **SVG Data URIs & Flat Attribute Selectors (`StyleGenerator.ts`)**: Encoded all custom SVGs and auto-icons into SVG Data URIs (`-webkit-mask-image: url("data:image/svg+xml;utf8,...")`) targeting `::before` pseudo-elements via flat `[data-cf-path="..."]` attribute selectors.
+4. **Zero-DOM Divider Engine (`DividerManager.ts`)**: Section dividers use `data-cf-divider="true"` attribute tagging and pseudo-element styling instead of inserting HTML elements.
+**Lesson**: Physical DOM element injection inside third-party application trees should be avoided whenever native browser CSS engines can render pseudo-elements via data attributes and programmatic constructable stylesheets (`adoptedStyleSheets`). Zero-DOM architectures deliver maximum performance and 100% compatibility across third-party ecosystems.

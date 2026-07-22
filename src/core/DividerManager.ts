@@ -75,7 +75,7 @@ export class DividerManager {
             const currentDividers = container.querySelectorAll('.cf-has-divider, [data-cf-divider]');
             currentDividers.forEach(el => {
                 const htmlEl = el as HTMLElement;
-                const path = htmlEl.dataset.path || htmlEl.dataset.cfPath;
+                const path = htmlEl.dataset.path || htmlEl.dataset.cfPath || htmlEl.getAttribute('data-cf-path');
                 if (!path || !desired.has(path)) {
                     htmlEl.classList.remove('cf-has-divider');
                     htmlEl.removeAttribute('data-cf-divider');
@@ -87,9 +87,7 @@ export class DividerManager {
                 if (targetEl) {
                     targetEl.classList.add('cf-has-divider');
                     targetEl.setAttribute('data-cf-divider', 'true');
-                    if (path !== 'cf-global-files-separator') {
-                        targetEl.setAttribute('data-cf-path', path);
-                    }
+                    targetEl.setAttribute('data-cf-path', path);
                 }
             }
         } catch (e) {

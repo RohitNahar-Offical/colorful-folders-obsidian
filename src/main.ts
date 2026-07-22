@@ -18,6 +18,10 @@ import { DividerManager } from "./core/DividerManager";
 import { DOMObserverService } from "./services/DOMObserverService";
 import { EventTrackerService } from "./services/EventTrackerService";
 import { AdoptedStyleSheetService } from "./services/AdoptedStyleSheetService";
+import { StyleSheetDeltaEngine } from "./services/StyleSheetDeltaEngine";
+import { DOMAttributeStamper } from "./services/DOMAttributeStamper";
+import { FolderTrie } from "./core/algorithms/FolderTrie";
+import { EventBus } from "./common/EventBus";
 
 import { IconManager } from "./core/IconManager";
 
@@ -34,6 +38,10 @@ export default class ColorfulFoldersPlugin
   iconManager: IconManager;
   sheet: CSSStyleSheet;
   adoptedStyleSheetService: AdoptedStyleSheetService;
+  deltaEngine: StyleSheetDeltaEngine;
+  domStamper: DOMAttributeStamper;
+  folderTrie: FolderTrie = new FolderTrie();
+  eventBus: EventBus = new EventBus();
 
   iconCache: Map<string, string> = new Map();
   _dividerTimeout: number | null = null;
@@ -69,6 +77,10 @@ export default class ColorfulFoldersPlugin
     this.domObserverService = new DOMObserverService(this);
     this.eventTrackerService = new EventTrackerService(this);
     this.adoptedStyleSheetService = new AdoptedStyleSheetService(this);
+    this.deltaEngine = new StyleSheetDeltaEngine(this);
+    this.domStamper = new DOMAttributeStamper(this);
+
+    this.folderTrie.rebuildFromSettings(this.settings.customFolderColors);
 
     // Initial document cache state
     this.cachedDocuments.add(activeDocument);
@@ -128,82 +140,14 @@ export default class ColorfulFoldersPlugin
       NotebookNavigatorIntegration.registerMenuExtensions(this);
       await this.loadLocalIcons();
 
-      // 1. Generate styles FIRST - before observers start
+      // Single fast synchronous style generation pass
       await this.generateStyles();
 
-      // Defer heavy rendering to yield the main thread to Obsidian's initial layout paint engine
-      // requestAnimationFrame + setTimeout(0) guarantees the browser paints the UI *before* we block the thread
-      window.requestAnimationFrame(() => {
-        window.setTimeout(() => {
-          if (this._abortStartupRender) return;
-          this.domObserverService.initDividerObserver();
-          this.dividerManager.syncDividers();
-        }, 0);
-      });
-
-
-
-      // 🚨 USER'S AUTOMATED CONSOLE SCRIPT BLOCK 🚨
-      // This will run immediately after Obsidian's layout is ready
-      if (this.settings.enableStaircaseHack) {
-        try {
-          (function () {
-            const win = window as unknown as Window & { _testerObserver?: MutationObserver };
-            // Stop any existing tester observers if you run this multiple times
-            if (win._testerObserver) {
-              win._testerObserver.disconnect();
-            }
-
-            const stripStyle = (el: Element) => {
-              const style = el.getAttribute('style') || '';
-              if (style.includes('padding-inline-start') || style.includes('padding-left') || style.includes('margin-left')) {
-                el.removeAttribute('style');
-              }
-            };
-
-            // 1. Initial Pass: Strip immediately from all current items
-            const items = activeDocument.querySelectorAll('.workspace-leaf-content[data-type="file-explorer"] .tree-item-self');
-            items.forEach(stripStyle);
-
-            // 2. Mutation Observer: Aggressively watch and re-strip if Obsidian's React engine tries to put it back
-            win._testerObserver = new MutationObserver((mutations) => {
-              for (const m of mutations) {
-                if (m.type === "attributes" && m.attributeName === "style") {
-                  const target = m.target as HTMLElement;
-                  if (target.classList && target.classList.contains('tree-item-self')) {
-                    stripStyle(target);
-                  }
-                } else if (m.type === "childList") {
-                  for (const node of Array.from(m.addedNodes)) {
-                    if (node.nodeType === Node.ELEMENT_NODE) {
-                      const el = node as HTMLElement;
-                      if (el.classList.contains('tree-item-self')) {
-                        stripStyle(el);
-                      }
-                      const children = el.querySelectorAll('.tree-item-self');
-                      children.forEach(stripStyle);
-                    }
-                  }
-                }
-              }
-            });
-
-            // Start observing the file explorer container
-            const explorer = activeDocument.querySelector('.workspace-leaf-content[data-type="file-explorer"]');
-            if (explorer) {
-              win._testerObserver.observe(explorer, {
-                childList: true,
-                subtree: true,
-                attributes: true,
-                attributeFilter: ['style']
-              });
-            }
-          })();
-
-        } catch {
-          // Empty catch to satisfy no-console rule
-        }
-      }
+      if (this._abortStartupRender) return;
+      this.domStamper.stampAllExplorers();
+      this.domObserverService.initDividerObserver();
+      this.dividerManager.syncDividers();
+      this.initStaircaseStyleStripper();
 
       try {
         const optimized = await this.optimizeBlueTopazStyleSettings();
@@ -294,10 +238,14 @@ export default class ColorfulFoldersPlugin
         const svgFiles = await this.getAllSvgFiles(iconsPath);
 
         this.localFileSystemIcons = {};
-        for (const file of svgFiles) {
+        const iconReads = svgFiles.map(async (file) => {
           const relPath = file.substring(iconsPath.length + 1);
           const content = await adapter.read(file);
-          
+          return { relPath, content };
+        });
+        const readResults = await Promise.all(iconReads);
+
+        for (const { relPath, content } of readResults) {
           const parts = relPath.split('/');
           const filename = parts[parts.length - 1].slice(0, -4);
           
@@ -346,9 +294,89 @@ export default class ColorfulFoldersPlugin
     }
   }
 
+  initStaircaseStyleStripper() {
+    const win = window as unknown as Window & { _testerObserver?: MutationObserver };
+    if (win._testerObserver) {
+      win._testerObserver.disconnect();
+    }
+
+    let isStripping = false;
+    const pendingEls = new Set<Element>();
+    let rafScheduled = false;
+
+    const flushStripping = () => {
+      isStripping = true;
+      pendingEls.forEach((el) => {
+        if (el.hasAttribute("style")) {
+          el.removeAttribute("style");
+        }
+      });
+      pendingEls.clear();
+      rafScheduled = false;
+      isStripping = false;
+    };
+
+    const scheduleStrip = (el: Element) => {
+      if (!el.hasAttribute("style")) return;
+      pendingEls.add(el);
+      if (!rafScheduled) {
+        rafScheduled = true;
+        window.requestAnimationFrame(flushStripping);
+      }
+    };
+
+    const items = activeDocument.querySelectorAll(
+      '.workspace-leaf-content[data-type="file-explorer"] .tree-item-self',
+    );
+    items.forEach(scheduleStrip);
+
+    win._testerObserver = new MutationObserver((mutations) => {
+      if (isStripping) return;
+
+      for (const m of mutations) {
+        if (m.type === "attributes" && m.attributeName === "style") {
+          const target = m.target as HTMLElement;
+          if (target.classList && target.classList.contains("tree-item-self")) {
+            scheduleStrip(target);
+          }
+        } else if (m.type === "childList") {
+          for (const node of Array.from(m.addedNodes)) {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              const el = node as HTMLElement;
+              if (el.classList.contains("tree-item-self")) {
+                scheduleStrip(el);
+              }
+              const children = el.querySelectorAll(".tree-item-self");
+              children.forEach(scheduleStrip);
+            }
+          }
+        }
+      }
+    });
+
+    const explorer = activeDocument.querySelector(
+      '.workspace-leaf-content[data-type="file-explorer"]',
+    );
+    if (explorer) {
+      win._testerObserver.observe(explorer, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["style"],
+      });
+    }
+  }
+
   onunload() {
+    const win = window as unknown as Window & { _testerObserver?: MutationObserver };
+    if (win._testerObserver) {
+      win._testerObserver.disconnect();
+      delete win._testerObserver;
+    }
     this._isUnloading = true;
     this.adoptedStyleSheetService.unload();
+    this.deltaEngine.unload();
+    this.eventBus.clear();
     this.getOpenDocuments().forEach(doc => {
       doc.body.classList.remove("cf-show-hidden", "cf-wrap-metadata");
     });
@@ -423,6 +451,8 @@ export default class ColorfulFoldersPlugin
     const iconRulesChanged = (this.settings.customIconRules || '') !== this._lastIconRulesKey;
     const customIconsChanged = JSON.stringify(this.settings.customIcons || {}) !== this._lastCustomIconsKey;
     const shouldClearIconCache = iconRulesChanged || customIconsChanged;
+
+    this.folderTrie.rebuildFromSettings(this.settings.customFolderColors);
 
     if (this.heatmapCache) {
       this.settings.heatmapData = Object.fromEntries(this.heatmapCache);
@@ -650,6 +680,7 @@ export default class ColorfulFoldersPlugin
     try {
       const css = await this.styleGenerator.generateCss();
       this.adoptedStyleSheetService.updateStyles(css);
+      this.domStamper.stampAllExplorers();
       this.isGeneratingStyles = false;
       // Sync folder colors to Graph View groups if the feature is enabled
       if (this.settings.graphColorSync && !this.isDragging) {

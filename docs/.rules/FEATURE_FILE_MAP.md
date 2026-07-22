@@ -2,34 +2,35 @@
 
 Use this to instantly know WHICH file to edit for any task.
 
-## "I want to change how colors or opacity work"
-→ Edit `src/core/StyleGenerator.ts` inside the static methods `resolveColor()`, `resolveOpacity()`, or `resolveTextColor()`.
+## "I want to change stylesheet adoption or CSS injection"
+→ Edit `src/services/AdoptedStyleSheetService.ts`.
 
-## "I want to change the rendering traversal logic"
-→ Edit `src/core/StyleGenerator.ts` inside the `traverse()` function.
+## "I want to change how colors or opacity work"
+→ Edit `src/core/ColorResolver.ts`.
+
+## "I want to change the rendering traversal logic or flat CSS generation"
+→ Edit `src/core/StyleGenerator.ts` inside `traverse()`.
 
 ## "I want to add a new setting"
-→ Edit `src/common/types.ts` (add to `ColorfulFoldersSettings`) + `src/ui/SettingTab.ts` (add UI).
+→ Edit `src/common/types.ts` (add to `ColorfulFoldersSettings`) + `src/common/constants.ts` (add default) + `src/ui/SettingTab.ts` (add UI).
 
-## "I want to change how icons look"
-→ Edit `src/core/IconManager.ts`.
+## "I want to change icon resolution rules, auto-download, or SVG Data URIs"
+→ Edit `src/core/IconManager.ts` (icon resolution rules & SVG Data URIs are rendered in `StyleGenerator.ts`).
+
+## "I want to change DOM attribute tagging or observers"
+→ Edit `src/services/DOMObserverService.ts`.
 
 ## "I want to fix alignment/layout"
-→ Edit `styles.css` BUT scope it strictly to `.nav-files-container` or `[data-path]` selectors.
+→ Edit `src/core/BaseCssGenerator.ts` or `styles.css` scoped strictly to `[data-cf-path]` and `[data-path]` selectors.
 
 ## "I want to add a new CSS effect (glow, blur, shadow)"
-→ Edit `src/core/StyleGenerator.ts` — add to `cssRules.push()` inside the folder loop.
+→ Edit `src/core/StyleGenerator.ts`.
 
 ## "I want to fix Notebook Navigator compatibility"
-→ Edit `src/integrations/NotebookNavigator.ts`.
-→ Read `docs/NOTEBOOK_NAVIGATOR.md` for architecture details.
+→ Edit `src/integrations/NotebookNavigator.ts`. Read `docs/NOTEBOOK_NAVIGATOR.md` for architecture details.
 
-## "I want to change dividers"
-→ Edit `src/core/DividerManager.ts`. Divider CSS is in the bottom of `StyleGenerator.ts`.
+## "I want to change section dividers"
+→ Edit `src/core/DividerManager.ts` (attribute tagging) & `src/core/BaseCssGenerator.ts` (divider CSS).
 
 ## "I want to fix build errors"
-→ Check `src/common/types.ts` — likely an interface mismatch.
-→ Run `node esbuild.config.mjs production` to see the exact error.
-
-## "I want to push to GitHub"
-→ Follow Rule 5 in DEVELOPMENT_RULES.md. Build must pass first.
+→ Check `src/common/types.ts` — likely an interface mismatch. Run `npm run build` and `npm run lint`.

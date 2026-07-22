@@ -17,6 +17,8 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             overflow: visible !important;
         }
 
+
+
         /* Force all immediate children and pseudo-elements to perfectly center vertically */
         body .nav-folder-title > *,
         body .nav-file-title > *,
@@ -380,14 +382,14 @@ export function generateDividerCss(settings: ColorfulFoldersSettings): string {
 export function generateStealthCss(settings: ColorfulFoldersSettings): string {
     let stealthCss = "";
     const styles = settings.customFolderColors;
-    
+
     for (const path in styles) {
         const style = styles[path];
         if (typeof style === 'object' && style !== null && style.isHidden) {
             if (settings.notebookNavigatorSupport) {
                 const nnSelector = NotebookNavigatorIntegration.getScopedNavSelector(path);
                 const nnFileSelector = NotebookNavigatorIntegration.getScopedFileSelector(path);
-                
+
                 stealthCss += `
                     body:not(.cf-show-hidden) ${nnSelector},
                     body:not(.cf-show-hidden) ${nnFileSelector} {

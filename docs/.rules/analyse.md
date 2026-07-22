@@ -1,4 +1,4 @@
-# Comprehensive Analysis: Icon Selection Process & Rule Hierarchy
+# Comprehensive Analysis: Icon Selection Process & Zero-DOM Rule Hierarchy
 
 This document provides a technical breakdown of the icon selection algorithm implemented across [IconManager.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/IconManager.ts), [StyleResolver.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/StyleResolver.ts), and [StyleGenerator.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/StyleGenerator.ts).
 
@@ -62,7 +62,7 @@ The system differentiates between **File** items (`TFile`) and **Folder** items 
 
 ## 3. Tiered Priority Hierarchy in `getAutoIconData()`
 
-When `settings.autoIcons` is enabled and no explicit custom icon overrides exist, [IconManager.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/IconManager.ts#L25-L152) resolves the target icon using the following strictly ordered 4-tier pipeline:
+When `settings.autoIcons` is enabled and no explicit custom icon overrides exist, [IconManager.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/IconManager.ts) resolves the target icon using the following strictly ordered 4-tier pipeline:
 
 ### 🥇 Tier 1: Exact Local Pack / Custom Icon Name Match (Priority: 2000)
 - **Target**: Compares the sanitized, hyphenated item title (`sanitized.replace(/[\s_]+/g, '-')`) directly against installed local SVG icon packs (in `.obsidian/icons`) and user custom icons (`settings.customIcons`).
@@ -73,7 +73,7 @@ When `settings.autoIcons` is enabled and no explicit custom icon overrides exist
 - **Behavior**: Built dynamically into regular expressions (`new RegExp(pattern, 'i')`) and sorted ahead of built-in categories.
 
 ### 🥉 Tier 3: Built-In Category Rules (Priority: 80–100)
-- **Target**: Evaluates [AUTO_ICON_CATEGORIES](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/IconManager.ts#L3) (e.g., `journal|daily|log`, `tech|code|dev`, `finance|money`).
+- **Target**: Evaluates category regexes in `AUTO_ICON_CATEGORIES` (e.g., `journal|daily|log`, `tech|code|dev`, `finance|money`).
 - **Behavior**: Matches the item name against standard categories. If `settings.autoIconVariety` is enabled, a deterministic hash of the item name (`hashString(name)`) selects a varied emoji/Lucide icon from the category pool.
 
 ### 🏅 Tier 4: Fuzzy Multi-Word & Partial Pack Fallback (Priority: 50)
@@ -84,22 +84,24 @@ When `settings.autoIcons` is enabled and no explicit custom icon overrides exist
 
 ---
 
-## 4. Rendering Modes: SVG Masking vs. Emoji Injection
+## 4. Zero-DOM Rendering Architecture
 
-Once `iconId` is resolved, the plugin renders the icon using one of three mechanisms:
+Under the Zero-DOM architecture, no physical HTML wrapper elements (`.cf-icon-wrapper`) are created in the DOM tree. Once `iconId` is resolved:
 
 1. **Emoji Mode** (`isEmojiIcon(iconId) === true`):
-   - Injected via CSS `::before` pseudo-element with `content: "${iconId} "`.
-2. **Lucide / Custom SVG Mask Mode**:
-   - Encoded SVG retrieved via [getIconSvg(iconId)](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/IconManager.ts#L205).
-   - Styled via CSS pseudo-element `::before` using `-webkit-mask-image: url("data:image/svg+xml,...")` with `-webkit-mask-size: contain`.
-3. **DOM Injection (RAF-Batched Batching)**:
-   - Evaluated by `_doInjectIcon()` for real-time dynamic elements, creating a `.cf-icon-wrapper` `<span>` stamped with `data-cf-icon-id` and `data-cf-icon-color` for O(1) re-render performance.
+   - Rendered via CSS `::before` pseudo-element with `content: "${iconId} "`.
+2. **Lucide / Custom SVG Data URI Mode**:
+   - SVG string retrieved via `getIconSvg(iconId, true)` and encoded into Data URIs.
+   - Rendered via CSS `::before` pseudo-element using `-webkit-mask-image: url("data:image/svg+xml;utf8,...")` with `-webkit-mask-size: contain`.
+3. **Flat Attribute Selection**:
+   - Rules target `.nav-folder-title[data-cf-path="..."]` and `.nav-file-title[data-cf-path="..."]` dataset attributes stamped by `DOMObserverService`.
 
 ---
 
 ## 5. Summary of Key Files
 
-- [IconManager.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/IconManager.ts): Implements `getAutoIconData()`, `findIconInPacks()`, `isEmojiIcon()`, `getIconSvg()`, and RAF-batched DOM injection.
-- [StyleResolver.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/StyleResolver.ts): Resolves effective style objects (`EffectiveStyle`) for individual files and folders.
-- [StyleGenerator.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/StyleGenerator.ts): Generates high-performance CSS stylesheet rules for Obsidian's File Explorer and third-party integrations (e.g., Notebook Navigator).
+- [IconManager.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/IconManager.ts): Implements `getAutoIconData()`, `findIconInPacks()`, `isEmojiIcon()`, and `getIconSvg()`.
+- [AdoptedStyleSheetService.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/services/AdoptedStyleSheetService.ts): Manages constructable `CSSStyleSheet` lifecycle and multi-document adoption.
+- [DOMObserverService.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/services/DOMObserverService.ts): Performs lightweight dataset attribute stamping (`data-cf-path`).
+- [StyleResolver.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/StyleResolver.ts): Resolves effective style objects (`FolderStyle`) for individual files and folders.
+- [StyleGenerator.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/StyleGenerator.ts): Generates high-performance flat CSS rules with SVG Data URIs for Obsidian's File Explorer and third-party integrations.

@@ -3,7 +3,7 @@ import { IColorfulFoldersPlugin } from '../common/types';
 export class DOMObserverService {
     plugin: IColorfulFoldersPlugin;
     private styleObservers: MutationObserver[] = [];
-    private dividerObserver: MutationObserver | null = null;
+    public dividerObserver: MutationObserver | null = null;
     private isScrolling = false;
     public isScrollingPublic = false;
     private scrollTimeout: number | null = null;
@@ -82,13 +82,6 @@ export class DOMObserverService {
         const allContainers = this.plugin.getAllExplorerContainers();
         if (allContainers.length === 0) return;
 
-        const stripStyle = (el: HTMLElement) => {
-            const style = el.getAttribute('style') || '';
-            if (style.includes('padding-inline-start') || style.includes('padding-left') || style.includes('margin-left')) {
-                el.removeAttribute('style');
-            }
-        };
-
         allContainers.forEach((container) => {
             this.tagExplorerItems(container);
 
@@ -100,11 +93,6 @@ export class DOMObserverService {
             (container as HTMLElement & { cfHasScrollListener?: boolean }).cfHasScrollListener = true;
 
             container.addEventListener('scroll', this.handleScroll, { passive: true });
-
-            const items = container.querySelectorAll<HTMLElement>('.tree-item-self');
-            for (let i = 0; i < items.length; i++) {
-                stripStyle(items[i]);
-            }
         });
 
         this.dividerObserver = new MutationObserver((mutations) => {
