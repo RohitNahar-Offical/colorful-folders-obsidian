@@ -128,11 +128,6 @@ export class StyleGenerator {
 
 
     private async traverse(folder: obsidian.TFolder, depth: number, validIndex: number, rootIndex: number, passedColor: { rgb: string, hex: string } | null, inheritedStyle: FolderStyle | null, context: StyleContext, grouper: CssGrouper, cumulativeTintOp: number = 0, yieldState: { lastYield: number }) {
-        if (Date.now() - yieldState.lastYield > 15) {
-            await new Promise((resolve) => setTimeout(resolve, 0));
-            yieldState.lastYield = Date.now();
-        }
-
         const copyFolders: obsidian.TFolder[] = [];
         const copyFiles: obsidian.TFile[] = [];
         for (let i = 0; i < folder.children.length; i++) {
@@ -267,10 +262,12 @@ export class StyleGenerator {
                 let fileRowCss = `
                     ${shouldColorNative ? `
                         background-color: var(--cf-file-bg, rgba(${color.rgb}, ${fileBgAlpha})) !important;
+                        --nav-item-background: var(--cf-file-bg, rgba(${color.rgb}, ${fileBgAlpha}));
                         border-left: ${baseThick}px solid rgba(${color.rgb}, 0.4) !important;
                         --cf-selection-bg: rgba(${color.rgb}, ${Math.min(1.0, fileBgAlpha + 0.15)});
                     ` : `
                         background-color: var(--cf-file-bg, transparent) !important;
+                        --nav-item-background: var(--cf-file-bg, transparent);
                         border-left: none !important;
                     `}
                     opacity: 1.0 !important;
@@ -703,6 +700,7 @@ export class StyleGenerator {
 
             grouper.add(`
                 background-color: var(--cf-folder-bg, ${folderStyles.b}) !important;
+                --nav-item-background: var(--cf-folder-bg, ${folderStyles.b});
                 --cf-selection-bg: rgba(${color.rgb}, ${Math.min(1.0, adjustedOp + 0.15)});
                 opacity: 1.0 !important;
                 border-radius: ${folderBr}px;

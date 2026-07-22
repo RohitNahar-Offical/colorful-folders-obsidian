@@ -127,6 +127,7 @@ export default class ColorfulFoldersPlugin
     void this.generateStyles();
 
     this.app.workspace.onLayoutReady(async () => {
+      this.initStaircaseStyleStripper();
       await this.generateStyles();
       NotebookNavigatorIntegration.registerMenuExtensions(this);
       void this.loadLocalIcons();
@@ -280,11 +281,72 @@ export default class ColorfulFoldersPlugin
   }
 
   initStaircaseStyleStripper() {
+    console.log("Starting style-stripper script...");
+
     const win = window as unknown as Window & { _testerObserver?: MutationObserver };
     if (win._testerObserver) {
       win._testerObserver.disconnect();
-      win._testerObserver = undefined;
+      console.log("Disconnected previous observer.");
     }
+
+    let isStripping = false;
+    const stripStyle = (el: Element) => {
+      if (el.hasAttribute("style")) {
+        isStripping = true;
+        el.removeAttribute("style");
+        isStripping = false;
+      }
+    };
+
+    // 1. Initial Pass: Strip immediately from all current items
+    let totalStripped = 0;
+    this.getOpenDocuments().forEach((doc) => {
+      const items = doc.querySelectorAll('.workspace-leaf-content[data-type="file-explorer"] .tree-item-self');
+      items.forEach(stripStyle);
+      totalStripped += items.length;
+    });
+    console.log(`Stripped styles from ${totalStripped} existing items.`);
+
+    // 2. Continuous Mutation Observer for React inline style re-injections
+    win._testerObserver = new MutationObserver((mutations) => {
+      if (isStripping) return;
+      for (let i = 0; i < mutations.length; i++) {
+        const m = mutations[i];
+        if (m.type === "attributes" && m.attributeName === "style") {
+          const target = m.target as HTMLElement;
+          if (target.classList?.contains("tree-item-self")) {
+            stripStyle(target);
+          }
+        } else if (m.type === "childList") {
+          for (let j = 0; j < m.addedNodes.length; j++) {
+            const node = m.addedNodes[j];
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              const el = node as HTMLElement;
+              if (el.classList?.contains("tree-item-self")) {
+                stripStyle(el);
+              }
+              const children = el.querySelectorAll?.(".tree-item-self");
+              if (children) {
+                for (let k = 0; k < children.length; k++) {
+                  stripStyle(children[k]);
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    this.getOpenDocuments().forEach((doc) => {
+      if (win._testerObserver) {
+        win._testerObserver.observe(doc.body, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          attributeFilter: ["style"],
+        });
+      }
+    });
   }
 
   onunload() {

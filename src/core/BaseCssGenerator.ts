@@ -13,8 +13,6 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             display: flex;
             align-items: center !important;
             justify-content: flex-start !important;
-            padding-top: 0 !important;
-            padding-bottom: 0 !important;
             overflow: visible !important;
         }
 

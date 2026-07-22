@@ -144,7 +144,7 @@ export function rgbToHex(r: number, g: number, b: number): string {
     return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 }
 export function parseColorToHexAlpha(color: string): { hex: string, alpha: number } {
-    if (!color) return { hex: "#ffffff", alpha: 0 };
+    if (!color || color.trim() === '') return { hex: "#ffffff", alpha: 1 };
     if (color.startsWith('#')) return { hex: color, alpha: 1 };
     if (color.startsWith('rgb')) {
         const parts = color.match(/[\d.]+/g);
@@ -152,7 +152,8 @@ export function parseColorToHexAlpha(color: string): { hex: string, alpha: numbe
             const r = parseInt(parts[0]);
             const g = parseInt(parts[1]);
             const b = parseInt(parts[2]);
-            const a = parts.length >= 4 ? parseFloat(parts[3]) : 1;
+            let a = parts.length >= 4 ? parseFloat(parts[3]) : 1;
+            if (isNaN(a)) a = 1;
             const hex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
             return { hex, alpha: a };
         }

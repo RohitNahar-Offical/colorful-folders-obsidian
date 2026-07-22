@@ -1326,28 +1326,30 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             let bgColorBox: HTMLElement;
             let bgTextComp: obsidian.TextComponent;
 
+            const toggleBgPicker = () => {
+                if (bgPickerWrap) { bgPickerWrap.remove(); bgPickerWrap = null; return; }
+                bgPickerWrap = bgRow.createDiv();
+                bgPickerWrap.setCssStyles({
+                    marginTop: '12px', padding: '16px', background: 'var(--background-secondary-alt)',
+                    borderRadius: '8px', border: '1px solid var(--background-modifier-border)'
+                });
+                const current = parseColorToHexAlpha(this.plugin.settings.customActiveBg);
+                createVisualColorPicker(bgPickerWrap, current.hex, (hex, alpha) => {
+                    const rgba = hexAlphaToRgba(hex, alpha);
+                    this.plugin.settings.customActiveBg = rgba;
+                    bgTextComp.setValue(rgba);
+                    bgColorBox.setCssStyles({ backgroundColor: rgba });
+                    void this.plugin.saveSettings().then(() => this.plugin.generateStylesDebounced());
+                }, { showAlpha: true, initialAlpha: current.alpha });
+            };
+
             new obsidian.Setting(bgRow)
                 .setName('Active background color')
                 .setDesc('The background color for the currently selected file.')
                 .addButton(btn => btn
                     .setIcon('palette')
                     .setTooltip('Open visual color picker')
-                    .onClick(() => {
-                        if (bgPickerWrap) { bgPickerWrap.remove(); bgPickerWrap = null; return; }
-                        bgPickerWrap = bgRow.createDiv();
-                        bgPickerWrap.setCssStyles({
-                            marginTop: '12px', padding: '16px', background: 'var(--background-secondary-alt)',
-                            borderRadius: '8px', border: '1px solid var(--background-modifier-border)'
-                        });
-                        const current = parseColorToHexAlpha(this.plugin.settings.customActiveBg);
-                        createVisualColorPicker(bgPickerWrap, current.hex, (hex, alpha) => {
-                            const rgba = hexAlphaToRgba(hex, alpha);
-                            this.plugin.settings.customActiveBg = rgba;
-                            bgTextComp.setValue(rgba);
-                            bgColorBox.setCssStyles({ backgroundColor: rgba });
-                            void this.plugin.saveSettings().then(() => this.plugin.generateStylesDebounced());
-                        }, { showAlpha: true, initialAlpha: current.alpha });
-                    }))
+                    .onClick(() => toggleBgPicker()))
                 .addText(text => {
                     bgTextComp = text;
                     text.setPlaceholder('Hex: #ffffff')
@@ -1359,10 +1361,12 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                             bgColorBox.setCssStyles({ backgroundColor: value || 'transparent' });
                         });
                     bgColorBox = text.inputEl.parentElement.createDiv();
+                    bgColorBox.setAttribute('title', 'Click to open visual color picker');
                     bgColorBox.setCssStyles({
                         width: '24px', height: '24px', borderRadius: '4px', border: '1px solid var(--background-modifier-border)',
-                        marginLeft: '12px', backgroundColor: this.plugin.settings.customActiveBg || 'transparent'
+                        marginLeft: '12px', cursor: 'pointer', backgroundColor: this.plugin.settings.customActiveBg || 'transparent'
                     });
+                    bgColorBox.addEventListener('click', () => toggleBgPicker());
                 });
 
             const textRow = activeCard.createDiv();
@@ -1370,28 +1374,30 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             let textColorBox: HTMLElement;
             let textColorTextComp: obsidian.TextComponent;
 
+            const toggleTextPicker = () => {
+                if (textPickerWrap) { textPickerWrap.remove(); textPickerWrap = null; return; }
+                textPickerWrap = textRow.createDiv();
+                textPickerWrap.setCssStyles({
+                    marginTop: '12px', padding: '16px', background: 'var(--background-secondary-alt)',
+                    borderRadius: '8px', border: '1px solid var(--background-modifier-border)'
+                });
+                const current = parseColorToHexAlpha(this.plugin.settings.customActiveText);
+                createVisualColorPicker(textPickerWrap, current.hex, (hex, alpha) => {
+                    const rgba = hexAlphaToRgba(hex, alpha);
+                    this.plugin.settings.customActiveText = rgba;
+                    textColorTextComp.setValue(rgba);
+                    textColorBox.setCssStyles({ backgroundColor: rgba });
+                    void this.plugin.saveSettings().then(() => this.plugin.generateStylesDebounced());
+                }, { showAlpha: true, initialAlpha: current.alpha });
+            };
+
             new obsidian.Setting(textRow)
                 .setName('Active text color')
                 .setDesc('The text color for the currently selected file.')
                 .addButton(btn => btn
                     .setIcon('palette')
                     .setTooltip('Open visual color picker')
-                    .onClick(() => {
-                        if (textPickerWrap) { textPickerWrap.remove(); textPickerWrap = null; return; }
-                        textPickerWrap = textRow.createDiv();
-                        textPickerWrap.setCssStyles({
-                            marginTop: '12px', padding: '16px', background: 'var(--background-secondary-alt)',
-                            borderRadius: '8px', border: '1px solid var(--background-modifier-border)'
-                        });
-                        const current = parseColorToHexAlpha(this.plugin.settings.customActiveText);
-                        createVisualColorPicker(textPickerWrap, current.hex, (hex, alpha) => {
-                            const rgba = hexAlphaToRgba(hex, alpha);
-                            this.plugin.settings.customActiveText = rgba;
-                            textColorTextComp.setValue(rgba);
-                            textColorBox.setCssStyles({ backgroundColor: rgba });
-                            void this.plugin.saveSettings().then(() => this.plugin.generateStylesDebounced());
-                        }, { showAlpha: true, initialAlpha: current.alpha });
-                    }))
+                    .onClick(() => toggleTextPicker()))
                 .addText(text => {
                     textColorTextComp = text;
                     text.setPlaceholder('Hex: #c0c0c0')
@@ -1403,10 +1409,12 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                             textColorBox.setCssStyles({ backgroundColor: value || 'transparent' });
                         });
                     textColorBox = text.inputEl.parentElement.createDiv();
+                    textColorBox.setAttribute('title', 'Click to open visual color picker');
                     textColorBox.setCssStyles({
                         width: '24px', height: '24px', borderRadius: '4px', border: '1px solid var(--background-modifier-border)',
-                        marginLeft: '12px', backgroundColor: this.plugin.settings.customActiveText || 'transparent'
+                        marginLeft: '12px', cursor: 'pointer', backgroundColor: this.plugin.settings.customActiveText || 'transparent'
                     });
+                    textColorBox.addEventListener('click', () => toggleTextPicker());
                 });
         }
 
@@ -2122,15 +2130,6 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         }
 
         const advCard = makeCard(sysPanel, "⚙️", "Advanced configuration");
-        new obsidian.Setting(advCard)
-            .setName('Enable staircase hack')
-            .setDesc('Strips inline styling forced by certain themes (like blue topaz) to prevent the "staircase effect" on folder indents. Keep off unless needed.')
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.enableStaircaseHack)
-                .onChange(async (value) => {
-                    this.plugin.settings.enableStaircaseHack = value;
-                    await this.plugin.saveSettings();
-                }));
 
         const dbCard = makeCard(sysPanel, "🗄️", "Database management");
         new obsidian.Setting(dbCard)

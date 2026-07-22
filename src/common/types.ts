@@ -176,6 +176,7 @@ export interface IColorfulFoldersPlugin {
     getStyle(path: string): FolderStyle | null;
     processDividers(): void;
     generateStyles(): Promise<void>;
+    initStaircaseStyleStripper(): void;
     generateStylesDebounced: Debouncer<[], void>;
     refreshIconsDebounced?: Debouncer<[], void>;
 
