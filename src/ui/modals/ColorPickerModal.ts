@@ -264,15 +264,39 @@ modifiedFields: Set<string>;
                 const currentIconId = this.folderStyle.iconId || (this.isFolder ? "folder" : "file");
                 if (currentIconId !== lastPreviewIconId) {
                     this._headerIconWrap.empty();
-                    obsidian.setIcon(this._headerIconWrap, currentIconId);
                     this._prevIconWrap.empty();
-                    obsidian.setIcon(this._prevIconWrap, currentIconId);
+                    
+                    const renderIconToTarget = (target: HTMLElement, sizePx: number) => {
+                        if (this.plugin.iconManager.isEmojiIcon(currentIconId)) {
+                            target.setText(currentIconId);
+                            target.setCssStyles({ fontSize: `${Math.round(sizePx * 0.85)}px` });
+                        } else {
+                            const rawSvg = this.plugin.iconManager.getIconSvg(currentIconId, false);
+                            if (rawSvg) {
+                                // eslint-disable-next-line no-unsanitized/method
+                                const frag = activeDocument.createRange().createContextualFragment(rawSvg);
+                                const svgEl = frag.querySelector("svg");
+                                if (svgEl) {
+                                    svgEl.removeAttribute("width");
+                                    svgEl.removeAttribute("height");
+                                    (svgEl as unknown as HTMLElement).setCssStyles({ width: `${sizePx}px`, height: `${sizePx}px`, color: effectiveIconColor, fill: "currentColor" });
+                                    target.appendChild(svgEl);
+                                }
+                            } else {
+                                obsidian.setIcon(target, currentIconId);
+                                const svgEl = target.querySelector("svg") as unknown as HTMLElement | null;
+                                if (svgEl) svgEl.setCssStyles({ width: `${sizePx}px`, height: `${sizePx}px`, color: effectiveIconColor });
+                            }
+                        }
+                    };
+
+                    renderIconToTarget(this._headerIconWrap, headerIconW);
+                    renderIconToTarget(this._prevIconWrap, previewIconW);
                     lastPreviewIconId = currentIconId;
                 }
 
                 const hsvg = this._headerIconWrap.querySelector("svg") as unknown as HTMLElement | null;
                 if (hsvg) hsvg.setCssStyles({ color: effectiveIconColor, width: `${headerIconW}px`, height: `${headerIconW}px` });
-                // Update preview bar
                 this._prevIconWrap.setCssStyles({ backgroundColor: "transparent" });
                 const prevSvg = this._prevIconWrap.querySelector("svg") as unknown as HTMLElement | null;
                 if (prevSvg) prevSvg.setCssStyles({ color: effectiveIconColor, width: `${previewIconW}px`, height: `${previewIconW}px` });
@@ -922,15 +946,38 @@ modifiedFields: Set<string>;
                 backgroundColor: this.folderStyle[targetIconField] === id ? "var(--interactive-accent)" : "transparent",
                 border: "2px solid " + (this.folderStyle[targetIconField] === id ? "var(--interactive-accent)" : "transparent")
             });
-            obsidian.setIcon(cell, id);
-            const cellSvg = cell.querySelector("svg") as unknown as HTMLElement | null;
-            if (cellSvg) {
-                cellSvg.removeAttribute('width');
-                cellSvg.removeAttribute('height');
-                cellSvg.setCssStyles({
-                    width: `${gridIconW}px`, height: `${gridIconW}px`,
-                    color: this.folderStyle[targetIconField] === id ? "#fff" : "var(--text-normal)"
-                });
+            const isSelectedCell = this.folderStyle[targetIconField] === id;
+            if (this.plugin.iconManager.isEmojiIcon(id)) {
+                cell.setText(id);
+                cell.setCssStyles({ fontSize: `${Math.round(gridIconW * 0.85)}px` });
+            } else {
+                const rawSvg = this.plugin.iconManager.getIconSvg(id, false);
+                if (rawSvg) {
+                    // eslint-disable-next-line no-unsanitized/method
+                    const frag = activeDocument.createRange().createContextualFragment(rawSvg);
+                    const svgEl = frag.querySelector("svg");
+                    if (svgEl) {
+                        svgEl.removeAttribute("width");
+                        svgEl.removeAttribute("height");
+                        (svgEl as unknown as HTMLElement).setCssStyles({
+                            width: `${gridIconW}px`, height: `${gridIconW}px`,
+                            color: isSelectedCell ? "#fff" : "var(--text-normal)",
+                            fill: "currentColor"
+                        });
+                        cell.appendChild(svgEl);
+                    }
+                } else {
+                    obsidian.setIcon(cell, id);
+                    const cellSvg = cell.querySelector("svg") as unknown as HTMLElement | null;
+                    if (cellSvg) {
+                        cellSvg.removeAttribute('width');
+                        cellSvg.removeAttribute('height');
+                        cellSvg.setCssStyles({
+                            width: `${gridIconW}px`, height: `${gridIconW}px`,
+                            color: isSelectedCell ? "#fff" : "var(--text-normal)"
+                        });
+                    }
+                }
             }
             cell.title = id;
             cell.onmouseenter = () => {

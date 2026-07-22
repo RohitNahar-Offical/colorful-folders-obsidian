@@ -125,15 +125,37 @@ export class IconPickerModal extends obsidian.Modal {
                     backgroundColor: isSelected ? "var(--interactive-accent)" : "transparent",
                 });
                 
-                obsidian.setIcon(cell, id);
-                const cellSvg = cell.querySelector("svg") as unknown as HTMLElement | null;
-                if (cellSvg) {
-                    cellSvg.removeAttribute('width');
-                    cellSvg.removeAttribute('height');
-                    cellSvg.setCssStyles({
-                        width: "24px", height: "24px",
-                        color: isSelected ? "white" : "var(--text-normal)"
-                    });
+                if (this.plugin.iconManager.isEmojiIcon(id)) {
+                    cell.setText(id);
+                    cell.setCssStyles({ fontSize: "20px" });
+                } else {
+                    const rawSvg = this.plugin.iconManager.getIconSvg(id, false);
+                    if (rawSvg) {
+                        // eslint-disable-next-line no-unsanitized/method
+                        const frag = activeDocument.createRange().createContextualFragment(rawSvg);
+                        const svgEl = frag.querySelector("svg");
+                        if (svgEl) {
+                            svgEl.removeAttribute("width");
+                            svgEl.removeAttribute("height");
+                            (svgEl as unknown as HTMLElement).setCssStyles({
+                                width: "24px", height: "24px",
+                                color: isSelected ? "white" : "var(--text-normal)",
+                                fill: "currentColor"
+                            });
+                            cell.appendChild(svgEl);
+                        }
+                    } else {
+                        obsidian.setIcon(cell, id);
+                        const cellSvg = cell.querySelector("svg") as unknown as HTMLElement | null;
+                        if (cellSvg) {
+                            cellSvg.removeAttribute('width');
+                            cellSvg.removeAttribute('height');
+                            cellSvg.setCssStyles({
+                                width: "24px", height: "24px",
+                                color: isSelected ? "white" : "var(--text-normal)"
+                            });
+                        }
+                    }
                 }
                 
                 cell.title = id;
