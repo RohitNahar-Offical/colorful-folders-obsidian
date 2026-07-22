@@ -74,7 +74,13 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
         body .tree-item-inner.cf-icon-active::before,
         body .nav-folder-title-content:has(.cf-icon-wrapper)::before,
         body .nav-file-title-content:has(.cf-icon-wrapper)::before,
-        body .tree-item-inner:has(.cf-icon-wrapper)::before {
+        body .tree-item-inner:has(.cf-icon-wrapper)::before,
+        body .nav-files-container [data-path] .nav-folder-title-content.cf-icon-active::before,
+        body .nav-files-container [data-path] .nav-file-title-content.cf-icon-active::before,
+        body .nav-files-container [data-path] .tree-item-inner.cf-icon-active::before,
+        body .nav-files-container [data-path] .nav-folder-title-content:has(.cf-icon-wrapper)::before,
+        body .nav-files-container [data-path] .nav-file-title-content:has(.cf-icon-wrapper)::before,
+        body .nav-files-container [data-path] .tree-item-inner:has(.cf-icon-wrapper)::before {
             display: none !important;
             content: none !important;
             -webkit-mask-image: none !important;

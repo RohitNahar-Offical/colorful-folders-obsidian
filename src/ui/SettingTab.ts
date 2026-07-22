@@ -130,16 +130,23 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         const updatePreview = () => {
             dividerContainer.empty();
-            const previewEl = this.plugin.dividerManager.buildDividerNode('preview-path', {
-                dividerText: 'Preview section',
-                dividerColor: 'var(--interactive-accent)',
-                hasDivider: true
-            }, activeDocument);
-
+            const previewEl = dividerContainer.createDiv({ cls: 'cf-divider-chip-preview' });
             previewEl.setCssStyles({
-                position: 'relative', top: '0', left: '0', width: '100%', margin: '0', pointerEvents: 'none'
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '6px 16px',
+                borderRadius: '40px',
+                fontSize: '11px',
+                fontWeight: '700',
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                color: 'var(--interactive-accent)',
+                backgroundColor: 'rgba(var(--mono-rgb-100), 0.05)',
+                border: '1px solid rgba(var(--mono-rgb-100), 0.15)',
+                margin: '8px auto'
             });
-            dividerContainer.appendChild(previewEl);
+            previewEl.setText('Preview section');
         };
         updatePreview();
         // --- End Preview ---

@@ -186,18 +186,7 @@ export class StyleGenerator {
                     continue;
                 }
 
-                if (performance.now() - yieldState.lastYield > 16) {
-                    const win = window as unknown as Window & { requestIdleCallback?: (cb: () => void) => void };
-                    if (depth > 3 && typeof win.requestIdleCallback === 'function') {
-                        const cb = win.requestIdleCallback;
-                        await new Promise<void>(r => cb(r));
-                    } else if (depth > 1) {
-                        await new Promise<void>(r => window.requestAnimationFrame(() => r()));
-                    } else {
-                        await new Promise<void>(r => window.setTimeout(r, 0));
-                    }
-                    yieldState.lastYield = performance.now();
-                }
+
 
                 const safePath = safeEscape(child.path);
                 const parentName = child.parent?.name;
@@ -333,20 +322,24 @@ export class StyleGenerator {
                 }
 
                 const fileRowSels = [
-                    `body .nav-files-container .nav-file-title[data-path="${safePath}"]:not(.nn-file)`,
-                    `body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem)`
+                    `.nav-file-title[data-cf-path="${safePath}"]:not(.nn-file)`,
+                    `.tree-item-self[data-cf-path="${safePath}"]:not(.nn-file):not(.nn-navitem)`,
+                    `.nav-file-title[data-path="${safePath}"]:not(.nn-file)`,
+                    `.tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem)`
                 ];
                 grouper.add(fileRowCss, fileRowSels, `fileRow_${color.hex}_${fileBgAlpha}_${shouldColorNative ? 1 : 0}_${baseThick}`);
 
                 const fileTextSels = [
-                    `body .nav-files-container .nav-file-title[data-path="${safePath}"]:not(.nn-file) .nav-file-title-content`,
-                    `body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner`
+                    `.nav-file-title[data-cf-path="${safePath}"]:not(.nn-file) .nav-file-title-content`,
+                    `.tree-item-self[data-cf-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner`,
+                    `.nav-file-title[data-path="${safePath}"]:not(.nn-file) .nav-file-title-content`,
+                    `.tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner`
                 ];
                 grouper.add(fileTextCss, fileTextSels, `fileText_${activeStyle?.textGradient ? 'grad' : 'norm'}_${isBold}_${isItalic}_${color.hex}`);
 
                 const fileTagSels = [
+                    `[data-cf-path="${safePath}"] .nav-file-tag`,
                     `[data-path="${safePath}"] .nav-file-tag`,
-                    `[data-path="${safePath}"] .nav-folder-tag`,
                     `[data-path="${safePath}"] .tree-item-flair`
                 ];
                 grouper.add(`
@@ -417,7 +410,7 @@ export class StyleGenerator {
                                 -webkit-mask-position: center !important;
                                 -webkit-mask-size: contain !important;
                                 opacity: 0.85 !important;
-                            `, fileTextSels.map(s => s + '::before'));
+                             `, fileTextSels.map(s => s + '::before'));
                         }
                     }
                 } else if (autoIcons) {
@@ -551,18 +544,7 @@ export class StyleGenerator {
 
         let validFolderIndex = 0;
         for (let i = 0; i < copyFolders.length; i++) {
-            if (performance.now() - yieldState.lastYield > 16) {
-                const win = window as unknown as Window & { requestIdleCallback?: (cb: () => void) => void };
-                if (depth > 3 && typeof win.requestIdleCallback === 'function') {
-                    const cb = win.requestIdleCallback;
-                    await new Promise<void>(r => cb(r));
-                } else if (depth > 1) {
-                    await new Promise<void>(r => window.requestAnimationFrame(() => r()));
-                } else {
-                    await new Promise<void>(r => window.setTimeout(r, 0));
-                }
-                yieldState.lastYield = performance.now();
-            }
+
 
             const child = copyFolders[i];
             if (excludeFolders.has(child.name.toLowerCase())) {
@@ -790,8 +772,10 @@ export class StyleGenerator {
             const nnSelectors = nnNavSel.split(',').map(s => `body ${s.trim()} ${nnNavNameSel}`);
 
             grouper.add(textCss, [
-                `body .nav-files-container .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content`,
-                `body .nav-files-container .tree-item-self[data-path="${safePath}"] .tree-item-inner`,
+                `.nav-folder-title[data-cf-path="${safePath}"] .nav-folder-title-content`,
+                `.tree-item-self[data-cf-path="${safePath}"] .tree-item-inner`,
+                `.nav-folder-title[data-path="${safePath}"] .nav-folder-title-content`,
+                `.tree-item-self[data-path="${safePath}"] .tree-item-inner`,
                 ...nnSelectors
             ], `folderText_${isUsingGradient ? 'grad_' + startCol.replace(/\s+/g, '') + '_' + endCol.replace(/\s+/g, '') : 'norm_' + folderStyles.t}_${isBold}_${isItalic}`);
 
@@ -799,23 +783,29 @@ export class StyleGenerator {
                 const isCustomEmoji = this.plugin.iconManager.isEmojiIcon(iconIdToUse);
 
                 const getSels = (expanded: boolean | null) => {
-                    const baseNav = `body .nav-files-container .nav-folder`;
-                    const baseTree = `body .nav-files-container .tree-item`;
+                    const baseNav = `.nav-folder`;
+                    const baseTree = `.tree-item`;
                     
                     if (expanded === true) {
                         return [
+                            `${baseNav}:not(.is-collapsed) > .nav-folder-title[data-cf-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
                             `${baseNav}:not(.is-collapsed) > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
+                            `${baseTree}:not(.is-collapsed) > .tree-item-self[data-cf-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`,
                             `${baseTree}:not(.is-collapsed) > .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
                         ];
                     } else if (expanded === false) {
                         return [
+                            `${baseNav}.is-collapsed > .nav-folder-title[data-cf-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
                             `${baseNav}.is-collapsed > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
+                            `${baseTree}.is-collapsed > .tree-item-self[data-cf-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`,
                             `${baseTree}.is-collapsed > .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
                         ];
                     }
                     return [
-                        `body .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
-                        `body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
+                        `.nav-folder-title[data-cf-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
+                        `.nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
+                        `.tree-item-self[data-cf-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`,
+                        `.tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
                     ];
                 };
 

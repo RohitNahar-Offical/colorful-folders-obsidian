@@ -141,7 +141,8 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     defaultOpenFolderIcon: "lucide-folder-open",
     showCollapseIndicator: true,
     folderBorderRadius: 10,
-    enableStaircaseHack: false
+    enableStaircaseHack: false,
+    smartConnectionsCompatMode: true
 };
 
 export const AUTO_ICON_CATEGORIES: AutoIconData[] = [

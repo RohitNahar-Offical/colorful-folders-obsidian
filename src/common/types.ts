@@ -110,6 +110,7 @@ export interface ColorfulFoldersSettings {
     showCollapseIndicator: boolean;
     folderBorderRadius: number;
     enableStaircaseHack: boolean;
+    smartConnectionsCompatMode?: boolean;
     heatmapData?: Record<string, number>;
 }
 
@@ -165,7 +166,6 @@ export interface IColorfulFoldersPlugin {
     dividerManager: {
         syncDividers(): void;
         clean(): void;
-        buildDividerNode(path: string, conf: FolderStyle, doc: Document): HTMLElement;
     };
     styleGenerator: { generateCss(): Promise<string> };
     domObserverService: DOMObserverService;

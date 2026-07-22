@@ -57,6 +57,21 @@ export class DOMObserverService {
         });
     }
 
+    /**
+     * Stamp lightweight dataset attributes (`data-cf-path`) on file explorer nodes.
+     * Attribute updates do NOT trigger childList mutations, eliminating race conditions.
+     */
+    public tagExplorerItems(container: HTMLElement) {
+        const items = container.querySelectorAll<HTMLElement>('.nav-folder-title, .nav-file-title, .tree-item-self');
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            const path = item.dataset.path;
+            if (path && item.getAttribute('data-cf-path') !== path) {
+                item.setAttribute('data-cf-path', path);
+            }
+        }
+    }
+
     initDividerObserver() {
         if (this.plugin.isDragging) return;
 
@@ -75,6 +90,8 @@ export class DOMObserverService {
         };
 
         allContainers.forEach((container) => {
+            this.tagExplorerItems(container);
+
             if (
                 (container as HTMLElement & { cfHasScrollListener?: boolean })
                   .cfHasScrollListener
@@ -95,73 +112,23 @@ export class DOMObserverService {
 
             let hasRelevantChange = false;
             for (const m of mutations) {
-                const target = m.target as HTMLElement;
-                if (target.closest('.cf-icon-wrapper, .cf-interactive-divider'))
-                    continue;
-
                 if (m.type !== 'childList') continue;
-
-                const isRelevantNode = (node: Node) => {
-                    if (node.nodeType !== Node.ELEMENT_NODE) return false;
-                    const el = node as HTMLElement;
-                    
-                    if (!el.classList.contains('nav-file') && 
-                        !el.classList.contains('nav-folder') && 
-                        !el.classList.contains('tree-item') && 
-                        !el.classList.contains('nn-navitem') &&
-                        !el.classList.contains('nav-file-title') &&
-                        !el.classList.contains('nav-folder-title')) {
-                        return false;
-                    }
-
-                    return (
-                        !el.classList.contains('cf-interactive-divider') &&
-                        !el.classList.contains('cf-icon-wrapper') &&
-                        !el.classList.contains('nav-file-ghost') &&
-                        !el.classList.contains('nav-folder-ghost') &&
-                        !el.closest('.cf-icon-wrapper')
-                    );
-                };
-
-                for (const node of Array.from(m.addedNodes)) {
-                    if (isRelevantNode(node)) {
-                        hasRelevantChange = true;
-                        break;
-                    }
+                if (m.addedNodes.length > 0 || m.removedNodes.length > 0) {
+                    hasRelevantChange = true;
+                    break;
                 }
-                if (hasRelevantChange) break;
-                for (const node of Array.from(m.removedNodes)) {
-                    if (isRelevantNode(node)) {
-                        hasRelevantChange = true;
-                        break;
-                    }
-                }
-                if (hasRelevantChange) break;
             }
 
             if (hasRelevantChange) {
+                allContainers.forEach(c => this.tagExplorerItems(c));
                 this.plugin.dividerManager.syncDividers();
-                if (!this.isScrolling) {
-                    const addedNodes = mutations
-                        .flatMap(m => Array.from(m.addedNodes));
-                    if (addedNodes.length > 0) {
-                        const nodelist = {
-                            forEach: (cb: (node: Node) => void) => addedNodes.forEach(cb),
-                        } as unknown as NodeList;
-                        this.plugin.iconManager.injectIconsForNodes(nodelist);
-                    } else {
-                        this.plugin.refreshIconsDebounced?.();
-                    }
-                }
             }
         });
 
         allContainers.forEach((container) => {
             this.dividerObserver?.observe(container, {
                 childList: true,
-                subtree: true,
-                attributes: true,
-                attributeFilter: ['style']
+                subtree: true
             });
         });
     }
@@ -177,7 +144,6 @@ export class DOMObserverService {
             this.isScrolling = false;
             this.isScrollingPublic = false;
             this.plugin.dividerManager.syncDividers();
-            this.plugin.refreshIconsDebounced?.();
         }, 100);
     };
 

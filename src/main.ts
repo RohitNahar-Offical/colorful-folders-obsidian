@@ -17,6 +17,7 @@ import { StyleGenerator } from "./core/StyleGenerator";
 import { DividerManager } from "./core/DividerManager";
 import { DOMObserverService } from "./services/DOMObserverService";
 import { EventTrackerService } from "./services/EventTrackerService";
+import { AdoptedStyleSheetService } from "./services/AdoptedStyleSheetService";
 
 import { IconManager } from "./core/IconManager";
 
@@ -32,6 +33,7 @@ export default class ColorfulFoldersPlugin
   declare settings: ColorfulFoldersSettings;
   iconManager: IconManager;
   sheet: CSSStyleSheet;
+  adoptedStyleSheetService: AdoptedStyleSheetService;
 
   iconCache: Map<string, string> = new Map();
   _dividerTimeout: number | null = null;
@@ -66,6 +68,7 @@ export default class ColorfulFoldersPlugin
     this.dividerManager = new DividerManager(this);
     this.domObserverService = new DOMObserverService(this);
     this.eventTrackerService = new EventTrackerService(this);
+    this.adoptedStyleSheetService = new AdoptedStyleSheetService(this);
 
     // Initial document cache state
     this.cachedDocuments.add(activeDocument);
@@ -212,21 +215,23 @@ export default class ColorfulFoldersPlugin
         console.error("Colorful Folders: Failed to optimize Blue Topaz settings", err);
       }
 
-      // Check for version update and show changelog
+      // Check for first download or version update and ensure icon packs exist
       const currentVersion = this.manifest.version;
-      if (this.settings.lastVersion !== currentVersion) {
-        const hasSimpleIcons = Object.keys(this.settings.customIcons || {}).some(k => k.startsWith('simple-icons-'));
+      const isFirstRunOrVersionChange = !this.settings.lastVersion || this.settings.lastVersion !== currentVersion;
+      if (isFirstRunOrVersionChange) {
+        const customIconKeys = Object.keys(this.settings.customIcons || {});
+        const hasSimpleIcons = customIconKeys.some(k => k.startsWith('simple-icons-') || k.startsWith('simple-'));
         if (!hasSimpleIcons) {
           window.setTimeout(() => {
             void this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/simple-icons.json", "simple-icons");
-          }, 6000);
+          }, 2000);
         }
 
-        const hasFeatherIcons = Object.keys(this.settings.customIcons || {}).some(k => k.startsWith('feather-'));
+        const hasFeatherIcons = customIconKeys.some(k => k.startsWith('feather-'));
         if (!hasFeatherIcons) {
           window.setTimeout(() => {
             void this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/feather.json", "feather");
-          }, 12000);
+          }, 5000);
         }
 
         this.settings.lastVersion = currentVersion;
@@ -260,12 +265,7 @@ export default class ColorfulFoldersPlugin
   }
 
   initializeStyles() {
-    this.sheet = new CSSStyleSheet();
-    this.getOpenDocuments().forEach(doc => {
-      if (!doc.adoptedStyleSheets.includes(this.sheet)) {
-        doc.adoptedStyleSheets = [...doc.adoptedStyleSheets, this.sheet];
-      }
-    });
+    this.adoptedStyleSheetService.initializeStyles();
   }
 
   private async getAllSvgFiles(dir: string): Promise<string[]> {
@@ -348,8 +348,8 @@ export default class ColorfulFoldersPlugin
 
   onunload() {
     this._isUnloading = true;
+    this.adoptedStyleSheetService.unload();
     this.getOpenDocuments().forEach(doc => {
-      doc.adoptedStyleSheets = doc.adoptedStyleSheets.filter(s => s !== this.sheet);
       doc.body.classList.remove("cf-show-hidden", "cf-wrap-metadata");
     });
 
@@ -649,13 +649,8 @@ export default class ColorfulFoldersPlugin
     this.isGeneratingStyles = true;
     try {
       const css = await this.styleGenerator.generateCss();
-      window.requestAnimationFrame(() => {
-        try {
-          this.sheet.replaceSync(css);
-        } finally {
-          this.isGeneratingStyles = false;
-        }
-      });
+      this.adoptedStyleSheetService.updateStyles(css);
+      this.isGeneratingStyles = false;
       // Sync folder colors to Graph View groups if the feature is enabled
       if (this.settings.graphColorSync && !this.isDragging) {
         void GraphColorSync.syncGraphColors(this);
