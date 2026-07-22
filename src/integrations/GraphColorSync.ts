@@ -67,11 +67,11 @@ export class GraphColorSync {
             seen.add(folder.path);
 
             if (folder.path === '/' || folder.isRoot()) {
-                const effStyle = StyleResolver.getEffectiveStyle(folder, plugin);
-                const hex = effStyle?.hex;
+                const rootStyle = plugin.settings.customFolderColors['/'] || plugin.settings.customFolderColors[''];
+                const hex = typeof rootStyle === 'string' ? rootStyle : rootStyle?.hex;
                 if (hex && hex.length >= 4 && !hex.startsWith('var(')) {
                     groups.push({
-                        query: 'file:""',
+                        query: 'path:"/"',
                         color: { a: 1, rgb: hexToGraphRgb(hex) }
                     });
                 }

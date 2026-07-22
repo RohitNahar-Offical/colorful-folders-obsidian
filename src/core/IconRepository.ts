@@ -264,7 +264,6 @@ export class IconRepository {
         if (svgStr) {
             const normalized = this.normalizeSvg(svgStr, shouldEncode);
             if (this.plugin.iconCache) {
-                if (this.plugin.iconCache.size > 2000) this.plugin.iconCache.clear();
                 this.plugin.iconCache.set(cacheKey, normalized);
             }
             return normalized;

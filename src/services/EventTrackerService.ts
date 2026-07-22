@@ -50,7 +50,7 @@ export class EventTrackerService {
         );
 
         this.registerEvent(
-            this.plugin.app.workspace.on("window-close", (win: unknown, doc: Document) => {
+            (this.plugin.app.workspace as obsidian.Events).on("window-close", (win: unknown, doc: Document) => {
                 this.plugin.cachedDocuments.delete(doc);
             })
         );
@@ -122,7 +122,7 @@ export class EventTrackerService {
         });
     }
 
-    private registerEvent(ref: obsidian.EventRef) {
+    private registerEvent(ref: EventRef) {
         this.plugin.registerEvent(ref);
         this.eventRefs.push(ref);
     }
