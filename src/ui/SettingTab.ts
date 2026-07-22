@@ -139,73 +139,38 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             const gapLeft = settings.dividerLinePaddingLeft ?? 8;
             const gapRight = settings.dividerLinePaddingRight ?? 8;
             const lineStyle = settings.dividerLineStyle || "solid";
-            const lineColor = "var(--text-muted)";
 
-            const bridge = dividerContainer.createDiv({ cls: "cf-divider-bridge-preview" });
-            bridge.setCssStyles({
-                display: "flex",
-                "align-items": "center",
-                width: "100%",
-                "padding-top": `${spacing}px`,
-                "padding-bottom": `${spacing}px`,
-                transition: "all 0.2s ease"
+            const bridge = dividerContainer.createDiv({ cls: "cf-divider-preview-bridge" });
+            bridge.setCssProps({
+                "--preview-spacing": `${spacing}px`
             });
 
             // Left line
-            const leftLine = bridge.createDiv();
-            leftLine.setCssStyles({
-                flex: "1",
-                height: "0px",
-                "border-top": `${thickness}px ${lineStyle} ${lineColor}`,
-                "margin-right": `${gapLeft}px`,
-                opacity: "0.6"
+            const leftLine = bridge.createDiv({ cls: "cf-divider-preview-line cf-divider-preview-line-left" });
+            leftLine.setCssProps({
+                "--preview-line-thickness": `${thickness}px`,
+                "--preview-line-style": lineStyle,
+                "--preview-gap-left": `${gapLeft}px`
             });
 
             // Central Chip / Pill label
-            const chip = bridge.createDiv({ cls: "cf-divider-chip-preview" });
-            if (isPill) {
-                chip.setCssStyles({
-                    display: "inline-flex",
-                    "align-items": "center",
-                    "justify-content": "center",
-                    padding: "6px 18px",
-                    "border-radius": "40px",
-                    "font-size": "11px",
-                    "font-weight": "700",
-                    "letter-spacing": "0.1em",
-                    "text-transform": "uppercase",
-                    color: "var(--text-normal)",
-                    "background-color": pillBgColor && pillBgColor.trim() ? pillBgColor : "rgba(var(--mono-rgb-100), 0.08)",
-                    border: "1px solid rgba(var(--mono-rgb-100), 0.2)",
-                    "box-shadow": "0 2px 8px rgba(0, 0, 0, 0.12)",
-                    "white-space": "nowrap"
-                });
-            } else {
-                chip.setCssStyles({
-                    display: "inline-flex",
-                    "align-items": "center",
-                    "justify-content": "center",
-                    padding: "2px 6px",
-                    "font-size": "11px",
-                    "font-weight": "700",
-                    "letter-spacing": "0.1em",
-                    "text-transform": "uppercase",
-                    color: "var(--text-muted)",
-                    "background-color": "transparent",
-                    border: "none",
-                    "white-space": "nowrap"
+            const chipCls = isPill
+                ? "cf-divider-preview-chip cf-divider-preview-chip-pill"
+                : "cf-divider-preview-chip cf-divider-preview-chip-text";
+            const chip = bridge.createDiv({ cls: chipCls });
+            if (isPill && pillBgColor && pillBgColor.trim()) {
+                chip.setCssProps({
+                    "--preview-pill-bg": pillBgColor.trim()
                 });
             }
-            chip.setText("Section Preview");
+            chip.setText("Section preview");
 
             // Right line
-            const rightLine = bridge.createDiv();
-            rightLine.setCssStyles({
-                flex: "1",
-                height: "0px",
-                "border-top": `${thickness}px ${lineStyle} ${lineColor}`,
-                "margin-left": `${gapRight}px`,
-                opacity: "0.6"
+            const rightLine = bridge.createDiv({ cls: "cf-divider-preview-line cf-divider-preview-line-right" });
+            rightLine.setCssProps({
+                "--preview-line-thickness": `${thickness}px`,
+                "--preview-line-style": lineStyle,
+                "--preview-gap-right": `${gapRight}px`
             });
         };
         updatePreview();
@@ -2128,8 +2093,6 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 });
             }
         }
-
-        const advCard = makeCard(sysPanel, "⚙️", "Advanced configuration");
 
         const dbCard = makeCard(sysPanel, "🗄️", "Database management");
         new obsidian.Setting(dbCard)

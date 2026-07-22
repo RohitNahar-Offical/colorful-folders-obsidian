@@ -122,7 +122,7 @@ export class EventTrackerService {
         });
     }
 
-    private registerEvent(ref: EventRef) {
+    private registerEvent(ref: obsidian.EventRef) {
         this.plugin.registerEvent(ref);
         this.eventRefs.push(ref);
     }

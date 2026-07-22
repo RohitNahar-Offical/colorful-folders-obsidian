@@ -28,6 +28,7 @@ export interface FolderStyle {
     dividerPillColor?: string;
     dividerLinePaddingLeft?: number;
     dividerLinePaddingRight?: number;
+    dividerThickness?: number;
     hasDivider?: boolean;
     isHidden?: boolean;
     textGradient?: boolean;

@@ -179,6 +179,59 @@ body .nav-files-container .cf-divider-icon svg {
 }
 
 /* Liquid Glass Markdown Popover */
+.cf-divider-preview-bridge {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    transition: all 0.2s ease;
+    padding-top: var(--preview-spacing, 16px);
+    padding-bottom: var(--preview-spacing, 16px);
+}
+
+.cf-divider-preview-line {
+    flex: 1;
+    height: 0px;
+    opacity: 0.6;
+    border-top-width: var(--preview-line-thickness, 1.5px);
+    border-top-style: var(--preview-line-style, solid);
+    border-top-color: var(--text-muted);
+}
+
+.cf-divider-preview-line-left {
+    margin-right: var(--preview-gap-left, 8px);
+}
+
+.cf-divider-preview-line-right {
+    margin-left: var(--preview-gap-right, 8px);
+}
+
+.cf-divider-preview-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.cf-divider-preview-chip-pill {
+    padding: 6px 18px;
+    border-radius: 40px;
+    color: var(--text-normal);
+    background-color: var(--preview-pill-bg, rgba(var(--mono-rgb-100), 0.08));
+    border: 1px solid rgba(var(--mono-rgb-100), 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.cf-divider-preview-chip-text {
+    padding: 2px 6px;
+    color: var(--text-muted);
+    background-color: transparent;
+    border: none;
+}
+
 .cf-premium-popover {
     position: fixed !important;
     z-index: 10000 !important;

@@ -177,7 +177,7 @@ export class IconRepository {
         }
 
         if (this._findPackIconCache.size > 2000) {
-            const oldest = this._findPackIconCache.keys().next().value;
+            const oldest = this._findPackIconCache.keys().next().value as string | undefined;
             if (oldest !== undefined) this._findPackIconCache.delete(oldest);
         }
         this._findPackIconCache.set(searchKey, result);
@@ -284,7 +284,7 @@ export class IconRepository {
         if (hit !== undefined) return hit;
 
         if (this._dataUriCache.size > 2000) {
-            const oldest = this._dataUriCache.keys().next().value;
+            const oldest = this._dataUriCache.keys().next().value as string | undefined;
             if (oldest !== undefined) this._dataUriCache.delete(oldest);
         }
         const rawSvg = this.getIconSvg(iconId, true);
@@ -299,7 +299,7 @@ export class IconRepository {
         if (hit !== undefined) return hit;
 
         if (this._normCache.size > 2000) {
-            const oldest = this._normCache.keys().next().value;
+            const oldest = this._normCache.keys().next().value as string | undefined;
             if (oldest !== undefined) this._normCache.delete(oldest);
         }
 

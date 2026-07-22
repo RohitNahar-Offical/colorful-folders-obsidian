@@ -280,6 +280,7 @@ export default class ColorfulFoldersPlugin
     }
   }
 
+  /* eslint-disable obsidianmd/rule-custom-message */
   initStaircaseStyleStripper() {
     console.log("Starting style-stripper script...");
 
@@ -595,24 +596,20 @@ export default class ColorfulFoldersPlugin
       settingsManager?: StyleSettingsManager;
     }
 
-    interface CustomApp extends obsidian.App {
-      customCss?: {
-        theme?: string;
-      };
-      plugins?: {
-        getPlugin(id: string): obsidian.Plugin | null;
-      };
-    }
+    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
+    const appAny = this.app as unknown as Record<string, unknown>;
+    const vaultAny = this.app.vault as unknown as Record<string, unknown>;
+    const getConfig = typeof vaultAny.getConfig === "function" ? (vaultAny.getConfig as (key: string) => string | null).bind(vaultAny) : null;
+    const customCss = appAny.customCss as { theme?: string } | undefined;
+    const themeName = customCss?.theme || "";
+    const currentTheme = (getConfig ? getConfig("cssTheme") : null) || themeName;
+    if (!currentTheme || (currentTheme as string).toLowerCase() !== "blue topaz") return false;
 
-    const customApp = this.app as unknown as CustomApp;
-    const vault = this.app.vault as unknown as { getConfig?(key: string): string | null };
-    const getConfig = typeof vault?.getConfig === "function" ? vault.getConfig.bind(vault) : null;
-    const currentTheme = (getConfig ? getConfig("cssTheme") : null) || customApp?.customCss?.theme;
-    if (!currentTheme || currentTheme.toLowerCase() !== "blue topaz") return false;
-
-    if (!customApp?.plugins?.getPlugin) return false;
-    const styleSettingsPlugin = customApp.plugins.getPlugin("obsidian-style-settings") as unknown as StyleSettingsPlugin | null;
+    const pluginsObj = appAny.plugins as { getPlugin?: (id: string) => StyleSettingsPlugin | null } | undefined;
+    if (!pluginsObj?.getPlugin) return false;
+    const styleSettingsPlugin = pluginsObj.getPlugin("obsidian-style-settings");
     if (!styleSettingsPlugin) return false;
+    /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
 
     const manager = styleSettingsPlugin?.settingsManager;
     if (!manager || !manager.settings) return false;
