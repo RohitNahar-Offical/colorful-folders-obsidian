@@ -2,6 +2,12 @@ import { App, MenuItem, Menu, EventRef, Debouncer } from 'obsidian';
 import { DOMObserverService } from '../services/DOMObserverService';
 import type { IconManager } from '../core/IconManager';
 
+declare module 'obsidian' {
+    interface Workspace {
+        on(name: 'window-close', callback: (win: unknown, doc: Document) => void): EventRef;
+    }
+}
+
 export interface FolderStyle {
     hex?: string;
     textColor?: string;
