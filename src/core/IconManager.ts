@@ -71,41 +71,8 @@ export class IconManager {
         }
         const fullHyphenated = sanitized.replace(/[\s_]+/g, '-');
 
+        // 1. Exact full name match in installed local icon packs / custom icons (Priority 2000)
         let exactMatchedIconId = this.findIconInPacks(fullHyphenated);
-
-        // For multi-word file/folder names (e.g. "Nintendo Switch 2 thoughts"), match word pairs or individual brand/tool words against installed packs
-        if (!exactMatchedIconId) {
-            const stopWords = new Set(['and', 'the', 'for', 'with', 'about', 'from', 'into', 'notes', 'thoughts', 'draft', 'list', 'page', 'doc', 'text', 'file', 'folder']);
-            const words = sanitized.split(/[\s_.-]+/).filter(w => w.length >= 3 && !stopWords.has(w.toLowerCase()));
-
-            // 1. Try 2-word combinations (e.g. "nintendo-switch", "nintendoswitch")
-            for (let i = 0; i < words.length - 1; i++) {
-                const pair = `${words[i]}-${words[i + 1]}`;
-                const matched = this.findIconInPacks(pair);
-                if (matched) {
-                    exactMatchedIconId = matched;
-                    break;
-                }
-                const pairNoDash = `${words[i]}${words[i + 1]}`;
-                const matchedNoDash = this.findIconInPacks(pairNoDash);
-                if (matchedNoDash) {
-                    exactMatchedIconId = matchedNoDash;
-                    break;
-                }
-            }
-
-            // 2. Try single words (e.g. "nintendo")
-            if (!exactMatchedIconId) {
-                for (const word of words) {
-                    const matched = this.findIconInPacks(word);
-                    if (matched) {
-                        exactMatchedIconId = matched;
-                        break;
-                    }
-                }
-            }
-        }
-
         if (exactMatchedIconId) {
             const safeRexStr = sanitized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             return {
@@ -117,12 +84,9 @@ export class IconManager {
             };
         }
 
+        // 2. Custom Regex rules & Built-in Auto-Icon Categories (Priority 1500 for user rules, 80-100 for categories)
         const matches = this._categoryCache.filter(cat => cat.rex.test(lName));
         matches.sort((a, b) => (b.priority || 0) - (a.priority || 0));
-
-        if (settings.iconDebugMode && matches.length > 0) {
-            console.debug(`Colorful Folders [Debug]: Match for "${name}" ->`, matches[0]);
-        }
 
         if (matches.length > 0) {
             const match = { ...matches[0] };
@@ -135,7 +99,53 @@ export class IconManager {
                     match.lucide = match.lucides[h % match.lucides.length];
                 }
             }
+            if (settings.iconDebugMode) {
+                console.debug(`Colorful Folders [Debug]: Category match for "${name}" ->`, match);
+            }
             return match;
+        }
+
+        // 3. Fallback: Multi-word word pairs and single brand/tool word matches against installed packs
+        let fuzzyMatchedIconId: string | null = null;
+        const stopWords = new Set(['and', 'the', 'for', 'with', 'about', 'from', 'into', 'notes', 'thoughts', 'draft', 'list', 'page', 'doc', 'text', 'file', 'folder']);
+        const words = sanitized.split(/[\s_.-]+/).filter(w => w.length >= 3 && !stopWords.has(w.toLowerCase()));
+
+        // Try 2-word combinations (e.g. "nintendo-switch", "nintendoswitch")
+        for (let i = 0; i < words.length - 1; i++) {
+            const pair = `${words[i]}-${words[i + 1]}`;
+            const matched = this.findIconInPacks(pair);
+            if (matched) {
+                fuzzyMatchedIconId = matched;
+                break;
+            }
+            const pairNoDash = `${words[i]}${words[i + 1]}`;
+            const matchedNoDash = this.findIconInPacks(pairNoDash);
+            if (matchedNoDash) {
+                fuzzyMatchedIconId = matchedNoDash;
+                break;
+            }
+        }
+
+        // Try single words (e.g. "nintendo")
+        if (!fuzzyMatchedIconId) {
+            for (const word of words) {
+                const matched = this.findIconInPacks(word);
+                if (matched) {
+                    fuzzyMatchedIconId = matched;
+                    break;
+                }
+            }
+        }
+
+        if (fuzzyMatchedIconId) {
+            const safeRexStr = sanitized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            return {
+                rex: new RegExp(`^${safeRexStr}$`, 'i'),
+                emoji: fuzzyMatchedIconId,
+                lucide: fuzzyMatchedIconId,
+                priority: 50,
+                isCustom: true
+            };
         }
 
         return null;
