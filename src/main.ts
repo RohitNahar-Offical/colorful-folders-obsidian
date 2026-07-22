@@ -370,8 +370,6 @@ export default class ColorfulFoldersPlugin
     const customIconsChanged = JSON.stringify(this.settings.customIcons || {}) !== this._lastCustomIconsKey;
     const shouldClearIconCache = iconRulesChanged || customIconsChanged;
 
-    this.folderTrie.rebuildFromSettings(this.settings.customFolderColors);
-
     if (this.heatmapCache) {
       this.settings.heatmapData = Object.fromEntries(this.heatmapCache);
     }
