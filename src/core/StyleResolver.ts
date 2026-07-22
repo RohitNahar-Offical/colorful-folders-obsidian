@@ -101,8 +101,11 @@ export class StyleResolver {
                         .filter((c) => !excludeFolders.has(c.name.toLowerCase()))
                         .sort((a, b) => a.name.localeCompare(b.name));
                         
-                    rootSiblings.forEach((s, idx) => plugin.rootSortCache.set(s.name, idx));
-                    rootIndex = plugin.rootSortCache.get(rootSegment) || 0;
+                    rootSiblings.forEach((s, idx) => {
+                        plugin.rootSortCache.set(s.name, idx);
+                        plugin.rootSortCache.set(s.path, idx);
+                    });
+                    rootIndex = plugin.rootSortCache.get(rootSegment) ?? plugin.rootSortCache.get(rootFolder.path + '/' + rootSegment) ?? 0;
                 }
             }
 

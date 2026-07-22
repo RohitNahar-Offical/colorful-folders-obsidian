@@ -128,6 +128,11 @@ export class StyleGenerator {
 
 
     private async traverse(folder: obsidian.TFolder, depth: number, validIndex: number, rootIndex: number, passedColor: { rgb: string, hex: string } | null, inheritedStyle: FolderStyle | null, context: StyleContext, grouper: CssGrouper, cumulativeTintOp: number = 0, yieldState: { lastYield: number }) {
+        if (Date.now() - yieldState.lastYield > 15) {
+            await new Promise((resolve) => setTimeout(resolve, 0));
+            yieldState.lastYield = Date.now();
+        }
+
         const copyFolders: obsidian.TFolder[] = [];
         const copyFiles: obsidian.TFile[] = [];
         for (let i = 0; i < folder.children.length; i++) {
@@ -249,19 +254,7 @@ export class StyleGenerator {
                     this.settings.colorText === 'all' || this.settings.colorText === 'files' || this.settings.colorText === true || this.settings.colorText === undefined
                 );
 
-                const textNN = ColorResolver.resolveTextColor(
-                    true,
-                    depth,
-                    color.hex,
-                    color.rgb,
-                    fileStyle,
-                    inheritedStyle,
-                    isDark,
-                    context.brightnessAmount,
-                    this.settings.rootStyle,
-                    outlineOnly,
-                    this.settings.colorText === 'all' || this.settings.colorText === 'files' || this.settings.colorText === true || this.settings.colorText === undefined
-                );
+                const textNN = textNative;
 
                 const isBold = fileStyle?.isBold !== undefined ? fileStyle.isBold : (inheritedStyle?.applyToFiles ? inheritedStyle.isBold : false);
                 const isItalic = fileStyle?.isItalic !== undefined ? fileStyle.isItalic : (inheritedStyle?.applyToFiles ? inheritedStyle.isItalic : false);
@@ -944,9 +937,11 @@ export class StyleGenerator {
             // Pass customStyle into the next level if applyToSubfolders OR applyToFiles is set.
             // - applyToSubfolders: files AND sub-folders in child will inherit
             // - applyToFiles only: files in the IMMEDIATE child folder inherit, but sub-subfolders do NOT (handled below)
-            const nextInherited = (customStyle?.applyToSubfolders || customStyle?.applyToFiles)
+            const nextInherited = customStyle?.applyToSubfolders
                 ? customStyle
-                : (inheritedStyle?.applyToSubfolders ? inheritedStyle : null);
+                : (customStyle?.applyToFiles
+                    ? { ...customStyle, applyToSubfolders: false }
+                    : (inheritedStyle?.applyToSubfolders ? inheritedStyle : null));
             await this.traverse(child, depth + 1, validFolderIndex, (depth === 0 ? validFolderIndex : rootIndex), color, nextInherited, context, grouper, cumulativeTintOp, yieldState);
             validFolderIndex++;
         }

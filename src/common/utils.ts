@@ -1,9 +1,14 @@
+const MAX_CACHE_SIZE = 1000;
 const rgbCache = new Map<string, {r: number, g: number, b: number} | null>();
 
 export function hexToRgbObj(hex: string): {r: number, g: number, b: number} | null {
     if (!hex || typeof hex !== 'string') return null;
     const cached = rgbCache.get(hex);
     if (cached !== undefined) return cached;
+
+    if (rgbCache.size > MAX_CACHE_SIZE) {
+        rgbCache.clear();
+    }
 
     let cleanHex = hex.trim().toLowerCase();
     
@@ -41,8 +46,10 @@ export function anyToHex(color: string): string {
 }
 
 export function adjustBrightnessRgb(rgb: string, amount: number): string {
+    if (!rgb || rgb.includes('var(')) return "120, 120, 120";
     const [r, g, b] = rgb.split(',').map(c => {
         const val = parseInt(c.trim());
+        if (isNaN(val)) return 120;
         if (amount < 0) {
             return Math.max(0, Math.round(val * (1 + amount)));
         } else {
@@ -64,10 +71,13 @@ export function parseCustomPalette(hexString: string): { rgb: string, hex: strin
     const cached = paletteCache.get(hexString);
     if (cached !== undefined) return cached;
 
+    if (paletteCache.size > MAX_CACHE_SIZE) {
+        paletteCache.clear();
+    }
+
     const hexes = hexString.split(',').map(s => s.trim().toLowerCase());
     const result: { rgb: string, hex: string }[] = [];
     for (let hex of hexes) {
-        // Add # if missing
         if (!hex.startsWith('#') && /^[0-9a-f]{3,6}$/i.test(hex)) {
             hex = '#' + hex;
         }

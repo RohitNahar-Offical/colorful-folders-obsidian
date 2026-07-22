@@ -2,10 +2,19 @@ import { IColorfulFoldersPlugin } from '../common/types';
 
 export class AdoptedStyleSheetService {
     plugin: IColorfulFoldersPlugin;
-    private sheet: CSSStyleSheet = new CSSStyleSheet();
+    public sheet: CSSStyleSheet = new CSSStyleSheet();
 
     constructor(plugin: IColorfulFoldersPlugin) {
         this.plugin = plugin;
+    }
+
+    /**
+     * Attaches the stylesheet instance to a specific document.
+     */
+    attachToDocument(doc: Document): void {
+        if (!doc.adoptedStyleSheets.includes(this.sheet)) {
+            doc.adoptedStyleSheets = [...doc.adoptedStyleSheets, this.sheet];
+        }
     }
 
     /**
@@ -13,11 +22,7 @@ export class AdoptedStyleSheetService {
      * without overwriting existing sheets.
      */
     initializeStyles(): void {
-        this.plugin.getOpenDocuments().forEach(doc => {
-            if (!doc.adoptedStyleSheets.includes(this.sheet)) {
-                doc.adoptedStyleSheets = [...doc.adoptedStyleSheets, this.sheet];
-            }
-        });
+        this.plugin.getOpenDocuments().forEach(doc => this.attachToDocument(doc));
     }
 
     /**

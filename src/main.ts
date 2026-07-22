@@ -66,6 +66,7 @@ export default class ColorfulFoldersPlugin
   isSyncingDividers: boolean = false;
   isDragging: boolean = false;
   isGeneratingStyles: boolean = false;
+  hasPendingGenerateStyles: boolean = false;
 
   ribbonEl: HTMLElement | null = null;
 
@@ -118,10 +119,6 @@ export default class ColorfulFoldersPlugin
 
 
     this.refreshRibbon();
-
-    // UI styles moved to styles.css to comply with obsidianmd/no-forbidden-elements
-
-    this.refreshRibbon();
     this.eventTrackerService.registerEvents();
     this.domObserverService.initStyleObservers();
 
@@ -136,18 +133,18 @@ export default class ColorfulFoldersPlugin
       );
     });
 
-    this.app.workspace.onLayoutReady(async () => {
-      NotebookNavigatorIntegration.registerMenuExtensions(this);
-      await this.loadLocalIcons();
+    this.initStaircaseStyleStripper();
+    void this.generateStyles();
 
-      // Single fast synchronous style generation pass
+    this.app.workspace.onLayoutReady(async () => {
       await this.generateStyles();
+      NotebookNavigatorIntegration.registerMenuExtensions(this);
+      void this.loadLocalIcons();
 
       if (this._abortStartupRender) return;
       this.domStamper.stampAllExplorers();
       this.domObserverService.initDividerObserver();
       this.dividerManager.syncDividers();
-      this.initStaircaseStyleStripper();
 
       try {
         const optimized = await this.optimizeBlueTopazStyleSettings();
@@ -248,14 +245,14 @@ export default class ColorfulFoldersPlugin
         for (const { relPath, content } of readResults) {
           const parts = relPath.split('/');
           const filename = parts[parts.length - 1].slice(0, -4);
+          const lowerFilename = filename.toLowerCase();
           
-          if (!this.localFileSystemIcons[filename]) {
-            this.localFileSystemIcons[filename] = content;
-          }
-          
+          const relNoExt = relPath.slice(0, -4);
+          const hyphenated = relNoExt.toLowerCase().replace(/[\s_]+/g, '-').replace(/\//g, '-');
+          this.localFileSystemIcons[hyphenated] = content;
+
           if (parts.length > 1) {
             const packName = parts[0].toLowerCase().replace(/[\s_]+/g, '-');
-            const lowerFilename = filename.toLowerCase();
             const packFilename = `${packName}-${lowerFilename}`;
             this.localFileSystemIcons[packFilename] = content;
 
@@ -279,11 +276,9 @@ export default class ColorfulFoldersPlugin
             if (packName.includes('material') || packName.startsWith('mdi')) {
               this.localFileSystemIcons[`mdi-${lowerFilename}`] = content;
             }
+          } else {
+            this.localFileSystemIcons[lowerFilename] = content;
           }
-
-          const relNoExt = relPath.slice(0, -4);
-          const hyphenated = relNoExt.toLowerCase().replace(/[\s_]+/g, '-').replace(/\//g, '-');
-          this.localFileSystemIcons[hyphenated] = content;
         }
 
         // Trigger style generation now that we know what icons exist
@@ -298,72 +293,7 @@ export default class ColorfulFoldersPlugin
     const win = window as unknown as Window & { _testerObserver?: MutationObserver };
     if (win._testerObserver) {
       win._testerObserver.disconnect();
-    }
-
-    let isStripping = false;
-    const pendingEls = new Set<Element>();
-    let rafScheduled = false;
-
-    const flushStripping = () => {
-      isStripping = true;
-      pendingEls.forEach((el) => {
-        if (el.hasAttribute("style")) {
-          el.removeAttribute("style");
-        }
-      });
-      pendingEls.clear();
-      rafScheduled = false;
-      isStripping = false;
-    };
-
-    const scheduleStrip = (el: Element) => {
-      if (!el.hasAttribute("style")) return;
-      pendingEls.add(el);
-      if (!rafScheduled) {
-        rafScheduled = true;
-        window.requestAnimationFrame(flushStripping);
-      }
-    };
-
-    const items = activeDocument.querySelectorAll(
-      '.workspace-leaf-content[data-type="file-explorer"] .tree-item-self',
-    );
-    items.forEach(scheduleStrip);
-
-    win._testerObserver = new MutationObserver((mutations) => {
-      if (isStripping) return;
-
-      for (const m of mutations) {
-        if (m.type === "attributes" && m.attributeName === "style") {
-          const target = m.target as HTMLElement;
-          if (target.classList && target.classList.contains("tree-item-self")) {
-            scheduleStrip(target);
-          }
-        } else if (m.type === "childList") {
-          for (const node of Array.from(m.addedNodes)) {
-            if (node.nodeType === Node.ELEMENT_NODE) {
-              const el = node as HTMLElement;
-              if (el.classList.contains("tree-item-self")) {
-                scheduleStrip(el);
-              }
-              const children = el.querySelectorAll(".tree-item-self");
-              children.forEach(scheduleStrip);
-            }
-          }
-        }
-      }
-    });
-
-    const explorer = activeDocument.querySelector(
-      '.workspace-leaf-content[data-type="file-explorer"]',
-    );
-    if (explorer) {
-      win._testerObserver.observe(explorer, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ["style"],
-      });
+      win._testerObserver = undefined;
     }
   }
 
@@ -675,20 +605,28 @@ export default class ColorfulFoldersPlugin
 
 
   async generateStyles() {
-    if (this.isGeneratingStyles || this._isUnloading) return;
+    if (this._isUnloading) return;
+    if (this.isGeneratingStyles) {
+      this.hasPendingGenerateStyles = true;
+      return;
+    }
     this.isGeneratingStyles = true;
     try {
       const css = await this.styleGenerator.generateCss();
       this.adoptedStyleSheetService.updateStyles(css);
       this.domStamper.stampAllExplorers();
-      this.isGeneratingStyles = false;
       // Sync folder colors to Graph View groups if the feature is enabled
       if (this.settings.graphColorSync && !this.isDragging) {
         void GraphColorSync.syncGraphColors(this);
       }
     } catch (e) {
+      console.error("Colorful Folders: Error during generateStyles", e);
+    } finally {
       this.isGeneratingStyles = false;
-      throw e;
+      if (this.hasPendingGenerateStyles && !this._isUnloading) {
+        this.hasPendingGenerateStyles = false;
+        this.generateStylesDebounced();
+      }
     }
   }
 
@@ -759,22 +697,29 @@ export default class ColorfulFoldersPlugin
     try {
       const res = await obsidian.requestUrl({ url });
       const data = res.json as Record<string, unknown>;
-      if (!data) return;
+      if (!data || typeof data !== 'object') return;
 
       const icons = data.icons as Record<string, { width?: number; height?: number; left?: number; top?: number; body?: string }> | undefined;
-      if (icons && (data.prefix || data.info)) {
-        const packPrefix = (data.prefix as string) || prefix;
-        const commonW = (data.width as number) || 24;
-        const commonH = (data.height as number) || 24;
+      if (icons && typeof icons === 'object' && !Array.isArray(icons)) {
+        const rawPrefix = typeof data.prefix === 'string' ? data.prefix : prefix;
+        const packPrefix = rawPrefix.replace(/[^a-z0-9-_]/gi, '');
+        const commonW = typeof data.width === 'number' ? data.width : 24;
+        const commonH = typeof data.height === 'number' ? data.height : 24;
 
         const processIcon = (name: string, iconData: { width?: number; height?: number; left?: number; top?: number; body?: string }) => {
-          const id = `${packPrefix}-${name}`;
-          const w = iconData.width || commonW;
-          const h = iconData.height || commonH;
-          const l = iconData.left || 0;
-          const t = iconData.top || 0;
+          if (!name || typeof name !== 'string') return false;
+          const cleanName = name.replace(/[^a-z0-9-_]/gi, '');
+          if (!cleanName) return false;
+
+          const id = `${packPrefix}-${cleanName}`;
+          const w = typeof iconData.width === 'number' ? iconData.width : commonW;
+          const h = typeof iconData.height === 'number' ? iconData.height : commonH;
+          const l = typeof iconData.left === 'number' ? iconData.left : 0;
+          const t = typeof iconData.top === 'number' ? iconData.top : 0;
           const body = iconData.body;
-          if (!body) return false;
+          
+          if (!body || typeof body !== 'string') return false;
+          if (/<script|on\w+\s*=/i.test(body)) return false; // Sanitize XSS scripts/event handlers
 
           const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${l} ${t} ${w} ${h}">${body}</svg>`;
           this.settings.customIcons[id] = svg;

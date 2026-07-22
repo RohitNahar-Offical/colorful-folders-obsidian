@@ -1,5 +1,6 @@
 import { ColorfulFoldersSettings } from '../common/types';
 import { NotebookNavigatorIntegration } from '../integrations/NotebookNavigator';
+import { safeEscape } from '../common/utils';
 
 export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string {
     return `
@@ -15,6 +16,8 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             padding-top: 0 !important;
             padding-bottom: 0 !important;
             overflow: visible !important;
+            contain: layout style paint !important;
+            will-change: transform !important;
         }
 
 
@@ -245,6 +248,66 @@ export function generateDividerCss(settings: ColorfulFoldersSettings): string {
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
             border-color: rgba(var(--mono-rgb-100), 0.3) !important;
         }
+
+        /* Liquid Glass Markdown Popover */
+        .cf-premium-popover {
+            position: fixed !important;
+            z-index: 10000 !important;
+            background: rgba(26, 26, 36, 0.55) !important;
+            backdrop-filter: blur(28px) saturate(210%) contrast(110%) !important;
+            -webkit-backdrop-filter: blur(28px) saturate(210%) contrast(110%) !important;
+            border: 1px solid rgba(255, 255, 255, 0.18) !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.35) !important;
+            border-radius: 16px !important;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), 
+                        inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                        0 0 24px rgba(var(--interactive-accent-rgb, 120, 120, 255), 0.12) !important;
+            padding: 14px 18px !important;
+            max-width: 340px !important;
+            min-width: 220px !important;
+            max-height: 400px !important;
+            overflow-y: auto !important;
+            transform: translate(-50%, -100%) !important;
+            color: var(--text-normal) !important;
+            font-size: 0.9em !important;
+            pointer-events: auto !important;
+            animation: cf-popover-appear 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+
+        .theme-light .cf-premium-popover {
+            background: rgba(255, 255, 255, 0.65) !important;
+            border: 1px solid rgba(0, 0, 0, 0.12) !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.8) !important;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15), 
+                        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+                        0 0 20px rgba(var(--interactive-accent-rgb, 120, 120, 255), 0.1) !important;
+        }
+
+        .cf-premium-popover.is-below {
+            transform: translate(-50%, 0) !important;
+        }
+
+        @keyframes cf-popover-appear {
+            from { opacity: 0; transform: translate(-50%, -90%) scale(0.95); }
+            to { opacity: 1; transform: translate(-50%, -100%) scale(1); }
+        }
+
+        .cf-premium-popover.is-below {
+            animation: cf-popover-appear-below 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+
+        @keyframes cf-popover-appear-below {
+            from { opacity: 0; transform: translate(-50%, -10%) scale(0.95); }
+            to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+        }
+
+        .cf-popover-content p {
+            margin: 4px 0 !important;
+        }
+
+        .cf-divider-chip.cf-has-description {
+            cursor: pointer !important;
+        }
         
         .cf-divider-chip {
             display: flex !important;
@@ -386,6 +449,24 @@ export function generateStealthCss(settings: ColorfulFoldersSettings): string {
     for (const path in styles) {
         const style = styles[path];
         if (typeof style === 'object' && style !== null && style.isHidden) {
+            const safePath = safeEscape(path);
+
+            stealthCss += `
+                body:not(.cf-show-hidden) .nav-folder-title[data-path="${safePath}"],
+                body:not(.cf-show-hidden) .nav-folder-title[data-path="${safePath}"] + .nav-folder-children,
+                body:not(.cf-show-hidden) .nav-file-title[data-path="${safePath}"],
+                body:not(.cf-show-hidden) .tree-item-self[data-path="${safePath}"] {
+                    display: none !important;
+                }
+
+                body.cf-show-hidden .nav-folder-title[data-path="${safePath}"],
+                body.cf-show-hidden .nav-file-title[data-path="${safePath}"],
+                body.cf-show-hidden .tree-item-self[data-path="${safePath}"] {
+                    opacity: 0.3 !important;
+                    filter: grayscale(1) blur(0.5px) !important;
+                }
+            `;
+
             if (settings.notebookNavigatorSupport) {
                 const nnSelector = NotebookNavigatorIntegration.getScopedNavSelector(path);
                 const nnFileSelector = NotebookNavigatorIntegration.getScopedFileSelector(path);

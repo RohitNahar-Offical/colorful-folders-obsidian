@@ -7,6 +7,7 @@ export interface FolderStyle {
     textColor?: string;
     iconColor?: string;
     iconId?: string;
+    icon?: string;
     expandedIconId?: string;
     opacity?: number;
     isBold?: boolean;
@@ -130,6 +131,7 @@ export interface EffectiveStyle {
     textColor: string;
     iconColor: string;
     iconId: string;
+    icon?: string;
     expandedIconId: string;
     opacity: number;
     isBold: boolean;

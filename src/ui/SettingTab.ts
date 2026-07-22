@@ -130,23 +130,83 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         const updatePreview = () => {
             dividerContainer.empty();
-            const previewEl = dividerContainer.createDiv({ cls: 'cf-divider-chip-preview' });
-            previewEl.setCssStyles({
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '6px 16px',
-                borderRadius: '40px',
-                fontSize: '11px',
-                fontWeight: '700',
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                color: 'var(--interactive-accent)',
-                backgroundColor: 'rgba(var(--mono-rgb-100), 0.05)',
-                border: '1px solid rgba(var(--mono-rgb-100), 0.15)',
-                margin: '8px auto'
+
+            const settings = this.plugin.settings;
+            const isPill = settings.dividerPillMode !== false;
+            const pillBgColor = settings.dividerPillColor;
+            const spacing = Math.min(30, Math.max(5, settings.dividerSpacing ?? 15));
+            const thickness = settings.dividerThickness ?? 1.5;
+            const gapLeft = settings.dividerLinePaddingLeft ?? 8;
+            const gapRight = settings.dividerLinePaddingRight ?? 8;
+            const lineStyle = settings.dividerLineStyle || "solid";
+            const lineColor = "var(--text-muted)";
+
+            const bridge = dividerContainer.createDiv({ cls: "cf-divider-bridge-preview" });
+            bridge.setCssStyles({
+                display: "flex",
+                "align-items": "center",
+                width: "100%",
+                "padding-top": `${spacing}px`,
+                "padding-bottom": `${spacing}px`,
+                transition: "all 0.2s ease"
             });
-            previewEl.setText('Preview section');
+
+            // Left line
+            const leftLine = bridge.createDiv();
+            leftLine.setCssStyles({
+                flex: "1",
+                height: "0px",
+                "border-top": `${thickness}px ${lineStyle} ${lineColor}`,
+                "margin-right": `${gapLeft}px`,
+                opacity: "0.6"
+            });
+
+            // Central Chip / Pill label
+            const chip = bridge.createDiv({ cls: "cf-divider-chip-preview" });
+            if (isPill) {
+                chip.setCssStyles({
+                    display: "inline-flex",
+                    "align-items": "center",
+                    "justify-content": "center",
+                    padding: "6px 18px",
+                    "border-radius": "40px",
+                    "font-size": "11px",
+                    "font-weight": "700",
+                    "letter-spacing": "0.1em",
+                    "text-transform": "uppercase",
+                    color: "var(--text-normal)",
+                    "background-color": pillBgColor && pillBgColor.trim() ? pillBgColor : "rgba(var(--mono-rgb-100), 0.08)",
+                    border: "1px solid rgba(var(--mono-rgb-100), 0.2)",
+                    "box-shadow": "0 2px 8px rgba(0, 0, 0, 0.12)",
+                    "white-space": "nowrap"
+                });
+            } else {
+                chip.setCssStyles({
+                    display: "inline-flex",
+                    "align-items": "center",
+                    "justify-content": "center",
+                    padding: "2px 6px",
+                    "font-size": "11px",
+                    "font-weight": "700",
+                    "letter-spacing": "0.1em",
+                    "text-transform": "uppercase",
+                    color: "var(--text-muted)",
+                    "background-color": "transparent",
+                    border: "none",
+                    "white-space": "nowrap"
+                });
+            }
+            chip.setText("Section Preview");
+
+            // Right line
+            const rightLine = bridge.createDiv();
+            rightLine.setCssStyles({
+                flex: "1",
+                height: "0px",
+                "border-top": `${thickness}px ${lineStyle} ${lineColor}`,
+                "margin-left": `${gapRight}px`,
+                opacity: "0.6"
+            });
         };
         updatePreview();
         // --- End Preview ---

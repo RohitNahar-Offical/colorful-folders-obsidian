@@ -12,6 +12,7 @@ export class DOMAttributeStamper {
      * onto visible explorer title elements in O(N_visible) time without DOM node creations.
      */
     stampContainer(container: HTMLElement): void {
+        if (this.plugin.domObserverService?.isScrollingPublic) return;
         const items = container.querySelectorAll<HTMLElement>('.nav-folder-title, .nav-file-title, .tree-item-self');
         for (let i = 0; i < items.length; i++) {
             const item = items[i];

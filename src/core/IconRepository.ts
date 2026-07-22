@@ -131,38 +131,54 @@ export class IconRepository {
         return null;
     }
 
+    private _findPackIconCache = new Map<string, string | null>();
+
     findIconInPacks(searchKey: string): string | null {
         if (!searchKey || searchKey.length < 3) return null;
+        if (this._findPackIconCache.has(searchKey)) {
+            return this._findPackIconCache.get(searchKey) || null;
+        }
+
         const local = this.plugin.localFileSystemIcons;
         const custom = this.plugin.settings.customIcons;
 
         const s = searchKey.toLowerCase().replace(/[\s_:]+/g, '-').replace(/\//g, '-');
         const cleanS = s.replace(/^(si|simple|simple-icons|simpleicons|feather|fa|fas|far|fab|fontawesome|ri|remix|remixicons|tb|tabler|mdi|material|oct|octicons|lucide)[-_:]/, '');
 
+        let result: string | null = null;
         if (custom) {
-            if (custom[s]) return s;
-            if (custom[cleanS]) return cleanS;
-            if (custom[`feather-${cleanS}`]) return `feather-${cleanS}`;
-            if (custom[`simple-icons-${cleanS}`]) return `simple-icons-${cleanS}`;
-            for (const key of Object.keys(custom)) {
-                if (key === s || key === cleanS || key.endsWith(`-${s}`) || key.endsWith(`-${cleanS}`) || key.endsWith(`/${cleanS}`)) {
-                    return key;
+            if (custom[s]) result = s;
+            else if (custom[cleanS]) result = cleanS;
+            else if (custom[`feather-${cleanS}`]) result = `feather-${cleanS}`;
+            else if (custom[`simple-icons-${cleanS}`]) result = `simple-icons-${cleanS}`;
+            else {
+                for (const key of Object.keys(custom)) {
+                    if (key === s || key === cleanS || key.endsWith(`-${s}`) || key.endsWith(`-${cleanS}`) || key.endsWith(`/${cleanS}`)) {
+                        result = key;
+                        break;
+                    }
                 }
             }
         }
 
-        if (local) {
-            if (local[s]) return s;
-            if (local[cleanS]) return cleanS;
-            if (local[`feather-${cleanS}`]) return `feather-${cleanS}`;
-            if (local[`simple-icons-${cleanS}`]) return `simple-icons-${cleanS}`;
-            for (const key of Object.keys(local)) {
-                if (key === s || key === cleanS || key.endsWith(`-${s}`) || key.endsWith(`-${cleanS}`) || key.endsWith(`/${cleanS}`)) {
-                    return key;
+        if (!result && local) {
+            if (local[s]) result = s;
+            else if (local[cleanS]) result = cleanS;
+            else if (local[`feather-${cleanS}`]) result = `feather-${cleanS}`;
+            else if (local[`simple-icons-${cleanS}`]) result = `simple-icons-${cleanS}`;
+            else {
+                for (const key of Object.keys(local)) {
+                    if (key === s || key === cleanS || key.endsWith(`-${s}`) || key.endsWith(`-${cleanS}`) || key.endsWith(`/${cleanS}`)) {
+                        result = key;
+                        break;
+                    }
                 }
             }
         }
-        return null;
+
+        if (this._findPackIconCache.size > 2000) this._findPackIconCache.clear();
+        this._findPackIconCache.set(searchKey, result);
+        return result;
     }
 
     isEmojiIcon(iconId?: string | null): boolean {
@@ -264,6 +280,7 @@ export class IconRepository {
         const hit = this._dataUriCache.get(iconId);
         if (hit !== undefined) return hit;
 
+        if (this._dataUriCache.size > 2000) this._dataUriCache.clear();
         const rawSvg = this.getIconSvg(iconId, true);
         const dataUri = rawSvg ? `url("data:image/svg+xml,${rawSvg}")` : "";
         this._dataUriCache.set(iconId, dataUri);
@@ -274,6 +291,8 @@ export class IconRepository {
         const cacheKey = (shouldEncode ? '1:' : '0:') + svgStr;
         const hit = this._normCache.get(cacheKey);
         if (hit !== undefined) return hit;
+
+        if (this._normCache.size > 2000) this._normCache.clear();
 
         let result: string;
         try {
@@ -328,5 +347,6 @@ export class IconRepository {
         this._customRulesKey = '';
         this._normCache.clear();
         this._dataUriCache.clear();
+        this._findPackIconCache.clear();
     }
 }

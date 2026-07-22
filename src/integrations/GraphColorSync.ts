@@ -66,7 +66,15 @@ export class GraphColorSync {
             if (seen.has(folder.path)) return;
             seen.add(folder.path);
 
-            if (folder.path === '/') {
+            if (folder.path === '/' || folder.isRoot()) {
+                const rootStyle = plugin.settings.customFolderColors['/'] || plugin.settings.customFolderColors[''];
+                const hex = typeof rootStyle === 'string' ? rootStyle : rootStyle?.hex;
+                if (hex && hex.length >= 4 && !hex.startsWith('var(')) {
+                    groups.push({
+                        query: 'path:"/"',
+                        color: { a: 1, rgb: hexToGraphRgb(hex) }
+                    });
+                }
                 for (const child of folder.children) {
                     if (child.name.startsWith('.')) continue;
                     if (child instanceof TFolder) processFolder(child);
@@ -101,7 +109,7 @@ export class GraphColorSync {
             }
 
             // Build the query. Use folder path for nested folders, just name for top-level.
-            const isTopLevel = folder.parent?.path === '/';
+            const isTopLevel = !folder.parent || folder.parent.isRoot() || folder.parent.path === '/' || folder.parent.path === '';
             const queryTarget = isTopLevel ? folder.name : folder.path;
             const query = `path:"${queryTarget}"`;
 

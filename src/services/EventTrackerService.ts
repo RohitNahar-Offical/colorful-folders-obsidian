@@ -1,9 +1,9 @@
-import { EventRef } from "obsidian";
+import * as obsidian from "obsidian";
 import type ColorfulFoldersPlugin from "../main";
 import { MenuHelper } from "../ui/MenuHelper";
 export class EventTrackerService {
     private plugin: ColorfulFoldersPlugin;
-    private eventRefs: EventRef[] = [];
+    private eventRefs: obsidian.EventRef[] = [];
     private domEvents: { element: HTMLElement | Document | Window, event: string, callback: EventListenerOrEventListenerObject }[] = [];
 
     constructor(plugin: ColorfulFoldersPlugin) {
@@ -37,9 +37,7 @@ export class EventTrackerService {
         this.registerEvent(
             this.plugin.app.workspace.on("window-open", (win: unknown, doc: Document) => {
                 this.plugin.cachedDocuments.add(doc);
-                if (this.plugin.sheet && !doc.adoptedStyleSheets.includes(this.plugin.sheet)) {
-                    doc.adoptedStyleSheets = [...doc.adoptedStyleSheets, this.plugin.sheet];
-                }
+                this.plugin.adoptedStyleSheetService?.attachToDocument(doc);
                 
                 doc.body.classList.toggle("cf-show-hidden", this.plugin.settings.showHiddenItems);
                 doc.body.classList.toggle("cf-wrap-metadata", !!this.plugin.settings.wrapMetadata);
@@ -52,8 +50,7 @@ export class EventTrackerService {
         );
 
         this.registerEvent(
-            // @ts-ignore - window-close is an internal Obsidian API event
-            this.plugin.app.workspace.on("window-close", (win: unknown, doc: Document) => {
+            (this.plugin.app.workspace as obsidian.Events).on("window-close", (win: unknown, doc: Document) => {
                 this.plugin.cachedDocuments.delete(doc);
             })
         );

@@ -43,6 +43,8 @@ body .nav-files-container .nav-file-title {
     padding-right: 14px;
     min-height: 32px;
     height: auto;
+    contain: layout style paint;
+    will-change: transform;
 }
 
 /* Fix Arrow & Icon Width */
@@ -178,26 +180,41 @@ body .nav-files-container .cf-divider-icon svg {
     stroke-width: 2.5px;
 }
 
-/* Premium Markdown Popover */
+/* Liquid Glass Markdown Popover */
 .cf-premium-popover {
-    position: fixed;
-    transform: translate(-50%, -100%);
-    background: var(--cf-popover-bg);
-    backdrop-filter: blur(12px) saturate(190%);
-    -webkit-backdrop-filter: blur(12px) saturate(190%);
-    border: 1px solid var(--background-modifier-border-focus);
-    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4), inset 0 0 1px 1px rgba(255, 255, 255, 0.05);
-    padding: 14px 20px;
-    border-radius: 14px;
-    max-width: 340px;
-    max-height: 400px;
-    overflow-y: auto;
-    z-index: 10000;
-    pointer-events: auto;
+    position: fixed !important;
+    z-index: 10000 !important;
+    background: rgba(26, 26, 36, 0.55) !important;
+    backdrop-filter: blur(28px) saturate(210%) contrast(110%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(210%) contrast(110%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.35) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), 
+                inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                0 0 24px rgba(var(--interactive-accent-rgb, 120, 120, 255), 0.12) !important;
+    padding: 14px 18px !important;
+    max-width: 340px !important;
+    min-width: 220px !important;
+    max-height: 400px !important;
+    overflow-y: auto !important;
+    transform: translate(-50%, -100%) !important;
+    color: var(--text-normal) !important;
+    font-size: 0.9em !important;
+    pointer-events: auto !important;
+}
+
+.theme-light .cf-premium-popover {
+    background: rgba(255, 255, 255, 0.65) !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.8) !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15), 
+                inset 0 1px 0 rgba(255, 255, 255, 0.9),
+                0 0 20px rgba(var(--interactive-accent-rgb, 120, 120, 255), 0.1) !important;
 }
 
 .cf-premium-popover.is-below {
-    transform: translate(-50%, 0);
+    transform: translate(-50%, 0) !important;
 }
 
 .cf-premium-popover::-webkit-scrollbar {

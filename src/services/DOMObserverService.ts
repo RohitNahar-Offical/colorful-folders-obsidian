@@ -62,6 +62,7 @@ export class DOMObserverService {
      * Attribute updates do NOT trigger childList mutations, eliminating race conditions.
      */
     public tagExplorerItems(container: HTMLElement) {
+        if (this.isScrolling) return;
         const items = container.querySelectorAll<HTMLElement>('.nav-folder-title, .nav-file-title, .tree-item-self');
         for (let i = 0; i < items.length; i++) {
             const item = items[i];
@@ -101,6 +102,26 @@ export class DOMObserverService {
             let hasRelevantChange = false;
             for (const m of mutations) {
                 if (m.type !== 'childList') continue;
+
+                // Ignore mutations caused by our own divider elements
+                let isDividerMutation = false;
+                for (let i = 0; i < m.addedNodes.length; i++) {
+                    const node = m.addedNodes[i] as HTMLElement;
+                    if (node.classList?.contains('cf-interactive-divider') || node.querySelector?.('.cf-interactive-divider')) {
+                        isDividerMutation = true;
+                        break;
+                    }
+                }
+                if (isDividerMutation) continue;
+                for (let i = 0; i < m.removedNodes.length; i++) {
+                    const node = m.removedNodes[i] as HTMLElement;
+                    if (node.classList?.contains('cf-interactive-divider') || node.querySelector?.('.cf-interactive-divider')) {
+                        isDividerMutation = true;
+                        break;
+                    }
+                }
+                if (isDividerMutation) continue;
+
                 if (m.addedNodes.length > 0 || m.removedNodes.length > 0) {
                     hasRelevantChange = true;
                     break;
@@ -125,12 +146,18 @@ export class DOMObserverService {
         const container = e.currentTarget as HTMLElement;
         const doc = container.ownerDocument;
         const win = doc.defaultView || window;
-        this.isScrolling = true;
-        this.isScrollingPublic = true;
+        if (!this.isScrolling) {
+            this.isScrolling = true;
+            this.isScrollingPublic = true;
+            if (this.dividerObserver) {
+                this.dividerObserver.disconnect();
+            }
+        }
         win.clearTimeout(this.scrollTimeout || undefined);
         this.scrollTimeout = win.setTimeout(() => {
             this.isScrolling = false;
             this.isScrollingPublic = false;
+            this.initDividerObserver();
             this.plugin.dividerManager.syncDividers();
         }, 100);
     };

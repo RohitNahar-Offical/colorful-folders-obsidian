@@ -47,13 +47,14 @@ export class DividerModal extends obsidian.Modal {
 
         const eff = StyleResolver.getEffectiveStyle(item, this.plugin);
         const defaultColor = eff.hex;
+        const defaultIcon = existingStyle.icon || eff.icon || eff.iconId || "";
         
         this.config = {
             name: existingStyle.dividerText || item.name,
             color: existingStyle.dividerColor || defaultColor,
             alignment: existingStyle.dividerAlignment || "center",
             lineStyle: existingStyle.dividerLineStyle || "global",
-            icon: existingStyle.dividerIcon || "",
+            icon: existingStyle.dividerIcon !== undefined ? existingStyle.dividerIcon : defaultIcon,
             isUpper: existingStyle.dividerUpper !== undefined ? existingStyle.dividerUpper : true,
             useGlass: existingStyle.dividerGlass !== undefined ? existingStyle.dividerGlass : true,
             iconPosition: existingStyle.dividerIconPosition || "left",
