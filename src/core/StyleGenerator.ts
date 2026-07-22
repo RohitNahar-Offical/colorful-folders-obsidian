@@ -398,7 +398,7 @@ export class StyleGenerator {
                                 height: ${effFileIconW} !important;
                                 margin-right: 4px !important;
                                 background-color: ${iconColor || color.hex || textNative} !important;
-                                -webkit-mask-image: url("data:image/svg+xml,${svgStr}") !important;
+                                -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(svgStr, true)}") !important;
                                 -webkit-mask-repeat: no-repeat !important;
                                 -webkit-mask-position: center !important;
                                 -webkit-mask-size: contain !important;
@@ -828,7 +828,7 @@ export class StyleGenerator {
                             height: ${folderIconW} !important;
                             margin-right: 4px !important;
                             background-color: ${customStyle?.iconColor || color.hex || folderStyles.t} !important;
-                            -webkit-mask-image: url("data:image/svg+xml,${svgStr}") !important;
+                            -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(svgStr, true)}") !important;
                             -webkit-mask-repeat: no-repeat !important;
                             -webkit-mask-position: center !important;
                             -webkit-mask-size: contain !important;

@@ -7,7 +7,8 @@ export function hexToRgbObj(hex: string): {r: number, g: number, b: number} | nu
     if (cached !== undefined) return cached;
 
     if (rgbCache.size > MAX_CACHE_SIZE) {
-        rgbCache.clear();
+        const oldestKey = rgbCache.keys().next().value;
+        if (oldestKey !== undefined) rgbCache.delete(oldestKey);
     }
 
     let cleanHex = hex.trim().toLowerCase();
@@ -72,7 +73,8 @@ export function parseCustomPalette(hexString: string): { rgb: string, hex: strin
     if (cached !== undefined) return cached;
 
     if (paletteCache.size > MAX_CACHE_SIZE) {
-        paletteCache.clear();
+        const oldestKey = paletteCache.keys().next().value;
+        if (oldestKey !== undefined) paletteCache.delete(oldestKey);
     }
 
     const hexes = hexString.split(',').map(s => s.trim().toLowerCase());

@@ -18,11 +18,7 @@ import { DividerManager } from "./core/DividerManager";
 import { DOMObserverService } from "./services/DOMObserverService";
 import { EventTrackerService } from "./services/EventTrackerService";
 import { AdoptedStyleSheetService } from "./services/AdoptedStyleSheetService";
-import { StyleSheetDeltaEngine } from "./services/StyleSheetDeltaEngine";
 import { DOMAttributeStamper } from "./services/DOMAttributeStamper";
-import { FolderTrie } from "./core/algorithms/FolderTrie";
-import { EventBus } from "./common/EventBus";
-
 import { IconManager } from "./core/IconManager";
 
 declare module "obsidian" {
@@ -38,10 +34,7 @@ export default class ColorfulFoldersPlugin
   iconManager: IconManager;
   sheet: CSSStyleSheet;
   adoptedStyleSheetService: AdoptedStyleSheetService;
-  deltaEngine: StyleSheetDeltaEngine;
   domStamper: DOMAttributeStamper;
-  folderTrie: FolderTrie = new FolderTrie();
-  eventBus: EventBus = new EventBus();
 
   iconCache: Map<string, string> = new Map();
   _dividerTimeout: number | null = null;
@@ -78,10 +71,7 @@ export default class ColorfulFoldersPlugin
     this.domObserverService = new DOMObserverService(this);
     this.eventTrackerService = new EventTrackerService(this);
     this.adoptedStyleSheetService = new AdoptedStyleSheetService(this);
-    this.deltaEngine = new StyleSheetDeltaEngine(this);
     this.domStamper = new DOMAttributeStamper(this);
-
-    this.folderTrie.rebuildFromSettings(this.settings.customFolderColors);
 
     // Initial document cache state
     this.cachedDocuments.add(activeDocument);
@@ -305,8 +295,6 @@ export default class ColorfulFoldersPlugin
     }
     this._isUnloading = true;
     this.adoptedStyleSheetService.unload();
-    this.deltaEngine.unload();
-    this.eventBus.clear();
     this.getOpenDocuments().forEach(doc => {
       doc.body.classList.remove("cf-show-hidden", "cf-wrap-metadata");
     });
@@ -558,14 +546,15 @@ export default class ColorfulFoldersPlugin
 
     const customApp = this.app as unknown as CustomApp;
     const vault = this.app.vault as unknown as { getConfig?(key: string): string | null };
-    const currentTheme = (typeof vault.getConfig === "function" ? vault.getConfig("cssTheme") : null) || customApp.customCss?.theme;
+    const getConfig = typeof vault?.getConfig === "function" ? vault.getConfig.bind(vault) : null;
+    const currentTheme = (getConfig ? getConfig("cssTheme") : null) || customApp?.customCss?.theme;
     if (!currentTheme || currentTheme.toLowerCase() !== "blue topaz") return false;
 
-    if (!customApp.plugins) return false;
+    if (!customApp?.plugins?.getPlugin) return false;
     const styleSettingsPlugin = customApp.plugins.getPlugin("obsidian-style-settings") as unknown as StyleSettingsPlugin | null;
     if (!styleSettingsPlugin) return false;
 
-    const manager = styleSettingsPlugin.settingsManager;
+    const manager = styleSettingsPlugin?.settingsManager;
     if (!manager || !manager.settings) return false;
 
     let changed = false;

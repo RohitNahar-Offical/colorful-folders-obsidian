@@ -16,8 +16,6 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             padding-top: 0 !important;
             padding-bottom: 0 !important;
             overflow: visible !important;
-            contain: layout style paint !important;
-            will-change: transform !important;
         }
 
 

@@ -1,126 +1,138 @@
-Here is the comprehensive technical audit of the **Colorful Folders** plugin based on the inspected source tree, docs, and memory context. All issues are categorized by severity and type.
+# Comprehensive Technical Audit Report — Colorful Folders
+
+**Date:** 2026-07-22  
+**Version under audit:** 4.2.7 (source)  
+**Auditor:** Kilo  
+**Scope:** Full codebase logical, syntax, architectural, and performance review
 
 ---
 
-# Technical Audit Report — Colorful Folders (v4.2.7)
+## Executive Summary
+
+The plugin has a sophisticated Zero-DOM architecture, but the current codebase still contains **unresolved critical logic bugs**, **dead code that claims to be removed**, **CSS-safety gaps**, and **scaling hazards** that undermine the “fast and effective” goal. The most severe issue is that Graph Color Sync silently fails to emit the vault-root color group because the root folder is never passed into the recursive processor. Secondary critical issues include lingering dead-code instantiations and unbounded internal caches.
+
+---
 
 ## 1. Critical Issues
 
-| # | Severity | Type | Location | Description |
-|---|----------|------|----------|-------------|
-| C-1 | **Critical** | Bug / Race Condition | `src/main.ts` `onLayoutReady()` | **`generateStyles()` is missing at the start of `onLayoutReady`.** The observer and `syncDividers()` start before the stylesheet is populated. This is the exact root cause documented in `PLAN2.MD` and the source of restart-time glitches (first folder OK, second folder broken) because the divider observer strips inline styles from elements while the sheet is still empty. |
-| C-2 | **Critical** | Bug | `src/services/EventTrackerService.ts` (lines 40–42) | **New popout windows are never attached to the stylesheet.** `EventTrackerService.window-open` checks `this.plugin.sheet`, but `main.ts` never assigns `this.sheet` (the private `CSSStyleSheet` instance lives inside `AdoptedStyleSheetService`, not on the plugin). Consequently, `doc.adoptedStyleSheets.includes(...)` is always false for new documents, leaving them unstyled until a full regeneration happens. |
-| C-3 | **Critical** | Bug / Architecture | `src/main.ts` `initStaircaseStyleStripper()` | **Aggressive global style stripping.** The `MutationObserver` with `subtree:true` removes inline `style` attributes from **every** `.tree-item-self` in every open document. This fights Obsidian’s native rendering and third-party plugins (e.g., Smart Connections, Style Settings) that legitimately inject inline styles, causing visual corruption and layout thrashing. It is also attached globally via `window._testerObserver`, risking collisions. |
+| # | Severity | Type | File | Line(s) | Description |
+|---|----------|------|------|---------|-------------|
+| C-1 | **Critical** | Logic Bug / Dead Branch | `src/integrations/GraphColorSync.ts` | 69–83, 130–133 | **Root folder color is never synced.** `processFolder()` contains a handler for `folder.path === '/' || folder.isRoot()`, but the entry loop at lines 130–133 only iterates `root.children`. `processFolder(root)` is never called, making the root handler unreachable dead code. A custom root color is therefore silently dropped from `graph.json`. |
+| C-2 | **Critical** | Dead Code / Architecture | `src/main.ts` | 21, 23–24, 41, 43–44, 81, 84, 308–309 | **Dead-code removal is incomplete.** `StyleSheetDeltaEngine`, `FolderTrie`, and `EventBus` are still imported, typed, instantiated, and cleaned up despite prior audit notes stating they were removed. This adds memory overhead, cognitive load, and an `unload()` path that executes no-op work. |
+| C-3 | **Critical** | Security / CSS Injection | `src/core/StyleGenerator.ts` | 400, 830, 865, 884 | **Unescaped `color.hex` interpolated into CSS `url()` Data URIs.** When a custom style stores a CSS variable or unquoted string (e.g., `var(--cf-folder-color)` or a raw string with special chars) in `hex`, it is interpolated directly into `url("data:image/svg+xml,...")` and `-webkit-mask-image` without escaping. This can break the surrounding CSS rule or, in crafted cases, inject arbitrary CSS. |
+| C-4 | **Critical** | Bug | `src/main.ts` | 247–281 | **Basename collision in `loadLocalIcons()`.** `this.localFileSystemIcons[filename] = content` overwrites any previously loaded icon with the same basename across different packs. Two packs containing `folder.svg` will collide; only the last-read pack survives. This causes non-deterministic icon rendering depending on filesystem order. |
 
 ---
 
 ## 2. Major Issues
 
-| # | Severity | Type | Location | Description |
-|---|----------|------|----------|-------------|
-| M-1 | **Major** | Bug / Type Mismatch | `src/core/DividerManager.ts` (lines 57–61) | **Access of undefined `FolderStyle.icon` property.** The code reads `effectiveStyle.icon` and `conf.icon`, but `FolderStyle` only defines `iconId` and `expandedIconId`. This results in always-falsy fallbacks and broken divider icons when a style is stored as a legacy object. |
-| M-2 | **Major** | Bug | `src/common/utils.ts` `parseCustomPalette()` | **Returns CSS variables as `hex`/`rgb` values.** When `customStyle.hex` is something like `var(--cf-folder-color)`, `parseCustomPalette` rejects it, and fallback logic in `ColorResolver` can end up returning `{ rgb: "var(--text-normal-rgb)", hex: "var(--text-normal)" }`. This is interpolated into `rgba(...)` and `rgb(...)` strings, producing invalid CSS that is silently dropped by the browser. |
-| M-3 | **Major** | Bug | `src/integrations/GraphColorSync.ts` (line 69 & 104) | **Root folder custom color is skipped** in graph sync because `processFolder` returns early when `folder.path === '/'`. Additionally, top-level detection uses `folder.parent?.path === '/'`, which is brittle and depends on the root path being `/`. |
-| M-4 | **Major** | Bug / Data Loss | `src/main.ts` `loadLocalIcons()` (line 248) | **Icon filename collision.** `this.localFileSystemIcons[filename] = content` overwrites any previously loaded icon with the same basename (e.g., `folder.svg` from different packs). Only packed-prefix keys are protected; plain basenames clobber each other. |
-| M-5 | **Major** | Logic Gap | `src/common/VaultUtils.ts` `countItems()` | **Counters are shallow, not deep.** `countItems` only tallies direct children of a folder. Users typically expect a cumulative file/folder count, so the displayed counter is misleading for deep folders. |
-| M-6 | **Major** | Bug | `src/main.ts` `autoDownloadPack()` | **No JSON shape validation.** Remote pack JSON is trusted implicitly. A malformed or malicious payload missing `icons` will cause runtime errors when iterating `data.icons`. |
-| M-7 | **Major** | Bug | `src/core/StyleResolver.ts` (line 104) | **`rootSortCache` keyed by `s.name` instead of `s.path`.** Root-level siblings are cached by display name. If two root folders share a name (rare but possible in different vault roots or mounts), the cache collides and returns the wrong index. |
-| M-8 | **Major** | Logic | `src/core/StyleGenerator.ts` (lines 238–264) | **Duplicate text-color computation.** `textNative` and `textNN` are computed with identical arguments and results. This computes the same expensive `resolveTextColor` branch twice per file. |
+| # | Severity | Type | File | Line(s) | Description |
+|---|----------|------|------|---------|-------------|
+| M-1 | **Major** | Bug / Query Injection | `src/integrations/GraphColorSync.ts` | 114 | **Unescaped folder name in graph query.** `queryTarget` (which may be `folder.name` or `folder.path`) is interpolated into `path:"${queryTarget}"` without escaping quotes or backslashes. A folder named `My "Special" Folder` produces an invalid/malicious query string. |
+| M-2 | **Major** | Performance / Cache Thrash | `src/common/utils.ts` | 9–11, 74–76 | **Entire-cache eviction on size limit.** When `rgbCache` or `paletteCache` exceeds 1,000 entries, the whole map is cleared. This causes a stampede of recomputation for all subsequent lookups until the cache warms again. An LRU or bounded `Map` with incremental eviction would avoid the thundering herd. |
+| M-3 | **Major** | Architecture / Dead Code | `src/common/EventBus.ts` | 1–38 | **Vestigial EventBus.** Instantiated in `main.ts` and cleared on unload, but no `emit()` calls exist anywhere in the codebase. It is unused scaffolding that adds API surface and memory churn. |
+| M-4 | **Major** | Architecture / Dead Code | `src/services/StyleSheetDeltaEngine.ts` | 1–85 | **Delta engine is unused.** The class is instantiated in `main.ts` and `unload()` is called, but `generateStyles()` never invokes `updatePathRule()` or `replaceSync()` on it. The incremental-update layer is completely bypassed. |
+| M-5 | **Major** | Logic Gap | `src/common/VaultUtils.ts` | 4–23 | **Shallow item counters.** `countItems()` only tallies direct children. For nested folders, users see only the immediate child count, not the cumulative total, which is the standard expectation for folder counters. |
+| M-6 | **Major** | Performance | `src/core/IconRepository.ts` | 162, 177 | **Linear scans remain in hot path.** `findIconInPacks()` still falls back to `Object.keys(custom)` / `Object.keys(local)` iteration for suffix/glob matches. The new `_findPackIconCache` memoizes the final result, but once the cache is cleared (>2,000 entries) or a new key is seen, the O(N) scan fires again. With large packs this is a perceptible stall during `traverse()`. |
+| M-7 | **Major** | Logic | `src/core/StyleResolver.ts` | 42–52 | **Inheritance loop stops at first match.** The `while (parent && !parent.isRoot())` loop breaks on the first ancestor with `applyToSubfolders` or `applyToFiles`. If a closer ancestor sets `applyToSubfolders: false` explicitly, it is ignored because the loop never checks for negation—it only checks for truthy matches. |
+| M-8 | **Major** | Bug | `src/main.ts` | 559–560 | **Unsafe `as unknown as` casts remain.** `optimizeBlueTopazStyleSettings()` casts `this.app` to `CustomApp` and `vault` to an object with `getConfig`. If Obsidian changes these internal APIs, the plugin will throw at runtime with no type safety. |
 
 ---
 
 ## 3. Minor Issues
 
-| # | Severity | Type | Location | Description |
-|---|----------|------|----------|-------------|
-| m-1 | **Minor** | Logic | `src/core/StyleGenerator.ts` (line 130, 952) | **Unused `yieldState` parameter.** `traverse` accepts `yieldState: { lastYield: number }` but never reads it. |
-| m-2 | **Minor** | Performance | `src/core/IconRepository.ts` `findIconInPacks()` | **O(N) linear scan over keys.** For each unresolved icon, the method iterates `Object.keys(custom)` and `Object.keys(local)`. With large icon packs (thousands of entries), this is a perceptible hotspot during traversal. |
-| m-3 | **Minor** | Bug | `src/common/utils.ts` `hexToRgbObj()` | **Module-scoped unbounded cache.** `rgbCache` is a global `Map` that never evicts entries. Over a long session with many unique hex strings, it grows indefinitely. |
-| m-4 | **Minor** | Best Practice | `src/core/StyleGenerator.ts`, `src/ui/modals/ColorPickerModal.ts` | **Duplicated color-math logic.** Brightness adjustment, gradient computation, and opacity resolution are copy-pasted between the engine and the modal preview, making maintenance error-prone. |
-| m-5 | **Minor** | Best Practice | Multiple files | **Heavy use of `as unknown as` casts** (e.g., `optimizeBlueTopazStyleSettings`, `window-open` typing, `display()` casts). This bypasses TypeScript safety and will break silently if Obsidian internals change. |
-| m-6 | **Minor** | Best Practice | `src/core/ColorResolver.ts` | **Two separate palette caches.** `getCurrentPalette` is memoized in both `StyleGenerator` (`_cachedPalette`) and the plugin (`activePaletteCache`), leading to redundant memory usage and potential stale reads if one is cleared without the other. |
-| m-7 | **Minor** | UX | `src/core/BaseCssGenerator.ts` | **Global `contain: layout style paint`** on explorer items can conflict with scroll-driven virtualization. `paint` containment on a recycled tree item may cause repaint flicker when Obsidian recycles cells during fast scrolling. |
-| m-8 | **Minor** | Potential Bug | `src/main.ts` `toggleStealthMode()` | **Unhandled promise in password branch.** `PasswordModal` callback returns `true`/`false`, but `applyToggle` is an async function. If the modal logic misfires, the promise rejection is unhandled. |
-| m-9 | **Minor** | Performance | `src/main.ts` `initStaircaseStyleStripper()` | **Synchronous initial pass over all docs.** On startup with many open leaves, the Q&A block `for (let i = 0; ...)` runs synchronously and can freeze the UI for hundreds of milliseconds. |
+| # | Severity | Type | File | Line(s) | Description |
+|---|----------|------|------|---------|-------------|
+| m-1 | **Minor** | Bug / Unbounded Cache | `src/core/IconRepository.ts` | 11, 276, 281 | `_normCache` and `_dataUriCache` are private maps with no size cap. Over a long session with many unique SVGs, memory grows monotonically. |
+| m-2 | **Minor** | Best Practice | `src/common/types.ts` | 5–9 | `window-open` augmentation lives in `main.ts` while `window-close` augmentation lives in `types.ts`. Module augmentations should be centralized to avoid scattering Obsidian API patches. |
+| m-3 | **Minor** | Duplication | `src/services/DOMAttributeStamper.ts` vs `src/services/DOMObserverService.ts` | 14–24, 64–74 | `stampContainer()` and `tagExplorerItems()` are near-identical implementations of the same O(N) query-and-stamp logic. Cleanup paths differ, creating a maintenance hazard. |
+| m-4 | **Minor** | UX / Performance | `src/core/BaseCssGenerator.ts` | 19 | `contain: layout style paint` on every explorer item can conflict with Obsidian’s virtualized list recycling. `paint` containment on recycled tree items may cause visual flicker during fast scroll. |
+| m-5 | **Minor** | Logic | `src/core/StyleGenerator.ts` | 130, 952 | `yieldState` parameter is now used for cooperative yielding, but the threshold is hardcoded at 15 ms. A configurable or adaptive threshold would be more robust across different hardware. |
+| m-6 | **Minor** | Best Practice | `src/main.ts` | 39 | `sheet: CSSStyleSheet` is declared on the plugin but never assigned directly; the real sheet lives in `AdoptedStyleSheetService`. This is a misleading field that could be removed or properly wired. |
 
 ---
 
-## 4. Architectural Weaknesses
+## 4. Performance Bottlenecks
 
-| # | Severity | Type | Location | Description |
-|---|----------|------|----------|-------------|
-| A-1 | **Major** | Dead Code | `src/services/StyleSheetDeltaEngine.ts` | The delta engine is instantiated in `main.ts` and attached, but **`generateStyles()` never calls `deltaEngine.updatePathRule()` or `replaceSync()`**. It is only `unload()`ed. The entire incremental-update layer is unused. |
-| A-2 | **Major** | Dead Code | `src/core/algorithms/FolderTrie.ts` | Rebuilt on every `saveSettings()`, but **never consulted** by `StyleResolver` or `StyleGenerator`. Style lookups still walk the raw filesystem tree. The trie adds memory and CPU overhead with zero benefit. |
-| A-3 | **Major** | Dead Code | `src/common/EventBus.ts` | Instantiated in `main.ts` and cleared on unload, but **no `emit()` calls exist anywhere in the codebase**. It is vestigial. |
-| A-4 | **Major** | Design | `src/core/StyleGenerator.ts` `traverse()` | **Monolithic recursive method** with ~20 parameters and thousands of lines of inline CSS template literals. This is the single hardest unit to test, debug, or extend. |
-| A-5 | **Medium** | Redundancy | `src/services/DOMAttributeStamper.ts` vs `DOMObserverService.ts` | Both classes implement nearly identical `stampContainer` / `tagExplorerItems` logic. The stamper is called in `onLayoutReady` and `generateStyles`, while the observer also tags on mutations. Cleanup in `onunload` only clears one path. |
-| A-6 | **Medium** | Cache Fragmentation | `src/core/StyleResolver.ts` + `StyleGenerator.ts` | Palette caching, exclusion-list parsing, folder-sort caching, and root-sort caching are split across plugin, generator, and resolver, making invalidation easy to miss during vault mutations. |
-
----
-
-## 5. Performance Bottlenecks
-
-| # | Severity | Type | Location | Description |
-|---|----------|------|----------|-------------|
-| P-1 | **High** | Performance | `src/core/StyleGenerator.ts` `generateCss()` | **Full-vault CSS regeneration on every update.** For vaults with thousands of items, `traverse()` builds a flat-selector CSS blob and `sheet.replaceSync(cssString)` replaces the entire stylesheet synchronously. This blocks the main thread. |
-| P-2 | **High** | Performance | `src/services/DOMObserverService.ts` + `initStaircaseStyleStripper()` | **Nested MutationObservers with `subtree:true`.** The style observer watches `doc.body` for class changes, and the staircase stripper adds another subtree observer per open document. During layout changes or scroll, this generates excessive mutation callbacks. |
-| P-3 | **Medium** | Performance | `src/core/IconRepository.ts` `findIconInPacks()` | O(N) scan of `Object.keys(customIcons)` per icon resolution during `traverse()`. With >5k custom icons, this becomes quadratic over the traversal. |
-| P-4 | **Medium** | Performance | `src/core/StyleGenerator.ts` `prepareContext()` / `calculateHeatmapData()` | When `colorMode === "heatmap"`, `calculateHeatmapData` call `this.app.vault.getFiles()` and walks ancestors for every file on every generation. This is O(N×D). |
-| P-5 | **Medium** | Performance | `src/main.ts` `loadLocalIcons()` | Recursive `getAllSvgFiles()` followed by `Promise.all` reads every SVG in `.obsidian/icons` sequentially. On slow disks or with many packs, this significantly delays the first paint. |
-| P-6 | **Low** | Performance | `src/core/StyleGenerator.ts` lines 238–264 | **Duplicate `resolveTextColor` call per file.** The result is identical; removing the duplicated call saves ~2× function call overhead per file. |
-| P-7 | **Low** | Performance | `src/core/CssGrouper.ts` `build()` | Selector chunks of 500 are joined with `join(',\n')`. For a vault with 10k items, this yields ~20k selectors in a single string. The resulting CSS string can exceed 1–2 MB, stressing `replaceSync`. |
+| # | Severity | Type | File | Description |
+|---|----------|------|------|-------------|
+| P-1 | **High** | Performance | `src/core/StyleGenerator.ts` | Full-vault CSS regeneration on every update. `traverse()` walks every folder/file and `sheet.replaceSync()` replaces the entire stylesheet synchronously. For 10k+ item vaults this blocks the main thread. The unused `StyleSheetDeltaEngine` exists precisely to solve this but is never called. |
+| P-2 | **High** | Performance | `src/services/DOMObserverService.ts` | `dividerObserver` uses `subtree: true` on every explorer container. During layout changes or scroll, this generates excessive mutation callbacks. The scroll suspension helps, but re-attaching observers on every scroll stop is expensive. |
+| P-3 | **Medium** | Performance | `src/core/StyleGenerator.ts` | Counter SVG template re-encoding per color change is optimized, but `encodeURIComponent` is still called 3× per unique color (prefix, mid, suffix). Pre-encoding the static skeleton once and reusing it would be faster. |
+| P-4 | **Medium** | Performance | `src/main.ts` | `loadLocalIcons()` recursively reads every SVG in `.obsidian/icons` with `Promise.all`. On slow disks or with many packs, this delays first paint. A lazy/deferred load strategy would improve startup time. |
+| P-5 | **Medium** | Performance | `src/core/StyleGenerator.ts` | `prepareContext()` calls `calculateHeatmapData()` on every `generateCss()`. When `heatmapCache` is cold or invalidated, it walks the entire vault file list and climbs ancestor chains O(N×D). |
+| P-6 | **Low** | Performance | `src/core/CssGrouper.ts` | Selector chunks of 500 are joined with `join(',\n')`. For 10k items this produces ~20k selectors in a single string, potentially exceeding 1–2 MB of CSS text passed to `replaceSync`. |
 
 ---
 
-## 6. Best-Practice & Security Deviations
+## 5. Best-Practice & Security Deviations
 
-| # | Severity | Type | Location | Description |
-|---|----------|------|----------|-------------|
-| B-1 | **Medium** | Security | `src/main.ts` `autoDownloadPack()` | Remote icon-pack JSON is fetched and deserialized without signature or integrity verification. A Man-in-the-Middle or compromised upstream could inject malicious payloads into `customIcons`. |
-| B-2 | **Medium** | Best Practice | `src/services/EventTrackerService.ts` (line 55) | **`@ts-ignore` for `window-close`.** This is an internal Obsidian event and may be removed or renamed without notice, breaking the plugin silently. |
-| B-3 | **Medium** | Best Practice | Multiple files | **Non-standard `setCssStyles` API.** Foundation is custom; no fallback exists if the method is removed or altered. |
-| B-4 | **Low** | Best Practice | `src/common/utils.ts` module-scoped maps | **Unbounded caches** (`rgbCache`, `paletteCache`, `_normCache`, `_dataUriCache`) with no size limit or LRU eviction. In a long-running session with many colors/icons, memory usage climbs monotonically. |
-| B-5 | **Low** | Best Practice | `src/core/DividerManager.ts` | **Corrupted comment characters** (e.g., `ΓÇö`, `ΓöÇ`) indicate encoding artifacts that reduce readability and may hint at past merge conflicts. |
+| # | Severity | Type | File | Description |
+|---|----------|------|------|-------------|
+| B-1 | **Medium** | Security | `src/main.ts` | Remote icon-pack JSON is fetched without signature or integrity verification. A compromised upstream or MITM could inject malicious SVG payloads into `customIcons`. Basic XSS filtering exists (`/<script|on\w+\s*=/i`), but SVG-based attacks (e.g., `<svg onload=...>`) are not fully mitigated. |
+| B-2 | **Medium** | Best Practice | `src/main.ts` | `toggleStealthMode()` launches `PasswordModal` with a callback that returns `true`/`false`, but the callback is `async` and its return value is not awaited or validated by the modal consumer. |
+| B-3 | **Low** | Best Practice | Multiple files | Heavy use of inline `setCssStyles({...})` calls and template literals for CSS makes the code hard to lint, format, or statically analyze for CSS validity. |
+| B-4 | **Low** | Best Practice | `src/core/DividerManager.ts` | Corrupted comment characters (e.g., `ΓöÇ`, `ΓÇö`) indicate encoding artifacts from past merge conflicts. |
 
 ---
 
-## 7. Prioritized Recommendations
+## 6. Prioritized Recommendations
 
-1. **Immediate Fixes**
-   - Add `this.generateStyles();` at the top of `onLayoutReady()` in `main.ts` to resolve C-1.
-   - Fix `EventTrackerService.window-open` to attach `AdoptedStyleSheetService.sheet` to new documents (C-2).
-   - Remove or gate `initStaircaseStyleStripper()` behind an opt-in setting, as it is fundamentally incompatible with other plugins (C-3).
-   - Add `icon?: string` to `FolderStyle` type or remove `.icon` fallbacks in `DividerManager` and `main.ts` (M-1).
+### Immediate (next commit)
 
-2. **Short-Term (Next Release)**
-   - Replace dead code: remove or wire up `StyleSheetDeltaEngine`, `FolderTrie`, and `EventBus` (A-1, A-2, A-3).
-   - Fix `GraphColorSync` to include the root folder and use path-based top-level detection (M-3).
-   - Implement proper pack-prefix collision handling in `loadLocalIcons` (M-4).
-   - Validate remote JSON in `autoDownloadPack` before indexing (M-6).
+1. **Fix GraphColorSync root sync**  
+   Add `processFolder(root)` before the child loop in `buildColorGroups()`, or emit root color directly outside recursion.
 
-3. **Medium-Term (Performance)**
-   - Move to **incremental stylesheet updates** via the existing (but unused) `StyleSheetDeltaEngine`, or cache generated CSS per-path and only diff changed directories.
-   - Replace `Object.keys()` linear scans in `findIconInPacks` with a `Map<string, string>` index for O(1) lookups.
-   - Break `traverse()` into smaller phases (resolve, generate, emit) to reduce main-thread blocking and improve testability (A-4).
+2. **Actually remove dead code or wire it up**  
+   Either delete `StyleSheetDeltaEngine`, `FolderTrie`, and `EventBus` imports/instantiation/cleanup from `main.ts`, or integrate the delta engine into `generateStyles()` to deliver on the claimed incremental-update architecture.
 
-4. **Long-Term (Robustness)**
-   - Migrate away from global MutationObservers; use `requestIdleCallback` + debounced targeted reconciliation.
-   - Introduce a typed event system or remove `EventBus` to reduce surface area.
-   - Replace `as unknown as` casts with proper Obsidian API augmentation.
+3. **Escape folder names in GraphColorSync queries**  
+   Wrap `queryTarget` with a proper escape function for Obsidian’s query syntax before interpolating into `path:"..."`.
 
+4. **Fix icon basename collisions**  
+   In `loadLocalIcons()`, namespace basename keys by pack folder (e.g., `${packName}/${filename}`) or reject duplicate basenames with a warning.
 
-### Residual concern in applied fixes
+### Short-term (next release)
 
-**GraphColorSync root folder still skipped.** At `GraphColorSync.ts:69-100`, `if (folder.path === '/')` continues to return early, so the root folder’s custom color is **never** emitted into `colorGroups`. The `isTopLevel` fix at line 104 is correct, but it only helps children of root—not root itself. If the user has a custom color assigned to the vault root, graph sync still omits it.
+5. **Implement bounded LRU caches**  
+   Replace full-map eviction in `rgbCache`, `paletteCache`, `_normCache`, `_dataUriCache`, and `_findPackIconCache` with a true LRU or segmented cache to avoid recomputation stampedes.
 
-### Remaining items outside the immediate fixes scope
+6. **Add CSS escaping for color values in Data URIs**  
+   Sanitize or validate `color.hex` before embedding into `url("data:image/svg+xml,...")` masks.
 
-The broader audit also flagged structural items that were not in the applied fixes set:
+7. **Break `traverse()` into phases**  
+   Split resolve/emit logic into smaller methods to reduce main-thread blocking and improve testability.
 
-- **A-1 / A-2 / A-3**: `StyleSheetDeltaEngine`, `FolderTrie`, and `EventBus` remain dead code.
-- **M-4**: `loadLocalIcons()` still allows basename collisions across packs.
-- **M-5**: `countItems()` remains shallow (direct children only).
-- **M-6 / B-1**: No validation or integrity check on remotely fetched icon-pack JSON.
-- **B-2 / B-4**: `@ts-ignore` on `window-close` persists, and caches in `IconRepository` (`_normCache`, `_dataUriCache`) remain unbounded.
+8. **Consolidate DOM stamper logic**  
+   Merge `DOMAttributeStamper` and `DOMObserverService.tagExplorerItems()` into a single service with one cleanup path.
 
-The plugin compiles cleanly and the restart-time race condition is resolved.
+### Medium-term
+
+9. **Wire up `StyleSheetDeltaEngine`**  
+   Use incremental `updatePathRule()` / `deletePathRule()` for style changes instead of full `replaceSync()`. This is the single highest-impact performance improvement for large vaults.
+
+10. **Replace `setTimeout(0)` yield with `requestIdleCallback`**  
+    Cooperative yielding in `traverse()` should use `requestIdleCallback` (with `setTimeout` fallback) to better respect the browser paint cycle.
+
+11. **Deep counters**  
+    Refactor `countItems()` to recursively aggregate files and folders, or add a `deepCount` variant.
+
+12. **Remove unsafe casts**  
+    Replace `as unknown as CustomApp` in `optimizeBlueTopazStyleSettings()` with proper Obsidian API typings or guarded runtime checks.
+
+---
+
+## 7. Residual Risk Matrix
+
+| Issue | Current State | Impact if Unfixed |
+|-------|---------------|-------------------|
+| GraphColorSync root sync | **Unreachable code path** | Root folder color never appears in Graph View |
+| Dead-code removal claims | **Code still present** | Memory + maintenance debt; delta engine potential wasted |
+| Icon basename collisions | **Overwrite on duplicate** | Non-deterministic icons across packs/seasons |
+| Graph query escaping | **Unescaped interpolation** | Broken graph queries or injection on special characters |
+| Cache eviction strategy | **Full clear on overflow** | Stall spikes after cache warm-up |
+| CSS Data URI safety | **No escaping of color value** | Broken CSS or injection on malformed values |
+
+---
+
+**Bottom line:** The plugin compiles cleanly and the startup race fix is correctly in place, but **GraphColorSync root sync is functionally broken** (unreachable handler), **dead-code removal is incomplete**, and **CSS-safety / query-safety gaps** remain. These are the highest-priority items to resolve before the next release.

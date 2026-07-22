@@ -149,17 +149,15 @@ export class DOMObserverService {
         if (!this.isScrolling) {
             this.isScrolling = true;
             this.isScrollingPublic = true;
-            if (this.dividerObserver) {
-                this.dividerObserver.disconnect();
-            }
         }
-        win.clearTimeout(this.scrollTimeout || undefined);
+        if (this.scrollTimeout !== null) {
+            win.clearTimeout(this.scrollTimeout);
+        }
         this.scrollTimeout = win.setTimeout(() => {
             this.isScrolling = false;
             this.isScrollingPublic = false;
-            this.initDividerObserver();
-            this.plugin.dividerManager.syncDividers();
-        }, 100);
+            this.scrollTimeout = null;
+        }, 150);
     };
 
     disposeStyleObservers() {

@@ -41,12 +41,15 @@ export class StyleResolver {
             let parent = target.parent;
             while (parent && !parent.isRoot()) {
                 const pStyle = getStyle(parent.path);
-                if (
-                    pStyle &&
-                    ((!isFile && pStyle.applyToSubfolders) || (isFile && pStyle.applyToFiles))
-                ) {
-                    inheritedStyle = pStyle;
-                    break;
+                if (pStyle) {
+                    const flag = isFile ? pStyle.applyToFiles : pStyle.applyToSubfolders;
+                    if (flag === false) {
+                        break; // Closer ancestor explicitly disabled subfolder/file inheritance
+                    }
+                    if (flag === true) {
+                        inheritedStyle = pStyle;
+                        break;
+                    }
                 }
                 parent = parent.parent;
             }

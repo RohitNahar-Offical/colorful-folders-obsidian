@@ -43,8 +43,6 @@ body .nav-files-container .nav-file-title {
     padding-right: 14px;
     min-height: 32px;
     height: auto;
-    contain: layout style paint;
-    will-change: transform;
 }
 
 /* Fix Arrow & Icon Width */

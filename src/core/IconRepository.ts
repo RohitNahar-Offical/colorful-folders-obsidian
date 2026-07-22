@@ -176,7 +176,10 @@ export class IconRepository {
             }
         }
 
-        if (this._findPackIconCache.size > 2000) this._findPackIconCache.clear();
+        if (this._findPackIconCache.size > 2000) {
+            const oldest = this._findPackIconCache.keys().next().value;
+            if (oldest !== undefined) this._findPackIconCache.delete(oldest);
+        }
         this._findPackIconCache.set(searchKey, result);
         return result;
     }
@@ -280,7 +283,10 @@ export class IconRepository {
         const hit = this._dataUriCache.get(iconId);
         if (hit !== undefined) return hit;
 
-        if (this._dataUriCache.size > 2000) this._dataUriCache.clear();
+        if (this._dataUriCache.size > 2000) {
+            const oldest = this._dataUriCache.keys().next().value;
+            if (oldest !== undefined) this._dataUriCache.delete(oldest);
+        }
         const rawSvg = this.getIconSvg(iconId, true);
         const dataUri = rawSvg ? `url("data:image/svg+xml,${rawSvg}")` : "";
         this._dataUriCache.set(iconId, dataUri);
@@ -292,7 +298,10 @@ export class IconRepository {
         const hit = this._normCache.get(cacheKey);
         if (hit !== undefined) return hit;
 
-        if (this._normCache.size > 2000) this._normCache.clear();
+        if (this._normCache.size > 2000) {
+            const oldest = this._normCache.keys().next().value;
+            if (oldest !== undefined) this._normCache.delete(oldest);
+        }
 
         let result: string;
         try {

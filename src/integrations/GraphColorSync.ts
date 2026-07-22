@@ -111,7 +111,8 @@ export class GraphColorSync {
             // Build the query. Use folder path for nested folders, just name for top-level.
             const isTopLevel = !folder.parent || folder.parent.isRoot() || folder.parent.path === '/' || folder.parent.path === '';
             const queryTarget = isTopLevel ? folder.name : folder.path;
-            const query = `path:"${queryTarget}"`;
+            const escapedTarget = queryTarget.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+            const query = `path:"${escapedTarget}"`;
 
             groups.push({
                 query,
@@ -127,10 +128,7 @@ export class GraphColorSync {
             }
         };
 
-        for (const child of root.children) {
-            if (child.name.startsWith('.')) continue;
-            if (child instanceof TFolder) processFolder(child);
-        }
+        processFolder(root);
 
         return groups;
     }
