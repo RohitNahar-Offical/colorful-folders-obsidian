@@ -114,10 +114,63 @@ export class EventTrackerService {
             // Add to currently active elements
             const activeItems = doc.querySelectorAll('.is-active');
             for (let i = 0; i < activeItems.length; i++) {
-                if (activeItems[i].parentElement) {
-                    activeItems[i].parentElement.classList.add('cf-active-parent');
+                const item = activeItems[i];
+                if (!item) continue;
+
+                const path = item.getAttribute('data-path') || '';
+                const parentFolderNode = item.closest('.tree-item.nav-folder, .nav-folder');
+                const parentTreeItem = item.closest('.tree-item, .nav-file');
+                
+                // Helper to check if item is a Folder Note
+                const isFolderNote = (): boolean => {
+                    const styleAttr = item.getAttribute('style') || '';
+                    const parentStyle = parentTreeItem?.getAttribute('style') || '';
+                    
+                    if (
+                        styleAttr.includes('display: none') || styleAttr.includes('display:none') ||
+                        parentStyle.includes('display: none') || parentStyle.includes('display:none') ||
+                        item.matches('.is-folder-note, .is-folder-note-hidden, .fn-hidden, .folder-note-hidden, [data-folder-note="true"], [data-is-folder-note="true"]') ||
+                        (parentTreeItem && parentTreeItem.matches('.is-folder-note, .is-folder-note-hidden, .fn-hidden, .folder-note-hidden, [data-folder-note="true"], [data-is-folder-note="true"]'))
+                    ) {
+                        return true;
+                    }
+
+                    if (!path || !parentFolderNode) return false;
+                    const folderTitleEl = parentFolderNode.querySelector(':scope > .tree-item-self, :scope > .nav-folder-title');
+                    const folderPath = folderTitleEl?.getAttribute('data-path') || '';
+                    if (!folderPath) return false;
+
+                    const parts = path.split('/');
+                    const fileName = parts[parts.length - 1];
+                    const folderParts = folderPath.split('/');
+                    const folderName = folderParts[folderParts.length - 1];
+                    const baseName = fileName.replace(/\.[^/.]+$/, '');
+
+                    return baseName.toLowerCase() === folderName.toLowerCase() || fileName.toLowerCase() === 'index.md';
+                };
+
+                if (isFolderNote()) {
+                    // Keep the file element 100% hidden via a CSS class (no inline styles)
+                    item.classList.add('cf-fn-hidden');
+                    item.classList.remove('is-active', 'cf-is-active');
+
+                    // Highlight the parent folder title instead
+                    if (parentFolderNode) {
+                        parentFolderNode.classList.add('cf-active-parent');
+                        const folderTitleEl = parentFolderNode.querySelector(':scope > .tree-item-self, :scope > .nav-folder-title');
+                        if (folderTitleEl) {
+                            folderTitleEl.classList.add('is-active', 'cf-active-parent', 'cf-is-active');
+                        }
+                    }
+                } else {
+                    if (item.parentElement) {
+                        item.parentElement.classList.add('cf-active-parent');
+                    }
+                    if (parentFolderNode) {
+                        parentFolderNode.classList.add('cf-active-parent');
+                    }
+                    item.classList.add('cf-is-active');
                 }
-                activeItems[i].classList.add('cf-is-active');
             }
         });
     }

@@ -7,9 +7,26 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
         /* ── NUCLEAR SPECIFICITY NAV ITEM LAYOUT ───────────────────────────────
            We use high-specificity selectors to defeat theme overrides (like Prism).
         ──────────────────────────────────────────────────────────────────────── */
-        body .nav-folder-title,
-        body .nav-file-title,
-        body .tree-item-self {
+        /* ── FOLDER NOTE INTEGRATION & CONFLICT PREVENTION ────────────────── */
+        body .is-folder-note,
+        body .is-folder-note-hidden,
+        body .fn-hidden,
+        body .folder-note-hidden,
+        body .cf-fn-hidden,
+        body [data-folder-note="true"],
+        body [data-is-folder-note="true"],
+        body .tree-item-self[style*="display: none"],
+        body .tree-item-self[style*="display:none"],
+        body .tree-item[style*="display: none"],
+        body .tree-item[style*="display:none"],
+        body .nav-file[style*="display: none"],
+        body .nav-file[style*="display:none"] {
+            display: none !important;
+        }
+
+        body .nav-folder-title:not([style*="display: none"]),
+        body .nav-file-title:not([style*="display: none"]),
+        body .tree-item-self:not([style*="display: none"]):not(.is-folder-note):not(.fn-hidden) {
             display: flex;
             align-items: center !important;
             justify-content: flex-start !important;

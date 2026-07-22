@@ -293,6 +293,23 @@ export default class ColorfulFoldersPlugin
     let isStripping = false;
     const stripStyle = (el: Element) => {
       if (el.hasAttribute("style")) {
+        const styleAttr = el.getAttribute("style") || "";
+        const parentTreeItem = el.closest(".tree-item, .nav-file, .nav-folder");
+        const parentStyle = parentTreeItem?.getAttribute("style") || "";
+
+        const isHiddenFolderNote =
+          styleAttr.includes("display: none") ||
+          styleAttr.includes("display:none") ||
+          parentStyle.includes("display: none") ||
+          parentStyle.includes("display:none") ||
+          el.matches('.is-folder-note, .is-folder-note-hidden, .fn-hidden, .folder-note-hidden, [data-folder-note="true"], [data-is-folder-note="true"]') ||
+          (parentTreeItem && parentTreeItem.matches('.is-folder-note, .is-folder-note-hidden, .fn-hidden, .folder-note-hidden, [data-folder-note="true"], [data-is-folder-note="true"]'));
+
+        if (isHiddenFolderNote) {
+          el.classList.add("cf-fn-hidden");
+          return;
+        }
+
         isStripping = true;
         el.removeAttribute("style");
         isStripping = false;
