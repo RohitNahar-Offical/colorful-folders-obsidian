@@ -18,7 +18,6 @@ import { DividerManager } from "./core/DividerManager";
 import { DOMObserverService } from "./services/DOMObserverService";
 import { EventTrackerService } from "./services/EventTrackerService";
 import { AdoptedStyleSheetService } from "./services/AdoptedStyleSheetService";
-import { DOMAttributeStamper } from "./services/DOMAttributeStamper";
 import { IconManager } from "./core/IconManager";
 
 declare module "obsidian" {
@@ -32,9 +31,7 @@ export default class ColorfulFoldersPlugin
   implements IColorfulFoldersPlugin {
   declare settings: ColorfulFoldersSettings;
   iconManager: IconManager;
-  sheet: CSSStyleSheet;
   adoptedStyleSheetService: AdoptedStyleSheetService;
-  domStamper: DOMAttributeStamper;
 
   iconCache: Map<string, string> = new Map();
   _dividerTimeout: number | null = null;
@@ -71,7 +68,6 @@ export default class ColorfulFoldersPlugin
     this.domObserverService = new DOMObserverService(this);
     this.eventTrackerService = new EventTrackerService(this);
     this.adoptedStyleSheetService = new AdoptedStyleSheetService(this);
-    this.domStamper = new DOMAttributeStamper(this);
 
     // Initial document cache state
     this.cachedDocuments.add(activeDocument);
@@ -133,9 +129,23 @@ export default class ColorfulFoldersPlugin
       void this.loadLocalIcons();
 
       if (this._abortStartupRender) return;
-      this.domStamper.stampAllExplorers();
+      this.getAllExplorerContainers().forEach((c) => this.domObserverService.tagExplorerItems(c));
       this.domObserverService.initDividerObserver();
       this.dividerManager.syncDividers();
+
+      // Pre-warm icon caches during idle period
+      const warmCaches = () => {
+        if (this.iconManager) {
+          void this.iconManager.getIconSvg("lucide-folder", true);
+          void this.iconManager.getIconSvg("lucide-folder-open", true);
+          void this.iconManager.getIconSvg("lucide-file-text", true);
+        }
+      };
+      if (typeof window.requestIdleCallback === "function") {
+        window.requestIdleCallback(warmCaches);
+      } else {
+        window.setTimeout(warmCaches, 1000);
+      }
 
       try {
         const optimized = await this.optimizeBlueTopazStyleSettings();
@@ -267,8 +277,16 @@ export default class ColorfulFoldersPlugin
             if (packName.includes('material') || packName.startsWith('mdi')) {
               this.localFileSystemIcons[`mdi-${lowerFilename}`] = content;
             }
+            if (!this.localFileSystemIcons[lowerFilename]) {
+              this.localFileSystemIcons[lowerFilename] = content;
+            }
           } else {
             this.localFileSystemIcons[lowerFilename] = content;
+          }
+
+          if (this.iconManager) {
+            this.iconManager.preNormalizeIcon(hyphenated, content);
+            this.iconManager.preNormalizeIcon(lowerFilename, content);
           }
         }
 
@@ -477,6 +495,9 @@ export default class ColorfulFoldersPlugin
   registerCustomIcons() {
     for (const [id, svg] of Object.entries(this.settings.customIcons)) {
       obsidian.addIcon(id, svg);
+      if (this.iconManager) {
+        this.iconManager.preNormalizeIcon(id, svg);
+      }
     }
   }
 
@@ -677,7 +698,7 @@ export default class ColorfulFoldersPlugin
     try {
       const css = await this.styleGenerator.generateCss();
       this.adoptedStyleSheetService.updateStyles(css);
-      this.domStamper.stampAllExplorers();
+      this.getAllExplorerContainers().forEach((c) => this.domObserverService.tagExplorerItems(c));
       // Sync folder colors to Graph View groups if the feature is enabled
       if (this.settings.graphColorSync && !this.isDragging) {
         void GraphColorSync.syncGraphColors(this);

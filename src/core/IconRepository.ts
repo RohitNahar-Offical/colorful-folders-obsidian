@@ -1,15 +1,21 @@
 import * as obsidian from 'obsidian';
 import { IColorfulFoldersPlugin, AutoIconData } from '../common/types';
-import { AUTO_ICON_CATEGORIES } from '../common/constants';
-import { hashString } from '../common/utils';
+import { AUTO_ICON_CATEGORIES, STOP_WORDS } from '../common/constants';
+import { hashString, stemWord } from '../common/utils';
+import { IconPackIndex } from './IconPackIndex';
+import { LRUCache } from '../common/LRUCache';
+import { CategoryTrie } from './CategoryTrie';
 
 export class IconRepository {
     plugin: IColorfulFoldersPlugin;
 
     private _categoryCache: AutoIconData[] | null = null;
+    private _categoryTrie = new CategoryTrie();
     private _customRulesKey: string = '';
-    private _normCache: Map<string, string> = new Map();
-    private _dataUriCache: Map<string, string> = new Map();
+    private _normCache = new LRUCache<string, string>(2048);
+    private _dataUriCache = new LRUCache<string, string>(2048);
+    private _findPackIconCache = new LRUCache<string, string | null>(2048);
+    private _packIndex: IconPackIndex = new IconPackIndex();
 
     constructor(plugin: IColorfulFoldersPlugin) {
         this.plugin = plugin;
@@ -51,7 +57,9 @@ export class IconRepository {
                     }
                 }
             }
+            categories.sort((a, b) => (b.priority || 0) - (a.priority || 0));
             this._categoryCache = categories;
+            this._categoryTrie.build(categories);
             this._customRulesKey = currentKey;
         }
 
@@ -62,44 +70,52 @@ export class IconRepository {
         }
         const fullHyphenated = sanitized.replace(/[\s_]+/g, '-');
 
-        // Tier 1: Exact local pack / custom icon match (Priority 2000)
+        // Tier 1: Exact local pack / custom icon match (Priority 1800)
         const exactMatchedIconId = this.findIconInPacks(fullHyphenated);
         if (exactMatchedIconId) {
             const safeRexStr = sanitized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             return {
+                tier: 1,
                 rex: new RegExp(`^${safeRexStr}$`, 'i'),
                 emoji: exactMatchedIconId,
                 lucide: exactMatchedIconId,
-                priority: 2000,
+                priority: 1800,
                 isCustom: true
             };
         }
 
-        // Tier 2 & 3: Custom Regex rules & Categories (Priority 1500 & 80-100)
-        const matches = this._categoryCache.filter(cat => cat.rex.test(lName));
-        matches.sort((a, b) => (b.priority || 0) - (a.priority || 0));
-
-        if (matches.length > 0) {
-            const match = { ...matches[0] };
-            if (settings.autoIconVariety) {
-                const h = hashString(name);
-                if (match.emojis && match.emojis.length > 0) {
-                    match.emoji = match.emojis[h % match.emojis.length];
+        // Tier 2 & 3: Custom Regex rules & Categories using CategoryTrie lookup
+        const candidateCategories = this._categoryTrie.lookup(lName);
+        for (let i = 0; i < candidateCategories.length; i++) {
+            const cat = candidateCategories[i];
+            if (cat.rex.test(lName)) {
+                const tierVal: 2 | 3 = cat.isCustom ? 2 : 3;
+                const match = { ...cat, tier: tierVal };
+                if (settings.autoIconVariety) {
+                    const h = hashString(name);
+                    if (match.emojis && match.emojis.length > 0) {
+                        match.emoji = match.emojis[h % match.emojis.length];
+                    }
+                    if (match.lucides && match.lucides.length > 0) {
+                        match.lucide = match.lucides[h % match.lucides.length];
+                    }
                 }
-                if (match.lucides && match.lucides.length > 0) {
-                    match.lucide = match.lucides[h % match.lucides.length];
-                }
+                return match;
             }
-            return match;
         }
 
-        // Tier 4: Fuzzy multi-word fallback (Priority 50)
+        // Tier 4: Stem-aware fuzzy multi-word & single-word fallback (Priority 50)
         let fuzzyMatchedIconId: string | null = null;
-        const stopWords = new Set(['and', 'the', 'for', 'with', 'about', 'from', 'into', 'notes', 'thoughts', 'draft', 'list', 'page', 'doc', 'text', 'file', 'folder']);
-        const words = sanitized.split(/[\s_.-]+/).filter(w => w.length >= 3 && !stopWords.has(w.toLowerCase()));
+        const words = sanitized
+            .split(/[\s_.-]+/)
+            .map(w => w.toLowerCase())
+            .filter(w => w.length >= 3 && !STOP_WORDS.has(w));
 
+        // 1. Multi-word pairs with stemming
         for (let i = 0; i < words.length - 1; i++) {
-            const pair = `${words[i]}-${words[i + 1]}`;
+            const w1 = stemWord(words[i]);
+            const w2 = stemWord(words[i + 1]);
+            const pair = `${w1}-${w2}`;
             const matched = this.findIconInPacks(pair);
             if (matched) {
                 fuzzyMatchedIconId = matched;
@@ -107,9 +123,11 @@ export class IconRepository {
             }
         }
 
+        // 2. Individual words with stemming (scanning from last to first for subject preference)
         if (!fuzzyMatchedIconId) {
-            for (const word of words) {
-                const matched = this.findIconInPacks(word);
+            for (let i = words.length - 1; i >= 0; i--) {
+                const stemmed = stemWord(words[i]);
+                const matched = this.findIconInPacks(stemmed) || this.findIconInPacks(words[i]);
                 if (matched) {
                     fuzzyMatchedIconId = matched;
                     break;
@@ -120,67 +138,39 @@ export class IconRepository {
         if (fuzzyMatchedIconId) {
             const safeRexStr = sanitized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             return {
+                tier: 4,
                 rex: new RegExp(`^${safeRexStr}$`, 'i'),
                 emoji: fuzzyMatchedIconId,
                 lucide: fuzzyMatchedIconId,
-                priority: 50,
-                isCustom: true
+                priority: 50
             };
         }
 
         return null;
     }
 
-    private _findPackIconCache = new Map<string, string | null>();
-
     findIconInPacks(searchKey: string): string | null {
         if (!searchKey || searchKey.length < 3) return null;
-        if (this._findPackIconCache.has(searchKey)) {
-            return this._findPackIconCache.get(searchKey) || null;
+        const hit = this._findPackIconCache.get(searchKey);
+        if (hit !== undefined) {
+            return hit;
         }
 
         const local = this.plugin.localFileSystemIcons;
         const custom = this.plugin.settings.customIcons;
 
-        const s = searchKey.toLowerCase().replace(/[\s_:]+/g, '-').replace(/\//g, '-');
-        const cleanS = s.replace(/^(si|simple|simple-icons|simpleicons|feather|fa|fas|far|fab|fontawesome|ri|remix|remixicons|tb|tabler|mdi|material|oct|octicons|lucide)[-_:]/, '');
-
-        let result: string | null = null;
-        if (custom) {
-            if (custom[s]) result = s;
-            else if (custom[cleanS]) result = cleanS;
-            else if (custom[`feather-${cleanS}`]) result = `feather-${cleanS}`;
-            else if (custom[`simple-icons-${cleanS}`]) result = `simple-icons-${cleanS}`;
-            else {
-                for (const key of Object.keys(custom)) {
-                    if (key === s || key === cleanS || key.endsWith(`-${s}`) || key.endsWith(`-${cleanS}`) || key.endsWith(`/${cleanS}`)) {
-                        result = key;
-                        break;
-                    }
-                }
-            }
+        // Build index once; only rebuild if icon maps actually changed
+        if (!this._packIndex.getIsBuilt()) {
+            this._packIndex.build(local, custom);
         }
-
-        if (!result && local) {
-            if (local[s]) result = s;
-            else if (local[cleanS]) result = cleanS;
-            else if (local[`feather-${cleanS}`]) result = `feather-${cleanS}`;
-            else if (local[`simple-icons-${cleanS}`]) result = `simple-icons-${cleanS}`;
-            else {
-                for (const key of Object.keys(local)) {
-                    if (key === s || key === cleanS || key.endsWith(`-${s}`) || key.endsWith(`-${cleanS}`) || key.endsWith(`/${cleanS}`)) {
-                        result = key;
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (this._findPackIconCache.size > 2000) {
-            const oldest = this._findPackIconCache.keys().next().value as string | undefined;
-            if (oldest !== undefined) this._findPackIconCache.delete(oldest);
-        }
+        const result = this._packIndex.findIcon(searchKey);
         this._findPackIconCache.set(searchKey, result);
+        
+        if (this.plugin.settings.iconDebugMode) {
+            // eslint-disable-next-line obsidianmd/rule-custom-message
+            console.log(`ColorfulFolders: Search icon match for "${searchKey}": ${result}`);
+        }
+        
         return result;
     }
 
@@ -235,11 +225,9 @@ export class IconRepository {
                 if (local[baseName]) {
                     svgStr = local[baseName];
                 } else {
-                    for (const key of Object.keys(local)) {
-                        if (key === baseName || key.endsWith(`-${baseName}`) || key.endsWith(`/${baseName}`)) {
-                            svgStr = local[key] || "";
-                            if (svgStr) break;
-                        }
+                    const matchedKey = this.findIconInPacks(baseName);
+                    if (matchedKey && local[matchedKey]) {
+                        svgStr = local[matchedKey];
                     }
                 }
             }
@@ -269,6 +257,12 @@ export class IconRepository {
             if (this.plugin.iconCache) {
                 this.plugin.iconCache.set(cacheKey, normalized);
             }
+            // Eagerly pre-warm opposite encoding state to avoid second DOMParser pass
+            const altKey = (shouldEncode ? '0:' : '1:') + iconId;
+            if (this.plugin.iconCache && !this.plugin.iconCache.has(altKey)) {
+                const altNorm = this.normalizeSvg(svgStr, !shouldEncode);
+                this.plugin.iconCache.set(altKey, altNorm);
+            }
             return normalized;
         }
 
@@ -276,17 +270,28 @@ export class IconRepository {
     }
 
     /**
-     * Memoized Data-URI generator. Encodes SVG to CSS Data-URI exactly once per unique icon.
+     * Eagerly normalizes and pre-caches raw and encoded Data-URI representations at load time.
+     */
+    preNormalizeIcon(id: string, rawSvg: string): void {
+        if (!id || !rawSvg) return;
+        const normEncoded = this.normalizeSvg(rawSvg, true);
+        const normRaw = this.normalizeSvg(rawSvg, false);
+
+        if (this.plugin.iconCache) {
+            this.plugin.iconCache.set(`1:${id}`, normEncoded);
+            this.plugin.iconCache.set(`0:${id}`, normRaw);
+        }
+        this._dataUriCache.set(id, `url("data:image/svg+xml,${normEncoded}")`);
+    }
+
+    /**
+     * Memoized Data-URI generator using LRUCache.
      */
     getDataUri(iconId: string): string {
         if (!iconId) return "";
         const hit = this._dataUriCache.get(iconId);
         if (hit !== undefined) return hit;
 
-        if (this._dataUriCache.size > 2000) {
-            const oldest = this._dataUriCache.keys().next().value as string | undefined;
-            if (oldest !== undefined) this._dataUriCache.delete(oldest);
-        }
         const rawSvg = this.getIconSvg(iconId, true);
         const dataUri = rawSvg ? `url("data:image/svg+xml,${rawSvg}")` : "";
         this._dataUriCache.set(iconId, dataUri);
@@ -297,11 +302,6 @@ export class IconRepository {
         const cacheKey = (shouldEncode ? '1:' : '0:') + svgStr;
         const hit = this._normCache.get(cacheKey);
         if (hit !== undefined) return hit;
-
-        if (this._normCache.size > 2000) {
-            const oldest = this._normCache.keys().next().value as string | undefined;
-            if (oldest !== undefined) this._normCache.delete(oldest);
-        }
 
         let result: string;
         try {
@@ -357,5 +357,6 @@ export class IconRepository {
         this._normCache.clear();
         this._dataUriCache.clear();
         this._findPackIconCache.clear();
+        this._packIndex.invalidate();
     }
 }

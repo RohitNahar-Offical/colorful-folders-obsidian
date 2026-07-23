@@ -180,3 +180,18 @@ export function hashString(str: string): number {
 export function escapeRegExp(string: string): string {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
+
+export function stemWord(word: string): string {
+    if (!word || word.length <= 3) return word;
+    let s = word.toLowerCase();
+    if (s.endsWith('ing') && s.length > 5) {
+        s = s.slice(0, -3);
+    } else if (s.endsWith('ed') && s.length > 4) {
+        s = s.slice(0, -2);
+    } else if (s.endsWith('es') && s.length > 4) {
+        s = s.slice(0, -2);
+    } else if (s.endsWith('s') && !s.endsWith('ss') && s.length > 3) {
+        s = s.slice(0, -1);
+    }
+    return s;
+}

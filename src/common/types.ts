@@ -118,6 +118,7 @@ export interface ColorfulFoldersSettings {
 
 
 export interface AutoIconData {
+    tier?: 0 | 1 | 2 | 3 | 4;
     rex: RegExp;
     emoji: string;
     lucide: string;
@@ -125,6 +126,7 @@ export interface AutoIconData {
     isCustom?: boolean;
     emojis?: string[];
     lucides?: string[];
+    packSource?: string;
 }
 
 export interface EffectiveStyle {
@@ -157,7 +159,6 @@ export interface IColorfulFoldersPlugin {
     parsedExclusionList?: Set<string> | null;
     activePaletteCache?: { palette: { rgb: string; hex: string }[] } | null;
     iconManager: IconManager;
-    sheet: CSSStyleSheet;
     isSyncingDividers: boolean;
     isDragging: boolean;
     _dividerTimeout?: number | null;

@@ -38,6 +38,10 @@ export class IconManager {
         return this.repository.normalizeSvg(svgStr, shouldEncode);
     }
 
+    preNormalizeIcon(id: string, rawSvg: string): void {
+        this.repository.preNormalizeIcon(id, rawSvg);
+    }
+
     /** Compatibility methods for Zero-DOM architecture. */
     injectIconsForNodes(_nodes: NodeList | Node[]): void {
         // Zero-DOM Architecture: Icons are rendered via adoptedStyleSheets CSS Data URIs.

@@ -275,4 +275,43 @@ export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
     { rex: /recipe|baking|dessert|sweets|cake/i, emoji: "🍰", lucide: "cake", priority: 85, emojis: ["🍰", "🍪", "🧁"], lucides: ["cake", "cookie"] },
     { rex: /fitness|workout|run|marathon|lift/i, emoji: "🏃", lucide: "dumbbell", priority: 85, emojis: ["🏃", "🏋️", "🚴"], lucides: ["dumbbell", "activity", "heart"] },
     { rex: /journal|thoughts|diary|reflection/i, emoji: "📔", lucide: "book-heart", priority: 85, emojis: ["📔", "💭", "✍️"], lucides: ["book-heart", "pen-tool"] },
+    { rex: /habit|routine|cue|cycle/i, emoji: "🔄", lucide: "repeat", priority: 90, emojis: ["🔄", "📅", "⚡"], lucides: ["repeat", "calendar-check", "activity"] },
+    { rex: /metaphor|analogy|concept|philosophy/i, emoji: "💡", lucide: "sparkles", priority: 85, emojis: ["💡", "✨", "🧠"], lucides: ["sparkles", "brain", "lightbulb"] },
+    { rex: /remember|memory|recall|mind/i, emoji: "🧠", lucide: "brain-circuit", priority: 90, emojis: ["🧠", "💡", "💾"], lucides: ["brain-circuit", "brain", "hard-drive"] },
+    { rex: /thesaurus|dictionary|vocabulary|word/i, emoji: "📖", lucide: "book-open-check", priority: 90, emojis: ["📖", "📚", "🔤"], lucides: ["book-open-check", "spell-check", "languages"] },
+    { rex: /estimate|underestimate|measure|math|scale/i, emoji: "📐", lucide: "gauge", priority: 85, emojis: ["📐", "⚖️", "📊"], lucides: ["gauge", "calculator", "ruler"] },
+    { rex: /metadata|attribute|property|tag|meta/i, emoji: "🏷️", lucide: "tags", priority: 90, emojis: ["🏷️", "🔖", "🔑"], lucides: ["tags", "tag", "file-key"] },
 ];
+
+export const PACK_PRIORITY: Record<string, number> = {
+    'custom': 100,       // 1. Unique brand assets
+    'lucide': 90,        // 2. Main UI baseline (Modern, sharp, highly consistent)
+    'tabler': 80,        // 3. Main UI fallback (Massive library, same aesthetic)
+    'simple-icons': 70,  // 4. Brands only (Logos for Google, GitHub, etc.)
+    'remix': 60,         // 5. Secondary fallback
+    'feather': 50,       // 6. Deprecated (Lucide is the upgraded version)
+    'font-awesome': 40,  // 7. Utility fallback (Heavy, traditional style)
+    'material': 30       // 8. Geometric fallback (Different design language)
+};
+
+export const PACK_PREFIXES: string[] = [
+    'custom', 'simple-icons', 'simple', 'lucide', 'feather', 
+    'fa', 'fas', 'far', 'fab', 'fontawesome', 'ri', 'remix', 
+    'tb', 'tabler', 'mdi', 'material', 'oct', 'octicons'
+];
+
+export const STOP_WORDS = new Set([
+    'a', 'an', 'the', 'and', 'or', 'but', 'if', 'because', 'as', 'until', 'while',
+    'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 'through',
+    'during', 'before', 'after', 'above', 'below', 'to', 'from', 'up', 'upon', 'down',
+    'in', 'out', 'on', 'off', 'over', 'under', 'again', 'further', 'then', 'once',
+    'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each',
+    'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only',
+    'own', 'same', 'so', 'than', 'too', 'very', 's', 't', 'can', 'will', 'just',
+    'don', 'should', 'now', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+    'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'works', 'worked',
+    'working', 'work', 'folder', 'file', 'notes', 'thoughts', 'draft', 'list', 'page',
+    'doc', 'text', 'directory', 'items', 'item'
+]);
+
+
