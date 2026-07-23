@@ -73,11 +73,16 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
         }
 
         /* ── ICON SUPPRESSION & CONFLICT PREVENTION ─────────────────────── */
-        body .nav-folder-title-content > svg:not(.cf-icon-wrapper svg),
-        body .nav-file-title-content > svg:not(.cf-icon-wrapper svg),
-        body .tree-item-inner > svg:not(.cf-icon-wrapper svg),
-        body .nav-folder-title-content > .nav-folder-icon,
-        body .nav-file-title-content > .nav-file-icon {
+        body [data-cf-path] .nav-folder-title-content > svg:not(.cf-icon-wrapper svg),
+        body [data-cf-path] .nav-file-title-content > svg:not(.cf-icon-wrapper svg),
+        body [data-cf-path] .tree-item-inner > svg:not(.cf-icon-wrapper svg),
+        body [data-cf-path] .nav-folder-title-content > .nav-folder-icon,
+        body [data-cf-path] .nav-file-title-content > .nav-file-icon,
+        body [data-path] .nav-folder-title-content > svg:not(.cf-icon-wrapper svg),
+        body [data-path] .nav-file-title-content > svg:not(.cf-icon-wrapper svg),
+        body [data-path] .tree-item-inner > svg:not(.cf-icon-wrapper svg),
+        body [data-path] .nav-folder-title-content > .nav-folder-icon,
+        body [data-path] .nav-file-title-content > .nav-file-icon {
             display: none !important;
         }
 

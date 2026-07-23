@@ -1775,7 +1775,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             .addSlider(slider => {
                 sliderComp_pathLineThickness = slider;
                 slider
-                .setLimits(1, 10, 0.5)
+                .setLimits(0, 50, 0.5)
                 .setValue(this.plugin.settings.pathLineThickness ?? 3)
 
 
@@ -1874,7 +1874,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             })
             .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
                 this.plugin.settings.rootOpacity = DEFAULT_SETTINGS.rootOpacity;
-                sliderComp_rootOpacity.setValue(DEFAULT_SETTINGS.rootOpacity);
+                sliderComp_rootOpacity.setValue(DEFAULT_SETTINGS.rootOpacity * 100);
                 await this.plugin.saveSettings();
                 this.plugin.generateStylesDebounced();
             }));
@@ -1889,7 +1889,6 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .setLimits(1, 100, 1)
                 .setValue(this.plugin.settings.subfolderOpacity * 100)
 
-
                 .onChange(async (value) => {
                     this.plugin.settings.subfolderOpacity = parseFloat((value / 100).toFixed(3));
                     await this.plugin.saveSettings();
@@ -1899,7 +1898,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             })
             .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
                 this.plugin.settings.subfolderOpacity = DEFAULT_SETTINGS.subfolderOpacity;
-                sliderComp_subfolderOpacity.setValue(DEFAULT_SETTINGS.subfolderOpacity);
+                sliderComp_subfolderOpacity.setValue(DEFAULT_SETTINGS.subfolderOpacity * 100);
                 await this.plugin.saveSettings();
                 this.plugin.generateStylesDebounced();
             }));
@@ -1914,7 +1913,6 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .setLimits(0, 100, 1)
                 .setValue(this.plugin.settings.tintOpacity * 100)
 
-
                 .onChange(async (value) => {
                     this.plugin.settings.tintOpacity = parseFloat((value / 100).toFixed(3));
                     await this.plugin.saveSettings();
@@ -1924,7 +1922,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             })
             .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
                 this.plugin.settings.tintOpacity = DEFAULT_SETTINGS.tintOpacity;
-                sliderComp_tintOpacity.setValue(DEFAULT_SETTINGS.tintOpacity);
+                sliderComp_tintOpacity.setValue(DEFAULT_SETTINGS.tintOpacity * 100);
                 await this.plugin.saveSettings();
                 this.plugin.generateStylesDebounced();
             }));
@@ -1940,7 +1938,6 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .setLimits(0, 100, 1)
                 .setValue((this.plugin.settings.fileBackgroundOpacity !== undefined ? this.plugin.settings.fileBackgroundOpacity : 0.1) * 100)
 
-
                 .onChange(async (value) => {
                     this.plugin.settings.fileBackgroundOpacity = parseFloat((value / 100).toFixed(3));
                     await this.plugin.saveSettings();
@@ -1949,8 +1946,9 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 return slider;
             })
             .addExtraButton(cb => cb.setIcon("reset").setTooltip("Reset to default").onClick(async () => {
-                this.plugin.settings.fileBackgroundOpacity = DEFAULT_SETTINGS.fileBackgroundOpacity;
-                sliderComp_fileBackgroundOpacity.setValue(DEFAULT_SETTINGS.fileBackgroundOpacity);
+                const defVal = DEFAULT_SETTINGS.fileBackgroundOpacity !== undefined ? DEFAULT_SETTINGS.fileBackgroundOpacity : 0.1;
+                this.plugin.settings.fileBackgroundOpacity = defVal;
+                sliderComp_fileBackgroundOpacity.setValue(defVal * 100);
                 await this.plugin.saveSettings();
                 this.plugin.generateStylesDebounced();
             }));

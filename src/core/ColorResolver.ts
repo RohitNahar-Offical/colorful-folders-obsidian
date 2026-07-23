@@ -155,12 +155,12 @@ export class ColorResolver {
                 return rootOpacity ?? 0.50;
             }
         } else {
-            const baseOp = rootOpacity ?? 0.50;
+            const baseOp = subfolderOpacity ?? 0.40;
             let startOp = baseOp;
             if (inheritedStyle?.opacity !== undefined) {
                 startOp = Math.min(baseOp, inheritedStyle.opacity);
             }
-            let op = startOp - (depth * 0.10);
+            let op = startOp - ((depth - 1) * 0.08);
             if (op < 0.10) {
                 op = 0.05;
             }
