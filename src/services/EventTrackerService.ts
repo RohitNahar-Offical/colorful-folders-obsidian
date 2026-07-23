@@ -120,6 +120,11 @@ export class EventTrackerService {
                 const path = item.getAttribute('data-path') || '';
                 const parentFolderNode = item.closest('.tree-item.nav-folder, .nav-folder');
                 const parentTreeItem = item.closest('.tree-item, .nav-file');
+
+                // If the active item is a folder title itself, do not hide it
+                if (item.matches('.nav-folder-title')) {
+                    continue;
+                }
                 
                 // Helper to check if item is a Folder Note
                 const isFolderNote = (): boolean => {
@@ -150,9 +155,8 @@ export class EventTrackerService {
                 };
 
                 if (isFolderNote()) {
-                    // Keep the file element 100% hidden via a CSS class (no inline styles)
+                    // Keep the file element hidden via a CSS class
                     item.classList.add('cf-fn-hidden');
-                    item.classList.remove('is-active', 'cf-is-active');
 
                     // Highlight the parent folder title instead
                     if (parentFolderNode) {
