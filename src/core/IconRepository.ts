@@ -80,7 +80,8 @@ export class IconRepository {
                 emoji: exactMatchedIconId,
                 lucide: exactMatchedIconId,
                 priority: 1800,
-                isCustom: true
+                isCustom: true,
+                packSource: exactMatchedIconId.includes('-') ? exactMatchedIconId.split('-')[0] : 'custom'
             };
         }
 
@@ -90,7 +91,7 @@ export class IconRepository {
             const cat = candidateCategories[i];
             if (cat.rex.test(lName)) {
                 const tierVal: 2 | 3 = cat.isCustom ? 2 : 3;
-                const match = { ...cat, tier: tierVal };
+                const match = { ...cat, tier: tierVal, packSource: cat.isCustom ? 'custom-rule' : 'category-default' };
                 if (settings.autoIconVariety) {
                     const h = hashString(name);
                     if (match.emojis && match.emojis.length > 0) {
@@ -142,7 +143,8 @@ export class IconRepository {
                 rex: new RegExp(`^${safeRexStr}$`, 'i'),
                 emoji: fuzzyMatchedIconId,
                 lucide: fuzzyMatchedIconId,
-                priority: 50
+                priority: 50,
+                packSource: fuzzyMatchedIconId.includes('-') ? fuzzyMatchedIconId.split('-')[0] : 'fuzzy-match'
             };
         }
 

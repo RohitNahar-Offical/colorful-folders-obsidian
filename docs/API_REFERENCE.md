@@ -80,26 +80,35 @@ HTML factory for the divider component.
 
 ---
 
-## 4. `IconManager` (Rendering Central)
+---
 
-### `getAutoIconData(name: string)`
-Matches filename against global regex category system.
-- **Cache**: `_categoryCache` is rebuilt only when `customIconRules` changes, not on every call.
+## 4. `IconRepository` & `IconManager` (Tiered Icon Engine)
 
-### `getIconSvg(iconId: string, encode?: boolean): string`
-Resolves an icon ID to a normalized, optionally URL-encoded SVG string.
-- **Priority**: `customIcons` → `localFileSystemIcons` → Lucide.
-- **Cache**: Result stored in `plugin.iconCache` keyed by `${iconId}-${enc|raw}`.
+### `IconRepository`
+Core resolution engine supporting a 4-tier priority system (`Tier 1`: Pack Exact > `Tier 2`: Custom Rule > `Tier 3`: Category Rule > `Tier 4`: Stemmed Fuzzy Match).
 
-### `normalizeSvg(svgStr: string)`
-Hardens raw SVG strings for CSS masks.
-- **Logic**: Strips backgrounds, removes hardcoded colors.
+- **`getAutoIconData(name: string, path?: string): AutoIconData | null`**: Returns `AutoIconData` populated with `tier: 1|2|3|4` and `packSource` (`custom`, `lucide`, `simple-icons`, `custom-rule`, `category-default`, `fuzzy-match`).
+- **`findIconInPacks(searchKey: string): string | null`**: Performs $O(1)$ pack lookup using `IconPackIndex` and `_findPackIconCache`.
+- **`getIconSvg(iconId: string, shouldEncode?: boolean): string`**: Resolves an icon ID to a normalized, optionally URL-encoded SVG string using `_normCache` (LRU).
+- **`getDataUri(iconId: string): string`**: Memoized Data-URI generator backed by `_dataUriCache` (LRU).
+- **`preNormalizeIcon(id: string, rawSvg: string): void`**: Eagerly normalizes and pre-caches raw and encoded Data-URI representations into `iconCache` and `_dataUriCache` at load time.
+- **`invalidateCache(): void`**: Flushes all internal LRU caches and invalidates `_packIndex` snapshot.
 
-### `colorizeSvg(svgStr: string, color: string)`
-Intelligently tints an SVG by rewriting path attributes.
+### `IconPackIndex` (`src/core/IconPackIndex.ts`)
+In-memory index maintaining `exactMap` and `suffixMap` to enable $O(1)$ lookups.
+- **`build(localIcons, customIcons): void`**: Builds lookup maps with automatic pack priority tie-breaking using `PACK_PRIORITY`.
+- **`findIcon(searchKey: string): string | null`**: Performs $O(1)$ exact, prefix-stripped, and suffix-matched lookups.
+- **`getIsBuilt(): boolean`**: Returns index build status.
 
-### `invalidateCategoryCache()`
-Clears the category memoization and normalization caches. Called **only** when icon-relevant settings (`customIcons`, `customIconRules`) are modified.
+### `CategoryTrie` (`src/core/CategoryTrie.ts`)
+Character-indexed prefix trie for `AUTO_ICON_CATEGORIES`.
+- **`build(categories: AutoIconData[]): void`**: Maps literal initial character tokens of rules to candidate lists.
+- **`lookup(name: string): AutoIconData[]`**: Aggregates rule candidates for all word initial characters in the input title.
+
+### `LRUCache<K, V>` (`src/common/LRUCache.ts`)
+Bounded $O(1)$ Least-Recently-Used cache with `Map` key reordering and auto-eviction.
+- **`get(key: K): V | undefined`**: Returns value and promotes key to MRU position.
+- **`set(key: K, value: V): void`**: Sets value and evicts LRU key when capacity (e.g., `2048`) is reached.
 
 ---
 

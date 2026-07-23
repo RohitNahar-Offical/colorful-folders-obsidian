@@ -93,17 +93,107 @@ Opacity is determined by a fixed mathematical progression:
 
 ---
 
-## 3. Zero-DOM Icon Resolution & Selection Logic
+## 3. Tiered Icon Selection Engine Architecture
 
-`IconManager` (`src/core/IconManager.ts`) handles icon resolution across **4 strict priority tiers**:
+`IconManager` (`src/core/IconManager.ts`) coordinates icon resolution and CSS Data-URI generation for both **Folders** and **Files**.
 
-1. **Tier 1 (Priority 2000)**: Exact match in installed local filesystem packs (`.obsidian/icons`) or custom settings SVGs.
-2. **Tier 2 (Priority 1500)**: Custom user regex rules from `settings.customIconRules`.
-3. **Tier 3 (Priority 80–100)**: Built-in `AUTO_ICON_CATEGORIES` with optional variety hashing (`autoIconVariety`).
-4. **Tier 4 (Priority 50)**: Multi-word and single-word brand/tool fallback in installed packs (`simple-icons`, `feather`, etc.).
+```mermaid
+flowchart TD
+    A[File / Folder Node Render] --> B{Explicit Custom Icon set in FolderStyle?}
+    B -- Yes --> C[Use Explicit iconId]
+    B -- No --> D{settings.autoIcons Enabled?}
+    D -- No --> E{Is Folder or File?}
+    E -- Folder --> F[Use defaultClosedFolderIcon / defaultOpenFolderIcon]
+    E -- File --> G[Use default CF_FILE_TEXT_ICON SVG]
+    D -- Yes --> H[Call IconRepository.getAutoIconData name, path]
+    H --> I[Execute 4-Tier Resolution Chain]
+    I --> J{Icon Match Found?}
+    J -- Yes --> K[Use Matched Auto-Icon ID]
+    J -- No --> E
+    C --> L[Resolve SVG / Data URI via IconManager.getIconSvg]
+    K --> L
+    F --> L
+    G --> L
+    L --> M[Generate CSS ::before -webkit-mask-image Rule]
+```
 
-### Auto-Download & Prioritization
-On plugin startup or version change (`!settings.lastVersion` or `settings.lastVersion !== currentVersion`), essential open-source icon packs (`simple-icons` and `feather`) are auto-downloaded into `settings.customIcons` if missing. Installed custom icon packs receive high priority in `findIconInPacks()`.
+### 3.1 Step-by-Step Selection Decision Flow
+
+#### For Folders:
+1. **Explicit Custom Override**: Checks `getStyle(folder.path)`. If `iconId` is set manually via the Color Picker or Style Modal, that icon is used unconditionally.
+2. **Inherited Parent Icon**: If an ancestor folder has `applyToSubfolders: true` with an `iconId` set, that icon cascades to nested folders.
+3. **Auto-Icon Resolution** (when `settings.autoIcons: true`): Queries `IconRepository.getAutoIconData(folder.name, folder.path)`.
+4. **Default Folder Icon Fallback**: If no auto-icon matches, falls back to `settings.defaultClosedFolderIcon` / `settings.defaultOpenFolderIcon` (or native Obsidian collapse icons).
+
+#### For Files:
+1. **Explicit Custom File Override**: Checks `fileStyle.iconId` set on the specific file path.
+2. **Inherited Folder File Icon**: Checks if parent folder has `inheritedStyle.applyToFiles: true` with an `iconId` set.
+3. **Auto-Icon Resolution** (when `settings.autoIcons: true`): Queries `IconRepository.getAutoIconData(file.name, file.path)`.
+4. **Default Document Fallback**: If no auto-icon matches, falls back to the default `CF_FILE_TEXT_ICON` document SVG.
+
+---
+
+### 3.2 The 4-Tier Resolution Chain (`IconRepository.ts`)
+
+```mermaid
+graph TD
+    A[getAutoIconData name] --> B[Sanitize: Lowercase & Strip File Extensions]
+    B --> C{Tier 1: Exact Pack Match}
+    C -- Match --> Z1[Return Tier 1: Priority 1800 + packSource]
+    C -- Miss --> D{Tier 2 & 3: CategoryTrie Lookup}
+    D --> E[Collect Candidates for ALL Word Prefixes]
+    E --> F[Test Candidate Regexes]
+    F -- Match --> Z2[Return Tier 2/3: Priority 1500/85 + packSource]
+    F -- Miss --> G{Tier 4: Stem-Aware Fuzzy Search}
+    G --> H[Filter Words via STOP_WORDS]
+    H --> I[Strip Suffixes via stemWord]
+    I --> J[Query IconPackIndex Right-to-Left]
+    J -- Match --> Z3[Return Tier 4: Priority 50 + packSource]
+    J -- Miss --> Z4[Return Null -> Fallback to Default Icon]
+```
+
+1. **Tier 1: Exact Pack Match (Priority 1800)**
+   - Hyphenates the sanitized name (`"my_project.md"` $\rightarrow$ `"my-project"`).
+   - Performs $O(1)$ query via `IconPackIndex.findIcon()`. Returns exact matching custom SVG or installed pack icon.
+
+2. **Tier 2 & 3: Custom Regex Rules & Category Trie (Priority 1500 & 80–110)**
+   - Queries `CategoryTrie.lookup(lName)` which collects candidate rules for the initial characters of **every word** in the title.
+   - Evaluates custom user regex rules first (Tier 2, Priority 1500), then built-in `AUTO_ICON_CATEGORIES` (Tier 3, Priority 80–110).
+   - If `autoIconVariety` is enabled, hashes `hashString(name)` against the category's `emojis` / `lucides` array to pick diverse icons.
+
+3. **Tier 4: Stem-Aware Fuzzy Search (Priority 50)**
+   - Tokenizes filename into words, filtering out question words, auxiliary verbs, and filler nouns via `STOP_WORDS`.
+   - Strips suffixes (`-ing`, `-ed`, `-es`, `-s`) using `stemWord()`.
+   - Queries multi-word pairs (`"word1-word2"`) and single words from **right to left** to give priority to main subject nouns over leading filler terms.
+
+---
+
+### 3.3 Pack Priority & Tie-Breaking (`PACK_PRIORITY`)
+
+When suffix matches overlap across multiple installed packs (e.g. `github` in `simple-icons` vs `feather`), `IconPackIndex` breaks ties at index-build time using `PACK_PRIORITY`:
+
+```typescript
+export const PACK_PRIORITY: Record<string, number> = {
+    'custom': 100,       // 1. Unique brand assets
+    'lucide': 90,        // 2. Main UI baseline (Modern, sharp, highly consistent)
+    'tabler': 80,        // 3. Main UI fallback (Massive library, same aesthetic)
+    'simple-icons': 70,  // 4. Brands only (Logos for Google, GitHub, etc.)
+    'remix': 60,         // 5. Secondary fallback
+    'feather': 50,       // 6. Deprecated (Lucide upgraded version)
+    'font-awesome': 40,  // 7. Utility fallback
+    'material': 30       // 8. Geometric fallback
+};
+```
+
+---
+
+### 3.4 High-Performance LRU Caching (`src/common/LRUCache.ts`)
+
+All SVG transformations and resolutions run through bounded $O(1)$ `LRUCache(2048)` instances:
+- `_normCache`: Normalized SVG strings.
+- `_dataUriCache`: Generated CSS Data-URIs.
+- `_findPackIconCache`: Resolved pack icon IDs.
+- `preNormalizeIcon()`: Eagerly pre-warms raw (`0:`) and encoded (`1:`) Data-URIs into memory on asset load.
 
 ---
 

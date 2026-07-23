@@ -75,16 +75,23 @@ To add a featured pack (like "Remix Icons"):
 | `StyleResolver.ts` | High-level `EffectiveStyle` compilation and customized overrides helper |
 | `BaseCssGenerator.ts` | Renders base global base, interactive dividers, and stealth CSS properties |
 | `VaultUtils.ts` | Pure functions for Vault traversal caches and item counting |
-| `IconManager.ts` | SVG normalization & Sanitization |
+| `IconRepository.ts` | Core 4-tier icon resolution engine, stemming, and LRU cache coordinator |
+| `IconPackIndex.ts` | In-memory $O(1)$ pack lookup index with `PACK_PRIORITY` tie-breaking |
+| `CategoryTrie.ts` | Multi-word initial character prefix candidate trie for category rules |
+| `LRUCache.ts` | Bounded $O(1)$ Least-Recently-Used cache with `Map` key reordering |
+| `IconManager.ts` | Rendering facade & SVG normalization |
 | `DividerManager.ts` | DOM reconciliation for dividers |
 | `ColorPickerModal.ts` | Primary manual styling UI |
 | `DividerModal.ts` | Divider & section configuration |
 
 ---
 
+## 7. Mandatory Development Rules
+
 > [!IMPORTANT]
-> Always run `npm run lint` before committing. We maintain a zero-warning policy to satisfy Obsidian's strict plugin requirements.
-> 
-> **Package Updates**: When updating the `obsidian` type definitions package (e.g., to fix API deprecations or type resolution errors), ALWAYS simultaneously update the linter-related packages (such as `eslint` and `eslint-plugin-obsidianmd`) to ensure type definitions and linting rules remain perfectly synchronized and do not produce mismatched "unsafe type" errors.
->
-> **Backwards Compatibility**: When addressing API deprecations (like `setWarning()` or `display()`), DO NOT arbitrarily raise the `minAppVersion` in `manifest.json` unless absolutely necessary for a new feature. Instead, safely bypass the developer console/linter warnings using strict typing casts (e.g., `(btn as unknown as { setWarning: () => typeof btn }).setWarning()`). This ensures the plugin remains fully compatible with older Obsidian releases (like `1.4.4`) without triggering linter failures.
+> 1. **Obsidian Plugin Compilation**: Whenever modifying TypeScript source files (`src/*.ts`), **ALWAYS run `npm run build` immediately** after edits. Obsidian reads `main.js`, so your changes will not take effect until built.
+> 2. **DOM Styling Compliance**: **NEVER** write inline property assignments or set static style properties directly using `el.style.setProperty()`. Use `el.setCssProps({ '--cf-variable': 'value' })` to assign CSS custom properties and consume them in CSS stylesheets.
+> 3. **DOM Injection Performance**: Never call `require()` or parse SVG strings repeatedly inside DOM node iteration loops. Construct DOM elements as single templates outside loops and use `.cloneNode(true)`.
+> 4. **Visual Styling Decoupling**: Never bundle text/icon color logic together with background block/border logic into a single boolean gate in `StyleGenerator.ts`. Text/icon auto-colors must evaluate independently.
+> 5. **Package Updates**: When updating the `obsidian` type definitions package, ALWAYS simultaneously update `eslint` and `eslint-plugin-obsidianmd` to keep type definitions and linting synchronized.
+> 6. **Zero Warning Policy**: Always run `npm run lint` (`eslint src --max-warnings 0`) before finishing tasks. Maintain 0 warnings and 0 errors.

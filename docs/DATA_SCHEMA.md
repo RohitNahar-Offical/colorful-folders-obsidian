@@ -121,6 +121,26 @@ interface FolderStyle {
 
 ---
 
+## 2b. `AutoIconData` (Tiered Icon Resolution Result)
+
+Returned by `IconRepository.getAutoIconData()` to describe matched icon metadata.
+
+```typescript
+export interface AutoIconData {
+    tier?: 0 | 1 | 2 | 3 | 4;          // Tier priority (1: Pack Exact > 2: Custom Rule > 3: Category Rule > 4: Stemmed Fuzzy Match)
+    rex: RegExp;                        // Regular expression pattern matched against item name
+    emoji: string;                      // Emoji icon representation or ID
+    lucide: string;                     // Lucide/SVG icon fallback key or ID
+    priority: number;                   // Numerical priority score for tie-breaking
+    isCustom?: boolean;                 // True if matched via custom user rule or pack exact key
+    emojis?: string[];                  // Variety list of emojis for autoIconVariety
+    lucides?: string[];                 // Variety list of Lucide icons for autoIconVariety
+    packSource?: string;                // Origin source ('custom', 'lucide', 'simple-icons', 'custom-rule', 'category-default', 'fuzzy-match')
+}
+```
+
+---
+
 ## 3. The Palette System
 
 Palettes are defined in `src/common/constants.ts` under `PALETTES`. 

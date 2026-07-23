@@ -388,19 +388,20 @@ The **Regex Builder** UI lets you create custom icon matching rules in the **Ico
 ```
 
 ### Priority Range
-- Valid range: **1 to 100** (integers only).
-- **1** = lowest priority (will be overridden by most other rules).
-- **100** = highest priority (wins over all other custom rules).
-- The built-in icon categories use internal values; your custom rules always operate in the 1–100 range.
+- Valid range: **1 to 2000** (integers only).
+- **1** = lowest priority.
+- **1500** = default custom rule priority (wins over built-in categories at 80–110 and Tier 4 fuzzy matches at 50).
+- **1800** = exact pack match priority.
+- **2000** = absolute maximum custom priority.
 
 ### Examples
 
 | Goal | Rule |
 | :--- | :--- |
-| Match folders ending in `_Archive` | `_archive$ = lucide-archive @90` |
-| Match files starting with a year | `^202[0-9]- = 📅 @85` |
-| Match anything containing "work" | `work = lucide-briefcase @50` |
-| Low-priority fallback for untitled | `^untitled = 📄 @1` |
+| Match folders ending in `_Archive` | `_archive$ = lucide-archive @1500` |
+| Match files starting with a year | `^202[0-9]- = 📅 @1600` |
+| Match anything containing "work" | `work = lucide-briefcase @1200` |
+| Low-priority fallback for untitled | `^untitled = 📄 @10` |
 
 ### Live Testing
 Type a folder or file name in the **Test name** input field in the Regex Builder UI. The icon that would be assigned is displayed immediately without requiring a reload.

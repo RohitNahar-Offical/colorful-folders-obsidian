@@ -1,41 +1,64 @@
-# The Staircase Effect Hack
+# 🪜 The Staircase Effect & Modern Inline Style Stripper
 
-This document outlines the mechanics of the "Staircase Effect" hack used to defeat Obsidian's React engine and enforce custom visual folder indentation (while keeping background highlight colors spanning the full width of the file explorer row).
+This document explains what the **"Staircase Effect"** is in Obsidian file-explorer rendering, why it occurs, and how **Colorful Folders** eliminates it using the **Style Stripper Engine**.
 
-## The Problem
-By default, Obsidian uses its React engine to calculate the depth of folders/files in the file explorer. It enforces this indentation natively by writing an inline `style="padding-inline-start: XXpx;"` directly onto the `.tree-item-self` DOM element.
+---
 
-If a plugin wishes to style the background of these elements (so the background highlight color stretches from the absolute left edge of the pane to the right), it must set the padding of `.tree-item-self` to `0px`. However, doing so eliminates the native staircase indentation effect. 
+## 1. What is the Staircase Effect?
 
-## The Synergistic Solution
+In Obsidian's native file explorer (especially when third-party themes like Blue Topaz, Prism, or custom CSS snippets are active), nested file and folder items (`.tree-item-self`) often receive dynamic inline `padding-left` or `margin-left` inline style assignments injected by Obsidian's virtualized list renderer.
 
-To maintain a full-width background **while** preserving the indented staircase text effect, we must separate the native padding logic from the text alignment logic. This requires two coordinated parts:
+### Visual Manifestation
+- Nested subfolders and files incrementally shift further to the right on every re-render frame.
+- Indentation lines break out of alignment.
+- Tree items take on a diagonal, "staircase" visual appearance that pushes text off-screen.
 
-### Part 1: The Stripper Script (`main.ts`)
-We inject a continuous `MutationObserver` directly into the plugin's startup sequence (currently isolated in `main.ts` inside a 5-second `setTimeout`). 
+---
 
-This observer's sole job is to aggressively watch every `.tree-item-self` element in the file explorer. Whenever Obsidian's React engine attempts to inject its native `style` attribute, the observer immediately strips it away using `el.removeAttribute('style')`.
+## 2. Technical Root Cause
 
-This completely neutralizes Obsidian's native indentation calculations and collapses all file explorer items to a `0px` baseline.
+1. **Inline Style Assignment Invalidation**: Obsidian's internal file explorer view dynamically writes inline styles (e.g. `element.style.paddingLeft = "24px"`) directly to `.tree-item-self` nodes during DOM recycling and virtualized scroll events.
+2. **CSS Specificity Clashes**: Inline `style="..."` attributes have higher CSS specificity ($1,0,0,0$) than class-based theme stylesheets ($0,1,0$), causing inline layout offsets to override theme CSS rules.
 
-### Part 2: The Visual Offset CSS Hack
-With the native padding stripped, all items are flush-left. To restore the staircase effect, a CSS snippet must be applied that manually shifts the *inner* text/icon elements back into a staircase shape, without affecting the `.tree-item-self` background wrapper.
+---
 
-```css
-/* 1. Set a forced global baseline on the outer wrapper */
-body .workspace-leaf-content[data-type="file-explorer"] .tree-item-self {
-    padding-inline-start: 30px !important;
-}
+## 3. How the Style Stripper Engine Works
 
-/* 2. Negatively shift the inner text and icons leftward */
-body .workspace-leaf-content[data-type="file-explorer"] .tree-item-self > .tree-item-icon,
-body .workspace-leaf-content[data-type="file-explorer"] .tree-item-self > .tree-item-inner {
-    position: relative !important;
-    left: -20px !important; 
-}
+Colorful Folders resolves this issue at the runtime level via `initStaircaseStyleStripper()` in [src/main.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/main.ts#L302-L378).
+
+```mermaid
+graph TD
+    A[Plugin Load / Vault Ready] --> B[initStaircaseStyleStripper]
+    B --> C[Initial Pass: Strip style attribute from existing .tree-item-self nodes]
+    C --> D[Attach MutationObserver to document.body]
+    D --> E{DOM Event: Attribute / ChildList Mutation}
+    E -->|Target is .tree-item-self| F{Is Explicit Folder Note?}
+    F -- Yes --> G[Add .cf-fn-hidden class; preserve folder note state]
+    F -- No --> H[Strip style attribute via el.removeAttribute('style')]
+    H --> I[Native C++ AdoptedStyleSheet handles layout & indentation]
 ```
 
-### Result
-1. The `.tree-item-self` (which holds the background hover/active color) stays visually pinned and full-width.
-2. The inner contents (`.tree-item-inner`) visually render shifted, creating an identical visual representation of Obsidian's staircase structure without being restricted by inline DOM styles.
-3. Because the React inline styles are being continuously stripped in JavaScript, the CSS properties correctly govern the layout hierarchy 100% of the time.
+### Key Components:
+
+1. **Initial Cleanup Pass**:
+   - Immediately queries all `.tree-item-self` elements across open workspace documents.
+   - Strips interfering inline `style` attributes upon plugin load.
+
+2. **Reactive `MutationObserver` (`win._testerObserver`)**:
+   - Observes `childList`, `subtree`, and `attributes` (`attributeFilter: ["style"]`) on `document.body`.
+   - Listens for React or virtualized scroll re-injections of inline `style` attributes on `.tree-item-self` nodes.
+
+3. **Folder Note Preservation Guard**:
+   - Checks if target or parent elements match explicit Folder Note plugin selectors (`.is-folder-note`, `.fn-hidden`, `[data-folder-note="true"]`).
+   - If marked as a folder note, preserves hiding behavior (`.cf-fn-hidden`) instead of stripping styles.
+
+4. **Zero-DOM CSS Replacement**:
+   - Once inline layout offsets are stripped, `BaseCssGenerator` and `AdoptedStyleSheetService` inject high-specificity flex layouts and custom CSS variables (`--cf-indent-level`), restoring perfectly aligned vertical indentation.
+
+---
+
+## 4. Summary of Benefits
+
+- **Zero Layout Shift**: Indentation remains rock-solid during fast scrolling and vault expansion.
+- **Theme Interoperability**: Seamlessly prevents theme-specific inline padding hacks from breaking tree layout.
+- **High Performance**: The `isStripping` guard flag eliminates recursive observer loops, maintaining $O(1)$ mutation processing overhead.
