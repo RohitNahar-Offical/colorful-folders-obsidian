@@ -1,5 +1,6 @@
 import * as obsidian from 'obsidian';
 import { IColorfulFoldersPlugin } from '../../common/types';
+import { t } from '../../lang/helpers';
 
 export class IconPickerModal extends obsidian.Modal {
     plugin: IColorfulFoldersPlugin;
@@ -28,7 +29,7 @@ export class IconPickerModal extends obsidian.Modal {
             borderBottom: "1px solid var(--background-modifier-border)",
             marginBottom: "12px"
         });
-        const h2 = header.createEl("h2", { text: "Select icon", cls: "cf-modal-title" });
+        const h2 = header.createEl("h2", { text: t("modal.icon_picker.title"), cls: "cf-modal-title" });
         h2.setCssStyles({ margin: "0" });
 
         const body = contentEl.createDiv();
@@ -41,14 +42,14 @@ export class IconPickerModal extends obsidian.Modal {
         const searchInputWrap = searchRow.createDiv();
         searchInputWrap.setCssStyles({ position: "relative", flex: "1" });
         
-        const searchInput = searchInputWrap.createEl("input", { type: "text" });
+        const searchInput = searchInputWrap.createEl("input", { type: "text", placeholder: t("modal.icon_picker.search_placeholder") });
         searchInput.setCssStyles({
             width: "100%", padding: "8px 12px 8px 36px", borderRadius: "8px",
             border: "1px solid var(--background-modifier-border)",
             backgroundColor: "var(--background-secondary)", color: "var(--text-normal)",
             fontSize: "0.9em", boxSizing: "border-box"
         });
-        searchInput.placeholder = "Search icons...";
+        searchInput.placeholder = t("modal.icon_picker.search_placeholder");
         
         const searchIcon = searchInputWrap.createDiv();
         searchIcon.setCssStyles({
@@ -131,7 +132,7 @@ export class IconPickerModal extends obsidian.Modal {
                 } else {
                     const rawSvg = this.plugin.iconManager.getIconSvg(id, false);
                     if (rawSvg) {
-                        // eslint-disable-next-line no-unsanitized/method
+                        // eslint-disable-next-line no-unsanitized/method -- SVG fragments are sanitized via IconManager
                         const frag = activeDocument.createRange().createContextualFragment(rawSvg);
                         const svgEl = frag.querySelector("svg");
                         if (svgEl) {
