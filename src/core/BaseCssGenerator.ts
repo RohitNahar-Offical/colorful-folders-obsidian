@@ -14,13 +14,7 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
         body .folder-note-hidden,
         body .cf-fn-hidden,
         body [data-folder-note="true"],
-        body [data-is-folder-note="true"],
-        body .tree-item-self[style*="display: none"],
-        body .tree-item-self[style*="display:none"],
-        body .tree-item[style*="display: none"],
-        body .tree-item[style*="display:none"],
-        body .nav-file[style*="display: none"],
-        body .nav-file[style*="display:none"] {
+        body [data-is-folder-note="true"] {
             display: none !important;
         }
 
