@@ -2,7 +2,6 @@ import * as obsidian from 'obsidian';
 import { IColorfulFoldersPlugin, MenuItemWithSubmenu } from '../common/types';
 import { ColorPickerModal } from './modals/ColorPickerModal';
 import { DividerModal } from './modals/DividerModal';
-import { t } from '../lang/helpers';
 
 export class MenuHelper {
     static addContextMenuItems(menu: obsidian.Menu, file: obsidian.TAbstractFile, plugin: IColorfulFoldersPlugin) {
@@ -11,7 +10,7 @@ export class MenuHelper {
 
         if (style && typeof style === 'object' && style.hasDivider) {
             menu.addItem((item) => {
-                item.setTitle(t("menu.edit_divider"))
+                item.setTitle("Edit divider")
                     .setIcon('settings-2')
                     .onClick(() => {
                         new DividerModal(plugin.app, plugin, file).open();
@@ -19,7 +18,7 @@ export class MenuHelper {
             });
 
             menu.addItem((remove) => {
-                remove.setTitle(t("menu.remove_divider"))
+                remove.setTitle("Remove divider")
                     .setIcon('trash-2')
                     .setWarning(true)
                     .onClick(async () => {
@@ -44,7 +43,7 @@ export class MenuHelper {
             });
         } else {
             menu.addItem((item) => {
-                item.setTitle(t("menu.add_divider"))
+                item.setTitle("Add divider")
                     .setIcon('separator-horizontal')
                     .onClick(() => {
                         new DividerModal(plugin.app, plugin, file).open();
@@ -75,7 +74,7 @@ export class MenuHelper {
         if (obsidian.Platform.isMobile) {
             // Flatten on mobile since native sheets don't support nested submenus
             menu.addItem((sub: obsidian.MenuItem) => {
-                sub.setTitle(t("menu.change_color"))
+                sub.setTitle('Change icon / color')
                     .setIcon('palette')
                     .onClick(() => {
                         new ColorPickerModal(plugin.app, plugin, file, 'icon').open();

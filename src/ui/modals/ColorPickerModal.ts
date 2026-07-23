@@ -273,7 +273,7 @@ modifiedFields: Set<string>;
                         } else {
                             const rawSvg = this.plugin.iconManager.getIconSvg(currentIconId, false);
                             if (rawSvg) {
-                                // eslint-disable-next-line no-unsanitized/method -- SVG fragments are sanitized via IconManager
+                                // eslint-disable-next-line no-unsanitized/method
                                 const frag = activeDocument.createRange().createContextualFragment(rawSvg);
                                 const svgEl = frag.querySelector("svg");
                                 if (svgEl) {
@@ -953,7 +953,7 @@ modifiedFields: Set<string>;
             } else {
                 const rawSvg = this.plugin.iconManager.getIconSvg(id, false);
                 if (rawSvg) {
-                    // eslint-disable-next-line no-unsanitized/method -- SVG fragments are sanitized via IconManager
+                    // eslint-disable-next-line no-unsanitized/method
                     const frag = activeDocument.createRange().createContextualFragment(rawSvg);
                     const svgEl = frag.querySelector("svg");
                     if (svgEl) {
