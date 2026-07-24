@@ -787,9 +787,9 @@ export class StyleGenerator {
                 this.settings.activeGlow !== false
             );
 
-            const nnNavSel = NotebookNavigatorIntegration.getScopedNavSelector(child.path);
             const nnNavNameSel = NotebookNavigatorIntegration.getNavNameSelector();
-            const nnSelectors = nnNavSel.split(',').map(s => `body ${s.trim()} ${nnNavNameSel}`);
+            const nnSelectors = NotebookNavigatorIntegration.getScopedNavSelectors(child.path)
+                .map(selector => `body ${selector} ${nnNavNameSel}`);
 
             grouper.add(textCss, [
                 `body .nav-files-container .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content`,

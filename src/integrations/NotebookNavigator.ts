@@ -64,10 +64,16 @@ export class NotebookNavigatorIntegration {
      * Returns a scoped selector that ONLY matches real vault items.
      * Hardened to exclude system views (Tags/Properties) via attribute filtering.
      */
-    static getScopedNavSelector(path: string): string {
+    static getScopedNavSelectors(path: string): string[] {
         const safePath = safeEscape(path);
-        return `.notebook-navigator .nn-navitem[data-path="${safePath}"]:not(.nn-header), 
-                .notebook-navigator .nn-shortcut-item[data-path="${safePath}"]`;
+        return [
+            `.notebook-navigator .nn-navitem[data-path="${safePath}"]:not(.nn-header)`,
+            `.notebook-navigator .nn-shortcut-item[data-path="${safePath}"]`
+        ];
+    }
+
+    static getScopedNavSelector(path: string): string {
+        return this.getScopedNavSelectors(path).join(', ');
     }
 
     static getScopedFileSelector(path: string): string {
