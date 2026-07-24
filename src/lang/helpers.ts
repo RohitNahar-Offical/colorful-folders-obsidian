@@ -2,6 +2,10 @@ import * as obsidian from 'obsidian';
 import en from './locale/en';
 import zhCN from './locale/zh-cn';
 import zhTW from './locale/zh-tw';
+import es from './locale/es';
+import fr from './locale/fr';
+import de from './locale/de';
+import ja from './locale/ja';
 
 export type TranslationKey = keyof typeof en;
 export type LocaleDictionary = Record<TranslationKey, string>;
@@ -12,6 +16,10 @@ const localeMap: Record<string, Partial<LocaleDictionary>> = {
     'zh-cn': zhCN,
     'zh-tw': zhTW,
     'zh-hk': zhTW,
+    es,
+    fr,
+    de,
+    ja,
 };
 
 export function getLanguage(): string {
