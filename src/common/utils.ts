@@ -60,9 +60,19 @@ export function adjustBrightnessRgb(rgb: string, amount: number): string {
     return `${r}, ${g}, ${b}`;
 }
 
+export function normalizeVaultPath(path: string): string {
+    if (!path) return "";
+    return path
+        .replace(/\\/g, '/')
+        .replace(/\/+/g, '/')
+        .replace(/^\/|\/$/g, '')
+        .trim();
+}
+
 export function safeEscape(path: string): string {
     if (!path) return "";
-    return path.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    const norm = normalizeVaultPath(path);
+    return norm.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
 const paletteCache = new Map<string, { rgb: string, hex: string }[] | null>();

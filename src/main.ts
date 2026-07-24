@@ -19,6 +19,7 @@ import { DOMObserverService } from "./services/DOMObserverService";
 import { EventTrackerService } from "./services/EventTrackerService";
 import { AdoptedStyleSheetService } from "./services/AdoptedStyleSheetService";
 import { IconManager } from "./core/IconManager";
+import { t } from './lang/helpers';
 
 declare module "obsidian" {
   interface Workspace {
@@ -150,7 +151,7 @@ export default class ColorfulFoldersPlugin
       try {
         const optimized = await this.optimizeBlueTopazStyleSettings();
         if (optimized) {
-          new obsidian.Notice("Colorful Folders: Conflicting Blue Topaz theme settings in Style Settings have been automatically disabled.");
+          new obsidian.Notice(t("notice.blue_topaz_disabled"));
           void this.generateStyles();
         }
       } catch (err) {
@@ -520,7 +521,7 @@ export default class ColorfulFoldersPlugin
           if (!checking) {
             delete this.settings.customFolderColors[file.path];
             void this.saveSettings();
-            new obsidian.Notice(`Cleared style for ${file.name}`);
+            new obsidian.Notice(t("notice.cleared_style_for"));
           }
           return true;
         }
@@ -557,7 +558,7 @@ export default class ColorfulFoldersPlugin
               void this.saveSettings();
               void this.generateStyles();
               this.dividerManager.syncDividers();
-              new obsidian.Notice(`Removed divider for ${file.name}`);
+              new obsidian.Notice(t("notice.removed_divider_for"));
             }
             return true;
           }
@@ -585,13 +586,13 @@ export default class ColorfulFoldersPlugin
     };
 
     if (this.settings.vaultPassword && this.settings.isVaultLocked) {
-      new PasswordModal(this.app, "Unlock stealth mode", async (pass) => {
+      new PasswordModal(this.app, t("modal.password.title"), async (pass) => {
         if (pass === this.settings.vaultPassword) {
           this.settings.isVaultLocked = false;
           await applyToggle();
           return true;
         } else {
-          new obsidian.Notice("Incorrect password!");
+          new obsidian.Notice(t("notice.incorrect_password"));
           return false;
         }
       }).open();
@@ -759,10 +760,10 @@ export default class ColorfulFoldersPlugin
     }
     if (count > 0) {
       await this.saveSettings();
-      new obsidian.Notice(`Cleaned up ${count} stale style entries.`);
+      new obsidian.Notice(t("notice.cleaned_stale_entries"));
     } else {
       new obsidian.Notice(
-        "No stale style entries found. Your configuration is clean!",
+        t("notice.no_stale_entries"),
       );
     }
   }

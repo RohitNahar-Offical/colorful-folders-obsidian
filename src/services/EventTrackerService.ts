@@ -1,6 +1,7 @@
 import * as obsidian from "obsidian";
 import type ColorfulFoldersPlugin from "../main";
 import { MenuHelper } from "../ui/MenuHelper";
+import { normalizeVaultPath } from "../common/utils";
 export class EventTrackerService {
     private plugin: ColorfulFoldersPlugin;
     private eventRefs: obsidian.EventRef[] = [];
@@ -145,9 +146,11 @@ export class EventTrackerService {
                     const folderPath = folderTitleEl?.getAttribute('data-path') || '';
                     if (!folderPath) return false;
 
-                    const parts = path.split('/');
+                    const normPath = normalizeVaultPath(path);
+                    const normFolderPath = normalizeVaultPath(folderPath);
+                    const parts = normPath.split('/');
                     const fileName = parts[parts.length - 1];
-                    const folderParts = folderPath.split('/');
+                    const folderParts = normFolderPath.split('/');
                     const folderName = folderParts[folderParts.length - 1];
                     const baseName = fileName.replace(/\.[^/.]+$/, '');
 

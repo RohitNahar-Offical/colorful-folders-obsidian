@@ -1,4 +1,5 @@
 import * as obsidian from 'obsidian';
+import { t } from '../../lang/helpers';
 import { IColorfulFoldersPlugin } from '../../common/types';
 
 export class IconPickerModal extends obsidian.Modal {
@@ -28,7 +29,7 @@ export class IconPickerModal extends obsidian.Modal {
             borderBottom: "1px solid var(--background-modifier-border)",
             marginBottom: "12px"
         });
-        const h2 = header.createEl("h2", { text: "Select icon", cls: "cf-modal-title" });
+        const h2 = header.createEl("h2", { text: t("modal.icon_picker.title"), cls: "cf-modal-title" });
         h2.setCssStyles({ margin: "0" });
 
         const body = contentEl.createDiv();
@@ -48,7 +49,7 @@ export class IconPickerModal extends obsidian.Modal {
             backgroundColor: "var(--background-secondary)", color: "var(--text-normal)",
             fontSize: "0.9em", boxSizing: "border-box"
         });
-        searchInput.placeholder = "Search icons...";
+        searchInput.placeholder = t("modal.icon_picker.search_placeholder");
         
         const searchIcon = searchInputWrap.createDiv();
         searchIcon.setCssStyles({
@@ -75,7 +76,7 @@ export class IconPickerModal extends obsidian.Modal {
             backgroundColor: "var(--background-secondary)", color: "var(--text-normal)", fontSize: "0.9em"
         });
         Array.from(prefixes).sort().forEach(p => {
-            const opt = filterSelect.createEl("option", { text: p === 'all' ? 'All packs' : p.toUpperCase(), value: p });
+            const opt = filterSelect.createEl("option", { text: p === 'all' ? t("settings.option.all_packs") : p.toUpperCase(), value: p });
             if (p === 'all') opt.selected = true;
         });
 
@@ -169,7 +170,7 @@ export class IconPickerModal extends obsidian.Modal {
             });
 
             if (filtered.length === 0) {
-                const emptyMsg = iconGrid.createDiv({ text: "No icons found", cls: "cf-no-icons" });
+                const emptyMsg = iconGrid.createDiv({ text: t("modal.icon_picker.no_icons_found"), cls: "cf-no-icons" });
                 emptyMsg.setCssStyles({
                     padding: "40px", textAlign: "center", color: "var(--text-muted)", fontSize: "0.9em", gridColumn: "1/-1"
                 });

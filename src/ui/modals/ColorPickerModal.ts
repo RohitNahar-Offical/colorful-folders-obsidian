@@ -2,7 +2,7 @@ import { StyleResolver } from '../../core/StyleResolver';
 import * as obsidian from 'obsidian';
 import { FolderStyle, EffectiveStyle, IColorfulFoldersPlugin } from '../../common/types';
 import { createVisualColorPicker } from '../components/ColorPicker';
-import { hexToRgbObj, adjustBrightnessRgb } from '../../common/utils';
+import { hexToRgbObj, adjustBrightnessRgb, normalizeVaultPath } from '../../common/utils';
 import { ColorResolver, isDarkMode } from '../../core/ColorResolver';
 
 const getAdjustedColor = (hex: string, brightnessVal: number | undefined): string => {
@@ -307,7 +307,7 @@ modifiedFields: Set<string>;
                         const rgb = hexToRgbObj(this.folderStyle.hex);
                         if (rgb) {
                             const isDark = isDarkMode();
-                            const depth = Math.max(0, this.item.path.split('/').length - 1);
+                            const depth = Math.max(0, normalizeVaultPath(this.item.path).split('/').length - 1);
                             
                             const opacity = ColorResolver.resolveOpacity(
                                 !this.isFolder,
@@ -365,7 +365,7 @@ modifiedFields: Set<string>;
                     const rgb = hexToRgbObj(this.folderStyle.hex);
                     const rgbStr = rgb ? `${rgb.r}, ${rgb.g}, ${rgb.b}` : "128, 128, 128";
                     
-                    const depth = Math.max(0, this.item.path.split('/').length - 1);
+                    const depth = Math.max(0, normalizeVaultPath(this.item.path).split('/').length - 1);
                     
                     textCol = ColorResolver.resolveTextColor(
                         !this.isFolder,

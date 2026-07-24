@@ -234,6 +234,8 @@ body .nav-files-container .cf-divider-icon svg {
 
 .cf-premium-popover {
     position: fixed !important;
+    top: var(--cf-popover-top) !important;
+    left: var(--cf-popover-left) !important;
     z-index: 10000 !important;
     background: rgba(26, 26, 36, 0.55) !important;
     backdrop-filter: blur(28px) saturate(210%) contrast(110%) !important;

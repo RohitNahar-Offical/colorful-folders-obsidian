@@ -1,6 +1,7 @@
 import * as obsidian from 'obsidian';
 import { IColorfulFoldersPlugin, MenuItemWithSubmenu } from '../common/types';
 import { ColorPickerModal } from './modals/ColorPickerModal';
+import { t } from '../lang/helpers';
 import { DividerModal } from './modals/DividerModal';
 
 export class MenuHelper {
@@ -10,7 +11,7 @@ export class MenuHelper {
 
         if (style && typeof style === 'object' && style.hasDivider) {
             menu.addItem((item) => {
-                item.setTitle("Edit divider")
+                item.setTitle(t("menu.edit_divider"))
                     .setIcon('settings-2')
                     .onClick(() => {
                         new DividerModal(plugin.app, plugin, file).open();
@@ -18,7 +19,7 @@ export class MenuHelper {
             });
 
             menu.addItem((remove) => {
-                remove.setTitle("Remove divider")
+                remove.setTitle(t("menu.remove_divider"))
                     .setIcon('trash-2')
                     .setWarning(true)
                     .onClick(async () => {
@@ -38,12 +39,12 @@ export class MenuHelper {
                         await plugin.saveSettings();
                         void plugin.generateStyles();
                         plugin.dividerManager.syncDividers();
-                        new obsidian.Notice(`Removed divider for: ${file.name}`);
+                        new obsidian.Notice(t("notice.removed_divider_for"));
                     });
             });
         } else {
             menu.addItem((item) => {
-                item.setTitle("Add divider")
+                item.setTitle(t("menu.add_divider"))
                     .setIcon('separator-horizontal')
                     .onClick(() => {
                         new DividerModal(plugin.app, plugin, file).open();
@@ -53,7 +54,7 @@ export class MenuHelper {
         
         menu.addItem((item) => {
             const isHidden = style && typeof style === 'object' && style.isHidden;
-            item.setTitle(isHidden ? "Unhide item" : "Hide item")
+            item.setTitle(isHidden ? t("menu.unhide_item") : t("menu.hide_item"))
                 .setIcon(isHidden ? 'eye' : 'eye-off')
                 .onClick(async () => {
                     let s = plugin.settings.customFolderColors[file.path];
@@ -64,7 +65,7 @@ export class MenuHelper {
                     s.isHidden = !s.isHidden;
                     await plugin.saveSettings();
                     void plugin.generateStyles();
-                    new obsidian.Notice(`${s.isHidden ? 'Hidden' : 'Revealed'}: ${file.name}`);
+                    new obsidian.Notice(t(s.isHidden ? "notice.hidden_for" : "notice.revealed_for"));
                 });
         });
 
@@ -74,7 +75,7 @@ export class MenuHelper {
         if (obsidian.Platform.isMobile) {
             // Flatten on mobile since native sheets don't support nested submenus
             menu.addItem((sub: obsidian.MenuItem) => {
-                sub.setTitle('Change icon / color')
+                sub.setTitle(t("menu.change_icon_color"))
                     .setIcon('palette')
                     .onClick(() => {
                         new ColorPickerModal(plugin.app, plugin, file, 'icon').open();
@@ -82,7 +83,7 @@ export class MenuHelper {
             });
 
             menu.addItem((sub: obsidian.MenuItem) => {
-                sub.setTitle('Change color')
+                sub.setTitle(t("menu.change_color_only"))
                     .setIcon('pipette')
                     .onClick(() => {
                         new ColorPickerModal(plugin.app, plugin, file, 'color').open();
@@ -90,7 +91,7 @@ export class MenuHelper {
             });
 
             menu.addItem((sub: obsidian.MenuItem) => {
-                sub.setTitle('Change background')
+                sub.setTitle(t("menu.change_background"))
                     .setIcon('paint-bucket')
                     .onClick(() => {
                         new ColorPickerModal(plugin.app, plugin, file, 'background').open();
@@ -100,26 +101,26 @@ export class MenuHelper {
             const existing = plugin.settings.customFolderColors[file.path];
             if (existing) {
                 menu.addItem((sub: obsidian.MenuItem) => {
-                    sub.setTitle('Clear style')
+                    sub.setTitle(t("menu.clear_style"))
                         .setIcon('eraser')
                         .onClick(async () => {
                             delete plugin.settings.customFolderColors[file.path];
                             await plugin.saveSettings();
                             void plugin.generateStyles();
-                            new obsidian.Notice(`Cleared style for ${file.name}`);
+                            new obsidian.Notice(t("notice.cleared_style"));
                         });
                 });
             }
         } else {
             // Grouped in submenu on desktop for a cleaner UI layout
             menu.addItem((item: obsidian.MenuItem) => {
-                item.setTitle('Set custom style')
+                item.setTitle(t("menu.set_custom_style"))
                     .setIcon('palette');
                 
                 const subMenu = (item as MenuItemWithSubmenu).setSubmenu();
 
                 subMenu.addItem((sub: obsidian.MenuItem) => {
-                    sub.setTitle('Change icon / color')
+                    sub.setTitle(t("menu.change_icon_color"))
                         .setIcon('palette')
                         .onClick(() => {
                             new ColorPickerModal(plugin.app, plugin, file, 'icon').open();
@@ -127,7 +128,7 @@ export class MenuHelper {
                 });
 
                 subMenu.addItem((sub: obsidian.MenuItem) => {
-                    sub.setTitle('Change color')
+                    sub.setTitle(t("menu.change_color_only"))
                         .setIcon('pipette')
                         .onClick(() => {
                             new ColorPickerModal(plugin.app, plugin, file, 'color').open();
@@ -135,7 +136,7 @@ export class MenuHelper {
                 });
 
                 subMenu.addItem((sub: obsidian.MenuItem) => {
-                    sub.setTitle('Change background')
+                    sub.setTitle(t("menu.change_background"))
                         .setIcon('paint-bucket')
                         .onClick(() => {
                             new ColorPickerModal(plugin.app, plugin, file, 'background').open();
@@ -146,13 +147,13 @@ export class MenuHelper {
                 if (existing) {
                     subMenu.addSeparator();
                     subMenu.addItem((sub: obsidian.MenuItem) => {
-                        sub.setTitle('Clear style')
+                        sub.setTitle(t("menu.clear_style"))
                             .setIcon('eraser')
                             .onClick(async () => {
                                 delete plugin.settings.customFolderColors[file.path];
                                 await plugin.saveSettings();
                                 void plugin.generateStyles();
-                                new obsidian.Notice(`Cleared style for ${file.name}`);
+                                new obsidian.Notice(t("notice.cleared_style"));
                             });
                     });
                 }

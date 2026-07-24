@@ -1,11 +1,12 @@
 import * as obsidian from 'obsidian';
 import { EffectiveStyle, FolderStyle, IColorfulFoldersPlugin } from '../common/types';
 import { ColorResolver, getCurrentPalette, isDarkMode } from './ColorResolver';
-import { anyToHex, hexToRgbObj, parseCustomPalette } from '../common/utils';
+import { anyToHex, hexToRgbObj, parseCustomPalette, normalizeVaultPath } from '../common/utils';
 
 export class StyleResolver {
     public static getStyle(plugin: IColorfulFoldersPlugin, path: string): FolderStyle | null {
-        const style = plugin.settings.customFolderColors[path];
+        const normPath = normalizeVaultPath(path);
+        const style = plugin.settings.customFolderColors[normPath] || plugin.settings.customFolderColors[path];
         if (!style) return null;
         if (typeof style === "string") return { hex: style };
         return style;
@@ -80,7 +81,7 @@ export class StyleResolver {
                         .filter((c): c is obsidian.TFolder => c instanceof obsidian.TFolder)
                         .filter((c) => !c.name.startsWith('.'))
                         .filter((c) => !excludeFolders.has(c.name.toLowerCase()))
-                        .sort((a, b) => a.name.localeCompare(b.name));
+                        .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
                     
                     siblings.forEach((s, idx) => plugin.folderSortCache.set(s.path, idx));
                     return plugin.folderSortCache.get(folder.path) || 0;
@@ -102,7 +103,7 @@ export class StyleResolver {
                         .filter((c): c is obsidian.TFolder => c instanceof obsidian.TFolder)
                         .filter((c) => !c.name.startsWith('.'))
                         .filter((c) => !excludeFolders.has(c.name.toLowerCase()))
-                        .sort((a, b) => a.name.localeCompare(b.name));
+                        .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
                         
                     rootSiblings.forEach((s, idx) => {
                         plugin.rootSortCache.set(s.name, idx);

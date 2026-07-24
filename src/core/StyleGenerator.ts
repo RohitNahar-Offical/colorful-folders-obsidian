@@ -142,8 +142,8 @@ export class StyleGenerator {
                 copyFiles.push(child);
             }
         }
-        copyFolders.sort((a, b) => a.name.localeCompare(b.name));
-        copyFiles.sort((a, b) => a.name.localeCompare(b.name));
+        copyFolders.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+        copyFiles.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
 
         const currentPalette = context.currentPalette;
         const isDark = context.isDark;

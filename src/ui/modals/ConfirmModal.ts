@@ -1,4 +1,5 @@
 import * as obsidian from 'obsidian';
+import { t } from '../../lang/helpers';
 
 export class ConfirmModal extends obsidian.Modal {
     private onConfirm: () => void | Promise<void>;
@@ -19,7 +20,7 @@ export class ConfirmModal extends obsidian.Modal {
 
         new obsidian.Setting(contentEl)
             .addButton(btn => {
-                btn.setButtonText('Confirm');
+                btn.setButtonText(t("common.confirm"));
                 (btn as unknown as { setWarning: () => typeof btn }).setWarning();
                 btn.onClick(async () => {
                     await this.onConfirm();
@@ -27,7 +28,7 @@ export class ConfirmModal extends obsidian.Modal {
                 });
             })
             .addButton(btn => btn
-                .setButtonText('Cancel')
+                .setButtonText(t("common.cancel"))
                 .onClick(() => {
                     this.close();
                 }));

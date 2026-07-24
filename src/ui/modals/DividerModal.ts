@@ -4,7 +4,7 @@ import { FolderStyle, IColorfulFoldersPlugin } from '../../common/types';
 import { IconPickerModal } from './IconPickerModal';
 import { HoverMessageModal } from './HoverMessageModal';
 import { createVisualColorPicker } from '../components/ColorPicker';
-import { parseColorToHexAlpha, hexAlphaToRgba } from '../../common/utils';
+import { parseColorToHexAlpha, hexAlphaToRgba, normalizeVaultPath } from '../../common/utils';
 
 export class DividerModal extends obsidian.Modal {
     plugin: IColorfulFoldersPlugin;
@@ -35,7 +35,7 @@ export class DividerModal extends obsidian.Modal {
         super(app);
         this.plugin = plugin;
         this.item = item;
-        this.path = item.path;
+        this.path = normalizeVaultPath(item.path);
         
         this.originalStyle = this.plugin.settings.customFolderColors?.[this.path];
         let existingStyle: FolderStyle = {};

@@ -352,11 +352,11 @@ export class DividerManager {
                 const spaceAbove = rect.top;
                 const needsFlip = spaceAbove < (popHeight + 40);
                 
+                const topVal = needsFlip ? `${rect.bottom + 12}px` : `${rect.top - 12}px`;
                 if (needsFlip) {
                     popover.addClass('is-below');
-                    popover.style.top = `${rect.bottom + 12}px`;
                 } else {
-                    popover.style.top = `${rect.top - 12}px`;
+                    popover.removeClass('is-below');
                 }
 
                 // Smart Adaptive Horizontal Positioning
@@ -372,7 +372,10 @@ export class DividerManager {
                     targetLeft = popWidth / 2 + minPadding;
                 }
                 
-                popover.style.left = `${targetLeft}px`;
+                popover.setCssProps({
+                    '--cf-popover-top': topVal,
+                    '--cf-popover-left': `${targetLeft}px`
+                });
                 
                 // Keep open on popover hover (The Bridge)
                 popover.onmouseenter = () => {
