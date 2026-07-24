@@ -2395,7 +2395,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         try {
             const res = await obsidian.requestUrl({ url });
             const data = res.json as Record<string, unknown>;
-            const count = await this.processIconData(data);
+            await this.processIconData(data);
             new obsidian.Notice(t("notice.import_success"));
 
             (this as unknown as { display: () => void }).display();

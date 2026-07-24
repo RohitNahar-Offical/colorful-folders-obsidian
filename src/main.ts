@@ -299,14 +299,13 @@ export default class ColorfulFoldersPlugin
     }
   }
 
-  /* eslint-disable obsidianmd/rule-custom-message */
   initStaircaseStyleStripper() {
-    console.log("Starting style-stripper script...");
+    console.debug("Starting style-stripper script...");
 
     const win = window as unknown as Window & { _testerObserver?: MutationObserver };
     if (win._testerObserver) {
       win._testerObserver.disconnect();
-      console.log("Disconnected previous observer.");
+      console.debug("Disconnected previous observer.");
     }
 
     let isStripping = false;
@@ -336,7 +335,7 @@ export default class ColorfulFoldersPlugin
       items.forEach(stripStyle);
       totalStripped += items.length;
     });
-    console.log(`Stripped styles from ${totalStripped} existing items.`);
+    console.debug(`Stripped styles from ${totalStripped} existing items.`);
 
     // 2. Continuous Mutation Observer for React inline style re-injections
     win._testerObserver = new MutationObserver((mutations) => {
@@ -629,20 +628,20 @@ export default class ColorfulFoldersPlugin
       settingsManager?: StyleSettingsManager;
     }
 
-    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
+    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- Accessing internal Obsidian app/plugins API for Blue Topaz theme detection */
     const appAny = this.app as unknown as Record<string, unknown>;
     const vaultAny = this.app.vault as unknown as Record<string, unknown>;
     const getConfig = typeof vaultAny.getConfig === "function" ? (vaultAny.getConfig as (key: string) => string | null).bind(vaultAny) : null;
     const customCss = appAny.customCss as { theme?: string } | undefined;
     const themeName = customCss?.theme || "";
     const currentTheme = (getConfig ? getConfig("cssTheme") : null) || themeName;
-    if (!currentTheme || (currentTheme as string).toLowerCase() !== "blue topaz") return false;
+    if (!currentTheme || currentTheme.toLowerCase() !== "blue topaz") return false;
 
     const pluginsObj = appAny.plugins as { getPlugin?: (id: string) => StyleSettingsPlugin | null } | undefined;
     if (!pluginsObj?.getPlugin) return false;
     const styleSettingsPlugin = pluginsObj.getPlugin("obsidian-style-settings");
     if (!styleSettingsPlugin) return false;
-    /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
+    /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- Re-enable linting rules */
 
     const manager = styleSettingsPlugin?.settingsManager;
     if (!manager || !manager.settings) return false;

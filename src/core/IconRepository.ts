@@ -169,8 +169,7 @@ export class IconRepository {
         this._findPackIconCache.set(searchKey, result);
         
         if (this.plugin.settings.iconDebugMode) {
-            // eslint-disable-next-line obsidianmd/rule-custom-message
-            console.log(`ColorfulFolders: Search icon match for "${searchKey}": ${result}`);
+            console.debug(`ColorfulFolders: Search icon match for "${searchKey}": ${result}`);
         }
         
         return result;

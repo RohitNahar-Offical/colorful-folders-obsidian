@@ -273,7 +273,7 @@ modifiedFields: Set<string>;
                         } else {
                             const rawSvg = this.plugin.iconManager.getIconSvg(currentIconId, false);
                             if (rawSvg) {
-                                // eslint-disable-next-line no-unsanitized/method
+                                // eslint-disable-next-line no-unsanitized/method -- Contextual fragment is safe here as svg content comes from curated internal asset maps or local files
                                 const frag = activeDocument.createRange().createContextualFragment(rawSvg);
                                 const svgEl = frag.querySelector("svg");
                                 if (svgEl) {
@@ -953,7 +953,7 @@ modifiedFields: Set<string>;
             } else {
                 const rawSvg = this.plugin.iconManager.getIconSvg(id, false);
                 if (rawSvg) {
-                    // eslint-disable-next-line no-unsanitized/method
+                    // eslint-disable-next-line no-unsanitized/method -- Contextual fragment is safe here as svg content comes from curated internal asset maps or local files
                     const frag = activeDocument.createRange().createContextualFragment(rawSvg);
                     const svgEl = frag.querySelector("svg");
                     if (svgEl) {
