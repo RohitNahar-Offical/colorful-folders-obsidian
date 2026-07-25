@@ -243,7 +243,7 @@ export class NotebookNavigatorIntegration {
                 content: "" !important;
                 opacity: 0.5 !important;
                 visibility: visible !important;
-            `, [target], `nnFallback_${fallbackSvg}_${effIconW}`);
+            `, [target], `nnFallback_${iconColor || color.hex || textCol}_${fallbackSvg}_${effIconW}`);
             grouper.add(`display: none !important;`, [`${target} *`], `nnDisplayNone`);
         }
 

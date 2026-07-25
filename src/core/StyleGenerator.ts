@@ -208,7 +208,7 @@ export class StyleGenerator {
                     true,
                     depth,
                     validIndex,
-                    0,
+                    rootIndex,
                     fileStyle,
                     inheritedStyle,
                     passedColor,
@@ -653,6 +653,7 @@ export class StyleGenerator {
                     this.settings.colorText === 'all' || this.settings.colorText === 'folders' || this.settings.colorText === true || this.settings.colorText === undefined
                 )
             };
+            const folderIconColor = customStyle?.iconColor || color.hex || folderStyles.t;
 
             const isBold = customStyle?.isBold !== undefined ? customStyle.isBold : (inheritedStyle?.isBold !== undefined ? inheritedStyle.isBold : true);
             const isItalic = customStyle?.isItalic !== undefined ? customStyle.isItalic : (inheritedStyle?.isItalic !== undefined ? inheritedStyle.isItalic : false);
@@ -848,12 +849,12 @@ export class StyleGenerator {
                             width: ${folderIconW} !important;
                             height: ${folderIconW} !important;
                             margin-right: 4px !important;
-                            background-color: ${customStyle?.iconColor || color.hex || folderStyles.t} !important;
+                            background-color: ${folderIconColor} !important;
                             -webkit-mask-image: url("data:image/svg+xml,${svgStr}") !important;
                             -webkit-mask-repeat: no-repeat !important;
                             -webkit-mask-position: center !important;
                             -webkit-mask-size: contain !important;
-                        `, sels, `icon_${iconIdToUse}_svg_${folderIconW}_${isExpandedState ? 'expanded' : 'collapsed'}`);
+                        `, sels, `icon_${iconIdToUse}_svg_${folderIconW}_${folderIconColor}_${isExpandedState ? 'expanded' : 'collapsed'}`);
                     }
                 }
             };
@@ -883,7 +884,7 @@ export class StyleGenerator {
                     width: ${folderIconW} !important;
                     height: ${folderIconW} !important;
                     margin-right: 4px !important;
-                    background-color: ${customStyle?.iconColor || color.hex || folderStyles.t} !important;
+                    background-color: ${folderIconColor} !important;
                     -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(closedSvg)}") !important;
                     -webkit-mask-repeat: no-repeat !important;
                     -webkit-mask-position: center !important;
@@ -891,7 +892,7 @@ export class StyleGenerator {
                 `, [
                     `${baseNav}.is-collapsed > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
                     `${baseTree}.is-collapsed > .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
-                ], `icon_closed_folder_${folderIconW}`);
+                ], `icon_closed_folder_${folderIconW}_${folderIconColor}`);
 
                 // Open State
                 grouper.add(`
@@ -902,7 +903,7 @@ export class StyleGenerator {
                     width: ${folderIconW} !important;
                     height: ${folderIconW} !important;
                     margin-right: 4px !important;
-                    background-color: ${customStyle?.iconColor || color.hex || folderStyles.t} !important;
+                    background-color: ${folderIconColor} !important;
                     -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(openSvg)}") !important;
                     -webkit-mask-repeat: no-repeat !important;
                     -webkit-mask-position: center !important;
@@ -910,7 +911,7 @@ export class StyleGenerator {
                 `, [
                     `${baseNav}:not(.is-collapsed) > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
                     `${baseTree}:not(.is-collapsed) > .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
-                ], `icon_open_folder_${folderIconW}`);
+                ], `icon_open_folder_${folderIconW}_${folderIconColor}`);
             }
 
             if (this.settings.showItemCounters) {

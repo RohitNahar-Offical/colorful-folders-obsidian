@@ -94,7 +94,9 @@ export class ColorResolver {
                 : (rgb ? { rgb: `${rgb.r}, ${rgb.g}, ${rgb.b}`, hex: inheritedStyle.hex } : palette[0]);
         } else if (isFile) {
             const parentColor = passedColor ?? (depth > 0 ? getFolderColor(0, depth - 1, rootIndex) : null);
-            if (inheritedStyle?.applyToFiles && parentColor) {
+            if (colorMode === "hierarchy" || colorMode === "monochromatic") {
+                return getFolderColor(validIndex, depth, rootIndex);
+            } else if (inheritedStyle?.applyToFiles && parentColor) {
                 const hObj = hexToRgbObj(inheritedStyle.hex ?? parentColor.hex) ?? { r: 235, g: 111, b: 146 };
                 const nameHash = hashString(name);
                 const offset = ((nameHash % 5) - 2) * 5;
