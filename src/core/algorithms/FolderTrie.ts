@@ -1,4 +1,5 @@
 import { FolderStyle } from '../../common/types';
+import { normalizeVaultPath } from '../../common/utils';
 
 export class FolderTrieNode {
     segment: string;
@@ -18,7 +19,8 @@ export class FolderTrie {
      */
     insert(path: string, style: FolderStyle): void {
         if (!path) return;
-        const segments = path.split('/').filter(Boolean);
+        const norm = normalizeVaultPath(path);
+        const segments = norm.split('/').filter(Boolean);
         let curr = this.root;
 
         for (const seg of segments) {
@@ -38,7 +40,8 @@ export class FolderTrie {
      */
     delete(path: string): void {
         if (!path) return;
-        const segments = path.split('/').filter(Boolean);
+        const norm = normalizeVaultPath(path);
+        const segments = norm.split('/').filter(Boolean);
         this.deleteRecursive(this.root, segments, 0);
     }
 
@@ -66,7 +69,8 @@ export class FolderTrie {
      */
     getDirectStyle(path: string): FolderStyle | null {
         if (!path) return null;
-        const segments = path.split('/').filter(Boolean);
+        const norm = normalizeVaultPath(path);
+        const segments = norm.split('/').filter(Boolean);
         let curr = this.root;
 
         for (const seg of segments) {
@@ -89,7 +93,8 @@ export class FolderTrie {
             return { directStyle: null, inheritedStyle: null };
         }
 
-        const segments = path.split('/').filter(Boolean);
+        const norm = normalizeVaultPath(path);
+        const segments = norm.split('/').filter(Boolean);
         let curr = this.root;
         let directStyle: FolderStyle | null = null;
         let inheritedStyle: FolderStyle | null = null;

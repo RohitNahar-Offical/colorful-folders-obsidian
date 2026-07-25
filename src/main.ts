@@ -20,6 +20,7 @@ import { EventTrackerService } from "./services/EventTrackerService";
 import { AdoptedStyleSheetService } from "./services/AdoptedStyleSheetService";
 import { IconManager } from "./core/IconManager";
 import { t } from './lang/helpers';
+import { normalizeVaultPath } from './common/utils';
 
 declare module "obsidian" {
   interface Workspace {
@@ -237,20 +238,22 @@ export default class ColorfulFoldersPlugin
         const svgFiles = await this.getAllSvgFiles(iconsPath);
 
         this.localFileSystemIcons = {};
+        const normIconsPath = normalizeVaultPath(iconsPath);
         const iconReads = svgFiles.map(async (file) => {
-          const relPath = file.substring(iconsPath.length + 1);
+          const normFile = normalizeVaultPath(file);
+          const relPath = normFile.startsWith(normIconsPath) ? normFile.substring(normIconsPath.length + 1) : normFile;
           const content = await adapter.read(file);
           return { relPath, content };
         });
         const readResults = await Promise.all(iconReads);
 
         for (const { relPath, content } of readResults) {
-          const parts = relPath.split('/');
+          const parts = relPath.split(/[\/\\]/);
           const filename = parts[parts.length - 1].slice(0, -4);
           const lowerFilename = filename.toLowerCase();
           
           const relNoExt = relPath.slice(0, -4);
-          const hyphenated = relNoExt.toLowerCase().replace(/[\s_]+/g, '-').replace(/\//g, '-');
+          const hyphenated = relNoExt.toLowerCase().replace(/[\s_]+/g, '-').replace(/[\/\\]/g, '-');
           this.localFileSystemIcons[hyphenated] = content;
 
           if (parts.length > 1) {
