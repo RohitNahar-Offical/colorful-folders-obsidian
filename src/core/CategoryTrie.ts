@@ -15,12 +15,10 @@ export class CategoryTrie {
             if (matches && matches.length > 0 && !source.startsWith('.') && !source.startsWith('\\')) {
                 const uniqueChars = new Set(matches.slice(0, 5));
                 for (const char of uniqueChars) {
-                    let list = this.trieMap.get(char);
-                    if (!list) {
-                        list = [];
-                        this.trieMap.set(char, list);
+                    if (!this.trieMap.has(char)) {
+                        this.trieMap.set(char, []);
                     }
-                    list.push(cat);
+                    this.trieMap.get(char)!.push(cat);
                 }
             } else {
                 this.fallbackCategories.push(cat);
