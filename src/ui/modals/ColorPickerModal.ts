@@ -488,8 +488,11 @@ modifiedFields: Set<string>;
 
         const opSlider = opRow.createEl('input', { type: 'range' });
         opSlider.min = '0'; opSlider.max = '100';
-        const isDark = activeDocument.body.classList.contains("theme-dark");
-        const defaultOp = this.isFolder ? (this.plugin.settings.rootOpacity ?? 0.5) : (this.plugin.settings.fileBackgroundOpacity ?? (isDark ? 0.1 : 0.15));
+        const isDark = isDarkMode();
+        const isAutoFileOn = this.plugin.settings.outlineOnly ? false : this.plugin.settings.autoColorFiles;
+        const defaultOp = this.isFolder 
+            ? (this.plugin.settings.rootOpacity ?? 0.5) 
+            : (isAutoFileOn ? (this.plugin.settings.fileBackgroundOpacity ?? (isDark ? 0.1 : 0.15)) : 0.0);
         opSlider.value = String(Math.round((this.folderStyle.opacity ?? defaultOp) * 100));
         opSlider.setCssStyles({ flex: '1', cursor: 'pointer' });
 

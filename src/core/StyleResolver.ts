@@ -135,6 +135,7 @@ export class StyleResolver {
                 }
             }
 
+            const autoColorFiles = plugin.settings.outlineOnly ? false : plugin.settings.autoColorFiles;
             const color = ColorResolver.resolveColor(
                 path,
                 target.name,
@@ -150,7 +151,7 @@ export class StyleResolver {
                 palette,
                 heatmapMtime,
                 plugin.settings.globalBackgroundColor || "",
-                plugin.settings.autoColorFiles,
+                autoColorFiles,
                 isNNActive
             );
 
@@ -163,7 +164,7 @@ export class StyleResolver {
                 plugin.settings.rootOpacity,
                 plugin.settings.subfolderOpacity,
                 plugin.settings.rootStyle,
-                plugin.settings.autoColorFiles,
+                autoColorFiles,
                 isNNActive,
                 isDark
             );

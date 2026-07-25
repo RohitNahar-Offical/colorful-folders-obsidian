@@ -158,7 +158,7 @@ export class StyleGenerator {
         const outlineOnly = this.settings.outlineOnly;
         const nnFileBgActive = NotebookNavigatorIntegration.showFileBg(this.settings);
         const tintOp = this.settings.tintOpacity;
-        const autoColorFiles = this.settings.autoColorFiles;
+        const autoColorFiles = outlineOnly ? false : this.settings.autoColorFiles;
         const autoIcons = this.settings.autoIcons;
         const baseThick = this.settings.pathLineThickness ?? 2.0;
         const folderThick = baseThick + 0.5;
@@ -210,10 +210,9 @@ export class StyleGenerator {
                     this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground
                 );
 
-                // isCustomOrInherited: true when file has a custom style, or a parent explicitly set applyToFiles
-                const isCustomOrInherited = !!(fileStyle && fileStyle.hex) || (!!(inheritedStyle && inheritedStyle.applyToFiles) && this.settings.autoColorFiles);
-                const shouldColorNative = isCustomOrInherited || this.settings.autoColorFiles || !!this.settings.globalBackgroundColor;
-                const shouldColorNN = isCustomOrInherited || (this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground);
+                const hasExplicitFileOpacity = fileStyle?.opacity !== undefined && fileStyle.opacity > 0;
+                const shouldColorNative = this.settings.autoColorFiles || hasExplicitFileOpacity;
+                const shouldColorNN = (this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground) || hasExplicitFileOpacity;
 
                 const activeStyle = fileStyle || (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle : null);
                 const iconColor = fileStyle?.iconColor || (inheritedStyle?.applyToFiles && inheritedStyle.iconColor) || null;
