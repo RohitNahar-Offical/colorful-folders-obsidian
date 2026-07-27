@@ -74,7 +74,7 @@ While not a direct security issue, a "Denial of Service" via a massive vault is 
 ### 🛡️ The Defense:
 - **Password Storage**: Passwords are stored in `data.json`. While not encrypted, they are used strictly for local session locking.
 - **Session Management**: The `isVaultLocked` state is managed in-memory, meaning the password is required for every new Obsidian session.
-- **No Network Leakage**: No vault structure or passwords are ever sent to external servers.
+- **No Network Leakage **: No vault structure or passwords are ever sent to external servers.
 
 ---
 

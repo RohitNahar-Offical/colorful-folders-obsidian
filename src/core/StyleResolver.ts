@@ -152,7 +152,8 @@ export class StyleResolver {
                 heatmapMtime,
                 plugin.settings.globalBackgroundColor || "",
                 autoColorFiles,
-                isNNActive
+                isNNActive,
+                plugin.settings.fileColorMode
             );
 
             const op = ColorResolver.resolveOpacity(

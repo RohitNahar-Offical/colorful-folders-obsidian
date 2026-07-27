@@ -56,7 +56,8 @@ export class ColorResolver {
         heatmapMtime: number,
         globalBackgroundColor: string,
         autoColorFiles: boolean,
-        isNNActive: boolean
+        isNNActive: boolean,
+        fileColorMode: string = "hierarchy"
     ): { rgb: string, hex: string } {
         const getFolderColor = (vIdx: number, d: number, rIdx: number) => {
             if (colorMode === "heatmap") {
@@ -103,8 +104,19 @@ export class ColorResolver {
                     hex: inheritedStyle.hex ?? parentColor.hex,
                 };
             } else if (autoColorFiles || isNNActive) {
-                const nameHash = hashString(name);
-                return palette[(validIndex + nameHash + cycleOffset) % palette.length];
+                if (fileColorMode === "parent" || fileColorMode === "hierarchy") {
+                    return parentColor ?? getFolderColor(validIndex, depth, rootIndex);
+                } else if (fileColorMode === "sequential") {
+                    return palette[(validIndex + cycleOffset) % palette.length];
+                } else if (fileColorMode === "none") {
+                    const gHex = globalBackgroundColor || "";
+                    const gRgb = hexToRgbObj(gHex);
+                    return parentColor ?? (gRgb ? { rgb: `${gRgb.r}, ${gRgb.g}, ${gRgb.b}`, hex: gHex } : { rgb: "var(--text-normal-rgb)", hex: "var(--text-normal)" });
+                } else {
+                    // "mixed" (Name hash)
+                    const nameHash = hashString(name);
+                    return palette[(validIndex + nameHash + cycleOffset) % palette.length];
+                }
             } else {
                 const gHex = globalBackgroundColor || "";
                 const gRgb = hexToRgbObj(gHex);

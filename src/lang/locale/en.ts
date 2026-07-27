@@ -89,6 +89,13 @@ export default {
     "settings.color_mode.heatmap": "Activity heatmap",
     "settings.color_mode.hierarchy": "Hierarchy level",
 
+    "settings.file_color_mode.name": "File color mode",
+    "settings.file_color_mode.desc": "Choose how file colors are generated in relation to folder depth levels.",
+    "settings.file_color_mode.parent": "Match parent folder color",
+    "settings.file_color_mode.mixed": "Mixed rainbow (Name hash)",
+    "settings.file_color_mode.sequential": "Sequential cycle",
+    "settings.file_color_mode.none": "Theme default / None",
+
     "settings.palette_light.name": "Light mode palette",
     "settings.palette_light.desc": "Select a curated color scheme for your vault in light mode.",
     "settings.palette_dark.name": "Dark mode palette",

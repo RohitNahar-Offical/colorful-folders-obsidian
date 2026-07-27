@@ -1147,9 +1147,24 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 .addOption('monochromatic', t("settings.color_mode.monochromatic"))
                 .addOption('heatmap', t("settings.color_mode.heatmap"))
                 .addOption('hierarchy', t("settings.color_mode.hierarchy"))
-                .setValue(this.plugin.settings.colorMode)
+                .setValue(this.plugin.settings.colorMode || 'cycle')
                 .onChange(async (value) => {
                     this.plugin.settings.colorMode = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStylesDebounced();
+                }));
+
+        new obsidian.Setting(genCard)
+            .setName(t("settings.file_color_mode.name"))
+            .setDesc(t("settings.file_color_mode.desc"))
+            .addDropdown(drop => drop
+                .addOption('parent', t("settings.file_color_mode.parent"))
+                .addOption('mixed', t("settings.file_color_mode.mixed"))
+                .addOption('sequential', t("settings.file_color_mode.sequential"))
+                .addOption('none', t("settings.file_color_mode.none"))
+                .setValue(this.plugin.settings.fileColorMode || 'mixed')
+                .onChange(async (value) => {
+                    this.plugin.settings.fileColorMode = value;
                     await this.plugin.saveSettings();
                     this.plugin.generateStylesDebounced();
                 }));

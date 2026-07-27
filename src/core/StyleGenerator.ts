@@ -207,7 +207,8 @@ export class StyleGenerator {
                     child.stat.mtime,
                     this.settings.globalBackgroundColor || "",
                     this.settings.autoColorFiles,
-                    this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground
+                    this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground,
+                    this.settings.fileColorMode
                 );
 
                 const hasExplicitFileOpacity = fileStyle?.opacity !== undefined && fileStyle.opacity > 0;
