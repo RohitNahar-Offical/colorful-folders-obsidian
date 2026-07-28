@@ -68,6 +68,14 @@ Representing the entire `data.json` structure. Defined in `src/common/types.ts`.
 | `tagSyncEnabled` | `boolean` | Enables syncing folder colors to their respective tags. |
 | `tagSyncMatchFolders` | `boolean` | Auto-syncs tags that perfectly match a styled folder name. |
 | `tagSyncRules` | `string` | Custom line-by-line mapping rules (`#tag = /path`). |
+| **AI Icon Classification** | | |
+| `aiProvider` | `string` | Selected provider (`gemini`, `claude`, `ollama`, `openai`, or `custom`). |
+| `aiApiKey` | `string` | User API Key for Gemini, Claude, or OpenAI. |
+| `aiModelName` | `string` | Target LLM model name (e.g. `gemini-2.5-flash`, `gpt-4o-mini`). |
+| `aiOllamaEndpoint` | `string` | Base URL for local Ollama service (`http://localhost:11434`). |
+| `aiCustomEndpoint` | `string` | Custom OpenAI-compatible API endpoint URL. |
+| `aiKeyConfirmed` | `boolean` | Privacy confirmation modal consent flag. |
+| `aiIncludeFiles` | `boolean` | Enables AI classification for `.md` note files in addition to folders. |
 | **System & Privacy** | | |
 | `presets` | `Record<string, FolderStyle>` | User-saved custom folder styles templates. |
 | `recentlyUsedIcons` | `string[]` | List of recently chosen icon IDs. |

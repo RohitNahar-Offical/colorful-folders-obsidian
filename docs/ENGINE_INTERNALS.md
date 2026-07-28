@@ -16,9 +16,9 @@ Colorful Folders hooks into the Obsidian event bus and DOM observers reactively:
 | `file-open` | `EventTrackerService` | Updates active folder path markers dynamically (`.is-active-path`). |
 | `dragstart` | `EventTrackerService` | Sets `plugin.isDragging = true` and suspends all styling and observer work during drag. |
 | `dragend` | `EventTrackerService` | Resets `isDragging` and runs a catch-up render. |
-| `create` / `delete` / `rename` | `EventTrackerService` | Vault structure changes; invalidates item count, heatmap, and icon caches. |
+| `create` / `delete` / `modify` | `PluginLifecycleService` | Vault structure changes; invalidates item count, container, and icon caches. |
 | `scroll` (container) | `DOMObserverService` | Suspends observer calculations during active scroll, queuing a single debounced catch-up sync after scroll stops. |
-| `layout-ready` | `main.ts` | Triggers startup cache pre-warming via `requestIdleCallback()` for core folder and document icons. |
+| `layout-ready` | `PluginLifecycleService` | Triggers startup cache pre-warming via `requestIdleCallback()` for core folder and document icons. |
 | `generateStyles` (post-render) | `main.ts / GraphColorSync` | Syncs folder colors to `.obsidian/graph.json` color groups if `graphColorSync` is enabled. |
 
 ---

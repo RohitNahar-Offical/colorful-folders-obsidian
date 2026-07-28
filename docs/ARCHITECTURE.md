@@ -171,7 +171,35 @@ graph TD
 
 ---
 
-### 3.3 Pack Priority & Tie-Breaking (`PACK_PRIORITY`)
+### 3.4 AI-Powered Icon Classification & Candidate Resolution (`AIIconClassifier.ts`)
+
+For intelligent, context-aware icon assignment across entire vaults, `AIIconClassifier` coordinates LLM query providers with `IconRepository`:
+
+```mermaid
+graph TD
+    A[User Triggers AI Auto-Assign] --> B{Check aiKeyConfirmed Privacy Consent}
+    B -- Confirmed --> C[Collect Vault Folders & Markdown Files]
+    C --> D[Sample Installed Packs simple-icons, feather, remix, tabler, etc.]
+    D --> E[Build Domain & Synonym Candidate System Prompt]
+    E --> F{Dispatch Provider queryGemini / queryClaude / queryOllama / queryOpenAI}
+    F --> G[Receive LLM JSON Response]
+    G --> H[Strip Thinking Tags & Parse Candidate Synonym Arrays]
+    H --> I[Iterate Candidates: Match via IconRepository.findIconInPacks]
+    I --> J[Save Matched iconId to customFolderColors in data.json]
+    J --> K[Trigger plugin.generateStyles Stylesheet Update]
+```
+
+#### How AI Icon Assignment Works:
+1. **Scope Selection**: Collects all vault folders and (if `aiIncludeFiles: true`) `.md` files, payloading `title`, `path`, `parent`, `files`, and `tags`.
+2. **Pack-Aware Prompt Generation**: Samples installed icon packs (`simple-icons`, `feather`, `remix`, `tabler`, `octicon`, `fontawesome`, `boxicons`, `rpg-awesome`, `lucide`) to construct domain and synonym instructions.
+3. **Candidate Synonym Array Output**: System prompt instructs the AI model to output an array of up to 4 synonym candidates ordered from most specific to general (e.g. `{ "Finances/Amazon.md": ["simple-icons-amazon", "shopping", "box", "package"] }`).
+4. **Resilient LLM Response Parsing**: Strips DeepSeek/Ollama `<think>...</think>` tags and markdown codeblocks via `parseJsonResponse()`.
+5. **Icon Pack Matching**: For each item, iterates through candidate synonyms in priority order, resolving exact pack IDs or invoking `IconRepository.findIconInPacks(candidate)`.
+6. **Persistence & Instant Render**: Stores resolved `iconId` directly in `settings.customFolderColors[path].iconId`, calls `saveSettings()`, and updates document stylesheets immediately via `generateStyles()`.
+
+---
+
+### 3.5 Pack Priority & Tie-Breaking (`PACK_PRIORITY`)
 
 When suffix matches overlap across multiple installed packs (e.g. `github` in `simple-icons` vs `feather`), `IconPackIndex` breaks ties at index-build time using `PACK_PRIORITY`:
 
