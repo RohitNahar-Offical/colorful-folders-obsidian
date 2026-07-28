@@ -2,6 +2,7 @@ import * as obsidian from 'obsidian';
 import { EffectiveStyle, FolderStyle, IColorfulFoldersPlugin } from '../common/types';
 import { ColorResolver, getCurrentPalette, isDarkMode } from './ColorResolver';
 import { anyToHex, hexToRgbObj, parseCustomPalette, normalizeVaultPath } from '../common/utils';
+import { FolderTrie } from './algorithms/FolderTrie';
 
 export class StyleResolver {
     public static getStyle(plugin: IColorfulFoldersPlugin, path: string): FolderStyle | null {

@@ -41,17 +41,4 @@ export class IconManager {
     preNormalizeIcon(id: string, rawSvg: string): void {
         this.repository.preNormalizeIcon(id, rawSvg);
     }
-
-    /** Compatibility methods for Zero-DOM architecture. */
-    injectIconsForNodes(_nodes: NodeList | Node[]): void {
-        // Zero-DOM Architecture: Icons are rendered via adoptedStyleSheets CSS Data URIs.
-    }
-
-    injectIcon(_el: HTMLElement, _style: FolderStyle): void {
-        // Zero-DOM Architecture: Icons are rendered via adoptedStyleSheets CSS Data URIs.
-    }
-
-    doInjectIcon(_el: HTMLElement, _style: FolderStyle): void {
-        // Zero-DOM Architecture: Icons are rendered via adoptedStyleSheets CSS Data URIs.
-    }
 }

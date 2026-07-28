@@ -405,145 +405,152 @@ Context & Pack Selection Instructions:
         const userPrompt = JSON.stringify(payload);
 
         if (provider === 'gemini') {
-            const apiKey = settings.aiApiKey?.trim();
-            const model = (settings.aiModelName || 'gemini-2.5-flash').trim().replace(/^models\//, '');
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+            return this.queryGemini(settings, systemPrompt, userPrompt);
+        } else if (provider === 'ollama') {
+            return this.queryOllama(settings, systemPrompt, userPrompt);
+        } else if (provider === 'claude') {
+            return this.queryClaude(settings, systemPrompt, userPrompt);
+        } else {
+            return this.queryOpenAI(settings, provider, systemPrompt, userPrompt);
+        }
+    }
 
+    private static async queryGemini(settings: any, systemPrompt: string, userPrompt: string): Promise<Record<string, unknown>> {
+        const apiKey = settings.aiApiKey?.trim();
+        const model = (settings.aiModelName || 'gemini-2.5-flash').trim().replace(/^models\//, '');
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+        const response = await requestUrl({
+            url,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: systemPrompt + "\n\nItems to classify:\n" + userPrompt }] }],
+                generationConfig: { responseMimeType: "application/json" }
+            })
+        });
+
+        const data = response.json;
+        const textResult = data?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+        return this.parseJsonResponse(textResult);
+    }
+
+    private static async queryOllama(settings: any, systemPrompt: string, userPrompt: string): Promise<Record<string, unknown>> {
+        const model = (settings.aiModelName || 'llama3').trim();
+        const baseUrl = (settings.aiOllamaEndpoint || 'http://localhost:11434').trim().replace(/\/$/, '');
+
+        try {
             const response = await requestUrl({
-                url,
+                url: `${baseUrl}/v1/chat/completions`,
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [
-                        {
-                            parts: [
-                                { text: systemPrompt + "\n\nItems to classify:\n" + userPrompt }
-                            ]
-                        }
-                    ],
-                    generationConfig: {
-                        responseMimeType: "application/json"
-                    }
-                })
-            });
-
-            const data = response.json;
-            const textResult = data?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-            return this.parseJsonResponse(textResult);
-        } else if (provider === 'ollama') {
-            const model = (settings.aiModelName || 'llama3').trim();
-            const baseUrl = (settings.aiOllamaEndpoint || 'http://localhost:11434').trim().replace(/\/$/, '');
-
-            try {
-                const response = await requestUrl({
-                    url: `${baseUrl}/v1/chat/completions`,
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        model,
-                        messages: [
-                            { role: 'system', content: systemPrompt },
-                            { role: 'user', content: userPrompt }
-                        ]
-                    })
-                });
-                const data = response.json;
-                const textResult = data?.choices?.[0]?.message?.content || "{}";
-                return this.parseJsonResponse(textResult);
-            } catch (e) {
-                const errStr = (e as Error)?.message || String(e);
-                if (errStr.includes('net::ERR_CONNECTION_REFUSED') || errStr.includes('Failed to fetch') || errStr.includes('ECONNREFUSED') || errStr.includes('connect')) {
-                    throw new Error(`Could not connect to Ollama at ${baseUrl}. Please ensure the Ollama desktop app or service is running on your machine.`);
-                }
-                console.warn("Colorful Folders AI: Ollama /v1/chat/completions failed, trying /api/generate fallback...", e);
-                const response = await requestUrl({
-                    url: `${baseUrl}/api/generate`,
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        model,
-                        prompt: `${systemPrompt}\n\nItems to classify:\n${userPrompt}`,
-                        stream: false
-                    })
-                });
-                const data = response.json;
-                const textResult = data?.response || "{}";
-                return this.parseJsonResponse(textResult);
-            }
-        } else if (provider === 'claude') {
-            const apiKey = settings.aiApiKey?.trim();
-            const model = (settings.aiModelName || 'claude-3-5-haiku-20241022').trim();
-            const url = 'https://api.anthropic.com/v1/messages';
-
-            const response = await requestUrl({
-                url,
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-api-key': apiKey,
-                    'anthropic-version': '2023-06-01'
-                },
-                body: JSON.stringify({
-                    model,
-                    max_tokens: 4096,
-                    messages: [
-                        { role: 'user', content: systemPrompt + "\n\nItems to classify:\n" + userPrompt }
-                    ]
-                })
-            });
-
-            const data = response.json;
-            const textResult = data?.content?.[0]?.text || "{}";
-            return this.parseJsonResponse(textResult);
-        } else {
-            // OpenAI / Custom Endpoint
-            const apiKey = settings.aiApiKey?.trim() || '';
-            const model = (settings.aiModelName || 'gpt-4o-mini').trim();
-            
-            if (provider === 'custom' && !settings.aiCustomEndpoint?.trim()) {
-                throw new Error("Please enter a valid Custom AI Endpoint URL in Settings -> Icon management -> AI Settings.");
-            }
-
-            const url = provider === 'custom' && settings.aiCustomEndpoint?.trim()
-                ? settings.aiCustomEndpoint.trim()
-                : 'https://api.openai.com/v1/chat/completions';
-
-            // Validate custom endpoint URL scheme
-            if (provider === 'custom') {
-                try {
-                    const endpointUrl = new URL(url);
-                    if (endpointUrl.protocol !== 'https:' && !endpointUrl.hostname.includes('localhost') && !endpointUrl.hostname.startsWith('127.')) {
-                        throw new Error("Custom AI endpoint must use HTTPS or localhost/127.0.0.1 for security.");
-                    }
-                } catch (e) {
-                    if (e instanceof Error && e.message.includes("Custom AI endpoint")) throw e;
-                    throw new Error("Invalid custom AI endpoint URL format.");
-                }
-            }
-
-            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-            if (apiKey) {
-                headers['Authorization'] = `Bearer ${apiKey}`;
-            }
-
-            const response = await requestUrl({
-                url,
-                method: 'POST',
-                headers,
                 body: JSON.stringify({
                     model,
                     messages: [
                         { role: 'system', content: systemPrompt },
                         { role: 'user', content: userPrompt }
-                    ],
-                    response_format: { type: "json_object" }
+                    ]
                 })
             });
-
             const data = response.json;
             const textResult = data?.choices?.[0]?.message?.content || "{}";
             return this.parseJsonResponse(textResult);
+        } catch (e) {
+            const errStr = (e as Error)?.message || String(e);
+            if (errStr.includes('net::ERR_CONNECTION_REFUSED') || errStr.includes('Failed to fetch') || errStr.includes('ECONNREFUSED') || errStr.includes('connect')) {
+                throw new Error(`Could not connect to Ollama at ${baseUrl}. Please ensure the Ollama desktop app or service is running on your machine.`);
+            }
+            console.warn("Colorful Folders AI: Ollama /v1/chat/completions failed, trying /api/generate fallback...", e);
+            const response = await requestUrl({
+                url: `${baseUrl}/api/generate`,
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model,
+                    prompt: `${systemPrompt}\n\nItems to classify:\n${userPrompt}`,
+                    stream: false
+                })
+            });
+            const data = response.json;
+            const textResult = data?.response || "{}";
+            return this.parseJsonResponse(textResult);
         }
+    }
+
+    private static async queryClaude(settings: any, systemPrompt: string, userPrompt: string): Promise<Record<string, unknown>> {
+        const apiKey = settings.aiApiKey?.trim();
+        const model = (settings.aiModelName || 'claude-3-5-haiku-20241022').trim();
+        const url = 'https://api.anthropic.com/v1/messages';
+
+        const response = await requestUrl({
+            url,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': apiKey,
+                'anthropic-version': '2023-06-01'
+            },
+            body: JSON.stringify({
+                model,
+                max_tokens: 4096,
+                messages: [
+                    { role: 'user', content: systemPrompt + "\n\nItems to classify:\n" + userPrompt }
+                ]
+            })
+        });
+
+        const data = response.json;
+        const textResult = data?.content?.[0]?.text || "{}";
+        return this.parseJsonResponse(textResult);
+    }
+
+    private static async queryOpenAI(settings: any, provider: string, systemPrompt: string, userPrompt: string): Promise<Record<string, unknown>> {
+        const apiKey = settings.aiApiKey?.trim() || '';
+        const model = (settings.aiModelName || 'gpt-4o-mini').trim();
+        
+        if (provider === 'custom' && !settings.aiCustomEndpoint?.trim()) {
+            throw new Error("Please enter a valid Custom AI Endpoint URL in Settings -> Icon management -> AI Settings.");
+        }
+
+        const url = provider === 'custom' && settings.aiCustomEndpoint?.trim()
+            ? settings.aiCustomEndpoint.trim()
+            : 'https://api.openai.com/v1/chat/completions';
+
+        // Validate custom endpoint URL scheme
+        if (provider === 'custom') {
+            try {
+                const endpointUrl = new URL(url);
+                if (endpointUrl.protocol !== 'https:' && !endpointUrl.hostname.includes('localhost') && !endpointUrl.hostname.startsWith('127.')) {
+                    throw new Error("Custom AI endpoint must use HTTPS or localhost/127.0.0.1 for security.");
+                }
+            } catch (e) {
+                if (e instanceof Error && e.message.includes("Custom AI endpoint")) throw e;
+                throw new Error("Invalid custom AI endpoint URL format.");
+            }
+        }
+
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (apiKey) {
+            headers['Authorization'] = `Bearer ${apiKey}`;
+        }
+
+        const response = await requestUrl({
+            url,
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+                model,
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: userPrompt }
+                ],
+                response_format: { type: "json_object" }
+            })
+        });
+
+        const data = response.json;
+        const textResult = data?.choices?.[0]?.message?.content || "{}";
+        return this.parseJsonResponse(textResult);
     }
 
     private static parseJsonResponse(textResult: string): Record<string, unknown> {

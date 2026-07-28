@@ -17,12 +17,14 @@
     ],
     "types": [
       "node",
-      "obsidian"
+      "obsidian",
+      "jest"
     ],
     "skipLibCheck": true,
     "esModuleInterop": true
   },
   "include": [
-    "**/*.ts"
+    "src/**/*.ts",
+    "tests/**/*.ts"
   ]
 }

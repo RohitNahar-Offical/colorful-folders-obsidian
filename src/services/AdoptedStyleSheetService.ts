@@ -37,9 +37,17 @@ export class AdoptedStyleSheetService {
     }
 
     /**
+     * Clears all CSS rules from the stylesheet.
+     */
+    clearStyles(): void {
+        this.updateStyles('');
+    }
+
+    /**
      * Detaches the stylesheet instance from all workspace documents on plugin unload.
      */
     unload(): void {
+        this.clearStyles();
         this.plugin.getOpenDocuments().forEach(doc => {
             doc.adoptedStyleSheets = doc.adoptedStyleSheets.filter(s => s !== this.sheet);
         });

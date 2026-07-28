@@ -9,8 +9,7 @@ import { countItems } from '../common/VaultUtils';
 import { isDarkMode, getCurrentPalette, ColorResolver } from './ColorResolver';
 import { generateGlobalBaseCss, generateDividerCss, generateStealthCss } from './BaseCssGenerator';
 import { CssGrouper } from './CssGrouper';
-
-
+import { StyleResolver } from './StyleResolver';
 
 export class StyleGenerator {
     plugin: IColorfulFoldersPlugin;
@@ -20,15 +19,6 @@ export class StyleGenerator {
     // PERF: Track dirty paths for incremental style regeneration
     private _dirtyPaths: Set<string> | null = null;
     private _fullRegenRequired = true;
-
-    // PERF FIX 3: Cache for the counter SVG template.
-    // The static SVG structure is pre-encoded once per unique color.
-    // Only the two count numbers are substituted per folder, saving
-    // encodeURIComponent() + regex replacements from running per-folder per-render.
-    private _counterSvgColor = '';
-    private _counterSvgPrefix = '';
-    private _counterSvgMid = '';
-    private _counterSvgSuffix = '';
 
     private _cachedPalette: { rgb: string, hex: string }[] | null = null;
     private _cachedPaletteKey = '';
@@ -171,10 +161,7 @@ export class StyleGenerator {
 
 
     getStyle(path: string): FolderStyle | null {
-        const style = this.settings.customFolderColors[path];
-        if (!style) return null;
-        if (typeof style === 'string') return { hex: style };
-        return style;
+        return StyleResolver.getStyle(this.plugin, path);
     }
 
 
@@ -962,21 +949,8 @@ export class StyleGenerator {
                 const counts = countItems(child, this.plugin);
                 const totalWidth = 110; // increased to 110 to allow 4 digits for both folders and files
 
-                // PERF FIX 3: Rebuild the static SVG template only when color changes.
-                // For large vaults, this avoids O(N) encodeURIComponent + regex calls
-                // per render cycle, replacing them with O(1) string concatenation.
-                if (color.hex !== this._counterSvgColor) {
-                    this._counterSvgColor = color.hex;
-                    const svgOpen = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="20" viewBox="0 0 ${totalWidth} 20" preserveAspectRatio="xMidYMid meet"><g stroke="${color.hex}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(0, 3) scale(0.65)"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></g><text x="21" y="10.5" dominant-baseline="central" fill="${color.hex}" font-family="sans-serif" font-size="11" font-weight="900">`;
-                    const svgMid = `</text><g stroke="${color.hex}" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(52, 3) scale(0.65)"><path d="M15.5 2H8.6c-.4 0-.8.2-1.1.5-.3.3-.5.7-.5 1.1v12.8c0 .4.2.8.5 1.1.3.3.7.5 1.1.5h9.8c.4 0 .8-.2 1.1-.5.3-.3.5-.7.5-1.1V7.5L15.5 2z"/><path d="M15 2v5h5"/><path d="M2 17.6V7.1c0-.4.2-.8.5-1.1.3-.3.7-.5 1.1-.5h3.3"/><path d="M13 22H3.6c-.4 0-.8-.2-1.1-.5-.3-.3-.5-.7-.5-1.1V10"/></g><text x="70" y="10.5" dominant-baseline="central" fill="${color.hex}" font-family="sans-serif" font-size="11" font-weight="900">`;
-                    const svgClose = `</text></svg>`;
-                    // Pre-encode the three static sections; only the count values need runtime concatenation
-                    this._counterSvgPrefix = encodeURIComponent(svgOpen);
-                    this._counterSvgMid = encodeURIComponent(svgMid);
-                    this._counterSvgSuffix = encodeURIComponent(svgClose);
-                }
-
-                const combinedIconUrl = `url("data:image/svg+xml,${this._counterSvgPrefix}${counts.folders}${this._counterSvgMid}${counts.files}${this._counterSvgSuffix}")`;
+                const svgOpen = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="20" viewBox="0 0 ${totalWidth} 20" preserveAspectRatio="xMidYMid meet"><g stroke="${color.hex}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(0, 3) scale(0.65)"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></g><text x="21" y="10.5" dominant-baseline="central" fill="${color.hex}" font-family="sans-serif" font-size="11" font-weight="900">${counts.folders}</text><g stroke="${color.hex}" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(52, 3) scale(0.65)"><path d="M15.5 2H8.6c-.4 0-.8.2-1.1.5-.3.3-.5.7-.5 1.1v12.8c0 .4.2.8.5 1.1.3.3.7.5 1.1.5h9.8c.4 0 .8-.2 1.1-.5.3-.3.5-.7.5-1.1V7.5L15.5 2z"/><path d="M15 2v5h5"/><path d="M2 17.6V7.1c0-.4.2-.8.5-1.1.3-.3.7-.5 1.1-.5h3.3"/><path d="M13 22H3.6c-.4 0-.8-.2-1.1-.5-.3-.3-.5-.7-.5-1.1V10"/></g><text x="70" y="10.5" dominant-baseline="central" fill="${color.hex}" font-family="sans-serif" font-size="11" font-weight="900">${counts.files}</text></svg>`;
+                const combinedIconUrl = `url("data:image/svg+xml,${encodeURIComponent(svgOpen)}")`;
 
                 grouper.addRaw(`
                     body .nav-folder-title[data-path="${safePath}"]::after,

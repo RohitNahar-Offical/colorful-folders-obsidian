@@ -18,6 +18,7 @@ import { DividerManager } from "./core/DividerManager";
 import { DOMObserverService } from "./services/DOMObserverService";
 import { EventTrackerService } from "./services/EventTrackerService";
 import { AdoptedStyleSheetService } from "./services/AdoptedStyleSheetService";
+import { PluginLifecycleService } from "./services/PluginLifecycleService";
 import { IconManager } from "./core/IconManager";
 import { AIIconClassifier } from './integrations/AIIconClassifier';
 import { t } from './lang/helpers';
@@ -56,6 +57,7 @@ export default class ColorfulFoldersPlugin
   eventTrackerService: EventTrackerService;
   dividerManager: DividerManager;
   styleGenerator: StyleGenerator;
+  lifecycleService: PluginLifecycleService;
   isSyncingDividers: boolean = false;
   isDragging: boolean = false;
   isGeneratingStyles: boolean = false;
@@ -71,13 +73,10 @@ export default class ColorfulFoldersPlugin
     this.domObserverService = new DOMObserverService(this);
     this.eventTrackerService = new EventTrackerService(this);
     this.adoptedStyleSheetService = new AdoptedStyleSheetService(this);
+    this.lifecycleService = new PluginLifecycleService(this);
 
     // Initial document cache state
-    this.cachedDocuments.add(activeDocument);
-    this.app.workspace.iterateAllLeaves((leaf) => {
-      const doc = leaf.view?.containerEl?.ownerDocument;
-      if (doc) this.cachedDocuments.add(doc);
-    });
+    this.lifecycleService.initializeDocumentTracking();
 
     this.initializeStyles();
     this.registerCustomIcons();
@@ -112,18 +111,7 @@ export default class ColorfulFoldersPlugin
     this.domObserverService.initStyleObservers();
 
     // Invalidate caches on vault changes
-    this.app.vault.on('modify', () => {
-      if (this.folderCountCache) this.folderCountCache.clear();
-      this.invalidateExplorerContainersCache();
-    });
-    this.app.vault.on('create', () => {
-      if (this.folderCountCache) this.folderCountCache.clear();
-      this.invalidateExplorerContainersCache();
-    });
-    this.app.vault.on('delete', () => {
-      if (this.folderCountCache) this.folderCountCache.clear();
-      this.invalidateExplorerContainersCache();
-    });
+    this.lifecycleService.registerVaultCacheEvents();
 
     this.cachedDocuments.forEach(doc => {
       doc.body.classList.toggle(
@@ -138,32 +126,7 @@ export default class ColorfulFoldersPlugin
 
     this.initStaircaseStyleStripper();
     void this.generateStyles();
-
-    this.app.workspace.onLayoutReady(async () => {
-      this.invalidateExplorerContainersCache();
-      this.initStaircaseStyleStripper();
-      await this.generateStyles();
-      NotebookNavigatorIntegration.registerMenuExtensions(this);
-      void this.loadLocalIcons();
-
-      if (this._abortStartupRender) return;
-      this.getAllExplorerContainers().forEach((c) => this.domObserverService.tagExplorerItems(c));
-      this.domObserverService.initDividerObserver();
-      this.dividerManager.syncDividers();
-
-      // Pre-warm icon caches during idle period
-      const warmCaches = () => {
-        if (this.iconManager) {
-          void this.iconManager.getIconSvg("lucide-folder", true);
-          void this.iconManager.getIconSvg("lucide-folder-open", true);
-          void this.iconManager.getIconSvg("lucide-file-text", true);
-        }
-      };
-      if (typeof window.requestIdleCallback === "function") {
-        window.requestIdleCallback(warmCaches);
-      } else {
-        window.setTimeout(warmCaches, 1000);
-      }
+    this.lifecycleService.onLayoutReady();
 
       try {
         const optimized = await this.optimizeBlueTopazStyleSettings();
@@ -209,11 +172,10 @@ export default class ColorfulFoldersPlugin
         } catch (err) {
           console.error(
             "Colorful folders: failed to fetch collective changelog from GitHub",
-            err,
+            err
           );
         }
       }
-    });
   }
 
   getStyle(path: string): FolderStyle | null {
@@ -404,32 +366,7 @@ export default class ColorfulFoldersPlugin
       win._testerObserver.disconnect();
       delete win._testerObserver;
     }
-    this._isUnloading = true;
-    this.adoptedStyleSheetService.unload();
-    this.getOpenDocuments().forEach(doc => {
-      doc.body.classList.remove("cf-show-hidden", "cf-wrap-metadata");
-    });
-
-    // Cleanly destroy observers and events
-    this.domObserverService.destroy();
-    this.eventTrackerService.destroy();
-
-    this.cleanDividers();
-
-    // Cancel all debouncers to prevent ghost execution
-    this.generateStylesDebounced.cancel();
-    this.saveDataDebounced.cancel();
-
-    // Explicitly clear memory-heavy global caches
-    this.iconCache.clear();
-    if (this.heatmapCache) this.heatmapCache.clear();
-    if (this.folderCountCache) this.folderCountCache.clear();
-    if (this.folderSortCache) this.folderSortCache.clear();
-    if (this.rootSortCache) this.rootSortCache.clear();
-    if (this.parsedExclusionList) this.parsedExclusionList.clear();
-
-    // Remove CF-generated graph groups on plugin unload
-    void GraphColorSync.clearGraphColors(this);
+    this.lifecycleService.destroy();
   }
 
   cleanDividers() {
