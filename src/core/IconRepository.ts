@@ -1,7 +1,7 @@
 import * as obsidian from 'obsidian';
 import { IColorfulFoldersPlugin, AutoIconData } from '../common/types';
-import { AUTO_ICON_CATEGORIES, STOP_WORDS } from '../common/constants';
-import { hashString, stemWord } from '../common/utils';
+import { AUTO_ICON_CATEGORIES, STOP_WORDS, GENERIC_SUFFIX_WORDS } from '../common/constants';
+import { hashString, stemWord, stripIconPrefix } from '../common/utils';
 import { IconPackIndex } from './IconPackIndex';
 import { LRUCache } from '../common/LRUCache';
 import { CategoryTrie } from './CategoryTrie';
@@ -15,13 +15,83 @@ export class IconRepository {
     private _normCache = new LRUCache<string, string>(2048);
     private _dataUriCache = new LRUCache<string, string>(2048);
     private _findPackIconCache = new LRUCache<string, string | null>(2048);
+    private _autoIconResultCache = new LRUCache<string, AutoIconData | null>(4096);
     private _packIndex: IconPackIndex = new IconPackIndex();
 
     constructor(plugin: IColorfulFoldersPlugin) {
         this.plugin = plugin;
     }
 
-    getAutoIconData(name: string, _path?: string): AutoIconData | null {
+    getAutoIconData(name: string, path?: string): AutoIconData | null {
+        if (!name) return null;
+        const cacheKey = path ? `${name}::${path}` : name;
+        const hit = this._autoIconResultCache.get(cacheKey);
+        if (hit !== undefined) {
+            return hit;
+        }
+
+        const result = this._computeAutoIconData(name, path);
+        this._autoIconResultCache.set(cacheKey, result);
+        return result;
+    }
+
+    private _computeAutoIconData(name: string, path?: string): AutoIconData | null {
+        // Tier 0 & Tier 0.5: Frontmatter & Tag Auto-Icon Resolution (only for Markdown files)
+        if (path && path.endsWith('.md') && this.plugin.app?.vault && this.plugin.app?.metadataCache) {
+            const file = this.plugin.app.vault.getAbstractFileByPath(path);
+            if (file instanceof obsidian.TFile) {
+                const cache = this.plugin.app.metadataCache.getFileCache(file);
+
+                // Tier 0: Explicit frontmatter icon property (icon, iconId, emoji, icon-id)
+                if (cache?.frontmatter) {
+                    const fmIcon = cache.frontmatter.icon || cache.frontmatter.iconId || cache.frontmatter.emoji || cache.frontmatter['icon-id'];
+                    if (fmIcon && typeof fmIcon === 'string' && fmIcon.trim().length > 0) {
+                        const cleanFmIcon = fmIcon.trim();
+                        return {
+                            tier: 0 as any,
+                            rex: /.*/,
+                            emoji: cleanFmIcon,
+                            lucide: cleanFmIcon,
+                            priority: 2500,
+                            isCustom: true,
+                            packSource: 'frontmatter'
+                        };
+                    }
+                }
+
+                // Tier 0.5: Tag-driven auto icon
+                const tags: string[] = [];
+                if (cache?.frontmatter?.tags) {
+                    const fmTags = Array.isArray(cache.frontmatter.tags)
+                        ? cache.frontmatter.tags
+                        : typeof cache.frontmatter.tags === 'string'
+                            ? cache.frontmatter.tags.split(',').map(t => t.trim())
+                            : [];
+                    tags.push(...fmTags);
+                }
+                if (cache?.tags) {
+                    for (const tObj of cache.tags) {
+                        if (tObj.tag) tags.push(tObj.tag);
+                    }
+                }
+
+                if (tags.length > 0) {
+                    const uniqueTags = Array.from(new Set(tags.map(t => t.replace(/^#/, '').trim().toLowerCase()))).filter(t => t.length > 0);
+                    for (const tag of uniqueTags) {
+                        // Query auto-icon for tag name (without path to prevent infinite recursion)
+                        const tagIcon = this.getAutoIconData(tag);
+                        if (tagIcon) {
+                            return {
+                                ...tagIcon,
+                                tier: 0.5 as any,
+                                packSource: 'tag-sync'
+                            };
+                        }
+                    }
+                }
+            }
+        }
+
         const lName = name.toLowerCase();
         const settings = this.plugin.settings;
         const currentKey = settings.customIconRules || '';
@@ -112,6 +182,9 @@ export class IconRepository {
             .map(w => w.toLowerCase())
             .filter(w => w.length >= 3 && !STOP_WORDS.has(w));
 
+        const domainWords = words.filter(w => !GENERIC_SUFFIX_WORDS.has(w));
+        const suffixWords = words.filter(w => GENERIC_SUFFIX_WORDS.has(w));
+
         // 1. Multi-word pairs with stemming
         for (let i = 0; i < words.length - 1; i++) {
             const w1 = stemWord(words[i]);
@@ -124,11 +197,23 @@ export class IconRepository {
             }
         }
 
-        // 2. Individual words with stemming (scanning from last to first for subject preference)
+        // 2. Individual domain words with stemming (prioritized over generic suffix words)
         if (!fuzzyMatchedIconId) {
-            for (let i = words.length - 1; i >= 0; i--) {
-                const stemmed = stemWord(words[i]);
-                const matched = this.findIconInPacks(stemmed) || this.findIconInPacks(words[i]);
+            for (let i = domainWords.length - 1; i >= 0; i--) {
+                const stemmed = stemWord(domainWords[i]);
+                const matched = this.findIconInPacks(stemmed) || this.findIconInPacks(domainWords[i]);
+                if (matched) {
+                    fuzzyMatchedIconId = matched;
+                    break;
+                }
+            }
+        }
+
+        // 3. Fallback to generic suffix words if no domain word matched
+        if (!fuzzyMatchedIconId) {
+            for (let i = suffixWords.length - 1; i >= 0; i--) {
+                const stemmed = stemWord(suffixWords[i]);
+                const matched = this.findIconInPacks(stemmed) || this.findIconInPacks(suffixWords[i]);
                 if (matched) {
                     fuzzyMatchedIconId = matched;
                     break;
@@ -221,7 +306,7 @@ export class IconRepository {
 
             svgStr = local[iconId] || local[lId] || local[cleanId] || local[hyphenated] || "";
             if (!svgStr) {
-                const baseName = lId.replace(/^(si|simple|simple-icons|simpleicons|feather|fa|fas|far|fab|fontawesome|ri|remix|remixicons|tb|tabler|mdi|material|oct|octicons|lucide)[-_:]/, '');
+                const baseName = stripIconPrefix(lId);
 
                 if (local[baseName]) {
                     svgStr = local[baseName];
@@ -358,6 +443,7 @@ export class IconRepository {
         this._normCache.clear();
         this._dataUriCache.clear();
         this._findPackIconCache.clear();
+        this._autoIconResultCache.clear();
         this._packIndex.invalidate();
     }
 }

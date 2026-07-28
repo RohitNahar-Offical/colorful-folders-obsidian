@@ -159,7 +159,7 @@ export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
     { rex: /finance|money|bank|pay|cost|bill|price|tax|wallet/i, emoji: "💸", lucide: "banknote", priority: 100 },
     { rex: /health|fit|exercise|diet|gym|doctor|med|sport/i, emoji: "🥗", lucide: "activity", priority: 100 },
     { rex: /travel|trip|vacation|flight|plane|map|explore/i, emoji: "✈️", lucide: "plane", priority: 100 },
-    { rex: /tech|code|dev|script|bot|program|web|git|coding/i, emoji: "💻", lucide: "code", priority: 100, emojis: ["💻", "🖥️", "⌨️", "🔧"], lucides: ["code", "terminal", "cpu", "wrench"] },
+    { rex: /tech|code|dev|script|bot|program|web|git|coding/i, emoji: "💻", lucide: "code", priority: 100, emojis: ["💻", "🖥️", "⌨️", "👨‍💻"], lucides: ["code", "terminal", "cpu", "laptop"] },
     { rex: /music|audio|song|playlist|sound|record/i, emoji: "🎵", lucide: "music", priority: 100 },
     { rex: /video|movie|film|clip|youtube|stream/i, emoji: "🎬", lucide: "video", priority: 100 },
     { rex: /school|study|class|course|exam|edu|lecture|uni/i, emoji: "🎓", lucide: "graduation-cap", priority: 100 },
@@ -191,8 +191,8 @@ export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
     { rex: /alert|warn|error|bug|issue/i, emoji: "⚠️", lucide: "alert-triangle", priority: 90 },
     { rex: /science|lab|experiment|chemistry|biology/i, emoji: "🔬", lucide: "flask-conical", priority: 90 },
     { rex: /career|job|resume|cv|work/i, emoji: "💼", lucide: "briefcase", priority: 90 },
-    { rex: /server|database|infra|network/i, emoji: "🖧", lucide: "server", priority: 90 },
-    { rex: /ai|ml|neural|model/i, emoji: "🤖", lucide: "cpu", priority: 90 },
+    { rex: /server|database|infra|network/i, emoji: "🖧", lucide: "server", priority: 105, emojis: ["🖧", "🖥️", "🗄️"], lucides: ["server", "database", "hard-drive"] },
+    { rex: /ai|ml|neural|model/i, emoji: "🤖", lucide: "cpu", priority: 95 },
 
     // --- More diverse icons ---
     { rex: /photo-edit|design|art|draw|paint/i, emoji: "🎨", lucide: "brush", priority: 80 },
@@ -314,5 +314,17 @@ export const STOP_WORDS = new Set([
     'working', 'work', 'folder', 'file', 'notes', 'thoughts', 'draft', 'list', 'page',
     'doc', 'text', 'directory', 'items', 'item'
 ]);
+
+export const GENERIC_SUFFIX_WORDS = new Set([
+    'programming', 'program', 'project', 'projects', 'notes', 'note', 'thoughts',
+    'draft', 'drafts', 'tutorial', 'tutorials', 'guide', 'guides', 'course', 'courses',
+    'class', 'classes', 'management', 'system', 'systems', 'app', 'apps', 'application',
+    'applications', 'service', 'services', 'module', 'modules', 'repo', 'repository',
+    'structure', 'architecture', 'overview', 'summary', 'basics', 'advanced', 'intro',
+    'introduction', 'practice', 'exercise', 'exercises', 'examples', 'example', 'demo',
+    'test', 'tests', 'testing', 'doc', 'docs', 'document', 'documents', 'file', 'files',
+    'folder', 'folders', 'list', 'page', 'pages', 'item', 'items', 'stuff', 'misc'
+]);
+
 
 

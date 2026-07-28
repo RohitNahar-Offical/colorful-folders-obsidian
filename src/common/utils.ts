@@ -205,3 +205,23 @@ export function stemWord(word: string): string {
     }
     return s;
 }
+
+export const ICON_PREFIX_REGEX = /^(si|simple|simple-icons|simpleicons|feather|fa|fas|far|fab|fontawesome|ri|remix|remixicons|tb|tabler|mdi|material|oct|octicons|lucide|bx|bxs|bxm|ph|heroicons|cf)[-_:]/i;
+export const ICON_VARIANT_SUFFIX_REGEX = /[-_:](line|fill|filled|outline|outlined|solid|regular|bold|light|duotone|alt|off|2|3|1|plus|sharp|rounded|circle|square)$/i;
+
+export function stripIconPrefix(iconId: string): string {
+    if (!iconId) return '';
+    return iconId.trim().toLowerCase().replace(ICON_PREFIX_REGEX, '');
+}
+
+export function stripIconVariantSuffix(iconId: string): string {
+    if (!iconId) return '';
+    return iconId.trim().toLowerCase().replace(ICON_VARIANT_SUFFIX_REGEX, '');
+}
+
+export function extractCoreIconKeyword(iconId: string): { noPrefix: string; core: string } {
+    const noPrefix = stripIconPrefix(iconId);
+    const core = stripIconVariantSuffix(noPrefix);
+    return { noPrefix, core };
+}
+

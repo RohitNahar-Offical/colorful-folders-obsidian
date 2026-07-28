@@ -1,7 +1,9 @@
 import { PACK_PRIORITY } from '../common/constants';
+import { extractCoreIconKeyword } from '../common/utils';
 
 export class IconPackIndex {
     private exactMap = new Map<string, string>();
+    private coreMap = new Map<string, string>();
     private suffixMap = new Map<string, string>();
     private isBuilt = false;
     private _localVersion = '';
@@ -17,6 +19,7 @@ export class IconPackIndex {
         return 10;
     }
 
+
     public build(localIcons: Record<string, string | null> | undefined, customIcons: Record<string, string> | undefined) {
         const localVersion = localIcons ? JSON.stringify(Object.keys(localIcons)) : '';
         const customVersion = customIcons ? JSON.stringify(Object.keys(customIcons)) : '';
@@ -26,6 +29,7 @@ export class IconPackIndex {
         }
 
         this.exactMap.clear();
+        this.coreMap.clear();
         this.suffixMap.clear();
 
         const addIconKey = (key: string, value: string) => {
@@ -33,21 +37,33 @@ export class IconPackIndex {
             if (!this.exactMap.has(lKey)) {
                 this.exactMap.set(lKey, value);
             }
-            
+
+            const { noPrefix, core } = extractCoreIconKeyword(lKey);
+
+            if (noPrefix && !this.exactMap.has(noPrefix)) {
+                this.exactMap.set(noPrefix, value);
+            }
+
+            if (core) {
+                const existing = this.coreMap.get(core);
+                if (!existing) {
+                    this.coreMap.set(core, value);
+                } else {
+                    const existingPrio = this.getPackPriority(existing);
+                    const newPrio = this.getPackPriority(value);
+                    if (newPrio > existingPrio) {
+                        this.coreMap.set(core, value);
+                    }
+                }
+            }
+
             const lastDash = lKey.lastIndexOf('-');
             const lastSlash = lKey.lastIndexOf('/');
             const splitIdx = Math.max(lastDash, lastSlash);
             if (splitIdx > 0 && splitIdx < lKey.length - 1) {
                 const suffix = lKey.substring(splitIdx + 1);
-                const existing = this.suffixMap.get(suffix);
-                if (!existing) {
+                if (!this.suffixMap.has(suffix)) {
                     this.suffixMap.set(suffix, value);
-                } else {
-                    const existingPrio = this.getPackPriority(existing);
-                    const newPrio = this.getPackPriority(value);
-                    if (newPrio > existingPrio) {
-                        this.suffixMap.set(suffix, value);
-                    }
                 }
             }
         };
@@ -74,22 +90,28 @@ export class IconPackIndex {
     public findIcon(searchKey: string): string | null {
         if (!this.isBuilt) return null;
         const s = searchKey.toLowerCase().replace(/[\s_:]+/g, '-').replace(/\//g, '-');
-        const cleanS = s.replace(/^(si|simple|simple-icons|simpleicons|feather|fa|fas|far|fab|fontawesome|ri|remix|remixicons|tb|tabler|mdi|material|oct|octicons|lucide)[-_:]/, '');
+        const { noPrefix, core } = extractCoreIconKeyword(s);
 
         // 1. Exact match
         if (this.exactMap.has(s)) return this.exactMap.get(s) || null;
-        if (this.exactMap.has(cleanS)) return this.exactMap.get(cleanS) || null;
+        if (noPrefix && this.exactMap.has(noPrefix)) return this.exactMap.get(noPrefix) || null;
+        if (core && this.exactMap.has(core)) return this.exactMap.get(core) || null;
 
-        // 2. Known prefixes
-        const featherKey = `feather-${cleanS}`;
-        if (this.exactMap.has(featherKey)) return this.exactMap.get(featherKey) || null;
+        // 2. Core Keyword match (handles prefix + variant suffix combinations like ri-server-line or tb-server-2)
+        if (core && this.coreMap.has(core)) {
+            return this.coreMap.get(core) || null;
+        }
 
-        const simpleKey = `simple-icons-${cleanS}`;
-        if (this.exactMap.has(simpleKey)) return this.exactMap.get(simpleKey) || null;
+        if (noPrefix && this.coreMap.has(noPrefix)) {
+            return this.coreMap.get(noPrefix) || null;
+        }
 
-        // 3. O(1) Suffix map lookup
-        if (this.suffixMap.has(cleanS)) {
-            return this.suffixMap.get(cleanS) || null;
+        // 3. Fallback suffix map lookup
+        if (core && this.suffixMap.has(core)) {
+            return this.suffixMap.get(core) || null;
+        }
+        if (noPrefix && this.suffixMap.has(noPrefix)) {
+            return this.suffixMap.get(noPrefix) || null;
         }
         if (this.suffixMap.has(s)) {
             return this.suffixMap.get(s) || null;
@@ -107,6 +129,7 @@ export class IconPackIndex {
         this._localVersion = '';
         this._customVersion = '';
         this.exactMap.clear();
+        this.coreMap.clear();
         this.suffixMap.clear();
     }
 }
