@@ -143,7 +143,14 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     showCollapseIndicator: true,
     folderBorderRadius: 10,
     enableStaircaseHack: false,
-    smartConnectionsCompatMode: true
+    smartConnectionsCompatMode: true,
+    aiProvider: "gemini",
+    aiApiKey: "",
+    aiCustomEndpoint: "",
+    aiOllamaEndpoint: "http://localhost:11434",
+    aiModelName: "gemini-2.5-flash",
+    aiIncludeFiles: false,
+    aiKeyConfirmed: false,
 };
 
 export const AUTO_ICON_CATEGORIES: AutoIconData[] = [

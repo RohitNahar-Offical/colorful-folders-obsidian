@@ -17,6 +17,10 @@ export class StyleGenerator {
     settings: ColorfulFoldersSettings;
     app: obsidian.App;
 
+    // PERF: Track dirty paths for incremental style regeneration
+    private _dirtyPaths: Set<string> | null = null;
+    private _fullRegenRequired = true;
+
     // PERF FIX 3: Cache for the counter SVG template.
     // The static SVG structure is pre-encoded once per unique color.
     // Only the two count numbers are substituted per folder, saving
@@ -37,6 +41,56 @@ export class StyleGenerator {
         if (!this.plugin.heatmapCache) {
             this.plugin.heatmapCache = new Map<string, number>();
         }
+    }
+
+    /**
+     * Mark a path and all its descendants as needing style regeneration.
+     */
+    markDirty(path: string): void {
+        if (!this._dirtyPaths) this._dirtyPaths = new Set();
+        this._dirtyPaths.add(path);
+        this._fullRegenRequired = false;
+    }
+
+    /**
+     * Mark all paths as needing full regeneration (e.g., global settings change).
+     */
+    markAllDirty(): void {
+        this._dirtyPaths = null;
+        this._fullRegenRequired = true;
+    }
+
+    /**
+     * Check if a path or any of its ancestors is dirty.
+     */
+    private isPathDirty(path: string): boolean {
+        if (this._fullRegenRequired) return true;
+        if (!this._dirtyPaths || this._dirtyPaths.size === 0) return false;
+        if (this._dirtyPaths.has(path)) return true;
+        // Check ancestors
+        const segments = path.split('/');
+        for (let i = 1; i <= segments.length; i++) {
+            const ancestor = segments.slice(0, i).join('/');
+            if (this._dirtyPaths.has(ancestor)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Check if a folder has any custom style or inherited style that would affect its children.
+     */
+    private hasCustomOrInheritedStyle(folderPath: string): boolean {
+        const style = this.settings.customFolderColors[folderPath];
+        if (style) return true;
+        // Check parent for inherited styles
+        const parentPath = folderPath.substring(0, folderPath.lastIndexOf('/'));
+        if (parentPath) {
+            const parentStyle = this.settings.customFolderColors[parentPath];
+            if (parentStyle && typeof parentStyle === 'object' && (parentStyle.applyToSubfolders || parentStyle.applyToFiles)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 
@@ -173,10 +227,7 @@ export class StyleGenerator {
         const extraTypographyCssFolders = (this.settings.spacedTextMode === 'both' || this.settings.spacedTextMode === 'folders') ? SPACED_TEXT_CSS : '';
 
         // Process Files
-        // Gate: process files if there's a parent color (applyToSubfolders), autoColorFiles, autoIcons, applyToFiles on the inheritedStyle, or NN is active.
-        if (passedColor || autoColorFiles || autoIcons || (inheritedStyle && inheritedStyle.applyToFiles) || (this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground)) {
-
-            for (const child of copyFiles) {
+        for (const child of copyFiles) {
                 const fileStyle = this.getStyle(child.path);
                 const hasCustomStyle = !!(fileStyle && (fileStyle.hex || fileStyle.iconId || fileStyle.textColor || fileStyle.isBold || fileStyle.isItalic));
                 const hasInherited = !!(inheritedStyle && inheritedStyle.applyToFiles);
@@ -232,8 +283,17 @@ export class StyleGenerator {
                     isDark
                 );
 
-                const autoIconFile = (this.settings.autoIcons && !fileStyle?.iconId && !(inheritedStyle?.applyToFiles && inheritedStyle?.iconId)) ? this.plugin.iconManager.getAutoIconData(child.name, child.path) : null;
-                const iconId = fileStyle?.iconId || (inheritedStyle?.applyToFiles ? inheritedStyle.iconId : null) || (autoIconFile ? (this.settings.wideAutoIcons ? autoIconFile.lucide : autoIconFile.emoji) : "");
+                const isValidFileIconStr = (id: string | null | undefined): boolean => {
+                    if (!id) return false;
+                    if (this.plugin.iconManager.isEmojiIcon(id)) return true;
+                    const svg = this.plugin.iconManager.getIconSvg(id, false);
+                    return !!svg && svg.length > 0;
+                };
+
+                const rawFileIcon = (fileStyle?.iconId && isValidFileIconStr(fileStyle.iconId)) ? fileStyle.iconId : null;
+                const rawInheritedFileIcon = (inheritedStyle?.applyToFiles && inheritedStyle?.iconId && isValidFileIconStr(inheritedStyle.iconId)) ? inheritedStyle.iconId : null;
+                const autoIconFile = (this.settings.autoIcons && !rawFileIcon && !rawInheritedFileIcon) ? this.plugin.iconManager.getAutoIconData(child.name, child.path) : null;
+                const iconId = rawFileIcon || rawInheritedFileIcon || (autoIconFile ? (this.settings.wideAutoIcons ? autoIconFile.lucide : autoIconFile.emoji) : "");
 
                 const textNative = ColorResolver.resolveTextColor(
                     true,
@@ -528,7 +588,6 @@ export class StyleGenerator {
                 }
                 // Increment skipped as fileIndex is unused
             }
-        }
 
         // Folder logic — tint is emitted per-child inside the loop below (using child's own color)
 
@@ -601,10 +660,19 @@ export class StyleGenerator {
                 `body .nav-files-container .tree-item-self[data-path="${safePath}"] + .tree-item-children`
             ], `folderBgTint_${color.hex}_${finalTintOp}_${outlineOnly}_${folderThick}`);
 
+            const isValidIconStr = (id: string | null | undefined): boolean => {
+                if (!id) return false;
+                if (this.plugin.iconManager.isEmojiIcon(id)) return true;
+                const svg = this.plugin.iconManager.getIconSvg(id, false);
+                return !!svg && svg.length > 0;
+            };
+
             // Pre-calculate folder icons to avoid warnings
-            const autoIconFolder = (this.settings.autoIcons && !customStyle?.iconId && !inheritedStyle?.iconId) ? this.plugin.iconManager.getAutoIconData(child.name, child.path) : null;
-            const folderIconId = customStyle?.iconId || inheritedStyle?.iconId || (autoIconFolder ? (this.settings.wideAutoIcons ? autoIconFolder.lucide : autoIconFolder.emoji) : "");
-            const folderExpandedIconId = customStyle?.expandedIconId || inheritedStyle?.expandedIconId || "";
+            const rawFolderIcon = (customStyle?.iconId && isValidIconStr(customStyle.iconId)) ? customStyle.iconId : null;
+            const rawInheritedFolderIcon = (inheritedStyle?.iconId && isValidIconStr(inheritedStyle.iconId)) ? inheritedStyle.iconId : null;
+            const autoIconFolder = (this.settings.autoIcons && !rawFolderIcon && !rawInheritedFolderIcon) ? this.plugin.iconManager.getAutoIconData(child.name, child.path) : null;
+            const folderIconId = rawFolderIcon || rawInheritedFolderIcon || (autoIconFolder ? (this.settings.wideAutoIcons ? autoIconFolder.lucide : autoIconFolder.emoji) : "");
+            const folderExpandedIconId = (customStyle?.expandedIconId && isValidIconStr(customStyle.expandedIconId)) ? customStyle.expandedIconId : ((inheritedStyle?.expandedIconId && isValidIconStr(inheritedStyle.expandedIconId)) ? inheritedStyle.expandedIconId : "");
 
             const isRainbowBgTransparent = depth === 0 && this.settings.rainbowRootText && this.settings.rainbowRootBgTransparent;
             const folderStyles = {
@@ -1033,6 +1101,11 @@ export class StyleGenerator {
         rawRules.push(TagColorSync.generateCss(this.plugin, context));
 
         rawRules.push(grouper.build());
+
+        // Reset dirty tracking state after successful generation
+        this._dirtyPaths = null;
+        this._fullRegenRequired = false;
+
         return rawRules.join('\n');
     }
 

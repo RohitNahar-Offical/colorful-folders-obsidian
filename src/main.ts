@@ -19,6 +19,7 @@ import { DOMObserverService } from "./services/DOMObserverService";
 import { EventTrackerService } from "./services/EventTrackerService";
 import { AdoptedStyleSheetService } from "./services/AdoptedStyleSheetService";
 import { IconManager } from "./core/IconManager";
+import { AIIconClassifier } from './integrations/AIIconClassifier';
 import { t } from './lang/helpers';
 import { normalizeVaultPath } from './common/utils';
 
@@ -110,6 +111,20 @@ export default class ColorfulFoldersPlugin
     this.eventTrackerService.registerEvents();
     this.domObserverService.initStyleObservers();
 
+    // Invalidate caches on vault changes
+    this.app.vault.on('modify', () => {
+      if (this.folderCountCache) this.folderCountCache.clear();
+      this.invalidateExplorerContainersCache();
+    });
+    this.app.vault.on('create', () => {
+      if (this.folderCountCache) this.folderCountCache.clear();
+      this.invalidateExplorerContainersCache();
+    });
+    this.app.vault.on('delete', () => {
+      if (this.folderCountCache) this.folderCountCache.clear();
+      this.invalidateExplorerContainersCache();
+    });
+
     this.cachedDocuments.forEach(doc => {
       doc.body.classList.toggle(
         "cf-show-hidden",
@@ -125,6 +140,7 @@ export default class ColorfulFoldersPlugin
     void this.generateStyles();
 
     this.app.workspace.onLayoutReady(async () => {
+      this.invalidateExplorerContainersCache();
       this.initStaircaseStyleStripper();
       await this.generateStyles();
       NotebookNavigatorIntegration.registerMenuExtensions(this);
@@ -575,6 +591,13 @@ export default class ColorfulFoldersPlugin
         void this.toggleStealthMode();
       },
     });
+    this.addCommand({
+      id: "ai-auto-assign-icons",
+      name: "AI Auto-Assign Icons for Vault",
+      callback: () => {
+        void AIIconClassifier.classifyVault(this);
+      },
+    });
   }
 
   async toggleStealthMode() {
@@ -631,7 +654,6 @@ export default class ColorfulFoldersPlugin
       settingsManager?: StyleSettingsManager;
     }
 
-    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- Accessing internal Obsidian app/plugins API for Blue Topaz theme detection */
     const appAny = this.app as unknown as Record<string, unknown>;
     const vaultAny = this.app.vault as unknown as Record<string, unknown>;
     const getConfig = typeof vaultAny.getConfig === "function" ? (vaultAny.getConfig as (key: string) => string | null).bind(vaultAny) : null;
@@ -644,7 +666,6 @@ export default class ColorfulFoldersPlugin
     if (!pluginsObj?.getPlugin) return false;
     const styleSettingsPlugin = pluginsObj.getPlugin("obsidian-style-settings");
     if (!styleSettingsPlugin) return false;
-    /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- Re-enable linting rules */
 
     const manager = styleSettingsPlugin?.settingsManager;
     if (!manager || !manager.settings) return false;
@@ -714,7 +735,13 @@ export default class ColorfulFoldersPlugin
 
 
 
+  private _explorerContainersCache: HTMLElement[] | null = null;
+  private _explorerContainersValid = false;
+
   getAllExplorerContainers(): HTMLElement[] {
+    if (this._explorerContainersValid && this._explorerContainersCache) {
+      return this._explorerContainersCache;
+    }
     const explorers: HTMLElement[] = [];
     this.app.workspace.iterateAllLeaves((leaf) => {
       if (!leaf || !leaf.view) return;
@@ -745,7 +772,14 @@ export default class ColorfulFoldersPlugin
       if (extra) extra.forEach((e) => allContainers.push(e as HTMLElement));
     });
 
+    this._explorerContainersCache = allContainers;
+    this._explorerContainersValid = true;
     return allContainers;
+  }
+
+  invalidateExplorerContainersCache(): void {
+    this._explorerContainersValid = false;
+    this._explorerContainersCache = null;
   }
 
 
@@ -800,9 +834,31 @@ export default class ColorfulFoldersPlugin
           const body = iconData.body;
           
           if (!body || typeof body !== 'string') return false;
-          if (/<script|on\w+\s*=/i.test(body)) return false; // Sanitize XSS scripts/event handlers
 
-          const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${l} ${t} ${w} ${h}">${body}</svg>`;
+          // Use DOMParser-based sanitization instead of regex for robust XSS prevention
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(`<svg xmlns="http://www.w3.org/2000/svg">${body}</svg>`, 'image/svg+xml');
+          const dangerousTags = ['script', 'iframe', 'object', 'embed', 'foreignobject'];
+          for (const tag of dangerousTags) {
+              doc.querySelectorAll(tag).forEach(el => el.remove());
+          }
+          doc.querySelectorAll('use').forEach(el => {
+              const href = (el.getAttribute('href') || el.getAttribute('xlink:href') || '').trim().toLowerCase();
+              if (href.startsWith('http') || href.startsWith('//') || href.startsWith('javascript:') || href.startsWith('data:')) {
+                  el.remove();
+              }
+          });
+          doc.querySelectorAll('*').forEach(el => {
+              const attrs = Array.from(el.attributes);
+              for (const attr of attrs) {
+                  if (attr.name.startsWith('on')) el.removeAttribute(attr.name);
+              }
+          });
+          const sanitizedSvg = doc.querySelector('svg');
+          if (!sanitizedSvg) return false;
+          const cleanBody = sanitizedSvg.innerHTML;
+
+          const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${l} ${t} ${w} ${h}">${cleanBody}</svg>`;
           this.settings.customIcons[id] = svg;
           return true;
         };

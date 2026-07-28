@@ -115,6 +115,14 @@ export interface ColorfulFoldersSettings {
     enableStaircaseHack: boolean;
     smartConnectionsCompatMode?: boolean;
     heatmapData?: Record<string, number>;
+
+    aiProvider: 'gemini' | 'openai' | 'claude' | 'ollama' | 'custom';
+    aiApiKey: string;
+    aiCustomEndpoint: string;
+    aiOllamaEndpoint: string;
+    aiModelName: string;
+    aiIncludeFiles: boolean;
+    aiKeyConfirmed: boolean;
 }
 
 

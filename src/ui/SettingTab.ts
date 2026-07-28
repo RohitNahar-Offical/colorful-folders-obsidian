@@ -7,6 +7,7 @@ import { IconPickerModal } from './modals/IconPickerModal';
 import { createVisualColorPicker } from './components/ColorPicker';
 import { parseColorToHexAlpha, hexAlphaToRgba } from '../common/utils';
 import { t } from '../lang/helpers';
+import { AIIconClassifier } from '../integrations/AIIconClassifier';
 
 
 export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
@@ -642,6 +643,185 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         // ──────────────────────────────────────────────────────────────────────
         // ── ICON PACKS PANEL ──────────────────────────────────────────────────
         // ──────────────────────────────────────────────────────────────────────
+
+        const aiCard = makeCard(iconPanel, "🤖", "AI Auto-Icon Classifier");
+        aiCard.createEl("p", {
+            text: "Automatically classify all vault items and assign contextually meaningful icons in batch using AI."
+        }).setCssStyles({ fontSize: "0.85em", color: "var(--text-muted)", marginBottom: "15px" });
+
+        new obsidian.Setting(aiCard)
+            .setName("AI Provider")
+            .setDesc("Select your AI model provider (Local Ollama, Anthropic Claude, Google Gemini, OpenAI, or Custom).")
+            .addDropdown(d => d
+                .addOption("gemini", "Google Gemini")
+                .addOption("openai", "OpenAI")
+                .addOption("claude", "🧠 Anthropic Claude")
+                .addOption("ollama", "🦙 Ollama (Local AI on Machine)")
+                .addOption("custom", "Custom OpenAI-Compatible API")
+                .setValue(this.plugin.settings.aiProvider || "gemini")
+                .onChange(async (val: 'gemini' | 'openai' | 'claude' | 'ollama' | 'custom') => {
+                    this.plugin.settings.aiProvider = val;
+                    if (val === 'ollama' && (!this.plugin.settings.aiModelName || this.plugin.settings.aiModelName === 'gemini-2.5-flash')) {
+                        this.plugin.settings.aiModelName = 'llama3';
+                    } else if (val === 'claude' && (!this.plugin.settings.aiModelName || this.plugin.settings.aiModelName === 'gemini-2.5-flash')) {
+                        this.plugin.settings.aiModelName = 'claude-3-5-haiku-20241022';
+                    }
+                    await this.plugin.saveSettings();
+                    this.display();
+                })
+            );
+
+        if (this.plugin.settings.aiProvider === 'ollama') {
+            new obsidian.Setting(aiCard)
+                .setName("Ollama Server URL")
+                .setDesc("Base URL for your local Ollama instance (default: http://localhost:11434).")
+                .addText(t => {
+                    t.setValue(this.plugin.settings.aiOllamaEndpoint || "http://localhost:11434")
+                     .setPlaceholder("http://localhost:11434")
+                     .onChange(async (val) => {
+                         this.plugin.settings.aiOllamaEndpoint = val.trim();
+                         await this.plugin.saveSettings();
+                     });
+                });
+        } else {
+            new obsidian.Setting(aiCard)
+                .setName("API Key")
+                .setDesc("Enter your API key for Gemini or OpenAI.")
+                .addText(t => {
+                    t.inputEl.type = "password";
+                    t.setValue(this.plugin.settings.aiApiKey || "")
+                     .setPlaceholder("Enter API key...")
+                     .onChange(async (val) => {
+                         this.plugin.settings.aiApiKey = val.trim();
+                         await this.plugin.saveSettings();
+                     });
+                });
+        }
+
+        if (this.plugin.settings.aiProvider === 'custom') {
+            new obsidian.Setting(aiCard)
+                .setName("Custom Endpoint URL")
+                .setDesc("Full URL endpoint (e.g. http://localhost:11434/v1/chat/completions).")
+                .addText(t => {
+                    t.setValue(this.plugin.settings.aiCustomEndpoint || "")
+                     .setPlaceholder("https://api.openai.com/v1/chat/completions")
+                     .onChange(async (val) => {
+                         this.plugin.settings.aiCustomEndpoint = val.trim();
+                         await this.plugin.saveSettings();
+                     });
+                });
+        }
+
+        new obsidian.Setting(aiCard)
+            .setName("Model Name")
+            .setDesc(this.plugin.settings.aiProvider === 'ollama' 
+                ? "Model name to use for classification. Click a recommended local model below or type custom model." 
+                : "Model name to use for classification (e.g. gemini-2.5-flash, gpt-4o-mini, claude-3-5-haiku-20241022).")
+            .addText(t => {
+                t.setValue(this.plugin.settings.aiModelName || (this.plugin.settings.aiProvider === 'ollama' ? 'qwen2.5:1.5b' : 'gemini-2.5-flash'))
+                 .setPlaceholder(this.plugin.settings.aiProvider === 'ollama' ? "qwen2.5:1.5b" : "gemini-2.5-flash")
+                 .onChange(async (val) => {
+                     this.plugin.settings.aiModelName = val.trim();
+                     await this.plugin.saveSettings();
+                 });
+            });
+
+        if (this.plugin.settings.aiProvider === 'ollama') {
+            const recDiv = aiCard.createDiv();
+            recDiv.setCssStyles({
+                padding: "10px 12px",
+                borderRadius: "6px",
+                backgroundColor: "var(--background-secondary-alt)",
+                border: "1px solid var(--border-color)",
+                marginBottom: "15px",
+                fontSize: "0.85em"
+            });
+            const recHeader = recDiv.createEl("div", { text: "💡 Recommended Fast Local Models (Run 'ollama run <model>' in terminal first):" });
+            recHeader.setCssStyles({ fontWeight: "600", marginBottom: "8px", color: "var(--text-normal)" });
+
+            const models = [
+                { name: "qwen2.5:1.5b", label: "⚡ qwen2.5:1.5b", desc: "Best Balance (~980MB)" },
+                { name: "qwen2.5:0.5b", label: "🚀 qwen2.5:0.5b", desc: "Ultra Light (~390MB)" },
+                { name: "llama3.2:1b", label: "🦙 llama3.2:1b", desc: "Meta Fast (~1.3GB)" },
+                { name: "llama3", label: "🦙 llama3", desc: "Standard (~4.7GB)" }
+            ];
+
+            const btnGrid = recDiv.createDiv();
+            btnGrid.setCssStyles({ display: "flex", flexWrap: "wrap", gap: "6px" });
+
+            for (const m of models) {
+                const isSelected = (this.plugin.settings.aiModelName || 'qwen2.5:1.5b') === m.name;
+                const btn = btnGrid.createEl("button", { text: `${m.label} (${m.desc})` });
+                btn.setCssStyles({
+                    fontSize: "0.85em",
+                    padding: "4px 8px",
+                    cursor: "pointer",
+                    backgroundColor: isSelected ? "var(--interactive-accent)" : "var(--interactive-normal)",
+                    color: isSelected ? "var(--text-on-accent)" : "var(--text-normal)"
+                });
+                btn.addEventListener("click", async () => {
+                    this.plugin.settings.aiModelName = m.name;
+                    await this.plugin.saveSettings();
+                    this.display();
+                    new obsidian.Notice(`Set AI Model to ${m.name}. Make sure to run 'ollama run ${m.name}' in terminal!`);
+                });
+            }
+        }
+
+        new obsidian.Setting(aiCard)
+            .setName("Include Markdown Files")
+            .setDesc("If enabled, classifies individual markdown files as well as folders (Folder-only is recommended for large vaults).")
+            .addToggle(t => t
+                .setValue(this.plugin.settings.aiIncludeFiles)
+                .onChange(async (val) => {
+                    this.plugin.settings.aiIncludeFiles = val;
+                    await this.plugin.saveSettings();
+                })
+            );
+
+        const aiBtnWrap = aiCard.createDiv();
+        aiBtnWrap.setCssStyles({ display: "flex", gap: "10px", marginTop: "15px", marginBottom: "10px" });
+
+        const aiRunBtn = aiBtnWrap.createEl("button", { text: "✨ Auto-Assign Icons with AI", cls: "mod-cta" });
+        aiRunBtn.onclick = async () => {
+            // Confirm API key awareness before running AI classification
+            if (this.plugin.settings.aiApiKey && this.plugin.settings.aiProvider !== 'ollama') {
+                if (!this.plugin.settings.aiKeyConfirmed) {
+                    new ConfirmModal(
+                        this.app,
+                        "AI API Key Warning",
+                        "Your AI API key is stored in plaintext in your Obsidian data file and will be sent to external AI providers. Do not use a key you are not willing to share. Do you want to proceed?",
+                        async () => {
+                            this.plugin.settings.aiKeyConfirmed = true;
+                            await this.plugin.saveSettings();
+                            void AIIconClassifier.classifyVault(this.plugin);
+                        }
+                    ).open();
+                    return;
+                }
+            }
+            void AIIconClassifier.classifyVault(this.plugin);
+        };
+
+        const aiForceBtn = aiBtnWrap.createEl("button", { text: "🔄 Force Re-Assign All" });
+        aiForceBtn.onclick = async () => {
+            if (this.plugin.settings.aiApiKey && this.plugin.settings.aiProvider !== 'ollama') {
+                if (!this.plugin.settings.aiKeyConfirmed) {
+                    new ConfirmModal(
+                        this.app,
+                        "AI API Key Warning",
+                        "Your AI API key is stored in plaintext in your Obsidian data file and will be sent to external AI providers. Do you want to proceed?",
+                        async () => {
+                            this.plugin.settings.aiKeyConfirmed = true;
+                            await this.plugin.saveSettings();
+                            void AIIconClassifier.classifyVault(this.plugin, { force: true });
+                        }
+                    ).open();
+                    return;
+                }
+            }
+            void AIIconClassifier.classifyVault(this.plugin, { force: true });
+        };
 
         const customIconCard = makeCard(iconPanel, "📦", "Custom icon management");
 

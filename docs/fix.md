@@ -1,66 +1,57 @@
-Developing plugins for Obsidian on Linux usually runs into issues in four main areas: file path separators, case-sensitive file systems, system shell differences, or Electron CSS rendering glitches.
-
-Here are the most common reasons cross-platform issues pop up in Obsidian plugins and how to fix them:
+Here's a clear summary of what's been completed and what remains.
 
 ---
 
-## 1. File Paths & Separators (Most Common)
+## Completed ✅
 
-Windows uses backslashes (`\`), while Linux and macOS use forward slashes (`/`). If you hardcode backslashes or concatenate strings for paths, Linux won't resolve them.
+### Phase 1 — Security Fixes (All Done)
+| # | Fix | File |
+|---|-----|------|
+| 1.1 | SVG sanitization: added `<foreignObject>`, `<script>`, `<iframe>`, `<object>`, `<embed>`, `<use>` removal + `on*` attribute stripping in `normalizeSvg()` | `src/core/IconRepository.ts` |
+| 1.1b | Replaced regex XSS check in `autoDownloadPack()` with DOMParser-based sanitization | `src/main.ts` |
+| 1.2 | Added `aiKeyConfirmed` setting + confirmation modal before AI classification runs | `src/ui/SettingTab.ts`, `src/common/types.ts`, `src/common/constants.ts` |
+| 1.3 | Custom AI endpoint URL validation (HTTPS or localhost only) | `src/integrations/AIIconClassifier.ts` |
+| 1.4 | `safeEscape()` now escapes single quotes | `src/common/utils.ts` |
 
-* **The Problem:** `"folder\\subfolder\\file.txt"` fails silently or errors on Linux.
-* **The Fix:** Always use Obsidian's `normalizePath()` helper function or Node's `path` module.
+### Phase 2 — Performance Optimizations (5 of 6 Done)
+| # | Fix | File |
+|---|-----|------|
+| 2.1 | LRUCache eviction: `Array.from(keys)[0]` → `keys().next().value` (O(1)) | `src/common/LRUCache.ts` |
+| 2.3 | `getAllExplorerContainers()` result caching with invalidation | `src/main.ts` |
+| 2.4 | CategoryTrie pre-computed lookup array (avoids Set allocation per call) | `src/core/CategoryTrie.ts` |
+| 2.5 | `folderCountCache` invalidation on vault `modify`/`create`/`delete` events | `src/main.ts` |
+| 2.6 | DOMParser reused as class field `_domParser` in `IconRepository` | `src/core/IconRepository.ts` |
+| 2.2 | **Incremental style regeneration** — `traverse()` early-exit for non-dirty subtrees | `src/core/StyleGenerator.ts` |
 
-```typescript
-import { normalizePath } from "obsidian";
-
-// Safe cross-platform path string
-const safePath = normalizePath("folder/subfolder/file.txt");
-
-```
-
----
-
-## 2. Case Sensitivity
-
-Windows and macOS (by default) have case-insensitive file systems, but Linux is strictly case-sensitive.
-
-* **Windows:** `MyFolder/File.md` and `myfolder/file.md` point to the exact same file.
-* **Linux:** These are two completely different paths.
-* **The Fix:** Ensure exact casing matches when referencing vault files, assets, or importing JavaScript/TypeScript modules.
-
----
-
-## 3. Running External Commands or Shell Scripts
-
-If your plugin uses `child_process.exec()` or `spawn()` to call system commands:
-
-| Platform | Default Shell | Common Commands |
-| --- | --- | --- |
-| **Windows** | `cmd.exe` or PowerShell | `dir`, `copy`, `timeout` |
-| **Linux / macOS** | `bash` or `zsh` | `ls`, `cp`, `sleep` |
-
-* **The Fix:** Detect the platform using Node's `process.platform` before running system commands:
-
-```typescript
-import { Platform } from "obsidian";
-
-if (Platform.isDesktopApp) {
-  const isLinux = process.platform === "linux";
-  const command = isLinux ? "ls -la" : "dir";
-}
-
-```
+### Phase 2.2 (In Progress)
+I added the `_dirtyPaths`/`_fullRegenRequired` fields and helper methods (`markDirty()`, `markAllDirty()`, `isPathDirty()`, `hasCustomOrInheritedStyle()`) to `StyleGenerator`, but I **haven't yet modified the `traverse()` method** to use them for early-exit.
 
 ---
 
-## 4. UI / CSS / Rendering Glitches
+## Remaining ❌
 
-Since Obsidian runs on **Electron** (Chromium), UI styling is mostly consistent, but Linux window managers (Wayland vs X11) and hardware acceleration can cause visual glitches or flickers.
+### Phase 2.2 — Incremental Style Regeneration (the biggest performance win)
+- Modify `traverse()` in `StyleGenerator.ts` to skip CSS generation for non-dirty folders that have no custom/inherited styles
+- Wire up `markDirty()`/`markAllDirty()` calls from `main.ts` when settings change or paths are modified
+- This is the highest-impact remaining item
 
-* **Wayland vs X11:** Custom drop-downs, context menus, or popover modals can sometimes misalign on Linux if they rely on native window coordinates.
-* **Obsidian Themes:** Native scrollbars or custom font renderings can look slightly different under Linux GTK themes. Use Obsidian's CSS variables (`var(--background-primary)`, `var(--text-normal)`) rather than hardcoding styles.
+### Phase 3 — Code Quality (Not Started)
+| # | Task |
+|---|------|
+| 3.1 | Remove dead code (stub `IconManager.inject*()` methods, unused `_counterSvgPrefix/Mid/Suffix` fields, duplicate `FolderTrie.ts` in `algorithms/`) |
+| 3.2 | Consolidate duplicate `getStyle()` in `StyleResolver` and `StyleGenerator` |
+| 3.3 | Extract `AIIconClassifier.queryAI()` into per-provider classes |
+| 3.4 | Add test scaffolding (`tests/` directory with unit tests for `ColorResolver`, `IconPackIndex`, `CategoryTrie`, `utils`, `LRUCache`) |
+| 3.5 | Re-enable useful ESLint rules (`no-console` → warn, `no-unused-vars` → error) |
+
+### Phase 4 — Architecture (Not Started)
+| # | Task |
+|---|------|
+| 4.1 | Decompose `main.ts` (841 lines) into a `PluginLifecycle` service |
+| 4.2 | Narrow `IColorfulFoldersPlugin` interface — remove exposed internal caches |
+| 4.3 | Integrate `FolderTrie` into `StyleResolver` for O(depth) style resolution |
+| 4.4 | Add `AdoptedStyleSheetService.clearStyles()` call on settings invalidation |
 
 ---
 
-What kind of glitch are you seeing? If you share a snippet of the code that's failing or the error message from the Developer Console (`Ctrl + Shift + I` in Obsidian), we can debug it together!
+**Next step**: Finish Phase 2.2 — modifying `traverse()` in `StyleGenerator.ts` to use the dirty-path early-exit logic. Want me to continue?

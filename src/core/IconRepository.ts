@@ -17,6 +17,7 @@ export class IconRepository {
     private _findPackIconCache = new LRUCache<string, string | null>(2048);
     private _autoIconResultCache = new LRUCache<string, AutoIconData | null>(4096);
     private _packIndex: IconPackIndex = new IconPackIndex();
+    private _domParser = new DOMParser();
 
     constructor(plugin: IColorfulFoldersPlugin) {
         this.plugin = plugin;
@@ -396,15 +397,37 @@ export class IconRepository {
                 const rawSvg = svgStr.includes('%') ? decodeURIComponent(svgStr) : svgStr;
                 if (!rawSvg.includes('<svg')) { result = svgStr; }
                 else {
-                    const parser = new DOMParser();
-                    let doc = parser.parseFromString(rawSvg, 'image/svg+xml');
-                    if (doc.getElementsByTagName("parsererror").length > 0) doc = parser.parseFromString(rawSvg, 'text/html');
-                    
-                    const svg = doc.querySelector('svg');
-                    if (!svg) { result = svgStr; }
-                    else {
-                        if (!svg.hasAttribute('xmlns')) svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-                        svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+                const parser = this._domParser;
+                let doc = parser.parseFromString(rawSvg, 'image/svg+xml');
+                if (doc.getElementsByTagName("parsererror").length > 0) doc = parser.parseFromString(rawSvg, 'text/html');
+
+                // Remove dangerous tags
+                const dangerousTags = ['script', 'iframe', 'object', 'embed', 'foreignobject'];
+                for (const tag of dangerousTags) {
+                    doc.querySelectorAll(tag).forEach(el => el.remove());
+                }
+
+                // Remove <use> elements ONLY if they point to external/untrusted schemes (http, https, //, javascript, data)
+                doc.querySelectorAll('use').forEach(el => {
+                    const href = (el.getAttribute('href') || el.getAttribute('xlink:href') || '').trim().toLowerCase();
+                    if (href.startsWith('http') || href.startsWith('//') || href.startsWith('javascript:') || href.startsWith('data:')) {
+                        el.remove();
+                    }
+                });
+
+                // Strip all on* event handler attributes from every element
+                doc.querySelectorAll('*').forEach(el => {
+                    const attrs = Array.from(el.attributes);
+                    for (const attr of attrs) {
+                        if (attr.name.startsWith('on')) el.removeAttribute(attr.name);
+                    }
+                });
+
+                const svg = doc.querySelector('svg');
+                if (!svg) { result = svgStr; }
+                else {
+                    if (!svg.hasAttribute('xmlns')) svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
                         
                         const vbAttr = svg.getAttribute('viewBox');
                         if (!vbAttr && (svg.hasAttribute('width') || svg.hasAttribute('height'))) {
