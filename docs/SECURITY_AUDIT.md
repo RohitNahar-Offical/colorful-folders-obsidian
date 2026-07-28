@@ -13,9 +13,9 @@ Users can import custom SVGs. SVGs are XML documents and can contain `<script>` 
 Most icons are rendered via **CSS Masks**, and all are processed by a **Recursive DOM Sanitizer**.
 
 1.  **DOM Sanitizer**: Before use, icons are parsed via `DOMParser`. We recursively walk the tree and remove:
-    - Forbidden tags (`<script>`, `<iframe>`, etc.).
+    - Forbidden tags (`<script>`, `<iframe>`, `<object>`, `<embed>`, `<foreignobject>`).
+    - External `<use>` elements pointing to external or script schemes (`http:`, `https:`, `//`, `javascript:`, `data:`), while preserving internal SVG symbol references (`<use href="#symbol-id">`) for vector icon packs.
     - All `on*` event handlers (`onmouseover`, `onclick`).
-    - `javascript:` URIs.
 2.  **CSS Masking**: The sanitized string is URI-encoded and placed in a `mask-image: url(...)`.
 3.  **Engine Safety**: Browsers treat SVGs inside `url()` as images; scripts are **never executed**, providing a secondary fail-safe.
 
@@ -69,12 +69,13 @@ While not a direct security issue, a "Denial of Service" via a massive vault is 
 
 ---
 
-## 6. Stealth Mode Privacy
+## 6. AI Privacy & Endpoint Security
 
 ### 🛡️ The Defense:
-- **Password Storage**: Passwords are stored in `data.json`. While not encrypted, they are used strictly for local session locking.
-- **Session Management**: The `isVaultLocked` state is managed in-memory, meaning the password is required for every new Obsidian session.
-- **No Network Leakage **: No vault structure or passwords are ever sent to external servers.
+- **User Privacy Confirmation**: AI icon classification requires explicit user confirmation (`aiKeyConfirmed`) via an interactive privacy modal before any vault file or folder names are transmitted.
+- **Custom Endpoint Scheme Validation**: Custom AI provider endpoints are strictly validated in `AIIconClassifier.ts` to require `https://` or `localhost`/`127.0.0.1`, preventing unencrypted plaintext transmission over public HTTP.
+- **Session Protection**: Passwords are stored in `data.json` for local session locking.
+- **No Unintended Telemetry**: Vault structures and note content are never sent to external servers without user configuration.
 
 ---
 

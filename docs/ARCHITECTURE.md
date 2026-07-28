@@ -16,31 +16,34 @@ Colorful Folders does **NOT** inject physical DOM wrapper elements (`.cf-icon-wr
 
 ### The Rendering Pipeline
 
+### The Rendering Pipeline
+
 ```mermaid
 graph TD
-    A[User Action / Plugin Load] --> B{DOMObserverService / EventTrackerService}
+    A[User Action / Plugin Load] --> B{PluginLifecycleService}
     B -->|Attribute Stamping data-cf-path| C[Debouncer Trigger]
     C --> D[main.generateStyles]
     D --> E[StyleGenerator.prepareContext]
     E --> F[StyleGenerator.generateCss]
     F --> G1[BaseCssGenerator]
     F --> G2[ColorResolver]
-    F --> G3[FocusModeEngine.generateCss]
+    F --> G3[TagColorSync]
     G1 --> H[Recursive Traversal & Flat Rule Generation]
     G2 --> H
     G3 --> H
-    H --> I[Build CSS String with SVG Data URIs]
+    H --> I[Build Complete CSS String with SVG Data URIs]
     I --> J[AdoptedStyleSheetService.updateStyles]
     J --> K[sheet.replaceSync CSS String]
     K --> L[Native C++ CSS Reflow & Paint on all windows]
 ```
 
 ### The Pipeline Steps:
-1. **Attribute Tagging**: `DOMObserverService` stamps lightweight `data-cf-path="<path>"` dataset attributes on `.nav-folder-title`, `.nav-file-title`, and `.tree-item-self` elements. Because attribute updates do **not** trigger `childList` mutations, third-party observer race conditions are physically impossible.
-2. **State Resolution**: `StyleResolver.getEffectiveStyle(target, plugin)` calculates the visual state for every folder/file.
-3. **Flat Rule & Data URI CSS Generation**: `StyleGenerator.traverse()` builds flat CSS attribute rules (`.nav-folder-title[data-cf-path="..."]`). Custom SVGs and auto-icons are encoded into SVG Data URIs (`-webkit-mask-image: url("data:image/svg+xml;utf8,...")`) targeting `::before` pseudo-elements.
-4. **Programmatic Stylesheet Adoption**: `AdoptedStyleSheetService` updates the programmatic `CSSStyleSheet` instance via `sheet.replaceSync(css)`. The sheet is attached directly to `document.adoptedStyleSheets` across all workspace windows without creating `<style>` elements or overwriting other plugins' sheets.
-5. **Browser Execution**: The native browser CSS engine applies styles instantly with $O(1)$ overhead as items enter the viewport.
+1. **Lifecycle Orchestration**: `PluginLifecycleService` manages event listeners (`create`, `modify`, `delete`), document tracking across workspace windows, layout ready hooks, and teardown on unload.
+2. **Attribute Tagging**: `DOMObserverService` stamps lightweight `data-cf-path="<path>"` dataset attributes on `.nav-folder-title`, `.nav-file-title`, and `.tree-item-self` elements. Because attribute updates do **not** trigger `childList` mutations, third-party observer race conditions are physically impossible.
+3. **State Resolution**: `StyleResolver.getEffectiveStyle(target, plugin)` calculates the visual state for every folder/file using `FolderTrie` for $O(\text{depth})$ path inheritance queries.
+4. **Flat Rule & Data URI CSS Generation**: `StyleGenerator.traverse()` builds complete flat CSS attribute rules (`.nav-folder-title[data-cf-path="..."]`). Custom SVGs and auto-icons are encoded into SVG Data URIs (`-webkit-mask-image: url("data:image/svg+xml;utf8,...")`) targeting `::before` pseudo-elements.
+5. **Programmatic Stylesheet Adoption**: `AdoptedStyleSheetService` updates the programmatic `CSSStyleSheet` instance via `sheet.replaceSync(css)`. The sheet is attached directly to `document.adoptedStyleSheets` across all workspace windows without creating `<style>` elements or overwriting other plugins' sheets.
+6. **Browser Execution**: The native browser CSS engine applies styles instantly with $O(1)$ overhead as items enter the viewport.
 
 ---
 
