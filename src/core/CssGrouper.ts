@@ -1,5 +1,5 @@
 export class CssGrouper {
-    private groups = new Map<string, { body: string, selectors: string[] }>();
+    private groups = new Map<string, { body: string, selectors: Set<string> }>();
     private rawBlocks: string[] = [];
 
     /**
@@ -14,10 +14,12 @@ export class CssGrouper {
         
         let existing = this.groups.get(key);
         if (!existing) {
-            existing = { body: cssBody, selectors: [] };
+            existing = { body: cssBody, selectors: new Set<string>() };
             this.groups.set(key, existing);
         }
-        existing.selectors.push(...selectors);
+        for (let i = 0; i < selectors.length; i++) {
+            existing.selectors.add(selectors[i]);
+        }
     }
 
     /**
@@ -33,10 +35,12 @@ export class CssGrouper {
     build(): string {
         const chunks: string[] = [...this.rawBlocks];
         for (const group of this.groups.values()) {
+            const selectorArray = Array.from(group.selectors);
+            if (selectorArray.length === 0) continue;
             // Chunk selectors into groups of 500 to avoid any browser selector limit edge cases
             const chunkSize = 500;
-            for (let i = 0; i < group.selectors.length; i += chunkSize) {
-                const chunk = group.selectors.slice(i, i + chunkSize);
+            for (let i = 0; i < selectorArray.length; i += chunkSize) {
+                const chunk = selectorArray.slice(i, i + chunkSize);
                 chunks.push(`${chunk.join(',\n')} {\n${group.body}\n}`);
             }
         }

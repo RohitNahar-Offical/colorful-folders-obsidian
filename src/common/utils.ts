@@ -72,7 +72,7 @@ export function normalizeVaultPath(path: string): string {
 export function safeEscape(path: string): string {
     if (!path) return "";
     const norm = normalizeVaultPath(path);
-    return norm.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/'/g, "\\'");
+    return norm.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/'/g, "\\'").replace(/\[/g, '\\[').replace(/\]/g, '\\]');
 }
 
 const paletteCache = new Map<string, { rgb: string, hex: string }[] | null>();

@@ -514,11 +514,11 @@ export class IconRepository {
                         }
                     });
 
-                    // Strip all on* event handler attributes from every element
+                    // Strip all on* event handler attributes from every element (case-insensitive)
                     doc.querySelectorAll('*').forEach(el => {
                         const attrs = Array.from(el.attributes);
                         for (const attr of attrs) {
-                            if (attr.name.startsWith('on')) el.removeAttribute(attr.name);
+                            if (attr.name.toLowerCase().startsWith('on')) el.removeAttribute(attr.name);
                         }
                     });
 
