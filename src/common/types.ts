@@ -1,6 +1,7 @@
 import { App, MenuItem, Menu, EventRef, Debouncer } from 'obsidian';
 import { DOMObserverService } from '../services/DOMObserverService';
 import type { IconManager } from '../core/IconManager';
+import type { AIIconClassifier } from '../integrations/AIIconClassifier';
 
 export interface FolderStyle {
     hex?: string;
@@ -121,8 +122,9 @@ export interface ColorfulFoldersSettings {
     aiCustomEndpoint: string;
     aiOllamaEndpoint: string;
     aiModelName: string;
-    aiIncludeFiles: boolean;
-    aiKeyConfirmed: boolean;
+    aiIncludeFiles?: boolean;
+    aiIncludeContentContext?: boolean;
+    aiKeyConfirmed?: boolean;
 }
 
 
@@ -168,6 +170,7 @@ export interface IColorfulFoldersPlugin {
     parsedExclusionList?: Set<string> | null;
     activePaletteCache?: { palette: { rgb: string; hex: string }[] } | null;
     iconManager: IconManager;
+    aiIconClassifier: AIIconClassifier;
     isSyncingDividers: boolean;
     isDragging: boolean;
     _dividerTimeout?: number | null;

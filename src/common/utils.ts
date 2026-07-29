@@ -225,3 +225,20 @@ export function extractCoreIconKeyword(iconId: string): { noPrefix: string; core
     return { noPrefix, core };
 }
 
+export function normalizePathKey(path: string): string {
+    if (!path) return "";
+    return path
+        .replace(/\\/g, '/')
+        .replace(/\.md$/i, '')
+        .trim()
+        .toLowerCase();
+}
+
+export function normalizeIconName(iconId: string): string {
+    if (!iconId) return "";
+    const clean = iconId.trim().toLowerCase();
+    const { core } = extractCoreIconKeyword(clean);
+    return core || stripIconPrefix(clean) || clean;
+}
+
+

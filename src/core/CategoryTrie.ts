@@ -1,48 +1,63 @@
 import { AutoIconData } from '../common/types';
 
+interface TrieNode {
+    children: Map<string, TrieNode>;
+    categories: AutoIconData[];
+}
+
+function createTrieNode(): TrieNode {
+    return { children: new Map(), categories: [] };
+}
+
 export class CategoryTrie {
-    private trieMap = new Map<string, AutoIconData[]>();
+    private root: TrieNode = createTrieNode();
     private fallbackCategories: AutoIconData[] = [];
-    private _lookupArray: AutoIconData[] | null = null;
 
     public build(categories: AutoIconData[]) {
-        this.trieMap.clear();
+        this.root = createTrieNode();
         this.fallbackCategories = [];
-        this._lookupArray = null;
 
         for (const cat of categories) {
             const source = cat.rex.source.toLowerCase();
-            // Handle numeric and date regexes (e.g. \d+, 19|20)
+            let isLiteralInserted = false;
+
+            // Handle numeric / digit regex patterns
             if (source.includes('\\d') || source.includes('0-9') || /19\|20/.test(source)) {
                 for (let d = 0; d <= 9; d++) {
-                    const char = String(d);
-                    if (!this.trieMap.has(char)) {
-                        this.trieMap.set(char, []);
+                    this.insertWord(String(d), cat);
+                }
+                isLiteralInserted = true;
+            }
+
+            // Extract literal word tokens (e.g., from "journal|daily|notes")
+            const wordTokens = source.match(/[a-z0-9]+/g);
+            if (wordTokens && wordTokens.length > 0 && !source.startsWith('.') && !source.startsWith('\\')) {
+                for (const word of wordTokens) {
+                    if (word.length >= 2 && !['or', 'and', 'in', 'of', 'to', 'for'].includes(word)) {
+                        this.insertWord(word, cat);
+                        isLiteralInserted = true;
                     }
-                    this.trieMap.get(char)!.push(cat);
                 }
             }
 
-            // Extract initial literal letter tokens from regex source (e.g., "journal|daily" -> "j", "d")
-            const matches = source.match(/[a-z0-9]/g);
-            if (matches && matches.length > 0 && !source.startsWith('.') && !source.startsWith('\\')) {
-                const uniqueChars = new Set(matches.slice(0, 5));
-                for (const char of uniqueChars) {
-                    if (!this.trieMap.has(char)) {
-                        this.trieMap.set(char, []);
-                    }
-                    this.trieMap.get(char)!.push(cat);
-                }
-            } else {
+            if (!isLiteralInserted) {
                 this.fallbackCategories.push(cat);
             }
         }
+    }
 
-        // Pre-compute the flattened lookup array to avoid Set/Array allocation on every lookup
-        this._lookupArray = [...this.fallbackCategories];
-        for (const [_, cats] of this.trieMap) {
-            for (const cat of cats) {
-                this._lookupArray.push(cat);
+    private insertWord(word: string, cat: AutoIconData) {
+        let node = this.root;
+        for (let i = 0; i < word.length; i++) {
+            const ch = word.charAt(i);
+            let child = node.children.get(ch);
+            if (!child) {
+                child = createTrieNode();
+                node.children.set(ch, child);
+            }
+            node = child;
+            if (!node.categories.includes(cat)) {
+                node.categories.push(cat);
             }
         }
     }
@@ -51,25 +66,28 @@ export class CategoryTrie {
         if (!name) return this.fallbackCategories;
         const words = name.toLowerCase().split(/[\s_.-]+/);
 
-        if (!this._lookupArray) return this.fallbackCategories;
+        const matchedSet = new Set<AutoIconData>();
 
-        // Use pre-computed array instead of building a Set on every call
-        let result: AutoIconData[] | null = null;
         for (const word of words) {
             if (!word) continue;
-            const firstChar = word.charAt(0);
-            const candidates = this.trieMap.get(firstChar);
-            if (candidates) {
-                if (result === null) {
-                    result = [...this._lookupArray];
-                }
-                for (const cat of candidates) {
-                    if (!result.includes(cat)) {
-                        result.push(cat);
-                    }
+            let node = this.root;
+            for (let i = 0; i < word.length; i++) {
+                const ch = word.charAt(i);
+                const nextNode = node.children.get(ch);
+                if (!nextNode) break;
+                node = nextNode;
+                for (const cat of node.categories) {
+                    matchedSet.add(cat);
                 }
             }
         }
-        return result ?? this._lookupArray;
+
+        const results = Array.from(matchedSet);
+        for (const fb of this.fallbackCategories) {
+            if (!matchedSet.has(fb)) {
+                results.push(fb);
+            }
+        }
+        return results;
     }
 }

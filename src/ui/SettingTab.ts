@@ -779,6 +779,17 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 })
             );
 
+        new obsidian.Setting(aiCard)
+            .setName("Include File Content & Frontmatter Context")
+            .setDesc("If enabled, AI reads file content snippets, tags, and frontmatter properties for classification. If disabled, items are classified strictly & fast based on file/folder names only.")
+            .addToggle(t => t
+                .setValue(this.plugin.settings.aiIncludeContentContext !== false)
+                .onChange(async (val) => {
+                    this.plugin.settings.aiIncludeContentContext = val;
+                    await this.plugin.saveSettings();
+                })
+            );
+
         const aiBtnWrap = aiCard.createDiv();
         aiBtnWrap.setCssStyles({ display: "flex", gap: "10px", marginTop: "15px", marginBottom: "10px" });
 
@@ -794,13 +805,13 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         async () => {
                             this.plugin.settings.aiKeyConfirmed = true;
                             await this.plugin.saveSettings();
-                            void AIIconClassifier.classifyVault(this.plugin);
+                            void this.plugin.aiIconClassifier.classifyVault();
                         }
                     ).open();
                     return;
                 }
             }
-            void AIIconClassifier.classifyVault(this.plugin);
+            void this.plugin.aiIconClassifier.classifyVault();
         };
 
         const aiForceBtn = aiBtnWrap.createEl("button", { text: "🔄 Force Re-Assign All" });
@@ -814,19 +825,19 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                         async () => {
                             this.plugin.settings.aiKeyConfirmed = true;
                             await this.plugin.saveSettings();
-                            void AIIconClassifier.classifyVault(this.plugin, { force: true });
+                            void this.plugin.aiIconClassifier.classifyVault({ force: true });
                         }
                     ).open();
                     return;
                 }
             }
-            void AIIconClassifier.classifyVault(this.plugin, { force: true });
+            void this.plugin.aiIconClassifier.classifyVault({ force: true });
         };
 
         const aiStopBtn = aiBtnWrap.createEl("button", { text: "🛑 Stop AI Classification" });
         aiStopBtn.setCssStyles({ color: "var(--text-error)" });
         aiStopBtn.onclick = () => {
-            AIIconClassifier.stopClassification();
+            this.plugin.aiIconClassifier.stopClassification();
         };
 
         const customIconCard = makeCard(iconPanel, "📦", "Custom icon management");

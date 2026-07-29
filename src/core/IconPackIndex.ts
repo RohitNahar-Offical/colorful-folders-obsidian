@@ -124,17 +124,34 @@ export class IconPackIndex {
 
     public searchFuzzy(searchKey: string, options?: { threshold?: number }): string | null {
         if (!this.isBuilt || !searchKey || searchKey.length < 3) return null;
+        
+        // Fast-path: O(1) exact or core keyword match
+        const exact = this.findIcon(searchKey);
+        if (exact) return exact;
+
         const threshold = options?.threshold ?? 0.8;
         const normKey = searchKey.toLowerCase().trim();
+        const maxLenDiffRatio = 1 - threshold;
 
         let bestMatch: string | null = null;
         let bestScore = 0;
 
         for (const candidateKey of this.allKeys) {
-            const score = this.calculateSimilarity(normKey, candidateKey);
+            const candidateLower = candidateKey.toLowerCase();
+            const lenA = normKey.length;
+            const lenB = candidateLower.length;
+            const maxLen = Math.max(lenA, lenB);
+            
+            // Length-difference pruning
+            if (Math.abs(lenA - lenB) / maxLen > maxLenDiffRatio) {
+                continue;
+            }
+
+            const score = this.calculateSimilarity(normKey, candidateLower);
             if (score >= threshold && score > bestScore) {
                 bestScore = score;
                 bestMatch = candidateKey;
+                if (bestScore >= 0.95) break; // Early termination on near-exact match
             }
         }
 
@@ -144,43 +161,52 @@ export class IconPackIndex {
     private calculateSimilarity(a: string, b: string): number {
         if (a === b) return 1.0;
         if (!a || !b) return 0;
-        const lA = a.toLowerCase();
-        const lB = b.toLowerCase();
-        if (lA === lB) return 1.0;
-        const { core: coreA, noPrefix: npA } = extractCoreIconKeyword(lA);
-        const { core: coreB, noPrefix: npB } = extractCoreIconKeyword(lB);
+        const { core: coreA, noPrefix: npA } = extractCoreIconKeyword(a);
+        const { core: coreB, noPrefix: npB } = extractCoreIconKeyword(b);
 
         if (coreA && coreB && coreA === coreB) return 0.95;
         if (npA && npB && npA === npB) return 0.95;
 
-        if (lA.includes(lB) || lB.includes(lA)) {
-            const minLen = Math.min(lA.length, lB.length);
+        // Word boundary / prefix alignment check (prevents false substring matches like "cat" in "communication-category")
+        const wordsB = b.split(/[-_: ]+/);
+        if (b.startsWith(a) || a.startsWith(b) || wordsB.includes(a)) {
+            const minLen = Math.min(a.length, b.length);
             if (minLen >= 4) return 0.85;
         }
 
-        const dist = this.levenshteinDistance(lA, lB);
-        const maxLen = Math.max(lA.length, lB.length);
+        const dist = this.levenshteinDistance(a, b);
+        const maxLen = Math.max(a.length, b.length);
         return maxLen === 0 ? 1 : 1 - dist / maxLen;
     }
 
     private levenshteinDistance(a: string, b: string): number {
-        const matrix: number[][] = [];
-        for (let i = 0; i <= b.length; i++) matrix[i] = [i];
-        for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
-        for (let i = 1; i <= b.length; i++) {
-            for (let j = 1; j <= a.length; j++) {
-                if (b.charAt(i - 1) === a.charAt(j - 1)) {
-                    matrix[i][j] = matrix[i - 1][j - 1];
-                } else {
-                    matrix[i][j] = Math.min(
-                        matrix[i - 1][j - 1] + 1,
-                        matrix[i][j - 1] + 1,
-                        matrix[i - 1][j] + 1
-                    );
-                }
+        if (a === b) return 0;
+        const lenA = a.length;
+        const lenB = b.length;
+        if (lenA === 0) return lenB;
+        if (lenB === 0) return lenA;
+
+        let prev = new Array(lenB + 1);
+        let curr = new Array(lenB + 1);
+
+        for (let j = 0; j <= lenB; j++) prev[j] = j;
+
+        for (let i = 1; i <= lenA; i++) {
+            curr[0] = i;
+            const charA = a.charCodeAt(i - 1);
+            for (let j = 1; j <= lenB; j++) {
+                const cost = charA === b.charCodeAt(j - 1) ? 0 : 1;
+                curr[j] = Math.min(
+                    curr[j - 1] + 1,
+                    prev[j] + 1,
+                    prev[j - 1] + cost
+                );
             }
+            const temp = prev;
+            prev = curr;
+            curr = temp;
         }
-        return matrix[b.length][a.length];
+        return prev[lenB];
     }
 
     public getIsBuilt(): boolean {

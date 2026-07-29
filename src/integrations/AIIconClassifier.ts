@@ -1,11 +1,18 @@
-import { requestUrl, Notice, TFolder, TFile, getIconIds } from 'obsidian';
+import * as obsidian from 'obsidian';
+import { requestUrl, Notice, TFolder, TFile, getIconIds, getIcon } from 'obsidian';
 import { IColorfulFoldersPlugin } from '../common/types';
+import { normalizePathKey, normalizeIconName } from '../common/utils';
 
 export class AIIconClassifier {
-    private static isClassifying = false;
-    private static cancelRequested = false;
+    private isClassifying = false;
+    private cancelRequested = false;
+    private plugin: IColorfulFoldersPlugin;
 
-    public static stopClassification(): void {
+    constructor(plugin: IColorfulFoldersPlugin) {
+        this.plugin = plugin;
+    }
+
+    public stopClassification(): void {
         if (this.isClassifying) {
             this.cancelRequested = true;
             new Notice("Colorful Folders AI: Stopping classification process...");
@@ -14,7 +21,7 @@ export class AIIconClassifier {
         }
     }
 
-    static async classifyVault(plugin: IColorfulFoldersPlugin, options?: { force?: boolean }): Promise<void> {
+    public async classifyVault(options?: { force?: boolean }): Promise<void> {
         if (this.isClassifying) {
             new Notice("Colorful Folders AI: Classification is already in progress...");
             return;
@@ -22,7 +29,7 @@ export class AIIconClassifier {
 
         this.cancelRequested = false;
 
-        const settings = plugin.settings;
+        const settings = this.plugin.settings;
         if (!settings.aiApiKey && settings.aiProvider !== 'custom' && settings.aiProvider !== 'ollama') {
             new Notice("Colorful Folders AI: Please enter an API key in Settings -> Icon management -> AI Settings.");
             return;
@@ -33,7 +40,7 @@ export class AIIconClassifier {
 
         try {
             // 1. Gather all vault folders and (optionally) markdown files with rich context
-            const allFiles = plugin.app.vault.getAllLoadedFiles();
+            const allFiles = this.plugin.app.vault.getAllLoadedFiles();
             const rawTargets: {
                 fileObj: TFolder | TFile;
                 path: string;
@@ -55,10 +62,14 @@ export class AIIconClassifier {
                 }
                 const pathHierarchy = file.path.split('/');
 
+                const includeContext = settings.aiIncludeContentContext !== false;
+
                 if (file instanceof TFolder && !file.isRoot()) {
                     const childSamples: string[] = [];
-                    for (const child of file.children.slice(0, 5)) {
-                        childSamples.push(child.name);
+                    if (includeContext) {
+                        for (const child of file.children.slice(0, 5)) {
+                            childSamples.push(child.name);
+                        }
                     }
                     rawTargets.push({
                         fileObj: file,
@@ -67,13 +78,13 @@ export class AIIconClassifier {
                         isFolder: true,
                         parentFolder,
                         pathHierarchy,
-                        childSamples
+                        childSamples: includeContext && childSamples.length > 0 ? childSamples : undefined
                     });
                 } else if (settings.aiIncludeFiles && file instanceof TFile) {
                     const tags: string[] = [];
                     const frontmatter: Record<string, string> = {};
-                    if (plugin.app?.metadataCache) {
-                        const cache = plugin.app.metadataCache.getFileCache(file);
+                    if (includeContext && this.plugin.app?.metadataCache) {
+                        const cache = this.plugin.app.metadataCache.getFileCache(file);
                         if (cache?.tags) {
                             tags.push(...cache.tags.map(t => t.tag));
                         }
@@ -102,8 +113,8 @@ export class AIIconClassifier {
                         isFolder: false,
                         parentFolder,
                         pathHierarchy,
-                        tags,
-                        frontmatter: Object.keys(frontmatter).length > 0 ? frontmatter : undefined
+                        tags: includeContext && tags.length > 0 ? tags : undefined,
+                        frontmatter: includeContext && Object.keys(frontmatter).length > 0 ? frontmatter : undefined
                     });
                 }
             }
@@ -130,32 +141,34 @@ export class AIIconClassifier {
 
             notice.setMessage(`Colorful Folders AI: Preparing ${unassignedTargets.length} vault items...`);
 
-            // Fast parallel read for markdown snippets (chunks of 50)
-            const fileTargets = unassignedTargets.filter(t => !t.isFolder && t.fileObj instanceof TFile) as (typeof unassignedTargets[0] & { fileObj: TFile; contentSnippet?: string })[];
-            const chunkSize = 50;
-            for (let i = 0; i < fileTargets.length; i += chunkSize) {
-                const chunk = fileTargets.slice(i, i + chunkSize);
-                await Promise.all(chunk.map(async t => {
-                    try {
-                        const rawContent = await plugin.app.vault.cachedRead(t.fileObj);
-                        const cleanContent = rawContent
-                            .replace(/^---[\s\S]*?---/, '')
-                            .replace(/#+\s+/g, '')
-                            .replace(/\[\[(.*?)\]\]/g, '$1')
-                            .replace(/`{1,3}[\s\S]*?`{1,3}/g, '')
-                            .replace(/\s+/g, ' ')
-                            .trim();
-                        if (cleanContent) {
-                            t.contentSnippet = cleanContent.substring(0, 150);
+            // Fast parallel read for markdown snippets (chunks of 50) - ONLY if content context is enabled
+            if (settings.aiIncludeContentContext !== false) {
+                const fileTargets = unassignedTargets.filter(t => !t.isFolder && t.fileObj instanceof TFile) as (typeof unassignedTargets[0] & { fileObj: TFile; contentSnippet?: string })[];
+                const chunkSize = 50;
+                for (let i = 0; i < fileTargets.length; i += chunkSize) {
+                    const chunk = fileTargets.slice(i, i + chunkSize);
+                    await Promise.all(chunk.map(async t => {
+                        try {
+                            const rawContent = await this.plugin.app.vault.cachedRead(t.fileObj);
+                            const cleanContent = rawContent
+                                .replace(/^---[\s\S]*?---/, '')
+                                .replace(/#+\s+/g, '')
+                                .replace(/\[\[(.*?)\]\]/g, '$1')
+                                .replace(/`{1,3}[\s\S]*?`{1,3}/g, '')
+                                .replace(/\s+/g, ' ')
+                                .trim();
+                            if (cleanContent) {
+                                t.contentSnippet = cleanContent.substring(0, 150);
+                            }
+                        } catch {
+                            // ignore read error
                         }
-                    } catch {
-                        // ignore read error
-                    }
-                }));
+                    }));
+                }
             }
 
             // Construct system prompt ONCE for all batches
-            const systemPrompt = this.buildSystemPrompt(plugin);
+            const systemPrompt = this.buildSystemPrompt();
 
             notice.setMessage(`Colorful Folders AI: Analyzing ${unassignedTargets.length} vault items...`);
 
@@ -164,7 +177,7 @@ export class AIIconClassifier {
             const maxConcurrent = settings.aiProvider === 'ollama' ? 1 : 3;
 
             const conceptMap = new Map<string, string>(); // path/normName -> iconId string
-            const normalizeKey = (str: string) => str.toLowerCase().replace(/\.md$/i, '').replace(/[^a-z0-9]/gi, '');
+            const normalizeKey = (str: string) => normalizePathKey(str);
 
             const batchChunks: (typeof unassignedTargets)[] = [];
             for (let i = 0; i < unassignedTargets.length; i += batchSize) {
@@ -176,18 +189,15 @@ export class AIIconClassifier {
                 const currentBatch = idx + 1;
                 const contextPayload = batchTargets.map(t => {
                     const itemObj: Record<string, any> = {
-                        title: t.name,
-                        path: t.path,
-                        hierarchy: t.pathHierarchy.slice(0, -1).join(' > '),
-                        parent: t.parentFolder
+                        item_path: t.path,
+                        type: t.isFolder ? 'Folder' : 'File'
                     };
                     if (t.isFolder && t.childSamples && t.childSamples.length > 0) {
-                        itemObj.files = t.childSamples;
+                        itemObj.sample_contents = t.childSamples.join(', ');
                     }
                     if (!t.isFolder) {
-                        if (t.tags && t.tags.length > 0) itemObj.tags = t.tags;
-                        if (t.frontmatter && Object.keys(t.frontmatter).length > 0) itemObj.properties = t.frontmatter;
-                        if ((t as any).contentSnippet) itemObj.contentSnippet = (t as any).contentSnippet;
+                        if (t.tags && t.tags.length > 0) itemObj.tags = t.tags.join(', ');
+                        if ((t as any).contentSnippet) itemObj.snippet = (t as any).contentSnippet;
                     }
                     return itemObj;
                 });
@@ -195,7 +205,7 @@ export class AIIconClassifier {
                 console.log(`🤖 [Colorful Folders AI] Batch ${currentBatch}/${batchChunks.length} Context Payload Sent:`, contextPayload);
 
                 try {
-                    const result = await this.queryAI(plugin, contextPayload, systemPrompt);
+                    const result = await this.queryAI(contextPayload, systemPrompt);
                     let kvPairs: Record<string, unknown> = {};
 
                     if (Array.isArray(result)) {
@@ -214,27 +224,171 @@ export class AIIconClassifier {
 
                     console.log(`📦 [Colorful Folders AI] Batch ${currentBatch}/${batchChunks.length} Parsed Output:`, kvPairs);
 
+                    const RESERVED_KEYS = new Set([
+                        'created', 'contentsnippet', 'snippet', 'rank', 'tags', 'properties',
+                        'parentfolder', 'parent', 'fileobj', 'pathhierarchy', 'hierarchy',
+                        'isfolder', 'cssclasses', 'position', 'name', 'title', 'path',
+                        'type', 'details', 'sample_contents', 'context', 'item_path', 'itempath',
+                        'files', 'file', ''
+                    ]);
+
+                    const COMPOUND_SUBSTRINGS = [
+                        // Navigation & location
+                        'map', 'pin', 'marker', 'location', 'geo', 'globe', 'compass', 'direction', 'route', 'navigation', 'atlas',
+                        // Objects & items
+                        'book', 'file', 'folder', 'document', 'note', 'text', 'write', 'pen', 'pencil', 'paper',
+                        // Technology & code
+                        'code', 'terminal', 'cpu', 'chip', 'dev', 'gear', 'settings', 'wrench', 'tool', 'build', 'plug', 'api',
+                        // Media
+                        'image', 'photo', 'video', 'music', 'audio', 'sound', 'play', 'film', 'camera', 'microphone', 'speaker',
+                        // Data & analytics
+                        'data', 'chart', 'graph', 'analytics', 'stats', 'number', 'calc', 'math', 'formula', 'function',
+                        // People & social
+                        'user', 'people', 'team', 'group', 'chat', 'message', 'comment', 'social', 'contact', 'account', 'profile',
+                        // Actions & status
+                        'download', 'upload', 'share', 'sync', 'export', 'import', 'copy', 'paste', 'delete', 'trash', 'add', 'create',
+                        // States, layout & qualities
+                        'layout', 'panel', 'sidebar', 'window', 'grid', 'column', 'row', 'table',
+                        'lock', 'unlock', 'shield', 'security', 'key', 'password', 'safe', 'check', 'checkmark', 'done', 'complete',
+                        'alert', 'warn', 'error', 'help', 'info', 'question', 'search', 'filter', 'sort', 'view', 'eye', 'visible',
+                        // Time & calendar
+                        'calendar', 'clock', 'time', 'date', 'schedule', 'event', 'reminder', 'history', 'archive', 'backup',
+                        // Places & spaces
+                        'home', 'house', 'building', 'office', 'room', 'place', 'spot', 'area', 'zone', 'floor', 'wall',
+                        // Nature & elements
+                        'plant', 'leaf', 'tree', 'flower', 'sun', 'moon', 'star', 'weather', 'rain', 'cloud', 'snow', 'wind',
+                        // Emotions & abstract
+                        'brain', 'think', 'idea', 'lightbulb', 'spark', 'heart', 'love', 'favorite', 'like',
+                        // Business & finance
+                        'money', 'dollar', 'coin', 'credit', 'bank', 'wallet', 'briefcase', 'work', 'job', 'career', 'meeting',
+                        // Health & fitness
+                        'health', 'fitness', 'exercise', 'workout', 'gym', 'run', 'walk', 'pulse', 'medical', 'hospital',
+                        // Travel & transport
+                        'travel', 'flight', 'plane', 'car', 'vehicle', 'drive', 'road', 'trip', 'vacation', 'hotel',
+                        // Education
+                        'school', 'study', 'learn', 'course', 'class', 'graduation', 'student', 'teacher', 'exam',
+                        // Communication
+                        'mail', 'email', 'notification', 'bell', 'phone', 'call'
+                    ];
+
                     for (const [key, conceptVal] of Object.entries(kvPairs)) {
                         if (!conceptVal) continue;
+                        const cleanKey = key.trim();
+                        const normKey = cleanKey.toLowerCase();
+                        if (RESERVED_KEYS.has(normKey)) {
+                            continue; // Silent drop of metadata key hallucinations
+                        }
+
+                        // Flexible target item matching: match full path, normalized path, filename/title, or trailing path segment
+                        const normCleanKey = normalizeKey(cleanKey);
+                        const targetItem = batchTargets.find(t => 
+                            t.path === cleanKey || 
+                            normalizeKey(t.path) === normCleanKey || 
+                            t.name === cleanKey ||
+                            normalizeKey(t.name) === normCleanKey ||
+                            normalizeKey(t.path).endsWith(normCleanKey) ||
+                            normCleanKey.endsWith(normalizeKey(t.name))
+                        );
+
+                        if (!targetItem) {
+                            continue; // Skip non-item keys returned by LLM explanations
+                        }
+
                         let rawIcon = Array.isArray(conceptVal) ? conceptVal[0] : conceptVal;
                         if (typeof rawIcon === 'object' && rawIcon) {
                             rawIcon = (rawIcon as any).icon || (rawIcon as any).iconId || (rawIcon as any).concept || '';
                         }
                         const cleanIcon = String(rawIcon).trim();
                         if (cleanIcon) {
-                            const isValid = plugin.iconManager.isEmojiIcon(cleanIcon) ||
-                                           Boolean(plugin.iconManager.getIconSvg(cleanIcon)) ||
-                                           Boolean(plugin.iconManager.findIconInPacks(cleanIcon));
-                            if (isValid) {
-                                conceptMap.set(key, cleanIcon);
-                                conceptMap.set(normalizeKey(key), cleanIcon);
+                            // Layer 1: Pre-normalization (Strip version suffixes "-1.6", "_2.0", spaces -> hyphens)
+                            const normalized = cleanIcon
+                                .replace(/[-_]v?\d+(\.\d+)*$/, '')
+                                .replace(/[\s_]+/g, '-')
+                                .replace(/[^a-z0-9\-]/gi, '')
+                                .replace(/-+/g, '-')
+                                .replace(/^-+|-+$/g, '')
+                                .toLowerCase();
+
+                            // Smart Icon Resolution Pipeline
+                            const resolveSmartIcon = (rawStr: string): string | null => {
+                                if (!rawStr) return null;
+                                const clean = rawStr.trim().replace(/^[\s+:=#]+/, '').trim();
+                                if (!clean) return null;
+                                const lowerClean = clean.toLowerCase();
+
+                                // 1. Direct emoji or SVG match
+                                if (this.plugin.iconManager.isEmojiIcon(clean)) return clean;
+                                if (this.plugin.iconManager.getIconSvg(lowerClean)) return lowerClean;
+                                if (obsidian.getIcon(lowerClean)) return lowerClean;
+                                if (this.plugin.iconManager.getIconSvg(clean)) return clean;
+
+                                // 2. Handle accidental file paths in icon value position
+                                if (clean.includes('/') || clean.endsWith('.md')) {
+                                    const parts = clean.split('/');
+                                    const lastPart = parts[parts.length - 1].replace(/\.md$/i, '').replace(/[/_]/g, ' ').trim();
+                                    if (lastPart && lastPart.toLowerCase() !== clean.toLowerCase()) {
+                                        const pathHit = resolveSmartIcon(lastPart);
+                                        if (pathHit) return pathHit;
+                                    }
+                                }
+
+                                // 3. Hyphenated version (convert underscores to hyphens)
+                                const hyphenated = lowerClean.replace(/[\s_]+/g, '-');
+                                if (this.plugin.iconManager.getIconSvg(hyphenated)) return hyphenated;
+                                if (obsidian.getIcon(hyphenated)) return hyphenated;
+
+                                // 4. Search installed packs / Lucide index + Relaxed Fuzzy Search (threshold 0.5)
+                                const packHit = this.plugin.iconManager.findIconInPacks(lowerClean) || 
+                                                this.plugin.iconManager.findIconInPacks(hyphenated) ||
+                                                this.plugin.iconManager.searchFuzzy(lowerClean, { threshold: 0.5 }) ||
+                                                this.plugin.iconManager.searchFuzzy(hyphenated, { threshold: 0.5 });
+                                if (packHit) return packHit;
+
+                                // 5. Word extraction & relaxed fuzzy search per word (threshold 0.5)
+                                const words = hyphenated.split(/[\-_:\s]+/).filter(w => w.length >= 3 && !/^\d+$/.test(w));
+                                for (let i = words.length - 1; i >= 0; i--) {
+                                    const word = words[i];
+                                    if (this.plugin.iconManager.getIconSvg(word)) return word;
+                                    if (obsidian.getIcon(word)) return word;
+                                    const wordHit = this.plugin.iconManager.findIconInPacks(word) || this.plugin.iconManager.searchFuzzy(word, { threshold: 0.5 });
+                                    if (wordHit) return wordHit;
+                                }
+
+                                // 6. Layer 2: Expanded Compound Substring Matching
+                                for (const sub of COMPOUND_SUBSTRINGS) {
+                                    if (lowerClean.includes(sub)) {
+                                        const subHit = this.plugin.iconManager.findIconInPacks(sub) || this.plugin.iconManager.searchFuzzy(sub, { threshold: 0.5 });
+                                        if (subHit) return subHit;
+                                        if (obsidian.getIcon(sub)) return sub;
+                                    }
+                                }
+
+                                return null;
+                            };
+
+                            const matchedIcon = resolveSmartIcon(cleanIcon) || resolveSmartIcon(normalized);
+                            if (matchedIcon) {
+                                conceptMap.set(targetItem.path, matchedIcon);
+                                conceptMap.set(normalizeKey(targetItem.path), matchedIcon);
                             } else {
-                                console.warn(`Colorful Folders AI: Skipping invalid icon string "${cleanIcon}" for "${key}"`);
+                                // Layer 4: Final Fallback to Native Auto-Icon System for the item path
+                                const autoIcon = this.plugin.iconManager.getAutoIconData(targetItem.name, targetItem.path);
+                                if (autoIcon && (autoIcon.lucide || autoIcon.emoji)) {
+                                    const fallbackIcon = autoIcon.lucide || autoIcon.emoji;
+                                    if (fallbackIcon) {
+                                        conceptMap.set(targetItem.path, fallbackIcon);
+                                        conceptMap.set(normalizeKey(targetItem.path), fallbackIcon);
+                                    }
+                                } else {
+                                    console.warn(`Colorful Folders AI: Skipping invalid icon string "${cleanIcon}" for "${targetItem.path}"`);
+                                }
                             }
                         }
                     }
                 } catch (err) {
+                    const msg = (err as Error)?.message || String(err);
                     console.error(`Colorful Folders AI: Batch ${currentBatch} classification failed`, err);
+                    new Notice(`Colorful Folders AI: ${msg}`, 6000);
                 } finally {
                     completedBatches++;
                     notice.setMessage(`Colorful Folders AI: Processed ${completedBatches}/${batchChunks.length} batches...`);
@@ -271,8 +425,19 @@ export class AIIconClassifier {
             for (const item of unassignedTargets) {
                 const normName = normalizeKey(item.name);
                 const normPath = normalizeKey(item.path);
-                const iconId = conceptMap.get(item.path) || conceptMap.get(normPath) || conceptMap.get(normName) || conceptMap.get(item.name) || "";
+                let iconId = conceptMap.get(item.path) || conceptMap.get(normPath) || conceptMap.get(normName) || conceptMap.get(item.name) || "";
                 
+                // Fallback: If AI returned nothing or a generic icon, resolve auto-icon using native file name & parent context
+                if (!iconId || iconId === 'file-text' || iconId === 'folder' || iconId === 'file') {
+                    const autoData = this.plugin.iconManager.getAutoIconData(item.name, item.path);
+                    if (autoData && (autoData.lucide || autoData.emoji)) {
+                        const fallbackIcon = autoData.lucide || autoData.emoji;
+                        if (fallbackIcon) {
+                            iconId = fallbackIcon;
+                        }
+                    }
+                }
+
                 if (iconId) {
                     const existing = settings.customFolderColors[item.path];
                     if (typeof existing === 'object') {
@@ -289,8 +454,8 @@ export class AIIconClassifier {
 
             console.log(`✨ [Colorful Folders AI] Successfully Assigned ${assignedCount} Icons directly from AI:`, assignedSummary);
 
-            await plugin.saveSettings();
-            await plugin.generateStyles();
+            await this.plugin.saveSettings();
+            await this.plugin.generateStyles();
 
             notice.setMessage(`Colorful Folders AI: Successfully assigned icons to ${assignedCount} vault items! ✨`);
             window.setTimeout(() => notice.hide(), 4000);
@@ -304,8 +469,8 @@ export class AIIconClassifier {
         }
     }
 
-    private static buildSystemPrompt(plugin: IColorfulFoldersPlugin): string {
-        const customKeys = plugin.settings.customIcons ? Object.keys(plugin.settings.customIcons) : [];
+    private buildSystemPrompt(): string {
+        const customKeys = this.plugin.settings.customIcons ? Object.keys(this.plugin.settings.customIcons) : [];
         
         // Sort custom icon keys to prioritize recognizable brand/concept names over numeric keys
         const sortedCustomKeys = [...customKeys].sort((a, b) => {
@@ -325,7 +490,7 @@ export class AIIconClassifier {
                 packSamplesMap.set(prefix, []);
             }
             const arr = packSamplesMap.get(prefix)!;
-            if (arr.length < 8) {
+            if (arr.length < 10) {
                 arr.push(key);
             }
         }
@@ -335,58 +500,63 @@ export class AIIconClassifier {
             sampledIconIDs.push(...samples);
         }
 
-        const PACK_DESCRIPTIONS: Record<string, string> = {
-            'simple-icons': 'Simple Icons: Exact brand, technology, software, and company logos (e.g. Amazon, GitHub, Python, Google, Docker, React, Spotify, Notion, Discord, Apple, Microsoft, YouTube).',
-            'feather': 'Feather Icons: Minimal line UI icons for generic concepts (e.g. folder, file-text, lock, key, globe, code, terminal, database, search, user).',
-            'ri': 'Remix Icons: Comprehensive category icons for media, finance, health, document types, tools, and UI.',
-            'tabler': 'Tabler Icons: Detailed stroke UI icons for workflows, dev tools, and file categories.',
-            'octicon': 'Octicons: Developer and repository icons (e.g. repo, git-branch, terminal, issue-opened).',
-            'fa': 'FontAwesome: Standard web and solid icons (e.g. file-code, folder-open, star, check).',
-            'bx': 'Boxicons: High quality web icons for files, folders, and UI elements.',
-            'ra': 'RPG Awesome: Fantasy, gaming, and gaming concept icons.',
-            'cf': 'Custom Vault Icons.'
-        };
+        const sampleIconsStr = sampledIconIDs.slice(0, 80).join(', ');
 
-        const packDescriptionsList: string[] = [];
-        for (const prefix of packSamplesMap.keys()) {
-            const matchedKey = Object.keys(PACK_DESCRIPTIONS).find(k => prefix.startsWith(k));
-            if (matchedKey) {
-                packDescriptionsList.push(`- ${PACK_DESCRIPTIONS[matchedKey]}`);
-            } else {
-                packDescriptionsList.push(`- ${prefix}: Installed icon pack (${prefix}-*).`);
-            }
-        }
+        const isContentMode = this.plugin.settings.aiIncludeContentContext !== false;
+        const evaluationScope = isContentMode
+            ? "Evaluate each item's title, path hierarchy, parent folder, tags, frontmatter, and content snippet to select the single most accurate icon ID."
+            : "Evaluate each item's title, path hierarchy, and parent folder to select the single most accurate icon ID.";
 
-        const sampleIconsStr = sampledIconIDs.slice(0, 60).join(', ');
+        return `You are an expert AI taxonomist and icon matcher for an Obsidian note-taking app. Your objective is to pick the SINGLE BEST valid icon ID for each requested vault item.
 
-        const packInfo = packSamplesMap.size > 0
-            ? `Installed Icon Pack Details & Capabilities:\n${packDescriptionsList.join('\n')}\nSample IDs across packs: [${sampleIconsStr}]. Standard Lucide Icons: [folder, file, server, database, rocket, code, terminal, cpu, book, user, lock, home, key, leaf, music, video, search, mail, calendar, clock, archive, history].`
-            : `Available icon library: Lucide standard icons.`;
+${evaluationScope}
 
-        return `You are an expert, context-aware AI assistant for an Obsidian note-taking app. Your task is to select the single best icon ID for each vault item based on its full context (title, path hierarchy, tags, frontmatter properties, and content snippet).
-${packInfo}
+### FLEXIBILITY NOTE (CRITICAL):
+The catalog below and installed samples are EXAMPLES to show valid naming styles. You are NOT restricted to only these listed names! You are free and ENCOURAGED to output ANY valid icon ID from any installed icon pack (e.g. 'simple-icons-<name>', 'feather-<name>', 'tabler-<name>', 'ri-<name>', 'octicon-<name>', 'fa-<name>') or any standard Lucide icon name (e.g. 'lightbulb', 'database', 'terminal', 'code', 'cpu', 'lock', 'calendar', 'music', 'camera').
 
-CONTEXT-AWARE ICON SELECTION RULES (TIER SUITABILITY HIERARCHY):
-Evaluate the item's title, path hierarchy, tags, frontmatter, and content to pick the highest suitable tier:
-- Tier 1 (Exact Entity / Brand / Software): If the item is explicitly about a specific service or software (e.g. Python, Docker, GitHub, React, Amazon), assign exact brand IDs (e.g. 'simple-icons-python', 'simple-icons-docker', 'github').
-- Tier 2 (Direct Visual Metaphor): E.g. Ideas/Thinking -> 'lightbulb', Reading/Books -> 'book', Dates/Events -> 'calendar', Music -> 'music', Science -> 'flask-conical'.
-- Tier 3 (Functional Category): E.g. General Coding -> 'code' or 'terminal', Finance -> 'banknote', Health/Fitness -> 'activity'.
-- Tier 4 (Fallback Concept): Standard general fallback like 'file-text' or 'folder'.
-CRITICAL: DO NOT assign Tier 1 brand icons (such as 'simple-icons-amazon' or 'shopping-bag') UNLESS the item is explicitly about that specific brand or shopping topic!
+### RECOMMENDED ICON CATEGORIES & EXAMPLES:
+- **Development & Tech Brands**: \`simple-icons-python\`, \`simple-icons-javascript\`, \`simple-icons-docker\`, \`simple-icons-react\`, \`simple-icons-github\`, \`simple-icons-html5\`, \`simple-icons-css3\`, \`code\`, \`terminal\`, \`cpu\`, \`database\`, \`server\`, \`bug\`, \`globe\`, \`file-code\`, \`git-branch\`, \`shield\`
+- **Writing, Notes & Books**: \`book-open\`, \`book\`, \`pen-tool\`, \`file-text\`, \`file\`, \`notebook\`, \`quote\`, \`sticky-note\`, \`library\`
+- **Tasks, Plans & Projects**: \`check-square\`, \`check-circle\`, \`calendar\`, \`clock\`, \`target\`, \`flag\`, \`list-todo\`, \`layers\`, \`kanban\`, \`zap\`
+- **Science, Ideas & Learning**: \`lightbulb\`, \`brain\`, \`flask-conical\`, \`microscope\`, \`graduation-cap\`, \`atom\`, \`compass\`, \`sparkles\`
+- **Media, Audio & Design**: \`image\`, \`video\`, \`music\`, \`camera\`, \`palette\`, \`film\`, \`headphones\`, \`simple-icons-youtube\`, \`simple-icons-spotify\`
+- **Finance & Business**: \`dollar-sign\`, \`credit-card\`, \`pie-chart\`, \`bar-chart\`, \`coins\`, \`trending-up\`, \`briefcase\`, \`receipt\`
+- **Personal, Organization & Storage**: \`home\`, \`user\`, \`heart\`, \`coffee\`, \`key\`, \`lock\`, \`map-pin\`, \`folder\`, \`archive\`, \`inbox\`, \`copy\`
 
-STRICT OUTPUT FORMAT RULES:
-- Output MUST be a SINGLE VALID RAW JSON OBJECT ONLY.
-- DO NOT INCLUDE ANY PREAMBLE, INTRODUCTORY TEXT, OR EXPLANATIONS.
-- Output ONLY raw JSON mapping each file/folder path directly to its assigned icon ID string:
+### INSTALLED ICON PACK SAMPLE IDs:
+[${sampleIconsStr || 'Lucide Standard Icons'}]
+
+### MATCHING HIERARCHY & REASONING:
+1. **Brand / Software Match (Tier 1)**: If a note/folder mentions specific tech (Python, React, Docker, YouTube, GitHub), use brand icons like \`simple-icons-python\`, \`simple-icons-youtube\`, \`github\`.
+2. **Visual Metaphor (Tier 2)**: E.g., Ideas -> \`lightbulb\`, Books/Reading -> \`book-open\`, Chemistry -> \`flask-conical\`, Debug/Errors -> \`bug\`, Security -> \`lock\`.
+3. **Context Awareness**: 
+   - Items inside \`Templates/\` or \`x-Templates\` -> prefer \`copy\`, \`file-text\`, \`zap\`, or topic-specific icon.
+   - Items inside \`Collections/\` -> prefer \`layers\`, \`archive\`, or \`folder\`.
+   - Files ending in \`.txt\` or \`.log\` -> prefer \`file-text\`, \`terminal\`, or \`bug\`.
+4. **General Concept (Tier 4)**: Fallback to \`file-text\` for files, \`folder\` for folders.
+
+### STRICT RULES & CONSTRAINTS:
+- Each key in your returned JSON object MUST be the exact 'item_path' string (e.g. "x/x/People", "Admin/CfDebug.txt").
+- NEVER use field labels like "title", "hierarchy", "path", "parent", "type", or "details" as JSON keys!
+- NEVER invent, slugify, or convert file basenames into fake icon names (e.g. NEVER output 'cf_debug', 'quickadd_template', or 'path_hierarchy').
+- ALWAYS use hyphens ('-') instead of underscores ('_'). Write 'flask-conical' (NOT 'flask_conical'), 'file-text' (NOT 'file_text').
+- ALWAYS output standard double quotes and colon syntax (e.g. "path": "iconId"). NEVER use '=>' or '->' arrow notation!
+- Output a single FLAT JSON object. Do NOT nest objects inside objects.
+- Do NOT write Python code, scripts, or explanations.
+
+### EXACT FEW-SHOT EXAMPLES:
+Correct Output:
 {
-  "Notes/Thinking.md": "lightbulb",
-  "Development/React.md": "simple-icons-react",
-  "Personal/Reading.md": "book"
+  "Admin/CfDebug.txt": "bug",
+  "Templates/QuickAdd Template.md": "zap",
+  "Development/React Notes.md": "simple-icons-react",
+  "Personal/Reading List.md": "book-open",
+  "Projects/Collections": "layers"
 }`;
     }
 
-    private static async queryAI(plugin: IColorfulFoldersPlugin, payload: any[], systemPrompt: string): Promise<Record<string, unknown>> {
-        const settings = plugin.settings;
+    private async queryAI(payload: any[], systemPrompt: string): Promise<Record<string, unknown>> {
+        const settings = this.plugin.settings;
         const provider = settings.aiProvider;
         const userPrompt = JSON.stringify(payload);
 
@@ -404,6 +574,25 @@ STRICT OUTPUT FORMAT RULES:
                 }
             } catch (err) {
                 lastErr = err;
+                const errStr = (err as Error)?.message || String(err);
+
+                // Fail fast on HTTP 404 (Not Found) or 401 (Unauthorized) without wasting 3 retries
+                const is404 = errStr.includes('status 404') || errStr.includes('404 Not Found') || (err as any)?.status === 404;
+                const is401 = errStr.includes('status 401') || errStr.includes('401 Unauthorized') || (err as any)?.status === 401;
+
+                if (is404) {
+                    const modelName = (settings.aiModelName || (provider === 'ollama' ? 'llama3' : 'gemini-2.5-flash')).trim();
+                    if (provider === 'ollama') {
+                        throw new Error(`Ollama model "${modelName}" was not found (HTTP 404). Run 'ollama pull ${modelName}' in your terminal or pick an installed model in AI Settings.`);
+                    } else {
+                        throw new Error(`AI Model "${modelName}" or endpoint URL was not found (HTTP 404). Check your model name & endpoint URL in AI Settings.`);
+                    }
+                }
+
+                if (is401) {
+                    throw new Error(`AI API Key is invalid or unauthorized (HTTP 401). Check your API Key in AI Settings.`);
+                }
+
                 if (attempt < 3) {
                     console.warn(`Colorful Folders AI: Batch request attempt ${attempt} failed, retrying in ${attempt * 1000}ms...`, err);
                     await new Promise(res => setTimeout(res, attempt * 1000));
@@ -413,7 +602,7 @@ STRICT OUTPUT FORMAT RULES:
         throw lastErr;
     }
 
-    private static async queryGemini(settings: any, systemPrompt: string, userPrompt: string): Promise<Record<string, unknown>> {
+    private async queryGemini(settings: any, systemPrompt: string, userPrompt: string): Promise<Record<string, unknown>> {
         const apiKey = settings.aiApiKey?.trim();
         const model = (settings.aiModelName || 'gemini-2.5-flash').trim().replace(/^models\//, '');
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
@@ -434,7 +623,7 @@ STRICT OUTPUT FORMAT RULES:
         return this.parseJsonResponse(textResult);
     }
 
-    private static async queryOllama(settings: any, systemPrompt: string, userPrompt: string): Promise<Record<string, unknown>> {
+    private async queryOllama(settings: any, systemPrompt: string, userPrompt: string): Promise<Record<string, unknown>> {
         const model = (settings.aiModelName || 'llama3').trim();
         const baseUrl = (settings.aiOllamaEndpoint || 'http://localhost:11434').trim().replace(/\/$/, '');
 
@@ -476,7 +665,7 @@ STRICT OUTPUT FORMAT RULES:
         }
     }
 
-    private static async queryClaude(settings: any, systemPrompt: string, userPrompt: string): Promise<Record<string, unknown>> {
+    private async queryClaude(settings: any, systemPrompt: string, userPrompt: string): Promise<Record<string, unknown>> {
         const apiKey = settings.aiApiKey?.trim();
         const model = (settings.aiModelName || 'claude-3-5-haiku-20241022').trim();
         const url = 'https://api.anthropic.com/v1/messages';
@@ -513,7 +702,7 @@ STRICT OUTPUT FORMAT RULES:
         return this.parseJsonResponse(textResult);
     }
 
-    private static async queryOpenAI(settings: any, provider: string, systemPrompt: string, userPrompt: string): Promise<Record<string, unknown>> {
+    private async queryOpenAI(settings: any, provider: string, systemPrompt: string, userPrompt: string): Promise<Record<string, unknown>> {
         const apiKey = settings.aiApiKey?.trim() || '';
         const model = (settings.aiModelName || 'gpt-4o-mini').trim();
         
@@ -562,7 +751,7 @@ STRICT OUTPUT FORMAT RULES:
         return this.parseJsonResponse(textResult);
     }
 
-    private static parseJsonResponse(textResult: string): Record<string, unknown> {
+    private parseJsonResponse(textResult: string): Record<string, unknown> {
         if (!textResult) return {};
         console.log("🧠 [Colorful Folders AI] Raw LLM Response / Thinking:", textResult);
 
@@ -573,22 +762,27 @@ STRICT OUTPUT FORMAT RULES:
             .replace(/```/g, '')
             .trim();
 
+        // Pre-sanitize arrow notation (=> or ->) before JSON parsing
+        const preSanitizedText = cleanText
+            .replace(/"\s*=?>\s*/g, '": ')
+            .replace(/'\s*=?>\s*/g, "': ");
+
         // Step 1: Attempt standard & single-quote JSON parsing after locating outer bounds { ... }
-        let jsonStr = cleanText;
-        const startObj = cleanText.indexOf('{');
-        const startArr = cleanText.indexOf('[');
+        let jsonStr = preSanitizedText;
+        const startObj = preSanitizedText.indexOf('{');
+        const startArr = preSanitizedText.indexOf('[');
 
         if (startArr !== -1 && (startObj === -1 || startArr < startObj)) {
-            const endArr = cleanText.lastIndexOf(']');
+            const endArr = preSanitizedText.lastIndexOf(']');
             if (endArr > startArr) {
-                jsonStr = cleanText.substring(startArr, endArr + 1);
+                jsonStr = preSanitizedText.substring(startArr, endArr + 1);
             }
         } else if (startObj !== -1) {
-            const endObj = cleanText.lastIndexOf('}');
+            const endObj = preSanitizedText.lastIndexOf('}');
             if (endObj > startObj) {
-                jsonStr = cleanText.substring(startObj, endObj + 1);
+                jsonStr = preSanitizedText.substring(startObj, endObj + 1);
             } else {
-                jsonStr = cleanText.substring(startObj);
+                jsonStr = preSanitizedText.substring(startObj);
             }
         }
 
@@ -658,14 +852,15 @@ STRICT OUTPUT FORMAT RULES:
         // Pattern D: Inline Arrow / Colon List Extractor e.g. "Item Path" -> cand1, cand2, cand3
         if (Object.keys(extracted).length === 0) {
             const lines = cleanText.split(/\r?\n/);
+            const isCodeJunk = (s: string) => /\b(return|len|get|count|join|import|def|if|else|self|dict|lambda)\b/i.test(s) || s.includes('(') || s.includes(')');
             for (const line of lines) {
                 const inlineMatch = line.match(/^[`"*]*([^`"*:\->\n]+)[`"*]*\s*(?:->|=>|=|\:)\s*(.+)$/i);
                 if (inlineMatch) {
                     const rawKey = inlineMatch[1].trim();
                     const rawVal = inlineMatch[2].trim().replace(/^\[|\]$/g, '');
                     const isPreamble = /^(below|here|based|note|result|response|status|code)/i.test(rawKey);
-                    if (rawKey && !isPreamble && rawVal) {
-                        const cands = rawVal.split(/[,;\s]+/).map(s => s.replace(/["']/g, '').trim()).filter(s => s.length >= 2);
+                    if (rawKey && !isPreamble && rawVal && !isCodeJunk(rawKey) && !isCodeJunk(rawVal)) {
+                        const cands = rawVal.split(/[,;\s]+/).map(s => s.replace(/["']/g, '').trim()).filter(s => s.length >= 2 && !isCodeJunk(s));
                         if (cands.length > 0) {
                             extracted[rawKey] = cands;
                         }
@@ -772,18 +967,27 @@ STRICT OUTPUT FORMAT RULES:
         return {};
     }
 
-    private static unwrapOuterJsonObject(parsed: Record<string, unknown>): Record<string, unknown> {
-        const keys = Object.keys(parsed);
-        if (keys.length === 1 && typeof parsed[keys[0]] === 'object' && !Array.isArray(parsed[keys[0]])) {
-            return parsed[keys[0]] as Record<string, unknown>;
-        }
-        return parsed;
+    private unwrapOuterJsonObject(parsed: Record<string, unknown>): Record<string, unknown> {
+        const result: Record<string, unknown> = {};
+
+        const flatten = (obj: Record<string, unknown>) => {
+            for (const [k, v] of Object.entries(obj)) {
+                if (v && typeof v === 'object' && v !== null && !Array.isArray(v)) {
+                    flatten(v as Record<string, unknown>);
+                } else if (typeof v === 'string' || Array.isArray(v)) {
+                    result[k] = v;
+                }
+            }
+        };
+
+        flatten(parsed);
+        return result;
     }
 
-    public static extractHttpErrorMessage(e: unknown, provider?: string): string {
-        if (!e || typeof e !== 'object') return String(e);
+    private extractHttpErrorMessage(err: unknown, provider: string): string {
+        if (!err || typeof err !== 'object') return String(err);
 
-        const errObj = e as any;
+        const errObj = err as any;
         let bodyText = errObj.text || '';
         if (!bodyText && errObj.json) {
             try { bodyText = JSON.stringify(errObj.json); } catch { bodyText = ''; }
@@ -803,7 +1007,7 @@ STRICT OUTPUT FORMAT RULES:
             }
         }
 
-        const msg = errObj.message || String(e);
+        const msg = errObj.message || String(err);
         const status = errObj.status;
 
         if (status === 401 || status === 403 || msg.includes('401') || msg.includes('403')) {

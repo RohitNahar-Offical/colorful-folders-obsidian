@@ -216,7 +216,7 @@ export class StyleGenerator {
         // Process Files
         for (const child of copyFiles) {
                 const fileStyle = this.getStyle(child.path);
-                const hasCustomStyle = !!(fileStyle && (fileStyle.hex || fileStyle.iconId || fileStyle.textColor || fileStyle.isBold || fileStyle.isItalic));
+                const hasCustomStyle = !!(fileStyle && (fileStyle.hex || fileStyle.iconId || fileStyle.iconColor || fileStyle.textColor || fileStyle.isBold || fileStyle.isItalic));
                 const hasInherited = !!(inheritedStyle && inheritedStyle.applyToFiles);
                 const needsProcessing = hasCustomStyle || hasInherited || autoColorFiles || autoIcons || (passedColor !== null) || (this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground) || !!this.settings.globalBackgroundColor;
 
@@ -788,6 +788,8 @@ export class StyleGenerator {
             const isEmoji = this.plugin.iconManager.isEmojiIcon(folderIconId);
             const iconSvg = !isEmoji && folderIconId ? this.plugin.iconManager.getIconSvg(folderIconId, true) : "";
 
+            const effFolderIconColor = customStyle?.iconColor || inheritedStyle?.iconColor || color.hex || folderStyles.t;
+
             NotebookNavigatorIntegration.generateIntegratedStyles(
                 grouper,
                 child.path,
@@ -796,7 +798,7 @@ export class StyleGenerator {
                 op,
                 folderStyles.t,
                 folderIconId,
-                customStyle?.iconColor || null,
+                customStyle?.iconColor || inheritedStyle?.iconColor || null,
                 isEmoji,
                 iconSvg,
                 activeBg,
@@ -880,12 +882,12 @@ export class StyleGenerator {
                             width: ${folderIconW} !important;
                             height: ${folderIconW} !important;
                             margin-right: 4px !important;
-                            background-color: ${customStyle?.iconColor || color.hex || folderStyles.t} !important;
+                            background-color: ${effFolderIconColor} !important;
                             -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(svgStr, true)}") !important;
                             -webkit-mask-repeat: no-repeat !important;
                             -webkit-mask-position: center !important;
                             -webkit-mask-size: contain !important;
-                        `, sels, `icon_${iconIdToUse}_svg_${folderIconW}_${isExpandedState ? 'expanded' : 'collapsed'}`);
+                        `, sels, `icon_${iconIdToUse}_svg_${folderIconW}_${effFolderIconColor.replace(/\s+/g, '')}_${isExpandedState ? 'expanded' : 'collapsed'}`);
                     }
                 }
             };
@@ -900,8 +902,10 @@ export class StyleGenerator {
                     generateIconCss(folderIconId, null);
                 }
             } else if (autoIcons) {
-                const closedSvg = this.plugin.iconManager.getIconSvg(this.settings.defaultClosedFolderIcon || "lucide-folder", true) || decodeURIComponent(CF_FOLDER_CLOSED);
-                const openSvg = this.plugin.iconManager.getIconSvg(this.settings.defaultOpenFolderIcon || "lucide-folder-open", true) || decodeURIComponent(CF_FOLDER_OPEN);
+                const closedIconId = this.settings.defaultClosedFolderIcon || "lucide-folder";
+                const openIconId = this.settings.defaultOpenFolderIcon || "lucide-folder-open";
+                const closedSvg = this.plugin.iconManager.getIconSvg(closedIconId, true) || decodeURIComponent(CF_FOLDER_CLOSED);
+                const openSvg = this.plugin.iconManager.getIconSvg(openIconId, true) || decodeURIComponent(CF_FOLDER_OPEN);
                 
                 const baseNav = `body .nav-files-container .nav-folder`;
                 const baseTree = `body .nav-files-container .tree-item`;
@@ -915,7 +919,7 @@ export class StyleGenerator {
                     width: ${folderIconW} !important;
                     height: ${folderIconW} !important;
                     margin-right: 4px !important;
-                    background-color: ${customStyle?.iconColor || color.hex || folderStyles.t} !important;
+                    background-color: ${effFolderIconColor} !important;
                     -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(closedSvg)}") !important;
                     -webkit-mask-repeat: no-repeat !important;
                     -webkit-mask-position: center !important;
@@ -923,7 +927,7 @@ export class StyleGenerator {
                 `, [
                     `${baseNav}.is-collapsed > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
                     `${baseTree}.is-collapsed > .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
-                ], `icon_closed_folder_${folderIconW}`);
+                ], `icon_closed_folder_${folderIconW}_${effFolderIconColor.replace(/\s+/g, '')}_${closedIconId}`);
 
                 // Open State
                 grouper.add(`
@@ -934,7 +938,7 @@ export class StyleGenerator {
                     width: ${folderIconW} !important;
                     height: ${folderIconW} !important;
                     margin-right: 4px !important;
-                    background-color: ${customStyle?.iconColor || color.hex || folderStyles.t} !important;
+                    background-color: ${effFolderIconColor} !important;
                     -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(openSvg)}") !important;
                     -webkit-mask-repeat: no-repeat !important;
                     -webkit-mask-position: center !important;
@@ -942,8 +946,22 @@ export class StyleGenerator {
                 `, [
                     `${baseNav}:not(.is-collapsed) > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
                     `${baseTree}:not(.is-collapsed) > .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
-                ], `icon_open_folder_${folderIconW}`);
+                ], `icon_open_folder_${folderIconW}_${effFolderIconColor.replace(/\s+/g, '')}_${openIconId}`);
             }
+
+            const collapseSels = [
+                `body .nav-files-container .nav-folder-title[data-path="${safePath}"] .nav-folder-collapse-indicator`,
+                `body .nav-files-container .nav-folder-title[data-path="${safePath}"] .collapse-icon`,
+                `body .nav-files-container .tree-item-self[data-path="${safePath}"] .tree-item-collapse-indicator`,
+                `body .nav-files-container .tree-item-self[data-path="${safePath}"] .collapse-icon`,
+                `body .nav-files-container .nav-folder-title[data-cf-path="${safePath}"] .nav-folder-collapse-indicator`,
+                `body .nav-files-container .nav-folder-title[data-cf-path="${safePath}"] .collapse-icon`,
+                `body .nav-files-container .tree-item-self[data-cf-path="${safePath}"] .tree-item-collapse-indicator`,
+                `body .nav-files-container .tree-item-self[data-cf-path="${safePath}"] .collapse-icon`
+            ];
+            grouper.add(`
+                color: ${effFolderIconColor} !important;
+            `, collapseSels, `collapseIcon_${color.hex}`);
 
             if (this.settings.showItemCounters) {
                 const counts = countItems(child, this.plugin);

@@ -35,6 +35,7 @@ export default class ColorfulFoldersPlugin
   implements IColorfulFoldersPlugin {
   declare settings: ColorfulFoldersSettings;
   iconManager: IconManager;
+  aiIconClassifier: AIIconClassifier;
   adoptedStyleSheetService: AdoptedStyleSheetService;
 
   iconCache: Map<string, string> = new Map();
@@ -69,6 +70,7 @@ export default class ColorfulFoldersPlugin
     await this.loadSettings();
     this.styleGenerator = new StyleGenerator(this);
     this.iconManager = new IconManager(this);
+    this.aiIconClassifier = new AIIconClassifier(this);
     this.dividerManager = new DividerManager(this);
     this.domObserverService = new DOMObserverService(this);
     this.eventTrackerService = new EventTrackerService(this);
@@ -532,7 +534,7 @@ export default class ColorfulFoldersPlugin
       id: "ai-auto-assign-icons",
       name: "AI Auto-Assign Icons for Vault",
       callback: () => {
-        void AIIconClassifier.classifyVault(this);
+        void this.aiIconClassifier.classifyVault();
       },
     });
   }

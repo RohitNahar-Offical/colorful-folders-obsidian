@@ -150,6 +150,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     aiOllamaEndpoint: "http://localhost:11434",
     aiModelName: "gemini-2.5-flash",
     aiIncludeFiles: false,
+    aiIncludeContentContext: true,
     aiKeyConfirmed: false,
 };
 
