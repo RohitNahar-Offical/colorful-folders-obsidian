@@ -194,13 +194,13 @@ graph TD
 
 #### How AI Icon Assignment Works:
 1. **Scope Selection & Payload**: Collects all vault folders and (if `aiIncludeFiles: true`) `.md` files, creating a clean `item_path` payload alongside tags, frontmatter, and content snippets.
-2. **Category-Guided System Prompt**: Constructs a structured system prompt featuring curated icon category catalogs, installed pack sample IDs, pack flexibility guidelines, and few-shot examples.
+2. **3-Tier Candidate System Prompt & Item Differentiation**: Instructs the AI model to output an array of 3 candidate icon names per item (`[Candidate 1: Specific/Brand, Candidate 2: Single-Word Visual, Candidate 3: General Fallback]`). Enforces structural container fallbacks for folders (`folder-code`, `layers`, `archive`, `folder`) and document fallbacks for files (`code`, `book`, `file-text`).
 3. **Multi-Syntax Resilient Parsing**:
    - Pre-sanitizes non-standard `=>` and `->` arrow notation into standard JSON colons (`:`).
    - Strips `<think>` tags and markdown codeblocks via `parseJsonResponse()`.
    - Recursively flattens nested group/category maps (`unwrapOuterJsonObject`).
 4. **Flexible Target Resolution**: Matches returned JSON keys against `batchTargets` via full path (`"x/x/Atlas.md"`), normalized path (`normalizePathKey`), filename/title (`"Atlas"`), or trailing path segment (`".../atlas"`).
-5. **Smart Icon Resolution & Fallback**: Validates candidates against installed icon packs (`simple-icons`, `feather`, `remix`, `tabler`, `octicon`, `fa`, `lucide`). If valid, assigns `iconId`; if invalid, falls back to the native auto-icon generator.
+5. **Sequential Candidate Evaluation & Tier Logging**: Iterates through candidates (`cand1` $\rightarrow$ `cand2` $\rightarrow$ `cand3`), validating against installed icon packs (`simple-icons`, `feather`, `remix`, `tabler`, `octicon`, `fa`, `lucide`) via `resolveSmartIcon`. Stops at the first installed icon, logs candidate tier wins in console, and falls back to native auto-icons if unmatched.
 6. **Persistence & Instant Render**: Stores resolved `iconId` directly in `settings.customFolderColors[path].iconId`, calls `saveSettings()`, and updates document stylesheets immediately via `generateStyles()`.
 
 ---

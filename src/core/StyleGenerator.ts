@@ -92,7 +92,25 @@ export class StyleGenerator {
 
 
 
+    private _iconValidityCache = new Map<string, boolean>();
+
+    private isValidIconStr(id: string | null | undefined): boolean {
+        if (!id) return false;
+        const cached = this._iconValidityCache.get(id);
+        if (cached !== undefined) return cached;
+        let isValid = false;
+        if (this.plugin.iconManager.isEmojiIcon(id)) {
+            isValid = true;
+        } else {
+            const svg = this.plugin.iconManager.getIconSvg(id, false);
+            isValid = !!svg && svg.length > 0;
+        }
+        this._iconValidityCache.set(id, isValid);
+        return isValid;
+    }
+
     private prepareContext(): StyleContext | null {
+        this._iconValidityCache.clear();
         const root = this.app.vault.getRoot();
         if (!root) return null;
 
@@ -270,15 +288,8 @@ export class StyleGenerator {
                     isDark
                 );
 
-                const isValidFileIconStr = (id: string | null | undefined): boolean => {
-                    if (!id) return false;
-                    if (this.plugin.iconManager.isEmojiIcon(id)) return true;
-                    const svg = this.plugin.iconManager.getIconSvg(id, false);
-                    return !!svg && svg.length > 0;
-                };
-
-                const rawFileIcon = (fileStyle?.iconId && isValidFileIconStr(fileStyle.iconId)) ? fileStyle.iconId : null;
-                const rawInheritedFileIcon = (inheritedStyle?.applyToFiles && inheritedStyle?.iconId && isValidFileIconStr(inheritedStyle.iconId)) ? inheritedStyle.iconId : null;
+                const rawFileIcon = (fileStyle?.iconId && this.isValidIconStr(fileStyle.iconId)) ? fileStyle.iconId : null;
+                const rawInheritedFileIcon = (inheritedStyle?.applyToFiles && inheritedStyle?.iconId && this.isValidIconStr(inheritedStyle.iconId)) ? inheritedStyle.iconId : null;
                 const autoIconFile = (this.settings.autoIcons && !rawFileIcon && !rawInheritedFileIcon) ? this.plugin.iconManager.getAutoIconData(child.name, child.path) : null;
                 const iconId = rawFileIcon || rawInheritedFileIcon || (autoIconFile ? (this.settings.wideAutoIcons ? autoIconFile.lucide : autoIconFile.emoji) : "");
 

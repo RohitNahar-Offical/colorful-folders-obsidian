@@ -933,7 +933,21 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
             const downloadBtn = btnGroup.createEl("button", { text: "Download" });
             downloadBtn.setCssStyles({ minWidth: "80px" });
-            downloadBtn.onclick = () => this.importUrl(p.url);
+            downloadBtn.onclick = async () => {
+                downloadBtn.setText("Downloading...");
+                downloadBtn.disabled = true;
+                try {
+                    const count = await this.plugin.autoDownloadPack(p.url, p.prefix);
+                    new obsidian.Notice(`Successfully downloaded ${count} icons for ${p.name}!`);
+                } catch (err) {
+                    const msg = (err as Error)?.message || String(err);
+                    new obsidian.Notice(`Failed to download ${p.name}: ${msg}`, 6000);
+                } finally {
+                    downloadBtn.setText("Download");
+                    downloadBtn.disabled = false;
+                    (this as unknown as { display: () => void }).display();
+                }
+            };
 
             const removeBtn = btnGroup.createEl("button", { text: "Remove" });
             removeBtn.setCssStyles({ minWidth: "80px", color: "var(--text-error)" });
@@ -955,34 +969,164 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         });
 
         const libCard = makeCard(iconPanel, "📚", "Custom icon library");
-        const lib = libCard.createDiv("cf-icon-grid");
         const customIconList = Object.entries(this.plugin.settings.customIcons);
+
         if (customIconList.length === 0) {
             const emptyMsg = libCard.createDiv({ text: t("settings.no_custom_icons") });
             emptyMsg.setCssStyles({ color: "var(--text-muted)", fontStyle: "italic", padding: "10px" });
         } else {
-            customIconList.forEach(([id, svg]) => {
-                const item = lib.createDiv("cf-icon-item");
-                item.setAttribute("aria-label", id);
+            // Group icons by pack prefix for the Dropdown Filter
+            const packMap = new Map<string, Array<[string, string]>>();
+            packMap.set("all", customIconList);
 
-                // Safe SVG injection
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(svg, 'image/svg+xml');
-                const svgEl = doc.querySelector('svg');
-                if (svgEl) {
-                    svgEl.setCssStyles({ width: "24px", height: "24px" });
-                    item.appendChild(this.containerEl.ownerDocument.importNode(svgEl, true));
+            for (const [id, svg] of customIconList) {
+                const prefixMatch = id.match(/^([a-z0-9-_]+?)-/i);
+                const packKey = prefixMatch ? prefixMatch[1].toLowerCase() : "custom";
+                if (!packMap.has(packKey)) {
+                    packMap.set(packKey, []);
+                }
+                packMap.get(packKey)!.push([id, svg]);
+            }
+
+            // Controls Header Bar: Pack Dropdown + Live Search
+            const ctrlBar = libCard.createDiv();
+            ctrlBar.setCssStyles({
+                display: "flex",
+                gap: "12px",
+                alignItems: "center",
+                marginBottom: "12px",
+                flexWrap: "wrap"
+            });
+
+            // Pack Select Dropdown
+            const packSelect = ctrlBar.createEl("select");
+            packSelect.setCssStyles({
+                padding: "6px 12px",
+                borderRadius: "6px",
+                backgroundColor: "var(--background-modifier-form-field)",
+                color: "var(--text-normal)",
+                border: "1px solid var(--background-modifier-border)",
+                cursor: "pointer"
+            });
+
+            const packLabels: Record<string, string> = {
+                "all": "All Icon Packs",
+                "simple-icons": "Simple Icons",
+                "feather": "Feather Icons",
+                "tabler": "Tabler Icons",
+                "fa-solid": "Font Awesome Solid",
+                "fa-regular": "Font Awesome Regular",
+                "bx": "Boxicons",
+                "octicon": "Octicons",
+                "ra": "RPG Awesome",
+                "cf": "Community Pack",
+                "custom": "Custom Icons"
+            };
+
+            for (const [pKey, items] of packMap.entries()) {
+                const name = packLabels[pKey] || pKey.toUpperCase();
+                const opt = packSelect.createEl("option", { value: pKey, text: `${name} (${items.length})` });
+                if (pKey === "all") opt.text = `All Icon Packs (${items.length})`;
+            }
+
+            // Search Input Bar
+            const searchInput = ctrlBar.createEl("input", {
+                type: "text",
+                placeholder: "Filter icon name..."
+            });
+            searchInput.setCssStyles({
+                padding: "6px 12px",
+                borderRadius: "6px",
+                backgroundColor: "var(--background-modifier-form-field)",
+                color: "var(--text-normal)",
+                border: "1px solid var(--background-modifier-border)",
+                flex: "1",
+                minWidth: "160px"
+            });
+
+            // Grid Container & Load More Container
+            const lib = libCard.createDiv("cf-icon-grid");
+            const loadMoreContainer = libCard.createDiv();
+            loadMoreContainer.setCssStyles({
+                display: "flex",
+                justifyContent: "center",
+                padding: "10px 0"
+            });
+
+            let currentPackKey = "all";
+            let currentSearch = "";
+            let visibleCount = 60; // Render 60 icons initially for maximum UI speed
+
+            const renderGrid = () => {
+                lib.empty();
+                loadMoreContainer.empty();
+
+                const packItems = packMap.get(currentPackKey) || customIconList;
+                const filtered = currentSearch
+                    ? packItems.filter(([id]) => id.toLowerCase().includes(currentSearch))
+                    : packItems;
+
+                if (filtered.length === 0) {
+                    const noMatch = lib.createDiv({ text: "No matching icons found." });
+                    noMatch.setCssStyles({ color: "var(--text-muted)", fontStyle: "italic", padding: "10px" });
+                    return;
                 }
 
-                const del = item.createEl("button", { text: "×", cls: "cf-btn-remove" });
-                del.onclick = async (e) => {
-                    e.stopPropagation();
-                    delete this.plugin.settings.customIcons[id];
-                    await this.plugin.saveSettings();
+                const batch = filtered.slice(0, visibleCount);
+                batch.forEach(([id, svg]) => {
+                    const item = lib.createDiv("cf-icon-item");
+                    item.setAttribute("aria-label", id);
 
-                    (this as unknown as { display: () => void }).display();
-                };
-            });
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(svg, 'image/svg+xml');
+                    const svgEl = doc.querySelector('svg');
+                    if (svgEl) {
+                        svgEl.setCssStyles({ width: "24px", height: "24px" });
+                        item.appendChild(this.containerEl.ownerDocument.importNode(svgEl, true));
+                    }
+
+                    const del = item.createEl("button", { text: "×", cls: "cf-btn-remove" });
+                    del.onclick = async (e) => {
+                        e.stopPropagation();
+                        delete this.plugin.settings.customIcons[id];
+                        await this.plugin.saveSettings();
+                        (this as unknown as { display: () => void }).display();
+                    };
+                });
+
+                if (filtered.length > visibleCount) {
+                    const remaining = filtered.length - visibleCount;
+                    const showMoreBtn = loadMoreContainer.createEl("button", {
+                        text: `Show More Icons (${remaining} remaining)`
+                    });
+                    showMoreBtn.setCssStyles({
+                        padding: "6px 16px",
+                        borderRadius: "6px",
+                        backgroundColor: "var(--interactive-accent)",
+                        color: "var(--text-on-accent)",
+                        cursor: "pointer",
+                        fontWeight: "500"
+                    });
+                    showMoreBtn.onclick = () => {
+                        visibleCount += 120;
+                        renderGrid();
+                    };
+                }
+            };
+
+            packSelect.onchange = () => {
+                currentPackKey = packSelect.value;
+                visibleCount = 60;
+                renderGrid();
+            };
+
+            searchInput.oninput = () => {
+                currentSearch = searchInput.value.toLowerCase().trim();
+                visibleCount = 60;
+                renderGrid();
+            };
+
+            renderGrid();
         }
 
         const maintCard = makeCard(sysPanel, "🔧", "Icon maintenance");

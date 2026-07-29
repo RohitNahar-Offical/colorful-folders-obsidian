@@ -130,6 +130,8 @@ export default class ColorfulFoldersPlugin
     void this.generateStyles();
     this.lifecycleService.onLayoutReady();
 
+    // Defer non-critical background checks (Blue Topaz optimization & Changelog modal) so plugin loads instantly
+    window.setTimeout(async () => {
       try {
         const optimized = await this.optimizeBlueTopazStyleSettings();
         if (optimized) {
@@ -165,7 +167,6 @@ export default class ColorfulFoldersPlugin
         // Show the collective changelog (Fetched from GitHub)
         try {
           const githubUrl = `https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/main/version.md`;
-
           const response = await obsidian.requestUrl({ url: githubUrl });
           if (response.status === 200) {
             const content = response.text;
@@ -178,6 +179,7 @@ export default class ColorfulFoldersPlugin
           );
         }
       }
+    }, 1000);
   }
 
   getStyle(path: string): FolderStyle | null {
@@ -447,9 +449,6 @@ export default class ColorfulFoldersPlugin
   registerCustomIcons() {
     for (const [id, svg] of Object.entries(this.settings.customIcons)) {
       obsidian.addIcon(id, svg);
-      if (this.iconManager) {
-        this.iconManager.preNormalizeIcon(id, svg);
-      }
     }
   }
 
@@ -747,11 +746,12 @@ export default class ColorfulFoldersPlugin
     return Array.from(this.cachedDocuments);
   }
 
-  async autoDownloadPack(url: string, prefix: string) {
-    try {
-      const res = await obsidian.requestUrl({ url });
+  async autoDownloadPack(url: string, prefix: string): Promise<number> {
+    let count = 0;
+    const fetchUrl = async (targetUrl: string) => {
+      const res = await obsidian.requestUrl({ url: targetUrl });
       const data = res.json as Record<string, unknown>;
-      if (!data || typeof data !== 'object') return;
+      if (!data || typeof data !== 'object') return false;
 
       const icons = data.icons as Record<string, { width?: number; height?: number; left?: number; top?: number; body?: string }> | undefined;
       if (icons && typeof icons === 'object' && !Array.isArray(icons)) {
@@ -774,7 +774,6 @@ export default class ColorfulFoldersPlugin
           
           if (!body || typeof body !== 'string') return false;
 
-          // Use DOMParser-based sanitization instead of regex for robust XSS prevention
           const parser = new DOMParser();
           const doc = parser.parseFromString(`<svg xmlns="http://www.w3.org/2000/svg">${body}</svg>`, 'image/svg+xml');
           const dangerousTags = ['script', 'iframe', 'object', 'embed', 'foreignobject'];
@@ -799,6 +798,7 @@ export default class ColorfulFoldersPlugin
 
           const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${l} ${t} ${w} ${h}">${cleanBody}</svg>`;
           this.settings.customIcons[id] = svg;
+          count++;
           return true;
         };
 
@@ -817,13 +817,35 @@ export default class ColorfulFoldersPlugin
             }
           }
         }
+        return true;
+      }
+      return false;
+    };
+
+    try {
+      let success = false;
+      try {
+        success = await fetchUrl(url);
+      } catch (err) {
+        // Fallback to jsdelivr CDN if raw.githubusercontent.com is blocked
+        if (url.includes('raw.githubusercontent.com')) {
+          const cdnUrl = url.replace('https://raw.githubusercontent.com/', 'https://cdn.jsdelivr.net/gh/').replace('/master/', '@master/').replace('/main/', '@main/');
+          console.log(`Colorful Folders: Retrying download via CDN mirror ${cdnUrl}...`);
+          success = await fetchUrl(cdnUrl);
+        } else {
+          throw err;
+        }
       }
 
-      this.registerCustomIcons();
-      await this.saveSettings();
-      void this.generateStyles();
+      if (success) {
+        this.registerCustomIcons();
+        await this.saveSettings();
+        void this.generateStyles();
+      }
+      return count;
     } catch (e) {
-      console.error(`Colorful Folders: Failed to auto-download ${prefix} icons`, e);
+      console.error(`Colorful Folders: Failed to download ${prefix} icons`, e);
+      throw e;
     }
   }
 

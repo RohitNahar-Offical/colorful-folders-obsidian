@@ -125,11 +125,24 @@ export class AIIconClassifier {
                 return;
             }
 
-            // Filter out items that already have explicit custom icons unless force is true
+            // Filter out items that have custom assigned icons or match custom user rules (unless force is true)
+            const computeHash = (t: any) => `${t.path}:${(t as any).contentSnippet || ''}:${(t.tags || []).join(',')}`;
             const unassignedTargets = rawTargets.filter(t => {
                 if (options?.force) return true;
+
+                // 1. Exclude items with manually assigned custom icons
                 const existing = settings.customFolderColors[t.path];
-                if (typeof existing === 'object' && existing.iconId) return false;
+                if (existing) {
+                    if (typeof existing === 'string') return false;
+                    if (typeof existing === 'object' && (existing.iconId || existing.icon)) return false;
+                }
+
+                // 2. Exclude items matching Custom User Rules (e.g. pattern = icon @ priority)
+                const customRule = this.plugin.iconManager.getAutoIconData(t.name, t.path);
+                if (customRule && (customRule.packSource === 'custom-rule' || customRule.isCustom)) {
+                    return false; // User custom rule match — do NOT send to AI
+                }
+
                 return true;
             });
 
@@ -294,13 +307,85 @@ export class AIIconClassifier {
                             continue; // Skip non-item keys returned by LLM explanations
                         }
 
-                        let rawIcon = Array.isArray(conceptVal) ? conceptVal[0] : conceptVal;
-                        if (typeof rawIcon === 'object' && rawIcon) {
-                            rawIcon = (rawIcon as any).icon || (rawIcon as any).iconId || (rawIcon as any).concept || '';
+                        // Process 3-tier candidate array: [Specific/Brand, Single-Word Visual, General Fallback]
+                        const candidatesList: string[] = [];
+                        if (Array.isArray(conceptVal)) {
+                            candidatesList.push(...conceptVal.map(c => String(c).trim()).filter(Boolean));
+                        } else if (typeof conceptVal === 'object' && conceptVal) {
+                            const raw = (conceptVal as any).icon || (conceptVal as any).iconId || (conceptVal as any).concept || '';
+                            if (raw) candidatesList.push(String(raw).trim());
+                        } else if (conceptVal) {
+                            const valStr = String(conceptVal).trim();
+                            if (valStr.includes(',')) {
+                                candidatesList.push(...valStr.split(',').map(s => s.trim()).filter(Boolean));
+                            } else {
+                                candidatesList.push(valStr);
+                            }
                         }
-                        const cleanIcon = String(rawIcon).trim();
-                        if (cleanIcon) {
-                            // Layer 1: Pre-normalization (Strip version suffixes "-1.6", "_2.0", spaces -> hyphens)
+
+                        // Smart Icon Resolution Pipeline
+                        const resolveSmartIcon = (rawStr: string): string | null => {
+                            if (!rawStr) return null;
+                            const clean = rawStr.trim().replace(/^[\s+:=#]+/, '').trim();
+                            if (!clean) return null;
+                            const lowerClean = clean.toLowerCase();
+
+                            // 1. Direct emoji or SVG match
+                            if (this.plugin.iconManager.isEmojiIcon(clean)) return clean;
+                            if (this.plugin.iconManager.getIconSvg(lowerClean)) return lowerClean;
+                            if (obsidian.getIcon(lowerClean)) return lowerClean;
+                            if (this.plugin.iconManager.getIconSvg(clean)) return clean;
+
+                            // 2. Handle accidental file paths in icon value position
+                            if (clean.includes('/') || clean.endsWith('.md')) {
+                                const parts = clean.split('/');
+                                const lastPart = parts[parts.length - 1].replace(/\.md$/i, '').replace(/[/_]/g, ' ').trim();
+                                if (lastPart && lastPart.toLowerCase() !== clean.toLowerCase()) {
+                                    const pathHit = resolveSmartIcon(lastPart);
+                                    if (pathHit) return pathHit;
+                                }
+                            }
+
+                            // 3. Hyphenated version (convert underscores to hyphens)
+                            const hyphenated = lowerClean.replace(/[\s_]+/g, '-');
+                            if (this.plugin.iconManager.getIconSvg(hyphenated)) return hyphenated;
+                            if (obsidian.getIcon(hyphenated)) return hyphenated;
+
+                            // 4. Search installed packs / Lucide index + Prefix-stripped fallback + Relaxed Fuzzy Search (threshold 0.5)
+                            const cleanPrefix = lowerClean.replace(/^(lucide|feather|tabler|simple-icons|ri|fa|octicon|bx|ra)-/i, '');
+                            const packHit = this.plugin.iconManager.findIconInPacks(lowerClean) || 
+                                            this.plugin.iconManager.findIconInPacks(hyphenated) ||
+                                            (cleanPrefix !== lowerClean ? this.plugin.iconManager.findIconInPacks(cleanPrefix) : null) ||
+                                            this.plugin.iconManager.searchFuzzy(lowerClean, { threshold: 0.5 }) ||
+                                            this.plugin.iconManager.searchFuzzy(hyphenated, { threshold: 0.5 });
+                            if (packHit) return packHit;
+
+                            // 5. Word extraction & relaxed fuzzy search per word (threshold 0.5)
+                            const words = hyphenated.split(/[\-_:\s]+/).filter(w => w.length >= 3 && !/^\d+$/.test(w));
+                            for (let i = words.length - 1; i >= 0; i--) {
+                                const word = words[i];
+                                if (this.plugin.iconManager.getIconSvg(word)) return word;
+                                if (obsidian.getIcon(word)) return word;
+                                const wordHit = this.plugin.iconManager.findIconInPacks(word) || this.plugin.iconManager.searchFuzzy(word, { threshold: 0.5 });
+                                if (wordHit) return wordHit;
+                            }
+
+                            // 6. Layer 2: Expanded Compound Substring Matching
+                            for (const sub of COMPOUND_SUBSTRINGS) {
+                                if (lowerClean.includes(sub)) {
+                                    const subHit = this.plugin.iconManager.findIconInPacks(sub) || this.plugin.iconManager.searchFuzzy(sub, { threshold: 0.5 });
+                                    if (subHit) return subHit;
+                                    if (obsidian.getIcon(sub)) return sub;
+                                }
+                            }
+
+                            return null;
+                        };
+
+                        let matchedIcon: string | null = null;
+                        let winningTier = 0;
+                        for (let cIdx = 0; cIdx < candidatesList.length; cIdx++) {
+                            const cleanIcon = candidatesList[cIdx];
                             const normalized = cleanIcon
                                 .replace(/[-_]v?\d+(\.\d+)*$/, '')
                                 .replace(/[\s_]+/g, '-')
@@ -309,79 +394,31 @@ export class AIIconClassifier {
                                 .replace(/^-+|-+$/g, '')
                                 .toLowerCase();
 
-                            // Smart Icon Resolution Pipeline
-                            const resolveSmartIcon = (rawStr: string): string | null => {
-                                if (!rawStr) return null;
-                                const clean = rawStr.trim().replace(/^[\s+:=#]+/, '').trim();
-                                if (!clean) return null;
-                                const lowerClean = clean.toLowerCase();
+                            const hit = resolveSmartIcon(cleanIcon) || resolveSmartIcon(normalized);
+                            if (hit) {
+                                matchedIcon = hit;
+                                winningTier = cIdx + 1;
+                                break; // Stop at first valid candidate!
+                            }
+                        }
 
-                                // 1. Direct emoji or SVG match
-                                if (this.plugin.iconManager.isEmojiIcon(clean)) return clean;
-                                if (this.plugin.iconManager.getIconSvg(lowerClean)) return lowerClean;
-                                if (obsidian.getIcon(lowerClean)) return lowerClean;
-                                if (this.plugin.iconManager.getIconSvg(clean)) return clean;
-
-                                // 2. Handle accidental file paths in icon value position
-                                if (clean.includes('/') || clean.endsWith('.md')) {
-                                    const parts = clean.split('/');
-                                    const lastPart = parts[parts.length - 1].replace(/\.md$/i, '').replace(/[/_]/g, ' ').trim();
-                                    if (lastPart && lastPart.toLowerCase() !== clean.toLowerCase()) {
-                                        const pathHit = resolveSmartIcon(lastPart);
-                                        if (pathHit) return pathHit;
-                                    }
+                        if (matchedIcon) {
+                            conceptMap.set(targetItem.path, matchedIcon);
+                            conceptMap.set(normalizeKey(targetItem.path), matchedIcon);
+                            if (winningTier > 1) {
+                                console.log(`Colorful Folders AI: "${targetItem.path}" resolved to "${matchedIcon}" via Candidate Tier ${winningTier} fallback.`);
+                            }
+                        } else {
+                            // Layer 4: Final Fallback to Native Auto-Icon System for the item path
+                            const autoIcon = this.plugin.iconManager.getAutoIconData(targetItem.name, targetItem.path);
+                            if (autoIcon && (autoIcon.lucide || autoIcon.emoji)) {
+                                const fallbackIcon = autoIcon.lucide || autoIcon.emoji;
+                                if (fallbackIcon) {
+                                    conceptMap.set(targetItem.path, fallbackIcon);
+                                    conceptMap.set(normalizeKey(targetItem.path), fallbackIcon);
                                 }
-
-                                // 3. Hyphenated version (convert underscores to hyphens)
-                                const hyphenated = lowerClean.replace(/[\s_]+/g, '-');
-                                if (this.plugin.iconManager.getIconSvg(hyphenated)) return hyphenated;
-                                if (obsidian.getIcon(hyphenated)) return hyphenated;
-
-                                // 4. Search installed packs / Lucide index + Relaxed Fuzzy Search (threshold 0.5)
-                                const packHit = this.plugin.iconManager.findIconInPacks(lowerClean) || 
-                                                this.plugin.iconManager.findIconInPacks(hyphenated) ||
-                                                this.plugin.iconManager.searchFuzzy(lowerClean, { threshold: 0.5 }) ||
-                                                this.plugin.iconManager.searchFuzzy(hyphenated, { threshold: 0.5 });
-                                if (packHit) return packHit;
-
-                                // 5. Word extraction & relaxed fuzzy search per word (threshold 0.5)
-                                const words = hyphenated.split(/[\-_:\s]+/).filter(w => w.length >= 3 && !/^\d+$/.test(w));
-                                for (let i = words.length - 1; i >= 0; i--) {
-                                    const word = words[i];
-                                    if (this.plugin.iconManager.getIconSvg(word)) return word;
-                                    if (obsidian.getIcon(word)) return word;
-                                    const wordHit = this.plugin.iconManager.findIconInPacks(word) || this.plugin.iconManager.searchFuzzy(word, { threshold: 0.5 });
-                                    if (wordHit) return wordHit;
-                                }
-
-                                // 6. Layer 2: Expanded Compound Substring Matching
-                                for (const sub of COMPOUND_SUBSTRINGS) {
-                                    if (lowerClean.includes(sub)) {
-                                        const subHit = this.plugin.iconManager.findIconInPacks(sub) || this.plugin.iconManager.searchFuzzy(sub, { threshold: 0.5 });
-                                        if (subHit) return subHit;
-                                        if (obsidian.getIcon(sub)) return sub;
-                                    }
-                                }
-
-                                return null;
-                            };
-
-                            const matchedIcon = resolveSmartIcon(cleanIcon) || resolveSmartIcon(normalized);
-                            if (matchedIcon) {
-                                conceptMap.set(targetItem.path, matchedIcon);
-                                conceptMap.set(normalizeKey(targetItem.path), matchedIcon);
                             } else {
-                                // Layer 4: Final Fallback to Native Auto-Icon System for the item path
-                                const autoIcon = this.plugin.iconManager.getAutoIconData(targetItem.name, targetItem.path);
-                                if (autoIcon && (autoIcon.lucide || autoIcon.emoji)) {
-                                    const fallbackIcon = autoIcon.lucide || autoIcon.emoji;
-                                    if (fallbackIcon) {
-                                        conceptMap.set(targetItem.path, fallbackIcon);
-                                        conceptMap.set(normalizeKey(targetItem.path), fallbackIcon);
-                                    }
-                                } else {
-                                    console.warn(`Colorful Folders AI: Skipping invalid icon string "${cleanIcon}" for "${targetItem.path}"`);
-                                }
+                                console.warn(`Colorful Folders AI: Skipping invalid candidates for "${targetItem.path}"`);
                             }
                         }
                     }
@@ -427,11 +464,17 @@ export class AIIconClassifier {
                 const normPath = normalizeKey(item.path);
                 let iconId = conceptMap.get(item.path) || conceptMap.get(normPath) || conceptMap.get(normName) || conceptMap.get(item.name) || "";
                 
-                // Fallback: If AI returned nothing or a generic icon, resolve auto-icon using native file name & parent context
-                if (!iconId || iconId === 'file-text' || iconId === 'folder' || iconId === 'file') {
-                    const autoData = this.plugin.iconManager.getAutoIconData(item.name, item.path);
-                    if (autoData && (autoData.lucide || autoData.emoji)) {
-                        const fallbackIcon = autoData.lucide || autoData.emoji;
+                // Priority 0: Explicit Custom User Rules ALWAYS take top priority over AI suggestions
+                const customRule = this.plugin.iconManager.getAutoIconData(item.name, item.path);
+                if (customRule && (customRule.packSource === 'custom-rule' || customRule.isCustom)) {
+                    const customIcon = customRule.lucide || customRule.emoji;
+                    if (customIcon) {
+                        iconId = customIcon;
+                    }
+                } else if (!iconId || iconId === 'file-text' || iconId === 'folder' || iconId === 'file') {
+                    // Fallback: If AI returned nothing or a generic icon, resolve auto-icon using native file name & parent context
+                    if (customRule && (customRule.lucide || customRule.emoji)) {
+                        const fallbackIcon = customRule.lucide || customRule.emoji;
                         if (fallbackIcon) {
                             iconId = fallbackIcon;
                         }
@@ -439,13 +482,15 @@ export class AIIconClassifier {
                 }
 
                 if (iconId) {
+                    const itemHash = `${item.path}:${(item as any).contentSnippet || ''}:${(item.tags || []).join(',')}`;
                     const existing = settings.customFolderColors[item.path];
                     if (typeof existing === 'object') {
                         existing.iconId = iconId;
+                        (existing as any).aiHash = itemHash;
                     } else if (typeof existing === 'string') {
-                        settings.customFolderColors[item.path] = { hex: existing, iconId };
+                        settings.customFolderColors[item.path] = { hex: existing, iconId, aiHash: itemHash } as any;
                     } else {
-                        settings.customFolderColors[item.path] = { iconId };
+                        settings.customFolderColors[item.path] = { iconId, aiHash: itemHash } as any;
                     }
                     assignedSummary[item.path] = iconId;
                     assignedCount++;
@@ -507,12 +552,22 @@ export class AIIconClassifier {
             ? "Evaluate each item's title, path hierarchy, parent folder, tags, frontmatter, and content snippet to select the single most accurate icon ID."
             : "Evaluate each item's title, path hierarchy, and parent folder to select the single most accurate icon ID.";
 
-        return `You are an expert AI taxonomist and icon matcher for an Obsidian note-taking app. Your objective is to pick the SINGLE BEST valid icon ID for each requested vault item.
+        return `You are an expert AI taxonomist and icon matcher for an Obsidian note-taking app. Your objective is to select 3 CANDIDATE ICON NAMES for each requested vault item ordered from specific to general.
 
 ${evaluationScope}
 
-### FLEXIBILITY NOTE (CRITICAL):
-The catalog below and installed samples are EXAMPLES to show valid naming styles. You are NOT restricted to only these listed names! You are free and ENCOURAGED to output ANY valid icon ID from any installed icon pack (e.g. 'simple-icons-<name>', 'feather-<name>', 'tabler-<name>', 'ri-<name>', 'octicon-<name>', 'fa-<name>') or any standard Lucide icon name (e.g. 'lightbulb', 'database', 'terminal', 'code', 'cpu', 'lock', 'calendar', 'music', 'camera').
+### 3-CANDIDATE SELECTION RULE (CRITICAL):
+For EVERY requested item, output a JSON array of EXACTLY 3 candidate icon names:
+- Candidate 1: Specific Pack Icon ID or Brand Name (e.g. "simple-icons-python", "flask-conical", "simple-icons-youtube", "book-open")
+- Candidate 2: Single-Word Core Visual Metaphor (e.g. "code", "book", "video", "map", "bug")
+- Candidate 3: General Fallback Icon (e.g. "terminal", "file-text", "folder")
+
+### FOLDER VS FILE DIFFERENTIATION RULE:
+- For FOLDERS: Candidates 2 & 3 MUST be structural container icons (e.g. Candidates 2 & 3: "folder-code", "layers", "archive", "folder").
+- For FILES / NOTES: Candidates 2 & 3 MUST be topic or document icons (e.g. Candidates 2 & 3: "code", "book", "bug", "file-text").
+
+### FLEXIBILITY NOTE:
+The catalog below and installed samples are EXAMPLES to show valid naming styles. You are NOT restricted to only these listed names! You are free and ENCOURAGED to output ANY valid icon ID from any installed icon pack (e.g. 'simple-icons-<name>', 'feather-<name>', 'tabler-<name>', 'ri-<name>', 'octicon-<name>', 'fa-<name>') or standard Lucide icon name (e.g. 'lightbulb', 'database', 'terminal', 'code', 'cpu', 'lock', 'calendar', 'music', 'camera').
 
 ### RECOMMENDED ICON CATEGORIES & EXAMPLES:
 - **Development & Tech Brands**: \`simple-icons-python\`, \`simple-icons-javascript\`, \`simple-icons-docker\`, \`simple-icons-react\`, \`simple-icons-github\`, \`simple-icons-html5\`, \`simple-icons-css3\`, \`code\`, \`terminal\`, \`cpu\`, \`database\`, \`server\`, \`bug\`, \`globe\`, \`file-code\`, \`git-branch\`, \`shield\`
@@ -526,32 +581,22 @@ The catalog below and installed samples are EXAMPLES to show valid naming styles
 ### INSTALLED ICON PACK SAMPLE IDs:
 [${sampleIconsStr || 'Lucide Standard Icons'}]
 
-### MATCHING HIERARCHY & REASONING:
-1. **Brand / Software Match (Tier 1)**: If a note/folder mentions specific tech (Python, React, Docker, YouTube, GitHub), use brand icons like \`simple-icons-python\`, \`simple-icons-youtube\`, \`github\`.
-2. **Visual Metaphor (Tier 2)**: E.g., Ideas -> \`lightbulb\`, Books/Reading -> \`book-open\`, Chemistry -> \`flask-conical\`, Debug/Errors -> \`bug\`, Security -> \`lock\`.
-3. **Context Awareness**: 
-   - Items inside \`Templates/\` or \`x-Templates\` -> prefer \`copy\`, \`file-text\`, \`zap\`, or topic-specific icon.
-   - Items inside \`Collections/\` -> prefer \`layers\`, \`archive\`, or \`folder\`.
-   - Files ending in \`.txt\` or \`.log\` -> prefer \`file-text\`, \`terminal\`, or \`bug\`.
-4. **General Concept (Tier 4)**: Fallback to \`file-text\` for files, \`folder\` for folders.
-
 ### STRICT RULES & CONSTRAINTS:
-- Each key in your returned JSON object MUST be the exact 'item_path' string (e.g. "x/x/People", "Admin/CfDebug.txt").
+- Each key in your returned JSON object MUST be the exact 'item_path' string.
+- Value MUST be an array of 3 strings: ["Candidate1_Specific", "Candidate2_SingleWord", "Candidate3_Fallback"].
 - NEVER use field labels like "title", "hierarchy", "path", "parent", "type", or "details" as JSON keys!
 - NEVER invent, slugify, or convert file basenames into fake icon names (e.g. NEVER output 'cf_debug', 'quickadd_template', or 'path_hierarchy').
 - ALWAYS use hyphens ('-') instead of underscores ('_'). Write 'flask-conical' (NOT 'flask_conical'), 'file-text' (NOT 'file_text').
-- ALWAYS output standard double quotes and colon syntax (e.g. "path": "iconId"). NEVER use '=>' or '->' arrow notation!
-- Output a single FLAT JSON object. Do NOT nest objects inside objects.
-- Do NOT write Python code, scripts, or explanations.
+- ALWAYS output standard double quotes and colon syntax (e.g. "path": ["icon1", "icon2", "icon3"]). NEVER use '=>' or '->' arrow notation!
 
 ### EXACT FEW-SHOT EXAMPLES:
 Correct Output:
 {
-  "Admin/CfDebug.txt": "bug",
-  "Templates/QuickAdd Template.md": "zap",
-  "Development/React Notes.md": "simple-icons-react",
-  "Personal/Reading List.md": "book-open",
-  "Projects/Collections": "layers"
+  "Admin/CfDebug.txt": ["bug", "terminal", "file-text"],
+  "Templates/QuickAdd Template.md": ["zap", "copy", "file-text"],
+  "Development/React Notes.md": ["simple-icons-react", "code", "terminal"],
+  "Personal/Reading List.md": ["book-open", "book", "file-text"],
+  "Projects/Collections": ["layers", "folder", "archive"]
 }`;
     }
 
@@ -595,7 +640,7 @@ Correct Output:
 
                 if (attempt < 3) {
                     console.warn(`Colorful Folders AI: Batch request attempt ${attempt} failed, retrying in ${attempt * 1000}ms...`, err);
-                    await new Promise(res => setTimeout(res, attempt * 1000));
+                    await new Promise(res => window.setTimeout(res, attempt * 1000));
                 }
             }
         }
@@ -637,7 +682,8 @@ Correct Output:
                     messages: [
                         { role: 'system', content: systemPrompt },
                         { role: 'user', content: userPrompt }
-                    ]
+                    ],
+                    response_format: { type: "json_object" }
                 })
             });
             const data = response.json;
@@ -656,6 +702,7 @@ Correct Output:
                 body: JSON.stringify({
                     model,
                     prompt: `${systemPrompt}\n\nItems to classify:\n${userPrompt}`,
+                    format: "json",
                     stream: false
                 })
             });

@@ -9,6 +9,7 @@ import { CategoryTrie } from './CategoryTrie';
 export class IconRepository {
     plugin: IColorfulFoldersPlugin;
 
+    private _customRulesCache: AutoIconData[] = [];
     private _categoryCache: AutoIconData[] | null = null;
     private _categoryTrie = new CategoryTrie();
     private _customRulesKey: string = '';
@@ -156,6 +157,7 @@ export class IconRepository {
 
         if (!this._categoryCache || this._customRulesKey !== currentKey) {
             const categories: AutoIconData[] = [...AUTO_ICON_CATEGORIES];
+            const customRules: AutoIconData[] = [];
             if (currentKey) {
                 const rules = currentKey.split('\n').filter((r: string) => r.trim());
                 for (const rule of rules) {
@@ -173,19 +175,27 @@ export class IconRepository {
                             priority = parseInt(prioParts[1]) || 1500;
                         }
 
-                        categories.push({
-                            rex: new RegExp(pattern, 'i'),
+                        const isRegexMeta = /[.*+?^${}()|[\]\\]/.test(pattern);
+                        const rex = isRegexMeta ? new RegExp(pattern, 'i') : new RegExp(`^${pattern}$|\\b${pattern}\\b|${pattern}`, 'i');
+
+                        const ruleData: AutoIconData = {
+                            rex,
                             emoji: secondHalf,
                             lucide: secondHalf,
                             priority: priority,
                             isCustom: true
-                        });
+                        };
+
+                        customRules.push(ruleData);
+                        categories.push(ruleData);
                     } catch (e) {
                         console.error("Colorful Folders: Failed to parse custom icon rule", rule, e);
                     }
                 }
             }
+            customRules.sort((a, b) => (b.priority || 0) - (a.priority || 0));
             categories.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+            this._customRulesCache = customRules;
             this._categoryCache = categories;
             this._categoryTrie.build(categories);
             this._customRulesKey = currentKey;
@@ -197,6 +207,28 @@ export class IconRepository {
             sanitized = sanitized.substring(0, dotIdx);
         }
         const fullHyphenated = sanitized.replace(/[\s_]+/g, '-');
+
+        const parentFolder = path ? path.split('/').slice(-2, -1)[0] : '';
+        const searchContexts = [lName];
+        if (sanitized && sanitized !== lName) searchContexts.push(sanitized);
+        if (parentFolder && parentFolder.toLowerCase() !== 'root') {
+            searchContexts.push(parentFolder.toLowerCase());
+        }
+
+        // Tier 0.8: Custom User Rules (Takes absolute top priority over standard pack names & defaults)
+        if (this._customRulesCache && this._customRulesCache.length > 0) {
+            for (const ctx of searchContexts) {
+                for (const rule of this._customRulesCache) {
+                    if (rule.rex.test(ctx)) {
+                        return {
+                            ...rule,
+                            tier: 1 as any,
+                            packSource: 'custom-rule'
+                        };
+                    }
+                }
+            }
+        }
 
         // Tier 1: Exact local pack / custom icon match (Priority 1800)
         const exactMatchedIconId = this.findIconInPacks(fullHyphenated);
@@ -213,12 +245,7 @@ export class IconRepository {
             };
         }
 
-        // Tier 2 & 3: Custom Regex rules & Categories using CategoryTrie lookup (with Parent Folder Context)
-        const parentFolder = path ? path.split('/').slice(-2, -1)[0] : '';
-        const searchContexts = [lName];
-        if (parentFolder && parentFolder.toLowerCase() !== 'root') {
-            searchContexts.push(parentFolder.toLowerCase());
-        }
+        // Tier 2 & 3: Categories using CategoryTrie lookup (with Parent Folder Context)
 
         for (const ctx of searchContexts) {
             const candidateCategories = this._categoryTrie.lookup(ctx);
