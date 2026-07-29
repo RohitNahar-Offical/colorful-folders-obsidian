@@ -159,42 +159,48 @@ graph TD
    - Hyphenates the sanitized name (`"my_project.md"` $\rightarrow$ `"my-project"`).
    - Performs $O(1)$ query via `IconPackIndex.findIcon()`. Returns exact matching custom SVG or installed pack icon.
 
-2. **Tier 2 & 3: Custom Regex Rules & Category Trie (Priority 1500 & 80–110)**
-   - Queries `CategoryTrie.lookup(lName)` which collects candidate rules for the initial characters of **every word** in the title.
+2. **Tier 2 & 3: Custom Regex Rules & Category Prefix Trie (Priority 1500 & 80–110)**
+   - Queries `CategoryTrie.lookup(lName)` which traverses a true Node-based Prefix Trie (`TrieNode`) matching tokenized words against character prefix branches without returning full fallback sets.
    - Evaluates custom user regex rules first (Tier 2, Priority 1500), then built-in `AUTO_ICON_CATEGORIES` (Tier 3, Priority 80–110).
    - If `autoIconVariety` is enabled, hashes `hashString(name)` against the category's `emojis` / `lucides` array to pick diverse icons.
 
-3. **Tier 4: Stem-Aware Fuzzy Search (Priority 50)**
-   - Tokenizes filename into words, filtering out question words, auxiliary verbs, and filler nouns via `STOP_WORDS`.
-   - Strips suffixes (`-ing`, `-ed`, `-es`, `-s`) using `stemWord()`.
-   - Queries multi-word pairs (`"word1-word2"`) and single words from **right to left** to give priority to main subject nouns over leading filler terms.
+3. **Tier 4: Stem-Aware Optimized Fuzzy Search (Priority 50)**
+   - Executes fast-path O(1) query via `IconPackIndex.findIcon()`.
+   - Performs length-difference pruning (`Math.abs(lenA - lenB) / maxLen > (1 - threshold)`).
+   - Enforces word-boundary / prefix alignment checks to prevent false substring matches (e.g. "cat" inside "communication-category").
+   - Calculates Levenshtein distance using a 1D single-row buffer to eliminate 2D array allocations.
 
 ---
 
-### 3.4 AI-Powered Icon Classification & Candidate Resolution (`AIIconClassifier.ts`)
+### 3.4 AI-Powered Icon Classification Service (`AIIconClassifier.ts`)
 
-For intelligent, context-aware icon assignment across entire vaults, `AIIconClassifier` coordinates LLM query providers with `IconRepository`:
+For intelligent, context-aware icon assignment across entire vaults, `AIIconClassifier` operates as an instance service (`plugin.aiIconClassifier`) coordinating LLM providers with `IconRepository`:
 
 ```mermaid
 graph TD
     A[User Triggers AI Auto-Assign] --> B{Check aiKeyConfirmed Privacy Consent}
     B -- Confirmed --> C[Collect Vault Folders & Markdown Files]
-    C --> D[Sample Installed Packs simple-icons, feather, remix, tabler, etc.]
-    D --> E[Build Domain & Synonym Candidate System Prompt]
+    C --> D[Construct item_path & Context Payload]
+    D --> E[Sample Installed Icon Packs & Build Category System Prompt]
     E --> F{Dispatch Provider queryGemini / queryClaude / queryOllama / queryOpenAI}
-    F --> G[Receive LLM JSON Response]
-    G --> H[Strip Thinking Tags & Parse Candidate Synonym Arrays]
-    H --> I[Iterate Candidates: Match via IconRepository.findIconInPacks]
-    I --> J[Save Matched iconId to customFolderColors in data.json]
-    J --> K[Trigger plugin.generateStyles Stylesheet Update]
+    F --> G[Receive LLM Response]
+    G --> H[Pre-Sanitize => Arrow Notation & Strip Thinking Fences]
+    H --> I[Parse JSON & Recursively Flatten Nested Group Maps]
+    I --> J[Flexible Target Resolution: Match Path / Title / Subpath]
+    J --> K[Resolve Smart Icon via IconRepository.findIconInPacks]
+    K --> L[Save Matched iconId to customFolderColors in data.json]
+    L --> M[Trigger plugin.generateStyles Stylesheet Update]
 ```
 
 #### How AI Icon Assignment Works:
-1. **Scope Selection**: Collects all vault folders and (if `aiIncludeFiles: true`) `.md` files, payloading `title`, `path`, `parent`, `files`, and `tags`.
-2. **Pack-Aware Prompt Generation**: Samples installed icon packs (`simple-icons`, `feather`, `remix`, `tabler`, `octicon`, `fontawesome`, `boxicons`, `rpg-awesome`, `lucide`) to construct domain and synonym instructions.
-3. **Candidate Synonym Array Output**: System prompt instructs the AI model to output an array of up to 4 synonym candidates ordered from most specific to general (e.g. `{ "Finances/Amazon.md": ["simple-icons-amazon", "shopping", "box", "package"] }`).
-4. **Resilient LLM Response Parsing**: Strips DeepSeek/Ollama `<think>...</think>` tags and markdown codeblocks via `parseJsonResponse()`.
-5. **Icon Pack Matching**: For each item, iterates through candidate synonyms in priority order, resolving exact pack IDs or invoking `IconRepository.findIconInPacks(candidate)`.
+1. **Scope Selection & Payload**: Collects all vault folders and (if `aiIncludeFiles: true`) `.md` files, creating a clean `item_path` payload alongside tags, frontmatter, and content snippets.
+2. **Category-Guided System Prompt**: Constructs a structured system prompt featuring curated icon category catalogs, installed pack sample IDs, pack flexibility guidelines, and few-shot examples.
+3. **Multi-Syntax Resilient Parsing**:
+   - Pre-sanitizes non-standard `=>` and `->` arrow notation into standard JSON colons (`:`).
+   - Strips `<think>` tags and markdown codeblocks via `parseJsonResponse()`.
+   - Recursively flattens nested group/category maps (`unwrapOuterJsonObject`).
+4. **Flexible Target Resolution**: Matches returned JSON keys against `batchTargets` via full path (`"x/x/Atlas.md"`), normalized path (`normalizePathKey`), filename/title (`"Atlas"`), or trailing path segment (`".../atlas"`).
+5. **Smart Icon Resolution & Fallback**: Validates candidates against installed icon packs (`simple-icons`, `feather`, `remix`, `tabler`, `octicon`, `fa`, `lucide`). If valid, assigns `iconId`; if invalid, falls back to the native auto-icon generator.
 6. **Persistence & Instant Render**: Stores resolved `iconId` directly in `settings.customFolderColors[path].iconId`, calls `saveSettings()`, and updates document stylesheets immediately via `generateStyles()`.
 
 ---

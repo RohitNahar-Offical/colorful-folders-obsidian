@@ -12,16 +12,17 @@ Welcome to the **Colorful Folders** master documentation index. This document pr
   - **Zero-DOM Rendering Strategy**: Explains why the plugin avoids injecting physical HTML wrapper elements into Obsidian's file explorer DOM tree (preventing third-party observer feedback loops such as Incident #27 with Smart Connections).
   - **The 6-Step Rendering Pipeline**: Mermaid sequence flowchart tracking state resolution from `DOMObserverService` dataset attribute tagging (`data-cf-path`) to `AdoptedStyleSheetService` injection (`sheet.replaceSync()`).
   - **Modular Color & Opacity Resolution**: Mathematical color priority chain in `ColorResolver.ts`.
-  - **The 4-Tier Icon Engine**: Exact pack matching, custom regex rules, multi-word `CategoryTrie` lookups, and stemmed fuzzy searching.
-  - **AI Icon Classification & Candidate Resolution**: Details `AIIconClassifier.ts` prompt building, pack sampling, LLM candidate arrays, `<think>` tag stripping, and icon pack matching.
+  - **The 4-Tier Icon Engine**: Exact pack matching, custom regex rules, true Node-based `CategoryTrie` prefix lookups, and optimized stemmed fuzzy searching.
+  - **AI Icon Classification Service**: Details `AIIconClassifier` instance service architecture, `item_path` context payloading, `=>` / `->` arrow notation pre-sanitization, recursive map flattening, and flexible target resolution (`full path`, `normalized path`, `title`, `subpath`).
   - **Pack Priority Tie-Breaking**: `PACK_PRIORITY` hierarchy (`custom` > `lucide` > `tabler` > `simple-icons` > `remix` > `feather` > `font-awesome` > `material`).
 
 ### **[ENGINE_INTERNALS.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/ENGINE_INTERNALS.md)** — Low-Level Logic & Lifecycle Bus
-- **Core Subject**: Reactive event bus mapping, low-level CSS attribute selectors, and string performance optimizations.
+- **Core Subject**: Reactive event bus mapping, low-level CSS attribute selectors, path key normalization, and string performance optimizations.
 - **Inner Workings & Technical Details**:
   - **Global Event Lifecycle**: Event bus table mapping workspace/vault events (`modify`, `create`, `delete`, `layout-ready`, `dragstart`, `scroll`) to `PluginLifecycleService`, `DOMObserverService`, and `EventTrackerService`.
   - **Low-Level CSS Selectors**: Attribute selectors targeting `.nav-folder-title[data-cf-path="..."]` and `.nav-file-title[data-cf-path="..."]`.
-  - **Stemming Engine**: English suffix stripping (`-ing`, `-ed`, `-es`, `-s`) and `STOP_WORDS` filtering.
+  - **Structure-Preserving Path Key Normalization**: `normalizePathKey(path)` preserving slashes `/` to eliminate key collision bugs across subfolders.
+  - **Stemming Engine & Fuzzy Optimizations**: `STOP_WORDS` filtering, `searchFuzzy` length-difference pruning, word-boundary alignment, and single-row Levenshtein memory buffer.
   - **$O(1)$ LRU Cache Systems**: Bounded 2048-capacity LRU caches (`_normCache`, `_dataUriCache`, `_findPackIconCache`).
 
 ---
@@ -35,7 +36,7 @@ Welcome to the **Colorful Folders** master documentation index. This document pr
   - **`PluginLifecycleService`**: `initializeDocumentTracking()`, `registerVaultCacheEvents()`, `onLayoutReady()`, `destroy()`.
   - **`StyleGenerator` & `StyleResolver`**: `generateCss()`, `traverse()`, `getStyle()`, and $O(\text{depth})$ path inheritance resolution using `FolderTrie`.
   - **`ColorResolver` & `BaseCssGenerator`**: Mathematical color calculations, global base CSS, divider CSS, and stealth mode CSS builders.
-  - **`IconRepository`, `IconPackIndex`, `CategoryTrie`, & `AIIconClassifier`**: Auto-icon resolution, LRU caching, candidate synonym array parsing, and provider subroutines (`queryGemini`, `queryClaude`, `queryOllama`, `queryOpenAI`).
+  - **`IconRepository`, `IconPackIndex`, `CategoryTrie`, & `AIIconClassifier`**: Auto-icon resolution, LRU caching, `searchFuzzy` single-row Levenshtein buffer, `CategoryTrie` prefix node lookup, and `AIIconClassifier` instance methods (`classifyVault`, `stopClassification`, `parseJsonResponse`, `unwrapOuterJsonObject`).
   - **`AdoptedStyleSheetService`**: `initializeStyles()`, `updateStyles()`, `clearStyles()`, and `unload()`.
 
 ### **[DATA_SCHEMA.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/DATA_SCHEMA.md)** — Persistent Data & JSON Schema

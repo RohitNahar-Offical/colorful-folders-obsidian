@@ -1,5 +1,26 @@
 # Updates for Colorful Folders
 
+## 🚀 4.2.8 - AI Classifier & Performance Engine Upgrade
+
+This major update brings a massive overhaul to the AI classification system, path key normalization, category search data structures, and fuzzy search performance.
+
+### 🤖 AI Classification & Prompt Intelligence
+- **Flexible Target Resolution**: The AI classifier now resolves item keys against full paths (`"x/x/Atlas.md"`), normalized paths, item titles (`"Atlas"`), or trailing subpaths (`".../atlas"`). Note titles and relative paths returned by LLMs now match successfully and assign icons without getting skipped.
+- **Robust Multi-Syntax Parser**: Auto-sanitizes non-standard `=>` and `->` arrow notation into standard JSON colons (`:`) and recursively flattens nested group/category maps outputted by local or custom LLM models.
+- **Category-Guided System Prompt**: Built a structured semantic icon catalog, installed pack flexibility rules, and few-shot examples into the system prompt to maximize accuracy and eliminate hallucinated icon names.
+- **Instance Service Refactoring**: Refactored `AIIconClassifier` from a static singleton into a clean plugin instance service (`plugin.aiIconClassifier`) for rock-solid lifecycle management.
+
+### ⚡ Performance & Data Structure Optimizations
+- **Structure-Preserving Path Key Normalization**: Replaced aggressive alphanumeric stripping with `normalizePathKey` which preserves path slashes `/`. Prevents key collision bugs where subfolder items (e.g. `"Dev/Notes.md"`) collided with top-level items (`"DevNotes.md"`).
+- **True Prefix Trie Data Structure**: Rebuilt `CategoryTrie` into a true Node-based Trie. Category searches walk prefix nodes and return matching categories instead of falling back to all categories.
+- **Hyper-Optimized Fuzzy Search**: Added O(1) map pre-checks (`findIcon`), length-difference candidate pruning, word-boundary alignment for substring scores, and a 1D single-row Levenshtein memory buffer to `searchFuzzy`.
+
+### 🎨 Styling & Collapse Indicator Colors
+- **Icon & Collapse Chevron Color Synchronization**: Folder collapse chevrons and custom file icons now dynamically match and inherit parent folder auto-colors.
+- **Visual Styling Decoupling**: Text and icon colors independently evaluate and inherit auto-colors regardless of background/border toggles.
+
+---
+
 ## 🚀 4.2.7 - Collapse Indicators Update
 
 This release introduces control over folder collapse indicators:

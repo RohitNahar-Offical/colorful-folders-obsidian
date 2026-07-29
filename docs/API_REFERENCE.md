@@ -103,21 +103,28 @@ Core resolution engine supporting a 4-tier priority system (`Tier 1`: Pack Exact
 - **`invalidateCache(): void`**: Flushes all internal LRU caches and invalidates `_packIndex` snapshot.
 
 ### `AIIconClassifier` (`src/integrations/AIIconClassifier.ts`)
-Context-aware LLM classifier for assigning smart icons across vault folders and Markdown files.
-- **`autoAssignIconsWithAI(plugin: IColorfulFoldersPlugin, targetPath?: string): Promise<void>`**: Triggers privacy verification, payload generation, LLM candidate retrieval, and style updates.
-- **`queryAI(plugin: IColorfulFoldersPlugin, payload: any[]): Promise<Record<string, unknown>>`**: Coordinates provider-specific subroutines (`queryGemini`, `queryClaude`, `queryOllama`, `queryOpenAI`).
-- **`parseJsonResponse(textResult: string): Record<string, unknown>`**: Strips `<think>` tags and markdown codeblocks to return candidate synonym arrays.
+Instance service (`plugin.aiIconClassifier`) for context-aware LLM icon classification across vault folders and Markdown files.
+- **`classifyVault(options?: { force?: boolean }): Promise<void>`**: Triggers privacy verification, context payload generation, LLM batch execution, smart icon resolution, and style updates.
+- **`stopClassification(): void`**: Cancels ongoing classification tasks gracefully via Notice feedback.
+- **`queryAI(payload: any[], systemPrompt: string): Promise<Record<string, unknown>>`**: Coordinates provider-specific subroutines (`queryGemini`, `queryClaude`, `queryOllama`, `queryOpenAI`).
+- **`parseJsonResponse(textResult: string): Record<string, unknown>`**: Pre-sanitizes `=>` / `->` arrow notation, strips `<think>` tags and markdown codeblocks, and returns key-value mapping arrays.
+- **`unwrapOuterJsonObject(parsed: Record<string, unknown>): Record<string, unknown>`**: Recursively flattens nested group/category maps into a single flat classification dictionary.
 
 ### `IconPackIndex` (`src/core/IconPackIndex.ts`)
-In-memory index maintaining `exactMap` and `suffixMap` to enable $O(1)$ lookups.
+In-memory index maintaining `exactMap`, `coreMap`, and `suffixMap` to enable $O(1)$ lookups.
 - **`build(localIcons, customIcons): void`**: Builds lookup maps with automatic pack priority tie-breaking using `PACK_PRIORITY`.
 - **`findIcon(searchKey: string): string | null`**: Performs $O(1)$ exact, prefix-stripped, and suffix-matched lookups.
+- **`searchFuzzy(searchKey: string, options?: { threshold?: number }): string | null`**: Optimized fuzzy search with $O(1)$ fast-path pre-check, length-difference pruning ratio `1 - threshold`, word-boundary similarity alignment, and single-row Levenshtein buffer.
 - **`getIsBuilt(): boolean`**: Returns index build status.
 
 ### `CategoryTrie` (`src/core/CategoryTrie.ts`)
-Character-indexed prefix trie for `AUTO_ICON_CATEGORIES`.
-- **`build(categories: AutoIconData[]): void`**: Maps literal initial character tokens of rules to candidate lists.
-- **`lookup(name: string): AutoIconData[]`**: Aggregates rule candidates for all word initial characters in the input title.
+Node-based prefix trie (`TrieNode`) for `AUTO_ICON_CATEGORIES`.
+- **`build(categories: AutoIconData[]): void`**: Inserts category words into the prefix trie node hierarchy (`insertWord`).
+- **`lookup(name: string): AutoIconData[]`**: Tokenizes input name and walks the node tree to return only matching category candidates.
+
+### `Utils` (`src/common/utils.ts`)
+- **`normalizePathKey(path: string): string`**: Lowercases path and strips `.md` extension while preserving `/` slashes, preventing path collisions across subfolders.
+- **`normalizeIconName(iconId: string): string`**: Standardizes icon key cleaning across AI Classification, Auto-Icon resolution, and Pack Index lookups.
 
 ### `AdoptedStyleSheetService` (`src/services/AdoptedStyleSheetService.ts`)
 Manages CSS injection directly into browser window `document.adoptedStyleSheets`.
