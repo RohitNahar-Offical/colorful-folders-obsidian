@@ -5,6 +5,7 @@ export class IconPackIndex {
     private exactMap = new Map<string, string>();
     private coreMap = new Map<string, string>();
     private suffixMap = new Map<string, string>();
+    private allKeys: string[] = [];
     private isBuilt = false;
     private _localVersion = '';
     private _customVersion = '';
@@ -19,7 +20,6 @@ export class IconPackIndex {
         return 10;
     }
 
-
     public build(localIcons: Record<string, string | null> | undefined, customIcons: Record<string, string> | undefined) {
         const localVersion = localIcons ? JSON.stringify(Object.keys(localIcons)) : '';
         const customVersion = customIcons ? JSON.stringify(Object.keys(customIcons)) : '';
@@ -31,9 +31,11 @@ export class IconPackIndex {
         this.exactMap.clear();
         this.coreMap.clear();
         this.suffixMap.clear();
+        this.allKeys = [];
 
         const addIconKey = (key: string, value: string) => {
             const lKey = key.toLowerCase();
+            this.allKeys.push(value);
             if (!this.exactMap.has(lKey)) {
                 this.exactMap.set(lKey, value);
             }
@@ -120,6 +122,67 @@ export class IconPackIndex {
         return null;
     }
 
+    public searchFuzzy(searchKey: string, options?: { threshold?: number }): string | null {
+        if (!this.isBuilt || !searchKey || searchKey.length < 3) return null;
+        const threshold = options?.threshold ?? 0.8;
+        const normKey = searchKey.toLowerCase().trim();
+
+        let bestMatch: string | null = null;
+        let bestScore = 0;
+
+        for (const candidateKey of this.allKeys) {
+            const score = this.calculateSimilarity(normKey, candidateKey);
+            if (score >= threshold && score > bestScore) {
+                bestScore = score;
+                bestMatch = candidateKey;
+            }
+        }
+
+        return bestMatch;
+    }
+
+    private calculateSimilarity(a: string, b: string): number {
+        if (a === b) return 1.0;
+        if (!a || !b) return 0;
+        const lA = a.toLowerCase();
+        const lB = b.toLowerCase();
+        if (lA === lB) return 1.0;
+        const { core: coreA, noPrefix: npA } = extractCoreIconKeyword(lA);
+        const { core: coreB, noPrefix: npB } = extractCoreIconKeyword(lB);
+
+        if (coreA && coreB && coreA === coreB) return 0.95;
+        if (npA && npB && npA === npB) return 0.95;
+
+        if (lA.includes(lB) || lB.includes(lA)) {
+            const minLen = Math.min(lA.length, lB.length);
+            if (minLen >= 4) return 0.85;
+        }
+
+        const dist = this.levenshteinDistance(lA, lB);
+        const maxLen = Math.max(lA.length, lB.length);
+        return maxLen === 0 ? 1 : 1 - dist / maxLen;
+    }
+
+    private levenshteinDistance(a: string, b: string): number {
+        const matrix: number[][] = [];
+        for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+        for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+        for (let i = 1; i <= b.length; i++) {
+            for (let j = 1; j <= a.length; j++) {
+                if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                    matrix[i][j] = matrix[i - 1][j - 1];
+                } else {
+                    matrix[i][j] = Math.min(
+                        matrix[i - 1][j - 1] + 1,
+                        matrix[i][j - 1] + 1,
+                        matrix[i - 1][j] + 1
+                    );
+                }
+            }
+        }
+        return matrix[b.length][a.length];
+    }
+
     public getIsBuilt(): boolean {
         return this.isBuilt;
     }
@@ -131,5 +194,6 @@ export class IconPackIndex {
         this.exactMap.clear();
         this.coreMap.clear();
         this.suffixMap.clear();
+        this.allKeys = [];
     }
 }

@@ -1,47 +1,24 @@
-Here's a clear summary of what's been completed and what remains.
+The analysis is complete and the comprehensive implementation plan has been delivered above. Here is a summary of the key findings and the plan structure:
 
 ---
 
-## Completed ✅
+### Two Root Causes Identified
 
-### Phase 1 — Security Fixes (All Done)
-| # | Fix | File |
-|---|-----|------|
-| 1.1 | SVG sanitization: added `<foreignObject>`, `<script>`, `<iframe>`, `<object>`, `<embed>`, `<use>` removal + `on*` attribute stripping in `normalizeSvg()` | `src/core/IconRepository.ts` |
-| 1.1b | Replaced regex XSS check in `autoDownloadPack()` with DOMParser-based sanitization | `src/main.ts` |
-| 1.2 | Added `aiKeyConfirmed` setting + confirmation modal before AI classification runs | `src/ui/SettingTab.ts`, `src/common/types.ts`, `src/common/constants.ts` |
-| 1.3 | Custom AI endpoint URL validation (HTTPS or localhost only) | `src/integrations/AIIconClassifier.ts` |
-| 1.4 | `safeEscape()` now escapes single quotes | `src/common/utils.ts` |
+**Issue 1 — Generic file icons instead of contextually relevant ones:**
+The auto-icon pipeline (`IconRepository._computeAutoIconData`) classifies items using **name-only matching** through 5 tiers. It has no content awareness for non-markdown files, no file extension semantics, and the `STOP_WORDS`/`GENERIC_SUFFIX_WORDS` filters only apply to Tier 4 (fuzzy matching), not Tier 3 (category regex matching). This means broad regexes like `/source|origin|root|base|data|lib|bib/i` and `/document|doc|word|report|text/i` catch many items that should get more specific icons.
 
-### Phase 2 — Performance Optimizations (All Done ✅)
-| # | Fix | File |
-|---|-----|------|
-| 2.1 | LRUCache eviction: `Array.from(keys)[0]` → `keys().next().value` (O(1)) | `src/common/LRUCache.ts` |
-| 2.2 | Full CSS Generation reliability — complete ruleset preservation across reloads | `src/core/StyleGenerator.ts` |
-| 2.3 | `getAllExplorerContainers()` result caching with invalidation | `src/main.ts` |
-| 2.4 | CategoryTrie pre-computed lookup array (avoids Set allocation per call) | `src/core/CategoryTrie.ts` |
-| 2.5 | `folderCountCache` invalidation on vault `modify`/`create`/`delete` events | `src/main.ts` |
-| 2.6 | DOMParser reused as class field `_domParser` in `IconRepository` | `src/core/IconRepository.ts` |
+**Issue 2 — Date-like names (e.g., "2030") get folder icons:**
+There is zero numeric/date pattern detection in `AUTO_ICON_CATEGORIES`. The `CategoryTrie` indexes by first character of regex sources (almost always letters), so "2030" starting with "2" falls through to the full lookup array where no regex matches. When `getAutoIconData()` returns `null`, `StyleGenerator` renders the default `lucide-folder` icon at line 902-946.
 
----
+### Plan Structure (6 Phases)
 
-### Phase 3 — Code Quality (All Done ✅)
-| # | Task | File |
-|---|------|------|
-| 3.1 | Remove dead code (`IconManager.inject*()` stubs, unused `_counterSvg*` fields) | `src/core/IconManager.ts`, `src/core/StyleGenerator.ts` |
-| 3.2 | Consolidate `getStyle()` delegation to `StyleResolver` | `src/core/StyleGenerator.ts` |
-| 3.3 | Modularize `AIIconClassifier.queryAI()` into isolated provider methods | `src/integrations/AIIconClassifier.ts` |
-| 3.4 | Add unit test scaffolding for core data structures | `tests/LRUCache.test.ts`, `tests/CategoryTrie.test.ts`, `tests/utils.test.ts` |
-| 3.5 | Clean ESLint setup (0 errors, 0 warnings) | `eslint.config.mjs` |
+| Phase | Focus | Key Changes |
+|-------|-------|------------|
+| **1** | Date/Numeric Detection | Add date/year/percent regex categories to `AUTO_ICON_CATEGORIES`; add numeric indexing to `CategoryTrie`; add a dedicated date tier in `IconRepository` |
+| **2** | Extension Awareness | Add extension-to-icon mapping; integrate as Tier 0.7 in `_computeAutoIconData()` |
+| **3** | Semantic Disambiguation | Expand `STOP_WORDS`/`GENERIC_SUFFIX_WORDS`; add generic-term penalty in Tier 3; improve `CategoryTrie` scoring; add parent folder context |
+| **4** | AI Classifier Improvements | Extend to non-markdown files; improve system prompt; add post-processing validation for generic/non-existent icons |
+| **5** | Content-Aware Classification | Add keyword extraction utility; add content-based classification tier (Tier 3.5) that matches file content keywords against categories |
+| **6** | Testing & Validation | Unit tests for date/numeric matching, extension mapping, AI post-processing; regression tests for existing behavior |
 
-### Phase 4 — Architecture Refactoring (All Done ✅)
-| # | Task | File |
-|---|------|------|
-| 4.1 | Decompose `main.ts` into a `PluginLifecycleService` | `src/services/PluginLifecycleService.ts`, `src/main.ts` |
-| 4.2 | Streamline plugin lifecycle orchestration and event handlers | `src/services/PluginLifecycleService.ts` |
-| 4.3 | Integrate `FolderTrie` for fast path lookups | `src/core/StyleResolver.ts` |
-| 4.4 | Add `AdoptedStyleSheetService.clearStyles()` method | `src/services/AdoptedStyleSheetService.ts` |
-
----
-
-**All Phases 1, 2, 3, and 4 are 100% Completed, Verified, and Linted with 0 Errors and 0 Warnings!**
+The full plan with detailed steps, file-level modifications, risk assessment, and success criteria is in the response above.

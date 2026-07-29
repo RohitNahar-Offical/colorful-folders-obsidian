@@ -154,6 +154,14 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
 };
 
 export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
+    // --- Dates, Years, Numbers & Percentages ---
+    { rex: /^(19|20)\d{2}$/, emoji: "📅", lucide: "calendar", priority: 150, emojis: ["📅", "📆", "⏳"], lucides: ["calendar", "calendar-days", "clock"] },
+    { rex: /^\d{4}-\d{2}(-\d{2})?$/, emoji: "📅", lucide: "calendar-days", priority: 150, emojis: ["📅", "📆"], lucides: ["calendar-days", "calendar-clock"] },
+    { rex: /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*$/i, emoji: "📅", lucide: "calendar", priority: 140 },
+    { rex: /^\d+$/, emoji: "🔢", lucide: "hash", priority: 130 },
+    { rex: /^\d+%$/, emoji: "📊", lucide: "percent", priority: 130 },
+    { rex: /^#\d+$/, emoji: "🏷️", lucide: "hash", priority: 130 },
+
     // --- Core categories ---
     { rex: /journal|daily|log|diary/i, emoji: "📅", lucide: "calendar", priority: 100, emojis: ["📅", "📆", "📝", "📔"], lucides: ["calendar", "calendar-days", "book", "pencil"] },
     { rex: /image|photo|pic|asset|gallery|album/i, emoji: "🖼️", lucide: "image", priority: 100, emojis: ["🖼️", "📷", "📸", "🎨"], lucides: ["image", "camera", "aperture", "palette"] },
@@ -184,8 +192,8 @@ export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
     { rex: /design|ui|ux|figma|sketch|mockup/i, emoji: "✨", lucide: "layout", priority: 90 },
     { rex: /data|csv|excel|sheet|table|stats|analytics/i, emoji: "📊", lucide: "bar-chart-2", priority: 90 },
     { rex: /presentation|slides|ppt|deck/i, emoji: "📽️", lucide: "presentation", priority: 90 },
-    { rex: /document|doc|word|report|text/i, emoji: "📄", lucide: "file-text", priority: 90 },
-    { rex: /pdf|ebook/i, emoji: "📕", lucide: "file", priority: 90 },
+    { rex: /\b(document|doc|word|report|text)\b/i, emoji: "📄", lucide: "file-text", priority: 85 },
+    { rex: /pdf|ebook/i, emoji: "📕", lucide: "file-text", priority: 90 },
     { rex: /zip|rar|compressed|archive/i, emoji: "🗜️", lucide: "package", priority: 90 },
     { rex: /cloud|sync|drive|storage/i, emoji: "☁️", lucide: "cloud", priority: 90 },
     { rex: /shopping|cart|store|shop|buy|order/i, emoji: "🛒", lucide: "shopping-cart", priority: 90 },
@@ -210,13 +218,12 @@ export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
     { rex: /tv|series|episode|show|drama|media/i, emoji: "📺", lucide: "tv", priority: 85, emojis: ["📺", "🎬", "🎭"], lucides: ["tv", "monitor-play", "clapperboard"] },
     { rex: /visual|view|display|watch|look|eye|see/i, emoji: "👁️", lucide: "eye", priority: 85, emojis: ["👁️", "👓", "🔭"], lucides: ["eye", "glasses", "telescope"] },
     { rex: /recent|update|history|mod|time|new/i, emoji: "🕒", lucide: "history", priority: 85, emojis: ["🕒", "🕙", "⏳", "📅"], lucides: ["history", "clock", "calendar-clock", "sparkles"] },
-    { rex: /source|origin|root|base|data|lib|bib/i, emoji: "📁", lucide: "database", priority: 85, emojis: ["📁", "📥", "📊"], lucides: ["database", "library", "binary"] },
+    { rex: /\b(source|origin|root|base|data|lib|bib)\b/i, emoji: "📁", lucide: "database", priority: 85, emojis: ["📁", "📥", "📊"], lucides: ["database", "library", "binary"] },
     { rex: /thing|object|stuff|entity|misc|item/i, emoji: "📦", lucide: "package", priority: 80, emojis: ["📦", "🎁", "🗳️"], lucides: ["package", "layers", "box"] },
     { rex: /review|crit|feedback|eval/i, emoji: "🔎", lucide: "search", priority: 85, lucides: ["search", "check-square", "clipboard-check"] },
     { rex: /draft|wip|process|build/i, emoji: "🚧", lucide: "wrench", priority: 85, emojis: ["🚧", "🛠️", "🏗️"], lucides: ["wrench", "construction", "hammer"] },
     { rex: /security|auth|key|password/i, emoji: "🔑", lucide: "key", priority: 80 },
     { rex: /download|install|setup/i, emoji: "⬇️", lucide: "download", priority: 80 },
-    { rex: /upload|share|publish/i, emoji: "⬆️", lucide: "upload", priority: 80 },
     { rex: /trash|delete|remove|bin/i, emoji: "🗑️", lucide: "trash", priority: 80 },
     { rex: /energy|power|electric|battery/i, emoji: "🔋", lucide: "battery-charging", priority: 80 },
     { rex: /weather|climate|forecast|rain|sun/i, emoji: "⛅", lucide: "cloud-sun", priority: 80 },

@@ -823,6 +823,12 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             void AIIconClassifier.classifyVault(this.plugin, { force: true });
         };
 
+        const aiStopBtn = aiBtnWrap.createEl("button", { text: "🛑 Stop AI Classification" });
+        aiStopBtn.setCssStyles({ color: "var(--text-error)" });
+        aiStopBtn.onclick = () => {
+            AIIconClassifier.stopClassification();
+        };
+
         const customIconCard = makeCard(iconPanel, "📦", "Custom icon management");
 
         const iconDesc = customIconCard.createEl("p", { text: t("settings.icon_management.desc") });

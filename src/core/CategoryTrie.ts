@@ -12,6 +12,17 @@ export class CategoryTrie {
 
         for (const cat of categories) {
             const source = cat.rex.source.toLowerCase();
+            // Handle numeric and date regexes (e.g. \d+, 19|20)
+            if (source.includes('\\d') || source.includes('0-9') || /19\|20/.test(source)) {
+                for (let d = 0; d <= 9; d++) {
+                    const char = String(d);
+                    if (!this.trieMap.has(char)) {
+                        this.trieMap.set(char, []);
+                    }
+                    this.trieMap.get(char)!.push(cat);
+                }
+            }
+
             // Extract initial literal letter tokens from regex source (e.g., "journal|daily" -> "j", "d")
             const matches = source.match(/[a-z0-9]/g);
             if (matches && matches.length > 0 && !source.startsWith('.') && !source.startsWith('\\')) {

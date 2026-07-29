@@ -41,4 +41,8 @@ export class IconManager {
     preNormalizeIcon(id: string, rawSvg: string): void {
         this.repository.preNormalizeIcon(id, rawSvg);
     }
+
+    searchFuzzy(searchKey: string, options?: { threshold?: number }): string | null {
+        return this.repository.searchFuzzy(searchKey, options);
+    }
 }

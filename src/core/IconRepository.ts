@@ -93,6 +93,63 @@ export class IconRepository {
             }
         }
 
+        // Tier 0.7: File Extension Awareness for Non-Markdown Files
+        if (path) {
+            const extMatch = path.match(/\.([a-z0-9]+)$/i);
+            if (extMatch) {
+                const ext = extMatch[1].toLowerCase();
+                const EXTENSION_ICON_MAP: Record<string, string> = {
+                    'pdf': 'file-text',
+                    'png': 'image',
+                    'jpg': 'image',
+                    'jpeg': 'image',
+                    'gif': 'image',
+                    'svg': 'image',
+                    'webp': 'image',
+                    'bmp': 'image',
+                    'mp4': 'video',
+                    'mkv': 'video',
+                    'mov': 'video',
+                    'avi': 'video',
+                    'webm': 'video',
+                    'mp3': 'music',
+                    'wav': 'music',
+                    'flac': 'music',
+                    'ogg': 'music',
+                    'm4a': 'music',
+                    'js': 'code',
+                    'ts': 'code',
+                    'py': 'code',
+                    'html': 'code',
+                    'css': 'code',
+                    'json': 'code',
+                    'cpp': 'code',
+                    'rs': 'code',
+                    'go': 'code',
+                    'zip': 'package',
+                    'tar': 'package',
+                    'gz': 'package',
+                    '7z': 'package',
+                    'rar': 'package',
+                    'csv': 'bar-chart-2',
+                    'xlsx': 'bar-chart-2',
+                    'xls': 'bar-chart-2',
+                    'tsv': 'bar-chart-2'
+                };
+                if (ext !== 'md' && EXTENSION_ICON_MAP[ext]) {
+                    const iconId = EXTENSION_ICON_MAP[ext];
+                    return {
+                        tier: 0.7 as any,
+                        rex: new RegExp(`\\.${ext}$`, 'i'),
+                        emoji: iconId,
+                        lucide: iconId,
+                        priority: 2000,
+                        packSource: 'file-extension'
+                    };
+                }
+            }
+        }
+
         const lName = name.toLowerCase();
         const settings = this.plugin.settings;
         const currentKey = settings.customIconRules || '';
@@ -156,23 +213,31 @@ export class IconRepository {
             };
         }
 
-        // Tier 2 & 3: Custom Regex rules & Categories using CategoryTrie lookup
-        const candidateCategories = this._categoryTrie.lookup(lName);
-        for (let i = 0; i < candidateCategories.length; i++) {
-            const cat = candidateCategories[i];
-            if (cat.rex.test(lName)) {
-                const tierVal: 2 | 3 = cat.isCustom ? 2 : 3;
-                const match = { ...cat, tier: tierVal, packSource: cat.isCustom ? 'custom-rule' : 'category-default' };
-                if (settings.autoIconVariety) {
-                    const h = hashString(name);
-                    if (match.emojis && match.emojis.length > 0) {
-                        match.emoji = match.emojis[h % match.emojis.length];
+        // Tier 2 & 3: Custom Regex rules & Categories using CategoryTrie lookup (with Parent Folder Context)
+        const parentFolder = path ? path.split('/').slice(-2, -1)[0] : '';
+        const searchContexts = [lName];
+        if (parentFolder && parentFolder.toLowerCase() !== 'root') {
+            searchContexts.push(parentFolder.toLowerCase());
+        }
+
+        for (const ctx of searchContexts) {
+            const candidateCategories = this._categoryTrie.lookup(ctx);
+            for (let i = 0; i < candidateCategories.length; i++) {
+                const cat = candidateCategories[i];
+                if (cat.rex.test(ctx)) {
+                    const tierVal: 2 | 3 = cat.isCustom ? 2 : 3;
+                    const match = { ...cat, tier: tierVal, packSource: cat.isCustom ? 'custom-rule' : 'category-default' };
+                    if (settings.autoIconVariety) {
+                        const h = hashString(name);
+                        if (match.emojis && match.emojis.length > 0) {
+                            match.emoji = match.emojis[h % match.emojis.length];
+                        }
+                        if (match.lucides && match.lucides.length > 0) {
+                            match.lucide = match.lucides[h % match.lucides.length];
+                        }
                     }
-                    if (match.lucides && match.lucides.length > 0) {
-                        match.lucide = match.lucides[h % match.lucides.length];
-                    }
+                    return match;
                 }
-                return match;
             }
         }
 
@@ -261,6 +326,17 @@ export class IconRepository {
         return result;
     }
 
+    searchFuzzy(searchKey: string, options?: { threshold?: number }): string | null {
+        if (!searchKey || searchKey.length < 3) return null;
+        const local = this.plugin.localFileSystemIcons;
+        const custom = this.plugin.settings.customIcons;
+
+        if (!this._packIndex.getIsBuilt()) {
+            this._packIndex.build(local, custom);
+        }
+        return this._packIndex.searchFuzzy(searchKey, options);
+    }
+
     isEmojiIcon(iconId?: string | null): boolean {
         if (!iconId) return false;
         if (this.plugin.localFileSystemIcons) {
@@ -280,8 +356,11 @@ export class IconRepository {
         if (obsidian.getIconIds?.().includes(`lucide-${iconId}`) || obsidian.getIconIds?.().includes(iconId)) {
             return false;
         }
-        if (iconId.length <= 2) return true;
-        return /[^a-zA-Z0-9\-_/.]/.test(iconId);
+        // If it contains letters, it is a text ID / title name, NOT an emoji
+        if (/[a-zA-Z]/.test(iconId)) {
+            return false;
+        }
+        return /\p{Extended_Pictographic}|\p{Emoji_Presentation}/u.test(iconId);
     }
 
     getIconSvg(iconId: string, shouldEncode = true): string {
@@ -344,7 +423,6 @@ export class IconRepository {
             if (this.plugin.iconCache) {
                 this.plugin.iconCache.set(cacheKey, normalized);
             }
-            // Eagerly pre-warm opposite encoding state to avoid second DOMParser pass
             const altKey = (shouldEncode ? '0:' : '1:') + iconId;
             if (this.plugin.iconCache && !this.plugin.iconCache.has(altKey)) {
                 const altNorm = this.normalizeSvg(svgStr, !shouldEncode);
@@ -356,9 +434,6 @@ export class IconRepository {
         return "";
     }
 
-    /**
-     * Eagerly normalizes and pre-caches raw and encoded Data-URI representations at load time.
-     */
     preNormalizeIcon(id: string, rawSvg: string): void {
         if (!id || !rawSvg) return;
         const normEncoded = this.normalizeSvg(rawSvg, true);
@@ -371,9 +446,6 @@ export class IconRepository {
         this._dataUriCache.set(id, `url("data:image/svg+xml,${normEncoded}")`);
     }
 
-    /**
-     * Memoized Data-URI generator using LRUCache.
-     */
     getDataUri(iconId: string): string {
         if (!iconId) return "";
         const hit = this._dataUriCache.get(iconId);
@@ -386,7 +458,7 @@ export class IconRepository {
     }
 
     normalizeSvg(svgStr: string, shouldEncode = true): string {
-        const cacheKey = (shouldEncode ? '1:' : '0:') + svgStr;
+        const cacheKey = `${shouldEncode ? '1:' : '0:'}${hashString(svgStr)}`;
         const hit = this._normCache.get(cacheKey);
         if (hit !== undefined) return hit;
 
@@ -397,38 +469,38 @@ export class IconRepository {
                 const rawSvg = svgStr.includes('%') ? decodeURIComponent(svgStr) : svgStr;
                 if (!rawSvg.includes('<svg')) { result = svgStr; }
                 else {
-                const parser = this._domParser;
-                let doc = parser.parseFromString(rawSvg, 'image/svg+xml');
-                if (doc.getElementsByTagName("parsererror").length > 0) doc = parser.parseFromString(rawSvg, 'text/html');
+                    const parser = this._domParser;
+                    let doc = parser.parseFromString(rawSvg, 'image/svg+xml');
+                    if (doc.getElementsByTagName("parsererror").length > 0) doc = parser.parseFromString(rawSvg, 'text/html');
 
-                // Remove dangerous tags
-                const dangerousTags = ['script', 'iframe', 'object', 'embed', 'foreignobject'];
-                for (const tag of dangerousTags) {
-                    doc.querySelectorAll(tag).forEach(el => el.remove());
-                }
-
-                // Remove <use> elements ONLY if they point to external/untrusted schemes (http, https, //, javascript, data)
-                doc.querySelectorAll('use').forEach(el => {
-                    const href = (el.getAttribute('href') || el.getAttribute('xlink:href') || '').trim().toLowerCase();
-                    if (href.startsWith('http') || href.startsWith('//') || href.startsWith('javascript:') || href.startsWith('data:')) {
-                        el.remove();
+                    // Remove dangerous tags
+                    const dangerousTags = ['script', 'iframe', 'object', 'embed', 'foreignobject'];
+                    for (const tag of dangerousTags) {
+                        doc.querySelectorAll(tag).forEach(el => el.remove());
                     }
-                });
 
-                // Strip all on* event handler attributes from every element
-                doc.querySelectorAll('*').forEach(el => {
-                    const attrs = Array.from(el.attributes);
-                    for (const attr of attrs) {
-                        if (attr.name.startsWith('on')) el.removeAttribute(attr.name);
-                    }
-                });
+                    // Remove <use> elements ONLY if they point to external/untrusted schemes (http, https, //, javascript, data)
+                    doc.querySelectorAll('use').forEach(el => {
+                        const href = (el.getAttribute('href') || el.getAttribute('xlink:href') || '').trim().toLowerCase();
+                        if (href.startsWith('http') || href.startsWith('//') || href.startsWith('javascript:') || href.startsWith('data:')) {
+                            el.remove();
+                        }
+                    });
 
-                const svg = doc.querySelector('svg');
-                if (!svg) { result = svgStr; }
-                else {
-                    if (!svg.hasAttribute('xmlns')) svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-                    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-                        
+                    // Strip all on* event handler attributes from every element
+                    doc.querySelectorAll('*').forEach(el => {
+                        const attrs = Array.from(el.attributes);
+                        for (const attr of attrs) {
+                            if (attr.name.startsWith('on')) el.removeAttribute(attr.name);
+                        }
+                    });
+
+                    const svg = doc.querySelector('svg');
+                    if (!svg) { result = svgStr; }
+                    else {
+                        if (!svg.hasAttribute('xmlns')) svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                        svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+                            
                         const vbAttr = svg.getAttribute('viewBox');
                         if (!vbAttr && (svg.hasAttribute('width') || svg.hasAttribute('height'))) {
                             const w = svg.getAttribute('width')?.replace('px', '') || "24";
