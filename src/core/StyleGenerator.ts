@@ -1,4 +1,4 @@
-import { ColorfulFoldersSettings, FolderStyle, IColorfulFoldersPlugin, StyleContext } from '../common/types';
+import { AutoIconData, ColorfulFoldersSettings, FolderStyle, IColorfulFoldersPlugin, StyleContext } from '../common/types';
 import { PALETTES, CF_FOLDER_CLOSED, CF_FOLDER_OPEN } from '../common/constants';
 import { hexToRgbObj, adjustBrightnessRgb, safeEscape } from '../common/utils';
 import * as obsidian from 'obsidian';
@@ -107,6 +107,20 @@ export class StyleGenerator {
         }
         this._iconValidityCache.set(id, isValid);
         return isValid;
+    }
+
+    private resolveAutoIconCandidate(data: AutoIconData | null): string {
+        if (!data) return "";
+        if (this.settings.wideAutoIcons) {
+            if (data.lucide && this.isValidIconStr(data.lucide)) return data.lucide;
+            if (data.emoji) return data.emoji;
+            if (data.lucide) return data.lucide;
+        } else {
+            if (data.emoji) return data.emoji;
+            if (data.lucide && this.isValidIconStr(data.lucide)) return data.lucide;
+            if (data.lucide) return data.lucide;
+        }
+        return "";
     }
 
     private prepareContext(): StyleContext | null {
@@ -294,12 +308,12 @@ export class StyleGenerator {
 
                 let iconId = "";
                 if (isUserCustomRuleFileMatch && customUserRuleFile) {
-                    iconId = this.settings.wideAutoIcons ? (customUserRuleFile.lucide || customUserRuleFile.emoji || "") : (customUserRuleFile.emoji || customUserRuleFile.lucide || "");
+                    iconId = this.resolveAutoIconCandidate(customUserRuleFile);
                 } else {
                     const rawFileIcon = (fileStyle?.iconId && this.isValidIconStr(fileStyle.iconId)) ? fileStyle.iconId : null;
                     const rawInheritedFileIcon = (inheritedStyle?.applyToFiles && inheritedStyle?.iconId && this.isValidIconStr(inheritedStyle.iconId)) ? inheritedStyle.iconId : null;
                     const autoIconFile = (this.settings.autoIcons && !rawFileIcon && !rawInheritedFileIcon) ? customUserRuleFile : null;
-                    iconId = rawFileIcon || rawInheritedFileIcon || (autoIconFile ? (this.settings.wideAutoIcons ? autoIconFile.lucide : autoIconFile.emoji) : "");
+                    iconId = rawFileIcon || rawInheritedFileIcon || this.resolveAutoIconCandidate(autoIconFile);
                 }
 
                 const textNative = ColorResolver.resolveTextColor(
@@ -673,12 +687,12 @@ export class StyleGenerator {
 
             let folderIconId = "";
             if (isUserCustomRuleFolderMatch && customUserRuleFolder) {
-                folderIconId = this.settings.wideAutoIcons ? (customUserRuleFolder.lucide || customUserRuleFolder.emoji || "") : (customUserRuleFolder.emoji || customUserRuleFolder.lucide || "");
+                folderIconId = this.resolveAutoIconCandidate(customUserRuleFolder);
             } else {
                 const rawFolderIcon = (customStyle?.iconId && this.isValidIconStr(customStyle.iconId)) ? customStyle.iconId : null;
                 const rawInheritedFolderIcon = (inheritedStyle?.iconId && this.isValidIconStr(inheritedStyle.iconId)) ? inheritedStyle.iconId : null;
                 const autoIconFolder = (this.settings.autoIcons && !rawFolderIcon && !rawInheritedFolderIcon) ? customUserRuleFolder : null;
-                folderIconId = rawFolderIcon || rawInheritedFolderIcon || (autoIconFolder ? (this.settings.wideAutoIcons ? autoIconFolder.lucide : autoIconFolder.emoji) : "");
+                folderIconId = rawFolderIcon || rawInheritedFolderIcon || this.resolveAutoIconCandidate(autoIconFolder);
             }
             const folderExpandedIconId = (customStyle?.expandedIconId && this.isValidIconStr(customStyle.expandedIconId)) ? customStyle.expandedIconId : ((inheritedStyle?.expandedIconId && this.isValidIconStr(inheritedStyle.expandedIconId)) ? inheritedStyle.expandedIconId : "");
 

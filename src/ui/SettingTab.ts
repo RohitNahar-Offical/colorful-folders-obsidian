@@ -790,6 +790,36 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 })
             );
 
+        // Token Usage Info Box
+        const tokenUsageDiv = aiCard.createDiv();
+        tokenUsageDiv.setCssStyles({
+            marginTop: '12px',
+            marginBottom: '15px',
+            padding: '12px 14px',
+            borderRadius: '8px',
+            backgroundColor: 'var(--background-secondary-alt)',
+            borderLeft: '4px solid var(--interactive-accent)',
+            fontSize: '0.85em',
+            lineHeight: '1.4'
+        });
+        const tokenHeader = tokenUsageDiv.createDiv({ text: '📊 Token Usage Overview by Mode' });
+        tokenHeader.setCssStyles({ fontWeight: '700', marginBottom: '6px', color: 'var(--text-normal)' });
+        
+        const tokenList = tokenUsageDiv.createEl('ul');
+        tokenList.setCssStyles({ margin: '0', paddingLeft: '18px', color: 'var(--text-muted)' });
+        
+        const mode1 = tokenList.createEl('li');
+        mode1.createEl('strong', { text: 'Fast / Name-Only Mode (Content Context OFF): ' });
+        mode1.appendText('Lowest token usage (~15-30 tokens per item). AI classifies items strictly based on folder and file names.');
+
+        const mode2 = tokenList.createEl('li');
+        mode2.createEl('strong', { text: 'Deep Context Mode (Content Context ON): ' });
+        mode2.appendText('Higher token usage (~150-500+ tokens per item). AI reads file content snippets, tags, and frontmatter properties for high contextual accuracy.');
+
+        const scopeTip = tokenList.createEl('li');
+        scopeTip.createEl('strong', { text: 'Vault Scope Tip: ' });
+        scopeTip.appendText('Disabling "Include Markdown Files" (Folder-Only Mode) significantly reduces overall token consumption in large vaults.');
+
         const aiBtnWrap = aiCard.createDiv();
         aiBtnWrap.setCssStyles({ display: "flex", gap: "10px", marginTop: "15px", marginBottom: "10px" });
 

@@ -209,6 +209,7 @@ export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
     { rex: /career|job|resume|cv|work/i, emoji: "💼", lucide: "briefcase", priority: 90 },
     { rex: /server|database|infra|network/i, emoji: "🖧", lucide: "server", priority: 105, emojis: ["🖧", "🖥️", "🗄️"], lucides: ["server", "database", "hard-drive"] },
     { rex: /ai|ml|neural|model/i, emoji: "🤖", lucide: "cpu", priority: 95 },
+    { rex: /skull|death|danger|poison|skeleton|ghost|spooky/i, emoji: "💀", lucide: "skull", priority: 100, emojis: ["💀", "☠️", "👻"], lucides: ["skull", "ghost"] },
 
     // --- More diverse icons ---
     { rex: /photo-edit|design|art|draw|paint/i, emoji: "🎨", lucide: "brush", priority: 80 },
