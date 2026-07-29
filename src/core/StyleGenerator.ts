@@ -288,10 +288,19 @@ export class StyleGenerator {
                     isDark
                 );
 
-                const rawFileIcon = (fileStyle?.iconId && this.isValidIconStr(fileStyle.iconId)) ? fileStyle.iconId : null;
-                const rawInheritedFileIcon = (inheritedStyle?.applyToFiles && inheritedStyle?.iconId && this.isValidIconStr(inheritedStyle.iconId)) ? inheritedStyle.iconId : null;
-                const autoIconFile = (this.settings.autoIcons && !rawFileIcon && !rawInheritedFileIcon) ? this.plugin.iconManager.getAutoIconData(child.name, child.path) : null;
-                const iconId = rawFileIcon || rawInheritedFileIcon || (autoIconFile ? (this.settings.wideAutoIcons ? autoIconFile.lucide : autoIconFile.emoji) : "");
+                // Custom User Rules take top priority over saved data.json AI icons
+                const customUserRuleFile = this.plugin.iconManager.getAutoIconData(child.name, child.path);
+                const isUserCustomRuleFileMatch = customUserRuleFile && (customUserRuleFile.packSource === 'custom-rule' || customUserRuleFile.isCustom);
+
+                let iconId = "";
+                if (isUserCustomRuleFileMatch && customUserRuleFile) {
+                    iconId = this.settings.wideAutoIcons ? (customUserRuleFile.lucide || customUserRuleFile.emoji || "") : (customUserRuleFile.emoji || customUserRuleFile.lucide || "");
+                } else {
+                    const rawFileIcon = (fileStyle?.iconId && this.isValidIconStr(fileStyle.iconId)) ? fileStyle.iconId : null;
+                    const rawInheritedFileIcon = (inheritedStyle?.applyToFiles && inheritedStyle?.iconId && this.isValidIconStr(inheritedStyle.iconId)) ? inheritedStyle.iconId : null;
+                    const autoIconFile = (this.settings.autoIcons && !rawFileIcon && !rawInheritedFileIcon) ? customUserRuleFile : null;
+                    iconId = rawFileIcon || rawInheritedFileIcon || (autoIconFile ? (this.settings.wideAutoIcons ? autoIconFile.lucide : autoIconFile.emoji) : "");
+                }
 
                 const textNative = ColorResolver.resolveTextColor(
                     true,
@@ -658,19 +667,20 @@ export class StyleGenerator {
                 `body .nav-files-container .tree-item-self[data-path="${safePath}"] + .tree-item-children`
             ], `folderBgTint_${color.hex}_${finalTintOp}_${outlineOnly}_${folderThick}`);
 
-            const isValidIconStr = (id: string | null | undefined): boolean => {
-                if (!id) return false;
-                if (this.plugin.iconManager.isEmojiIcon(id)) return true;
-                const svg = this.plugin.iconManager.getIconSvg(id, false);
-                return !!svg && svg.length > 0;
-            };
+            // Custom User Rules take top priority over saved data.json AI icons
+            const customUserRuleFolder = this.plugin.iconManager.getAutoIconData(child.name, child.path);
+            const isUserCustomRuleFolderMatch = customUserRuleFolder && (customUserRuleFolder.packSource === 'custom-rule' || customUserRuleFolder.isCustom);
 
-            // Pre-calculate folder icons to avoid warnings
-            const rawFolderIcon = (customStyle?.iconId && isValidIconStr(customStyle.iconId)) ? customStyle.iconId : null;
-            const rawInheritedFolderIcon = (inheritedStyle?.iconId && isValidIconStr(inheritedStyle.iconId)) ? inheritedStyle.iconId : null;
-            const autoIconFolder = (this.settings.autoIcons && !rawFolderIcon && !rawInheritedFolderIcon) ? this.plugin.iconManager.getAutoIconData(child.name, child.path) : null;
-            const folderIconId = rawFolderIcon || rawInheritedFolderIcon || (autoIconFolder ? (this.settings.wideAutoIcons ? autoIconFolder.lucide : autoIconFolder.emoji) : "");
-            const folderExpandedIconId = (customStyle?.expandedIconId && isValidIconStr(customStyle.expandedIconId)) ? customStyle.expandedIconId : ((inheritedStyle?.expandedIconId && isValidIconStr(inheritedStyle.expandedIconId)) ? inheritedStyle.expandedIconId : "");
+            let folderIconId = "";
+            if (isUserCustomRuleFolderMatch && customUserRuleFolder) {
+                folderIconId = this.settings.wideAutoIcons ? (customUserRuleFolder.lucide || customUserRuleFolder.emoji || "") : (customUserRuleFolder.emoji || customUserRuleFolder.lucide || "");
+            } else {
+                const rawFolderIcon = (customStyle?.iconId && this.isValidIconStr(customStyle.iconId)) ? customStyle.iconId : null;
+                const rawInheritedFolderIcon = (inheritedStyle?.iconId && this.isValidIconStr(inheritedStyle.iconId)) ? inheritedStyle.iconId : null;
+                const autoIconFolder = (this.settings.autoIcons && !rawFolderIcon && !rawInheritedFolderIcon) ? customUserRuleFolder : null;
+                folderIconId = rawFolderIcon || rawInheritedFolderIcon || (autoIconFolder ? (this.settings.wideAutoIcons ? autoIconFolder.lucide : autoIconFolder.emoji) : "");
+            }
+            const folderExpandedIconId = (customStyle?.expandedIconId && this.isValidIconStr(customStyle.expandedIconId)) ? customStyle.expandedIconId : ((inheritedStyle?.expandedIconId && this.isValidIconStr(inheritedStyle.expandedIconId)) ? inheritedStyle.expandedIconId : "");
 
             const isRainbowBgTransparent = depth === 0 && this.settings.rainbowRootText && this.settings.rainbowRootBgTransparent;
             const folderStyles = {
