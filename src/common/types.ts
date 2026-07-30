@@ -117,7 +117,7 @@ export interface ColorfulFoldersSettings {
     smartConnectionsCompatMode?: boolean;
     heatmapData?: Record<string, number>;
 
-    aiProvider: 'gemini' | 'openai' | 'claude' | 'ollama' | 'custom';
+    aiProvider: 'ollama' | 'custom';
     aiApiKey: string;
     aiCustomEndpoint: string;
     aiOllamaEndpoint: string;

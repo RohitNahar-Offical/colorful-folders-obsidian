@@ -30,10 +30,6 @@ export class AIIconClassifier {
         this.cancelRequested = false;
 
         const settings = this.plugin.settings;
-        if (!settings.aiApiKey && settings.aiProvider !== 'custom' && settings.aiProvider !== 'ollama') {
-            new Notice("Colorful Folders AI: Please enter an API key in Settings -> Icon management -> AI Settings.");
-            return;
-        }
 
         this.isClassifying = true;
         const notice = new Notice("Colorful Folders AI: Gathering vault items...", 0);
@@ -608,34 +604,25 @@ Correct Output:
         let lastErr: unknown = null;
         for (let attempt = 1; attempt <= 3; attempt++) {
             try {
-                if (provider === 'gemini') {
-                    return await this.queryGemini(settings, systemPrompt, userPrompt);
-                } else if (provider === 'ollama') {
-                    return await this.queryOllama(settings, systemPrompt, userPrompt);
-                } else if (provider === 'claude') {
-                    return await this.queryClaude(settings, systemPrompt, userPrompt);
+                if (provider === 'custom') {
+                    return await this.queryCustomLocal(settings, systemPrompt, userPrompt);
                 } else {
-                    return await this.queryOpenAI(settings, provider, systemPrompt, userPrompt);
+                    return await this.queryOllama(settings, systemPrompt, userPrompt);
                 }
             } catch (err) {
                 lastErr = err;
                 const errStr = (err as Error)?.message || String(err);
 
-                // Fail fast on HTTP 404 (Not Found) or 401 (Unauthorized) without wasting 3 retries
+                // Fail fast on HTTP 404 (Not Found) without wasting 3 retries
                 const is404 = errStr.includes('status 404') || errStr.includes('404 Not Found') || (err as any)?.status === 404;
-                const is401 = errStr.includes('status 401') || errStr.includes('401 Unauthorized') || (err as any)?.status === 401;
 
                 if (is404) {
-                    const modelName = (settings.aiModelName || (provider === 'ollama' ? 'llama3' : 'gemini-2.5-flash')).trim();
+                    const modelName = (settings.aiModelName || 'qwen2.5:1.5b').trim();
                     if (provider === 'ollama') {
                         throw new Error(`Ollama model "${modelName}" was not found (HTTP 404). Run 'ollama pull ${modelName}' in your terminal or pick an installed model in AI Settings.`);
                     } else {
-                        throw new Error(`AI Model "${modelName}" or endpoint URL was not found (HTTP 404). Check your model name & endpoint URL in AI Settings.`);
+                        throw new Error(`Local model "${modelName}" or custom endpoint URL was not found (HTTP 404). Check your settings.`);
                     }
-                }
-
-                if (is401) {
-                    throw new Error(`AI API Key is invalid or unauthorized (HTTP 401). Check your API Key in AI Settings.`);
                 }
 
                 if (attempt < 3) {
@@ -647,29 +634,8 @@ Correct Output:
         throw lastErr;
     }
 
-    private async queryGemini(settings: any, systemPrompt: string, userPrompt: string): Promise<Record<string, unknown>> {
-        const apiKey = settings.aiApiKey?.trim();
-        const model = (settings.aiModelName || 'gemini-2.5-flash').trim().replace(/^models\//, '');
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
-        const response = await requestUrl({
-            url,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                systemInstruction: { parts: [{ text: systemPrompt }] },
-                contents: [{ role: "user", parts: [{ text: "Items to classify:\n" + userPrompt }] }],
-                generationConfig: { responseMimeType: "application/json" }
-            })
-        });
-
-        const data = response.json;
-        const textResult = data?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-        return this.parseJsonResponse(textResult);
-    }
-
     private async queryOllama(settings: any, systemPrompt: string, userPrompt: string): Promise<Record<string, unknown>> {
-        const model = (settings.aiModelName || 'llama3').trim();
+        const model = (settings.aiModelName || 'qwen2.5:1.5b').trim();
         const baseUrl = (settings.aiOllamaEndpoint || 'http://localhost:11434').trim().replace(/\/$/, '');
 
         try {
@@ -712,71 +678,29 @@ Correct Output:
         }
     }
 
-    private async queryClaude(settings: any, systemPrompt: string, userPrompt: string): Promise<Record<string, unknown>> {
-        const apiKey = settings.aiApiKey?.trim();
-        const model = (settings.aiModelName || 'claude-3-5-haiku-20241022').trim();
-        const url = 'https://api.anthropic.com/v1/messages';
-
-        const response = await requestUrl({
-            url,
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': apiKey,
-                'anthropic-version': '2023-06-01'
-            },
-            body: JSON.stringify({
-                model,
-                max_tokens: 4096,
-                system: systemPrompt,
-                messages: [
-                    { role: 'user', content: "Items to classify:\n" + userPrompt },
-                    { role: 'assistant', content: "{" }
-                ]
-            })
-        });
-
-        const data = response.json;
-        let textResult = data?.content?.[0]?.text || "";
+    private async queryCustomLocal(settings: any, systemPrompt: string, userPrompt: string): Promise<Record<string, unknown>> {
+        const model = (settings.aiModelName || 'local-model').trim();
         
-        // Claude prefill guarantees the first character was intended to be `{`
-        if (textResult && !textResult.trim().startsWith('{')) {
-            textResult = "{\n" + textResult;
-        } else if (!textResult) {
-            textResult = "{}";
-        }
-        
-        return this.parseJsonResponse(textResult);
-    }
-
-    private async queryOpenAI(settings: any, provider: string, systemPrompt: string, userPrompt: string): Promise<Record<string, unknown>> {
-        const apiKey = settings.aiApiKey?.trim() || '';
-        const model = (settings.aiModelName || 'gpt-4o-mini').trim();
-        
-        if (provider === 'custom' && !settings.aiCustomEndpoint?.trim()) {
-            throw new Error("Please enter a valid Custom AI Endpoint URL in Settings -> Icon management -> AI Settings.");
+        if (!settings.aiCustomEndpoint?.trim()) {
+            throw new Error("Please enter a valid Local Custom AI Endpoint URL in Settings -> Icon management -> AI Settings.");
         }
 
-        const url = provider === 'custom' && settings.aiCustomEndpoint?.trim()
-            ? settings.aiCustomEndpoint.trim()
-            : 'https://api.openai.com/v1/chat/completions';
+        const url = settings.aiCustomEndpoint.trim();
 
         // Validate custom endpoint URL scheme
-        if (provider === 'custom') {
-            try {
-                const endpointUrl = new URL(url);
-                if (endpointUrl.protocol !== 'https:' && !endpointUrl.hostname.includes('localhost') && !endpointUrl.hostname.startsWith('127.')) {
-                    throw new Error("Custom AI endpoint must use HTTPS or localhost/127.0.0.1 for security.");
-                }
-            } catch (e) {
-                if (e instanceof Error && e.message.includes("Custom AI endpoint")) throw e;
-                throw new Error("Invalid custom AI endpoint URL format.");
+        try {
+            const endpointUrl = new URL(url);
+            if (endpointUrl.protocol !== 'https:' && !endpointUrl.hostname.includes('localhost') && !endpointUrl.hostname.startsWith('127.')) {
+                throw new Error("Custom local AI endpoint must use HTTPS or localhost/127.0.0.1.");
             }
+        } catch (e) {
+            if (e instanceof Error && e.message.includes("Custom local AI endpoint")) throw e;
+            throw new Error("Invalid custom AI endpoint URL format.");
         }
 
         const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (apiKey) {
-            headers['Authorization'] = `Bearer ${apiKey}`;
+        if (settings.aiApiKey?.trim()) {
+            headers['Authorization'] = `Bearer ${settings.aiApiKey.trim()}`;
         }
 
         const response = await requestUrl({

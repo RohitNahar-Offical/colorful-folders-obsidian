@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "node esbuild.config.mjs production",
-    "lint": "eslint src --max-warnings 0"
+    "lint": "eslint src --max-warnings 0",
+    "test:ai": "node tests/ai_test_runner.js"
   },
   "keywords": [],
   "author": "ROHIT-NAHAR",

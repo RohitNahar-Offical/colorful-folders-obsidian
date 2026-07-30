@@ -651,20 +651,15 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         new obsidian.Setting(aiCard)
             .setName("AI Provider")
-            .setDesc("Select your AI model provider (Local Ollama, Anthropic Claude, Google Gemini, OpenAI, or Custom).")
+            .setDesc("Select your local AI provider (Local Ollama or Local Custom OpenAI-Compatible Server).")
             .addDropdown(d => d
-                .addOption("gemini", "Google Gemini")
-                .addOption("openai", "OpenAI")
-                .addOption("claude", "🧠 Anthropic Claude")
-                .addOption("ollama", "🦙 Ollama (Local AI on Machine)")
-                .addOption("custom", "Custom OpenAI-Compatible API")
-                .setValue(this.plugin.settings.aiProvider || "gemini")
-                .onChange(async (val: 'gemini' | 'openai' | 'claude' | 'ollama' | 'custom') => {
+                .addOption("ollama", "🦙 Local Ollama")
+                .addOption("custom", "🌐 Local Custom OpenAI-Compatible Server")
+                .setValue(this.plugin.settings.aiProvider === 'custom' ? 'custom' : 'ollama')
+                .onChange(async (val: 'ollama' | 'custom') => {
                     this.plugin.settings.aiProvider = val;
                     if (val === 'ollama' && (!this.plugin.settings.aiModelName || this.plugin.settings.aiModelName === 'gemini-2.5-flash')) {
-                        this.plugin.settings.aiModelName = 'llama3';
-                    } else if (val === 'claude' && (!this.plugin.settings.aiModelName || this.plugin.settings.aiModelName === 'gemini-2.5-flash')) {
-                        this.plugin.settings.aiModelName = 'claude-3-5-haiku-20241022';
+                        this.plugin.settings.aiModelName = 'qwen2.5:1.5b';
                     }
                     await this.plugin.saveSettings();
                     this.display();
@@ -683,28 +678,15 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                          await this.plugin.saveSettings();
                      });
                 });
-        } else {
-            new obsidian.Setting(aiCard)
-                .setName("API Key")
-                .setDesc("Enter your API key for Gemini or OpenAI.")
-                .addText(t => {
-                    t.inputEl.type = "password";
-                    t.setValue(this.plugin.settings.aiApiKey || "")
-                     .setPlaceholder("Enter API key...")
-                     .onChange(async (val) => {
-                         this.plugin.settings.aiApiKey = val.trim();
-                         await this.plugin.saveSettings();
-                     });
-                });
         }
 
         if (this.plugin.settings.aiProvider === 'custom') {
             new obsidian.Setting(aiCard)
                 .setName("Custom Endpoint URL")
-                .setDesc("Full URL endpoint (e.g. http://localhost:11434/v1/chat/completions).")
+                .setDesc("Full URL endpoint for your local server (e.g. http://localhost:1234/v1/chat/completions).")
                 .addText(t => {
                     t.setValue(this.plugin.settings.aiCustomEndpoint || "")
-                     .setPlaceholder("https://api.openai.com/v1/chat/completions")
+                     .setPlaceholder("http://localhost:1234/v1/chat/completions")
                      .onChange(async (val) => {
                          this.plugin.settings.aiCustomEndpoint = val.trim();
                          await this.plugin.saveSettings();
@@ -714,12 +696,10 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
         new obsidian.Setting(aiCard)
             .setName("Model Name")
-            .setDesc(this.plugin.settings.aiProvider === 'ollama' 
-                ? "Model name to use for classification. Click a recommended local model below or type custom model." 
-                : "Model name to use for classification (e.g. gemini-2.5-flash, gpt-4o-mini, claude-3-5-haiku-20241022).")
+            .setDesc("Model name to use for local classification (e.g. qwen2.5:1.5b, llama3.2:1b).")
             .addText(t => {
-                t.setValue(this.plugin.settings.aiModelName || (this.plugin.settings.aiProvider === 'ollama' ? 'qwen2.5:1.5b' : 'gemini-2.5-flash'))
-                 .setPlaceholder(this.plugin.settings.aiProvider === 'ollama' ? "qwen2.5:1.5b" : "gemini-2.5-flash")
+                t.setValue(this.plugin.settings.aiModelName || 'qwen2.5:1.5b')
+                 .setPlaceholder("qwen2.5:1.5b")
                  .onChange(async (val) => {
                      this.plugin.settings.aiModelName = val.trim();
                      await this.plugin.saveSettings();
@@ -824,43 +804,12 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         aiBtnWrap.setCssStyles({ display: "flex", gap: "10px", marginTop: "15px", marginBottom: "10px" });
 
         const aiRunBtn = aiBtnWrap.createEl("button", { text: "✨ Auto-Assign Icons with AI", cls: "mod-cta" });
-        aiRunBtn.onclick = async () => {
-            // Confirm API key awareness before running AI classification
-            if (this.plugin.settings.aiApiKey && this.plugin.settings.aiProvider !== 'ollama') {
-                if (!this.plugin.settings.aiKeyConfirmed) {
-                    new ConfirmModal(
-                        this.app,
-                        "AI API Key Warning",
-                        "Your AI API key is stored in plaintext in your Obsidian data file and will be sent to external AI providers. Do not use a key you are not willing to share. Do you want to proceed?",
-                        async () => {
-                            this.plugin.settings.aiKeyConfirmed = true;
-                            await this.plugin.saveSettings();
-                            void this.plugin.aiIconClassifier.classifyVault();
-                        }
-                    ).open();
-                    return;
-                }
-            }
+        aiRunBtn.onclick = () => {
             void this.plugin.aiIconClassifier.classifyVault();
         };
 
         const aiForceBtn = aiBtnWrap.createEl("button", { text: "🔄 Force Re-Assign All" });
-        aiForceBtn.onclick = async () => {
-            if (this.plugin.settings.aiApiKey && this.plugin.settings.aiProvider !== 'ollama') {
-                if (!this.plugin.settings.aiKeyConfirmed) {
-                    new ConfirmModal(
-                        this.app,
-                        "AI API Key Warning",
-                        "Your AI API key is stored in plaintext in your Obsidian data file and will be sent to external AI providers. Do you want to proceed?",
-                        async () => {
-                            this.plugin.settings.aiKeyConfirmed = true;
-                            await this.plugin.saveSettings();
-                            void this.plugin.aiIconClassifier.classifyVault({ force: true });
-                        }
-                    ).open();
-                    return;
-                }
-            }
+        aiForceBtn.onclick = () => {
             void this.plugin.aiIconClassifier.classifyVault({ force: true });
         };
 

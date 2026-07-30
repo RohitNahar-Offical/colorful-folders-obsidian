@@ -79,46 +79,7 @@ modifiedFields: Set<string>;
             width: "95vw"
         });
 
-        // ── HEADER ──────────────────────────────────────────────────────────
-        const header = contentEl.createDiv({ cls: "cf-modal-header" });
-        header.setCssStyles({
-            display: "flex", alignItems: "center", gap: "12px",
-            padding: "18px 20px 12px", borderBottom: "1px solid var(--background-modifier-border)",
-            marginBottom: "0"
-        });
-        const iconScale = this.plugin.settings.iconScale || 1.0;
-        const headerIconW = Math.round(18 * iconScale);
-        const headerIconSize = Math.round(36 * (iconScale > 1.0 ? iconScale : 1.0)); // Adjust container if needed
-
-        const iconWrap = header.createDiv();
-        iconWrap.setCssStyles({
-            width: `${headerIconSize}px`, height: `${headerIconSize}px`, borderRadius: "8px",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            backgroundColor: this.folderStyle.hex, flexShrink: "0"
-        });
-        obsidian.setIcon(iconWrap, this.folderStyle.iconId || (this.isFolder ? "folder" : "file"));
-        const headerSvg = iconWrap.querySelector("svg") as unknown as HTMLElement | null;
-        if (headerSvg) {
-            headerSvg.setCssStyles({
-                color: this.folderStyle.iconColor || this.folderStyle.textColor || "#fff",
-                width: `${headerIconW}px`, height: `${headerIconW}px`
-            });
-        }
-
-        const titleWrap = header.createDiv();
-        const mTitle = titleWrap.createDiv({ text: this.item.name, cls: "cf-modal-title" });
-        mTitle.setCssStyles({
-            fontSize: "1.1em", fontWeight: "700", color: "var(--text-normal)", lineHeight: "1.2"
-        });
-        const mSub = titleWrap.createDiv({ text: `Custom ${this.isFolder ? "folder" : "file"} style` });
-        mSub.setCssStyles({
-            fontSize: "0.78em", color: "var(--text-muted)", marginTop: "2px"
-        });
-
-        // store refs for live preview
-        this._headerIconWrap = iconWrap;
-
-        // ── TABS ────────────────────────────────────────────────────────────
+        // ── TOP TAB NAVIGATION BAR ──────────────────────────────────────────
         const tabs = [
             { id: "appearance", label: "Appearance", icon: "palette" },
             { id: "icon", label: "Icon", icon: "smile" },
@@ -128,8 +89,8 @@ modifiedFields: Set<string>;
 
         const tabBar = contentEl.createDiv({ cls: "cf-tab-bar" });
         tabBar.setCssStyles({
-            display: "flex", gap: "2px", padding: "8px 16px 0",
-            borderBottom: "1px solid var(--background-modifier-border)"
+            display: "flex", justifyContent: "center", alignItems: "center", gap: "8px",
+            padding: "16px 20px 14px", borderBottom: "1px solid var(--background-modifier-border)"
         });
 
 
@@ -223,16 +184,15 @@ modifiedFields: Set<string>;
         tabs.forEach(t => {
             const btn = tabBar.createEl("button", { cls: "cf-tab-btn" });
             btn.setCssStyles({
-                background: "none", border: "none", padding: "7px 13px",
-                borderRadius: "6px 6px 0 0", cursor: "pointer", fontSize: "0.82em",
+                background: "transparent", border: "1px solid transparent", padding: "6px 14px",
+                borderRadius: "20px", cursor: "pointer", fontSize: "0.85em",
                 fontWeight: "600", display: "flex", alignItems: "center", gap: "6px",
-                color: "var(--text-muted)", borderBottom: "2px solid transparent",
-                transition: "all 0.15s ease"
+                color: "var(--text-muted)", transition: "all 0.15s ease"
             });
             const btnIcon = btn.createSpan();
             obsidian.setIcon(btnIcon, t.icon);
             const biSvg = btnIcon.querySelector("svg") as unknown as HTMLElement | null;
-            if (biSvg) biSvg.setCssStyles({ width: "13px", height: "13px" });
+            if (biSvg) biSvg.setCssStyles({ width: "14px", height: "14px" });
             btn.createSpan({ text: t.label });
 
             const panel = body.createDiv({ cls: "cf-tab-panel" });
@@ -251,19 +211,15 @@ modifiedFields: Set<string>;
 
         let lastPreviewIconId = "";
         const updatePreview = () => {
-            if (!this._headerIconWrap || !this._prevIconWrap || !this._prevLabel) return;
+            if (!this._prevIconWrap || !this._prevLabel) return;
             try {
                 const iconScale = this.plugin.settings.iconScale || 1.0;
                 const previewIconW = Math.round(16 * iconScale);
-                const headerIconW = Math.round(18 * iconScale);
 
                 const effectiveIconColor = this.folderStyle.iconColor || this.folderStyle.hex || "#fff";
-                // Update header icon
-                this._headerIconWrap.setCssStyles({ backgroundColor: this.folderStyle.hex });
                 
                 const currentIconId = this.folderStyle.iconId || (this.isFolder ? "folder" : "file");
                 if (currentIconId !== lastPreviewIconId) {
-                    this._headerIconWrap.empty();
                     this._prevIconWrap.empty();
                     
                     const renderIconToTarget = (target: HTMLElement, sizePx: number) => {
@@ -290,13 +246,10 @@ modifiedFields: Set<string>;
                         }
                     };
 
-                    renderIconToTarget(this._headerIconWrap, headerIconW);
                     renderIconToTarget(this._prevIconWrap, previewIconW);
                     lastPreviewIconId = currentIconId;
                 }
 
-                const hsvg = this._headerIconWrap.querySelector("svg") as unknown as HTMLElement | null;
-                if (hsvg) hsvg.setCssStyles({ color: effectiveIconColor, width: `${headerIconW}px`, height: `${headerIconW}px` });
                 this._prevIconWrap.setCssStyles({ backgroundColor: "transparent" });
                 const prevSvg = this._prevIconWrap.querySelector("svg") as unknown as HTMLElement | null;
                 if (prevSvg) prevSvg.setCssStyles({ color: effectiveIconColor, width: `${previewIconW}px`, height: `${previewIconW}px` });
@@ -1262,10 +1215,15 @@ modifiedFields: Set<string>;
         Object.entries(btns).forEach(([k, btn]) => {
             const active = k === id;
             btn.setCssStyles({
-                color: active ? "var(--interactive-accent)" : "var(--text-muted)",
-                borderBottom: active ? "2px solid var(--interactive-accent)" : "2px solid transparent",
-                backgroundColor: active ? "var(--background-modifier-hover)" : "transparent"
+                color: active ? "var(--text-normal)" : "var(--text-muted)",
+                backgroundColor: active ? "var(--background-modifier-hover)" : "transparent",
+                border: active ? "1px solid var(--background-modifier-border)" : "1px solid transparent",
+                boxShadow: active ? "0 2px 6px rgba(0, 0, 0, 0.12)" : "none"
             });
+            const svg = btn.querySelector("svg") as unknown as HTMLElement | null;
+            if (svg) {
+                svg.setCssStyles({ color: active ? "var(--interactive-accent)" : "var(--text-muted)" });
+            }
         });
         Object.entries(panels).forEach(([k, p]) => { p.setCssStyles({ display: k === id ? "block" : "none" }); });
     }
