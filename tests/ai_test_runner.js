@@ -23,35 +23,50 @@ const apiKey = args.apikey || process.env.AI_API_KEY || '';
 const endpoint = args.endpoint || (provider === 'custom' ? 'http://localhost:1234/v1/chat/completions' : 'http://localhost:11434/v1/chat/completions');
 
 // --- Sample Vault Items to Classify ---
-const sampleVaultItems = [
-    { item_path: "Development/Python Projects/FastAPI Backend.md", type: "File", snippet: "import fastapi\napp = FastAPI()\n@app.get('/')" },
+const customItemName = args.file || args.item;
+const sampleVaultItems = customItemName ? [
+    { item_path: customItemName.includes('.') ? customItemName : `${customItemName}.md`, type: customItemName.includes('.') ? "File" : "File", snippet: `Notes, maps, and information regarding ${customItemName}` }
+] : [
+    { item_path: "Development/Python Projects/ listning", type: "File" },
     { item_path: "Work/Client Meetings 2026/exprement.md", type: "File", tags: "meeting, planning, Q3" },
     { item_path: "Finance/Tax Declarations/2026 data.md", type: "File", snippet: "Total Tax Refund calculated for Q2..." },
     { item_path: "Personal/Reading List/SciFi Books.md", type: "File", tags: "books, reading" },
     { item_path: "Projects/Website Redesign", type: "Folder", sample_contents: "index.html, styles.css, components" }
 ];
 
-// --- System Prompt Construction ---
-const systemPrompt = `You are an expert AI taxonomist for an Obsidian note-taking app. Your objective is to select 3 CANDIDATE ICON NAMES for each requested vault item.
+const systemPrompt = `You are an expert AI taxonomist and icon matcher for an Obsidian note-taking app. Your objective is to select 3 CANDIDATE ICON NAMES for each requested vault item ordered from specific to general.
 
-### 3-CANDIDATE SELECTION RULE:
-Output a JSON object mapping each 'item_path' to an array of EXACTLY 3 candidate icon names:
-- Candidate 1: Specific Brand or Specific Pack Icon (e.g. "simple-icons-python", "flask-conical", "simple-icons-react", "book-open")
-- Candidate 2: Single-Word Core Visual Metaphor (e.g. "code", "calendar", "book", "receipt")
-- Candidate 3: General Fallback Icon (e.g. "file-text", "folder", "archive")
+### ITEM NAME PRIORITY RULE (STRICT):
+1. **FOCUS STRICTLY ON THE ITEM NAME FIRST:** Base icon selection 100% on the actual file name or folder name (e.g. for "BAKE/Amazon.md", focus strictly on "Amazon").
+2. **DO NOT USE PARENT CONTEXT OR TAGS UNLESS STRUGGLING:** Do NOT look at parent folders, tags, frontmatter, or content snippets UNLESS the file/folder name alone is completely generic, vague, or ambiguous (e.g. "Untitled.md", "Notes.md", "123.md", "exprement.md"). Only fallback to parent context when the filename alone provides no meaningful icon clues.
+
+### 3-CANDIDATE SELECTION RULE (CRITICAL):
+For EVERY requested item, output a JSON array of EXACTLY 3 candidate icon names:
+- **Candidate 1 (Specific Brand / Precise Icon):** Specific brand, tool, or precise topic icon (e.g. "amazon", "simple-icons-amazon", "python", "react", "youtube", "book-open").
+- **Candidate 2 (Core Category Metaphor):** Primary category icon or visual domain metaphor (e.g. "shopping-cart", "shopping-bag", "code", "calendar", "book", "video", "receipt").
+- **Candidate 3 (Alternative Domain Icon):** A secondary topic icon or alternative domain metaphor (e.g. "package", "store", "terminal", "clock", "notebook", "layers"). Do NOT output generic "file-text" or "file" fallbacks for Candidate 3, as the plugin handles default file fallbacks automatically!
+
+### PACK FLEXIBILITY & AGNOSTICISM (IMPORTANT):
+You are NOT restricted or limited to 'simple-icons-' prefix! You may output standard clean icon names (e.g. 'amazon', 'python', 'react', 'shopping-cart', 'code') OR pack-prefixed IDs (e.g. 'simple-icons-amazon', 'fa-amazon', 'ri-amazon', 'lucide-shopping-cart') depending on what best matches the item.
+
+### BRAND & E-COMMERCE DISAMBIGUATION RULE:
+- E-Commerce & Retail Brands ("Amazon", "eBay", "Shopify", "Walmart"): Candidate 1 = "amazon" or "simple-icons-amazon", Candidate 2 = "shopping-cart" or "shopping-bag", Candidate 3 = "package" or "store". NEVER assign video or music icons!
+- Video/Media Brands ("YouTube", "Netflix"): Candidate 1 = "youtube" or "simple-icons-youtube", Candidate 2 = "video" or "film", Candidate 3 = "play" or "camera".
+- Development & Tech Brands ("Python", "React", "Docker", "GitHub"): Candidate 1 = "python" or "simple-icons-python", Candidate 2 = "code", Candidate 3 = "terminal" or "cpu".
 
 ### FOLDER VS FILE DIFFERENTIATION RULE:
-- For FOLDERS: Candidates 2 & 3 MUST be structural container icons ("folder", "layers", "archive"). NEVER use calendar or tech icons for folder fallback!
-- For FILES / NOTES: Candidates 2 & 3 MUST match the note topic. NEVER assign "terminal" or "code" to non-technical topics like Books, Reading, or Art!
+- For FOLDERS: Candidates 2 & 3 MUST be structural container icons (e.g. "folder", "layers", "archive", "box").
+- For FILES / NOTES: Candidates 1, 2, and 3 MUST match the note topic. Do NOT output generic document fallbacks ("file-text", "file", "document").
 
-### Output Format (Strict JSON ONLY):
+### OUTPUT FORMAT
+Output **STRICT JSON ONLY**:
 {
-  "Development/Python Projects/FastAPI Backend.md": ["simple-icons-python", "code", "terminal"],
-  "Work/Client Meetings 2026/Q3 Planning.md": ["calendar", "clock", "file-text"],
-  "Personal/Reading List/SciFi Books.md": ["book-open", "book", "file-text"],
-  "Projects/Website Redesign": ["simple-icons-react", "folder", "layers"]
+  "BAKE/Amazon.md": ["amazon", "shopping-cart", "package"],
+  "Development/Python Projects/FastAPI Backend.md": ["python", "code", "terminal"],
+  "Work/Client Meetings 2026/Q3 Planning.md": ["calendar", "clock", "target"],
+  "Personal/Reading List/SciFi Books.md": ["book-open", "book", "notebook"],
+  "Projects/Website Redesign": ["react", "folder", "layers"]
 }`;
-
 console.log("==================================================");
 console.log(`🤖 LIVE AI MODEL TEST RUNNER (${provider.toUpperCase()})`);
 console.log(`📌 Model: ${model}`);

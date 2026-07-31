@@ -550,49 +550,52 @@ export class AIIconClassifier {
 
         return `You are an expert AI taxonomist and icon matcher for an Obsidian note-taking app. Your objective is to select 3 CANDIDATE ICON NAMES for each requested vault item ordered from specific to general.
 
-${evaluationScope}
+### ITEM NAME PRIORITY RULE (STRICT):
+1. **FOCUS STICKLY ON THE ITEM NAME FIRST:** Base icon selection 100% on the actual file name or folder name (e.g. for "BAKE/Amazon.md", focus strictly on "Amazon").
+2. **DO NOT USE PARENT CONTEXT OR TAGS UNLESS STRUGGLING:** Do NOT look at parent folders, tags, frontmatter, or content snippets UNLESS the file/folder name alone is completely generic, vague, or ambiguous (e.g. "Untitled.md", "Notes.md", "123.md", "exprement.md"). Only fallback to parent context when the filename alone provides no meaningful icon clues.
 
 ### 3-CANDIDATE SELECTION RULE (CRITICAL):
 For EVERY requested item, output a JSON array of EXACTLY 3 candidate icon names:
-- Candidate 1: Specific Pack Icon ID or Brand Name (e.g. "simple-icons-python", "flask-conical", "simple-icons-youtube", "book-open")
-- Candidate 2: Single-Word Core Visual Metaphor (e.g. "code", "book", "video", "map", "bug")
-- Candidate 3: General Fallback Icon (e.g. "terminal", "file-text", "folder")
+- **Candidate 1 (Specific Brand / Precise Icon):** Specific brand, tool, or precise topic icon (e.g. "amazon", "simple-icons-amazon", "python", "react", "youtube", "book-open").
+- **Candidate 2 (Core Category Metaphor):** Primary category icon or visual domain metaphor (e.g. "shopping-cart", "shopping-bag", "code", "calendar", "book", "video", "receipt").
+- **Candidate 3 (Alternative Domain Icon):** A secondary topic icon or alternative domain metaphor (e.g. "package", "store", "terminal", "clock", "notebook", "layers"). Do NOT output generic "file-text" or "file" fallbacks for Candidate 3, as the plugin handles default file fallbacks automatically!
+
+### PACK FLEXIBILITY & AGNOSTICISM (IMPORTANT):
+You are NOT restricted or limited to 'simple-icons-' prefix! You may output standard clean icon names (e.g. 'amazon', 'python', 'react', 'shopping-cart', 'code') OR pack-prefixed IDs (e.g. 'simple-icons-amazon', 'fa-amazon', 'ri-amazon', 'lucide-shopping-cart') depending on what best matches the item.
+
+### BRAND & E-COMMERCE DISAMBIGUATION RULE:
+- E-Commerce & Retail Brands ("Amazon", "eBay", "Shopify", "Walmart"): Candidate 1 = "amazon" or "simple-icons-amazon", Candidate 2 = "shopping-cart" or "shopping-bag", Candidate 3 = "package" or "store". NEVER assign video or music icons!
+- Video/Media Brands ("YouTube", "Netflix"): Candidate 1 = "youtube" or "simple-icons-youtube", Candidate 2 = "video" or "film", Candidate 3 = "play" or "camera".
+- Development & Tech Brands ("Python", "React", "Docker", "GitHub"): Candidate 1 = "python" or "simple-icons-python", Candidate 2 = "code", Candidate 3 = "terminal" or "cpu".
 
 ### FOLDER VS FILE DIFFERENTIATION RULE:
-- For FOLDERS: Candidates 2 & 3 MUST be structural container icons (e.g. Candidates 2 & 3: "folder-code", "layers", "archive", "folder").
-- For FILES / NOTES: Candidates 2 & 3 MUST be topic or document icons (e.g. Candidates 2 & 3: "code", "book", "bug", "file-text").
+- For FOLDERS: Candidates 2 & 3 MUST be structural container icons (e.g. "folder", "layers", "archive", "box").
+- For FILES / NOTES: Candidates 1, 2, and 3 MUST match the note topic. Do NOT output generic document fallbacks ("file-text", "file", "document").
 
-### FLEXIBILITY NOTE:
-The catalog below and installed samples are EXAMPLES to show valid naming styles. You are NOT restricted to only these listed names! You are free and ENCOURAGED to output ANY valid icon ID from any installed icon pack (e.g. 'simple-icons-<name>', 'feather-<name>', 'tabler-<name>', 'ri-<name>', 'octicon-<name>', 'fa-<name>') or standard Lucide icon name (e.g. 'lightbulb', 'database', 'terminal', 'code', 'cpu', 'lock', 'calendar', 'music', 'camera').
-
-### RECOMMENDED ICON CATEGORIES & EXAMPLES:
-- **Development & Tech Brands**: \`simple-icons-python\`, \`simple-icons-javascript\`, \`simple-icons-docker\`, \`simple-icons-react\`, \`simple-icons-github\`, \`simple-icons-html5\`, \`simple-icons-css3\`, \`code\`, \`terminal\`, \`cpu\`, \`database\`, \`server\`, \`bug\`, \`globe\`, \`file-code\`, \`git-branch\`, \`shield\`
-- **Writing, Notes & Books**: \`book-open\`, \`book\`, \`pen-tool\`, \`file-text\`, \`file\`, \`notebook\`, \`quote\`, \`sticky-note\`, \`library\`
-- **Tasks, Plans & Projects**: \`check-square\`, \`check-circle\`, \`calendar\`, \`clock\`, \`target\`, \`flag\`, \`list-todo\`, \`layers\`, \`kanban\`, \`zap\`
-- **Science, Ideas & Learning**: \`lightbulb\`, \`brain\`, \`flask-conical\`, \`microscope\`, \`graduation-cap\`, \`atom\`, \`compass\`, \`sparkles\`
-- **Media, Audio & Design**: \`image\`, \`video\`, \`music\`, \`camera\`, \`palette\`, \`film\`, \`headphones\`, \`simple-icons-youtube\`, \`simple-icons-spotify\`
-- **Finance & Business**: \`dollar-sign\`, \`credit-card\`, \`pie-chart\`, \`bar-chart\`, \`coins\`, \`trending-up\`, \`briefcase\`, \`receipt\`
-- **Personal, Organization & Storage**: \`home\`, \`user\`, \`heart\`, \`coffee\`, \`key\`, \`lock\`, \`map-pin\`, \`folder\`, \`archive\`, \`inbox\`, \`copy\`
+### RECOMMENDED ICON EXAMPLES:
+- **E-Commerce & Brands**: \`amazon\`, \`simple-icons-amazon\`, \`shopify\`, \`shopping-cart\`, \`shopping-bag\`, \`store\`, \`package\`, \`credit-card\`
+- **Development & Tech**: \`python\`, \`simple-icons-python\`, \`javascript\`, \`docker\`, \`react\`, \`github\`, \`code\`, \`terminal\`, \`cpu\`, \`database\`
+- **Writing, Notes & Books**: \`book-open\`, \`book\`, \`pen-tool\`, \`notebook\`, \`quote\`, \`sticky-note\`, \`library\`
+- **Tasks, Plans & Projects**: \`check-square\`, \`check-circle\`, \`calendar\`, \`clock\`, \`target\`, \`flag\`, \`layers\`
+- **Finance & Business**: \`dollar-sign\`, \`pie-chart\`, \`bar-chart\`, \`coins\`, \`trending-up\`, \`briefcase\`, \`receipt\`
 
 ### INSTALLED ICON PACK SAMPLE IDs:
-[${sampleIconsStr || 'Lucide Standard Icons'}]
+[${sampleIconsStr || 'Lucide, Simple Icons, FontAwesome, Tabler, etc.'}]
 
 ### STRICT RULES & CONSTRAINTS:
 - Each key in your returned JSON object MUST be the exact 'item_path' string.
-- Value MUST be an array of 3 strings: ["Candidate1_Specific", "Candidate2_SingleWord", "Candidate3_Fallback"].
-- NEVER use field labels like "title", "hierarchy", "path", "parent", "type", or "details" as JSON keys!
-- NEVER invent, slugify, or convert file basenames into fake icon names (e.g. NEVER output 'cf_debug', 'quickadd_template', or 'path_hierarchy').
-- ALWAYS use hyphens ('-') instead of underscores ('_'). Write 'flask-conical' (NOT 'flask_conical'), 'file-text' (NOT 'file_text').
-- ALWAYS output standard double quotes and colon syntax (e.g. "path": ["icon1", "icon2", "icon3"]). NEVER use '=>' or '->' arrow notation!
+- Value MUST be an array of 3 strings: ["Candidate1_BrandOrSpecific", "Candidate2_CategoryMetaphor", "Candidate3_AlternativeTopic"].
+- ALWAYS use hyphens ('-') instead of underscores ('_'). Write 'shopping-cart' (NOT 'shopping_cart').
+- ALWAYS output standard JSON format.
 
 ### EXACT FEW-SHOT EXAMPLES:
 Correct Output:
 {
-  "Admin/CfDebug.txt": ["bug", "terminal", "file-text"],
-  "Templates/QuickAdd Template.md": ["zap", "copy", "file-text"],
-  "Development/React Notes.md": ["simple-icons-react", "code", "terminal"],
-  "Personal/Reading List.md": ["book-open", "book", "file-text"],
-  "Projects/Collections": ["layers", "folder", "archive"]
+  "BAKE/Amazon.md": ["amazon", "shopping-cart", "package"],
+  "Development/FastAPI Backend.md": ["python", "code", "terminal"],
+  "Personal/Reading List.md": ["book-open", "book", "notebook"],
+  "Work/Client Meetings 2026/Q3 Planning.md": ["calendar", "clock", "target"],
+  "Projects/Website Redesign": ["react", "folder", "layers"]
 }`;
     }
 
