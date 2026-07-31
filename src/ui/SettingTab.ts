@@ -24,6 +24,11 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         const rootEl = this.containerEl;
         rootEl.empty();
         rootEl.addClass('colorful-folders-config');
+        rootEl.setCssStyles({
+            overflowX: 'hidden',
+            boxSizing: 'border-box',
+            maxWidth: '100%'
+        });
 
         // Hero Section
         const hero = rootEl.createDiv('cf-hero');

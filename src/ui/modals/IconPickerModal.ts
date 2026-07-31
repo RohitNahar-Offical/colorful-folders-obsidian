@@ -19,7 +19,9 @@ export class IconPickerModal extends obsidian.Modal {
         contentEl.empty();
         modalEl.setCssStyles({
             maxWidth: "520px",
-            width: "90vw",
+            width: "min(520px, 92vw)",
+            maxHeight: "88vh",
+            overflowY: "auto",
             borderRadius: "12px"
         });
 

@@ -14,7 +14,13 @@ export class ConfirmModal extends obsidian.Modal {
     }
 
     onOpen() {
-        const { contentEl } = this;
+        const { contentEl, modalEl } = this;
+        modalEl.setCssStyles({
+            maxWidth: "420px",
+            width: "min(420px, 92vw)",
+            maxHeight: "88vh",
+            overflowY: "auto"
+        });
         contentEl.createEl('h2', { text: this.title });
         contentEl.createEl('p', { text: this.message });
 

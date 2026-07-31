@@ -29,7 +29,9 @@ export class HoverMessageModal extends obsidian.Modal {
 
         modalEl.setCssStyles({
             maxWidth: "600px",
-            width: "90vw",
+            width: "min(600px, 92vw)",
+            maxHeight: "88vh",
+            overflowY: "auto",
             borderRadius: "14px",
             boxShadow: "0 10px 40px rgba(0,0,0,0.4)"
         });

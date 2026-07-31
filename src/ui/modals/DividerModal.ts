@@ -72,6 +72,9 @@ export class DividerModal extends obsidian.Modal {
         contentEl.empty();
         modalEl.setCssStyles({
             maxWidth: "440px",
+            width: "min(440px, 92vw)",
+            maxHeight: "88vh",
+            overflowY: "auto",
             borderRadius: "14px",
             boxShadow: "0 10px 40px rgba(0,0,0,0.3)"
         });

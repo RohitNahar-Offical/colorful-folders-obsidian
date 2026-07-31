@@ -17,6 +17,9 @@ export class PasswordModal extends obsidian.Modal {
 
         modalEl.setCssStyles({
             maxWidth: "400px",
+            width: "min(400px, 92vw)",
+            maxHeight: "88vh",
+            overflowY: "auto",
             borderRadius: "12px",
             boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
             border: "1px solid var(--background-modifier-border)"

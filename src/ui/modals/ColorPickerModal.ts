@@ -76,7 +76,9 @@ modifiedFields: Set<string>;
         contentEl.empty();
         modalEl.setCssStyles({
             maxWidth: "580px",
-            width: "95vw"
+            width: "min(580px, 95vw)",
+            maxHeight: "88vh",
+            overflowY: "auto"
         });
 
         // ── TOP TAB NAVIGATION BAR ──────────────────────────────────────────

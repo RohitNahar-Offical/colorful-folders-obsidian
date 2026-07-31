@@ -16,8 +16,10 @@ export class ChangelogModal extends obsidian.Modal {
         contentEl.addClass("cf-changelog-modal");
         
         modalEl.setCssStyles({
-            width: "800px",
-            maxWidth: "90vw"
+            maxWidth: "800px",
+            width: "min(800px, 92vw)",
+            maxHeight: "88vh",
+            overflowY: "auto"
         });
 
         // Premium styling
