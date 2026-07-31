@@ -209,14 +209,10 @@ export class ColorResolver {
             }
 
             const adjust = isDark
-                ? Math.max(brightnessAmount, 0)
-                : brightnessAmount === 0
-                    ? -0.5
-                    : brightnessAmount;
+                ? (brightnessAmount === 0 ? 0.45 : Math.max(brightnessAmount, 0.35))
+                : (brightnessAmount === 0 ? -0.40 : Math.min(brightnessAmount, -0.20));
 
-            return isDark && adjust === 0
-                ? colorHex
-                : `rgb(${adjustBrightnessRgb(colorRgb, adjust)})`;
+            return `rgb(${adjustBrightnessRgb(colorRgb, adjust)})`;
         }
         return "var(--text-normal)";
     }

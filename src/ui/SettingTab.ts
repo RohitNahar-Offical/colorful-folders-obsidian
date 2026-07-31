@@ -8,6 +8,7 @@ import { createVisualColorPicker } from './components/ColorPicker';
 import { parseColorToHexAlpha, hexAlphaToRgba } from '../common/utils';
 import { t } from '../lang/helpers';
 import { AIIconClassifier } from '../integrations/AIIconClassifier';
+import { RainbowManager } from '../core/RainbowManager';
 
 
 export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
@@ -2179,7 +2180,81 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 }));
 
         if (this.plugin.settings.rainbowRootText) {
+            const previewWrap = typeCard.createDiv({ cls: 'cf-rainbow-preview-wrap' });
+            previewWrap.setCssStyles({
+                padding: '12px 16px',
+                margin: '12px 0',
+                borderRadius: '8px',
+                backgroundColor: 'var(--background-secondary)',
+                border: '1px solid var(--background-modifier-border)'
+            });
+            previewWrap.createEl('small', { text: 'Rainbow Text Live Preview', cls: 'cf-preview-label' }).setCssStyles({
+                display: 'block',
+                marginBottom: '8px',
+                fontWeight: '600',
+                fontSize: '0.8em',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                opacity: '0.7'
+            });
 
+            const previewContainer = previewWrap.createDiv();
+            previewContainer.setCssStyles({
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px'
+            });
+
+            const updateRainbowPreview = () => {
+                previewContainer.empty();
+                const isDark = activeDocument.body.classList.contains('theme-dark');
+                const sampleFolders = ['Atlas', 'BAKE', 'Calendar'];
+                const angle = this.plugin.settings.rainbowGradientAngle ?? 90;
+                const isTransparent = this.plugin.settings.rainbowRootBgTransparent;
+                const palette = isDark ? (this.plugin.settings.paletteDark || []) : (this.plugin.settings.paletteLight || []);
+
+                sampleFolders.forEach((name, idx) => {
+                    const row = previewContainer.createDiv();
+                    row.setCssStyles({
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '6px 12px',
+                        borderRadius: '6px',
+                        backgroundColor: isTransparent ? 'transparent' : 'var(--background-primary-alt, rgba(255, 255, 255, 0.05))',
+                        border: isTransparent ? 'none' : '1px solid var(--background-modifier-border)'
+                    });
+
+                    const iconEl = row.createDiv();
+                    obsidian.setIcon(iconEl, 'folder');
+                    iconEl.setCssStyles({ width: '16px', height: '16px', display: 'flex', alignItems: 'center' });
+
+                    const textEl = row.createDiv({ text: name });
+                    const stops = RainbowManager.resolveRootSpectrum(idx, palette, isDark);
+                    const gradientCss = RainbowManager.buildGradientCss(stops, {
+                        angle,
+                        isDark,
+                        isBold: true,
+                        isTransparentBg: isTransparent
+                    });
+
+                    const bgMatch = gradientCss.match(/background-image:\s*([^!;]+)/);
+                    const bgVal = bgMatch ? bgMatch[1].trim() : `linear-gradient(${angle}deg, #ff2a85, #00f0ff)`;
+
+                    textEl.setCssStyles({
+                        backgroundImage: bgVal,
+                        backgroundClip: 'text',
+                        webkitBackgroundClip: 'text',
+                        webkitTextFillColor: 'transparent',
+                        color: 'transparent',
+                        fontWeight: '800',
+                        fontSize: '0.9em',
+                        filter: isDark ? 'drop-shadow(0 1px 2px rgba(0,0,0,0.75))' : 'drop-shadow(0 1px 1px rgba(0,0,0,0.15))'
+                    });
+                });
+            };
+
+            updateRainbowPreview();
 
             new obsidian.Setting(typeCard)
                 .setName(t("settings.transparent_root_bg.name"))
@@ -2189,8 +2264,37 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                     .onChange(async (value) => {
                         this.plugin.settings.rainbowRootBgTransparent = value;
                         await this.plugin.saveSettings();
+                        RainbowManager.clearCache();
                         this.plugin.generateStylesDebounced();
+                        updateRainbowPreview();
                     }));
+
+            let sliderComp_gradientAngle: obsidian.SliderComponent;
+            new obsidian.Setting(typeCard)
+                .setName("Rainbow Gradient Direction")
+                .setDesc("Linear gradient angle in degrees (0 = bottom-to-top, 90 = horizontal, 135 = diagonal).")
+                .addSlider(slider => {
+                    sliderComp_gradientAngle = slider;
+                    slider
+                        .setLimits(0, 360, 15)
+                        .setValue(this.plugin.settings.rainbowGradientAngle ?? 90)
+                        .onChange(async (value) => {
+                            this.plugin.settings.rainbowGradientAngle = value;
+                            await this.plugin.saveSettings();
+                            RainbowManager.clearCache();
+                            this.plugin.generateStylesDebounced();
+                            updateRainbowPreview();
+                        });
+                    return slider;
+                })
+                .addExtraButton(cb => cb.setIcon("reset").setTooltip(t("common.reset_to_default")).onClick(async () => {
+                    this.plugin.settings.rainbowGradientAngle = DEFAULT_SETTINGS.rainbowGradientAngle;
+                    sliderComp_gradientAngle.setValue(DEFAULT_SETTINGS.rainbowGradientAngle ?? 90);
+                    await this.plugin.saveSettings();
+                    RainbowManager.clearCache();
+                    this.plugin.generateStylesDebounced();
+                    updateRainbowPreview();
+                }));
         }
 
         const tuneCard = makeCard(generalPanel, "🎛️", t("settings.card.advanced_tuning"));

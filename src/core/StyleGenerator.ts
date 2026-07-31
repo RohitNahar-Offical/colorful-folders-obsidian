@@ -10,6 +10,7 @@ import { isDarkMode, getCurrentPalette, ColorResolver } from './ColorResolver';
 import { generateGlobalBaseCss, generateDividerCss, generateStealthCss } from './BaseCssGenerator';
 import { CssGrouper } from './CssGrouper';
 import { StyleResolver } from './StyleResolver';
+import { RainbowManager } from './RainbowManager';
 
 export class StyleGenerator {
     plugin: IColorfulFoldersPlugin;
@@ -365,31 +366,14 @@ export class StyleGenerator {
                 `;
 
                 if (activeStyle && activeStyle.textGradient && activeStyle.textColor && activeStyle.textGradientEnd) {
-                    const angle = 90;
-                    let sC = activeStyle.textColor;
-                    let eC = activeStyle.textGradientEnd;
-                    const bVal = activeStyle.rainbowBrightness !== undefined ? activeStyle.rainbowBrightness : 50;
-                    if (bVal !== 50) {
-                        const amount = (bVal - 50) / 50;
-                        const rgbS = hexToRgbObj(sC);
-                        if (rgbS) sC = `rgb(${adjustBrightnessRgb(`${rgbS.r},${rgbS.g},${rgbS.b}`, amount)})`;
-                        const rgbE = hexToRgbObj(eC);
-                        if (rgbE) eC = `rgb(${adjustBrightnessRgb(`${rgbE.r},${rgbE.g},${rgbE.b}`, amount)})`;
-                    }
-                    fileTextCss = `
-                    background-image: linear-gradient(${angle}deg, ${sC}, ${eC}, ${sC}) !important;
-                    background-clip: text !important;
-                    -webkit-background-clip: text !important;
-                    -webkit-text-fill-color: transparent !important;
-                    color: transparent !important;
-                    font-weight: ${isBold ? '800' : 'normal'} !important;
-                    font-style: ${isItalic ? 'italic' : 'normal'} !important;
-                    ${extraTypographyCssFiles}
-                    display: flex !important;
-                    align-items: center !important;
-                    width: fit-content !important;
-                    flex: 0 1 auto !important;
-                `;
+                    const stops = RainbowManager.resolveCustomStops(activeStyle.textColor, activeStyle.textGradientEnd, activeStyle.rainbowBrightness, isDark);
+                    fileTextCss = RainbowManager.buildGradientCss(stops, {
+                        angle: this.settings.rainbowGradientAngle ?? 90,
+                        isDark,
+                        isBold,
+                        isItalic,
+                        extraCss: extraTypographyCssFiles
+                    });
                 }
 
                 const fileRowSels = [
@@ -717,48 +701,6 @@ export class StyleGenerator {
             const isBold = customStyle?.isBold !== undefined ? customStyle.isBold : (inheritedStyle?.isBold !== undefined ? inheritedStyle.isBold : true);
             const isItalic = customStyle?.isItalic !== undefined ? customStyle.isItalic : (inheritedStyle?.isItalic !== undefined ? inheritedStyle.isItalic : false);
 
-            let isUsingGradient = false;
-            let startCol = "";
-            let endCol = "";
-            let gradAngle = 90;
-            let gradWeight = isBold ? '800' : 'normal';
-
-            if (customStyle?.textGradient && customStyle?.textColor && customStyle?.textGradientEnd) {
-                isUsingGradient = true;
-                let sC = customStyle.textColor;
-                let eC = customStyle.textGradientEnd;
-                const bVal = customStyle.rainbowBrightness !== undefined ? customStyle.rainbowBrightness : 50;
-                if (bVal !== 50) {
-                    const amount = (bVal - 50) / 50;
-                    const rgbS = hexToRgbObj(sC);
-                    if (rgbS) sC = `rgb(${adjustBrightnessRgb(`${rgbS.r},${rgbS.g},${rgbS.b}`, amount)})`;
-                    const rgbE = hexToRgbObj(eC);
-                    if (rgbE) eC = `rgb(${adjustBrightnessRgb(`${rgbE.r},${rgbE.g},${rgbE.b}`, amount)})`;
-                }
-                startCol = sC;
-                endCol = eC;
-            } else if (this.settings.rainbowRootText && depth === 0 && !customStyle?.textColor) {
-                isUsingGradient = true;
-                const rainbowOpacity = 1.0;
-
-                const nextColor = currentPalette[(i + 1) % currentPalette.length];
-                startCol = color.hex;
-                endCol = nextColor.hex;
-
-                // Convert hex to rgb string for rgba opacity mix
-                if (startCol.startsWith("#")) {
-                    const rgb = hexToRgbObj(startCol);
-                    if (rgb) startCol = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${rainbowOpacity})`;
-                }
-                if (endCol.startsWith("#")) {
-                    const rgb = hexToRgbObj(endCol);
-                    if (rgb) endCol = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${rainbowOpacity})`;
-                }
-
-                gradAngle = 90;
-                gradWeight = "800"; // hardcoded thick default
-            }
-
             let textCss = `
                 color: var(--cf-folder-color, ${folderStyles.t}) !important;
                 font-weight: ${isBold ? '800' : 'normal'} !important;
@@ -766,21 +708,30 @@ export class StyleGenerator {
                 ${extraTypographyCssFolders}
             `;
 
-            if (isUsingGradient) {
-                textCss = `
-                    background-image: linear-gradient(${gradAngle}deg, ${startCol}, ${endCol}, ${startCol}) !important;
-                    background-clip: text !important;
-                    -webkit-background-clip: text !important;
-                    -webkit-text-fill-color: transparent !important;
-                    color: transparent !important;
-                    font-weight: ${gradWeight} !important;
-                    font-style: ${isItalic ? 'italic' : 'normal'} !important;
-                    ${extraTypographyCssFolders}
-                    display: flex !important;
-                    align-items: center !important;
-                    width: fit-content !important;
-                    flex: 0 1 auto !important;
-                `;
+            const gradAngle = this.settings.rainbowGradientAngle ?? 90;
+
+            if (customStyle?.textGradient && customStyle?.textColor && customStyle?.textGradientEnd) {
+                const stops = RainbowManager.resolveCustomStops(customStyle.textColor, customStyle.textGradientEnd, customStyle.rainbowBrightness, isDark);
+                textCss = RainbowManager.buildGradientCss(stops, {
+                    angle: gradAngle,
+                    isDark,
+                    isBold,
+                    isItalic,
+                    extraCss: extraTypographyCssFolders,
+                    isTransparentBg: isRainbowBgTransparent,
+                    outlineOnly
+                });
+            } else if (this.settings.rainbowRootText && depth === 0 && !customStyle?.textColor && (this.settings.rootStyle !== 'solid' || isRainbowBgTransparent || outlineOnly)) {
+                const stops = RainbowManager.resolveRootSpectrum(i, currentPalette, isDark);
+                textCss = RainbowManager.buildGradientCss(stops, {
+                    angle: gradAngle,
+                    isDark,
+                    isBold: true,
+                    isItalic,
+                    extraCss: extraTypographyCssFolders,
+                    isTransparentBg: isRainbowBgTransparent,
+                    outlineOnly
+                });
             }
 
             const activeBg = (this.settings.useCustomActiveColor && this.settings.customActiveBg) ? this.settings.customActiveBg : `rgba(${color.rgb}, ${useGlass ? 0.14 : 0.12})`;
@@ -860,7 +811,7 @@ export class StyleGenerator {
                 `.nav-folder-title[data-path="${safePath}"] .nav-folder-title-content`,
                 `.tree-item-self[data-path="${safePath}"] .tree-item-inner`,
                 ...nnSelectors
-            ], `folderText_${isUsingGradient ? 'grad_' + startCol.replace(/\s+/g, '') + '_' + endCol.replace(/\s+/g, '') : 'norm_' + folderStyles.t}_${isBold}_${isItalic}`);
+            ], `folderText_${customStyle?.textGradient || (this.settings.rainbowRootText && depth === 0) ? 'grad' : 'norm'}_${folderStyles.t}_${isBold}_${isItalic}`);
 
             const generateIconCss = (iconIdToUse: string, isExpandedState: boolean | null) => {
                 const isCustomEmoji = this.plugin.iconManager.isEmojiIcon(iconIdToUse);

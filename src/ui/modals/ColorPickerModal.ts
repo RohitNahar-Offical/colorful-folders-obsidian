@@ -4,6 +4,7 @@ import { FolderStyle, EffectiveStyle, IColorfulFoldersPlugin } from '../../commo
 import { createVisualColorPicker } from '../components/ColorPicker';
 import { hexToRgbObj, adjustBrightnessRgb, normalizeVaultPath } from '../../common/utils';
 import { ColorResolver, isDarkMode } from '../../core/ColorResolver';
+import { RainbowManager } from '../../core/RainbowManager';
 
 const getAdjustedColor = (hex: string, brightnessVal: number | undefined): string => {
     if (!hex) return hex;
@@ -128,27 +129,27 @@ modifiedFields: Set<string>;
         let initialTextCol = this.folderStyle.textColor;
         let initialBgGradient = "";
         
+        const gradAngle = this.plugin.settings.rainbowGradientAngle ?? 90;
+        const isDarkTheme = isDarkMode();
         if (this.folderStyle.textGradient && initialTextCol && this.folderStyle.textGradientEnd) {
-            const startC = getAdjustedColor(initialTextCol, this.folderStyle.rainbowBrightness);
-            const endC = getAdjustedColor(this.folderStyle.textGradientEnd, this.folderStyle.rainbowBrightness);
-            initialBgGradient = `linear-gradient(90deg, ${startC}, ${endC}, ${startC})`;
+            const stops = RainbowManager.resolveCustomStops(initialTextCol, this.folderStyle.textGradientEnd, this.folderStyle.rainbowBrightness, isDarkTheme);
+            initialBgGradient = `linear-gradient(${gradAngle}deg, ${stops.join(', ')})`;
         } else if (!initialTextCol && this.folderStyle.hex) {
-            const isDark = isDarkMode();
             const settings = this.plugin.settings;
             const lightBrightness = (settings.lightModeBrightness || 0) / 100;
             const darkBrightness = (settings.darkModeBrightness || 0) / 100;
-            const brightnessAmount = isDark ? darkBrightness : lightBrightness;
+            const brightnessAmount = isDarkTheme ? darkBrightness : lightBrightness;
             
-            const adjust = isDark
+            const adjust = isDarkTheme
                 ? Math.max(brightnessAmount, 0)
                 : brightnessAmount === 0
                     ? -0.5
                     : brightnessAmount;
-                    
+            
             const rgb = hexToRgbObj(this.folderStyle.hex);
             if (rgb) {
                 const rgbStr = `${rgb.r}, ${rgb.g}, ${rgb.b}`;
-                initialTextCol = isDark && adjust === 0
+                initialTextCol = isDarkTheme && adjust === 0
                     ? this.folderStyle.hex
                     : `rgb(${adjustBrightnessRgb(rgbStr, adjust)})`;
             }
@@ -164,6 +165,7 @@ modifiedFields: Set<string>;
                 color: "transparent",
                 fontWeight: this.folderStyle.isBold ? "800" : "normal",
                 fontStyle: this.folderStyle.isItalic ? "italic" : "normal",
+                filter: isDarkTheme ? "drop-shadow(0 1px 2px rgba(0, 0, 0, 0.75))" : "drop-shadow(0 1px 1px rgba(0, 0, 0, 0.15))",
                 fontSize: "0.9em"
             });
         } else {
@@ -306,10 +308,9 @@ modifiedFields: Set<string>;
                 let bgGradient = "";
                 
                 if (this.folderStyle.textGradient && textCol && this.folderStyle.textGradientEnd) {
-                    const startC = getAdjustedColor(textCol, this.folderStyle.rainbowBrightness);
-                    const endC = getAdjustedColor(this.folderStyle.textGradientEnd, this.folderStyle.rainbowBrightness);
-                    // Matches StyleGenerator: looped gradient start->end->start
-                    bgGradient = `linear-gradient(90deg, ${startC}, ${endC}, ${startC})`;
+                    const stops = RainbowManager.resolveCustomStops(textCol, this.folderStyle.textGradientEnd, this.folderStyle.rainbowBrightness, isDarkMode());
+                    const angle = this.plugin.settings.rainbowGradientAngle ?? 90;
+                    bgGradient = `linear-gradient(${angle}deg, ${stops.join(', ')})`;
                 } else if (this.folderStyle.hex) {
                     const isDark = isDarkMode();
                     const settings = this.plugin.settings;
@@ -345,7 +346,8 @@ modifiedFields: Set<string>;
                         webkitTextFillColor: "transparent",
                         color: "transparent",
                         fontWeight: this.folderStyle.isBold ? "800" : "normal",
-                        fontStyle: this.folderStyle.isItalic ? "italic" : "normal"
+                        fontStyle: this.folderStyle.isItalic ? "italic" : "normal",
+                        filter: isDarkMode() ? "drop-shadow(0 1px 2px rgba(0, 0, 0, 0.75))" : "drop-shadow(0 1px 1px rgba(0, 0, 0, 0.15))"
                     });
                 } else {
                     this._prevLabel.setCssStyles({

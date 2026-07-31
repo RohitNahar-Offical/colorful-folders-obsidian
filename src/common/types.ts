@@ -62,6 +62,7 @@ export interface ColorfulFoldersSettings {
     wideAutoIcons: boolean;
     rainbowRootText: boolean;
     rainbowRootBgTransparent: boolean;
+    rainbowGradientAngle?: number;
     autoColorFiles: boolean;
     fileColorMode: string;
     colorText?: string | boolean;

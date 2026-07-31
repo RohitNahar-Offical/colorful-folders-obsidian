@@ -90,6 +90,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     wideAutoIcons: true,
     rainbowRootText: true,
     rainbowRootBgTransparent: false,
+    rainbowGradientAngle: 90,
     autoColorFiles: false,
     fileColorMode: "mixed",
     colorText: "all",
