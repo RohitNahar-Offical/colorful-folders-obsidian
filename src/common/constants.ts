@@ -82,7 +82,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     customFolderColors: {},
     presets: {},
     recentlyUsedIcons: [],
-    glassmorphism: false,
+    glassmorphism: true,
 
     autoIcons: true,
     autoIconVariety: true,

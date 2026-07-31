@@ -146,8 +146,7 @@ export class IconPickerModal extends obsidian.Modal {
                             svgEl.removeAttribute("height");
                             (svgEl as unknown as HTMLElement).setCssStyles({
                                 width: "24px", height: "24px",
-                                color: isSelected ? "white" : "var(--text-normal)",
-                                fill: "currentColor"
+                                color: isSelected ? "white" : "var(--text-normal)"
                             });
                             cell.appendChild(svgEl);
                         }

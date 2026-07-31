@@ -239,7 +239,7 @@ modifiedFields: Set<string>;
                                 if (svgEl) {
                                     svgEl.removeAttribute("width");
                                     svgEl.removeAttribute("height");
-                                    (svgEl as unknown as HTMLElement).setCssStyles({ width: `${sizePx}px`, height: `${sizePx}px`, color: effectiveIconColor, fill: "currentColor" });
+                                    (svgEl as unknown as HTMLElement).setCssStyles({ width: `${sizePx}px`, height: `${sizePx}px`, color: effectiveIconColor });
                                     target.appendChild(svgEl);
                                 }
                             } else {
@@ -922,8 +922,7 @@ modifiedFields: Set<string>;
                         svgEl.removeAttribute("height");
                         (svgEl as unknown as HTMLElement).setCssStyles({
                             width: `${gridIconW}px`, height: `${gridIconW}px`,
-                            color: isSelectedCell ? "#fff" : "var(--text-normal)",
-                            fill: "currentColor"
+                            color: isSelectedCell ? "#fff" : "var(--text-normal)"
                         });
                         cell.appendChild(svgEl);
                     }
