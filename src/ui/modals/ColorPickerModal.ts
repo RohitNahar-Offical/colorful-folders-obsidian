@@ -885,9 +885,10 @@ modifiedFields: Set<string>;
         });
 
         // Merge custom icons into the list
-        const lucideIcons = (obsidian.getIconIds ? obsidian.getIconIds() : [])
-            .filter(id => id.startsWith('lucide-'))
-            .map(id => id.replace('lucide-', ''));
+        const lucideRaw = obsidian.getIconIds ? obsidian.getIconIds() : [];
+        const lucideIcons = Array.from(new Set(
+            lucideRaw.map(id => id.replace(/^lucide-/, ''))
+        )).filter(id => id.length > 0 && !id.includes(':'));
         
         // Prioritize custom icons at the top
         const allIconsSet = new Set([...customIds, ...lucideIcons]);

@@ -189,6 +189,7 @@ export interface IColorfulFoldersPlugin {
     getAllExplorerContainers(): HTMLElement[];
     getOpenDocuments(): Document[];
     getStyle(path: string): FolderStyle | null;
+    getActivePalette(isDark?: boolean): { rgb: string; hex: string }[];
     processDividers(): void;
     generateStyles(): Promise<void>;
     autoDownloadPack(url: string, prefix: string): Promise<number>;

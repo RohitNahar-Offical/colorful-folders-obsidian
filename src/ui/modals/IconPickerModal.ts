@@ -78,7 +78,10 @@ export class IconPickerModal extends obsidian.Modal {
             backgroundColor: "var(--background-secondary)", color: "var(--text-normal)", fontSize: "0.9em"
         });
         Array.from(prefixes).sort().forEach(p => {
-            const opt = filterSelect.createEl("option", { text: p === 'all' ? t("settings.option.all_packs") : p.toUpperCase(), value: p });
+            let label = p.toUpperCase();
+            if (p === 'all') label = t("settings.option.all_packs");
+            else if (p === 'lucide') label = "✨ Obsidian Official (Lucide)";
+            const opt = filterSelect.createEl("option", { text: label, value: p });
             if (p === 'all') opt.selected = true;
         });
 
@@ -92,9 +95,10 @@ export class IconPickerModal extends obsidian.Modal {
             backgroundColor: "rgba(0,0,0,0.05)"
         });
 
-        const lucideIcons = (obsidian.getIconIds ? obsidian.getIconIds() : [])
-            .filter(id => id.startsWith('lucide-'))
-            .map(id => id.replace('lucide-', ''));
+        const lucideRaw = obsidian.getIconIds ? obsidian.getIconIds() : [];
+        const lucideIcons = Array.from(new Set(
+            lucideRaw.map(id => id.replace(/^lucide-/, ''))
+        )).filter(id => id.length > 0 && !id.includes(':'));
         
         const allIcons = Array.from(new Set([...customIds, ...localIds, ...lucideIcons]));
 
