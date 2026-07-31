@@ -652,6 +652,10 @@ export default class ColorfulFoldersPlugin
     }
     this.isGeneratingStyles = true;
     try {
+      this.cachedDocuments.forEach((doc) => {
+        doc.body.classList.toggle("cf-show-hidden", Boolean(this.settings.showHiddenItems));
+        doc.body.classList.toggle("cf-wrap-metadata", Boolean(this.settings.wrapMetadata));
+      });
       const css = await this.styleGenerator.generateCss();
       this.adoptedStyleSheetService.updateStyles(css);
       this.getAllExplorerContainers().forEach((c) => this.domObserverService.tagExplorerItems(c));

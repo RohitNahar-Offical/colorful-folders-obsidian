@@ -466,16 +466,32 @@ export function generateStealthCss(settings: ColorfulFoldersSettings): string {
             stealthCss += `
                 body:not(.cf-show-hidden) .nav-folder-title[data-path="${safePath}"],
                 body:not(.cf-show-hidden) .nav-folder-title[data-path="${safePath}"] + .nav-folder-children,
+                body:not(.cf-show-hidden) .nav-folder-title[data-path="${safePath}"] + .tree-item-children,
                 body:not(.cf-show-hidden) .nav-file-title[data-path="${safePath}"],
-                body:not(.cf-show-hidden) .tree-item-self[data-path="${safePath}"] {
+                body:not(.cf-show-hidden) .tree-item-self[data-path="${safePath}"],
+                body:not(.cf-show-hidden) .tree-item[data-path="${safePath}"],
+                body:not(.cf-show-hidden) .nav-file[data-path="${safePath}"],
+                body:not(.cf-show-hidden) .nav-folder[data-path="${safePath}"] {
                     display: none !important;
                 }
 
-                body.cf-show-hidden .nav-folder-title[data-path="${safePath}"],
-                body.cf-show-hidden .nav-file-title[data-path="${safePath}"],
-                body.cf-show-hidden .tree-item-self[data-path="${safePath}"] {
-                    opacity: 0.3 !important;
-                    filter: grayscale(1) blur(0.5px) !important;
+                body.cf-show-hidden .nav-folder-title[data-path="${safePath}"]:not(.is-folder-note):not(.is-folder-note-hidden):not(.fn-hidden):not(.cf-fn-hidden):not(.folder-note-hidden):not([data-folder-note="true"]),
+                body.cf-show-hidden .nav-file-title[data-path="${safePath}"]:not(.is-folder-note):not(.is-folder-note-hidden):not(.fn-hidden):not(.cf-fn-hidden):not(.folder-note-hidden):not([data-folder-note="true"]),
+                body.cf-show-hidden .tree-item-self[data-path="${safePath}"]:not(.is-folder-note):not(.is-folder-note-hidden):not(.fn-hidden):not(.cf-fn-hidden):not(.folder-note-hidden):not([data-folder-note="true"]),
+                body.cf-show-hidden .tree-item[data-path="${safePath}"]:not(.is-folder-note):not(.is-folder-note-hidden):not(.fn-hidden):not(.cf-fn-hidden):not(.folder-note-hidden):not([data-folder-note="true"]),
+                body.cf-show-hidden .nav-file[data-path="${safePath}"]:not(.is-folder-note):not(.is-folder-note-hidden):not(.fn-hidden):not(.cf-fn-hidden):not(.folder-note-hidden):not([data-folder-note="true"]),
+                body.cf-show-hidden .nav-folder[data-path="${safePath}"]:not(.is-folder-note):not(.is-folder-note-hidden):not(.fn-hidden):not(.cf-fn-hidden):not(.folder-note-hidden):not([data-folder-note="true"]) {
+                    display: flex !important;
+                    visibility: visible !important;
+                    background-color: rgba(128, 128, 128, 0.15) !important;
+                    border-radius: 6px !important;
+                    opacity: 0.75 !important;
+                }
+
+                body.cf-show-hidden .nav-folder-title[data-path="${safePath}"] + .nav-folder-children,
+                body.cf-show-hidden .nav-folder-title[data-path="${safePath}"] + .tree-item-children {
+                    display: block !important;
+                    visibility: visible !important;
                 }
             `;
 
@@ -491,8 +507,11 @@ export function generateStealthCss(settings: ColorfulFoldersSettings): string {
 
                     body.cf-show-hidden ${nnSelector},
                     body.cf-show-hidden ${nnFileSelector} {
-                        opacity: 0.3 !important;
-                        filter: grayscale(1) blur(0.5px) !important;
+                        display: flex !important;
+                        visibility: visible !important;
+                        background-color: rgba(128, 128, 128, 0.15) !important;
+                        border-radius: 6px !important;
+                        opacity: 0.75 !important;
                     }
                 `;
             }

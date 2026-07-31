@@ -292,6 +292,8 @@ export class DividerModal extends obsidian.Modal {
                 .addOption("solid", "Solid")
                 .addOption("dashed", "Dashed")
                 .addOption("dotted", "Dotted")
+                .addOption("double", "Double")
+                .addOption("groove", "Groove")
                 .addOption("none", "None")
                 .setValue(this.config.lineStyle)
                 .onChange(v => {

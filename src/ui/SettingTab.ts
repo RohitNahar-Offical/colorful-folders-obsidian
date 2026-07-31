@@ -36,6 +36,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
     display() {
         const rootEl = this.containerEl;
+        const savedScrollTop = rootEl.scrollTop;
         rootEl.empty();
         rootEl.addClass('colorful-folders-config');
         rootEl.setCssStyles({
@@ -101,6 +102,12 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         try { this.featuresSection.render(intPanel); } catch (e) { console.error("Colorful Folders: Error rendering Features section", e); }
         try { this.iconSection.render(iconPanel); } catch (e) { console.error("Colorful Folders: Error rendering Icon section", e); }
         try { this.privacySection.render(sysPanel); } catch (e) { console.error("Colorful Folders: Error rendering Privacy section", e); }
+
+        if (savedScrollTop > 0) {
+            window.requestAnimationFrame(() => {
+                rootEl.scrollTop = savedScrollTop;
+            });
+        }
     }
 
     async processIconData(data: Record<string, unknown>): Promise<number> {
