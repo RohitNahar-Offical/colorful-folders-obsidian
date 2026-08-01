@@ -21,6 +21,12 @@ export class StyleGenerator {
     private _dirtyPaths: Set<string> | null = null;
     private _fullRegenRequired = true;
 
+    private static readonly CF_FILE_TEXT_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px; opacity: 0.85;"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+    private static readonly SPACED_TEXT_CSS = `
+        letter-spacing: 1px !important;
+        word-spacing: 2px !important;
+    `;
+
     private _pathEscapeCache = new Map<string, string>();
     private _cachedGlobalBaseCss: { key: string; css: string } | null = null;
     private _cachedDividerCss: { key: string; css: string } | null = null;
@@ -255,14 +261,9 @@ export class StyleGenerator {
         const baseThick = this.settings.pathLineThickness ?? 2.0;
         const folderThick = baseThick + 0.5;
         const activeFolderThick = baseThick + 2.0;
-        const CF_FILE_TEXT_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px; opacity: 0.85;"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`;
-
-        const SPACED_TEXT_CSS = `
-            letter-spacing: 1px !important;
-            word-spacing: 2px !important;
-        `;
-        const extraTypographyCssFiles = (this.settings.spacedTextMode === 'both' || this.settings.spacedTextMode === 'files') ? SPACED_TEXT_CSS : '';
-        const extraTypographyCssFolders = (this.settings.spacedTextMode === 'both' || this.settings.spacedTextMode === 'folders') ? SPACED_TEXT_CSS : '';
+        const CF_FILE_TEXT_ICON = StyleGenerator.CF_FILE_TEXT_ICON;
+        const extraTypographyCssFiles = (this.settings.spacedTextMode === 'both' || this.settings.spacedTextMode === 'files') ? StyleGenerator.SPACED_TEXT_CSS : '';
+        const extraTypographyCssFolders = (this.settings.spacedTextMode === 'both' || this.settings.spacedTextMode === 'folders') ? StyleGenerator.SPACED_TEXT_CSS : '';
 
         // Process Files
         for (const child of copyFiles) {

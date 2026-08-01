@@ -90,7 +90,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     wideAutoIcons: true,
     rainbowRootText: true,
     rainbowRootBgTransparent: false,
-    rainbowGradientAngle: 90,
+    rainbowGradientAngle: 135,
     autoColorFiles: false,
     fileColorMode: "mixed",
     colorText: "all",
@@ -244,7 +244,8 @@ export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
     { rex: /canvas|whiteboard|draw|excalidraw/i, emoji: "🎨", lucide: "frame", priority: 110, lucides: ["frame", "shapes", "pencil-ruler"] },
     { rex: /graph|link|relation|node|network/i, emoji: "🕸️", lucide: "share-2", priority: 110, lucides: ["share-2", "git-branch", "workflow"] },
 
-    // --- Advanced Dev & Infrastructure ---
+    // --- Plugins, Extensions & Addons ---
+    { rex: /\b(?:plugin|plugins|extension|extensions|addon|addons|widget|widgets|wxt)\b/i, emoji: "🧩", lucide: "puzzle", priority: 115, emojis: ["🧩", "🔌"], lucides: ["puzzle", "plugin", "simple-icons-wxt"] },
     { rex: /docker|k8s|kubernetes|container|pod/i, emoji: "🐳", lucide: "ship", priority: 95, lucides: ["ship", "container", "box"] },
     { rex: /aws|cloud|azure|gcp|lambda|serverless/i, emoji: "☁️", lucide: "cloud-lightning", priority: 95, lucides: ["cloud-lightning", "flame", "hard-drive"] },
     { rex: /api|json|yaml|xml|graphql|rest/i, emoji: "🔌", lucide: "plug", priority: 95, lucides: ["plug", "webhook", "bracket"] },

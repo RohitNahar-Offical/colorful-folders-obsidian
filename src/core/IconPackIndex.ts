@@ -123,11 +123,13 @@ export class IconPackIndex {
     }
 
     public searchFuzzy(searchKey: string, options?: { threshold?: number }): string | null {
-        if (!this.isBuilt || !searchKey || searchKey.length < 3) return null;
+        if (!this.isBuilt || !searchKey) return null;
         
         // Fast-path: O(1) exact or core keyword match
         const exact = this.findIcon(searchKey);
         if (exact) return exact;
+
+        if (searchKey.length < 3) return null;
 
         const threshold = options?.threshold ?? 0.8;
         const normKey = searchKey.toLowerCase().trim();

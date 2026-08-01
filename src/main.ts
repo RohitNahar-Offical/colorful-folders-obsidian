@@ -153,10 +153,10 @@ export default class ColorfulFoldersPlugin
           }, 2000);
         }
 
-        const hasFeatherIcons = customIconKeys.some(k => k.startsWith('feather-'));
-        if (!hasFeatherIcons) {
+        const hasTablerIcons = customIconKeys.some(k => k.startsWith('tabler-') || k.startsWith('tb-'));
+        if (!hasTablerIcons) {
           window.setTimeout(() => {
-            void this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/feather.json", "feather");
+            void this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/tabler.json", "tabler");
           }, 5000);
         }
 

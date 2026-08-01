@@ -292,32 +292,7 @@ export class FeaturesSettingSection extends SettingSection {
                     updatePreview();
                 }));
 
-        new obsidian.Setting(divCard)
-            .setName("Auto-insert divider between folders and files")
-            .setDesc("Automatically place a visual divider separating folder items from note file items.")
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.showFileDivider || false)
-                .onChange(async (value) => {
-                    this.plugin.settings.showFileDivider = value;
-                    await this.plugin.saveSettings();
-                    this.plugin.generateStylesDebounced();
-                    this.plugin.dividerManager.syncDividers();
-                    updatePreview();
-                }));
 
-        new obsidian.Setting(divCard)
-            .setName("Auto file divider label")
-            .setDesc("Label text to display inside the automatic file divider (leave empty for line-only).")
-            .addText(text => text
-                .setPlaceholder("e.g. Files")
-                .setValue(this.plugin.settings.fileDividerText || "")
-                .onChange(async (value) => {
-                    this.plugin.settings.fileDividerText = value;
-                    await this.plugin.saveSettings();
-                    this.plugin.generateStylesDebounced();
-                    this.plugin.dividerManager.syncDividers();
-                    updatePreview();
-                }));
 
         new obsidian.Setting(divCard)
             .setName("Divider icon position")

@@ -743,6 +743,32 @@ export class GeneralSettingSection extends SettingSection {
                         await this.plugin.saveSettings();
                         this.plugin.generateStylesDebounced();
                     }));
+
+            let sliderComp_gradientAngle: obsidian.SliderComponent;
+            new obsidian.Setting(typeCard)
+                .setName('Text Gradient Angle')
+                .setDesc('Customize the angle (0° to 360°) for rainbow text gradients.')
+                .addSlider(slider => {
+                    sliderComp_gradientAngle = slider;
+                    slider
+                        .setLimits(0, 360, 15)
+                        .setValue(this.plugin.settings.rainbowGradientAngle ?? 135)
+                        .setDynamicTooltip()
+                        .onChange(async (value) => {
+                            this.plugin.settings.rainbowGradientAngle = value;
+                            await this.plugin.saveSettings();
+                            this.plugin.generateStylesDebounced();
+                        });
+                })
+                .addExtraButton(btn => btn
+                    .setIcon("rotate-ccw")
+                    .setTooltip("Reset to default (135°)")
+                    .onClick(async () => {
+                        this.plugin.settings.rainbowGradientAngle = 135;
+                        sliderComp_gradientAngle.setValue(135);
+                        await this.plugin.saveSettings();
+                        this.plugin.generateStylesDebounced();
+                    }));
         }
 
         // 🎛️ Advanced Tuning Card

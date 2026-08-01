@@ -273,7 +273,7 @@ export class IconRepository {
         const words = sanitized
             .split(/[\s_.-]+/)
             .map(w => w.toLowerCase())
-            .filter(w => w.length >= 3 && !STOP_WORDS.has(w));
+            .filter(w => w.length >= 1 && !STOP_WORDS.has(w));
 
         const domainWords = words.filter(w => !GENERIC_SUFFIX_WORDS.has(w));
         const suffixWords = words.filter(w => GENERIC_SUFFIX_WORDS.has(w));
@@ -330,7 +330,7 @@ export class IconRepository {
     }
 
     findIconInPacks(searchKey: string): string | null {
-        if (!searchKey || searchKey.length < 3) return null;
+        if (!searchKey) return null;
         const hit = this._findPackIconCache.get(searchKey);
         if (hit !== undefined) {
             return hit;
@@ -354,7 +354,7 @@ export class IconRepository {
     }
 
     searchFuzzy(searchKey: string, options?: { threshold?: number }): string | null {
-        if (!searchKey || searchKey.length < 3) return null;
+        if (!searchKey) return null;
         const local = this.plugin.localFileSystemIcons;
         const custom = this.plugin.settings.customIcons;
 

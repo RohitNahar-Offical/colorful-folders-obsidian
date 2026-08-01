@@ -75,6 +75,10 @@ export class DOMObserverService {
 
     initDividerObserver() {
         if (this.plugin.isDragging) return;
+        if (!this.plugin.dividerManager?.hasAnyDividers()) {
+            this.disposeDividerObserver();
+            return;
+        }
 
         if (this.dividerObserver) {
             this.dividerObserver.disconnect();

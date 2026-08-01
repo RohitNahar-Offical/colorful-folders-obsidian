@@ -183,6 +183,7 @@ export interface IColorfulFoldersPlugin {
     dividerManager: {
         syncDividers(): void;
         clean(): void;
+        hasAnyDividers(): boolean;
     };
     styleGenerator: { generateCss(): Promise<string> };
     domObserverService: DOMObserverService;

@@ -103,7 +103,17 @@ export class EventTrackerService {
         this.plugin.rootSortCache = null;
     }
 
+    private _activeClassRaf: number | null = null;
+
     public updateActiveFolderClasses() {
+        if (this._activeClassRaf !== null) return;
+        this._activeClassRaf = window.requestAnimationFrame(() => {
+            this._activeClassRaf = null;
+            this._doUpdateActiveFolderClasses();
+        });
+    }
+
+    private _doUpdateActiveFolderClasses() {
         const docs = this.plugin.getOpenDocuments();
         docs.forEach(doc => {
             // Remove from previously active elements
