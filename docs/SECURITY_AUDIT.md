@@ -52,10 +52,16 @@ All paths are passed through `utils.safeEscape(path)` to ensure the `[data-path=
 
 ```typescript
 export function safeEscape(path: string): string {
-    return path
+    if (!path) return "";
+    const norm = normalizeVaultPath(path);
+    return norm
         .replace(/\\/g, '\\\\')
         .replace(/"/g, '\\"')
-        .replace(/'/g, "\\'");
+        .replace(/'/g, "\\'")
+        .replace(/\[/g, '\\[')
+        .replace(/\]/g, '\\]')
+        .replace(/=/g, '\\=')
+        .replace(/\^/g, '\\^');
 }
 ```
 

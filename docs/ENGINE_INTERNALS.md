@@ -95,8 +95,9 @@ graph TD
 
 ---
 
-## 5. AdoptedStyleSheet Lifecycle & Zero-DOM Storage
+## 5. AdoptedStyleSheet Lifecycle & Mobile Fallback Engine
 
 - Programmatic `CSSStyleSheet` instance owned by `AdoptedStyleSheetService`.
 - Attached to `activeDocument.adoptedStyleSheets` and all popout window documents.
 - `sheet.replaceSync(cssString)` executes in < 0.1ms without creating HTML `<style>` elements or modifying DOM child nodes.
+- **Mobile & Legacy WebKit Fallback**: For older mobile OS versions or webviews that lack `CSSStyleSheet` constructor or `adoptedStyleSheets` support, `AdoptedStyleSheetService` automatically injects and manages a fallback dynamic `<style id="cf-dynamic-styles">` element inside `doc.head`, guaranteeing 100% rendering compatibility across iOS, Android, Linux, and Windows.
