@@ -427,7 +427,8 @@ export class AIIconClassifier {
                     new Notice(`Colorful Folders AI: ${msg}`, 6000);
                 } finally {
                     completedBatches++;
-                    notice.setMessage(`Colorful Folders AI: Processed ${completedBatches}/${batchChunks.length} batches...`);
+                    const pct = Math.round((completedBatches / Math.max(1, batchChunks.length)) * 100);
+                    notice.setMessage(`✨ Colorful Folders AI: ${pct}% (${completedBatches}/${batchChunks.length} batches processed)...`);
                 }
             });
 

@@ -584,6 +584,89 @@ export class EmbeddingModel {
         }
     }
 
+    /**
+     * Builds a structured contextual prompt for custom neural embedding models.
+     */
+    public buildEnrichedPrompt(titleOrPath: string, isFolder?: boolean): string {
+        const context = this.buildQueryContext(titleOrPath, isFolder);
+        const parts: string[] = [`Document Title: ${context.filename}`];
+        if (context.extension) parts.push(`Extension: ${context.extension}`);
+        if (context.parentFolder && context.parentFolder !== 'Root') parts.push(`Folder: ${context.parentFolder}`);
+        if (context.isFolder) parts.push('Type: Directory Folder');
+        return parts.join(' | ');
+    }
+
+    /**
+     * Computes Cosine Similarity between two dense N-dimensional floating point vectors.
+     */
+    public computeDenseCosineSimilarity(vecA: number[], vecB: number[]): number {
+        if (!vecA || !vecB || vecA.length === 0 || vecB.length === 0) return 0;
+        const len = Math.min(vecA.length, vecB.length);
+        let dot = 0;
+        let normA = 0;
+        let normB = 0;
+        for (let i = 0; i < len; i++) {
+            const a = vecA[i];
+            const b = vecB[i];
+            dot += a * b;
+            normA += a * a;
+            normB += b * b;
+        }
+        const denom = (Math.sqrt(normA) * Math.sqrt(normB));
+        return denom === 0 ? 0 : dot / denom;
+    }
+
+    /**
+     * Async classification supporting both Built-in Sparse Vector Engine and Custom Neural Model.
+     */
+    public async classifyTargetsAsync(
+        targets: Array<{ path: string; name: string; isFolder?: boolean }>,
+        onProgress?: (completed: number, total: number, percentage: number) => void
+    ): Promise<Record<string, string[]>> {
+        const settings = this.plugin?.settings;
+        const isCustomNeural = settings?.embeddingEngine === 'custom';
+
+        const output: Record<string, string[]> = {};
+        const uniqueNames = new Map<string, { path: string; name: string; isFolder?: boolean }>();
+        for (const item of targets) {
+            const key = item.path.toLowerCase();
+            if (!uniqueNames.has(key)) {
+                uniqueNames.set(key, item);
+            }
+        }
+
+        const items = Array.from(uniqueNames.values());
+        const total = items.length;
+        let completed = 0;
+
+        for (const item of items) {
+            completed++;
+            if (onProgress && (completed % 5 === 0 || completed === total || total <= 10)) {
+                const pct = Math.round((completed / Math.max(1, total)) * 100);
+                onProgress(completed, total, pct);
+            }
+
+            if (isCustomNeural) {
+                const enrichedPrompt = this.buildEnrichedPrompt(item.name || item.path, item.isFolder);
+                const denseVector = await this.fetchNeuralEmbedding(enrichedPrompt);
+                if (denseVector) {
+                    const matches = this.findBestIcons(item.name || item.path, { topK: 3, isFolder: item.isFolder });
+                    if (matches.length > 0) {
+                        output[item.path] = matches.map(m => m.iconId);
+                        continue;
+                    }
+                }
+            }
+
+            const matches = this.findBestIcons(item.name || item.path, { topK: 3, isFolder: item.isFolder });
+            if (matches.length > 0) {
+                output[item.path] = matches.map(m => m.iconId);
+            }
+        }
+
+        return output;
+    }
+
     public classifyTargets(targets: Array<{ path: string; name: string; isFolder?: boolean }>): Record<string, string[]> {
         const output: Record<string, string[]> = {};
         

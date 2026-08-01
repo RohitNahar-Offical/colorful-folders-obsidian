@@ -241,35 +241,53 @@ export class IconSettingSection extends SettingSection {
 
         const vectorRunBtn = vectorBtnWrap.createEl("button", { text: "⚡ Auto-Assign Icons with Embeddings", cls: "mod-cta" });
         vectorRunBtn.onclick = async () => {
-            const files = this.plugin.app.vault.getFiles();
-            const targets = files.map(f => ({ path: f.path, name: f.name }));
-
-            const results = this.plugin.embeddingModel.classifyTargets(targets);
-            let count = 0;
-            for (const [path, candidates] of Object.entries(results)) {
-                if (candidates.length > 0) {
-                    const iconId = candidates[0];
-                    const existing = this.plugin.settings.customFolderColors[path];
-                    if (typeof existing === 'object' && existing) {
-                        existing.iconId = iconId;
-                        existing.iconSource = 'embedding';
-                    } else if (typeof existing === 'string') {
-                        this.plugin.settings.customFolderColors[path] = { hex: existing, iconId, iconSource: 'embedding' };
-                    } else {
-                        this.plugin.settings.customFolderColors[path] = { iconId, iconSource: 'embedding' };
-                    }
-                    count++;
-                }
-            }
-
-            await this.plugin.saveSettings();
-            await this.plugin.generateStyles();
+            vectorRunBtn.disabled = true;
+            vectorRunBtn.setText("⏳ Running Vector Embedding Classification...");
 
             const engineName = this.plugin.settings.embeddingEngine === 'custom'
                 ? `Custom Neural Model (${this.plugin.settings.embeddingCustomModel || 'bge-m3'})`
                 : 'Built-in Local Vector Model (0MB)';
 
-            new obsidian.Notice(`⚡ ${engineName}: Auto-assigned ${count} icons!`);
+            const loadingNotice = new obsidian.Notice(`⏳ ${engineName} is scanning vault files...`, 0);
+
+            try {
+                const files = this.plugin.app.vault.getFiles();
+                const targets = files.map(f => ({ path: f.path, name: f.name }));
+
+                const results = await this.plugin.embeddingModel.classifyTargetsAsync(targets, (completed, total, pct) => {
+                    loadingNotice.setMessage(`⏳ ${engineName}: ${pct}% (${completed}/${total} items processed)...`);
+                    vectorRunBtn.setText(`⏳ Classifying ${pct}% (${completed}/${total})...`);
+                });
+                let count = 0;
+                for (const [path, candidates] of Object.entries(results)) {
+                    if (candidates.length > 0) {
+                        const iconId = candidates[0];
+                        const existing = this.plugin.settings.customFolderColors[path];
+                        if (typeof existing === 'object' && existing) {
+                            existing.iconId = iconId;
+                            existing.iconSource = 'embedding';
+                        } else if (typeof existing === 'string') {
+                            this.plugin.settings.customFolderColors[path] = { hex: existing, iconId, iconSource: 'embedding' };
+                        } else {
+                            this.plugin.settings.customFolderColors[path] = { iconId, iconSource: 'embedding' };
+                        }
+                        count++;
+                    }
+                }
+
+                await this.plugin.saveSettings();
+                await this.plugin.generateStyles();
+
+                loadingNotice.hide();
+                new obsidian.Notice(`⚡ ${engineName}: Auto-assigned ${count} icons!`);
+            } catch (err) {
+                loadingNotice.hide();
+                const msg = (err as Error)?.message || String(err);
+                new obsidian.Notice(`❌ Vector Embedding error: ${msg}`);
+            } finally {
+                vectorRunBtn.disabled = false;
+                vectorRunBtn.setText("⚡ Auto-Assign Icons with Embeddings");
+            }
         };
 
         // 🤖 Automation Engine Card
