@@ -1,4 +1,5 @@
 import { StyleResolver } from './core/StyleResolver';
+import { getCurrentPalette } from './core/ColorResolver';
 import * as obsidian from "obsidian";
 import {
   ColorfulFoldersSettings,
@@ -126,8 +127,6 @@ export default class ColorfulFoldersPlugin
       );
     });
 
-    this.initStaircaseStyleStripper();
-    void this.generateStyles();
     this.lifecycleService.onLayoutReady();
 
     // Defer non-critical background checks (Blue Topaz optimization & Changelog modal) so plugin loads instantly
@@ -184,6 +183,10 @@ export default class ColorfulFoldersPlugin
 
   getStyle(path: string): FolderStyle | null {
     return StyleResolver.getStyle(this, path);
+  }
+
+  getActivePalette(isDark?: boolean): { rgb: string; hex: string }[] {
+    return getCurrentPalette(this.settings, null, "").palette;
   }
 
   processDividers(): void {
@@ -447,8 +450,34 @@ export default class ColorfulFoldersPlugin
   }
 
   registerCustomIcons() {
-    for (const [id, svg] of Object.entries(this.settings.customIcons)) {
-      obsidian.addIcon(id, svg);
+    const entries = Object.entries(this.settings.customIcons || {});
+    if (entries.length === 0) return;
+
+    // Chunk icon registration into non-blocking idle batches to eliminate startup lag
+    const registerBatch = (startIndex: number) => {
+      const batchSize = 250;
+      const end = Math.min(startIndex + batchSize, entries.length);
+      for (let i = startIndex; i < end; i++) {
+        const [id, svg] = entries[i];
+        try {
+          obsidian.addIcon(id, svg);
+        } catch {
+          // Ignore duplicate icon registration
+        }
+      }
+      if (end < entries.length) {
+        if (typeof window.requestIdleCallback === "function") {
+          window.requestIdleCallback(() => registerBatch(end));
+        } else {
+          window.setTimeout(() => registerBatch(end), 50);
+        }
+      }
+    };
+
+    if (typeof window.requestIdleCallback === "function") {
+      window.requestIdleCallback(() => registerBatch(0));
+    } else {
+      window.setTimeout(() => registerBatch(0), 100);
     }
   }
 

@@ -20,14 +20,17 @@ export class PluginLifecycleService {
     public registerVaultCacheEvents(): void {
         this.plugin.app.vault.on('modify', () => {
             if (this.plugin.folderCountCache) this.plugin.folderCountCache.clear();
+            if (this.plugin.heatmapCache) this.plugin.heatmapCache.clear();
             this.plugin.invalidateExplorerContainersCache();
         });
         this.plugin.app.vault.on('create', () => {
             if (this.plugin.folderCountCache) this.plugin.folderCountCache.clear();
+            if (this.plugin.heatmapCache) this.plugin.heatmapCache.clear();
             this.plugin.invalidateExplorerContainersCache();
         });
         this.plugin.app.vault.on('delete', () => {
             if (this.plugin.folderCountCache) this.plugin.folderCountCache.clear();
+            if (this.plugin.heatmapCache) this.plugin.heatmapCache.clear();
             this.plugin.invalidateExplorerContainersCache();
         });
     }

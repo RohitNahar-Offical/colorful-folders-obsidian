@@ -368,18 +368,18 @@ public static resolveCustomStops(
 
 ## 4. Implementation Priority
 
-| Priority | Issue | Effort | Impact |
-|---|---|---|---|
-| **P0** | Fix `resolveRootSpectrum()` to use palette | Low | High — makes palette setting functional |
-| **P0** | Eliminate double brightness adjustment | Low | High — fixes color inconsistency |
-| **P0** | Fix inverted dark mode brightness logic | Low | High — makes brightness slider functional |
-| **P1** | Unify ColorPickerModal preview with production CSS | Medium | High — fixes preview/actual mismatch |
-| **P1** | Add gradient CSS caching | Low | Medium — reduces redundant computation |
-| **P1** | Add mode awareness (transparent bg, outline only) | Medium | Medium — improves readability |
-| **P2** | Add gradient direction setting | Medium | Low — new feature |
-| **P2** | Implement theme-aware curated combinations | Medium | Medium — improves accessibility |
-| **P2** | Consolidate gradient application logic | High | Medium — reduces code duplication |
-| **P2** | Add gradient opacity/alpha support | Medium | Low — new feature |
+| Priority | Issue | Effort | Impact | Status |
+|---|---|---|---|---|
+| **P0** | Fix `resolveRootSpectrum()` to use palette | Low | High — makes palette setting functional | [x] **Done** |
+| **P0** | Eliminate double brightness adjustment | Low | High — fixes color inconsistency | [x] **Done** |
+| **P0** | Fix inverted dark mode brightness logic | Low | High — makes brightness slider functional | [ ] Pending |
+| **P1** | Unify ColorPickerModal preview with production CSS | Medium | High — fixes preview/actual mismatch | [ ] Pending |
+| **P1** | Add gradient CSS caching | Low | Medium — reduces redundant computation | [x] **Done** |
+| **P1** | Add mode awareness (transparent bg, outline only) | Medium | Medium — improves readability | [x] **Done** |
+| **P2** | Add gradient direction setting | Medium | Low — new feature | [ ] Pending |
+| **P2** | Implement theme-aware curated combinations | Medium | Medium — improves accessibility | [ ] Pending |
+| **P2** | Consolidate gradient application logic | High | Medium — reduces code duplication | [ ] Pending |
+| **P2** | Add gradient opacity/alpha support | Medium | Low — new feature | [ ] Pending |
 
 ---
 

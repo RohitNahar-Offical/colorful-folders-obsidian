@@ -501,15 +501,21 @@ export class IconRepository {
                     if (doc.getElementsByTagName("parsererror").length > 0) doc = parser.parseFromString(rawSvg, 'text/html');
 
                     // Remove dangerous tags
-                    const dangerousTags = ['script', 'iframe', 'object', 'embed', 'foreignobject'];
+                    const dangerousTags = ['script', 'iframe', 'object', 'embed', 'foreignobject', 'animate', 'set'];
                     for (const tag of dangerousTags) {
                         doc.querySelectorAll(tag).forEach(el => el.remove());
                     }
+                    // Also check for case variations in SVG XML namespace like foreignObject
+                    doc.querySelectorAll('*').forEach(el => {
+                        if (dangerousTags.includes(el.tagName.toLowerCase())) {
+                            el.remove();
+                        }
+                    });
 
-                    // Remove <use> elements ONLY if they point to external/untrusted schemes (http, https, //, javascript, data)
-                    doc.querySelectorAll('use').forEach(el => {
+                    // Remove elements with javascript: links in href or xlink:href
+                    doc.querySelectorAll('a, use, image').forEach(el => {
                         const href = (el.getAttribute('href') || el.getAttribute('xlink:href') || '').trim().toLowerCase();
-                        if (href.startsWith('http') || href.startsWith('//') || href.startsWith('javascript:') || href.startsWith('data:')) {
+                        if (href.startsWith('javascript:') || href.startsWith('http:') || href.startsWith('https:') || href.startsWith('//') || (el.tagName.toLowerCase() === 'use' && href.startsWith('data:'))) {
                             el.remove();
                         }
                     });

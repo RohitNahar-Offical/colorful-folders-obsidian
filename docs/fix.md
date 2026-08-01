@@ -189,3 +189,16 @@ private resolveSmartIcon(rawCandidate: string, pathName: string): string | null 
 ```
 
 * **Benefit**: Ensures that even if the AI suggests an icon ID with a slightly incorrect prefix (e.g., `lucide-github` instead of `simple-icons-github`), the client engine seamlessly corrects and renders it without failing.
+
+---
+
+## ✅ Implemented Audit Fixes Checklist
+
+- [x] **Static CSS Memoization**: Cached `generateGlobalBaseCss`, `generateDividerCss`, and `generateStealthCss` in `StyleGenerator.ts`
+- [x] **Path Escaping Cache**: Added `_pathEscapeCache` and `getSafeEscape()` in `StyleGenerator.ts` to replace 20+ regex replacements per item
+- [x] **Attribute Escaping Hardening**: Updated `safeEscape()` in `utils.ts` to escape `=`, `]`, `^` meta-characters
+- [x] **SVG Sanitization Hardening**: Hardened `normalizeSvg()` in `IconRepository.ts` against case-insensitive tags (`foreignObject`, `script`, `iframe`, `animate`, `set`) and `javascript:` URIs
+- [x] **Heatmap Event Invalidation**: Added `heatmapCache.clear()` to vault modify/create/delete listeners in `PluginLifecycleService.ts`
+- [x] **Gradient Double-Brightness Fix**: Added `skipBrightnessAdjustment` flag and `gradientCssCache` memoization in `RainbowManager.ts`
+- [x] **Palette Utilization**: Updated `RainbowManager.ts` to utilize active palette entries
+- [x] **Plugin Interface Conformance**: Implemented `getActivePalette()` on `ColorfulFoldersPlugin` in `main.ts`

@@ -8,6 +8,7 @@ export interface RainbowGradientOpts {
     extraCss?: string;
     isTransparentBg?: boolean;
     outlineOnly?: boolean;
+    skipBrightnessAdjustment?: boolean;
 }
 
 export class RainbowManager {
@@ -48,8 +49,9 @@ export class RainbowManager {
         const extraCss = opts.extraCss || '';
         const isTransparentBg = opts.isTransparentBg ?? false;
         const outlineOnly = opts.outlineOnly ?? false;
+        const skipBrightness = opts.skipBrightnessAdjustment ?? false;
 
-        const cacheKey = `${colors.join('|')}|${angle}|${isDark}|${isBold}|${isItalic}|${isTransparentBg}|${outlineOnly}|${extraCss}`;
+        const cacheKey = `${colors.join('|')}|${angle}|${isDark}|${isBold}|${isItalic}|${isTransparentBg}|${outlineOnly}|${skipBrightness}|${extraCss}`;
         const cached = RainbowManager.gradientCssCache.get(cacheKey);
         if (cached) return cached;
 
@@ -57,6 +59,7 @@ export class RainbowManager {
         const processedColors = colors.map(c => {
             if (!c) return 'rgb(140, 140, 140)';
             const clean = c.trim();
+            if (skipBrightness) return clean;
             if (clean.startsWith('#')) {
                 const rgb = hexToRgbObj(clean);
                 if (rgb) return `rgb(${adjustBrightnessRgb(`${rgb.r}, ${rgb.g}, ${rgb.b}`, adjust)})`;

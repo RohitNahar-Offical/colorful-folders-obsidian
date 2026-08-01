@@ -21,6 +21,11 @@ export class StyleGenerator {
     private _dirtyPaths: Set<string> | null = null;
     private _fullRegenRequired = true;
 
+    private _pathEscapeCache = new Map<string, string>();
+    private _cachedGlobalBaseCss: { key: string; css: string } | null = null;
+    private _cachedDividerCss: { key: string; css: string } | null = null;
+    private _cachedStealthCss: { key: string; css: string } | null = null;
+
     private _cachedPalette: { rgb: string, hex: string }[] | null = null;
     private _cachedPaletteKey = '';
 
@@ -32,6 +37,15 @@ export class StyleGenerator {
         if (!this.plugin.heatmapCache) {
             this.plugin.heatmapCache = new Map<string, number>();
         }
+    }
+
+    private getSafeEscape(path: string): string {
+        let escaped = this._pathEscapeCache.get(path);
+        if (escaped === undefined) {
+            escaped = safeEscape(path);
+            this._pathEscapeCache.set(path, escaped);
+        }
+        return escaped;
     }
 
     /**
@@ -49,6 +63,11 @@ export class StyleGenerator {
     markAllDirty(): void {
         this._dirtyPaths = null;
         this._fullRegenRequired = true;
+        this._pathEscapeCache.clear();
+        this._cachedGlobalBaseCss = null;
+        this._cachedDividerCss = null;
+        this._cachedStealthCss = null;
+        this._iconValidityCache.clear();
     }
 
     /**
@@ -125,7 +144,6 @@ export class StyleGenerator {
     }
 
     private prepareContext(): StyleContext | null {
-        this._iconValidityCache.clear();
         const root = this.app.vault.getRoot();
         if (!root) return null;
 
@@ -259,7 +277,7 @@ export class StyleGenerator {
 
 
 
-                const safePath = safeEscape(child.path);
+                const safePath = this.getSafeEscape(child.path);
                 const parentName = child.parent?.name;
                 const isFolderNote = !!(parentName && (child.basename === parentName || child.basename === 'index' || child.basename === '_about_'));
                 const color = ColorResolver.resolveColor(
@@ -628,7 +646,7 @@ export class StyleGenerator {
                 false
             );
 
-            const safePath = safeEscape(child.path);
+            const safePath = this.getSafeEscape(child.path);
             const op = ColorResolver.resolveOpacity(
                 false,
                 depth,
@@ -1002,12 +1020,20 @@ export class StyleGenerator {
         await this.traverse(root, 0, 0, 0, null, null, context, grouper, 0, yieldState);
 
         const rawRules: string[] = [];
-        rawRules.push(generateGlobalBaseCss(this.settings));
+
+        const baseKey = `${this.settings.showCollapseIndicator !== false}|${this.settings.spacedTextMode}`;
+        if (!this._cachedGlobalBaseCss || this._cachedGlobalBaseCss.key !== baseKey) {
+            this._cachedGlobalBaseCss = { key: baseKey, css: generateGlobalBaseCss(this.settings) };
+        }
+        rawRules.push(this._cachedGlobalBaseCss.css);
 
         const baseThick = this.settings.pathLineThickness ?? 2.0;
 
-
-        rawRules.push(generateDividerCss(this.settings));
+        const dividerKey = `${this.settings.showFileDivider}|${this.settings.dividerSpacing}|${Object.keys(this.settings.customFolderColors).length}`;
+        if (!this._cachedDividerCss || this._cachedDividerCss.key !== dividerKey) {
+            this._cachedDividerCss = { key: dividerKey, css: generateDividerCss(this.settings) };
+        }
+        rawRules.push(this._cachedDividerCss.css);
 
         // Support for styling the vault root in Notebook Navigator
         const rootStyle = this.getStyle(root.path) || this.getStyle("/");
@@ -1075,7 +1101,11 @@ export class StyleGenerator {
             }
         }
 
-        rawRules.push(generateStealthCss(this.settings));
+        const stealthKey = `${this.settings.notebookNavigatorSupport}|${Object.keys(this.settings.customFolderColors).length}`;
+        if (!this._cachedStealthCss || this._cachedStealthCss.key !== stealthKey) {
+            this._cachedStealthCss = { key: stealthKey, css: generateStealthCss(this.settings) };
+        }
+        rawRules.push(this._cachedStealthCss.css);
         rawRules.push(TagColorSync.generateCss(this.plugin, context));
 
         rawRules.push(grouper.build());
