@@ -372,7 +372,7 @@ public static resolveCustomStops(
 |---|---|---|---|---|
 | **P0** | Fix `resolveRootSpectrum()` to use palette | Low | High — makes palette setting functional | [x] **Done** |
 | **P0** | Eliminate double brightness adjustment | Low | High — fixes color inconsistency | [x] **Done** |
-| **P0** | Fix inverted dark mode brightness logic | Low | High — makes brightness slider functional | [ ] Pending |
+| **P0** | Fix inverted dark mode brightness logic | Low | High — makes brightness slider functional | [x] **Done** |
 | **P1** | Unify ColorPickerModal preview with production CSS | Medium | High — fixes preview/actual mismatch | [ ] Pending |
 | **P1** | Add gradient CSS caching | Low | Medium — reduces redundant computation | [x] **Done** |
 | **P1** | Add mode awareness (transparent bg, outline only) | Medium | Medium — improves readability | [x] **Done** |

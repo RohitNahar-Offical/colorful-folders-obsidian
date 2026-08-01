@@ -151,16 +151,18 @@ export class RainbowManager {
     ): string[] {
         const bVal = rainbowBrightness !== undefined ? rainbowBrightness : 50;
         const amount = (bVal - 50) / 50;
-        const effAmount = bVal === 50 ? (isDark ? 0.15 : 0) : amount;
+        const effAmount = bVal === 50 ? (isDark ? 0.15 : 0) : Math.max(amount, -1.0);
 
         let sC = startHex;
         let eC = endHex;
 
-        const rgbS = hexToRgbObj(sC);
-        if (rgbS) sC = `rgb(${adjustBrightnessRgb(`${rgbS.r},${rgbS.g},${rgbS.b}`, effAmount)})`;
+        if (effAmount !== 0) {
+            const rgbS = hexToRgbObj(sC);
+            if (rgbS) sC = `rgb(${adjustBrightnessRgb(`${rgbS.r},${rgbS.g},${rgbS.b}`, effAmount)})`;
 
-        const rgbE = hexToRgbObj(eC);
-        if (rgbE) eC = `rgb(${adjustBrightnessRgb(`${rgbE.r},${rgbE.g},${rgbE.b}`, effAmount)})`;
+            const rgbE = hexToRgbObj(eC);
+            if (rgbE) eC = `rgb(${adjustBrightnessRgb(`${rgbE.r},${rgbE.g},${rgbE.b}`, effAmount)})`;
+        }
 
         return [sC, eC];
     }
