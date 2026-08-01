@@ -153,6 +153,9 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     aiIncludeFiles: false,
     aiIncludeContentContext: true,
     aiKeyConfirmed: false,
+    embeddingEngine: "builtin",
+    embeddingCustomModel: "bge-m3",
+    embeddingCustomEndpoint: "http://localhost:11434",
 };
 
 export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
@@ -314,8 +317,8 @@ export const PACK_PRIORITY: Record<string, number> = {
 };
 
 export const PACK_PREFIXES: string[] = [
-    'custom', 'simple-icons', 'simple', 'lucide', 'feather', 
-    'fa', 'fas', 'far', 'fab', 'fontawesome', 'ri', 'remix', 
+    'custom', 'simple-icons', 'simple', 'lucide', 'feather',
+    'fa', 'fas', 'far', 'fab', 'fontawesome', 'ri', 'remix',
     'tb', 'tabler', 'mdi', 'material', 'oct', 'octicons'
 ];
 

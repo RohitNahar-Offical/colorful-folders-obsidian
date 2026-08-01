@@ -122,7 +122,6 @@ export class AIIconClassifier {
             }
 
             // Filter out items that have custom assigned icons or match custom user rules (unless force is true)
-            const computeHash = (t: any) => `${t.path}:${(t as any).contentSnippet || ''}:${(t.tags || []).join(',')}`;
             const unassignedTargets = rawTargets.filter(t => {
                 if (options?.force) return true;
 
@@ -211,27 +210,31 @@ export class AIIconClassifier {
                     return itemObj;
                 });
 
-                console.log(`🤖 [Colorful Folders AI] Batch ${currentBatch}/${batchChunks.length} Context Payload Sent:`, contextPayload);
-
-                try {
-                    const result = await this.queryAI(contextPayload, systemPrompt);
-                    let kvPairs: Record<string, unknown> = {};
-
-                    if (Array.isArray(result)) {
-                        batchTargets.forEach((t, itemIdx) => {
-                            const val = result[itemIdx];
-                            if (val) kvPairs[t.path] = val;
-                        });
-                    } else if (result && typeof result === 'object') {
-                        const keys = Object.keys(result);
-                        if (keys.length === 1 && typeof result[keys[0]] === 'object' && !Array.isArray(result[keys[0]])) {
-                            kvPairs = result[keys[0]] as Record<string, unknown>;
-                        } else {
-                            kvPairs = result as Record<string, unknown>;
-                        }
+                    if (settings.iconDebugMode) {
+                        console.log(`🤖 [Colorful Folders AI] Batch ${currentBatch}/${batchChunks.length} Context Payload Sent:`, contextPayload);
                     }
 
-                    console.log(`📦 [Colorful Folders AI] Batch ${currentBatch}/${batchChunks.length} Parsed Output:`, kvPairs);
+                    try {
+                        const result = await this.queryAI(contextPayload, systemPrompt);
+                        let kvPairs: Record<string, unknown> = {};
+
+                        if (Array.isArray(result)) {
+                            batchTargets.forEach((t, itemIdx) => {
+                                const val = result[itemIdx];
+                                if (val) kvPairs[t.path] = val;
+                            });
+                        } else if (result && typeof result === 'object') {
+                            const keys = Object.keys(result);
+                            if (keys.length === 1 && typeof result[keys[0]] === 'object' && !Array.isArray(result[keys[0]])) {
+                                kvPairs = result[keys[0]] as Record<string, unknown>;
+                            } else {
+                                kvPairs = result;
+                            }
+                        }
+
+                        if (settings.iconDebugMode) {
+                            console.log(`📦 [Colorful Folders AI] Batch ${currentBatch}/${batchChunks.length} Parsed Output:`, kvPairs);
+                        }
 
                     const RESERVED_KEYS = new Set([
                         'created', 'contentsnippet', 'snippet', 'rank', 'tags', 'properties',
@@ -357,7 +360,7 @@ export class AIIconClassifier {
                             if (packHit) return packHit;
 
                             // 5. Word extraction & relaxed fuzzy search per word (threshold 0.5)
-                            const words = hyphenated.split(/[\-_:\s]+/).filter(w => w.length >= 3 && !/^\d+$/.test(w));
+                            const words = hyphenated.split(/[-_:\s]+/).filter(w => w.length >= 3 && !/^\d+$/.test(w));
                             for (let i = words.length - 1; i >= 0; i--) {
                                 const word = words[i];
                                 if (this.plugin.iconManager.getIconSvg(word)) return word;
@@ -385,7 +388,7 @@ export class AIIconClassifier {
                             const normalized = cleanIcon
                                 .replace(/[-_]v?\d+(\.\d+)*$/, '')
                                 .replace(/[\s_]+/g, '-')
-                                .replace(/[^a-z0-9\-]/gi, '')
+                                .replace(/[^a-z0-9-]/gi, '')
                                 .replace(/-+/g, '-')
                                 .replace(/^-+|-+$/g, '')
                                 .toLowerCase();
@@ -436,10 +439,11 @@ export class AIIconClassifier {
                     window.setTimeout(() => notice.hide(), 4000);
                     break;
                 }
-                const p: Promise<void> = task().then(() => {
+                const p: Promise<void> = (async () => {
+                    await task();
                     const idx = executing.indexOf(p);
                     if (idx !== -1) executing.splice(idx, 1);
-                });
+                })();
                 executing.push(p);
                 if (executing.length >= maxConcurrent) {
                     await Promise.race(executing);
@@ -477,28 +481,38 @@ export class AIIconClassifier {
                     }
                 }
 
+                const itemSnippet = 'contentSnippet' in item && typeof item.contentSnippet === 'string' ? item.contentSnippet : '';
                 if (iconId) {
-                    const itemHash = `${item.path}:${(item as any).contentSnippet || ''}:${(item.tags || []).join(',')}`;
+                    const itemHash = `${item.path}:${itemSnippet}:${(item.tags || []).join(',')}`;
+                    const modelLabel = settings.aiProvider === 'ollama'
+                        ? `ai-ollama:${settings.aiModelName || 'qwen2.5:1.5b'}`
+                        : `ai-custom:${settings.aiModelName || 'local-model'}`;
                     const existing = settings.customFolderColors[item.path];
-                    if (typeof existing === 'object') {
+                    if (typeof existing === 'object' && existing) {
                         existing.iconId = iconId;
-                        (existing as any).aiHash = itemHash;
+                        existing.aiHash = itemHash;
+                        existing.iconSource = modelLabel;
                     } else if (typeof existing === 'string') {
-                        settings.customFolderColors[item.path] = { hex: existing, iconId, aiHash: itemHash } as any;
+                        settings.customFolderColors[item.path] = { hex: existing, iconId, aiHash: itemHash, iconSource: modelLabel };
                     } else {
-                        settings.customFolderColors[item.path] = { iconId, aiHash: itemHash } as any;
+                        settings.customFolderColors[item.path] = { iconId, aiHash: itemHash, iconSource: modelLabel };
                     }
                     assignedSummary[item.path] = iconId;
                     assignedCount++;
                 }
             }
 
-            console.log(`✨ [Colorful Folders AI] Successfully Assigned ${assignedCount} Icons directly from AI:`, assignedSummary);
+            if (settings.iconDebugMode) {
+                console.log(`✨ [Colorful Folders AI] Successfully Assigned ${assignedCount} Icons directly from AI:`, assignedSummary);
+            }
 
             await this.plugin.saveSettings();
             await this.plugin.generateStyles();
 
-            notice.setMessage(`Colorful Folders AI: Successfully assigned icons to ${assignedCount} vault items! ✨`);
+            const modelLabel = settings.aiProvider === 'ollama'
+                ? settings.aiModelName || 'qwen2.5:1.5b'
+                : settings.aiModelName || 'local-model';
+            notice.setMessage(`Colorful Folders AI: Successfully assigned icons to ${assignedCount} vault items via ${modelLabel}! ✨`);
             window.setTimeout(() => notice.hide(), 4000);
         } catch (e) {
             console.error("Colorful Folders AI Classification Error:", e);
@@ -527,11 +541,8 @@ export class AIIconClassifier {
         for (const key of sortedCustomKeys) {
             const parts = key.split('-');
             const prefix = parts.length > 1 ? parts[0] : 'custom';
-            if (!packSamplesMap.has(prefix)) {
-                packSamplesMap.set(prefix, []);
-            }
-            const arr = packSamplesMap.get(prefix)!;
-            if (arr.length < 10) {
+            const arr = packSamplesMap.get(prefix);
+            if (arr && arr.length < 10) {
                 arr.push(key);
             }
         }
@@ -548,7 +559,7 @@ export class AIIconClassifier {
             ? "Evaluate each item's title, path hierarchy, parent folder, tags, frontmatter, and content snippet to select the single most accurate icon ID."
             : "Evaluate each item's title, path hierarchy, and parent folder to select the single most accurate icon ID.";
 
-        return `You are an expert AI taxonomist and icon matcher for an Obsidian note-taking app. Your objective is to select 3 CANDIDATE ICON NAMES for each requested vault item ordered from specific to general.
+        return `You are an expert AI taxonomist and icon matcher for an Obsidian note-taking app. ${evaluationScope} Your objective is to select 3 CANDIDATE ICON NAMES for each requested vault item ordered from specific to general.
 
 ### ITEM NAME PRIORITY RULE (STRICT):
 1. **FOCUS STICKLY ON THE ITEM NAME FIRST:** Base icon selection 100% on the actual file name or folder name (e.g. for "BAKE/Amazon.md", focus strictly on "Amazon").
@@ -558,12 +569,6 @@ export class AIIconClassifier {
 For EVERY requested item, output a JSON array of EXACTLY 3 candidate icon names:
 - **Candidate 1 (Specific Brand / Precise Icon):** Specific brand, tool, or precise topic icon (e.g. "amazon", "simple-icons-amazon", "python", "react", "youtube", "book-open").
 - **Candidate 2 (Core Category Metaphor):** Primary category icon or visual domain metaphor (e.g. "shopping-cart", "shopping-bag", "code", "calendar", "book", "video", "receipt").
-- **Candidate 3 (Alternative Domain Icon):** A secondary topic icon or alternative domain metaphor (e.g. "package", "store", "terminal", "clock", "notebook", "layers"). Do NOT output generic "file-text" or "file" fallbacks for Candidate 3, as the plugin handles default file fallbacks automatically!
-
-### PACK FLEXIBILITY & AGNOSTICISM (IMPORTANT):
-You are NOT restricted or limited to 'simple-icons-' prefix! You may output standard clean icon names (e.g. 'amazon', 'python', 'react', 'shopping-cart', 'code') OR pack-prefixed IDs (e.g. 'simple-icons-amazon', 'fa-amazon', 'ri-amazon', 'lucide-shopping-cart') depending on what best matches the item.
-
-### BRAND & E-COMMERCE DISAMBIGUATION RULE:
 - E-Commerce & Retail Brands ("Amazon", "eBay", "Shopify", "Walmart"): Candidate 1 = "amazon" or "simple-icons-amazon", Candidate 2 = "shopping-cart" or "shopping-bag", Candidate 3 = "package" or "store". NEVER assign video or music icons!
 - Video/Media Brands ("YouTube", "Netflix"): Candidate 1 = "youtube" or "simple-icons-youtube", Candidate 2 = "video" or "film", Candidate 3 = "play" or "camera".
 - Development & Tech Brands ("Python", "React", "Docker", "GitHub"): Candidate 1 = "python" or "simple-icons-python", Candidate 2 = "code", Candidate 3 = "terminal" or "cpu".
@@ -617,7 +622,7 @@ Correct Output:
                 const errStr = (err as Error)?.message || String(err);
 
                 // Fail fast on HTTP 404 (Not Found) without wasting 3 retries
-                const is404 = errStr.includes('status 404') || errStr.includes('404 Not Found') || (err as any)?.status === 404;
+                const is404 = errStr.includes('status 404') || errStr.includes('404 Not Found') || (err as { status?: number })?.status === 404;
 
                 if (is404) {
                     const modelName = (settings.aiModelName || 'qwen2.5:1.5b').trim();
@@ -828,7 +833,7 @@ Correct Output:
             const lines = cleanText.split(/\r?\n/);
             const isCodeJunk = (s: string) => /\b(return|len|get|count|join|import|def|if|else|self|dict|lambda)\b/i.test(s) || s.includes('(') || s.includes(')');
             for (const line of lines) {
-                const inlineMatch = line.match(/^[`"*]*([^`"*:\->\n]+)[`"*]*\s*(?:->|=>|=|\:)\s*(.+)$/i);
+                const inlineMatch = line.match(/^[`"*]*([^`"*:->\n]+)[`"*]*\s*(?:->|=>|=|:)\s*(.+)$/i);
                 if (inlineMatch) {
                     const rawKey = inlineMatch[1].trim();
                     const rawVal = inlineMatch[2].trim().replace(/^\[|\]$/g, '');
@@ -920,7 +925,7 @@ Correct Output:
                     // Strip trailing parenthetical explanations like (exact entity/brand ID)
                     candidateText = candidateText
                         .replace(/\s*\([^)]*\)/g, '')
-                        .replace(/[\[\]"']/g, '')
+                        .replace(/[[\]"']/g, '')
                         .replace(/\.(md|png|svg|pdf|html|jpg)$/i, '')
                         .trim();
 

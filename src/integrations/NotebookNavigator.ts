@@ -167,7 +167,7 @@ export class NotebookNavigatorIntegration {
         tintOp: number = 0,
         baseThick: number = 2.0,
         outlineOnly: boolean = false,
-        useRadiantPath: boolean = false,
+        _useRadiantPath: boolean = false,
         effIconW: string = '1.3em',
         activeGlow: boolean = true
     ): void {

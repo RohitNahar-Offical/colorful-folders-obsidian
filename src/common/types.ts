@@ -37,6 +37,7 @@ export interface FolderStyle {
     rainbowBrightness?: number;
     borderRadius?: number;
     aiHash?: string;
+    iconSource?: 'ai' | 'ai-ollama' | 'ai-custom' | 'embedding' | 'manual' | 'auto' | (string & {});
 }
 
 export interface ColorfulFoldersSettings {
@@ -127,6 +128,10 @@ export interface ColorfulFoldersSettings {
     aiIncludeFiles?: boolean;
     aiIncludeContentContext?: boolean;
     aiKeyConfirmed?: boolean;
+
+    embeddingEngine?: 'builtin' | 'custom';
+    embeddingCustomModel?: string;
+    embeddingCustomEndpoint?: string;
 }
 
 
@@ -173,6 +178,7 @@ export interface IColorfulFoldersPlugin {
     activePaletteCache?: { palette: { rgb: string; hex: string }[] } | null;
     iconManager: IconManager;
     aiIconClassifier: AIIconClassifier;
+    embeddingModel?: import('../integrations/embedingmodel').EmbeddingModel;
     isSyncingDividers: boolean;
     isDragging: boolean;
     _dividerTimeout?: number | null;

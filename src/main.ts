@@ -22,6 +22,7 @@ import { AdoptedStyleSheetService } from "./services/AdoptedStyleSheetService";
 import { PluginLifecycleService } from "./services/PluginLifecycleService";
 import { IconManager } from "./core/IconManager";
 import { AIIconClassifier } from './integrations/AIIconClassifier';
+import { EmbeddingModel } from './integrations/embedingmodel';
 import { t } from './lang/helpers';
 import { normalizeVaultPath } from './common/utils';
 
@@ -55,6 +56,7 @@ export default class ColorfulFoldersPlugin
   _abortStartupRender: boolean = false;
   _isUnloading: boolean = false;
 
+  embeddingModel: EmbeddingModel;
   domObserverService: DOMObserverService;
   eventTrackerService: EventTrackerService;
   dividerManager: DividerManager;
@@ -72,6 +74,7 @@ export default class ColorfulFoldersPlugin
     this.styleGenerator = new StyleGenerator(this);
     this.iconManager = new IconManager(this);
     this.aiIconClassifier = new AIIconClassifier(this);
+    this.embeddingModel = new EmbeddingModel(this);
     this.dividerManager = new DividerManager(this);
     this.domObserverService = new DOMObserverService(this);
     this.eventTrackerService = new EventTrackerService(this);
@@ -185,7 +188,7 @@ export default class ColorfulFoldersPlugin
     return StyleResolver.getStyle(this, path);
   }
 
-  getActivePalette(isDark?: boolean): { rgb: string; hex: string }[] {
+  getActivePalette(_isDark?: boolean): { rgb: string; hex: string }[] {
     return getCurrentPalette(this.settings, null, "").palette;
   }
 
@@ -233,12 +236,12 @@ export default class ColorfulFoldersPlugin
         const readResults = await Promise.all(iconReads);
 
         for (const { relPath, content } of readResults) {
-          const parts = relPath.split(/[\/\\]/);
+          const parts = relPath.split(/[/\\]/);
           const filename = parts[parts.length - 1].slice(0, -4);
           const lowerFilename = filename.toLowerCase();
           
           const relNoExt = relPath.slice(0, -4);
-          const hyphenated = relNoExt.toLowerCase().replace(/[\s_]+/g, '-').replace(/[\/\\]/g, '-');
+          const hyphenated = relNoExt.toLowerCase().replace(/[\s_]+/g, '-').replace(/[/\\]/g, '-');
           this.localFileSystemIcons[hyphenated] = content;
 
           if (parts.length > 1) {

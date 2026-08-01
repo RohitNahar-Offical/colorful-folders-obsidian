@@ -316,7 +316,7 @@ export class GeneralSettingSection extends SettingSection {
                 .addOption('folders', t("settings.option.folders_only"))
                 .addOption('files', t("settings.option.files_only"))
                 .addOption('none', t("settings.option.none_icons_only"))
-                .setValue((this.plugin.settings.colorText === true || this.plugin.settings.colorText === undefined) ? 'all' : (this.plugin.settings.colorText === false ? 'none' : this.plugin.settings.colorText as string))
+                .setValue((this.plugin.settings.colorText === true || this.plugin.settings.colorText === undefined) ? 'all' : (this.plugin.settings.colorText === false ? 'none' : String(this.plugin.settings.colorText)))
                 .onChange(async (value) => {
                     this.plugin.settings.colorText = value;
                     await this.plugin.saveSettings();

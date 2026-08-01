@@ -78,7 +78,7 @@ export class IconSettingSection extends SettingSection {
                 marginBottom: "15px",
                 fontSize: "0.85em"
             });
-            const recHeader = recDiv.createEl("div", { text: "💡 Recommended Fast Local Models (Run 'ollama run <model>' in terminal first):" });
+            const recHeader = recDiv.createDiv({ text: "💡 Recommended Fast Local Models (Run 'ollama run <model>' in terminal first):" });
             recHeader.setCssStyles({ fontWeight: "600", marginBottom: "8px", color: "var(--text-normal)" });
 
             const models = [
@@ -179,6 +179,97 @@ export class IconSettingSection extends SettingSection {
         aiStopBtn.setCssStyles({ color: "var(--text-error)" });
         aiStopBtn.onclick = () => {
             this.plugin.aiIconClassifier.stopClassification();
+        };
+
+        // ⚡ Vector Embedding Model Card (Fast & Offline)
+        const vectorCard = this.settingTab.makeCard(containerEl, "⚡", "Vector embedding model (Fast & Offline)");
+        const vectorDesc = vectorCard.createEl('p', {
+            text: 'Auto-assign icons instantly (<5ms per note) using the zero-dependency built-in local vector engine or a custom neural embedding model (Ollama / BGE-M3).'
+        });
+        vectorDesc.setCssStyles({ fontSize: "0.85em", color: "var(--text-muted)", marginBottom: "12px" });
+
+        const customContainer = vectorCard.createDiv();
+
+        new obsidian.Setting(vectorCard)
+            .setName("Embedding model engine")
+            .setDesc("Choose between the zero-setup Built-in local vector model (0MB) or a Custom neural embedding model (Ollama / Local API).")
+            .addDropdown(drop => drop
+                .addOption("builtin", "⚡ Built-in Local Vector Model (0MB, Default)")
+                .addOption("custom", "⚙️ Custom / Local Neural Model (Ollama / BGE-M3)")
+                .setValue(this.plugin.settings.embeddingEngine || "builtin")
+                .onChange(async (val) => {
+                    this.plugin.settings.embeddingEngine = val as 'builtin' | 'custom';
+                    await this.plugin.saveSettings();
+                    (this.settingTab as unknown as { display: () => void }).display();
+                }));
+
+        if (this.plugin.settings.embeddingEngine === "custom") {
+            customContainer.setCssStyles({
+                padding: "10px 12px",
+                borderRadius: "6px",
+                backgroundColor: "var(--background-secondary-alt)",
+                border: "1px solid var(--border-color)",
+                marginTop: "8px",
+                marginBottom: "12px"
+            });
+
+            new obsidian.Setting(customContainer)
+                .setName("Custom model name")
+                .setDesc("The embedding model name registered in Ollama or your local server (e.g. bge-m3, nomic-embed-text).")
+                .addText(text => text
+                    .setPlaceholder("bge-m3")
+                    .setValue(this.plugin.settings.embeddingCustomModel || "bge-m3")
+                    .onChange(async (val) => {
+                        this.plugin.settings.embeddingCustomModel = val.trim();
+                        await this.plugin.saveSettings();
+                    }));
+
+            new obsidian.Setting(customContainer)
+                .setName("Endpoint URL")
+                .setDesc("The base URL for your local embedding endpoint.")
+                .addText(text => text
+                    .setPlaceholder("http://localhost:11434")
+                    .setValue(this.plugin.settings.embeddingCustomEndpoint || "http://localhost:11434")
+                    .onChange(async (val) => {
+                        this.plugin.settings.embeddingCustomEndpoint = val.trim();
+                        await this.plugin.saveSettings();
+                    }));
+        }
+
+        const vectorBtnWrap = vectorCard.createDiv();
+        vectorBtnWrap.setCssStyles({ display: "flex", gap: "10px", marginTop: "10px", marginBottom: "10px" });
+
+        const vectorRunBtn = vectorBtnWrap.createEl("button", { text: "⚡ Auto-Assign Icons with Embeddings", cls: "mod-cta" });
+        vectorRunBtn.onclick = async () => {
+            const files = this.plugin.app.vault.getFiles();
+            const targets = files.map(f => ({ path: f.path, name: f.name }));
+
+            const results = this.plugin.embeddingModel.classifyTargets(targets);
+            let count = 0;
+            for (const [path, candidates] of Object.entries(results)) {
+                if (candidates.length > 0) {
+                    const iconId = candidates[0];
+                    const existing = this.plugin.settings.customFolderColors[path];
+                    if (typeof existing === 'object' && existing) {
+                        existing.iconId = iconId;
+                        existing.iconSource = 'embedding';
+                    } else if (typeof existing === 'string') {
+                        this.plugin.settings.customFolderColors[path] = { hex: existing, iconId, iconSource: 'embedding' };
+                    } else {
+                        this.plugin.settings.customFolderColors[path] = { iconId, iconSource: 'embedding' };
+                    }
+                    count++;
+                }
+            }
+
+            await this.plugin.saveSettings();
+            await this.plugin.generateStyles();
+
+            const engineName = this.plugin.settings.embeddingEngine === 'custom'
+                ? `Custom Neural Model (${this.plugin.settings.embeddingCustomModel || 'bge-m3'})`
+                : 'Built-in Local Vector Model (0MB)';
+
+            new obsidian.Notice(`⚡ ${engineName}: Auto-assigned ${count} icons!`);
         };
 
         // 🤖 Automation Engine Card
@@ -584,7 +675,8 @@ export class IconSettingSection extends SettingSection {
                 if (!packMap.has(packKey)) {
                     packMap.set(packKey, []);
                 }
-                packMap.get(packKey)!.push([id, svg]);
+                const list = packMap.get(packKey);
+                if (list) list.push([id, svg]);
             }
 
             const ctrlBar = libCard.createDiv();
@@ -755,7 +847,7 @@ export class IconSettingSection extends SettingSection {
                         (this.settingTab as unknown as { display: () => void }).display();
                     } catch (e) {
                         new obsidian.Notice(t("notice.invalid_json_format"));
-                        console.error("Colorful Folders: Manual Import failed", e);
+                        console.error("Colorful Folders: Manual Import failed", (e as Error)?.message || String(e));
                     }
                 }));
     }

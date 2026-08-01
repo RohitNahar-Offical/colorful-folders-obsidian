@@ -113,7 +113,7 @@ export class RainbowManager {
     public static resolveRootSpectrum(
         index: number,
         palette: { rgb: string; hex: string }[],
-        isDark: boolean
+        _isDark: boolean
     ): string[] {
         if (palette && palette.length >= 3) {
             const start = palette[index % palette.length];
