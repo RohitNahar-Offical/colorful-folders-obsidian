@@ -753,7 +753,6 @@ export class GeneralSettingSection extends SettingSection {
                     slider
                         .setLimits(0, 360, 15)
                         .setValue(this.plugin.settings.rainbowGradientAngle ?? 135)
-                        .setDynamicTooltip()
                         .onChange(async (value) => {
                             this.plugin.settings.rainbowGradientAngle = value;
                             await this.plugin.saveSettings();

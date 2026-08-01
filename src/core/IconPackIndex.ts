@@ -188,8 +188,8 @@ export class IconPackIndex {
         if (lenA === 0) return lenB;
         if (lenB === 0) return lenA;
 
-        let prev = new Array(lenB + 1);
-        let curr = new Array(lenB + 1);
+        let prev = new Int32Array(lenB + 1);
+        let curr = new Int32Array(lenB + 1);
 
         for (let j = 0; j <= lenB; j++) prev[j] = j;
 

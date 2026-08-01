@@ -46,11 +46,12 @@ export class IconRepository {
 
                 // Tier 0: Explicit frontmatter icon property (icon, iconId, emoji, icon-id)
                 if (cache?.frontmatter) {
-                    const fmIcon = cache.frontmatter.icon || cache.frontmatter.iconId || cache.frontmatter.emoji || cache.frontmatter['icon-id'];
+                    const fm = cache.frontmatter as Record<string, unknown>;
+                    const fmIcon = fm.icon || fm.iconId || fm.emoji || fm['icon-id'];
                     if (fmIcon && typeof fmIcon === 'string' && fmIcon.trim().length > 0) {
                         const cleanFmIcon = fmIcon.trim();
                         return {
-                            tier: 0 as any,
+                            tier: 0,
                             rex: /.*/,
                             emoji: cleanFmIcon,
                             lucide: cleanFmIcon,
@@ -64,10 +65,11 @@ export class IconRepository {
                 // Tier 0.5: Tag-driven auto icon
                 const tags: string[] = [];
                 if (cache?.frontmatter?.tags) {
-                    const fmTags = Array.isArray(cache.frontmatter.tags)
-                        ? cache.frontmatter.tags
-                        : typeof cache.frontmatter.tags === 'string'
-                            ? cache.frontmatter.tags.split(',').map(t => t.trim())
+                    const rawTags = (cache.frontmatter as Record<string, unknown>).tags;
+                    const fmTags: string[] = Array.isArray(rawTags)
+                        ? rawTags.map(t => String(t))
+                        : typeof rawTags === 'string'
+                            ? rawTags.split(',').map(t => t.trim())
                             : [];
                     tags.push(...fmTags);
                 }
@@ -85,7 +87,7 @@ export class IconRepository {
                         if (tagIcon) {
                             return {
                                 ...tagIcon,
-                                tier: 0.5 as any,
+                                tier: 0.5,
                                 packSource: 'tag-sync'
                             };
                         }
@@ -140,7 +142,7 @@ export class IconRepository {
                 if (ext !== 'md' && EXTENSION_ICON_MAP[ext]) {
                     const iconId = EXTENSION_ICON_MAP[ext];
                     return {
-                        tier: 0.7 as any,
+                        tier: 0.7,
                         rex: new RegExp(`\\.${ext}$`, 'i'),
                         emoji: iconId,
                         lucide: iconId,
@@ -222,7 +224,7 @@ export class IconRepository {
                     if (rule.rex.test(ctx)) {
                         return {
                             ...rule,
-                            tier: 1 as any,
+                            tier: 1,
                             packSource: 'custom-rule'
                         };
                     }

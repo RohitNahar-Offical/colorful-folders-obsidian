@@ -1,7 +1,7 @@
 import * as obsidian from 'obsidian';
-import { requestUrl, Notice, TFolder, TFile, getIconIds, getIcon } from 'obsidian';
-import { IColorfulFoldersPlugin } from '../common/types';
-import { normalizePathKey, normalizeIconName } from '../common/utils';
+import { requestUrl, Notice, TFolder, TFile } from 'obsidian';
+import { IColorfulFoldersPlugin, ColorfulFoldersSettings } from '../common/types';
+import { normalizePathKey } from '../common/utils';
 
 export class AIIconClassifier {
     private isClassifying = false;
@@ -637,7 +637,7 @@ Correct Output:
         throw lastErr;
     }
 
-    private async queryOllama(settings: any, systemPrompt: string, userPrompt: string): Promise<Record<string, unknown>> {
+    private async queryOllama(settings: ColorfulFoldersSettings, systemPrompt: string, userPrompt: string): Promise<Record<string, unknown>> {
         const model = (settings.aiModelName || 'qwen2.5:1.5b').trim();
         const baseUrl = (settings.aiOllamaEndpoint || 'http://localhost:11434').trim().replace(/\/$/, '');
 
@@ -655,7 +655,7 @@ Correct Output:
                     response_format: { type: "json_object" }
                 })
             });
-            const data = response.json;
+            const data = response.json as { choices?: Array<{ message?: { content?: string } }> };
             const textResult = data?.choices?.[0]?.message?.content || "{}";
             return this.parseJsonResponse(textResult);
         } catch (e) {
@@ -675,13 +675,13 @@ Correct Output:
                     stream: false
                 })
             });
-            const data = response.json;
+            const data = response.json as { response?: string };
             const textResult = data?.response || "{}";
             return this.parseJsonResponse(textResult);
         }
     }
 
-    private async queryCustomLocal(settings: any, systemPrompt: string, userPrompt: string): Promise<Record<string, unknown>> {
+    private async queryCustomLocal(settings: ColorfulFoldersSettings, systemPrompt: string, userPrompt: string): Promise<Record<string, unknown>> {
         const model = (settings.aiModelName || 'local-model').trim();
         
         if (!settings.aiCustomEndpoint?.trim()) {
@@ -961,18 +961,19 @@ Correct Output:
     private extractHttpErrorMessage(err: unknown, provider: string): string {
         if (!err || typeof err !== 'object') return String(err);
 
-        const errObj = err as any;
-        let bodyText = errObj.text || '';
+        const errObj = err as Record<string, unknown>;
+        let bodyText = typeof errObj.text === 'string' ? errObj.text : '';
         if (!bodyText && errObj.json) {
             try { bodyText = JSON.stringify(errObj.json); } catch { bodyText = ''; }
         }
 
         if (bodyText) {
             try {
-                const parsed = typeof errObj.json === 'object' ? errObj.json : JSON.parse(bodyText);
-                if (parsed?.error?.message) return parsed.error.message;
-                if (typeof parsed?.error === 'string') return parsed.error;
-                if (parsed?.message) return parsed.message;
+                const parsed = (typeof errObj.json === 'object' && errObj.json ? errObj.json : JSON.parse(bodyText)) as Record<string, unknown>;
+                const errorObj = parsed.error;
+                if (typeof errorObj === 'object' && errorObj && 'message' in errorObj && typeof errorObj.message === 'string') return errorObj.message;
+                if (typeof errorObj === 'string') return errorObj;
+                if (typeof parsed.message === 'string') return parsed.message;
             } catch {
                 // Keep raw text if not JSON
             }
@@ -981,8 +982,8 @@ Correct Output:
             }
         }
 
-        const msg = errObj.message || String(err);
-        const status = errObj.status;
+        const msg = typeof errObj.message === 'string' ? errObj.message : String(err);
+        const status = typeof errObj.status === 'number' ? errObj.status : null;
 
         if (status === 401 || status === 403 || msg.includes('401') || msg.includes('403')) {
             return "Invalid API key or unauthorized access (status 401/403). Please verify your API key in settings.";

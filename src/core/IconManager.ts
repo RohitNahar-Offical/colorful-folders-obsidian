@@ -1,4 +1,4 @@
-import { IColorfulFoldersPlugin, FolderStyle, AutoIconData } from '../common/types';
+import { IColorfulFoldersPlugin, AutoIconData } from '../common/types';
 import { IconRepository } from './IconRepository';
 
 export class IconManager {

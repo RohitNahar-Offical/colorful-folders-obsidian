@@ -6,15 +6,7 @@ import { hexToRgbObj, adjustBrightnessRgb, normalizeVaultPath } from '../../comm
 import { ColorResolver, isDarkMode } from '../../core/ColorResolver';
 import { RainbowManager } from '../../core/RainbowManager';
 
-const getAdjustedColor = (hex: string, brightnessVal: number | undefined): string => {
-    if (!hex) return hex;
-    const bVal = brightnessVal !== undefined ? brightnessVal : 50;
-    const amount = (bVal - 50) / 50;
-    if (amount === 0) return hex;
-    const rgb = hexToRgbObj(hex);
-    if (!rgb) return hex;
-    return `rgb(${adjustBrightnessRgb(`${rgb.r},${rgb.g},${rgb.b}`, amount)})`;
-};
+
 
 export class ColorPickerModal extends obsidian.Modal {
 plugin: IColorfulFoldersPlugin;

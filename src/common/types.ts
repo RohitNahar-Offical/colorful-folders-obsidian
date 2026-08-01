@@ -36,6 +36,7 @@ export interface FolderStyle {
     textGradientEnd?: string;
     rainbowBrightness?: number;
     borderRadius?: number;
+    aiHash?: string;
 }
 
 export interface ColorfulFoldersSettings {
@@ -130,7 +131,7 @@ export interface ColorfulFoldersSettings {
 
 
 export interface AutoIconData {
-    tier?: 0 | 1 | 2 | 3 | 4;
+    tier?: number;
     rex: RegExp;
     emoji: string;
     lucide: string;
