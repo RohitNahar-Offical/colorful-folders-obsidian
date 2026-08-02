@@ -273,7 +273,7 @@ export class EmbeddingModel {
         for (const iconId of Object.keys(customIcons)) {
             const vector = this.getOrCreateVector(iconId);
             const cleanId = iconId
-                .replace(/^(simple-icons-|si-|tabler-|fa-solid-|fa-regular-|bx-|octicon-|ra-|cf-)/i, '')
+                .replace(/^(simple-icons-|si-|tabler-|fa-solid-|fa-regular-|bx-|octicon-|ra-|cf-|bi-|ri-|feather-)/i, '')
                 .replace(/^brand-/i, '');
 
             const tokens = this.tokenizeText(cleanId);
@@ -287,7 +287,7 @@ export class EmbeddingModel {
             const vector = this.getOrCreateVector(iconId);
             const cleanId = iconId
                 .replace(/^lucide-/i, '')
-                .replace(/^(simple-icons-|si-|tabler-|fa-solid-|fa-regular-|bx-|octicon-|ra-|cf-)/i, '')
+                .replace(/^(simple-icons-|si-|tabler-|fa-solid-|fa-regular-|bx-|octicon-|ra-|cf-|bi-|ri-|feather-)/i, '')
                 .replace(/^brand-/i, '');
 
             const tokens = this.tokenizeText(cleanId);

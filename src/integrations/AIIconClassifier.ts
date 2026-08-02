@@ -360,7 +360,7 @@ export class AIIconClassifier {
                             if (obsidian.getIcon(hyphenated)) return hyphenated;
 
                             // 4. Search installed packs / Lucide index + Prefix-stripped fallback + Relaxed Fuzzy Search (threshold 0.5)
-                            const cleanPrefix = lowerClean.replace(/^(lucide|feather|tabler|simple-icons|ri|fa|octicon|bx|ra)-/i, '');
+                            const cleanPrefix = lowerClean.replace(/^(lucide|feather|tabler|simple-icons|ri|fa|octicon|bx|ra|bi)-/i, '');
                             const packHit = this.plugin.iconManager.findIconInPacks(lowerClean) ||
                                 this.plugin.iconManager.findIconInPacks(hyphenated) ||
                                 (cleanPrefix !== lowerClean ? this.plugin.iconManager.findIconInPacks(cleanPrefix) : null) ||
