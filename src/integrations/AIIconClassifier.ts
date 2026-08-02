@@ -51,7 +51,7 @@ export class AIIconClassifier {
 
             for (const file of allFiles) {
                 if (file.path.startsWith('.') || file.path.includes('/.')) continue;
-                
+
                 let parentFolder = "Root";
                 if (file.parent && !file.parent.isRoot()) {
                     parentFolder = file.parent.name;
@@ -195,11 +195,20 @@ export class AIIconClassifier {
             let completedBatches = 0;
             const tasks = batchChunks.map((batchTargets, idx) => async () => {
                 const currentBatch = idx + 1;
+
+                const vectorCandidateMap = this.plugin.embeddingModel?.getBatchVectorCandidatesAsync
+                    ? await this.plugin.embeddingModel.getBatchVectorCandidatesAsync(batchTargets, 5)
+                    : {};
+
                 const contextPayload = batchTargets.map(t => {
                     const itemObj: Record<string, any> = {
                         item_path: t.path,
                         type: t.isFolder ? 'Folder' : 'File'
                     };
+                    const vecCandidates = vectorCandidateMap[t.path];
+                    if (vecCandidates && vecCandidates.length > 0) {
+                        itemObj.candidates = vecCandidates;
+                    }
                     if (t.isFolder && t.childSamples && t.childSamples.length > 0) {
                         itemObj.sample_contents = t.childSamples.join(', ');
                     }
@@ -210,31 +219,31 @@ export class AIIconClassifier {
                     return itemObj;
                 });
 
-                    if (settings.iconDebugMode) {
-                        console.log(`🤖 [Colorful Folders AI] Batch ${currentBatch}/${batchChunks.length} Context Payload Sent:`, contextPayload);
+                if (settings.iconDebugMode) {
+                    console.log(`🤖 [Colorful Folders AI] Batch ${currentBatch}/${batchChunks.length} Context Payload Sent:`, contextPayload);
+                }
+
+                try {
+                    const result = await this.queryAI(contextPayload, systemPrompt);
+                    let kvPairs: Record<string, unknown> = {};
+
+                    if (Array.isArray(result)) {
+                        batchTargets.forEach((t, itemIdx) => {
+                            const val = result[itemIdx];
+                            if (val) kvPairs[t.path] = val;
+                        });
+                    } else if (result && typeof result === 'object') {
+                        const keys = Object.keys(result);
+                        if (keys.length === 1 && typeof result[keys[0]] === 'object' && !Array.isArray(result[keys[0]])) {
+                            kvPairs = result[keys[0]] as Record<string, unknown>;
+                        } else {
+                            kvPairs = result;
+                        }
                     }
 
-                    try {
-                        const result = await this.queryAI(contextPayload, systemPrompt);
-                        let kvPairs: Record<string, unknown> = {};
-
-                        if (Array.isArray(result)) {
-                            batchTargets.forEach((t, itemIdx) => {
-                                const val = result[itemIdx];
-                                if (val) kvPairs[t.path] = val;
-                            });
-                        } else if (result && typeof result === 'object') {
-                            const keys = Object.keys(result);
-                            if (keys.length === 1 && typeof result[keys[0]] === 'object' && !Array.isArray(result[keys[0]])) {
-                                kvPairs = result[keys[0]] as Record<string, unknown>;
-                            } else {
-                                kvPairs = result;
-                            }
-                        }
-
-                        if (settings.iconDebugMode) {
-                            console.log(`📦 [Colorful Folders AI] Batch ${currentBatch}/${batchChunks.length} Parsed Output:`, kvPairs);
-                        }
+                    if (settings.iconDebugMode) {
+                        console.log(`📦 [Colorful Folders AI] Batch ${currentBatch}/${batchChunks.length} Parsed Output:`, kvPairs);
+                    }
 
                     const RESERVED_KEYS = new Set([
                         'created', 'contentsnippet', 'snippet', 'rank', 'tags', 'properties',
@@ -293,9 +302,9 @@ export class AIIconClassifier {
 
                         // Flexible target item matching: match full path, normalized path, filename/title, or trailing path segment
                         const normCleanKey = normalizeKey(cleanKey);
-                        const targetItem = batchTargets.find(t => 
-                            t.path === cleanKey || 
-                            normalizeKey(t.path) === normCleanKey || 
+                        const targetItem = batchTargets.find(t =>
+                            t.path === cleanKey ||
+                            normalizeKey(t.path) === normCleanKey ||
                             t.name === cleanKey ||
                             normalizeKey(t.name) === normCleanKey ||
                             normalizeKey(t.path).endsWith(normCleanKey) ||
@@ -352,11 +361,11 @@ export class AIIconClassifier {
 
                             // 4. Search installed packs / Lucide index + Prefix-stripped fallback + Relaxed Fuzzy Search (threshold 0.5)
                             const cleanPrefix = lowerClean.replace(/^(lucide|feather|tabler|simple-icons|ri|fa|octicon|bx|ra)-/i, '');
-                            const packHit = this.plugin.iconManager.findIconInPacks(lowerClean) || 
-                                            this.plugin.iconManager.findIconInPacks(hyphenated) ||
-                                            (cleanPrefix !== lowerClean ? this.plugin.iconManager.findIconInPacks(cleanPrefix) : null) ||
-                                            this.plugin.iconManager.searchFuzzy(lowerClean, { threshold: 0.5 }) ||
-                                            this.plugin.iconManager.searchFuzzy(hyphenated, { threshold: 0.5 });
+                            const packHit = this.plugin.iconManager.findIconInPacks(lowerClean) ||
+                                this.plugin.iconManager.findIconInPacks(hyphenated) ||
+                                (cleanPrefix !== lowerClean ? this.plugin.iconManager.findIconInPacks(cleanPrefix) : null) ||
+                                this.plugin.iconManager.searchFuzzy(lowerClean, { threshold: 0.5 }) ||
+                                this.plugin.iconManager.searchFuzzy(hyphenated, { threshold: 0.5 });
                             if (packHit) return packHit;
 
                             // 5. Word extraction & relaxed fuzzy search per word (threshold 0.5)
@@ -408,16 +417,17 @@ export class AIIconClassifier {
                                 console.log(`Colorful Folders AI: "${targetItem.path}" resolved to "${matchedIcon}" via Candidate Tier ${winningTier} fallback.`);
                             }
                         } else {
-                            // Layer 4: Final Fallback to Native Auto-Icon System for the item path
+                            // Layer 4: Fallback to Native Auto-Icon System or Vector Embedding Engine
                             const autoIcon = this.plugin.iconManager.getAutoIconData(targetItem.name, targetItem.path);
-                            if (autoIcon && (autoIcon.lucide || autoIcon.emoji)) {
-                                const fallbackIcon = autoIcon.lucide || autoIcon.emoji;
-                                if (fallbackIcon) {
-                                    conceptMap.set(targetItem.path, fallbackIcon);
-                                    conceptMap.set(normalizeKey(targetItem.path), fallbackIcon);
-                                }
+                            const fallbackIcon = autoIcon?.lucide || autoIcon?.emoji;
+                            if (fallbackIcon) {
+                                conceptMap.set(targetItem.path, fallbackIcon);
+                                conceptMap.set(normalizeKey(targetItem.path), fallbackIcon);
                             } else {
-                                console.warn(`Colorful Folders AI: Skipping invalid candidates for "${targetItem.path}"`);
+                                const vectorFallback = this.plugin.embeddingModel?.findBestIcons(targetItem.name || targetItem.path, { topK: 1, isFolder: targetItem.isFolder }) || [];
+                                const resolvedFallback = vectorFallback.length > 0 ? vectorFallback[0].iconId : (targetItem.isFolder ? 'folder' : 'file-text');
+                                conceptMap.set(targetItem.path, resolvedFallback);
+                                conceptMap.set(normalizeKey(targetItem.path), resolvedFallback);
                             }
                         }
                     }
@@ -464,7 +474,7 @@ export class AIIconClassifier {
                 const normName = normalizeKey(item.name);
                 const normPath = normalizeKey(item.path);
                 let iconId = conceptMap.get(item.path) || conceptMap.get(normPath) || conceptMap.get(normName) || conceptMap.get(item.name) || "";
-                
+
                 // Priority 0: Explicit Custom User Rules ALWAYS take top priority over AI suggestions
                 const customRule = this.plugin.iconManager.getAutoIconData(item.name, item.path);
                 if (customRule && (customRule.packSource === 'custom-rule' || customRule.isCustom)) {
@@ -527,7 +537,7 @@ export class AIIconClassifier {
 
     private buildSystemPrompt(): string {
         const customKeys = this.plugin.settings.customIcons ? Object.keys(this.plugin.settings.customIcons) : [];
-        
+
         // Sort custom icon keys to prioritize recognizable brand/concept names over numeric keys
         const sortedCustomKeys = [...customKeys].sort((a, b) => {
             const aNum = /^\d+$/.test((a.split('-').pop() || '').trim());
@@ -561,6 +571,12 @@ export class AIIconClassifier {
             : "Evaluate each item's title, path hierarchy, and parent folder to select the single most accurate icon ID.";
 
         return `You are an expert AI taxonomist and icon matcher for an Obsidian note-taking app. ${evaluationScope} Your objective is to select 3 CANDIDATE ICON NAMES for each requested vault item ordered from specific to general.
+
+### PRE-VERIFIED VECTOR CANDIDATES RULE (STRICT):
+If an item in the JSON request payload contains a 'candidates' list, prioritize selecting from the 'candidates' list.
+
+### PRECISE NAME / BRAND OVERRIDE RULE (CRITICAL):
+If the item name contains a precise proper noun, company, software framework, tech brand, or person name (e.g. "OpenAI", "PyTorch", "Kubernetes", "Kafka", "Supabase", "PostgreSQL", "Shakespeare") that vector search missed, the AI MUST OVERRIDE generic candidates and output the exact brand/tool icon ID (e.g. "simple-icons-openai", "simple-icons-kubernetes", "database", "brain")!
 
 ### ITEM NAME PRIORITY RULE (STRICT):
 1. **FOCUS STICKLY ON THE ITEM NAME FIRST:** Base icon selection 100% on the actual file name or folder name (e.g. for "BAKE/Amazon.md", focus strictly on "Amazon").
@@ -689,7 +705,7 @@ Correct Output:
 
     private async queryCustomLocal(settings: ColorfulFoldersSettings, systemPrompt: string, userPrompt: string): Promise<Record<string, unknown>> {
         const model = (settings.aiModelName || 'local-model').trim();
-        
+
         if (!settings.aiCustomEndpoint?.trim()) {
             throw new Error("Please enter a valid Local Custom AI Endpoint URL in Settings -> Icon management -> AI Settings.");
         }

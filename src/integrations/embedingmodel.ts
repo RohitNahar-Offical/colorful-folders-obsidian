@@ -690,4 +690,36 @@ export class EmbeddingModel {
 
         return output;
     }
+
+    /**
+     * Pre-calculates candidate icon IDs for a batch of items, supporting both Built-in Local and Custom Neural models.
+     */
+    public async getBatchVectorCandidatesAsync(
+        items: Array<{ path: string; name: string; isFolder?: boolean }>,
+        topK = 5
+    ): Promise<Record<string, string[]>> {
+        const settings = this.plugin?.settings;
+        if (settings?.embeddingEngine === 'custom') {
+            return await this.classifyTargetsAsync(items);
+        }
+        return this.getBatchVectorCandidates(items, topK);
+    }
+
+    public getBatchVectorCandidates(
+        items: Array<{ path: string; name: string; isFolder?: boolean }>,
+        topK = 5
+    ): Record<string, string[]> {
+        const candidateMap: Record<string, string[]> = {};
+        for (const item of items) {
+            const matches = this.findBestIcons(item.name || item.path, { topK, isFolder: item.isFolder });
+            if (matches.length > 0) {
+                candidateMap[item.path] = matches.map(m => m.iconId);
+            } else {
+                candidateMap[item.path] = item.isFolder
+                    ? ['folder', 'layers', 'box', 'folder-kanban']
+                    : ['file-text', 'notebook', 'edit-3', 'layers'];
+            }
+        }
+        return candidateMap;
+    }
 }

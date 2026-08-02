@@ -3,9 +3,9 @@
 
 /* ── 1. DESIGN TOKENS (CSS VARIABLES) ────────────────────────────────── */
 :root {
-    --cf-accent: #1e88e5; /* Modern bright blue */
-    --cf-accent-rgb: 30, 136, 229;
-    --cf-accent-glow: rgba(30, 136, 229, 0.4);
+    --cf-accent: var(--interactive-accent, #1e88e5);
+    --cf-accent-rgb: var(--interactive-accent-rgb, 30, 136, 229);
+    --cf-accent-glow: rgba(var(--interactive-accent-rgb, 30, 136, 229), 0.4);
 
     --cf-glass-bg: rgba(var(--background-secondary-rgb), 0.7);
     --cf-card-bg: var(--background-secondary);
@@ -371,11 +371,12 @@ body .colorful-folders-config .cf-tab-btn {
     cursor: pointer;
     font-weight: 700;
     font-size: 1em;
-    color: var(--text-muted);
-    background: transparent;
-    border: none;
+    color: var(--interactive-accent);
+    background: rgba(var(--interactive-accent-rgb, 120, 120, 255), 0.08);
+    border: 1px solid rgba(var(--interactive-accent-rgb, 120, 120, 255), 0.18);
     box-shadow: none;
     position: relative;
+    transition: all 0.2s ease-in-out;
 }
 
 .cf-tab-btn span {
@@ -383,14 +384,16 @@ body .colorful-folders-config .cf-tab-btn {
 }
 
 .cf-tab-btn:hover {
-    color: var(--text-normal);
-    background: rgba(var(--mono-rgb-100), 0.05);
+    color: var(--interactive-accent);
+    background: rgba(var(--interactive-accent-rgb, 120, 120, 255), 0.16);
+    border-color: rgba(var(--interactive-accent-rgb, 120, 120, 255), 0.35);
 }
 
 body .colorful-folders-config .cf-tab-btn.is-active {
-    background: var(--cf-accent);
+    background: var(--interactive-accent);
     color: #ffffff;
-    box-shadow: 0 4px 16px var(--cf-accent-glow);
+    border-color: var(--interactive-accent);
+    box-shadow: 0 4px 16px rgba(var(--interactive-accent-rgb, 120, 120, 255), 0.4);
 }
 
 .cf-settings-card {
@@ -477,16 +480,16 @@ body .colorful-folders-config .cf-tab-btn.is-active {
 }
 
 body .colorful-folders-config .checkbox-container.is-enabled {
-    background-color: var(--cf-accent);
+    background-color: var(--interactive-accent);
 }
 
 /* Custom Sliders */
 .colorful-folders-config input[type='range'] {
-    background-color: rgba(var(--mono-rgb-100), 0.1);
+    background-color: rgba(var(--interactive-accent-rgb, 120, 120, 255), 0.1);
 }
 body .colorful-folders-config input[type='range']::-webkit-slider-thumb {
     background-color: #ffffff;
-    border: 2px solid var(--cf-accent);
+    border: 2px solid var(--interactive-accent);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 body .colorful-folders-config .setting-item-control input[type="range"] {
@@ -528,7 +531,7 @@ body .colorful-folders-config .setting-item-control input[type="range"]::-webkit
     border-color: rgba(var(--color-red-rgb), 0.3);
 }
 .colorful-folders-config button.mod-cta {
-    background-color: var(--cf-accent);
+    background-color: var(--interactive-accent);
     color: #ffffff;
     border-color: rgba(0, 0, 0, 0.1);
 }

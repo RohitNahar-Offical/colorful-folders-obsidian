@@ -1,9 +1,9 @@
 import * as obsidian from 'obsidian';
 import { IColorfulFoldersPlugin } from '../common/types';
-import { t } from '../lang/helpers';
 import { GeneralSettingSection } from './settings/GeneralSettingSection';
 import { FeaturesSettingSection } from './settings/FeaturesSettingSection';
 import { IconSettingSection } from './settings/IconSettingSection';
+import { AISettingSection } from './settings/AISettingSection';
 import { PrivacySettingSection } from './settings/PrivacySettingSection';
 
 export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
@@ -13,6 +13,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
     private generalSection: GeneralSettingSection;
     private featuresSection: FeaturesSettingSection;
     private iconSection: IconSettingSection;
+    private aiSection: AISettingSection;
     private privacySection: PrivacySettingSection;
 
     constructor(app: obsidian.App, plugin: IColorfulFoldersPlugin) {
@@ -23,6 +24,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         this.generalSection = new GeneralSettingSection(this.app, this.plugin, this);
         this.featuresSection = new FeaturesSettingSection(this.app, this.plugin, this);
         this.iconSection = new IconSettingSection(this.app, this.plugin, this);
+        this.aiSection = new AISettingSection(this.app, this.plugin, this);
         this.privacySection = new PrivacySettingSection(this.app, this.plugin, this);
     }
 
@@ -45,55 +47,51 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             maxWidth: '100%'
         });
 
-        // Hero Section
-        const hero = rootEl.createDiv('cf-hero');
-        const heroTitle = hero.createEl("h1", { text: t("settings.brand.name") });
-        const heroSubtitle = hero.createEl('p', { text: 'Configuration' });
-
-        // Tab Bar
+        // Tab Bar (at the very top)
         const tabBar = rootEl.createDiv('cf-tab-bar');
+        tabBar.setCssStyles({ marginTop: '12px', marginBottom: '24px' });
 
         const generalPanel = rootEl.createDiv();
         const intPanel = rootEl.createDiv();
         const iconPanel = rootEl.createDiv();
+        const aiPanel = rootEl.createDiv();
         const sysPanel = rootEl.createDiv();
 
         generalPanel.setCssStyles({ display: 'block' });
         intPanel.setCssStyles({ display: 'none' });
         iconPanel.setCssStyles({ display: 'none' });
+        aiPanel.setCssStyles({ display: 'none' });
         sysPanel.setCssStyles({ display: 'none' });
 
-        const btnGen = tabBar.createEl("button", { text: "General", cls: 'cf-tab-btn' });
-        const btnInt = tabBar.createEl("button", { text: "Features", cls: 'cf-tab-btn' });
-        const btnIcon = tabBar.createEl("button", { text: "Icons", cls: 'cf-tab-btn' });
-        const btnSys = tabBar.createEl("button", { text: "Privacy", cls: 'cf-tab-btn' });
-
-        const setHeroInfo = (tabKey: string) => {
-            if (tabKey === "gen") { heroTitle.setText("Visual design"); heroSubtitle.setText("Tailor your vault's interface with premium palettes and refined structural aesthetics."); }
-            if (tabKey === "int") { heroTitle.setText("Features"); heroSubtitle.setText("Unlock powerful custom features and connect with external extensions."); }
-            if (tabKey === "icon") { heroTitle.setText("Icon management"); heroSubtitle.setText("Command a vast library of symbols with intelligent automation rules."); }
-            if (tabKey === "sys") { heroTitle.setText("Privacy"); heroSubtitle.setText("Configure telemetry preferences and data management settings."); }
+        const createTabBtn = (tabKey: string, iconId: string, label: string): HTMLElement => {
+            const btn = tabBar.createEl("button", { cls: 'cf-tab-btn' });
+            const iconSpan = btn.createSpan({ cls: 'cf-tab-icon' });
+            obsidian.setIcon(iconSpan, iconId);
+            btn.createSpan({ text: label });
+            btn.onclick = () => setTab(tabKey);
+            return btn;
         };
+
+        const btnGen = createTabBtn("gen", "palette", "General");
+        const btnInt = createTabBtn("int", "sparkles", "Features");
+        const btnIcon = createTabBtn("icon", "smile", "Icons");
+        const btnAI = createTabBtn("ai", "bot", "AI");
+        const btnSys = createTabBtn("sys", "shield-check", "Privacy");
 
         const setTab = (tabKey: string) => {
             this.activeTab = tabKey;
             generalPanel.setCssStyles({ display: (tabKey === "gen" ? "block" : "none") });
             intPanel.setCssStyles({ display: (tabKey === "int" ? "block" : "none") });
             iconPanel.setCssStyles({ display: (tabKey === "icon" ? "block" : "none") });
+            aiPanel.setCssStyles({ display: (tabKey === "ai" ? "block" : "none") });
             sysPanel.setCssStyles({ display: (tabKey === "sys" ? "block" : "none") });
 
             btnGen.toggleClass('is-active', tabKey === "gen");
             btnInt.toggleClass('is-active', tabKey === "int");
             btnIcon.toggleClass('is-active', tabKey === "icon");
+            btnAI.toggleClass('is-active', tabKey === "ai");
             btnSys.toggleClass('is-active', tabKey === "sys");
-
-            setHeroInfo(tabKey);
         };
-
-        btnGen.onclick = () => setTab("gen");
-        btnInt.onclick = () => setTab("int");
-        btnIcon.onclick = () => setTab("icon");
-        btnSys.onclick = () => setTab("sys");
 
         setTab(this.activeTab || "gen");
 
@@ -101,6 +99,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         try { this.generalSection.render(generalPanel); } catch (e) { console.error("Colorful Folders: Error rendering General section", e); }
         try { this.featuresSection.render(intPanel); } catch (e) { console.error("Colorful Folders: Error rendering Features section", e); }
         try { this.iconSection.render(iconPanel); } catch (e) { console.error("Colorful Folders: Error rendering Icon section", e); }
+        try { this.aiSection.render(aiPanel); } catch (e) { console.error("Colorful Folders: Error rendering AI section", e); }
         try { this.privacySection.render(sysPanel); } catch (e) { console.error("Colorful Folders: Error rendering Privacy section", e); }
 
         if (savedScrollTop > 0) {
