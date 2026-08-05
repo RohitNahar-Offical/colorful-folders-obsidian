@@ -175,69 +175,75 @@ export class PrivacySettingSection extends SettingSection {
             }, 1000);
         };
 
+        let selectedBackupType = "both";
         new obsidian.Setting(dbCard)
-            .setName(t("settings.backup_folders.name"))
-            .setDesc('Download a backup of your colorful folder and file styles (excludes dividers).')
+            .setName(t("settings.backup_unified.name"))
+            .setDesc(t("settings.backup_unified.desc"))
+            .addDropdown(drop => drop
+                .addOption("both", t("settings.backup_option.both"))
+                .addOption("folders", t("settings.backup_option.folders"))
+                .addOption("dividers", t("settings.backup_option.dividers"))
+                .setValue("both")
+                .onChange(val => { selectedBackupType = val; })
+            )
             .addButton(btn => btn
-                .setButtonText(t("settings.backup_folders.btn"))
+                .setButtonText(t("settings.backup_unified.btn"))
+                .setCta()
                 .onClick(() => {
-                    const folderData: Record<string, FolderStyle | string> = {};
-                    for (const [key, value] of Object.entries(this.plugin.settings.customFolderColors || {})) {
-                        if (typeof value === 'string') {
-                            folderData[key] = value;
-                        } else if (value && typeof value === 'object') {
-                            const folderProps = { ...value };
-                            delete folderProps.hasDivider;
-                            delete folderProps.dividerText;
-                            delete folderProps.dividerColor;
-                            delete folderProps.dividerAlignment;
-                            delete folderProps.dividerLineStyle;
-                            delete folderProps.dividerIcon;
-                            delete folderProps.dividerIconColor;
-                            delete folderProps.dividerUpper;
-                            delete folderProps.dividerGlass;
-                            delete folderProps.dividerIconPosition;
-                            delete folderProps.dividerPillMode;
-                            delete folderProps.dividerDescription;
-                            delete folderProps.dividerPillColor;
-                            delete folderProps.dividerLinePaddingLeft;
-                            delete folderProps.dividerLinePaddingRight;
-                            if (Object.keys(folderProps).length > 0) folderData[key] = folderProps;
+                    if (selectedBackupType === "folders") {
+                        const folderData: Record<string, FolderStyle | string> = {};
+                        for (const [key, value] of Object.entries(this.plugin.settings.customFolderColors || {})) {
+                            if (typeof value === 'string') {
+                                folderData[key] = value;
+                            } else if (value && typeof value === 'object') {
+                                const folderProps = { ...value };
+                                delete folderProps.hasDivider;
+                                delete folderProps.dividerText;
+                                delete folderProps.dividerColor;
+                                delete folderProps.dividerAlignment;
+                                delete folderProps.dividerLineStyle;
+                                delete folderProps.dividerIcon;
+                                delete folderProps.dividerIconColor;
+                                delete folderProps.dividerUpper;
+                                delete folderProps.dividerGlass;
+                                delete folderProps.dividerIconPosition;
+                                delete folderProps.dividerPillMode;
+                                delete folderProps.dividerDescription;
+                                delete folderProps.dividerPillColor;
+                                delete folderProps.dividerLinePaddingLeft;
+                                delete folderProps.dividerLinePaddingRight;
+                                if (Object.keys(folderProps).length > 0) folderData[key] = folderProps;
+                            }
                         }
-                    }
-                    triggerDownload({ type: "cf-folder-backup", version: "1.0", data: folderData, presets: this.plugin.settings.presets }, "colorful-folders-backup.json");
-                }));
-
-        new obsidian.Setting(dbCard)
-            .setName(t("settings.backup_dividers.name"))
-            .setDesc(t("settings.backup_dividers.desc"))
-            .addButton(btn => btn
-                .setButtonText(t("settings.backup_dividers.btn"))
-                .onClick(() => {
-                    const dividerData: Record<string, FolderStyle> = {};
-                    for (const [key, value] of Object.entries(this.plugin.settings.customFolderColors || {})) {
-                        if (value && typeof value === 'object' && value.hasDivider) {
-                            const v = value;
-                            dividerData[key] = {
-                                hasDivider: v.hasDivider,
-                                dividerText: v.dividerText,
-                                dividerColor: v.dividerColor,
-                                dividerAlignment: v.dividerAlignment,
-                                dividerLineStyle: v.dividerLineStyle,
-                                dividerIcon: v.dividerIcon,
-                                dividerIconColor: v.dividerIconColor,
-                                dividerUpper: v.dividerUpper,
-                                dividerGlass: v.dividerGlass,
-                                dividerIconPosition: v.dividerIconPosition,
-                                dividerPillMode: v.dividerPillMode,
-                                dividerDescription: v.dividerDescription,
-                                dividerPillColor: v.dividerPillColor,
-                                dividerLinePaddingLeft: v.dividerLinePaddingLeft,
-                                dividerLinePaddingRight: v.dividerLinePaddingRight
-                            };
+                        triggerDownload({ type: "cf-folder-backup", version: "1.0", data: folderData, presets: this.plugin.settings.presets }, "colorful-folders-backup.json");
+                    } else if (selectedBackupType === "dividers") {
+                        const dividerData: Record<string, FolderStyle> = {};
+                        for (const [key, value] of Object.entries(this.plugin.settings.customFolderColors || {})) {
+                            if (value && typeof value === 'object' && value.hasDivider) {
+                                const v = value;
+                                dividerData[key] = {
+                                    hasDivider: v.hasDivider,
+                                    dividerText: v.dividerText,
+                                    dividerColor: v.dividerColor,
+                                    dividerAlignment: v.dividerAlignment,
+                                    dividerLineStyle: v.dividerLineStyle,
+                                    dividerIcon: v.dividerIcon,
+                                    dividerIconColor: v.dividerIconColor,
+                                    dividerUpper: v.dividerUpper,
+                                    dividerGlass: v.dividerGlass,
+                                    dividerIconPosition: v.dividerIconPosition,
+                                    dividerPillMode: v.dividerPillMode,
+                                    dividerDescription: v.dividerDescription,
+                                    dividerPillColor: v.dividerPillColor,
+                                    dividerLinePaddingLeft: v.dividerLinePaddingLeft,
+                                    dividerLinePaddingRight: v.dividerLinePaddingRight
+                                };
+                            }
                         }
+                        triggerDownload({ type: "cf-divider-backup", version: "1.0", data: dividerData }, "colorful-dividers-backup.json");
+                    } else {
+                        triggerDownload({ type: "cf-complete-backup", version: "1.0", data: this.plugin.settings.customFolderColors, presets: this.plugin.settings.presets }, "colorful-folders-complete-backup.json");
                     }
-                    triggerDownload({ type: "cf-divider-backup", version: "1.0", data: dividerData }, "colorful-dividers-backup.json");
                 }));
 
         new obsidian.Setting(dbCard)
@@ -278,7 +284,7 @@ export class PrivacySettingSection extends SettingSection {
                                     return;
                                 }
 
-                                if (parsed.type === "cf-folder-backup") {
+                                if (parsed.type === "cf-folder-backup" || parsed.type === "cf-complete-backup") {
                                     if (parsed.data && typeof parsed.data === 'object') {
                                         for (const [key, val] of Object.entries(parsed.data)) {
                                             if (typeof val === 'string') {
