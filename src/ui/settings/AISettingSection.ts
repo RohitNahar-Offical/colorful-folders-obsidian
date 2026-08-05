@@ -274,8 +274,12 @@ export class AISettingSection extends SettingSection {
             const loadingNotice = new obsidian.Notice(`⏳ ${engineName} is scanning vault files...`, 0);
 
             try {
-                const files = this.plugin.app.vault.getFiles();
-                const targets = files.map(f => ({ path: f.path, name: f.name }));
+                const allItems = this.plugin.app.vault.getAllLoadedFiles().filter(f => f.path !== '/');
+                const targets = allItems.map(f => ({
+                    path: f.path,
+                    name: f.name,
+                    isFolder: f instanceof obsidian.TFolder
+                }));
 
                 const results = await this.plugin.embeddingModel.classifyTargetsAsync(targets, (completed, total, pct) => {
                     loadingNotice.setMessage(`⏳ ${engineName}: ${pct}% (${completed}/${total} items processed)...`);

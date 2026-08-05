@@ -10,6 +10,7 @@ export interface VectorMatchResult {
 
 interface IconVector {
     tokens: string[];
+    tokenWeights: Map<string, number>;
     normalized: Map<string, number>;
     domains: Set<string>;
 }
@@ -288,9 +289,10 @@ export class EmbeddingModel {
         for (const [brand, candidates] of Object.entries(EmbeddingModel.BRAND_DICTIONARY)) {
             for (const iconId of candidates) {
                 const vector = this.getOrCreateVector(iconId);
-                const tokens = this.tokenizeText(brand);
-                tokens.forEach(t => vector.normalized.set(t, (vector.normalized.get(t) || 0) + 1.0));
-                vector.tokens = Array.from(vector.normalized.keys());
+                const weights = this.buildWeightedTokenMap(brand);
+                weights.forEach((w, t) => {
+                    vector.tokenWeights.set(t, (vector.tokenWeights.get(t) || 0) + w);
+                });
                 vector.domains.add(brand);
             }
         }
@@ -302,9 +304,13 @@ export class EmbeddingModel {
                 .replace(/^(simple-icons-|si-|tabler-|fa-solid-|fa-regular-|bx-|octicon-|ra-|cf-|bi-|ri-|feather-)/i, '')
                 .replace(/^brand-/i, '');
 
-            const tokens = this.tokenizeText(cleanId);
-            tokens.forEach(t => vector.normalized.set(t, (vector.normalized.get(t) || 0) + 1.5));
-            vector.tokens = Array.from(vector.normalized.keys());
+            vector.tokenWeights.set(iconId.toLowerCase(), 4.0);
+            vector.tokenWeights.set(cleanId.toLowerCase(), 3.5);
+
+            const weights = this.buildWeightedTokenMap(cleanId);
+            weights.forEach((w, t) => {
+                vector.tokenWeights.set(t, (vector.tokenWeights.get(t) || 0) + w * 1.5);
+            });
         }
 
         const localIcons = this.plugin?.localFileSystemIcons || {};
@@ -316,10 +322,20 @@ export class EmbeddingModel {
                 .replace(/^(simple-icons-|si-|tabler-|fa-solid-|fa-regular-|bx-|octicon-|ra-|cf-|bi-|ri-|feather-)/i, '')
                 .replace(/^brand-/i, '');
 
-            const tokens = this.tokenizeText(cleanId);
-            tokens.forEach(t => vector.normalized.set(t, (vector.normalized.get(t) || 0) + 1.0));
-            vector.tokens = Array.from(vector.normalized.keys());
+            vector.tokenWeights.set(iconId.toLowerCase(), 4.0);
+            vector.tokenWeights.set(cleanId.toLowerCase(), 3.5);
+
+            const weights = this.buildWeightedTokenMap(cleanId);
+            weights.forEach((w, t) => {
+                vector.tokenWeights.set(t, (vector.tokenWeights.get(t) || 0) + w);
+            });
         }
+
+        // Finalize vector normalization
+        this.iconVectors.forEach(vec => {
+            vec.normalized = this.normalizeVectorFromMap(vec.tokenWeights);
+            vec.tokens = Array.from(vec.normalized.keys());
+        });
 
         this.isInitialized = true;
     }
@@ -329,6 +345,7 @@ export class EmbeddingModel {
         if (!vector) {
             vector = {
                 tokens: [],
+                tokenWeights: new Map(),
                 normalized: new Map(),
                 domains: new Set()
             };
@@ -337,42 +354,71 @@ export class EmbeddingModel {
         return vector;
     }
 
-    private tokenizeText(text: string): string[] {
-        const clean = text.toLowerCase().replace(/[^a-z0-9\s-]/g, ' ').trim();
+    /**
+     * Builds a weighted token map preserving full file names, full un-split phrases, and full words with high weights,
+     * while retaining subword 3-grams as lower-weighted fallbacks.
+     */
+    private buildWeightedTokenMap(text: string): Map<string, number> {
+        const tokenWeights = new Map<string, number>();
+
+        const addToken = (tok: string, weight: number) => {
+            if (!tok || tok.length < 2) return;
+            const lower = tok.toLowerCase().trim();
+            const current = tokenWeights.get(lower) || 0;
+            tokenWeights.set(lower, Math.max(current, weight));
+        };
+
+        const clean = text.toLowerCase().replace(/[^a-z0-9\s_-]/g, ' ').trim();
+        if (!clean) return tokenWeights;
+
+        // 1. Full un-split clean phrase/filename (Highest priority)
+        const fullClean = clean.replace(/[\s_-]+/g, ' ');
+        const fullJoined = clean.replace(/[\s_-]+/g, '');
+        const fullHyphen = clean.replace(/[\s_-]+/g, '-');
+        
+        addToken(fullClean, 3.5);
+        addToken(fullJoined, 3.5);
+        addToken(fullHyphen, 3.5);
+
+        // 2. Full individual word tokens (High priority)
         const rawWords = clean.split(/[\s_-]+/).filter(w => w.length >= 2);
         const filteredWords = rawWords.filter(w => !EmbeddingModel.STOP_WORDS.has(w));
         const words = filteredWords.length > 0 ? filteredWords : rawWords;
 
-        const tokens: string[] = [...words];
+        for (const w of words) {
+            addToken(w, 2.5);
+        }
 
+        // 3. Subword 3-grams for partial matching fallback (Low priority)
         for (const w of words) {
             if (w.length >= THREE_GRAM_MIN_LENGTH && w.length <= THREE_GRAM_MAX_LENGTH) {
-                const cached = EmbeddingModel.THREE_GRAM_CACHE.get(w);
-                if (cached) {
-                    tokens.push(...cached);
-                } else {
-                    const grams: string[] = [];
+                let grams = EmbeddingModel.THREE_GRAM_CACHE.get(w);
+                if (!grams) {
+                    grams = [];
                     for (let i = 0; i <= w.length - 3; i++) {
                         grams.push(w.substring(i, i + 3));
                     }
                     EmbeddingModel.THREE_GRAM_CACHE.set(w, grams);
-                    tokens.push(...grams);
+                }
+                for (const g of grams) {
+                    addToken(g, 0.4);
                 }
             }
         }
 
-        return tokens;
+        return tokenWeights;
     }
 
-    private normalizeVector(tokens: string[]): Map<string, number> {
+    public tokenizeText(text: string): string[] {
+        return Array.from(this.buildWeightedTokenMap(text).keys());
+    }
+
+    private normalizeVectorFromMap(weightsMap: Map<string, number>): Map<string, number> {
         const vec = new Map<string, number>();
-        tokens.forEach(t => vec.set(t, (vec.get(t) || 0) + 1.0));
-
         let normSq = 0;
-        vec.forEach(v => { normSq += v * v; });
+        weightsMap.forEach(v => { normSq += v * v; });
         const norm = Math.sqrt(normSq) || 1.0;
-
-        vec.forEach((v, k) => vec.set(k, v / norm));
+        weightsMap.forEach((v, k) => vec.set(k, v / norm));
         return vec;
     }
 
@@ -480,14 +526,14 @@ export class EmbeddingModel {
             return enriched;
         }
 
-        const queryTokens = this.tokenizeText(context.filename);
-        if (queryTokens.length === 0) {
+        const queryTokenWeights = this.buildWeightedTokenMap(context.filename);
+        if (queryTokenWeights.size === 0) {
             const fallback = this.getFallbackIcons(context, topK);
             this.queryCache.set(cacheKey, { result: fallback, timestamp: Date.now() });
             return fallback;
         }
 
-        const queryVector = this.normalizeVector(queryTokens);
+        const queryVector = this.normalizeVectorFromMap(queryTokenWeights);
         const scored: { iconId: string; rawScore: number }[] = [];
 
         this.iconVectors.forEach((iconVec, iconId) => {
@@ -510,6 +556,12 @@ export class EmbeddingModel {
             matchedTag: context.filename,
             confidence: r.score >= 0.7 ? 'high' as const : r.score >= 0.45 ? 'medium' as const : 'low' as const
         }));
+
+        if (result.length === 0) {
+            const fallback = this.getFallbackIcons(context, topK);
+            this.queryCache.set(cacheKey, { result: fallback, timestamp: Date.now() });
+            return fallback;
+        }
 
         this.queryCache.set(cacheKey, { result, timestamp: Date.now() });
         return result;
@@ -536,6 +588,33 @@ export class EmbeddingModel {
     }
 
     private tryDirectDictionaryMatch(lowerName: string, topK: number, context?: QueryContext): VectorMatchResult[] {
+        // Direct icon name & clean ID match against available icon library
+        const normLowerName = lowerName.replace(/[\s_-]+/g, '');
+        const directIconMatches: VectorMatchResult[] = [];
+
+        this.iconVectors.forEach((_vec, iconId) => {
+            const cleanId = iconId
+                .replace(/^lucide-/i, '')
+                .replace(/^(simple-icons-|si-|tabler-|fa-solid-|fa-regular-|bx-|octicon-|ra-|cf-|bi-|ri-|feather-)/i, '')
+                .replace(/^brand-/i, '')
+                .toLowerCase();
+            const normCleanId = cleanId.replace(/[\s_-]+/g, '');
+            const lowerIcon = iconId.toLowerCase();
+
+            if (lowerIcon === lowerName || cleanId === lowerName || normCleanId === normLowerName) {
+                directIconMatches.push({
+                    iconId,
+                    score: 0.99,
+                    matchedTag: lowerName,
+                    confidence: 'high' as const
+                });
+            }
+        });
+
+        if (directIconMatches.length > 0) {
+            return directIconMatches.slice(0, topK);
+        }
+
         if (context && this.isPersonName(context.filename, context.parentFolder)) {
             const personIcons = context.isFolder
                 ? ['folder-users', 'users', 'user', 'contact']
@@ -616,6 +695,24 @@ export class EmbeddingModel {
             }
         }
 
+        if (results.length < topK) {
+            const defaultIcons = context.isFolder
+                ? ['folder', 'layers', 'box', 'folder-kanban']
+                : ['file-text', 'notebook', 'edit-3', 'layers'];
+            for (const iconId of defaultIcons) {
+                if (!seen.has(iconId)) {
+                    seen.add(iconId);
+                    results.push({
+                        iconId,
+                        score: 0.3,
+                        matchedTag: context.isFolder ? 'default-folder' : 'default-file',
+                        confidence: 'low' as const
+                    });
+                }
+                if (results.length >= topK) break;
+            }
+        }
+
         return results;
     }
 
@@ -647,9 +744,12 @@ export class EmbeddingModel {
      */
     public buildEnrichedPrompt(titleOrPath: string, isFolder?: boolean): string {
         const context = this.buildQueryContext(titleOrPath, isFolder);
-        const parts: string[] = [`Document Title: ${context.filename}`];
+        const parts: string[] = [
+            `Full File Name: ${context.filename}`,
+            `Exact Words: ${context.filename.replace(/[\s_-]+/g, ' ')}`
+        ];
         if (context.extension) parts.push(`Extension: ${context.extension}`);
-        if (context.parentFolder && context.parentFolder !== 'Root') parts.push(`Folder: ${context.parentFolder}`);
+        if (context.parentFolder && context.parentFolder !== 'Root') parts.push(`Folder Path: ${context.parentFolder}`);
         if (context.isFolder) parts.push('Type: Directory Folder');
         return parts.join(' | ');
     }
