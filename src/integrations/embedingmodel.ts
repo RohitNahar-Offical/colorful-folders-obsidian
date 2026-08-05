@@ -152,6 +152,32 @@ export class EmbeddingModel {
         markdown: ['simple-icons-markdown', 'file-text', 'pen-tool'],
         database: ['database', 'server', 'hard-drive', 'layers'],
         
+        people: ['users', 'user', 'contact', 'folder-users'],
+        person: ['user', 'contact', 'id-card', 'profile'],
+        user: ['user', 'contact', 'id-card', 'profile'],
+        users: ['users', 'contact', 'folder-users'],
+        contact: ['contact', 'user', 'id-card', 'phone'],
+        contacts: ['users', 'contact', 'folder-users', 'phone'],
+        client: ['user', 'contact', 'briefcase', 'id-card'],
+        clients: ['users', 'contact', 'briefcase', 'folder-users'],
+        customer: ['user', 'contact', 'shopping-bag', 'id-card'],
+        customers: ['users', 'contact', 'shopping-bag', 'folder-users'],
+        author: ['user', 'pen-tool', 'book-open', 'contact'],
+        authors: ['users', 'book-open', 'pen-tool', 'contact'],
+        speaker: ['user', 'mic', 'contact'],
+        biography: ['user', 'book-open', 'file-text'],
+        profile: ['user', 'id-card', 'contact'],
+        team: ['users', 'contact', 'folder-users', 'briefcase'],
+        member: ['user', 'contact', 'id-card'],
+        members: ['users', 'contact', 'folder-users'],
+        staff: ['users', 'contact', 'briefcase'],
+        employee: ['user', 'contact', 'id-card', 'briefcase'],
+        candidate: ['user-check', 'user', 'id-card'],
+        doctor: ['user', 'stethoscope', 'activity'],
+        dr: ['user', 'stethoscope', 'activity'],
+        prof: ['user', 'graduation-cap', 'book-open'],
+        professor: ['user', 'graduation-cap', 'book-open'],
+
         finance: ['dollar-sign', 'coins', 'credit-card', 'trending-up', 'receipt', 'wallet'],
         money: ['dollar-sign', 'coins', 'bank', 'credit-card'],
         invoice: ['receipt', 'dollar-sign', 'credit-card', 'file-text'],
@@ -442,7 +468,7 @@ export class EmbeddingModel {
             this.queryCache.delete(oldestKey);
         }
 
-        const directMatch = this.tryDirectDictionaryMatch(context.lowerName, topK);
+        const directMatch = this.tryDirectDictionaryMatch(context.lowerName, topK, context);
         if (directMatch.length > 0) {
             const enriched = directMatch.map(r => ({
                 ...r,
@@ -489,7 +515,39 @@ export class EmbeddingModel {
         return result;
     }
 
-    private tryDirectDictionaryMatch(lowerName: string, topK: number): VectorMatchResult[] {
+    private isPersonName(name: string, parentFolder?: string): boolean {
+        if (!name) return false;
+        const clean = name.replace(/\.(md|txt|docx|pdf)$/i, '').trim();
+        if (/^(dr|mr|mrs|ms|prof|professor|sir|lady|author|client|patient|member|staff|doctor)\b/i.test(clean)) {
+            return true;
+        }
+        if (parentFolder && /^(people|contacts|friends|family|team|members|staff|clients|customers|authors|speakers|patients|candidates)$/i.test(parentFolder.trim())) {
+            return true;
+        }
+        const words = clean.split(/[\s._-]+/).filter(Boolean);
+        if (words.length >= 2 && words.length <= 4) {
+            const nonNameKeywords = /^(project|meeting|data|model|system|config|test|code|file|document|folder|report|summary|draft|final|version|script|app|index|main|log|track|build|page|site|web|task|list|plan|note|notes|idea|ideas|readme|changelog|package)$/i;
+            const hasNonNameWord = words.some(w => nonNameKeywords.test(w) || /^\d+$/.test(w));
+            if (!hasNonNameWord) {
+                return words.every(w => /^[A-Z][a-z]+$/.test(w));
+            }
+        }
+        return false;
+    }
+
+    private tryDirectDictionaryMatch(lowerName: string, topK: number, context?: QueryContext): VectorMatchResult[] {
+        if (context && this.isPersonName(context.filename, context.parentFolder)) {
+            const personIcons = context.isFolder
+                ? ['folder-users', 'users', 'user', 'contact']
+                : ['user', 'contact', 'id-card', 'profile', 'user-check'];
+            return personIcons.slice(0, topK).map(iconId => ({
+                iconId,
+                score: 0.98,
+                matchedTag: 'person-name',
+                confidence: 'high' as const
+            }));
+        }
+
         const direct = EmbeddingModel.BRAND_DICTIONARY[lowerName];
         if (direct) {
             return direct.slice(0, topK).map(iconId => ({

@@ -496,17 +496,18 @@ export function generateStealthCss(settings: ColorfulFoldersSettings): string {
             `;
 
             if (settings.notebookNavigatorSupport) {
-                const nnSelector = NotebookNavigatorIntegration.getScopedNavSelector(path);
+                const nnSelectors = NotebookNavigatorIntegration.getScopedNavSelectors(path);
                 const nnFileSelector = NotebookNavigatorIntegration.getScopedFileSelector(path);
 
+                const hideSels = [...nnSelectors, nnFileSelector].map(s => `body:not(.cf-show-hidden) ${s}`).join(',\n');
+                const showSels = [...nnSelectors, nnFileSelector].map(s => `body.cf-show-hidden ${s}`).join(',\n');
+
                 stealthCss += `
-                    body:not(.cf-show-hidden) ${nnSelector},
-                    body:not(.cf-show-hidden) ${nnFileSelector} {
+                    ${hideSels} {
                         display: none !important;
                     }
 
-                    body.cf-show-hidden ${nnSelector},
-                    body.cf-show-hidden ${nnFileSelector} {
+                    ${showSels} {
                         display: flex !important;
                         visibility: visible !important;
                         background-color: rgba(128, 128, 128, 0.15) !important;

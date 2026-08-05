@@ -3,6 +3,31 @@ import { SettingSection } from './SettingSection';
 
 export class AISettingSection extends SettingSection {
     render(containerEl: HTMLElement): void {
+        // 🧪 Experimental Feature Banner
+        const experimentalNotice = containerEl.createDiv({ cls: "cf-experimental-banner" });
+        experimentalNotice.setCssStyles({
+            backgroundColor: "rgba(235, 150, 20, 0.12)",
+            borderLeft: "4px solid var(--text-warning, #f59e0b)",
+            padding: "12px 16px",
+            borderRadius: "6px",
+            marginBottom: "16px"
+        });
+        experimentalNotice.createEl("h4", {
+            text: "🧪 Experimental Feature"
+        }).setCssStyles({
+            margin: "0 0 6px 0",
+            fontSize: "1em",
+            fontWeight: "600",
+            color: "var(--text-warning, #f59e0b)"
+        });
+        experimentalNotice.createEl("p", {
+            text: "AI auto-icon classification is an experimental feature. Before running batch classification, please make a backup of your plugin settings and styles from the Privacy tab."
+        }).setCssStyles({
+            margin: "0",
+            fontSize: "0.85em",
+            color: "var(--text-normal)"
+        });
+
         // 🤖 AI Auto-Icon Classifier Card
         const aiCard = this.settingTab.makeCard(containerEl, "🤖", "AI Auto-Icon Classifier");
         aiCard.createEl("p", {

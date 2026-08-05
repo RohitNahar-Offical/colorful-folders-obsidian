@@ -589,12 +589,21 @@ For EVERY requested item, output a JSON array of EXACTLY 3 candidate icon names:
 - E-Commerce & Retail Brands ("Amazon", "eBay", "Shopify", "Walmart"): Candidate 1 = "amazon" or "simple-icons-amazon", Candidate 2 = "shopping-cart" or "shopping-bag", Candidate 3 = "package" or "store". NEVER assign video or music icons!
 - Video/Media Brands ("YouTube", "Netflix"): Candidate 1 = "youtube" or "simple-icons-youtube", Candidate 2 = "video" or "film", Candidate 3 = "play" or "camera".
 - Development & Tech Brands ("Python", "React", "Docker", "GitHub"): Candidate 1 = "python" or "simple-icons-python", Candidate 2 = "code", Candidate 3 = "terminal" or "cpu".
+- People & Person Names ("John Smith", "Dr. Sarah Conner", "Author", "Client"): Candidate 1 = "user" or "contact" or "id-card", Candidate 2 = "users" or "profile", Candidate 3 = "folder-users" or "file-text".
+
+### PEOPLE & PERSON NAMES RULE (CRITICAL):
+If an item is a person's name (e.g. "John Smith", "Dr. Sarah Conner", "Albert Einstein", "Alex Johnson"), a biography, author note, client file, team member, or contact:
+- Candidate 1 MUST be a person/contact icon: "user", "contact", "id-card", "user-check", or "profile".
+- Candidate 2 MUST be: "users" (for groups/teams) or "user" or "contact".
+- Candidate 3 MUST be: "folder-users" (for folders) or "book-open" (for biographies) or "file-text".
+- NEVER output tech icons ("code", "terminal"), product icons ("box", "package"), or generic document fallbacks ("file-text") for people/person names!
 
 ### FOLDER VS FILE DIFFERENTIATION RULE:
 - For FOLDERS: Candidates 2 & 3 MUST be structural container icons (e.g. "folder", "layers", "archive", "box").
 - For FILES / NOTES: Candidates 1, 2, and 3 MUST match the note topic. Do NOT output generic document fallbacks ("file-text", "file", "document").
 
 ### RECOMMENDED ICON EXAMPLES:
+- **People, Contacts & Names**: \`user\`, \`users\`, \`contact\`, \`id-card\`, \`user-check\`, \`user-round\`, \`folder-users\`, \`profile\`
 - **E-Commerce & Brands**: \`amazon\`, \`simple-icons-amazon\`, \`shopify\`, \`shopping-cart\`, \`shopping-bag\`, \`store\`, \`package\`, \`credit-card\`
 - **Development & Tech**: \`python\`, \`simple-icons-python\`, \`javascript\`, \`docker\`, \`react\`, \`github\`, \`code\`, \`terminal\`, \`cpu\`, \`database\`
 - **Writing, Notes & Books**: \`book-open\`, \`book\`, \`pen-tool\`, \`notebook\`, \`quote\`, \`sticky-note\`, \`library\`
@@ -615,6 +624,7 @@ Correct Output:
 {
   "BAKE/Amazon.md": ["amazon", "shopping-cart", "package"],
   "Development/FastAPI Backend.md": ["python", "code", "terminal"],
+  "People/John Smith.md": ["user", "contact", "id-card"],
   "Personal/Reading List.md": ["book-open", "book", "notebook"],
   "Work/Client Meetings 2026/Q3 Planning.md": ["calendar", "clock", "target"],
   "Projects/Website Redesign": ["react", "folder", "layers"]

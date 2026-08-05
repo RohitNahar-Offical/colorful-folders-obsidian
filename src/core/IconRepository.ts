@@ -208,11 +208,14 @@ export class IconRepository {
         if (dotIdx > 0 && sanitized.length - dotIdx <= 5) {
             sanitized = sanitized.substring(0, dotIdx);
         }
+        const cleanSanitized = sanitized.replace(/[^\p{L}\p{N}\s_-]/gu, '').trim();
         const fullHyphenated = sanitized.replace(/[\s_]+/g, '-');
+        const cleanHyphenated = cleanSanitized.replace(/[\s_]+/g, '-');
 
         const parentFolder = path ? path.split('/').slice(-2, -1)[0] : '';
         const searchContexts = [lName];
         if (sanitized && sanitized !== lName) searchContexts.push(sanitized);
+        if (cleanSanitized && cleanSanitized !== sanitized && cleanSanitized !== lName) searchContexts.push(cleanSanitized);
         if (parentFolder && parentFolder.toLowerCase() !== 'root') {
             searchContexts.push(parentFolder.toLowerCase());
         }
@@ -233,7 +236,7 @@ export class IconRepository {
         }
 
         // Tier 1: Exact local pack / custom icon match (Priority 1800)
-        const exactMatchedIconId = this.findIconInPacks(fullHyphenated);
+        const exactMatchedIconId = this.findIconInPacks(fullHyphenated) || (cleanHyphenated ? this.findIconInPacks(cleanHyphenated) : null);
         if (exactMatchedIconId) {
             const safeRexStr = sanitized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             return {
@@ -273,7 +276,7 @@ export class IconRepository {
         // Tier 4: Stem-aware fuzzy multi-word & single-word fallback (Priority 50)
         let fuzzyMatchedIconId: string | null = null;
         const words = sanitized
-            .split(/[\s_.-]+/)
+            .split(/[^\p{L}\p{N}]+/gu)
             .map(w => w.toLowerCase())
             .filter(w => w.length >= 1 && !STOP_WORDS.has(w));
 

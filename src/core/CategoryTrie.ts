@@ -64,7 +64,7 @@ export class CategoryTrie {
 
     public lookup(name: string): AutoIconData[] {
         if (!name) return this.fallbackCategories;
-        const words = name.toLowerCase().split(/[\s_.-]+/);
+        const words = name.toLowerCase().split(/[^\p{L}\p{N}]+/gu);
 
         const matchedSet = new Set<AutoIconData>();
 

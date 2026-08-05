@@ -765,12 +765,9 @@ export class StyleGenerator {
                 );
             }
 
-            const nnNavSel = NotebookNavigatorIntegration.isSupported(this.settings)
-                ? NotebookNavigatorIntegration.getScopedNavSelector(child.path)
-                : null;
             const nnNavNameSel = NotebookNavigatorIntegration.getNavNameSelector();
-            const nnSelectors = nnNavSel
-                ? nnNavSel.split(',').map(s => `body ${s.trim()} ${nnNavNameSel}`)
+            const nnSelectors = NotebookNavigatorIntegration.isSupported(this.settings)
+                ? NotebookNavigatorIntegration.getScopedNavSelectors(child.path).map(s => `body ${s} ${nnNavNameSel}`)
                 : [];
 
             grouper.add(textCss, [
