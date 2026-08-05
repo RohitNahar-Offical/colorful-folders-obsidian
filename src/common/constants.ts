@@ -311,15 +311,16 @@ export const PACK_PRIORITY: Record<string, number> = {
     'tabler': 80,        // 3. Main UI fallback (Massive library, same aesthetic)
     'simple-icons': 70,  // 4. Brands only (Logos for Google, GitHub, etc.)
     'remix': 60,         // 5. Secondary fallback
-    'feather': 50,       // 6. Deprecated (Lucide is the upgraded version)
-    'font-awesome': 40,  // 7. Utility fallback (Heavy, traditional style)
-    'material': 30       // 8. Geometric fallback (Different design language)
+    'bi': 55,            // 6. Bootstrap Icons (large general-purpose library)
+    'feather': 50,       // 7. Deprecated (Lucide is the upgraded version)
+    'font-awesome': 40,  // 8. Utility fallback (Heavy, traditional style)
+    'material': 30       // 9. Geometric fallback (Different design language)
 };
 
 export const PACK_PREFIXES: string[] = [
     'custom', 'simple-icons', 'simple', 'lucide', 'feather',
     'fa', 'fas', 'far', 'fab', 'fontawesome', 'ri', 'remix',
-    'tb', 'tabler', 'mdi', 'material', 'oct', 'octicons'
+    'tb', 'tabler', 'mdi', 'material', 'oct', 'octicons', 'bi', 'bootstrap'
 ];
 
 export const STOP_WORDS = new Set([

@@ -7,9 +7,10 @@ export class IconPackIndex {
     private suffixMap = new Map<string, string>();
     private allKeys: string[] = [];
     private isBuilt = false;
-    private _localVersion = '';
-    private _customVersion = '';
-
+    private _localRef: Record<string, string | null> | undefined = undefined;
+    private _customRef: Record<string, string> | undefined = undefined;
+    private _localCount = -1;
+    private _customCount = -1;
     private getPackPriority(iconKey: string): number {
         const lower = iconKey.toLowerCase();
         for (const [pack, prio] of Object.entries(PACK_PRIORITY)) {
@@ -21,12 +22,23 @@ export class IconPackIndex {
     }
 
     public build(localIcons: Record<string, string | null> | undefined, customIcons: Record<string, string> | undefined) {
-        const localVersion = localIcons ? JSON.stringify(Object.keys(localIcons)) : '';
-        const customVersion = customIcons ? JSON.stringify(Object.keys(customIcons)) : '';
+        const localCount = localIcons ? Object.keys(localIcons).length : 0;
+        const customCount = customIcons ? Object.keys(customIcons).length : 0;
 
-        if (this.isBuilt && this._localVersion === localVersion && this._customVersion === customVersion) {
+        if (
+            this.isBuilt &&
+            this._localRef === localIcons &&
+            this._customRef === customIcons &&
+            this._localCount === localCount &&
+            this._customCount === customCount
+        ) {
             return; // No change — skip rebuild
         }
+
+        this._localRef = localIcons;
+        this._customRef = customIcons;
+        this._localCount = localCount;
+        this._customCount = customCount;
 
         this.exactMap.clear();
         this.coreMap.clear();
@@ -84,8 +96,6 @@ export class IconPackIndex {
             }
         }
 
-        this._localVersion = localVersion;
-        this._customVersion = customVersion;
         this.isBuilt = true;
     }
 
@@ -217,8 +227,10 @@ export class IconPackIndex {
 
     public invalidate() {
         this.isBuilt = false;
-        this._localVersion = '';
-        this._customVersion = '';
+        this._localRef = undefined;
+        this._customRef = undefined;
+        this._localCount = -1;
+        this._customCount = -1;
         this.exactMap.clear();
         this.coreMap.clear();
         this.suffixMap.clear();

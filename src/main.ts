@@ -421,11 +421,16 @@ export default class ColorfulFoldersPlugin
   // cache if customIcons or customIconRules actually changed — saving
   // unrelated settings (opacity, tag colors, etc.) no longer thrashes the cache.
   private _lastIconRulesKey = '';
-  private _lastCustomIconsKey = '';
+  private _lastCustomIconsCount = -1;
+  private _lastCustomIconsRef: Record<string, string> | null = null;
 
   async saveSettings() {
     const iconRulesChanged = (this.settings.customIconRules || '') !== this._lastIconRulesKey;
-    const customIconsChanged = JSON.stringify(this.settings.customIcons || {}) !== this._lastCustomIconsKey;
+    const currentCustomIcons = this.settings.customIcons || {};
+    const currentCustomCount = Object.keys(currentCustomIcons).length;
+    const customIconsChanged =
+      this._lastCustomIconsRef !== currentCustomIcons ||
+      this._lastCustomIconsCount !== currentCustomCount;
     const shouldClearIconCache = iconRulesChanged || customIconsChanged;
 
     if (this.heatmapCache) {
@@ -438,7 +443,8 @@ export default class ColorfulFoldersPlugin
       this.iconCache.clear();
       this.iconManager.invalidateCategoryCache();
       this._lastIconRulesKey = this.settings.customIconRules || '';
-      this._lastCustomIconsKey = JSON.stringify(this.settings.customIcons || {});
+      this._lastCustomIconsRef = currentCustomIcons;
+      this._lastCustomIconsCount = currentCustomCount;
     }
     this.activePaletteCache = null;
     this.parsedExclusionList = new Set(
@@ -453,34 +459,38 @@ export default class ColorfulFoldersPlugin
   }
 
   registerCustomIcons() {
-    const entries = Object.entries(this.settings.customIcons || {});
-    if (entries.length === 0) return;
+    const doRegister = () => {
+      const entries = Object.entries(this.settings.customIcons || {});
+      if (entries.length === 0) return;
 
-    // Chunk icon registration into non-blocking idle batches to eliminate startup lag
-    const registerBatch = (startIndex: number) => {
-      const batchSize = 250;
-      const end = Math.min(startIndex + batchSize, entries.length);
-      for (let i = startIndex; i < end; i++) {
-        const [id, svg] = entries[i];
-        try {
-          obsidian.addIcon(id, svg);
-        } catch {
-          // Ignore duplicate icon registration
+      // Chunk icon registration into non-blocking idle batches to eliminate startup lag
+      const registerBatch = (startIndex: number) => {
+        const batchSize = 250;
+        const end = Math.min(startIndex + batchSize, entries.length);
+        for (let i = startIndex; i < end; i++) {
+          const [id, svg] = entries[i];
+          try {
+            obsidian.addIcon(id, svg);
+          } catch {
+            // Ignore duplicate icon registration
+          }
         }
-      }
-      if (end < entries.length) {
-        if (typeof window.requestIdleCallback === "function") {
-          window.requestIdleCallback(() => registerBatch(end));
-        } else {
-          window.setTimeout(() => registerBatch(end), 50);
+        if (end < entries.length) {
+          if (typeof window.requestIdleCallback === "function") {
+            window.requestIdleCallback(() => registerBatch(end));
+          } else {
+            window.setTimeout(() => registerBatch(end), 50);
+          }
         }
-      }
+      };
+
+      registerBatch(0);
     };
 
     if (typeof window.requestIdleCallback === "function") {
-      window.requestIdleCallback(() => registerBatch(0));
+      window.requestIdleCallback(doRegister);
     } else {
-      window.setTimeout(() => registerBatch(0), 100);
+      window.setTimeout(doRegister, 1000);
     }
   }
 

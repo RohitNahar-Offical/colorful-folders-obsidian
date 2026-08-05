@@ -194,10 +194,6 @@ export function hashString(str: string): number {
     return Math.abs(hash);
 }
 
-export function escapeRegExp(string: string): string {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 export function stemWord(word: string): string {
     if (!word || word.length <= 3) return word;
     let s = word.toLowerCase();
@@ -239,13 +235,6 @@ export function normalizePathKey(path: string): string {
         .replace(/\.md$/i, '')
         .trim()
         .toLowerCase();
-}
-
-export function normalizeIconName(iconId: string): string {
-    if (!iconId) return "";
-    const clean = iconId.trim().toLowerCase();
-    const { core } = extractCoreIconKeyword(clean);
-    return core || stripIconPrefix(clean) || clean;
 }
 
 

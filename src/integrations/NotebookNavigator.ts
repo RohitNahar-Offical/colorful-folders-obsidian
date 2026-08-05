@@ -371,5 +371,26 @@ export class NotebookNavigatorIntegration {
                 }
             }, interval);
         }
+
+        // Graceful degradation: invalidate cache if NN is deactivated mid-session
+        try {
+            interface InternalPluginManager {
+                on(event: string, cb: (pluginId: string) => void): obsidian.EventRef;
+            }
+            const pm = (plugin.app as unknown as { plugins: InternalPluginManager }).plugins;
+            if (pm && typeof pm.on === 'function') {
+                plugin.registerEvent(
+                    pm.on('change', (pluginId: string) => {
+                        if (pluginId === 'notebook-navigator') {
+                            // Invalidate explorer container cache and regenerate styles
+                            (plugin as unknown as { _explorerContainerCache?: unknown })._explorerContainerCache = null;
+                            void plugin.generateStyles();
+                        }
+                    })
+                );
+            }
+        } catch {
+            // Silently ignore: undocumented API not available in this version
+        }
     }
 }

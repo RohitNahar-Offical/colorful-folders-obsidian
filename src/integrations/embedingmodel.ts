@@ -667,29 +667,7 @@ export class EmbeddingModel {
         return output;
     }
 
-    public classifyTargets(targets: Array<{ path: string; name: string; isFolder?: boolean }>): Record<string, string[]> {
-        const output: Record<string, string[]> = {};
-        
-        const uniqueNames = new Map<string, { path: string; name: string; isFolder?: boolean }>();
-        for (const item of targets) {
-            const key = item.path.toLowerCase();
-            if (!uniqueNames.has(key)) {
-                uniqueNames.set(key, item);
-            }
-        }
 
-        for (const item of uniqueNames.values()) {
-            const matches = this.findBestIcons(item.name || item.path, { 
-                topK: 3, 
-                isFolder: item.isFolder 
-            });
-            if (matches.length > 0) {
-                output[item.path] = matches.map(m => m.iconId);
-            }
-        }
-
-        return output;
-    }
 
     /**
      * Pre-calculates candidate icon IDs for a batch of items, supporting both Built-in Local and Custom Neural models.

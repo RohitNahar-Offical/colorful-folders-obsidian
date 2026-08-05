@@ -17,10 +17,6 @@ export class StyleGenerator {
     settings: ColorfulFoldersSettings;
     app: obsidian.App;
 
-    // PERF: Track dirty paths for incremental style regeneration
-    private _dirtyPaths: Set<string> | null = null;
-    private _fullRegenRequired = true;
-
     private static readonly CF_FILE_TEXT_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px; opacity: 0.85;"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`;
     private static readonly SPACED_TEXT_CSS = `
         letter-spacing: 1px !important;
@@ -54,60 +50,7 @@ export class StyleGenerator {
         return escaped;
     }
 
-    /**
-     * Mark a path and all its descendants as needing style regeneration.
-     */
-    markDirty(path: string): void {
-        if (!this._dirtyPaths) this._dirtyPaths = new Set();
-        this._dirtyPaths.add(path);
-        this._fullRegenRequired = false;
-    }
 
-    /**
-     * Mark all paths as needing full regeneration (e.g., global settings change).
-     */
-    markAllDirty(): void {
-        this._dirtyPaths = null;
-        this._fullRegenRequired = true;
-        this._pathEscapeCache.clear();
-        this._cachedGlobalBaseCss = null;
-        this._cachedDividerCss = null;
-        this._cachedStealthCss = null;
-        this._iconValidityCache.clear();
-    }
-
-    /**
-     * Check if a path or any of its ancestors is dirty.
-     */
-    private isPathDirty(path: string): boolean {
-        if (this._fullRegenRequired) return true;
-        if (!this._dirtyPaths || this._dirtyPaths.size === 0) return false;
-        if (this._dirtyPaths.has(path)) return true;
-        // Check ancestors
-        const segments = path.split('/');
-        for (let i = 1; i <= segments.length; i++) {
-            const ancestor = segments.slice(0, i).join('/');
-            if (this._dirtyPaths.has(ancestor)) return true;
-        }
-        return false;
-    }
-
-    /**
-     * Check if a folder has any custom style or inherited style that would affect its children.
-     */
-    private hasCustomOrInheritedStyle(folderPath: string): boolean {
-        const style = this.settings.customFolderColors[folderPath];
-        if (style) return true;
-        // Check parent for inherited styles
-        const parentPath = folderPath.substring(0, folderPath.lastIndexOf('/'));
-        if (parentPath) {
-            const parentStyle = this.settings.customFolderColors[parentPath];
-            if (parentStyle && typeof parentStyle === 'object' && (parentStyle.applyToSubfolders || parentStyle.applyToFiles)) {
-                return true;
-            }
-        }
-        return false;
-    }
 
 
 
@@ -789,40 +732,46 @@ export class StyleGenerator {
 
 
             /* Notebook Navigator Folder Integration (Native-Bridge Architecture) */
-
-            const isEmoji = this.plugin.iconManager.isEmojiIcon(folderIconId);
-            const iconSvg = !isEmoji && folderIconId ? this.plugin.iconManager.getIconSvg(folderIconId, true) : "";
-
+            /* Only generated when notebookNavigatorSupport is explicitly enabled */
             const effFolderIconColor = customStyle?.iconColor || inheritedStyle?.iconColor || color.hex || folderStyles.t;
 
-            NotebookNavigatorIntegration.generateIntegratedStyles(
-                grouper,
-                child.path,
-                true,
-                color,
-                op,
-                folderStyles.t,
-                folderIconId,
-                customStyle?.iconColor || inheritedStyle?.iconColor || null,
-                isEmoji,
-                iconSvg,
-                activeBg,
-                activeText,
-                isBold,
-                isItalic,
-                true,
-                useGlass,
-                tintOp,
-                baseThick,
-                this.settings.notebookNavigatorOutlineOnly,
-                false, /* useRadiantPath is now managed via :has(.is-active) statically */
-                context.nnIconW,
-                this.settings.activeGlow !== false
-            );
+            if (NotebookNavigatorIntegration.isSupported(this.settings)) {
+                const isEmoji = this.plugin.iconManager.isEmojiIcon(folderIconId);
+                const iconSvg = !isEmoji && folderIconId ? this.plugin.iconManager.getIconSvg(folderIconId, true) : "";
 
-            const nnNavSel = NotebookNavigatorIntegration.getScopedNavSelector(child.path);
+                NotebookNavigatorIntegration.generateIntegratedStyles(
+                    grouper,
+                    child.path,
+                    true,
+                    color,
+                    op,
+                    folderStyles.t,
+                    folderIconId,
+                    customStyle?.iconColor || inheritedStyle?.iconColor || null,
+                    isEmoji,
+                    iconSvg,
+                    activeBg,
+                    activeText,
+                    isBold,
+                    isItalic,
+                    true,
+                    useGlass,
+                    tintOp,
+                    baseThick,
+                    this.settings.notebookNavigatorOutlineOnly,
+                    false, /* useRadiantPath is now managed via :has(.is-active) statically */
+                    context.nnIconW,
+                    this.settings.activeGlow !== false
+                );
+            }
+
+            const nnNavSel = NotebookNavigatorIntegration.isSupported(this.settings)
+                ? NotebookNavigatorIntegration.getScopedNavSelector(child.path)
+                : null;
             const nnNavNameSel = NotebookNavigatorIntegration.getNavNameSelector();
-            const nnSelectors = nnNavSel.split(',').map(s => `body ${s.trim()} ${nnNavNameSel}`);
+            const nnSelectors = nnNavSel
+                ? nnNavSel.split(',').map(s => `body ${s.trim()} ${nnNavNameSel}`)
+                : [];
 
             grouper.add(textCss, [
                 `.nav-folder-title[data-cf-path="${safePath}"] .nav-folder-title-content`,
@@ -1110,10 +1059,6 @@ export class StyleGenerator {
         rawRules.push(TagColorSync.generateCss(this.plugin, context));
 
         rawRules.push(grouper.build());
-
-        // Reset dirty tracking state after successful generation
-        this._dirtyPaths = null;
-        this._fullRegenRequired = false;
 
         return rawRules.join('\n');
     }
