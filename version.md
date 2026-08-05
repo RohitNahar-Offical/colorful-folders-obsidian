@@ -19,6 +19,10 @@ This major update brings a massive overhaul to the AI classification system, pat
 - **Icon & Collapse Chevron Color Synchronization**: Folder collapse chevrons and custom file icons now dynamically match and inherit parent folder auto-colors.
 - **Visual Styling Decoupling**: Text and icon colors independently evaluate and inherit auto-colors regardless of background/border toggles.
 
+### 🐛 Bug Fixes & Robustness
+- **Path Comma Escaping & Selector Safety**: Resolved a critical issue where folder or file paths containing commas (e.g., `"A,"` or `"Work, Projects"`) caused string selector splitting inside `[data-path="..."]` attributes. Refactored `NotebookNavigatorIntegration` to return structured `string[]` arrays (`getScopedNavSelectors`), preventing broken CSS selector fragments and `SyntaxError` exceptions during `CSSStyleSheet.replaceSync()`.
+- **Punctuation-Aware Auto-Icon Normalization**: Enhanced `IconRepository` and `CategoryTrie` word splitting to strip non-alphanumeric punctuation (such as trailing commas `,` or symbols). Folder names like `A,` now cleanly map to matching icons (e.g., letter `a`) instead of failing auto-icon resolution.
+
 ---
 
 ## 🚀 4.2.7 - Collapse Indicators Update
