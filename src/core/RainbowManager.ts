@@ -55,24 +55,35 @@ export class RainbowManager {
         const cached = RainbowManager.gradientCssCache.get(cacheKey);
         if (cached) return cached;
 
-        const adjust = isDark ? 0.20 : -0.15;
         const processedColors = colors.map(c => {
             if (!c) return 'rgb(140, 140, 140)';
             const clean = c.trim();
             if (skipBrightness) return clean;
+            let r = 140, g = 140, b = 140;
+            let parsed = false;
             if (clean.startsWith('#')) {
                 const rgb = hexToRgbObj(clean);
-                if (rgb) return `rgb(${adjustBrightnessRgb(`${rgb.r}, ${rgb.g}, ${rgb.b}`, adjust)})`;
-                return clean;
-            }
-            if (clean.startsWith('rgb')) {
+                if (rgb) { r = rgb.r; g = rgb.g; b = rgb.b; parsed = true; }
+            } else if (clean.startsWith('rgb')) {
                 const raw = clean.replace(/^rgba?\(|\)$/g, '');
-                return `rgb(${adjustBrightnessRgb(raw, adjust)})`;
+                const parts = raw.split(',').map(p => parseInt(p.trim(), 10));
+                if (parts.length >= 3 && !parts.some(isNaN)) { r = parts[0]; g = parts[1]; b = parts[2]; parsed = true; }
+            } else if (/^\d+,\s*\d+,\s*\d+/.test(clean)) {
+                const parts = clean.split(',').map(p => parseInt(p.trim(), 10));
+                if (parts.length >= 3 && !parts.some(isNaN)) { r = parts[0]; g = parts[1]; b = parts[2]; parsed = true; }
             }
-            if (/^\d+,\s*\d+,\s*\d+/.test(clean)) {
-                return `rgb(${adjustBrightnessRgb(clean, adjust)})`;
+            if (!parsed) return clean;
+
+            if (isDark) {
+                const maxChannel = Math.max(r, g, b);
+                // Pastel colors have high maxChannel (> 210); tone down brightness boost to prevent clipping to white
+                const effAdjust = maxChannel > 210 ? Math.max(0, 0.20 - (maxChannel - 210) * 0.004) : 0.20;
+                return `rgb(${adjustBrightnessRgb(`${r}, ${g}, ${b}`, effAdjust)})`;
+            } else {
+                const minChannel = Math.min(r, g, b);
+                const effAdjust = minChannel < 60 ? Math.min(0, -0.15 + (60 - minChannel) * 0.003) : -0.15;
+                return `rgb(${adjustBrightnessRgb(`${r}, ${g}, ${b}`, effAdjust)})`;
             }
-            return clean;
         });
 
         const stops = processedColors.length === 1 

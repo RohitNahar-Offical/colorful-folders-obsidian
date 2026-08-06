@@ -672,6 +672,8 @@ export class StyleGenerator {
 
             const gradAngle = this.settings.rainbowGradientAngle ?? 90;
 
+            const isRainbowActiveForFolder = this.settings.rainbowRootText && depth === 0 && !customStyle?.textColor && (this.settings.rootStyle !== 'solid' || isRainbowBgTransparent || outlineOnly);
+
             if (customStyle?.textGradient && customStyle?.textColor && customStyle?.textGradientEnd) {
                 const stops = RainbowManager.resolveCustomStops(customStyle.textColor, customStyle.textGradientEnd, customStyle.rainbowBrightness, isDark);
                 textCss = RainbowManager.buildGradientCss(stops, {
@@ -683,7 +685,7 @@ export class StyleGenerator {
                     isTransparentBg: isRainbowBgTransparent,
                     outlineOnly
                 });
-            } else if (this.settings.rainbowRootText && depth === 0 && !customStyle?.textColor && (this.settings.rootStyle !== 'solid' || isRainbowBgTransparent || outlineOnly)) {
+            } else if (isRainbowActiveForFolder) {
                 const stops = RainbowManager.resolveRootSpectrum(i, currentPalette, isDark);
                 textCss = RainbowManager.buildGradientCss(stops, {
                     angle: gradAngle,
@@ -776,7 +778,7 @@ export class StyleGenerator {
                 `.nav-folder-title[data-path="${safePath}"] .nav-folder-title-content`,
                 `.tree-item-self[data-path="${safePath}"] .tree-item-inner`,
                 ...nnSelectors
-            ], `folderText_${customStyle?.textGradient || (this.settings.rainbowRootText && depth === 0) ? 'grad' : 'norm'}_${folderStyles.t}_${isBold}_${isItalic}`);
+            ], `folderText_${customStyle?.textGradient || isRainbowActiveForFolder ? 'grad' : 'norm'}_${folderStyles.t}_${isBold}_${isItalic}`);
 
             const generateIconCss = (iconIdToUse: string, isExpandedState: boolean | null) => {
                 const isCustomEmoji = this.plugin.iconManager.isEmojiIcon(iconIdToUse);
