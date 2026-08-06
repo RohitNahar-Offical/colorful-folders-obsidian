@@ -751,10 +751,12 @@ export default class ColorfulFoldersPlugin
     docs.add(activeDocument);
 
     const allContainers = [...explorers];
-    docs.forEach((doc) => {
-      const extra = NotebookNavigatorIntegration.getExtraContainers(doc);
-      if (extra) extra.forEach((e) => allContainers.push(e as HTMLElement));
-    });
+    if (this.settings.notebookNavigatorSupport) {
+      docs.forEach((doc) => {
+        const extra = NotebookNavigatorIntegration.getExtraContainers(doc, this.settings);
+        if (extra) extra.forEach((e) => allContainers.push(e as HTMLElement));
+      });
+    }
 
     this._explorerContainersCache = allContainers;
     this._explorerContainersValid = true;

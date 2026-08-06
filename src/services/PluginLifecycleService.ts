@@ -39,8 +39,9 @@ export class PluginLifecycleService {
         this.plugin.app.workspace.onLayoutReady(async () => {
             this.plugin.invalidateExplorerContainersCache();
             this.plugin.initStaircaseStyleStripper();
-            await this.plugin.generateStyles();
-            NotebookNavigatorIntegration.registerMenuExtensions(this.plugin);
+            if (this.plugin.settings.notebookNavigatorSupport) {
+                NotebookNavigatorIntegration.registerMenuExtensions(this.plugin);
+            }
             void this.plugin.loadLocalIcons();
 
             if (this.plugin._abortStartupRender) return;

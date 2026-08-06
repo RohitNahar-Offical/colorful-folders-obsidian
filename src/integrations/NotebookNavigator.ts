@@ -15,7 +15,7 @@ interface NNPlugin {
  * Centralizes all DOM selectors and NN-specific logic.
  */
 export const NN_SELECTORS = {
-    CONTAINERS: '.nn-navigation-pane-content, .nn-virtual-container, .nn-list-view, .nn-explorer-content',
+    CONTAINERS: '.notebook-navigator, .nn-navigation-pane-content, .nn-list-view, .nn-explorer-content',
     NAV_ITEM: '.nn-navitem',
     FILE_ITEM: '.nn-file',
     NAV_NAME: '.nn-navitem-name',
@@ -36,8 +36,9 @@ export class NotebookNavigatorIntegration {
     /**
      * Returns the extra containers (NN navigation pane, etc.) that should be observed.
      */
-    static getExtraContainers(doc: Document): NodeListOf<Element> {
-        return doc.querySelectorAll(NN_SELECTORS.CONTAINERS);
+    static getExtraContainers(doc: Document, settings?: ColorfulFoldersSettings): Element[] {
+        if (settings && !settings.notebookNavigatorSupport) return [];
+        return Array.from(doc.querySelectorAll(NN_SELECTORS.CONTAINERS));
     }
 
     /**
@@ -118,8 +119,8 @@ export class NotebookNavigatorIntegration {
      * Checks if a container is a Notebook Navigator container.
      */
     static isNNContainer(container: Element): boolean {
-        return container.classList.contains('nn-navigation-pane-content') || 
-               container.classList.contains('nn-virtual-container') ||
+        return container.classList.contains('notebook-navigator') ||
+               container.classList.contains('nn-navigation-pane-content') || 
                container.classList.contains('nn-list-view') ||
                container.classList.contains('nn-explorer-content');
     }
@@ -127,8 +128,8 @@ export class NotebookNavigatorIntegration {
     /**
      * Returns true if dividers should be rendered for the given container.
      */
-    static shouldRenderDividers(container: Element, _settings: ColorfulFoldersSettings): boolean {
-        if (this.isNNContainer(container)) {
+    static shouldRenderDividers(container: Element, settings: ColorfulFoldersSettings): boolean {
+        if (this.isSupported(settings) && this.isNNContainer(container)) {
             return false;
         }
         return true; // Native explorer always supported
@@ -334,38 +335,42 @@ export class NotebookNavigatorIntegration {
         const interval = 2000; // 2 seconds
 
         const tryRegister = () => {
-            attempts++;
-            
-            interface InternalApp extends obsidian.App {
-                plugins: {
-                    getPlugin(id: string): Record<string, unknown> | null;
-                };
-            }
+            try {
+                attempts++;
+                
+                interface InternalApp extends obsidian.App {
+                    plugins: {
+                        getPlugin(id: string): Record<string, unknown> | null;
+                    };
+                }
 
-            const app = plugin.app as InternalApp;
-            if (!app.plugins) return false;
-            
-            const nnInstance = app.plugins.getPlugin('notebook-navigator');
-            if (!nnInstance) return false;
+                const app = plugin.app as InternalApp;
+                if (!app.plugins || typeof app.plugins.getPlugin !== 'function') return false;
+                
+                const nnInstance = app.plugins.getPlugin('notebook-navigator');
+                if (!nnInstance) return false;
 
-            // Some plugins expose API under .api
-            const nnPlugin = (nnInstance.api || nnInstance) as NNPlugin;
+                // Some plugins expose API under .api
+                const nnPlugin = ((nnInstance as { api?: NNPlugin }).api || nnInstance) as NNPlugin;
 
-            // Check if API methods exist
-            if (typeof nnPlugin.registerFileMenu !== 'function' || typeof nnPlugin.registerFolderMenu !== 'function') {
+                // Check if API methods exist
+                if (typeof nnPlugin.registerFileMenu !== 'function' || typeof nnPlugin.registerFolderMenu !== 'function') {
+                    return false;
+                }
+
+                // Register with NN's public menu API
+                nnPlugin.registerFileMenu((menu: obsidian.Menu, file: obsidian.TAbstractFile) => {
+                    MenuHelper.addContextMenuItems(menu, file, plugin);
+                });
+
+                nnPlugin.registerFolderMenu((menu: obsidian.Menu, folder: obsidian.TAbstractFile) => {
+                    MenuHelper.addContextMenuItems(menu, folder, plugin);
+                });
+
+                return true;
+            } catch {
                 return false;
             }
-
-            // Register with NN's public menu API
-            nnPlugin.registerFileMenu((menu: obsidian.Menu, file: obsidian.TAbstractFile) => {
-                MenuHelper.addContextMenuItems(menu, file, plugin);
-            });
-
-            nnPlugin.registerFolderMenu((menu: obsidian.Menu, folder: obsidian.TAbstractFile) => {
-                MenuHelper.addContextMenuItems(menu, folder, plugin);
-            });
-
-            return true;
         };
 
 
