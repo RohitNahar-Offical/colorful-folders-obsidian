@@ -383,25 +383,15 @@ export class NotebookNavigatorIntegration {
             }, interval);
         }
 
-        // Graceful degradation: invalidate cache if NN is deactivated mid-session
+        // Graceful degradation: invalidate cache when workspace layout changes
         try {
-            interface InternalPluginManager {
-                on(event: string, cb: (pluginId: string) => void): obsidian.EventRef;
-            }
-            const pm = (plugin.app as unknown as { plugins: InternalPluginManager }).plugins;
-            if (pm && typeof pm.on === 'function') {
-                plugin.registerEvent(
-                    pm.on('change', (pluginId: string) => {
-                        if (pluginId === 'notebook-navigator') {
-                            // Invalidate explorer container cache and regenerate styles
-                            (plugin as unknown as { _explorerContainerCache?: unknown })._explorerContainerCache = null;
-                            void plugin.generateStyles();
-                        }
-                    })
-                );
-            }
+            plugin.registerEvent(
+                plugin.app.workspace.on('layout-change', () => {
+                    plugin.invalidateExplorerContainersCache();
+                })
+            );
         } catch {
-            // Silently ignore: undocumented API not available in this version
+            // Silently ignore: fallback if workspace is unavailable
         }
     }
 }

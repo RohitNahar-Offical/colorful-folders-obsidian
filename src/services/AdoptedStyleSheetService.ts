@@ -2,18 +2,43 @@ import { IColorfulFoldersPlugin } from '../common/types';
 
 export class AdoptedStyleSheetService {
     plugin: IColorfulFoldersPlugin;
-    public sheet: CSSStyleSheet = new CSSStyleSheet();
+    public sheet: CSSStyleSheet | null = null;
+    private fallbackStyles: Map<Document, HTMLStyleElement> = new Map();
 
     constructor(plugin: IColorfulFoldersPlugin) {
         this.plugin = plugin;
+        try {
+            if (typeof CSSStyleSheet !== 'undefined') {
+                this.sheet = new CSSStyleSheet();
+            }
+        } catch {
+            this.sheet = null;
+        }
     }
 
     /**
      * Attaches the stylesheet instance to a specific document.
      */
     attachToDocument(doc: Document): void {
-        if (doc && Array.isArray(doc.adoptedStyleSheets) && !doc.adoptedStyleSheets.includes(this.sheet)) {
-            doc.adoptedStyleSheets = [...doc.adoptedStyleSheets, this.sheet];
+        if (!doc) return;
+        try {
+            if (this.sheet && Array.isArray(doc.adoptedStyleSheets) && !doc.adoptedStyleSheets.includes(this.sheet)) {
+                doc.adoptedStyleSheets = [...doc.adoptedStyleSheets, this.sheet];
+                return;
+            }
+        } catch {
+            // Fallback to DOM <style> tag below
+        }
+
+        try {
+            if (!this.fallbackStyles.has(doc)) {
+                const styleEl = doc.createElement('style');
+                styleEl.id = 'cf-adopted-fallback-styles';
+                (doc.head || doc.documentElement).appendChild(styleEl);
+                this.fallbackStyles.set(doc, styleEl);
+            }
+        } catch (e) {
+            console.error('Colorful Folders: Failed to attach fallback style', e);
         }
     }
 
@@ -21,7 +46,11 @@ export class AdoptedStyleSheetService {
      * Attaches the stylesheet instance to all active workspace documents safely.
      */
     initializeStyles(): void {
-        this.plugin.getOpenDocuments().forEach(doc => this.attachToDocument(doc));
+        try {
+            this.plugin.getOpenDocuments().forEach(doc => this.attachToDocument(doc));
+        } catch (e) {
+            console.error('Colorful Folders: Failed initializeStyles', e);
+        }
     }
 
     /**
@@ -29,10 +58,18 @@ export class AdoptedStyleSheetService {
      */
     updateStyles(cssString: string): void {
         try {
-            this.sheet.replaceSync(cssString);
+            if (this.sheet && typeof this.sheet.replaceSync === 'function') {
+                this.sheet.replaceSync(cssString);
+            }
         } catch (e) {
             console.error('Colorful Folders: Failed to replaceSync CSS in AdoptedStyleSheetService', e);
         }
+
+        this.fallbackStyles.forEach((styleEl) => {
+            try {
+                styleEl.textContent = cssString;
+            } catch {}
+        });
     }
 
     /**
@@ -47,10 +84,19 @@ export class AdoptedStyleSheetService {
      */
     unload(): void {
         this.clearStyles();
-        this.plugin.getOpenDocuments().forEach(doc => {
-            if (doc && Array.isArray(doc.adoptedStyleSheets)) {
-                doc.adoptedStyleSheets = doc.adoptedStyleSheets.filter(s => s !== this.sheet);
-            }
+        try {
+            this.plugin.getOpenDocuments().forEach(doc => {
+                if (doc && Array.isArray(doc.adoptedStyleSheets) && this.sheet) {
+                    doc.adoptedStyleSheets = doc.adoptedStyleSheets.filter(s => s !== this.sheet);
+                }
+            });
+        } catch {}
+
+        this.fallbackStyles.forEach((styleEl) => {
+            try {
+                styleEl.remove();
+            } catch {}
         });
+        this.fallbackStyles.clear();
     }
 }

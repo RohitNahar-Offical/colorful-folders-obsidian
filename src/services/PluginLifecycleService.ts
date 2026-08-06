@@ -70,25 +70,29 @@ export class PluginLifecycleService {
 
     public destroy(): void {
         this.plugin._isUnloading = true;
-        this.plugin.adoptedStyleSheetService.unload();
-        this.plugin.getOpenDocuments().forEach(doc => {
-            doc.body.classList.remove("cf-show-hidden", "cf-wrap-metadata");
-        });
+        try {
+            this.plugin.adoptedStyleSheetService?.unload();
+            this.plugin.getOpenDocuments()?.forEach(doc => {
+                doc.body.classList.remove("cf-show-hidden", "cf-wrap-metadata");
+            });
 
-        this.plugin.domObserverService.destroy();
-        this.plugin.eventTrackerService.destroy();
-        this.plugin.cleanDividers();
+            this.plugin.domObserverService?.destroy();
+            this.plugin.eventTrackerService?.destroy();
+            this.plugin.cleanDividers();
 
-        this.plugin.generateStylesDebounced.cancel();
-        this.plugin.saveDataDebounced.cancel();
+            this.plugin.generateStylesDebounced?.cancel();
+            this.plugin.saveDataDebounced?.cancel();
 
-        this.plugin.iconCache.clear();
-        if (this.plugin.heatmapCache) this.plugin.heatmapCache.clear();
-        if (this.plugin.folderCountCache) this.plugin.folderCountCache.clear();
-        if (this.plugin.folderSortCache) this.plugin.folderSortCache.clear();
-        if (this.plugin.rootSortCache) this.plugin.rootSortCache.clear();
-        if (this.plugin.parsedExclusionList) this.plugin.parsedExclusionList.clear();
+            this.plugin.iconCache?.clear();
+            if (this.plugin.heatmapCache) this.plugin.heatmapCache.clear();
+            if (this.plugin.folderCountCache) this.plugin.folderCountCache.clear();
+            if (this.plugin.folderSortCache) this.plugin.folderSortCache.clear();
+            if (this.plugin.rootSortCache) this.plugin.rootSortCache.clear();
+            if (this.plugin.parsedExclusionList) this.plugin.parsedExclusionList.clear();
 
-        void GraphColorSync.clearGraphColors(this.plugin);
+            void GraphColorSync.clearGraphColors(this.plugin);
+        } catch (e) {
+            console.error("Colorful Folders: Exception during plugin cleanup", e);
+        }
     }
 }

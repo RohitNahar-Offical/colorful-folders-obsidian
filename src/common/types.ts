@@ -195,6 +195,7 @@ export interface IColorfulFoldersPlugin {
     styleGenerator: { generateCss(): Promise<string> };
     domObserverService: DOMObserverService;
     getAllExplorerContainers(): HTMLElement[];
+    invalidateExplorerContainersCache(): void;
     getOpenDocuments(): Document[];
     getStyle(path: string): FolderStyle | null;
     getActivePalette(isDark?: boolean): { rgb: string; hex: string }[];

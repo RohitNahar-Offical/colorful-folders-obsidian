@@ -70,67 +70,69 @@ export default class ColorfulFoldersPlugin
   ribbonEl: HTMLElement | null = null;
 
   async onload() {
-    await this.loadSettings();
-    this.styleGenerator = new StyleGenerator(this);
-    this.iconManager = new IconManager(this);
-    this.aiIconClassifier = new AIIconClassifier(this);
-    this.embeddingModel = new EmbeddingModel(this);
-    this.dividerManager = new DividerManager(this);
-    this.domObserverService = new DOMObserverService(this);
-    this.eventTrackerService = new EventTrackerService(this);
-    this.adoptedStyleSheetService = new AdoptedStyleSheetService(this);
-    this.lifecycleService = new PluginLifecycleService(this);
+    try {
+      await this.loadSettings();
+      this.styleGenerator = new StyleGenerator(this);
+      this.iconManager = new IconManager(this);
+      this.aiIconClassifier = new AIIconClassifier(this);
+      this.embeddingModel = new EmbeddingModel(this);
+      this.dividerManager = new DividerManager(this);
+      this.domObserverService = new DOMObserverService(this);
+      this.eventTrackerService = new EventTrackerService(this);
+      this.adoptedStyleSheetService = new AdoptedStyleSheetService(this);
+      this.lifecycleService = new PluginLifecycleService(this);
 
-    // Initial document cache state
-    this.lifecycleService.initializeDocumentTracking();
+      // Initial document cache state
+      this.lifecycleService.initializeDocumentTracking();
 
-    this.initializeStyles();
-    this.registerCustomIcons();
-    this.registerCommands();
+      this.initializeStyles();
+      this.registerCustomIcons();
+      this.registerCommands();
 
-    this.addSettingTab(new ColorfulFoldersSettingTab(this.app, this));
+      this.addSettingTab(new ColorfulFoldersSettingTab(this.app, this));
 
-    this.generateStylesDebounced = obsidian.debounce(
-      () => {
-        if (!this.isDragging) {
-          void this.generateStyles();
-        }
-      },
-      100,
-      true
-    );
-
-    this.saveDataDebounced = obsidian.debounce(
-      () => {
-        void this.saveData(this.settings);
-      },
-      1000, // 1-second trailing edge debounce for disk I/O
-      false
-    );
-
-
-
-
-
-    this.refreshRibbon();
-    this.eventTrackerService.registerEvents();
-    this.domObserverService.initStyleObservers();
-
-    // Invalidate caches on vault changes
-    this.lifecycleService.registerVaultCacheEvents();
-
-    this.cachedDocuments.forEach(doc => {
-      doc.body.classList.toggle(
-        "cf-show-hidden",
-        this.settings.showHiddenItems,
+      this.generateStylesDebounced = obsidian.debounce(
+        () => {
+          if (!this.isDragging) {
+            void this.generateStyles();
+          }
+        },
+        100,
+        true
       );
-      doc.body.classList.toggle(
-        "cf-wrap-metadata",
-        Boolean(this.settings.wrapMetadata),
-      );
-    });
 
-    this.lifecycleService.onLayoutReady();
+      this.saveDataDebounced = obsidian.debounce(
+        () => {
+          void this.saveData(this.settings);
+        },
+        1000, // 1-second trailing edge debounce for disk I/O
+        false
+      );
+
+      this.refreshRibbon();
+      this.eventTrackerService.registerEvents();
+      this.domObserverService.initStyleObservers();
+
+      // Invalidate caches on vault changes
+      this.lifecycleService.registerVaultCacheEvents();
+
+      this.cachedDocuments.forEach(doc => {
+        try {
+          doc.body.classList.toggle(
+            "cf-show-hidden",
+            this.settings.showHiddenItems,
+          );
+          doc.body.classList.toggle(
+            "cf-wrap-metadata",
+            Boolean(this.settings.wrapMetadata),
+          );
+        } catch {}
+      });
+
+      this.lifecycleService.onLayoutReady();
+    } catch (err) {
+      console.error("Colorful Folders: Exception in plugin onload", err);
+    }
 
     // Defer non-critical background checks (Blue Topaz optimization & Changelog modal) so plugin loads instantly
     window.setTimeout(async () => {
