@@ -49,31 +49,27 @@ export const PALETTES: Record<string, Array<{ rgb: string, hex: string }>> = {
     ],
     "Tailwind UI": [
         { rgb: "59, 130, 246", hex: "#3b82f6" },  // Blue
-        { rgb: "6, 182, 212", hex: "#06b6d4" },   // Cyan
-        { rgb: "20, 184, 166", hex: "#14b8a6" },  // Teal
         { rgb: "16, 185, 129", hex: "#10b981" },  // Emerald
-        { rgb: "132, 204, 22", hex: "#84cc16" },  // Lime
-        { rgb: "245, 158, 11", hex: "#f59e0b" },  // Amber
-        { rgb: "249, 115, 22", hex: "#f97316" },  // Orange
         { rgb: "239, 68, 68", hex: "#ef4444" },   // Red
+        { rgb: "139, 92, 246", hex: "#8b5cf6" },  // Purple
+        { rgb: "245, 158, 11", hex: "#f59e0b" },  // Amber
+        { rgb: "6, 182, 212", hex: "#06b6d4" },   // Cyan
         { rgb: "236, 72, 153", hex: "#ec4899" },  // Pink
-        { rgb: "217, 70, 239", hex: "#d946ef" },  // Fuchsia
-        { rgb: "139, 92, 246", hex: "#8b5cf6" },  // Violet
-        { rgb: "99, 102, 241", hex: "#6366f1" }   // Indigo
+        { rgb: "99, 102, 241", hex: "#6366f1" },  // Indigo
+        { rgb: "244, 63, 94", hex: "#f43f5e" },   // Rose
+        { rgb: "20, 184, 166", hex: "#14b8a6" }   // Teal
     ],
     "Tailwind UI Dark": [
         { rgb: "56, 189, 248", hex: "#38bdf8" },  // Sky
-        { rgb: "34, 211, 238", hex: "#22d3ee" },  // Cyan
-        { rgb: "45, 212, 191", hex: "#2dd4bf" },  // Teal
         { rgb: "52, 211, 153", hex: "#34d399" },  // Emerald
-        { rgb: "163, 230, 53", hex: "#a3e635" },  // Lime
-        { rgb: "251, 191, 36", hex: "#fbbf24" },  // Amber
-        { rgb: "251, 146, 60", hex: "#fb923c" },  // Orange
         { rgb: "248, 113, 113", hex: "#f87171" },  // Red
+        { rgb: "192, 132, 252", hex: "#c084fc" },  // Purple
+        { rgb: "251, 191, 36", hex: "#fbbf24" },  // Amber
+        { rgb: "34, 211, 238", hex: "#22d3ee" },  // Cyan
         { rgb: "244, 114, 182", hex: "#f472b6" },  // Pink
-        { rgb: "232, 121, 249", hex: "#e879f9" },  // Fuchsia
-        { rgb: "192, 132, 252", hex: "#c084fc" },  // Violet
-        { rgb: "129, 140, 248", hex: "#818cf8" }   // Indigo
+        { rgb: "129, 140, 248", hex: "#818cf8" },  // Indigo
+        { rgb: "251, 113, 133", hex: "#fb7185" },  // Rose
+        { rgb: "45, 212, 191", hex: "#2dd4bf" }   // Teal
     ]
 };
 
