@@ -1,6 +1,13 @@
 const MAX_CACHE_SIZE = 1000;
 const rgbCache = new Map<string, {r: number, g: number, b: number} | null>();
 
+function parseHexNibble(code: number): number {
+    if (code >= 48 && code <= 57) return code - 48; // '0'-'9'
+    if (code >= 97 && code <= 102) return code - 87; // 'a'-'f'
+    if (code >= 65 && code <= 70) return code - 55; // 'A'-'F'
+    return -1;
+}
+
 export function hexToRgbObj(hex: string): {r: number, g: number, b: number} | null {
     if (!hex || typeof hex !== 'string') return null;
     const cached = rgbCache.get(hex);
@@ -11,27 +18,54 @@ export function hexToRgbObj(hex: string): {r: number, g: number, b: number} | nu
         if (oldestKey !== undefined) rgbCache.delete(oldestKey);
     }
 
-    let cleanHex = hex.trim().toLowerCase();
-    
-    const hasHash = cleanHex.startsWith('#');
-    let hexDigits = hasHash ? cleanHex.slice(1) : cleanHex;
-    
-    if (/^[a-f\d]{3}$/i.test(hexDigits)) {
-        hexDigits = hexDigits[0] + hexDigits[0] + hexDigits[1] + hexDigits[1] + hexDigits[2] + hexDigits[2];
+    // Strip leading/trailing whitespace & optional leading '#'
+    let start = 0;
+    const len = hex.length;
+    while (start < len && hex.charCodeAt(start) <= 32) start++;
+    if (start < len && hex.charCodeAt(start) === 35) start++; // '#' = 35
+
+    let end = len;
+    while (end > start && hex.charCodeAt(end - 1) <= 32) end--;
+
+    const hexLen = end - start;
+
+    if (hexLen === 3) {
+        const rVal = parseHexNibble(hex.charCodeAt(start));
+        const gVal = parseHexNibble(hex.charCodeAt(start + 1));
+        const bVal = parseHexNibble(hex.charCodeAt(start + 2));
+        if (rVal < 0 || gVal < 0 || bVal < 0) {
+            rgbCache.set(hex, null);
+            return null;
+        }
+        const res = { r: (rVal << 4) | rVal, g: (gVal << 4) | gVal, b: (bVal << 4) | bVal };
+        rgbCache.set(hex, res);
+        return res;
     }
-    
-    if (!/^[a-f\d]{6}$/i.test(hexDigits)) {
-        rgbCache.set(hex, null);
-        return null;
+
+    if (hexLen === 6) {
+        const r1 = parseHexNibble(hex.charCodeAt(start));
+        const r2 = parseHexNibble(hex.charCodeAt(start + 1));
+        const g1 = parseHexNibble(hex.charCodeAt(start + 2));
+        const g2 = parseHexNibble(hex.charCodeAt(start + 3));
+        const b1 = parseHexNibble(hex.charCodeAt(start + 4));
+        const b2 = parseHexNibble(hex.charCodeAt(start + 5));
+
+        if (r1 < 0 || r2 < 0 || g1 < 0 || g2 < 0 || b1 < 0 || b2 < 0) {
+            rgbCache.set(hex, null);
+            return null;
+        }
+
+        const res = {
+            r: (r1 << 4) | r2,
+            g: (g1 << 4) | g2,
+            b: (b1 << 4) | b2
+        };
+        rgbCache.set(hex, res);
+        return res;
     }
-    
-    const result = {
-        r: parseInt(hexDigits.slice(0, 2), 16),
-        g: parseInt(hexDigits.slice(2, 4), 16),
-        b: parseInt(hexDigits.slice(4, 6), 16)
-    };
-    rgbCache.set(hex, result);
-    return result;
+
+    rgbCache.set(hex, null);
+    return null;
 }
 
 export function anyToHex(color: string): string {
@@ -46,18 +80,52 @@ export function anyToHex(color: string): string {
     return "#000000";
 }
 
+export function adjustBrightnessValues(r: number, g: number, b: number, amount: number): { r: number, g: number, b: number } {
+    let nr: number, ng: number, nb: number;
+    if (amount < 0) {
+        const factor = 1 + amount;
+        nr = (r * factor + 0.5) | 0;
+        ng = (g * factor + 0.5) | 0;
+        nb = (b * factor + 0.5) | 0;
+    } else {
+        const invAmount = 1 - amount;
+        nr = (255 - (255 - r) * invAmount + 0.5) | 0;
+        ng = (255 - (255 - g) * invAmount + 0.5) | 0;
+        nb = (255 - (255 - b) * invAmount + 0.5) | 0;
+    }
+    return {
+        r: nr < 0 ? 0 : (nr > 255 ? 255 : nr),
+        g: ng < 0 ? 0 : (ng > 255 ? 255 : ng),
+        b: nb < 0 ? 0 : (nb > 255 ? 255 : nb)
+    };
+}
+
 export function adjustBrightnessRgb(rgb: string, amount: number): string {
-    if (!rgb || rgb.includes('var(')) return "120, 120, 120";
-    const [r, g, b] = rgb.split(',').map(c => {
-        const val = parseInt(c.trim());
-        if (isNaN(val)) return 120;
-        if (amount < 0) {
-            return Math.max(0, Math.round(val * (1 + amount)));
-        } else {
-            return Math.min(255, Math.round(val + (255 - val) * amount));
+    if (!rgb || rgb.indexOf('var(') !== -1) return "120, 120, 120";
+
+    let str = rgb;
+    const startParen = str.indexOf('(');
+    if (startParen !== -1) {
+        const endParen = str.indexOf(')', startParen);
+        str = endParen !== -1 ? str.substring(startParen + 1, endParen) : str.substring(startParen + 1);
+    }
+    
+    let r = 120, g = 120, b = 120;
+    let idx1 = str.indexOf(',');
+    if (idx1 !== -1) {
+        let idx2 = str.indexOf(',', idx1 + 1);
+        if (idx2 !== -1) {
+            r = parseInt(str.substring(0, idx1).trim(), 10);
+            g = parseInt(str.substring(idx1 + 1, idx2).trim(), 10);
+            b = parseInt(str.substring(idx2 + 1).trim(), 10);
+            if (isNaN(r)) r = 120;
+            if (isNaN(g)) g = 120;
+            if (isNaN(b)) b = 120;
         }
-    });
-    return `${r}, ${g}, ${b}`;
+    }
+
+    const res = adjustBrightnessValues(r, g, b, amount);
+    return `${res.r}, ${res.g}, ${res.b}`;
 }
 
 export function normalizeVaultPath(path: string): string {
@@ -94,21 +162,13 @@ export function parseCustomPalette(hexString: string): { rgb: string, hex: strin
         if (oldestKey !== undefined) paletteCache.delete(oldestKey);
     }
 
-    const hexes = hexString.split(',').map(s => s.trim().toLowerCase());
+    const hexes = hexString.split(',');
     const result: { rgb: string, hex: string }[] = [];
     for (let hex of hexes) {
-        if (!hex.startsWith('#') && /^[0-9a-f]{3,6}$/i.test(hex)) {
-            hex = '#' + hex;
-        }
-
-        if (/^#[0-9a-f]{3}$/i.test(hex)) {
-            hex = '#' + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3];
-        }
-        if (/^#[0-9a-f]{6}$/i.test(hex)) {
-            const r = parseInt(hex.slice(1, 3), 16);
-            const g = parseInt(hex.slice(3, 5), 16);
-            const b = parseInt(hex.slice(5, 7), 16);
-            result.push({ rgb: `${r}, ${g}, ${b}`, hex: hex });
+        const rgb = hexToRgbObj(hex);
+        if (rgb) {
+            const canonicalHex = "#" + ((1 << 24) + (rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).slice(1);
+            result.push({ rgb: `${rgb.r}, ${rgb.g}, ${rgb.b}`, hex: canonicalHex });
         }
     }
     const finalVal = result.length > 0 ? result : null;

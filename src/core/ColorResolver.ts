@@ -1,6 +1,6 @@
 import { ColorfulFoldersSettings, FolderStyle } from '../common/types';
 import { PALETTES } from '../common/constants';
-import { hexToRgbObj, adjustBrightnessRgb, parseCustomPalette, hashString } from '../common/utils';
+import { hexToRgbObj, adjustBrightnessRgb, adjustBrightnessValues, parseCustomPalette, hashString } from '../common/utils';
 
 export function isDarkMode(): boolean {
     return activeDocument.body.classList.contains('theme-dark');
@@ -29,10 +29,11 @@ export function getCurrentPalette(
 
     if (!isDark) {
         currentPalette = currentPalette.map(c => {
-            const darker = adjustBrightnessRgb(c.rgb, -0.15);
-            const p = darker.split(',').map(s => parseInt(s.trim(), 10));
-            const hex = "#" + ((1 << 24) + (p[0] << 16) + (p[1] << 8) + p[2]).toString(16).slice(1);
-            return { rgb: darker, hex: hex };
+            const parsed = hexToRgbObj(c.hex);
+            if (!parsed) return c;
+            const adj = adjustBrightnessValues(parsed.r, parsed.g, parsed.b, -0.15);
+            const hex = "#" + ((1 << 24) + (adj.r << 16) + (adj.g << 8) + adj.b).toString(16).slice(1);
+            return { rgb: `${adj.r}, ${adj.g}, ${adj.b}`, hex };
         });
     }
 

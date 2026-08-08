@@ -1,4 +1,4 @@
-import { hexToRgbObj, adjustBrightnessRgb } from '../common/utils';
+import { hexToRgbObj, adjustBrightnessValues } from '../common/utils';
 
 export interface RainbowGradientOpts {
     angle?: number;
@@ -51,7 +51,11 @@ export class RainbowManager {
         const outlineOnly = opts.outlineOnly ?? false;
         const skipBrightness = opts.skipBrightnessAdjustment ?? false;
 
-        const cacheKey = `${colors.join('|')}|${angle}|${isDark}|${isBold}|${isItalic}|${isTransparentBg}|${outlineOnly}|${skipBrightness}|${extraCss}`;
+        let colorKey = '';
+        for (let i = 0; i < colors.length; i++) {
+            colorKey += (i > 0 ? ',' : '') + colors[i];
+        }
+        const cacheKey = `${colorKey}_${angle}_${isDark ? 1 : 0}_${isBold ? 1 : 0}_${isItalic ? 1 : 0}_${isTransparentBg ? 1 : 0}_${outlineOnly ? 1 : 0}_${skipBrightness ? 1 : 0}_${extraCss}`;
         const cached = RainbowManager.gradientCssCache.get(cacheKey);
         if (cached) return cached;
 
@@ -61,28 +65,45 @@ export class RainbowManager {
             if (skipBrightness) return clean;
             let r = 140, g = 140, b = 140;
             let parsed = false;
-            if (clean.startsWith('#')) {
+            if (clean.charCodeAt(0) === 35 /* '#' */) {
                 const rgb = hexToRgbObj(clean);
                 if (rgb) { r = rgb.r; g = rgb.g; b = rgb.b; parsed = true; }
             } else if (clean.startsWith('rgb')) {
-                const raw = clean.replace(/^rgba?\(|\)$/g, '');
-                const parts = raw.split(',').map(p => parseInt(p.trim(), 10));
-                if (parts.length >= 3 && !parts.some(isNaN)) { r = parts[0]; g = parts[1]; b = parts[2]; parsed = true; }
-            } else if (/^\d+,\s*\d+,\s*\d+/.test(clean)) {
-                const parts = clean.split(',').map(p => parseInt(p.trim(), 10));
-                if (parts.length >= 3 && !parts.some(isNaN)) { r = parts[0]; g = parts[1]; b = parts[2]; parsed = true; }
+                const idx1 = clean.indexOf('(');
+                const idx2 = clean.indexOf(')');
+                if (idx1 !== -1 && idx2 !== -1) {
+                    const raw = clean.substring(idx1 + 1, idx2);
+                    const p1 = raw.indexOf(',');
+                    const p2 = raw.indexOf(',', p1 + 1);
+                    if (p1 !== -1 && p2 !== -1) {
+                        r = parseInt(raw.substring(0, p1).trim(), 10);
+                        g = parseInt(raw.substring(p1 + 1, p2).trim(), 10);
+                        b = parseInt(raw.substring(p2 + 1).trim(), 10);
+                        if (!isNaN(r) && !isNaN(g) && !isNaN(b)) parsed = true;
+                    }
+                }
+            } else if (clean.indexOf(',') !== -1) {
+                const p1 = clean.indexOf(',');
+                const p2 = clean.indexOf(',', p1 + 1);
+                if (p1 !== -1 && p2 !== -1) {
+                    r = parseInt(clean.substring(0, p1).trim(), 10);
+                    g = parseInt(clean.substring(p1 + 1, p2).trim(), 10);
+                    b = parseInt(clean.substring(p2 + 1).trim(), 10);
+                    if (!isNaN(r) && !isNaN(g) && !isNaN(b)) parsed = true;
+                }
             }
             if (!parsed) return clean;
 
             if (isDark) {
                 const maxChannel = Math.max(r, g, b);
-                // Pastel colors have high maxChannel (> 210); tone down brightness boost to prevent clipping to white
                 const effAdjust = maxChannel > 210 ? Math.max(0, 0.20 - (maxChannel - 210) * 0.004) : 0.20;
-                return `rgb(${adjustBrightnessRgb(`${r}, ${g}, ${b}`, effAdjust)})`;
+                const adj = adjustBrightnessValues(r, g, b, effAdjust);
+                return `rgb(${adj.r}, ${adj.g}, ${adj.b})`;
             } else {
                 const minChannel = Math.min(r, g, b);
                 const effAdjust = minChannel < 60 ? Math.min(0, -0.15 + (60 - minChannel) * 0.003) : -0.15;
-                return `rgb(${adjustBrightnessRgb(`${r}, ${g}, ${b}`, effAdjust)})`;
+                const adj = adjustBrightnessValues(r, g, b, effAdjust);
+                return `rgb(${adj.r}, ${adj.g}, ${adj.b})`;
             }
         });
 
