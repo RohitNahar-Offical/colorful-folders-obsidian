@@ -112,3 +112,20 @@ Welcome to the **Colorful Folders** master documentation index. This document pr
 - **Inner Workings & Technical Details**:
   - **Staircase Bug**: Remedies inline margin/padding overrides injected by certain Obsidian themes.
   - **`initStaircaseStyleStripper()`**: MutationObserver that strips conflicting inline `style` attributes on `.tree-item-self` elements while preserving folder note titles.
+
+---
+
+## 🌐 6. Localization (i18n) System
+
+### **[LOCALIZATION.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/LOCALIZATION.md)** — Internationalization Architecture
+- **Core Subject**: Complete i18n system specification — language detection, key namespaces, locale file structure, and developer workflow for adding new languages.
+- **Inner Workings & Technical Details**:
+  - **Compile-Time Typed Keys**: `TranslationKey` is derived as `keyof typeof en` — TypeScript emits a build error if a `t()` call references a key that doesn't exist in `en.ts`.
+  - **`t(key, vars?)` API**: Runtime translation function with `{{var}}` interpolation support. Defined in `src/lang/helpers.ts`.
+  - **Language Detection Chain**: `obsidian.getLanguage()` → `localStorage["language"]` → `moment.locale()` → `"en"` fallback.
+  - **Partial Locale Files**: All non-English locales are `Partial<LocaleDictionary>`, so missing keys automatically fall back to English without errors.
+  - **8 Supported Locales**: English (`en`), Slovak (`sk`), German (`de`), Spanish (`es`), French (`fr`), Japanese (`ja`), Simplified Chinese (`zh-cn`), Traditional Chinese (`zh-tw` / `zh-hk`).
+  - **Key Namespace Map**: 13 prefix namespaces covering `common.*`, `settings.tab.*`, `settings.ai.*`, `section.*`, `notice.*`, `modal.divider.*`, `modal.hover_message.*`, `modal.password.*`, etc.
+  - **Full UI Coverage**: All user-facing strings in `SettingTab.ts`, `GeneralSettingSection.ts`, `IconSettingSection.ts`, `FeaturesSettingSection.ts`, `AISettingSection.ts`, `HoverMessageModal.ts`, `DividerModal.ts`, and `PasswordModal.ts` use `t(...)`.
+  - **Sentence-Case Linter Compliance**: Placeholder strings with product names (e.g. `Bge-m3`) must capitalize only the first character to satisfy `obsidianmd/ui/sentence-case`.
+

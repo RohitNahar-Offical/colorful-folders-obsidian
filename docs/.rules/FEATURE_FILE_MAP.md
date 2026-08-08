@@ -34,3 +34,16 @@ Use this to instantly know WHICH file to edit for any task.
 
 ## "I want to fix build errors"
 → Check `src/common/types.ts` — likely an interface mismatch. Run `npm run build` and `npm run lint`.
+
+## "I want to add or change a user-facing UI string"
+→ Edit `src/lang/locale/en.ts` to add the key, then add the translated equivalent in ALL locale files (`sk.ts`, `de.ts`, `es.ts`, `fr.ts`, `ja.ts`, `zh-cn.ts`, `zh-tw.ts`). Replace the hardcoded string in the source file with `t("your.key")`. See `docs/LOCALIZATION.md` for full workflow.
+
+## "I want to add a new language"
+→ Create `src/lang/locale/<code>.ts`, export a default object with all keys from `en.ts`, and register it in `src/lang/helpers.ts` inside `localeMap`. Read `docs/LOCALIZATION.md` for key namespace conventions.
+
+## "I want to change the Section Divider editor modal"
+→ Edit `src/ui/modals/DividerModal.ts` for UI settings, labels, and layout. For divider CSS logic (pill styles, line styles, glassmorphism), edit `src/core/BaseCssGenerator.ts`. All strings in `DividerModal.ts` must use `t(...)` from `src/lang/helpers.ts`.
+
+## "I want to change the Hover Message (popover) editor"
+→ Edit `src/ui/modals/HoverMessageModal.ts`. All strings (toolbar tooltips, placeholders, live preview label) must use `t(...)`.
+

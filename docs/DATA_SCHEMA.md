@@ -15,7 +15,8 @@ Representing the entire `data.json` structure. Defined in `src/common/types.ts`.
 | `paletteDark` | `string` | Active palette name for Dark Mode. |
 | `palette` | `string` | Legacy active palette name. |
 | `customPalette` | `string` | Comma-separated hex list for the "Custom" palette mode. |
-| `colorMode` | `string` | `cycle` (sequential), `monochromatic` (fixed root color), or `heatmap` (by age). |
+| `colorMode` | `string` | `cycle` (sequential), `hierarchy` (by depth level), `monochromatic` (fixed root color), or `heatmap` (by age). |
+| `fileColorMode` | `string` | `folder_scope`, `parent`, `hierarchy`, `sequential`, `mixed` (name hash), or `none`. |
 | `cycleOffset` | `number` | Shifts the starting point of the color cycle. |
 | **Opacity & Accents** | | |
 | `rootOpacity` | `number` | Starting opacity for depth-0 folder title backgrounds. Default: `0.50`. Used as the base for the depth progression formula. |
@@ -76,6 +77,11 @@ Representing the entire `data.json` structure. Defined in `src/common/types.ts`.
 | `aiCustomEndpoint` | `string` | Custom OpenAI-compatible API endpoint URL. |
 | `aiKeyConfirmed` | `boolean` | Privacy confirmation modal consent flag. |
 | `aiIncludeFiles` | `boolean` | Enables AI classification for `.md` note files in addition to folders. |
+| `aiIncludeContent` | `boolean` | When true, AI reads file content snippets, tags, and frontmatter for richer context. |
+| **Vector Embedding Engine** | | |
+| `embeddingEngine` | `string` | `"builtin"` (zero-dependency local vector model) or `"custom"` (Ollama / local API). |
+| `embeddingCustomModel` | `string` | Model name for the custom embedding engine (e.g. `bge-m3`, `nomic-embed-text`). |
+| `embeddingEndpointUrl` | `string` | Base URL for the custom local embedding API endpoint. |
 | **System & Privacy** | | |
 | `presets` | `Record<string, FolderStyle>` | User-saved custom folder styles templates. |
 | `recentlyUsedIcons` | `string[]` | List of recently chosen icon IDs. |

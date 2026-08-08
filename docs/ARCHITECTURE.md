@@ -51,18 +51,39 @@ graph TD
 
 All color, opacity, and text color math is centralized into `ColorResolver` (`src/core/ColorResolver.ts`).
 
-### 2.1 `ColorResolver.resolveColor(...)` — The Color Priority Chain
+### 2.1 `ColorResolver.resolveColor(...)` — The Color Priority Chain & Color Modes
 
-Every item's final color is determined by this priority chain:
+Every item's final color is determined by this priority chain and active `colorMode` (`cycle`, `monochromatic`, `hierarchy`, or `heatmap`):
 
 1. **Custom Style Override**: If the item's path has a `FolderStyle` with a `hex` value set, that color is used unconditionally.
 2. **Inherited Subfolder Color**: If an ancestor has `applyToSubfolders: true` AND a `passedColor` (the ancestor's resolved color) is available, that color is returned directly.
 3. **Inherited Subfolder Hex**: If inheritance is active but `passedColor` is not yet resolved, falls back to the ancestor's own `hex` value.
 4. **File Color** (when `isFile: true`):
+   - Evaluated according to `fileColorMode` (`hierarchy`, `folder_scope`, `parent`, `sequential`, `mixed`, or `none`).
    - If `applyToFiles` is active on the inherited style, applies a per-name ±5-channel RGB jitter to the parent color for subtle variation.
-   - If `autoColorFiles` or Notebook Navigator file-background is active, uses a hash of the filename against the palette.
+   - If `autoColorFiles` or Notebook Navigator file-background is active, resolves file background according to `fileColorMode`.
    - Otherwise, falls back to `globalBackgroundColor`.
-5. **Palette Cycle** (default for folders): Uses `(validIndex + depth + rootIndex + cycleOffset) % palette.length`.
+5. **Folder Color Generation Modes**:
+   - **`hierarchy` (Hierarchy Level Mode)**: Each folder level's color is strictly determined by its nesting depth in the tree (`palette[(depth + cycleOffset) % palette.length]`). Uses `getFastFolderScopeDepth()` / `getFastPathSlashes()` for $O(1)$ zero-allocation depth calculations.
+   - **`cycle` (Sequential Mode)**: Uses `(validIndex + depth + rootIndex + cycleOffset) % palette.length`.
+   - **`monochromatic`**: Root folders pick sequential colors, and subfolders inherit their root folder's base color tint.
+   - **`heatmap`**: Colors items based on modification age (`heatmapMtime`).
+
+#### ⚡ Performance Optimization: Fast Path Slash Counting
+To compute hierarchy depth without heap allocations or string splitting, `ColorResolver` uses a fast-path character scanner `getFastPathSlashes(path: string)`:
+```typescript
+export function getFastPathSlashes(path: string): number {
+    let slashes = 0;
+    const len = path.length;
+    for (let i = 0; i < len; i++) {
+        if (path.charCodeAt(i) === 47) { // '/' = 47
+            slashes++;
+        }
+    }
+    return slashes;
+}
+```
+This avoids `path.split('/')` array allocations entirely, executing in $O(\text{path.length})$ CPU cycles with **0 bytes of memory allocations**.
 
 ```mermaid
 graph TD
@@ -248,3 +269,78 @@ All SVG transformations and resolutions run through bounded $O(1)$ `LRUCache(204
 - Attaches cleanly to `document.adoptedStyleSheets` for all active workspace windows on load without overwriting existing sheets (`doc.adoptedStyleSheets = [...doc.adoptedStyleSheets, this.sheet]`).
 - Updates styles synchronously via `updateStyles(cssString)` -> `sheet.replaceSync(cssString)`.
 - Detaches cleanly from `adoptedStyleSheets` in `onunload()`.
+
+---
+
+## 6. Vector Embedding Classification Engine
+
+The plugin includes a **Zero-LLM, offline-capable icon assignment engine** operating independently of the LLM-based `AIIconClassifier`. It uses dense vector embeddings to match vault folder/file names to icon concepts without network access.
+
+### 6.1 Engine Selection
+
+Configured via `settings.embeddingEngine`:
+- `"builtin"` — Uses the **zero-dependency built-in local vector model** (0mb download, embedded at compile time). Achieves <5ms per item classification.
+- `"custom"` — Delegates to a **local neural model** (e.g. `bge-m3` via Ollama or a local OpenAI-compatible embedding API) for higher semantic accuracy.
+
+### 6.2 Vector Classification Flow
+
+```mermaid
+graph TD
+    A[User triggers vector auto-assign] --> B{embeddingEngine setting}
+    B -- builtin --> C[BuiltinVectorEngine.classify]
+    B -- custom --> D[CustomEmbeddingEngine.classify via HTTP]
+    C --> E[Compute cosine similarity against icon concept embeddings]
+    D --> E
+    E --> F[Rank candidates by similarity score]
+    F --> G[Resolve best icon via IconRepository.findIconInPacks]
+    G --> H[Save iconId to customFolderColors]
+    H --> I[Trigger generateStyles]
+```
+
+### 6.3 Notices & Progress
+
+The engine reports progress via localized notices (`t("notice.vector_scanning")`, `t("notice.vector_progress")`, `t("notice.vector_success")`, `t("notice.vector_error")`). The button text in `AISettingSection.ts` dynamically updates from `t("settings.ai.btn_vector_auto_assign")` → `t("settings.ai.btn_vector_progress", { pct, completed, total })` during scanning.
+
+---
+
+## 7. Internationalization (i18n) Architecture
+
+All user-facing strings across every setting panel, modal, notice, and tooltip are served through a **compile-time typed localization system**.
+
+### 7.1 Key Components
+
+| File | Role |
+|:---|:---|
+| `src/lang/helpers.ts` | `t()` translation function, `getLanguage()` detection, `localeMap` registry |
+| `src/lang/locale/en.ts` | **Source of truth** — 624+ keys, all typed `as const` |
+| `src/lang/locale/sk.ts` | Slovak (full coverage) |
+| `src/lang/locale/de.ts` | German (full coverage) |
+| `src/lang/locale/es.ts` | Spanish (full coverage) |
+| `src/lang/locale/fr.ts` | French (full coverage) |
+| `src/lang/locale/ja.ts` | Japanese (full coverage) |
+| `src/lang/locale/zh-cn.ts` | Simplified Chinese (full coverage) |
+| `src/lang/locale/zh-tw.ts` | Traditional Chinese / HK (full coverage) |
+
+### 7.2 Type Safety Mechanism
+
+```typescript
+// TranslationKey is automatically derived from en.ts
+export type TranslationKey = keyof typeof en;
+
+// t() is strictly typed — wrong keys are caught at compile time
+export function t(key: TranslationKey, vars?: Record<string, string | number>): string
+```
+
+Passing a string that is not a key in `en.ts` produces a TypeScript error at the `t()` call site — **no runtime surprises, no silent mismatches**.
+
+### 7.3 Variable Interpolation
+
+Template variables use `{{name}}` syntax:
+
+```typescript
+t("notice.vector_progress", { engineName: "Built-in", pct: 42, completed: 420, total: 1000 })
+// → "⏳ Built-in: 42% (420/1000 items processed)..."
+```
+
+For full documentation: [`docs/LOCALIZATION.md`](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/LOCALIZATION.md).
+

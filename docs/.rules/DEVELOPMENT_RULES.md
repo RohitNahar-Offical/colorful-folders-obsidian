@@ -126,6 +126,9 @@ Any event listener registered on an element MUST be explicitly unregistered in t
 **RULE 5.5: Reset UI state on Reset buttons.**
 When providing "Reset" buttons in modals, store references to `ToggleComponent` and other interactive UI elements, and explicitly call `.setValue(false)` (or equivalent) to keep the UI in sync with the data model. *(Incident #23)*
 
+**RULE 5.6: All new user-facing strings MUST use `t()` from the i18n system.**
+Never add hardcoded strings (setting names, descriptions, button labels, tooltips, modal titles, notices, placeholders) to any UI file. Every new string must be added as a key in `src/lang/locale/en.ts` AND in all supported locale files (`sk.ts`, `de.ts`, `es.ts`, `fr.ts`, `ja.ts`, `zh-cn.ts`, `zh-tw.ts`). Use `t("your.key")` in the source file. TypeScript will emit a build error if the key doesn't exist in `en.ts`, providing automatic coverage enforcement. See `docs/LOCALIZATION.md` for the full workflow. *(Established post-localization refactor of all setting panels and modals)*
+
 ---
 
 ## 6. CI/CD & Release Pipeline
@@ -174,9 +177,13 @@ colorful-folders/
 │   │   └── DividerManager.ts  ← Divider DOM management
 │   ├── services/
 │   │   └── DOMObserverService.ts ← MutationObserver & scroll handling
+│   ├── lang/
+│   │   ├── helpers.ts         ← t() translation function & localeMap registry
+│   │   └── locale/            ← Locale dictionaries (en, sk, de, es, fr, ja, zh-cn, zh-tw)
 │   ├── ui/
 │   │   ├── SettingTab.ts      ← Settings panel UI
-│   │   └── modals/            ← All interactive UI modals
+│   │   ├── settings/          ← Per-tab setting sections
+│   │   └── modals/            ← All interactive UI modals (DividerModal, HoverMessageModal, PasswordModal, etc.)
 │   └── integrations/
 │       └── NotebookNavigator.ts ← NN plugin integration
 ├── styles.css                 ← Static base styles only
@@ -240,6 +247,7 @@ When starting a new session on this plugin, do the following **before writing an
 | 5.3 | #12, #23 |
 | 5.4 | #12 |
 | 5.5 | #23 |
+| 5.6 | Post-localization refactor |
 | 6.1 | #11 |
 | 6.2 | #11 |
 | 7 (Staircase) | #24, #25 |

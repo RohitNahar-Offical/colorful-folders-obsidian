@@ -64,7 +64,10 @@ graph TD
 - Builds once per session with version-snapshot checking (`_localVersion`, `_customVersion`).
 - Resolves suffix collisions at build time using `PACK_PRIORITY` weights:
   `custom` (100) > `lucide` (90) > `tabler` (80) > `simple-icons` (70) > `remix` (60) > `feather` (50) > `font-awesome` (40) > `material` (30).
-- **`searchFuzzy` Optimization**: Includes $O(1)$ map pre-checks (`findIcon`), length-difference candidate pruning ratio `1 - threshold`, word-boundary alignment checks, and a 1D single-row Levenshtein buffer.
+  - **Structure-Preserving Path Key Normalization**: `normalizePathKey(path)` preserving slashes `/` to eliminate key collision bugs across subfolders.
+  - **Memory-Efficient Hierarchy Depth Scanner (`getFastPathSlashes`)**: Zero-allocation $O(\text{len})$ char-code scanner (`charCodeAt(i) === 47`) replacing expensive `path.split('/')` heap allocations during color resolution.
+  - **Hierarchy Level Color Mode (`colorMode: "hierarchy"`)**: Directly maps folder color indices to tree depth (`(depth + cycleOffset) % palette.length`) with zero array allocations.
+  - **Stemming Engine & Fuzzy Optimizations**: `STOP_WORDS` filtering, `searchFuzzy` length-difference pruning, word-boundary alignment, and single-row Levenshtein memory buffer.
 
 ### 3.2 `CategoryTrie` (`src/core/CategoryTrie.ts`)
 - Indexes `AUTO_ICON_CATEGORIES` using a true Node-based Prefix Trie (`TrieNode`).
