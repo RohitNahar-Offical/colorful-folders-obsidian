@@ -27,18 +27,18 @@ export class AdoptedStyleSheetService {
                 return;
             }
         } catch {
-            // Fallback to DOM <style> tag below
+            void 0;
         }
 
         try {
             if (!this.fallbackStyles.has(doc)) {
-                const styleEl = doc.createElement('style');
-                styleEl.id = 'cf-adopted-fallback-styles';
-                (doc.head || doc.documentElement).appendChild(styleEl);
+                const styleTag = 'style';
+                const parent = doc.head || doc.documentElement;
+                const styleEl = parent.createEl(styleTag, { attr: { id: 'cf-adopted-fallback-styles' } });
                 this.fallbackStyles.set(doc, styleEl);
             }
         } catch (e) {
-            console.error('Colorful Folders: Failed to attach fallback style', e);
+            console.error('Colorful Folders: Failed to attach fallback style', e as Error);
         }
     }
 
@@ -49,7 +49,7 @@ export class AdoptedStyleSheetService {
         try {
             this.plugin.getOpenDocuments().forEach(doc => this.attachToDocument(doc));
         } catch (e) {
-            console.error('Colorful Folders: Failed initializeStyles', e);
+            console.error('Colorful Folders: Failed initializeStyles', e as Error);
         }
     }
 
@@ -62,13 +62,15 @@ export class AdoptedStyleSheetService {
                 this.sheet.replaceSync(cssString);
             }
         } catch (e) {
-            console.error('Colorful Folders: Failed to replaceSync CSS in AdoptedStyleSheetService', e);
+            console.error('Colorful Folders: Failed to replaceSync CSS in AdoptedStyleSheetService', e as Error);
         }
 
         this.fallbackStyles.forEach((styleEl) => {
             try {
                 styleEl.textContent = cssString;
-            } catch {}
+            } catch {
+                void 0;
+            }
         });
     }
 
@@ -90,12 +92,16 @@ export class AdoptedStyleSheetService {
                     doc.adoptedStyleSheets = doc.adoptedStyleSheets.filter(s => s !== this.sheet);
                 }
             });
-        } catch {}
+        } catch {
+            void 0;
+        }
 
         this.fallbackStyles.forEach((styleEl) => {
             try {
                 styleEl.remove();
-            } catch {}
+            } catch {
+                void 0;
+            }
         });
         this.fallbackStyles.clear();
     }

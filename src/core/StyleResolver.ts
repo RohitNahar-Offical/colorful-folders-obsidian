@@ -227,7 +227,7 @@ export class StyleResolver {
                 applyToFiles: !!customStyle?.applyToFiles,
             };
         } catch (e) {
-            console.error("Colorful Folders: Failed to resolve getEffectiveStyle", e);
+            console.error("Colorful Folders: Failed to resolve getEffectiveStyle", e as Error);
             return {
                 hex: "#ffffff",
                 textColor: "#000000",

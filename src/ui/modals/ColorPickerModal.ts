@@ -358,7 +358,7 @@ modifiedFields: Set<string>;
                     this._refreshIconSelection(this.folderStyle.iconId, this._curIconBox);
                 }
             } catch (e) {
-                console.warn("Colorful Folders: Preview update failed", e);
+                console.warn("Colorful Folders: Preview update failed", e as Error);
             }
         };
         this._updatePreview = updatePreview;

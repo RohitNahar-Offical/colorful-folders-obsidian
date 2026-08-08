@@ -510,15 +510,17 @@ export class EmbeddingModel {
         const context = this.buildQueryContext(titleOrPath, options?.isFolder ?? false);
 
         if (this.queryCache.size >= MAX_CACHE_SIZE) {
-            const oldestKey = this.queryCache.keys().next().value!;
-            this.queryCache.delete(oldestKey);
+            for (const k of this.queryCache.keys()) {
+                this.queryCache.delete(k);
+                break;
+            }
         }
 
         const directMatch = this.tryDirectDictionaryMatch(context.lowerName, topK, context);
         if (directMatch.length > 0) {
-            const enriched = directMatch.map(r => ({
+            const enriched: VectorMatchResult[] = directMatch.map((r): VectorMatchResult => ({
                 ...r,
-                confidence: 'high' as const,
+                confidence: 'high',
                 score: this.applyContextBoost(r.score, r.iconId, context)
             })).sort((a, b) => b.score - a.score).slice(0, topK);
             
@@ -551,10 +553,10 @@ export class EmbeddingModel {
             .sort((a, b) => b.score - a.score)
             .slice(0, topK);
 
-        const result = boosted.map(r => ({
+        const result: VectorMatchResult[] = boosted.map((r): VectorMatchResult => ({
             ...r,
             matchedTag: context.filename,
-            confidence: r.score >= 0.7 ? 'high' as const : r.score >= 0.45 ? 'medium' as const : 'low' as const
+            confidence: r.score >= 0.7 ? 'high' : r.score >= 0.45 ? 'medium' : 'low'
         }));
 
         if (result.length === 0) {
@@ -606,7 +608,7 @@ export class EmbeddingModel {
                     iconId,
                     score: 0.99,
                     matchedTag: lowerName,
-                    confidence: 'high' as const
+                    confidence: 'high'
                 });
             }
         });
@@ -623,7 +625,7 @@ export class EmbeddingModel {
                 iconId,
                 score: 0.98,
                 matchedTag: 'person-name',
-                confidence: 'high' as const
+                confidence: 'high'
             }));
         }
 
@@ -633,7 +635,7 @@ export class EmbeddingModel {
                 iconId,
                 score: 1.0,
                 matchedTag: lowerName,
-                confidence: 'high' as const
+                confidence: 'high'
             }));
         }
 
@@ -654,7 +656,7 @@ export class EmbeddingModel {
                 iconId: m.iconId,
                 score: 0.9,
                 matchedTag: m.brand,
-                confidence: 'high' as const
+                confidence: 'high'
             }));
         }
 
@@ -673,7 +675,7 @@ export class EmbeddingModel {
                     iconId,
                     score: 0.4,
                     matchedTag: context.extension,
-                    confidence: 'low' as const
+                    confidence: 'low'
                 });
             }
             if (results.length >= topK) break;
@@ -688,7 +690,7 @@ export class EmbeddingModel {
                         iconId,
                         score: 0.35,
                         matchedTag: context.parentFolder,
-                        confidence: 'low' as const
+                        confidence: 'low'
                     });
                 }
                 if (results.length >= topK) break;
@@ -706,7 +708,7 @@ export class EmbeddingModel {
                         iconId,
                         score: 0.3,
                         matchedTag: context.isFolder ? 'default-folder' : 'default-file',
-                        confidence: 'low' as const
+                        confidence: 'low'
                     });
                 }
                 if (results.length >= topK) break;

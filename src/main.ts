@@ -126,12 +126,14 @@ export default class ColorfulFoldersPlugin
             "cf-wrap-metadata",
             Boolean(this.settings.wrapMetadata),
           );
-        } catch {}
+        } catch {
+          void 0;
+        }
       });
 
       this.lifecycleService.onLayoutReady();
     } catch (err) {
-      console.error("Colorful Folders: Exception in plugin onload", err);
+      console.error("Colorful Folders: Exception in plugin onload", err as Error);
     }
 
     // Defer non-critical background checks (Blue Topaz optimization & Changelog modal) so plugin loads instantly
@@ -143,7 +145,7 @@ export default class ColorfulFoldersPlugin
           void this.generateStyles();
         }
       } catch (err) {
-        console.error("Colorful Folders: Failed to optimize Blue Topaz settings", err);
+        console.error("Colorful Folders: Failed to optimize Blue Topaz settings", err as Error);
       }
 
       // Check for first download or version update and ensure icon packs exist
@@ -179,7 +181,7 @@ export default class ColorfulFoldersPlugin
         } catch (err) {
           console.error(
             "Colorful folders: failed to fetch collective changelog from GitHub",
-            err
+            err as Error
           );
         }
       }
@@ -288,7 +290,7 @@ export default class ColorfulFoldersPlugin
         this.generateStylesDebounced();
       }
     } catch (e) {
-      console.error("Colorful Folders: Failed to load local icons", e);
+      console.error("Colorful Folders: Failed to load local icons", e as Error);
     }
   }
 
@@ -636,15 +638,15 @@ export default class ColorfulFoldersPlugin
       settingsManager?: StyleSettingsManager;
     }
 
-    const appAny = this.app as unknown as Record<string, unknown>;
-    const vaultAny = this.app.vault as unknown as Record<string, unknown>;
-    const getConfig = typeof vaultAny.getConfig === "function" ? (vaultAny.getConfig as (key: string) => string | null).bind(vaultAny) : null;
-    const customCss = appAny.customCss as { theme?: string } | undefined;
+    const vault = this.app.vault as obsidian.Vault & { getConfig?: (key: string) => unknown };
+    const getConfigFn = typeof vault.getConfig === "function" ? vault.getConfig : null;
+    const customCss = (this.app as obsidian.App & { customCss?: { theme?: string }; plugins?: { getPlugin?: (id: string) => StyleSettingsPlugin | null } }).customCss;
     const themeName = customCss?.theme || "";
-    const currentTheme = (getConfig ? getConfig("cssTheme") : null) || themeName;
+    const rawTheme = getConfigFn ? (vault as { getConfig: (key: string) => unknown }).getConfig("cssTheme") : null;
+    const currentTheme = (typeof rawTheme === "string" ? rawTheme : null) || themeName;
     if (!currentTheme || currentTheme.toLowerCase() !== "blue topaz") return false;
 
-    const pluginsObj = appAny.plugins as { getPlugin?: (id: string) => StyleSettingsPlugin | null } | undefined;
+    const pluginsObj = (this.app as obsidian.App & { plugins?: { getPlugin?: (id: string) => StyleSettingsPlugin | null } }).plugins;
     if (!pluginsObj?.getPlugin) return false;
     const styleSettingsPlugin = pluginsObj.getPlugin("obsidian-style-settings");
     if (!styleSettingsPlugin) return false;
@@ -708,7 +710,7 @@ export default class ColorfulFoldersPlugin
         void GraphColorSync.syncGraphColors(this);
       }
     } catch (e) {
-      console.error("Colorful Folders: Error during generateStyles", e);
+      console.error("Colorful Folders: Error during generateStyles", e as Error);
     } finally {
       this.isGeneratingStyles = false;
       if (this.hasPendingGenerateStyles && !this._isUnloading) {
@@ -894,7 +896,7 @@ export default class ColorfulFoldersPlugin
       }
       return count;
     } catch (e) {
-      console.error(`Colorful Folders: Failed to download ${prefix} icons`, e);
+      console.error(`Colorful Folders: Failed to download ${prefix} icons`, e as Error);
       throw e;
     }
   }

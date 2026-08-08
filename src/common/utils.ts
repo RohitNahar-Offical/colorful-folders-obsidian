@@ -14,8 +14,10 @@ export function hexToRgbObj(hex: string): {r: number, g: number, b: number} | nu
     if (cached !== undefined) return cached;
 
     if (rgbCache.size > MAX_CACHE_SIZE) {
-        const oldestKey = rgbCache.keys().next().value;
-        if (oldestKey !== undefined) rgbCache.delete(oldestKey);
+        for (const k of rgbCache.keys()) {
+            rgbCache.delete(k);
+            break;
+        }
     }
 
     // Strip leading/trailing whitespace & optional leading '#'
@@ -158,8 +160,10 @@ export function parseCustomPalette(hexString: string): { rgb: string, hex: strin
     if (cached !== undefined) return cached;
 
     if (paletteCache.size > MAX_CACHE_SIZE) {
-        const oldestKey = paletteCache.keys().next().value;
-        if (oldestKey !== undefined) paletteCache.delete(oldestKey);
+        for (const k of paletteCache.keys()) {
+            paletteCache.delete(k);
+            break;
+        }
     }
 
     const hexes = hexString.split(',');

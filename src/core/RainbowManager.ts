@@ -1,4 +1,4 @@
-import { hexToRgbObj, adjustBrightnessValues } from '../common/utils';
+import { hexToRgbObj, adjustBrightnessValues, adjustBrightnessRgb } from '../common/utils';
 
 export interface RainbowGradientOpts {
     angle?: number;

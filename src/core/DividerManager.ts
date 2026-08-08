@@ -586,7 +586,7 @@ export class DividerManager {
                 }
             }
         } catch (e) {
-            console.error("Colorful Folders: Failed to sync dividers for container", e);
+            console.error("Colorful Folders: Failed to sync dividers for container", e as Error);
         }
     }
 

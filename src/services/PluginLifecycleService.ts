@@ -92,7 +92,7 @@ export class PluginLifecycleService {
 
             void GraphColorSync.clearGraphColors(this.plugin);
         } catch (e) {
-            console.error("Colorful Folders: Exception during plugin cleanup", e);
+            console.error("Colorful Folders: Exception during plugin cleanup", e as Error);
         }
     }
 }

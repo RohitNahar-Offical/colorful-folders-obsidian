@@ -96,11 +96,11 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         setTab(this.activeTab || "gen");
 
         // Delegate Section Rendering (SRP / OOP)
-        try { this.generalSection.render(generalPanel); } catch (e) { console.error("Colorful Folders: Error rendering General section", e); }
-        try { this.featuresSection.render(intPanel); } catch (e) { console.error("Colorful Folders: Error rendering Features section", e); }
-        try { this.iconSection.render(iconPanel); } catch (e) { console.error("Colorful Folders: Error rendering Icon section", e); }
-        try { this.aiSection.render(aiPanel); } catch (e) { console.error("Colorful Folders: Error rendering AI section", e); }
-        try { this.privacySection.render(sysPanel); } catch (e) { console.error("Colorful Folders: Error rendering Privacy section", e); }
+        try { this.generalSection.render(generalPanel); } catch (e) { console.error("Colorful Folders: Error rendering General section", e as Error); }
+        try { this.featuresSection.render(intPanel); } catch (e) { console.error("Colorful Folders: Error rendering Features section", e as Error); }
+        try { this.iconSection.render(iconPanel); } catch (e) { console.error("Colorful Folders: Error rendering Icon section", e as Error); }
+        try { this.aiSection.render(aiPanel); } catch (e) { console.error("Colorful Folders: Error rendering AI section", e as Error); }
+        try { this.privacySection.render(sysPanel); } catch (e) { console.error("Colorful Folders: Error rendering Privacy section", e as Error); }
 
         if (savedScrollTop > 0) {
             window.requestAnimationFrame(() => {
@@ -171,7 +171,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         } catch (e) {
             const msg = (e as Error)?.message || String(e);
             new obsidian.Notice(`Failed to import icon pack: ${msg}`, 6000);
-            console.error("Colorful Folders: URL Import failed", e);
+            console.error("Colorful Folders: URL Import failed", e as Error);
         }
     }
 }

@@ -201,7 +201,7 @@ export class AIIconClassifier {
                     : {};
 
                 const contextPayload = batchTargets.map(t => {
-                    const itemObj: Record<string, any> = {
+                    const itemObj: Record<string, unknown> = {
                         item_path: t.path,
                         type: t.isFolder ? 'Folder' : 'File'
                     };
@@ -214,7 +214,8 @@ export class AIIconClassifier {
                     }
                     if (!t.isFolder) {
                         if (t.tags && t.tags.length > 0) itemObj.tags = t.tags.join(', ');
-                        if ((t as any).contentSnippet) itemObj.snippet = (t as any).contentSnippet;
+                        const snippet = (t as { contentSnippet?: string }).contentSnippet;
+                        if (snippet) itemObj.snippet = snippet;
                     }
                     return itemObj;
                 });
@@ -229,7 +230,7 @@ export class AIIconClassifier {
 
                     if (Array.isArray(result)) {
                         batchTargets.forEach((t, itemIdx) => {
-                            const val = result[itemIdx];
+                            const val = (result as unknown[])[itemIdx];
                             if (val) kvPairs[t.path] = val;
                         });
                     } else if (result && typeof result === 'object') {
@@ -320,7 +321,8 @@ export class AIIconClassifier {
                         if (Array.isArray(conceptVal)) {
                             candidatesList.push(...conceptVal.map(c => String(c).trim()).filter(Boolean));
                         } else if (typeof conceptVal === 'object' && conceptVal) {
-                            const raw = (conceptVal as any).icon || (conceptVal as any).iconId || (conceptVal as any).concept || '';
+                            const cObj = conceptVal as Record<string, unknown>;
+                            const raw = (cObj.icon || cObj.iconId || cObj.concept || '') as string;
                             if (raw) candidatesList.push(String(raw).trim());
                         } else if (conceptVal) {
                             const valStr = String(conceptVal).trim();
@@ -433,7 +435,7 @@ export class AIIconClassifier {
                     }
                 } catch (err) {
                     const msg = (err as Error)?.message || String(err);
-                    console.error(`Colorful Folders AI: Batch ${currentBatch} classification failed`, err);
+                    console.error(`Colorful Folders AI: Batch ${currentBatch} classification failed`, err as Error);
                     new Notice(`Colorful Folders AI: ${msg}`, 6000);
                 } finally {
                     completedBatches++;
@@ -526,7 +528,7 @@ export class AIIconClassifier {
             notice.setMessage(`Colorful Folders AI: Successfully assigned icons to ${assignedCount} vault items via ${modelLabel}! ✨`);
             window.setTimeout(() => notice.hide(), 4000);
         } catch (e) {
-            console.error("Colorful Folders AI Classification Error:", e);
+            console.error("Colorful Folders AI Classification Error:", e as Error);
             const friendlyMsg = this.extractHttpErrorMessage(e, settings.aiProvider);
             notice.setMessage(`Colorful Folders AI Error: ${friendlyMsg}`);
             window.setTimeout(() => notice.hide(), 7000);
@@ -631,7 +633,7 @@ Correct Output:
 }`;
     }
 
-    private async queryAI(payload: any[], systemPrompt: string): Promise<Record<string, unknown>> {
+    private async queryAI(payload: Record<string, unknown>[], systemPrompt: string): Promise<Record<string, unknown>> {
         const settings = this.plugin.settings;
         const provider = settings.aiProvider;
         const userPrompt = JSON.stringify(payload);
@@ -661,7 +663,7 @@ Correct Output:
                 }
 
                 if (attempt < 3) {
-                    console.warn(`Colorful Folders AI: Batch request attempt ${attempt} failed, retrying in ${attempt * 1000}ms...`, err);
+                    console.warn(`Colorful Folders AI: Batch request attempt ${attempt} failed, retrying in ${attempt * 1000}ms...`, err as Error);
                     await new Promise(res => window.setTimeout(res, attempt * 1000));
                 }
             }
@@ -695,7 +697,7 @@ Correct Output:
             if (errStr.includes('net::ERR_CONNECTION_REFUSED') || errStr.includes('Failed to fetch') || errStr.includes('ECONNREFUSED') || errStr.includes('connect')) {
                 throw new Error(`Could not connect to Ollama at ${baseUrl}. Please ensure the Ollama desktop app or service is running on your machine.`);
             }
-            console.warn("Colorful Folders AI: Ollama /v1/chat/completions failed, trying /api/generate fallback...", e);
+            console.warn("Colorful Folders AI: Ollama /v1/chat/completions failed, trying /api/generate fallback...", e as Error);
             const response = await requestUrl({
                 url: `${baseUrl}/api/generate`,
                 method: 'POST',
@@ -752,7 +754,7 @@ Correct Output:
             })
         });
 
-        const data = response.json;
+        const data = response.json as { choices?: Array<{ message?: { content?: string } }> } | undefined;
         const textResult = data?.choices?.[0]?.message?.content || "{}";
         return this.parseJsonResponse(textResult);
     }
@@ -798,7 +800,7 @@ Correct Output:
             .replace(/'([^'\\]*(?:\\.[^'\\]*)*)'/g, '"$1"');
 
         try {
-            const parsed = JSON.parse(sanitizedStr);
+            const parsed = JSON.parse(sanitizedStr) as Record<string, unknown>;
             if (parsed && typeof parsed === 'object') {
                 return this.unwrapOuterJsonObject(parsed);
             }
@@ -806,7 +808,7 @@ Correct Output:
             // Try auto-repairing truncated JSON (strip trailing comma & append missing closing brace/bracket)
             try {
                 const repairedStr = sanitizedStr.replace(/,\s*$/, '').trim() + (sanitizedStr.trim().startsWith('[') ? ']' : '}');
-                const parsed = JSON.parse(repairedStr);
+                const parsed = JSON.parse(repairedStr) as Record<string, unknown>;
                 if (parsed && typeof parsed === 'object') {
                     return this.unwrapOuterJsonObject(parsed);
                 }
