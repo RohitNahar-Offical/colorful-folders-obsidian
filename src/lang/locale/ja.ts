@@ -86,6 +86,8 @@ const ja: Partial<LocaleDictionary> = {
     "settings.color_mode.heatmap": "アクティビティヒートマップ",
     "settings.color_mode.hierarchy": "階層レベル",
 
+    "settings.file_color_mode.folder_scope": "フォルダースコープ階層 (ツリー深度)",
+
     "settings.palette_light.name": "ライトモード パレット",
     "settings.palette_light.desc": "ライトモード用のカラーパレット。",
     "settings.palette_dark.name": "ダークモード パレット",

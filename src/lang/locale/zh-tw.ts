@@ -65,6 +65,8 @@ const zhTW: Partial<LocaleDictionary> = {
     "settings.color_mode.heatmap": "活動熱力圖",
     "settings.color_mode.hierarchy": "階層層級",
 
+    "settings.file_color_mode.folder_scope": "資料夾作用域層級 (樹深度)",
+
     "settings.palette_light.name": "淺色模式配色",
     "settings.palette_light.desc": "為您的儲存庫選擇淺色模式配色方案。",
     "settings.palette_dark.name": "深色模式配色",

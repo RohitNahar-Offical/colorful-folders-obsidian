@@ -86,6 +86,8 @@ const de: Partial<LocaleDictionary> = {
     "settings.color_mode.heatmap": "Aktivitäts-Heatmap",
     "settings.color_mode.hierarchy": "Hierarchieebene",
 
+    "settings.file_color_mode.folder_scope": "Ordnerbereich-Hierarchie (Baumtiefe)",
+
     "settings.palette_light.name": "Palette Hellmodus",
     "settings.palette_light.desc": "Wählen Sie eine Palette für den Hellmodus.",
     "settings.palette_dark.name": "Palette Dunkelmodus",

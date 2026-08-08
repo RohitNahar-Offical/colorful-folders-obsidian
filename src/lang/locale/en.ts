@@ -92,6 +92,7 @@ export default {
     "settings.file_color_mode.name": "File color mode",
     "settings.file_color_mode.desc": "Choose how file colors are generated in relation to folder depth levels.",
     "settings.file_color_mode.parent": "Match parent folder color",
+    "settings.file_color_mode.folder_scope": "Folder scope hierarchy (Tree depth)",
     "settings.file_color_mode.mixed": "Mixed rainbow (Name hash)",
     "settings.file_color_mode.sequential": "Sequential cycle",
     "settings.file_color_mode.none": "Theme default / None",

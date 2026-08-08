@@ -86,6 +86,8 @@ const fr: Partial<LocaleDictionary> = {
     "settings.color_mode.heatmap": "Carte de chaleur",
     "settings.color_mode.hierarchy": "Niveau hiérarchique",
 
+    "settings.file_color_mode.folder_scope": "Hiérarchie portée dossier (Profondeur de l'arbre)",
+
     "settings.palette_light.name": "Palette mode clair",
     "settings.palette_light.desc": "Choisissez une palette pour le mode clair.",
     "settings.palette_dark.name": "Palette mode sombre",

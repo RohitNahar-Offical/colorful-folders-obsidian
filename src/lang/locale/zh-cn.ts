@@ -65,6 +65,8 @@ const zhCN: Partial<LocaleDictionary> = {
     "settings.color_mode.heatmap": "活动热力图",
     "settings.color_mode.hierarchy": "层次级别",
 
+    "settings.file_color_mode.folder_scope": "文件夹作用域层级 (树深度)",
+
     "settings.palette_light.name": "浅色模式配色",
     "settings.palette_light.desc": "为您的仓库选择浅色模式配色方案。",
     "settings.palette_dark.name": "深色模式配色",

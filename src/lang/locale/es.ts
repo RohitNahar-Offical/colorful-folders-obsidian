@@ -86,6 +86,8 @@ const es: Partial<LocaleDictionary> = {
     "settings.color_mode.heatmap": "Mapa de calor",
     "settings.color_mode.hierarchy": "Nivel de jerarquía",
 
+    "settings.file_color_mode.folder_scope": "Jerarquía de ámbito de carpeta (Profundidad del árbol)",
+
     "settings.palette_light.name": "Paleta modo claro",
     "settings.palette_light.desc": "Selecciona una paleta curada para tu bóveda en modo claro.",
     "settings.palette_dark.name": "Paleta modo oscuro",

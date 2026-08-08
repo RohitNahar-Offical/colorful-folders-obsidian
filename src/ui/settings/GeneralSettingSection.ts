@@ -298,6 +298,7 @@ export class GeneralSettingSection extends SettingSection {
             .setDesc(t("settings.file_color_mode.desc"))
             .addDropdown(drop => drop
                 .addOption('parent', t("settings.file_color_mode.parent"))
+                .addOption('folder_scope', t("settings.file_color_mode.folder_scope"))
                 .addOption('mixed', t("settings.file_color_mode.mixed"))
                 .addOption('sequential', t("settings.file_color_mode.sequential"))
                 .addOption('none', t("settings.file_color_mode.none"))

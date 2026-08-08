@@ -39,6 +39,22 @@ export function getCurrentPalette(
     return { palette: currentPalette, newKey: key };
 }
 
+export function getFastPathSlashes(path: string): number {
+    let slashes = 0;
+    const len = path.length;
+    for (let i = 0; i < len; i++) {
+        if (path.charCodeAt(i) === 47) { // '/' = 47
+            slashes++;
+        }
+    }
+    return slashes;
+}
+
+export function getFastFolderScopeDepth(path: string, isFile: boolean): number {
+    const slashes = getFastPathSlashes(path);
+    return isFile ? Math.max(0, slashes - 1) : slashes;
+}
+
 export class ColorResolver {
     public static resolveColor(
         path: string,
@@ -59,6 +75,10 @@ export class ColorResolver {
         isNNActive: boolean,
         fileColorMode: string = "hierarchy"
     ): { rgb: string, hex: string } {
+        const isHierarchyMode = colorMode === "hierarchy";
+        const fastDepth = isHierarchyMode ? getFastFolderScopeDepth(path, isFile) : depth;
+        const effectiveDepth = isHierarchyMode ? fastDepth : depth;
+
         const getFolderColor = (vIdx: number, d: number, rIdx: number) => {
             if (colorMode === "heatmap") {
                 if (!heatmapMtime) return palette[palette.length - 1];
@@ -72,7 +92,7 @@ export class ColorResolver {
             } else if (colorMode === "monochromatic") {
                 if (d === 0) return palette[vIdx % palette.length];
                 return palette[rIdx % palette.length];
-            } else if (colorMode === "hierarchy") {
+            } else if (isHierarchyMode) {
                 return palette[(d + cycleOffset) % palette.length];
             } else {
                 return palette[(vIdx + d + rIdx + cycleOffset) % palette.length];
@@ -94,18 +114,21 @@ export class ColorResolver {
                 ? cp[0]
                 : (rgb ? { rgb: `${rgb.r}, ${rgb.g}, ${rgb.b}`, hex: inheritedStyle.hex } : palette[0]);
         } else if (isFile) {
-            const parentColor = passedColor ?? (depth > 0 ? getFolderColor(0, depth - 1, rootIndex) : null);
+            const parentColor = passedColor ?? (isHierarchyMode ? getFolderColor(0, effectiveDepth, rootIndex) : (depth > 0 ? getFolderColor(0, depth - 1, rootIndex) : null));
             if (inheritedStyle?.applyToFiles && parentColor) {
                 const hObj = hexToRgbObj(inheritedStyle.hex ?? parentColor.hex) ?? { r: 235, g: 111, b: 146 };
                 const nameHash = hashString(name);
                 const offset = ((nameHash % 5) - 2) * 5;
                 return {
-                    rgb: `${Math.max(0, Math.min(255, hObj.r + offset))}, ${Math.max(0, Math.min(255, hObj.g + offset))}, ${Math.max(0, Math.min(255, hObj.b + offset))}`,
+                    rgb: `${Math.max(0, Math.min(255, hObj.r + offset))}, ${Math.max(0, Math.min(255, hObj.b + offset))}, ${Math.max(0, Math.min(255, hObj.b + offset))}`,
                     hex: inheritedStyle.hex ?? parentColor.hex,
                 };
             } else if (autoColorFiles || isNNActive) {
-                if (fileColorMode === "parent" || fileColorMode === "hierarchy") {
-                    return parentColor ?? getFolderColor(validIndex, depth, rootIndex);
+                if (fileColorMode === "folder_scope") {
+                    const treeDepth = isHierarchyMode ? getFastPathSlashes(path) : depth;
+                    return getFolderColor(validIndex, treeDepth, rootIndex);
+                } else if (fileColorMode === "parent" || fileColorMode === "hierarchy") {
+                    return parentColor ?? getFolderColor(validIndex, effectiveDepth, rootIndex);
                 } else if (fileColorMode === "sequential") {
                     return palette[(validIndex + cycleOffset) % palette.length];
                 } else if (fileColorMode === "none") {
@@ -123,7 +146,7 @@ export class ColorResolver {
                 return parentColor ?? (gRgb ? { rgb: `${gRgb.r}, ${gRgb.g}, ${gRgb.b}`, hex: gHex } : { rgb: "var(--text-normal-rgb)", hex: "var(--text-normal)" });
             }
         } else {
-            return getFolderColor(validIndex, depth, rootIndex);
+            return getFolderColor(validIndex, effectiveDepth, rootIndex);
         }
     }
 
