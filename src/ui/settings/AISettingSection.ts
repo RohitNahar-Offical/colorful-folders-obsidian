@@ -124,11 +124,13 @@ export class AISettingSection extends SettingSection {
                     backgroundColor: isSelected ? "var(--interactive-accent)" : "var(--interactive-normal)",
                     color: isSelected ? "var(--text-on-accent)" : "var(--text-normal)"
                 });
-                btn.addEventListener("click", async () => {
-                    this.plugin.settings.aiModelName = m.name;
-                    await this.plugin.saveSettings();
-                    (this.settingTab as unknown as { display: () => void }).display();
-                    new obsidian.Notice(`Set AI Model to ${m.name}. Make sure to run 'ollama run ${m.name}' in terminal!`);
+                btn.addEventListener("click", () => {
+                    void (async () => {
+                        this.plugin.settings.aiModelName = m.name;
+                        await this.plugin.saveSettings();
+                        (this.settingTab as unknown as { display: () => void }).display();
+                        new obsidian.Notice(`Set AI Model to ${m.name}. Make sure to run 'ollama run ${m.name}' in terminal!`);
+                    })();
                 });
             }
         }

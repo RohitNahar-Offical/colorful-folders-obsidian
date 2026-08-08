@@ -137,54 +137,56 @@ export default class ColorfulFoldersPlugin
     }
 
     // Defer non-critical background checks (Blue Topaz optimization & Changelog modal) so plugin loads instantly
-    window.setTimeout(async () => {
-      try {
-        const optimized = await this.optimizeBlueTopazStyleSettings();
-        if (optimized) {
-          new obsidian.Notice(t("notice.blue_topaz_disabled"));
-          void this.generateStyles();
-        }
-      } catch (err) {
-        console.error("Colorful Folders: Failed to optimize Blue Topaz settings", err as Error);
-      }
-
-      // Check for first download or version update and ensure icon packs exist
-      const currentVersion = this.manifest.version;
-      const isFirstRunOrVersionChange = !this.settings.lastVersion || this.settings.lastVersion !== currentVersion;
-      if (isFirstRunOrVersionChange) {
-        const customIconKeys = Object.keys(this.settings.customIcons || {});
-        const hasSimpleIcons = customIconKeys.some(k => k.startsWith('simple-icons-') || k.startsWith('simple-'));
-        if (!hasSimpleIcons) {
-          window.setTimeout(() => {
-            void this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/simple-icons.json", "simple-icons");
-          }, 2000);
-        }
-
-        const hasTablerIcons = customIconKeys.some(k => k.startsWith('tabler-') || k.startsWith('tb-'));
-        if (!hasTablerIcons) {
-          window.setTimeout(() => {
-            void this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/tabler.json", "tabler");
-          }, 5000);
-        }
-
-        this.settings.lastVersion = currentVersion;
-        await this.saveSettings();
-
-        // Show the collective changelog (Fetched from GitHub)
+    window.setTimeout(() => {
+      void (async () => {
         try {
-          const githubUrl = `https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/main/version.md`;
-          const response = await obsidian.requestUrl({ url: githubUrl });
-          if (response.status === 200) {
-            const content = response.text;
-            new ChangelogModal(this.app, content).open();
+          const optimized = await this.optimizeBlueTopazStyleSettings();
+          if (optimized) {
+            new obsidian.Notice(t("notice.blue_topaz_disabled"));
+            void this.generateStyles();
           }
         } catch (err) {
-          console.error(
-            "Colorful folders: failed to fetch collective changelog from GitHub",
-            err as Error
-          );
+          console.error("Colorful Folders: Failed to optimize Blue Topaz settings", err as Error);
         }
-      }
+
+        // Check for first download or version update and ensure icon packs exist
+        const currentVersion = this.manifest.version;
+        const isFirstRunOrVersionChange = !this.settings.lastVersion || this.settings.lastVersion !== currentVersion;
+        if (isFirstRunOrVersionChange) {
+          const customIconKeys = Object.keys(this.settings.customIcons || {});
+          const hasSimpleIcons = customIconKeys.some(k => k.startsWith('simple-icons-') || k.startsWith('simple-'));
+          if (!hasSimpleIcons) {
+            window.setTimeout(() => {
+              void this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/simple-icons.json", "simple-icons");
+            }, 2000);
+          }
+
+          const hasTablerIcons = customIconKeys.some(k => k.startsWith('tabler-') || k.startsWith('tb-'));
+          if (!hasTablerIcons) {
+            window.setTimeout(() => {
+              void this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/tabler.json", "tabler");
+            }, 5000);
+          }
+
+          this.settings.lastVersion = currentVersion;
+          await this.saveSettings();
+
+          // Show the collective changelog (Fetched from GitHub)
+          try {
+            const githubUrl = `https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/main/version.md`;
+            const response = await obsidian.requestUrl({ url: githubUrl });
+            if (response.status === 200) {
+              const content = response.text;
+              new ChangelogModal(this.app, content).open();
+            }
+          } catch (err) {
+            console.error(
+              "Colorful folders: failed to fetch collective changelog from GitHub",
+              err as Error
+            );
+          }
+        }
+      })();
     }, 1000);
   }
 

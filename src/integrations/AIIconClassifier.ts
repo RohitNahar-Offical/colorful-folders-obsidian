@@ -325,7 +325,9 @@ export class AIIconClassifier {
                             const raw = (cObj.icon || cObj.iconId || cObj.concept || '') as string;
                             if (raw) candidatesList.push(String(raw).trim());
                         } else if (conceptVal) {
-                            const valStr = String(conceptVal).trim();
+                            const valStr = (typeof conceptVal === 'string' ? conceptVal
+                                : typeof conceptVal === 'number' || typeof conceptVal === 'boolean' ? String(conceptVal)
+                                : '').trim();
                             if (valStr.includes(',')) {
                                 candidatesList.push(...valStr.split(',').map(s => s.trim()).filter(Boolean));
                             } else {
@@ -997,7 +999,11 @@ Correct Output:
     }
 
     private extractHttpErrorMessage(err: unknown, provider: string): string {
-        if (!err || typeof err !== 'object') return String(err);
+        if (!err || typeof err !== 'object') {
+            return typeof err === 'string' ? err
+                : typeof err === 'number' || typeof err === 'boolean' ? String(err)
+                : 'Unknown error';
+        }
 
         const errObj = err as Record<string, unknown>;
         let bodyText = typeof errObj.text === 'string' ? errObj.text : '';
@@ -1020,7 +1026,7 @@ Correct Output:
             }
         }
 
-        const msg = typeof errObj.message === 'string' ? errObj.message : String(err);
+        const msg = typeof errObj.message === 'string' ? errObj.message : 'Unknown error';
         const status = typeof errObj.status === 'number' ? errObj.status : null;
 
         if (status === 401 || status === 403 || msg.includes('401') || msg.includes('403')) {
