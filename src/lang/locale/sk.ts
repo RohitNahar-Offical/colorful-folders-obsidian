@@ -206,9 +206,8 @@ const sk: Partial<LocaleDictionary> = {
     "settings.custom_tag_rules.name": "Vlastné pravidlá pre značky",
     "settings.custom_tag_rules.desc": "Definujte vlastné pravidlá farieb pre špecifické značky.",
     "settings.no_custom_rules": "Nie sú definované žiadne vlastné pravidlá.",
-    "settings.outline_only_navigator": "Odstráni plné pozadia z položiek Notebook Navigator a ponechá len ľavý akcentový okraj.",
     "settings.nb_navigator_icon_scale": "Škálovanie ikon v Navigator",
-    "settings.nb_navigator_icon_scale.desc": "Vynásobí veľkosť ikon výhradne v Notebook Navigator (predvolené 0.8). Rozsah: 0.5 až 2.5.",
+    "settings.nb_navigator_icon_scale.desc": "Vynásobí veľkosť ikon výhradne v Notebook Navigator (predvolené 1.0). Rozsah: 0.5 až 2.5.",
 
     "settings.vault_locked": "Trezor je uzamknutý",
     "settings.vault_unlocked": "Trezor je odomknutý",

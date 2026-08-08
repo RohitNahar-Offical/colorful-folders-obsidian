@@ -1,102 +1,42 @@
 # Updates for Colorful Folders
 
-## 🚀 4.2.8 - Folder Scope Hierarchy & High-Performance Color Engine
+## 🚀 5.0.0 - The Next-Gen Speed, AI & Multi-Language Update
 
-This release introduces **Folder Scope Hierarchy** in File Color Mode and delivers massive performance optimizations to hex color parsing, brightness resolution, tree depth scanning, and gradient generation algorithms.
+Welcome to **Colorful Folders 5.0.0**! This major update brings full multi-language support, smart AI icon matching, blistering performance improvements for large vaults, and bulletproof stability with other Obsidian plugins.
 
-### 🌲 Folder Scope Hierarchy (Tree Depth Level)
-- **Tree Depth Level Matching**: Added `Folder Scope Hierarchy` option under **File Color Mode** (`fileColorMode = "folder_scope"`).
-- **Exact Level Color Uniformity**: Both folders and notes sitting at the exact same depth in the file explorer tree receive identical colors:
-  - **Tree Depth 0** (Root folders & root notes): Color A
-  - **Tree Depth 1** (Subfolders & notes in root folders): Color B
-  - **Tree Depth 2** (Sub-subfolders & notes in subfolders): Color C
-- **Solves Level Mismatches**: Eliminates the visual mismatch of `"Match parent folder color"` where depth 2 notes were colored with depth 1 parent colors.
-
-### ⚡ Zero-Allocation Depth Scanner & Bitwise Color Engine
-- **$O(1)$ Memory Tree Depth Scanner**: Replaced expensive `path.split('/')` string array allocations with `getFastPathSlashes` zero-allocation character code scanning (`charCodeAt(47)`), eliminating garbage collection pauses across massive vaults.
-- **Fast Bitwise Hex Parsing**: Replaced RegEx validation (`/^[a-f\d]{6}$/i`) and substring slicing in `hexToRgbObj` with fast-path nibble evaluation (`parseHexNibble`) and bitwise bit shifts (`(num >> 16) & 255`). Up to **10x faster** with 0 intermediate string allocations.
-- **Numeric Brightness Transformations**: Introduced `adjustBrightnessValues` for pure numeric RGB channel manipulation using bitwise truncation (`| 0`). Eliminated `.split(',').map(...)` array allocations in `adjustBrightnessRgb` (**5x–8x faster**).
-- **Direct Palette Shading**: Transformed light mode palette brightness scaling in `getCurrentPalette` to calculate hex strings directly from bitwise values without string array re-parsing (**4x faster**).
-- **Fast Text Gradient Caching**: Replaced `colors.join('|')` with fast loop cache key generation and string bounds parsing in `RainbowManager.buildGradientCss`.
-
-### 🛡️ Edge-Case Hardening & Safety
-- Hardened hex parsing and brightness adjustments against malformed hex strings (e.g. `#12345g`), whitespace, and `var(...)` CSS custom properties.
+---
+### ⚡ 1. Instant Local Vector Auto-Icons (Offline & Free)
+* **No API Keys Needed**: Automatically pick perfect icons for your notes and folders in seconds—completely offline, private, and 100% free!
+* **Blazing Fast**: Classifies hundreds of notes in under a second (<5ms per item).
+* **Local Neural Models**: Optionally connect to local models (like `bge-m3` via Ollama) for ultra-smart matching.
+* **Live Progress**: See exact real-time progress percentages while scanning your vault.
 
 ---
 
-## 🚀 4.2.7 - Collapse Indicators Update
-
-This release introduces control over folder collapse indicators:
-
-### 🌟 New Features & Fixes
-- **Individual Folder Border Radius**: Set a custom border-radius with a range slider for individual folders/files inside the **"Set Custom File Style"** context menu modal.
-
-- **Toggle Collapse Indicators**: Added a new setting toggle **Show collapse indicator** under the "Appearance and visibility" section in settings to let you hide or show folder collapse arrows in the file explorer.
-
-- **Custom Default Open/Closed Folder Icons**: You can now define custom global defaults for both closed and open folder icons directly in the settings. Additionally, you can override these icons individually for any folder via the **"Set Custom File Style"** context menu modal.
-
-- **Centered Icon and Text Alignment**: Fine-tuned visual alignment to ensure folder/file explorer items, their custom icons, collapse chevrons, and text titles are perfectly centered vertically and look extremely polished.
-
-- **Minor Fixes**: Fixed styling inconsistencies and optimized background settings.
+### 🤖 3. Smart AI LLM Icon Assistant
+* **Context-Aware Matching**: Connect your favorite Local AI model to automatically style your vault based on what your notes are actually about!
+* **Smart Fallbacks**: If the AI suggests an icon you don't have installed, it automatically finds the closest matching alternative from Lucide, Simple Icons, or FontAwesome.
 
 ---
 
-## 🚀 4.2.6 - The "Ultimate Performance" Update
-
-This hyper-optimized release brings unprecedented speed and stability to massive vaults, alongside highly-requested features and fixes!
-
-### 🌟 Highlight: The Smart Icon Manager
-- **Local Icon Packs Support**: You can now drop any custom SVG icon pack directly into your `.obsidian/icons` folder! The plugin automatically detects and loads them using a blazingly fast parallel scanner, meaning even thousands of custom icons won't slow down your startup.
-- **Completely Optimized Caching**: The Icon Manager has been completely rebuilt! The plugin now intelligently caches your custom SVG icons and strictly reloads them *only* when you change your icon settings. This completely eliminates unnecessary lag when tweaking other options, giving you a lightning-fast customization experience!
-
-### ⚡ Lightning Fast & Butter Smooth
-- **Instant Load Times**: The plugin now uses a highly optimized grouping engine to calculate styles instantly. No more waiting 10 seconds for colors to appear when you open Obsidian!
-- **Zero UI Freezing**: We've completely rewritten how the plugin processes huge folder trees in the background. It now gracefully pauses to let the app breathe, meaning you can scroll and click without any stuttering.
-- **Ultra-Snappy Responsiveness**: We slashed the refresh delay by 3x! When you change a setting or move a file, the UI updates almost instantaneously.
-- **Lighter Memory Footprint**: We streamlined the core engine to prevent memory bloat, keeping your Obsidian workspace incredibly light and fast.
-
-### 🎨 New Features, Fixes & Integrations
-- **Custom Rainbow Texts**: You can now enable and customize gorgeous rainbow gradient text on ANY individual file or folder in your vault via the right-click menu!
-- **Accurate Custom Opacity**: Setting a custom folder/file color now locks in the perfect background opacity (50% for folders, 15% for files) instead of improperly fading out based on folder depth. The UI slider now also perfectly reflects these defaults!
-- **New Tailwind UI Palettes**: Added two beautiful new built-in color palettes (`Tailwind UI` and `Tailwind UI Dark`) to bring modern, punchy web-design colors directly into your vault.
-- **Inheritance Problem SOLVED!**: Fixed a stubborn bug where subfolders and files were not correctly inheriting colors from their parent folders. Your entire tree will now flawlessly inherit and display the correct colors!
-- **Flawless Integrations**: Re-architected how third-party plugins (like Notebook Navigator) interact with our colors. Everything is now perfectly synchronized, eliminating duplicate styles and boosting overall speed.
-- **Squeaky Clean Codebase**: Cleared out all underlying code warnings and strict errors for a rock-solid, crash-free experience.
+### 🚀 4. Butter-Smooth Performance & Zero Conflicts
+* **Rebuilt Stylesheet Engine**: We redesigned how styles are applied under the hood. The plugin now uses native browser stylesheets instead of modifying your HTML layout.
+* **100% Plugin Compatibility**: Say goodbye to conflicts with plugins like *Smart Connections* or *Notebook Navigator*—no more duplicate icons or flashing colors!
+* **Zero Lag in Huge Vaults**: Optimized color calculations to be **10x faster**, eliminating micro-stutters and memory lag even in vaults with 10,000+ files.
 
 ---
 
-## 🌟 4.2.0 - The "Advanced Features" Update
-
-<a href="https://github.com/sponsors/RohitNahar-Offical">
-  <img src="https://img.shields.io/badge/Sponsor-RohitNahar--Offical-ea4aaa?style=for-the-badge&logo=github-sponsors" alt="Sponsor RohitNahar-Offical" />
-</a>
-
-This massive release brings powerful new customization options and resolves one of the most stubborn UI bugs for power users with huge vaults.
-
-### ⚡ 1. Perfect Scroll & Instant Startup
-- **Instant Startup**: Optimized the plugin loading cycle. Folder styles and settings load instantly when you open your vault.
-- **Smooth Sidebar Scrolling**: Rewrote the background styling engine. Scrolling through thousands of folders and files is now buttery smooth, with zero lag or stutter.
-- **Smart Background Icon Loading**: Custom icons are now loaded gently in the background. The plugin waits 2 seconds after startup before scanning files, ensuring it never freezes your Obsidian app.
-- **Cached Folder Colors**: Folder colors and styles are calculated once and stored in memory. The plugin doesn't need to recalculate them constantly, saving your device's CPU.
-
-### 🏷️ 2. Tag Color Synchronization
-- **Unify Your Vault**: Folder colors can now automatically synchronize with Obsidian tags!
-- **Match Folders**: Automatically color tags that perfectly match a styled folder's name (e.g. styling the folder "Work" automatically styles `#Work`).
-- **Custom Tag Rules**: Use the new Tag Sync Rules setting to map specific tags to any styled folder path manually (e.g. `#todo = /Projects/Active`).
-- **Interactive Tag Rules Builder**: Added a visual rules builder in the settings. Click to pick tag colors using a color picker and manage rules with buttons instead of typing them manually.
-- **True Capsule Pill Styling**: Styled tags now display as beautiful rounded pills in both Reading Mode and Live Preview (writing mode), with seamless border corners and balanced spacing.
-
-### 🎨 3. Graph View Color Sync
-- **Colorful Nodes**: Your beautiful folder colors now sync directly into Obsidian's built-in Graph View as color groups, giving you a perfectly unified aesthetic across your entire workspace.
-
-### 🧩 4. Advanced Auto-Icon Builder & Local Packs
-- **Regex Icon Matching**: The Custom Icon Rules engine now supports powerful Regular Expressions. Match multiple folders instantly using flexible patterns instead of strict names.
-- **`.obsidian/icons` Support**: The plugin now automatically detects and loads any SVG icons placed in the standard `.obsidian/icons` directory! (Includes parallel loading for near-instant startups even with 1000+ icons).
-
-### 🖌️ 5. Visual Settings Pickers & Interactive UI
-- **Visual Global Backgrounds**: The global background setting now uses an interactive visual color picker instead of forcing you to type raw hex codes.
-- **Interactive Palette Builder**: The Custom Hex Palette setting has been completely rewritten into a side-by-side interactive builder.
-- **Swatch Previews**: See all your palette colors as real swatches, click them to open a side-panel visual color picker, and manage them effortlessly with new "Add Color" and "Reset to Default" buttons.
-- **Smooth Performance (Debounced Saves)**: Added a 300ms save/build debouncer to prevent database lag and UI stutters when dragging visual color picker sliders.
+### 🌲 5. Perfect Folder Scope Hierarchy
+* **Matching Colors by Tree Level**: Introducing **Folder Scope Hierarchy** mode! Both folders and files at the exact same depth level get perfectly matched colors:
+  - **Level 1** (Root folders & root notes) = Color A
+  - **Level 2** (Subfolders & notes inside root folders) = Color B
+  - **Level 3** (Deeper subfolders) = Color C
+* **No More Level Mismatches**: Notes now align visually with their exact depth level in your sidebar layout.
 
 ---
+
+### 🎛️ 6. New Controls & Polish
+* **Custom Corner Rounding (Border Radius)**: Adjust corner roundness for individual folders or files using a new visual slider in the right-click menu.
+* **Hide/Show Collapse Arrows**: Added a setting to hide or show folder arrow chevrons for a ultra-minimalist look.
+* **Markdown Hover Popover Editor**: Create rich markdown notes inside Section Divider hover popovers with a live preview bar and formatting toolbar.
+* **Pixel-Perfect Alignment**: Icons, chevrons, and text titles are vertically centered across all themes.

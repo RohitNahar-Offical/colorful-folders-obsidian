@@ -105,7 +105,7 @@ export class StyleGenerator {
         const wideScale = this.settings.wideAutoIcons ? 1.05 : 1.0;
         const folderIconW = `calc(1.3em * ${iconScale * wideScale})`;
         const effFileIconW = `calc(1.3em * ${iconScale * wideScale})`;
-        const nnIconScale = this.settings.notebookNavigatorIconScale ?? 0.8;
+        const nnIconScale = this.settings.notebookNavigatorIconScale ?? 1.0;
         const nnIconW = `calc(1.1em * ${nnIconScale * wideScale})`;
 
         const cpRes = getCurrentPalette(this.settings, this._cachedPalette, this._cachedPaletteKey);

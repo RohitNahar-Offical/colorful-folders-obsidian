@@ -117,7 +117,6 @@ export interface ColorfulFoldersSettings {
     showCollapseIndicator: boolean;
     folderBorderRadius: number;
     enableStaircaseHack: boolean;
-    smartConnectionsCompatMode?: boolean;
     heatmapData?: Record<string, number>;
 
     aiProvider: 'ollama' | 'custom';

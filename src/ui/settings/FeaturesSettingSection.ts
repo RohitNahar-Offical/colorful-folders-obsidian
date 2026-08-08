@@ -522,26 +522,15 @@ export class FeaturesSettingSection extends SettingSection {
                     this.plugin.generateStylesDebounced();
                 }));
 
-        new obsidian.Setting(intCard)
-            .setName(t("settings.outline_only_navigator"))
-            .setDesc('Removes solid backgrounds from notebook navigator items, showing only the left accent border.')
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.notebookNavigatorOutlineOnly)
-                .onChange(async (value) => {
-                    this.plugin.settings.notebookNavigatorOutlineOnly = value;
-                    await this.plugin.saveSettings();
-                    this.plugin.generateStylesDebounced();
-                }));
-
         let sliderComp_notebookNavigatorIconScale: obsidian.SliderComponent;
         new obsidian.Setting(intCard)
             .setName(t("settings.nb_navigator_icon_scale"))
-            .setDesc('Multiplies the size of icons strictly within Notebook Navigator (default 0.8). Range: 0.5 to 2.5.')
+            .setDesc(t("settings.nb_navigator_icon_scale.desc"))
             .addSlider(slider => {
                 sliderComp_notebookNavigatorIconScale = slider;
                 slider
                     .setLimits(0.5, 2.5, 0.1)
-                    .setValue(this.plugin.settings.notebookNavigatorIconScale ?? 0.8)
+                    .setValue(this.plugin.settings.notebookNavigatorIconScale ?? 1.0)
                     .onChange(async (value) => {
                         this.plugin.settings.notebookNavigatorIconScale = value;
                         await this.plugin.saveSettings();
@@ -555,16 +544,5 @@ export class FeaturesSettingSection extends SettingSection {
                 await this.plugin.saveSettings();
                 this.plugin.generateStylesDebounced();
             }));
-
-        new obsidian.Setting(intCard)
-            .setName(t("settings.smart_connections.name"))
-            .setDesc(t("settings.smart_connections.desc"))
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.smartConnectionsCompatMode !== false)
-                .onChange(async (value) => {
-                    this.plugin.settings.smartConnectionsCompatMode = value;
-                    await this.plugin.saveSettings();
-                    this.plugin.generateStylesDebounced();
-                }));
     }
 }

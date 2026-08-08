@@ -45,37 +45,22 @@ This release introduces control over folder collapse indicators:
 
 ---
 
-## 🌟 4.2.6 - The "Ultimate Performance" Update
-
-### 🌟 Highlight: The Smart Icon Manager
-
-* **Local Icon Packs Support:** You can now drop any custom SVG icon pack directly into your `.obsidian/icons` folder! The plugin automatically detects and loads them using a blazingly fast parallel scanner, meaning even thousands of custom icons won't slow down your startup.
-* **Completely Optimized Caching:** The Icon Manager has been completely rebuilt! The plugin now intelligently caches your custom SVG icons and strictly reloads them *only* when you change your icon settings. This completely eliminates unnecessary lag when tweaking other options, giving you a lightning-fast customization experience!
-
-### ⚡ Lightning Fast & Butter Smooth
-
-* **Instant Load Times:** The plugin now uses a highly optimized grouping engine to calculate styles instantly. No more waiting 10 seconds for colors to appear when you open Obsidian!
-* **Zero UI Freezing:** We've completely rewritten how the plugin processes huge folder trees in the background. It now gracefully pauses to let the app breathe, meaning you can scroll and click without any stuttering.
-* **Ultra-Snappy Responsiveness:** We slashed the refresh delay by 3x! When you change a setting or move a file, the UI updates almost instantaneously.
-* **Lighter Memory Footprint:** We streamlined the core engine to prevent memory bloat, keeping your Obsidian workspace incredibly light and fast.
-
-### 🎨 New Features, Fixes & Integrations
-
-* **Custom Rainbow Texts:** You can now enable and customize gorgeous rainbow gradient text on ANY individual file or folder in your vault via the right-click menu!
-* **Accurate Custom Opacity:** Setting a custom folder/file color now locks in the perfect background opacity (50% for folders, 15% for files) instead of improperly fading out based on folder depth. The UI slider now also perfectly reflects these defaults!
-* **New Tailwind UI Palettes:** Added two beautiful new built-in color palettes (`Tailwind UI` and `Tailwind UI Dark`) to bring modern, punchy web-design colors directly into your vault.
-* **Inheritance Problem SOLVED!:** Fixed a stubborn bug where subfolders and files were not correctly inheriting colors from their parent folders. Your entire tree will now flawlessly inherit and display the correct colors!
-* **Flawless Integrations:** Re-architected how third-party plugins (like Notebook Navigator) interact with our colors. Everything is now perfectly synchronized, eliminating duplicate styles and boosting overall speed.
-* **Squeaky Clean Codebase:** Cleared out all underlying code warnings and strict errors for a rock-solid, crash-free experience.
-
 ## ✨ Core Features
+
+### ⚡ Ultra-Performance & Smart Icon Engine
+
+* **Smart Icon Manager:** Automatically detects and loads custom SVG icon packs dropped into `.obsidian/icons` with a blazingly fast parallel scanner and intelligent LRU/setting-aware caching.
+* **Instant Load Times & Zero UI Freezing:** Optimized grouping engine calculates styles instantly. Background processing pauses gracefully during heavy tree walks so scrolling remains butter-smooth.
+* **Ultra-Snappy Responsiveness:** 3x faster UI refresh rates for immediate visual feedback on setting or file changes, supported by a lightweight memory footprint.
+* **AdoptedStyleSheet Engine:** Zero-DOM rendering using native `document.adoptedStyleSheets` for high speed and 100% immunity against third-party observer race conditions.
 
 ### 🎨 Vivid Color & Visual Hierarchy
 
 * **Color-Coding Hierarchy:** Automatically assigns beautiful, distinct colors to top-level and nested folders.
 * **Visual Wayfinding:** Glowing connector lines create a clear "breadcrumb trail" to your currently active file.
-* **Smart Rainbow Logic:** Cycle files through your palette for a full rainbow effect, or use the **Adaptive Heatmap** to seamlessly sync with your chosen colors.
-* **Minimalist Modes:** Force subfolders to inherit parent colors, or use **Outline Only Mode** to remove background tints while keeping bright connecting lines.
+* **Smart Rainbow Logic & Rainbow Text:** Cycle files through your palette for a full rainbow effect, use **Adaptive Heatmap**, or enable custom rainbow gradient text on any file/folder via the context menu.
+* **Minimalist & Opacity Modes:** Force subfolders to inherit parent colors, or use **Outline Only Mode** to remove background tints while keeping bright connecting lines. Accurate custom opacity defaults (50% folders, 15% files) maintain visual consistency.
+* **Modern Palettes:** Built-in curated palettes including **Tailwind UI** and **Tailwind UI Dark**.
 
 ### 🤖 Smart Iconography
 
@@ -88,9 +73,10 @@ This release introduces control over folder collapse indicators:
 ### 📁 Advanced Customization & Typography
 
 * **Right-Click WYSIWYG Menu:** Select **"Set Custom File Style"** on any item to easily override its color, icon, and text formatting.
+* **Individual Border Radius:** Set a custom border radius (in pixels) with an interactive range slider for individual folders or files inside the **"Set Custom File Style"** modal.
 * **Context-Aware Styling:** The style modal pre-fills with currently visible colors and adapts to dark-mode brightness.
 * **Advanced Typography:** Make key projects pop with bold, italic, and custom text color overrides.
-* **Smart Inheritance:** Force a specific style down an entire folder tree with a single click.
+* **Flawless Inheritance:** Force a specific style down an entire folder tree or file hierarchy with a single click.
 
 ### 📐 Organization & Spacing
 
@@ -103,6 +89,7 @@ This release introduces control over folder collapse indicators:
 * **Tag Color Sync:** Automatically color tags that perfectly match a styled folder's name (e.g., styling the folder "Work" styles `#Work`).
 * **Custom Tag Rules:** Manually map specific tags to any styled folder path (e.g., `#todo = /Projects/Active`).
 * **Graph View Sync:** Your beautiful folder colors now sync directly into Obsidian's built-in Graph View as color groups for a unified vault aesthetic.
+* **Flawless Third-Party Integrations:** Fully synchronized compatibility with plugins like Notebook Navigator and Smart Connections.
 
 ### 🕵️ Stealth & Privacy Engine
 
@@ -148,15 +135,17 @@ Access all styling configurations by navigating to **Settings > Colorful Folders
 
 ---
 
-## 👨‍💻 Developer Documentation
+## 👨💻 Developer Documentation
 
 Looking to understand the internal architecture, contribute features, or debug the styling engine? Check out our comprehensive technical guides:
 
-* **[Developer Master Guide](https://www.google.com/search?q=DEVELOPER.md):** The entry point for all technical documentation.
-* **[Internal Engine Architecture](https://www.google.com/search?q=docs/ARCHITECTURE.md):** Deep dive into the rendering pipeline and logic flow.
-* **[API Reference](https://www.google.com/search?q=docs/API_REFERENCE.md):** Detailed class and method documentation.
-* **[Customization Guide](https://www.google.com/search?q=docs/CUSTOMIZATION.md):** Advanced CSS snippets and styling overrides.
+* **[Developer Master Guide](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/DOCUMENTATION_INDEX.md):** The entry point for all technical documentation.
+* **[Internal Engine Architecture](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/ARCHITECTURE.md):** Deep dive into the rendering pipeline and logic flow.
+* **[API Reference](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/API_REFERENCE.md):** Detailed class and method documentation.
+* **[Customization Guide](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/CUSTOMIZATION.md):** Advanced CSS snippets and styling overrides.
+* **[Localization Architecture](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/LOCALIZATION.md):** Complete guide to the i18n translation system.
 
 ---
 
+**Developed with ❤️ by [ROHIT-NAHAR](https://github.com/RohitNahar-Offical)**
 **Developed with ❤️ by [ROHIT-NAHAR**](https://github.com/RohitNahar-Offical)

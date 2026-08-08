@@ -204,9 +204,8 @@ export default {
     "settings.custom_tag_rules.name": "Custom tag rules",
     "settings.custom_tag_rules.desc": "Define custom color overrides for specific tags.",
     "settings.no_custom_rules": "No custom rules defined.",
-    "settings.outline_only_navigator": "Removes solid backgrounds from notebook navigator items, showing only the left accent border.",
     "settings.nb_navigator_icon_scale": "Navigator icon scaling",
-    "settings.nb_navigator_icon_scale.desc": "Multiplies the size of icons strictly within Notebook Navigator (default 0.8). Range: 0.5 to 2.5.",
+    "settings.nb_navigator_icon_scale.desc": "Multiplies the size of icons strictly within Notebook Navigator (default 1.0). Range: 0.5 to 2.5.",
 
     "settings.vault_locked": "Vault is locked",
     "settings.vault_unlocked": "Vault is unlocked",
@@ -549,8 +548,6 @@ export default {
     "settings.tag_color_placeholder": "#ffffff",
     "settings.new_tag_rule_default": "New_Rule = #5ebd8e",
     "settings.nb_navigator.auto_color_desc": "Injects the faint background block and left border to file cards. Disable this to keep the cards strictly native.",
-    "settings.smart_connections.name": "Smart connections compatibility mode",
-    "settings.smart_connections.desc": "Ensure seamless styling compatibility with smart connections plugin panels.",
 
     // --- AI Section Strings ---
     "settings.ai.banner_header": "🧪 Experimental feature",
