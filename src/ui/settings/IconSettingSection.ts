@@ -353,17 +353,17 @@ export class IconSettingSection extends SettingSection {
             const btnGroup = row.createDiv();
             btnGroup.setCssStyles({ display: "flex", gap: "8px" });
 
-            const downloadBtn = btnGroup.createEl("button", { text: isInstalled ? "Re-Download" : "Download" });
+            const downloadBtn = btnGroup.createEl("button", { text: isInstalled ? t("settings.redownload_pack") : t("settings.download_pack") });
             downloadBtn.setCssStyles({ minWidth: "90px" });
             downloadBtn.onclick = async () => {
-                downloadBtn.setText("Downloading...");
+                downloadBtn.setText(t("settings.downloading_pack"));
                 downloadBtn.disabled = true;
                 try {
                     const count = await this.plugin.autoDownloadPack(p.url, p.prefix);
-                    new obsidian.Notice(`Successfully downloaded ${count} icons for ${p.name}!`);
+                    new obsidian.Notice(t("settings.download_success", { count, name: p.name }));
                 } catch (err) {
                     const msg = (err as Error)?.message || String(err);
-                    new obsidian.Notice(`Failed to download ${p.name}: ${msg}`, 6000);
+                    new obsidian.Notice(t("settings.download_failed", { name: p.name, msg }), 6000);
                 } finally {
                     downloadBtn.disabled = false;
                     (this.settingTab as unknown as { display: () => void }).display();
@@ -453,7 +453,7 @@ export class IconSettingSection extends SettingSection {
 
             const searchInput = ctrlBar.createEl("input", {
                 type: "text",
-                placeholder: "Filter icon name..."
+                placeholder: t("settings.filter_icon_name")
             });
             searchInput.setCssStyles({
                 padding: "6px 12px",
@@ -487,7 +487,7 @@ export class IconSettingSection extends SettingSection {
                     : packItems;
 
                 if (filtered.length === 0) {
-                    const noMatch = lib.createDiv({ text: "No matching icons found." });
+                    const noMatch = lib.createDiv({ text: t("settings.no_matching_icons") });
                     noMatch.setCssStyles({ color: "var(--text-muted)", fontStyle: "italic", padding: "10px" });
                     return;
                 }
@@ -517,7 +517,7 @@ export class IconSettingSection extends SettingSection {
                 if (filtered.length > visibleCount) {
                     const remaining = filtered.length - visibleCount;
                     const showMoreBtn = loadMoreContainer.createEl("button", {
-                        text: `Show More Icons (${remaining} remaining)`
+                        text: t("settings.show_more_icons", { remaining })
                     });
                     showMoreBtn.setCssStyles({
                         padding: "6px 16px",

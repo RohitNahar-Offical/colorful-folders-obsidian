@@ -1,4 +1,5 @@
 import * as obsidian from 'obsidian';
+import { t } from '../../lang/helpers';
 
 export class PasswordModal extends obsidian.Modal {
     private passwordValue: string = "";
@@ -28,7 +29,7 @@ export class PasswordModal extends obsidian.Modal {
         const header = contentEl.createDiv({ cls: "cf-modal-header" });
         header.setCssStyles({ textAlign: "center", marginBottom: "20px" });
         header.createEl("h2", { text: this.title }).setCssStyles({ margin: "0", fontSize: "1.5em" });
-        header.createEl("p", { text: "Please enter your vault password to continue." }).setCssStyles({ opacity: "0.6", fontSize: "0.9em", marginTop: "8px" });
+        header.createEl("p", { text: t("modal.password.enter_password_desc") }).setCssStyles({ opacity: "0.6", fontSize: "0.9em", marginTop: "8px" });
 
         const body = contentEl.createDiv({ cls: "cf-modal-body" });
         body.setCssStyles({ display: "flex", flexDirection: "column", gap: "15px" });

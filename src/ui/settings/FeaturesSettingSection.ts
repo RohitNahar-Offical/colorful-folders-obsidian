@@ -42,7 +42,7 @@ export class FeaturesSettingSection extends SettingSection {
             overflow: 'hidden'
         });
 
-        previewWrap.createEl('small', { text: 'Live preview', cls: 'cf-preview-label' }).setCssStyles({
+        previewWrap.createEl('small', { text: t('settings.live_preview'), cls: 'cf-preview-label' }).setCssStyles({
             position: 'absolute', top: '8px', left: '12px', opacity: '0.4', fontSize: '0.7em', letterSpacing: '0.1em', fontWeight: '700'
         });
 
@@ -295,12 +295,12 @@ export class FeaturesSettingSection extends SettingSection {
 
 
         new obsidian.Setting(divCard)
-            .setName("Divider icon position")
-            .setDesc("Placement of icons on divider pills.")
+            .setName(t("settings.divider_icon_position.name"))
+            .setDesc(t("settings.divider_icon_position.desc"))
             .addDropdown(drop => drop
-                .addOption('left', 'Left of text')
-                .addOption('right', 'Right of text')
-                .addOption('both', 'Both sides')
+                .addOption('left', t("settings.divider_icon_position.left"))
+                .addOption('right', t("settings.divider_icon_position.right"))
+                .addOption('both', t("settings.divider_icon_position.both"))
                 .setValue(this.plugin.settings.dividerIconPosition || 'left')
                 .onChange(async (value) => {
                     this.plugin.settings.dividerIconPosition = value;
@@ -311,9 +311,9 @@ export class FeaturesSettingSection extends SettingSection {
                 }));
 
         // 🏷️ Tag Sync Card (Card 2)
-        const tagCard = this.settingTab.makeCard(containerEl, "🏷️", "Tag Color Sync");
+        const tagCard = this.settingTab.makeCard(containerEl, "🏷️", t("settings.tag_sync.name"));
         tagCard.createEl('p', {
-            text: 'Harmonize your vault\'s visual hierarchy by automatically color-coding tags to match your folder themes.',
+            text: t("settings.tag_sync.banner_desc"),
             cls: 'setting-item-description'
         }).setCssStyles({ fontSize: '0.85em', color: 'var(--text-muted)', marginBottom: '16px' });
 
@@ -557,8 +557,8 @@ export class FeaturesSettingSection extends SettingSection {
             }));
 
         new obsidian.Setting(intCard)
-            .setName("Smart connections compatibility mode")
-            .setDesc("Ensure seamless styling compatibility with smart connections plugin panels.")
+            .setName(t("settings.smart_connections.name"))
+            .setDesc(t("settings.smart_connections.desc"))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.smartConnectionsCompatMode !== false)
                 .onChange(async (value) => {

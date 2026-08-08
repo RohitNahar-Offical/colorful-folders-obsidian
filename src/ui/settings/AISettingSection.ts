@@ -1,5 +1,6 @@
 import * as obsidian from 'obsidian';
 import { SettingSection } from './SettingSection';
+import { t } from '../../lang/helpers';
 
 export class AISettingSection extends SettingSection {
     render(containerEl: HTMLElement): void {
@@ -13,7 +14,7 @@ export class AISettingSection extends SettingSection {
             marginBottom: "16px"
         });
         experimentalNotice.createEl("h4", {
-            text: "🧪 Experimental feature"
+            text: t("settings.ai.banner_header")
         }).setCssStyles({
             margin: "0 0 6px 0",
             fontSize: "1em",
@@ -21,7 +22,7 @@ export class AISettingSection extends SettingSection {
             color: "var(--text-warning, #f59e0b)"
         });
         experimentalNotice.createEl("p", {
-            text: "AI auto-icon classification is an experimental feature. Before running batch classification, please make a backup of your plugin settings and styles from the privacy tab."
+            text: t("settings.ai.banner_desc")
         }).setCssStyles({
             margin: "0",
             fontSize: "0.85em",
@@ -29,17 +30,17 @@ export class AISettingSection extends SettingSection {
         });
 
         // 🤖 AI Auto-Icon Classifier Card
-        const aiCard = this.settingTab.makeCard(containerEl, "🤖", "AI Auto-Icon Classifier");
+        const aiCard = this.settingTab.makeCard(containerEl, "🤖", t("settings.ai.title"));
         aiCard.createEl("p", {
-            text: "Automatically classify all vault items and assign contextually meaningful icons in batch using AI."
+            text: t("settings.ai.desc")
         }).setCssStyles({ fontSize: "0.85em", color: "var(--text-muted)", marginBottom: "15px" });
 
         new obsidian.Setting(aiCard)
-            .setName("AI provider")
-            .setDesc("Select your local AI provider (local ollama or local custom OpenAI-Compatible server).")
+            .setName(t("settings.ai.provider.name"))
+            .setDesc(t("settings.ai.provider.desc"))
             .addDropdown(d => d
-                .addOption("ollama", "🦙 Local ollama")
-                .addOption("custom", "🌐 Local custom OpenAI-Compatible server")
+                .addOption("ollama", t("settings.ai.provider.ollama"))
+                .addOption("custom", t("settings.ai.provider.openai"))
                 .setValue(this.plugin.settings.aiProvider === 'custom' ? 'custom' : 'ollama')
                 .onChange(async (val: 'ollama' | 'custom') => {
                     this.plugin.settings.aiProvider = val;
@@ -53,10 +54,10 @@ export class AISettingSection extends SettingSection {
 
         if (this.plugin.settings.aiProvider === 'ollama') {
             new obsidian.Setting(aiCard)
-                .setName("Ollama server URL")
-                .setDesc("Base URL for your local ollama instance (default: http://localhost:11434).")
-                .addText(t => {
-                    t.setValue(this.plugin.settings.aiOllamaEndpoint || "http://localhost:11434")
+                .setName(t("settings.ai.ollama_url.name"))
+                .setDesc(t("settings.ai.ollama_url.desc"))
+                .addText(tComp => {
+                    tComp.setValue(this.plugin.settings.aiOllamaEndpoint || "http://localhost:11434")
                         .setPlaceholder("HTTP://localhost:11434")
                         .onChange(async (val) => {
                             this.plugin.settings.aiOllamaEndpoint = val.trim();
@@ -67,10 +68,10 @@ export class AISettingSection extends SettingSection {
 
         if (this.plugin.settings.aiProvider === 'custom') {
             new obsidian.Setting(aiCard)
-                .setName("Custom endpoint URL")
-                .setDesc("Full URL endpoint for your local server (e.g. HTTP://localhost:1234/v1/chat/completions).")
-                .addText(t => {
-                    t.setValue(this.plugin.settings.aiCustomEndpoint || "")
+                .setName(t("settings.ai.custom_endpoint.name"))
+                .setDesc(t("settings.ai.custom_endpoint.desc"))
+                .addText(tComp => {
+                    tComp.setValue(this.plugin.settings.aiCustomEndpoint || "")
                         .setPlaceholder("HTTP://localhost:1234/v1/chat/completions")
                         .onChange(async (val) => {
                             this.plugin.settings.aiCustomEndpoint = val.trim();
@@ -80,10 +81,10 @@ export class AISettingSection extends SettingSection {
         }
 
         new obsidian.Setting(aiCard)
-            .setName("Model name")
-            .setDesc("Model name to use for local classification (e.g. Qwen2.5:1.5b, llama3.2:1b).")
-            .addText(t => {
-                t.setValue(this.plugin.settings.aiModelName || 'qwen2.5:1.5b')
+            .setName(t("settings.ai.model_name.name"))
+            .setDesc(t("settings.ai.model_name.desc"))
+            .addText(tComp => {
+                tComp.setValue(this.plugin.settings.aiModelName || 'qwen2.5:1.5b')
                     .setPlaceholder("qwen2.5:1.5b")
                     .onChange(async (val) => {
                         this.plugin.settings.aiModelName = val.trim();
@@ -101,7 +102,7 @@ export class AISettingSection extends SettingSection {
                 marginBottom: "15px",
                 fontSize: "0.85em"
             });
-            const recHeader = recDiv.createDiv({ text: "💡 Recommended Fast Local Models (Run 'ollama run <model>' in terminal first):" });
+            const recHeader = recDiv.createDiv({ text: t("settings.ai.recommended_models") });
             recHeader.setCssStyles({ fontWeight: "600", marginBottom: "8px", color: "var(--text-normal)" });
 
             const models = [
@@ -129,16 +130,16 @@ export class AISettingSection extends SettingSection {
                         this.plugin.settings.aiModelName = m.name;
                         await this.plugin.saveSettings();
                         (this.settingTab as unknown as { display: () => void }).display();
-                        new obsidian.Notice(`Set AI Model to ${m.name}. Make sure to run 'ollama run ${m.name}' in terminal!`);
+                        new obsidian.Notice(t("notice.set_ai_model", { name: m.name }));
                     })();
                 });
             }
         }
 
         new obsidian.Setting(aiCard)
-            .setName("Include Markdown files")
-            .setDesc("If enabled, classifies individual Markdown files as well as folders (folder-only is recommended for large vaults).")
-            .addToggle(t => t
+            .setName(t("settings.ai.include_md.name"))
+            .setDesc(t("settings.ai.include_md.desc"))
+            .addToggle(tComp => tComp
                 .setValue(this.plugin.settings.aiIncludeFiles)
                 .onChange(async (val) => {
                     this.plugin.settings.aiIncludeFiles = val;
@@ -147,9 +148,9 @@ export class AISettingSection extends SettingSection {
             );
 
         new obsidian.Setting(aiCard)
-            .setName("Include file content & frontmatter context")
-            .setDesc("If enabled, AI reads file content snippets, tags, and frontmatter properties for classification. If disabled, items are classified strictly & fast based on file/folder names only.")
-            .addToggle(t => t
+            .setName(t("settings.ai.include_content.name"))
+            .setDesc(t("settings.ai.include_content.desc"))
+            .addToggle(tComp => tComp
                 .setValue(this.plugin.settings.aiIncludeContentContext !== false)
                 .onChange(async (val) => {
                     this.plugin.settings.aiIncludeContentContext = val;
@@ -169,58 +170,58 @@ export class AISettingSection extends SettingSection {
             fontSize: '0.85em',
             lineHeight: '1.4'
         });
-        const tokenHeader = tokenUsageDiv.createDiv({ text: '📊 Token Usage Overview by Mode' });
+        const tokenHeader = tokenUsageDiv.createDiv({ text: t("settings.ai.token_overview") });
         tokenHeader.setCssStyles({ fontWeight: '700', marginBottom: '6px', color: 'var(--text-normal)' });
 
         const tokenList = tokenUsageDiv.createEl('ul');
         tokenList.setCssStyles({ margin: '0', paddingLeft: '18px', color: 'var(--text-muted)' });
 
         const mode1 = tokenList.createEl('li');
-        mode1.createEl('strong', { text: 'Fast / name-only mode (content context off): ' });
-        mode1.appendText('Lowest token usage (~15-30 tokens per item). AI classifies items strictly based on folder and file names.');
+        mode1.createEl('strong', { text: t("settings.ai.fast_mode_label") + ' ' });
+        mode1.appendText(t("settings.ai.fast_mode_desc"));
 
         const mode2 = tokenList.createEl('li');
-        mode2.createEl('strong', { text: 'Deep context mode (content context on): ' });
-        mode2.appendText('Higher token usage (~150-500+ tokens per item). AI reads file content snippets, tags, and frontmatter properties for high contextual accuracy.');
+        mode2.createEl('strong', { text: t("settings.ai.deep_mode_label") + ' ' });
+        mode2.appendText(t("settings.ai.deep_mode_desc"));
 
         const scopeTip = tokenList.createEl('li');
-        scopeTip.createEl('strong', { text: 'Vault scope tip: ' });
-        scopeTip.appendText('Disabling "Include Markdown Files" (Folder-Only Mode) significantly reduces overall token consumption in large vaults.');
+        scopeTip.createEl('strong', { text: t("settings.ai.scope_tip_label") + ' ' });
+        scopeTip.appendText(t("settings.ai.scope_tip_desc"));
 
         const aiBtnWrap = aiCard.createDiv();
         aiBtnWrap.setCssStyles({ display: "flex", gap: "10px", marginTop: "15px", marginBottom: "10px" });
 
-        const aiRunBtn = aiBtnWrap.createEl("button", { text: "✨ Auto-assign icons with AI", cls: "mod-cta" });
+        const aiRunBtn = aiBtnWrap.createEl("button", { text: t("settings.ai.btn_auto_assign"), cls: "mod-cta" });
         aiRunBtn.onclick = () => {
             void this.plugin.aiIconClassifier.classifyVault();
         };
 
-        const aiForceBtn = aiBtnWrap.createEl("button", { text: "🔄 Force re-assign all" });
+        const aiForceBtn = aiBtnWrap.createEl("button", { text: t("settings.ai.btn_force_reassign") });
         aiForceBtn.onclick = () => {
             void this.plugin.aiIconClassifier.classifyVault({ force: true });
         };
 
-        const aiStopBtn = aiBtnWrap.createEl("button", { text: "🛑 Stop AI classification" });
+        const aiStopBtn = aiBtnWrap.createEl("button", { text: t("settings.ai.btn_stop") });
         aiStopBtn.setCssStyles({ color: "var(--text-error)" });
         aiStopBtn.onclick = () => {
             this.plugin.aiIconClassifier.stopClassification();
         };
 
         // ⚡ Vector Embedding Model Card (Fast & Offline)
-        const vectorCard = this.settingTab.makeCard(containerEl, "⚡", "Vector embedding model (Fast & Offline)");
+        const vectorCard = this.settingTab.makeCard(containerEl, "⚡", t("settings.ai.vector_title"));
         const vectorDesc = vectorCard.createEl('p', {
-            text: 'Auto-assign icons instantly (<5ms per note) using the zero-dependency built-in local vector engine or a custom neural embedding model (ollama / bge-m3).'
+            text: t("settings.ai.vector_desc")
         });
         vectorDesc.setCssStyles({ fontSize: "0.85em", color: "var(--text-muted)", marginBottom: "12px" });
 
         const customContainer = vectorCard.createDiv();
 
         new obsidian.Setting(vectorCard)
-            .setName("Embedding model engine")
-            .setDesc("Choose between the zero-setup built-in local vector model (0mb) or a custom neural embedding model (ollama / local API).")
+            .setName(t("settings.ai.embedding_engine.name"))
+            .setDesc(t("settings.ai.embedding_engine.desc"))
             .addDropdown(drop => drop
-                .addOption("builtin", "⚡ Built-in local vector model (0mb, default)")
-                .addOption("custom", "⚙️ custom / local neural model (ollama / bge-m3)")
+                .addOption("builtin", t("settings.ai.embedding_engine.builtin"))
+                .addOption("custom", t("settings.ai.embedding_engine.custom"))
                 .setValue(this.plugin.settings.embeddingEngine || "builtin")
                 .onChange(async (val) => {
                     this.plugin.settings.embeddingEngine = val as 'builtin' | 'custom';
@@ -239,9 +240,9 @@ export class AISettingSection extends SettingSection {
             });
 
             new obsidian.Setting(customContainer)
-                .setName("Custom model name")
-                .setDesc("The embedding model name registered in ollama or your local server (e.g. Bge-m3, nomic-embed-text).")
-                .addText(text => text
+                .setName(t("settings.ai.custom_model.name"))
+                .setDesc(t("settings.ai.custom_model.desc"))
+                .addText(textComp => textComp
                     .setPlaceholder("Bge-m3")
                     .setValue(this.plugin.settings.embeddingCustomModel || "bge-m3")
                     .onChange(async (val) => {
@@ -250,9 +251,9 @@ export class AISettingSection extends SettingSection {
                     }));
 
             new obsidian.Setting(customContainer)
-                .setName("Endpoint URL")
-                .setDesc("The base URL for your local embedding endpoint.")
-                .addText(text => text
+                .setName(t("settings.ai.endpoint.name"))
+                .setDesc(t("settings.ai.endpoint.desc"))
+                .addText(textComp => textComp
                     .setPlaceholder("HTTP://localhost:11434")
                     .setValue(this.plugin.settings.embeddingCustomEndpoint || "http://localhost:11434")
                     .onChange(async (val) => {
@@ -264,16 +265,16 @@ export class AISettingSection extends SettingSection {
         const vectorBtnWrap = vectorCard.createDiv();
         vectorBtnWrap.setCssStyles({ display: "flex", gap: "10px", marginTop: "10px", marginBottom: "10px" });
 
-        const vectorRunBtn = vectorBtnWrap.createEl("button", { text: "⚡ Auto-assign icons with embeddings", cls: "mod-cta" });
+        const vectorRunBtn = vectorBtnWrap.createEl("button", { text: t("settings.ai.btn_vector_auto_assign"), cls: "mod-cta" });
         vectorRunBtn.onclick = async () => {
             vectorRunBtn.disabled = true;
-            vectorRunBtn.setText("⏳ Running vector embedding classification...");
+            vectorRunBtn.setText(t("settings.ai.btn_vector_running"));
 
             const engineName = this.plugin.settings.embeddingEngine === 'custom'
                 ? `Custom Neural Model (${this.plugin.settings.embeddingCustomModel || 'bge-m3'})`
                 : 'Built-in Local Vector Model (0MB)';
 
-            const loadingNotice = new obsidian.Notice(`⏳ ${engineName} is scanning vault files...`, 0);
+            const loadingNotice = new obsidian.Notice(t("notice.vector_scanning", { engineName }), 0);
 
             try {
                 const allItems = this.plugin.app.vault.getAllLoadedFiles().filter(f => f.path !== '/');
@@ -284,8 +285,8 @@ export class AISettingSection extends SettingSection {
                 }));
 
                 const results = await this.plugin.embeddingModel.classifyTargetsAsync(targets, (completed, total, pct) => {
-                    loadingNotice.setMessage(`⏳ ${engineName}: ${pct}% (${completed}/${total} items processed)...`);
-                    vectorRunBtn.setText(`⏳ Classifying ${pct}% (${completed}/${total})...`);
+                    loadingNotice.setMessage(t("notice.vector_progress", { engineName, pct, completed, total }));
+                    vectorRunBtn.setText(t("settings.ai.btn_vector_progress", { pct, completed, total }));
                 });
                 let count = 0;
                 for (const [path, candidates] of Object.entries(results)) {
@@ -308,14 +309,14 @@ export class AISettingSection extends SettingSection {
                 await this.plugin.generateStyles();
 
                 loadingNotice.hide();
-                new obsidian.Notice(`⚡ ${engineName}: Auto-assigned ${count} icons!`);
+                new obsidian.Notice(t("notice.vector_success", { engineName, count }));
             } catch (err) {
                 loadingNotice.hide();
                 const msg = (err as Error)?.message || String(err);
-                new obsidian.Notice(`❌ Vector Embedding error: ${msg}`);
+                new obsidian.Notice(t("notice.vector_error", { msg }));
             } finally {
                 vectorRunBtn.disabled = false;
-                vectorRunBtn.setText("⚡ Auto-assign icons with embeddings");
+                vectorRunBtn.setText(t("settings.ai.btn_vector_auto_assign"));
             }
         };
     }

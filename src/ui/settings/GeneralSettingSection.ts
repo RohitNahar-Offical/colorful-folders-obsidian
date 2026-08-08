@@ -77,7 +77,7 @@ export class GeneralSettingSection extends SettingSection {
             alignItems: 'center',
             marginBottom: '16px'
         });
-        header.createSpan({ text: 'Palette colors' }).setCssStyles({
+        header.createSpan({ text: t('settings.palette_colors') }).setCssStyles({
             fontWeight: '600',
             fontSize: '1.0em',
             color: 'var(--text-normal)'
@@ -86,10 +86,10 @@ export class GeneralSettingSection extends SettingSection {
         const btnContainer = header.createDiv();
         btnContainer.setCssStyles({ display: 'flex', gap: '10px' });
 
-        const resetBtn = btnContainer.createEl('button', { text: 'Reset' });
+        const resetBtn = btnContainer.createEl('button', { text: t('common.reset') });
         resetBtn.setCssStyles({ cursor: 'pointer' });
 
-        const addColorBtn = btnContainer.createEl('button', { text: '+ add color' });
+        const addColorBtn = btnContainer.createEl('button', { text: t('common.add_color') });
         addColorBtn.setCssStyles({
             backgroundColor: 'var(--interactive-accent)',
             color: 'var(--text-on-accent)',
@@ -747,8 +747,8 @@ export class GeneralSettingSection extends SettingSection {
 
             let sliderComp_gradientAngle: obsidian.SliderComponent;
             new obsidian.Setting(typeCard)
-                .setName('Text gradient angle')
-                .setDesc('Customize the angle (0° to 360°) for rainbow text gradients.')
+                .setName(t('settings.text_gradient_angle.name'))
+                .setDesc(t('settings.text_gradient_angle.desc'))
                 .addSlider(slider => {
                     sliderComp_gradientAngle = slider;
                     slider
@@ -762,7 +762,7 @@ export class GeneralSettingSection extends SettingSection {
                 })
                 .addExtraButton(btn => btn
                     .setIcon("rotate-ccw")
-                    .setTooltip("Reset to default (135°)")
+                    .setTooltip(t('settings.reset_default_angle'))
                     .onClick(async () => {
                         this.plugin.settings.rainbowGradientAngle = 135;
                         sliderComp_gradientAngle.setValue(135);

@@ -6,6 +6,7 @@ import es from './locale/es';
 import fr from './locale/fr';
 import de from './locale/de';
 import ja from './locale/ja';
+import sk from './locale/sk';
 
 export type TranslationKey = keyof typeof en;
 export type LocaleDictionary = Record<TranslationKey, string>;
@@ -20,6 +21,7 @@ const localeMap: Record<string, Partial<LocaleDictionary>> = {
     fr,
     de,
     ja,
+    sk,
 };
 
 export function getLanguage(): string {

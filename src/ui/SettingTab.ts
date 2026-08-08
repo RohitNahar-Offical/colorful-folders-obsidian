@@ -1,5 +1,6 @@
 import * as obsidian from 'obsidian';
 import { IColorfulFoldersPlugin } from '../common/types';
+import { t } from '../lang/helpers';
 import { GeneralSettingSection } from './settings/GeneralSettingSection';
 import { FeaturesSettingSection } from './settings/FeaturesSettingSection';
 import { IconSettingSection } from './settings/IconSettingSection';
@@ -72,11 +73,11 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             return btn;
         };
 
-        const btnGen = createTabBtn("gen", "palette", "General");
-        const btnInt = createTabBtn("int", "sparkles", "Features");
-        const btnIcon = createTabBtn("icon", "smile", "Icons");
-        const btnAI = createTabBtn("ai", "bot", "AI");
-        const btnSys = createTabBtn("sys", "shield-check", "Privacy");
+        const btnGen = createTabBtn("gen", "palette", t("settings.tab.general"));
+        const btnInt = createTabBtn("int", "sparkles", t("settings.tab.features"));
+        const btnIcon = createTabBtn("icon", "smile", t("settings.tab.icons"));
+        const btnAI = createTabBtn("ai", "bot", t("settings.tab.ai"));
+        const btnSys = createTabBtn("sys", "shield-check", t("settings.tab.privacy"));
 
         const setTab = (tabKey: string) => {
             this.activeTab = tabKey;
@@ -158,19 +159,19 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
 
     async importUrl(url: string): Promise<void> {
         try {
-            new obsidian.Notice(`Fetching icon pack from ${url}...`);
+            new obsidian.Notice(t("notice.fetching_icon_pack", { url }));
             const res = await obsidian.requestUrl({ url });
             const data = res.json as Record<string, unknown>;
             const count = await this.processIconData(data);
             if (count > 0) {
-                new obsidian.Notice(`Successfully imported ${count} icons!`);
+                new obsidian.Notice(t("notice.import_success", { count }));
                 (this as unknown as { display: () => void }).display();
             } else {
-                new obsidian.Notice("No valid SVG icons found in the provided JSON.");
+                new obsidian.Notice(t("notice.no_valid_svg_icons"));
             }
         } catch (e) {
             const msg = (e as Error)?.message || String(e);
-            new obsidian.Notice(`Failed to import icon pack: ${msg}`, 6000);
+            new obsidian.Notice(t("notice.failed_import_icon_pack", { msg }), 6000);
             console.error("Colorful Folders: URL Import failed", e as Error);
         }
     }

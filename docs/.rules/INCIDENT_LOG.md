@@ -413,3 +413,38 @@ The final working solution relied on two synergistic parts:
 3. **SVG Data URIs & Flat Attribute Selectors (`StyleGenerator.ts`)**: Encoded all custom SVGs and auto-icons into SVG Data URIs (`-webkit-mask-image: url("data:image/svg+xml;utf8,...")`) targeting `::before` pseudo-elements via flat `[data-cf-path="..."]` attribute selectors.
 4. **Zero-DOM Divider Engine (`DividerManager.ts`)**: Section dividers use `data-cf-divider="true"` attribute tagging and pseudo-element styling instead of inserting HTML elements.
 **Lesson**: Physical DOM element injection inside third-party application trees should be avoided whenever native browser CSS engines can render pseudo-elements via data attributes and programmatic constructable stylesheets (`adoptedStyleSheets`). Zero-DOM architectures deliver maximum performance and 100% compatibility across third-party ecosystems.
+
+---
+
+## Incident #29 — Local Linter Silent Version Conflict: Hidden Errors Missed by Local ESLint (2026-08-08)
+
+**What was attempted**: Enabling all strict Obsidian Store linter rules (`@typescript-eslint/no-unsafe-*`, `obsidianmd/ui/sentence-case`, etc.) in `eslint.config.mjs` and running `npm run lint` locally to verify zero violations before submission.
+
+**What broke**: 
+- Obsidian's Community Plugin Store submission bot (running its own separate linter server) reported **hundreds of errors** across dozens of files — including `no-unsafe-argument`, `no-unsafe-member-access`, `no-unsafe-assignment`, `no-unsafe-call`, `no-unsafe-return`, `no-base-to-string`, `no-misused-promises`, and `no-unnecessary-type-assertion` violations.
+- Our local `npm run lint` was **silently passing with 0 errors** despite these issues existing in the source code.
+
+**Root cause**: 
+- Our `package.json` had `@typescript-eslint/eslint-plugin@8.66.0` installed at the top level.
+- `eslint-plugin-obsidianmd@0.4.1` bundles its own `typescript-eslint@8.65.0` internally.
+- When ESLint resolved rule implementations, the **top-level `@typescript-eslint@8.66.0`** was used for rule functions, but **`eslint-plugin-obsidianmd`'s bundled `@typescript-eslint@8.65.0`** was used for rule configuration.
+- This version mismatch caused `@typescript-eslint/unbound-method` to **crash with `TypeError: Cannot read properties of undefined (reading 'at')`** — aborting ESLint before it could report any type-aware errors.
+- To silence the crash, we had added `"@typescript-eslint/unbound-method": "off"` to `eslint.config.mjs`, which masked all the other violations as well.
+- Result: our local linter was effectively non-functional for type-aware rules, while Obsidian's server (using its own consistent package versions) correctly found all errors.
+
+**Resolution**:
+1. **Version Alignment**: Pinned our top-level `@typescript-eslint` packages to match `eslint-plugin-obsidianmd`'s bundled version exactly: `npm install --save-dev @typescript-eslint/parser@8.65.0 @typescript-eslint/eslint-plugin@8.65.0`. This caused npm to deduplicate both packages to the same version, eliminating the mismatch.
+2. **Removed `unbound-method: "off"` override**: With the crash eliminated, the rule runs correctly and no override is needed.
+3. **Fixed all real violations** exposed once the linter worked properly:
+   - `no-base-to-string`: Replaced `String(unknownValue)` with explicit `typeof` narrowing chains.
+   - `no-misused-promises`: Replaced `async () =>` callbacks in `window.setTimeout` and `addEventListener("click")` with `() => { void (async () => { ... })(); }` IIFE pattern.
+   - `ui/sentence-case`: Updated all UI label strings to sentence case directly in source files (not by adding `"off"` overrides).
+   - `no-deprecated`: Replaced deprecated `this.display()` in `SettingTab.ts` with inline re-render.
+4. **Full reinstall**: Ran `npm uninstall eslint @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint-plugin-obsidianmd eslint-plugin-no-unsanitized` followed by a clean `npm install`, ensuring npm resolves all packages to the same `@typescript-eslint@8.66.0` version uniformly (no internal dedupe conflicts).
+
+**Lesson**:
+1. **Never assume local lint == store lint.** Obsidian's store linter runs in an isolated environment with its own consistent package resolution. If your local linter passes but the store bot rejects, the first thing to check is package version conflicts between `eslint-plugin-obsidianmd` and your top-level `@typescript-eslint` packages.
+2. **A crashing rule silences everything.** If any rule crashes (even a single one), ESLint may abort the entire type-aware pipeline. Always check for `TypeError` or `Oops! Something went wrong!` output from `npm run lint` — a clean pass is NOT the same as zero output with no crash.
+3. **Pin `@typescript-eslint` to match `eslint-plugin-obsidianmd`'s bundled version.** Run `npm list eslint-plugin-obsidianmd` and look for the `typescript-eslint` sub-dependency version. Pin your top-level packages to that exact version using `@x.x.x` (not `^x.x.x`) to prevent npm from silently upgrading to a mismatched version.
+4. **Never turn off rules to fix crashes.** Disabling `unbound-method` (or any other crashing rule) to suppress a TypeError is not a fix — it hides the underlying version conflict and masks all the real errors it was protecting against.
+

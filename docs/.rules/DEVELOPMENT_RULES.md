@@ -104,6 +104,9 @@ Do not have 4+ different container query blocks scattered across files. Consolid
 **RULE 4.7: Run the linter before pushing.**
 Always run `npm run lint` (or `node node_modules/eslint/bin/eslint.js`) before committing, especially after adding features that use generic objects or DOM manipulation. *(Incident #6)*
 
+**RULE 4.8: Pin `@typescript-eslint` to match `eslint-plugin-obsidianmd`'s bundled version.**
+Before running `npm install`, check what version of `typescript-eslint` is bundled inside `eslint-plugin-obsidianmd` by running `npm list eslint-plugin-obsidianmd`. Pin your top-level `@typescript-eslint/eslint-plugin` and `@typescript-eslint/parser` to that **exact same version** (e.g., `8.65.0`, not `^8.65.0`). A version mismatch causes type-aware rules (like `unbound-method`) to crash with `TypeError: Cannot read properties of undefined`, aborting ESLint silently — making your local linter pass while Obsidian's store bot finds hundreds of errors. If you see `"@typescript-eslint/unbound-method": "off"` in `eslint.config.mjs`, it is masking this crash — fix the versions instead. *(Incident #29)*
+
 ---
 
 ## 5. UI/UX Standards & Edge Cases
@@ -240,3 +243,4 @@ When starting a new session on this plugin, do the following **before writing an
 | 6.1 | #11 |
 | 6.2 | #11 |
 | 7 (Staircase) | #24, #25 |
+| 4.8 | #29 |
