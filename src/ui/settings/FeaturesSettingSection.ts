@@ -557,8 +557,8 @@ export class FeaturesSettingSection extends SettingSection {
             }));
 
         new obsidian.Setting(intCard)
-            .setName("Smart Connections compatibility mode")
-            .setDesc("Ensure seamless styling compatibility with Smart Connections plugin panels.")
+            .setName("Smart connections compatibility mode")
+            .setDesc("Ensure seamless styling compatibility with smart connections plugin panels.")
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.smartConnectionsCompatMode !== false)
                 .onChange(async (value) => {

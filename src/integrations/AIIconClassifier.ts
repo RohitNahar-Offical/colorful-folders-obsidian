@@ -15,15 +15,15 @@ export class AIIconClassifier {
     public stopClassification(): void {
         if (this.isClassifying) {
             this.cancelRequested = true;
-            new Notice("Colorful Folders AI: Stopping classification process...");
+            new Notice("Colorful folders AI: Stopping classification process...");
         } else {
-            new Notice("Colorful Folders AI: No classification is currently running.");
+            new Notice("Colorful folders AI: No classification is currently running.");
         }
     }
 
     public async classifyVault(options?: { force?: boolean }): Promise<void> {
         if (this.isClassifying) {
-            new Notice("Colorful Folders AI: Classification is already in progress...");
+            new Notice("Colorful folders AI: Classification is already in progress...");
             return;
         }
 
@@ -32,7 +32,7 @@ export class AIIconClassifier {
         const settings = this.plugin.settings;
 
         this.isClassifying = true;
-        const notice = new Notice("Colorful Folders AI: Gathering vault items...", 0);
+        const notice = new Notice("Colorful folders AI: Gathering vault items...", 0);
 
         try {
             // 1. Gather all vault folders and (optionally) markdown files with rich context

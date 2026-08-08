@@ -747,7 +747,7 @@ export class GeneralSettingSection extends SettingSection {
 
             let sliderComp_gradientAngle: obsidian.SliderComponent;
             new obsidian.Setting(typeCard)
-                .setName('Text Gradient Angle')
+                .setName('Text gradient angle')
                 .setDesc('Customize the angle (0° to 360°) for rainbow text gradients.')
                 .addSlider(slider => {
                     sliderComp_gradientAngle = slider;

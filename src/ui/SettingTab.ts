@@ -164,7 +164,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             const count = await this.processIconData(data);
             if (count > 0) {
                 new obsidian.Notice(`Successfully imported ${count} icons!`);
-                this.display();
+                (this as unknown as { display: () => void }).display();
             } else {
                 new obsidian.Notice("No valid SVG icons found in the provided JSON.");
             }

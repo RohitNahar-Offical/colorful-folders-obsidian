@@ -577,7 +577,7 @@ export default class ColorfulFoldersPlugin
     });
     this.addCommand({
       id: "ai-auto-assign-icons",
-      name: "AI Auto-Assign Icons for Vault",
+      name: "AI auto-assign icons for vault",
       callback: () => {
         void this.aiIconClassifier.classifyVault();
       },
