@@ -104,7 +104,7 @@ export class PrivacySettingSection extends SettingSection {
                 marginTop: '15px', padding: '10px', background: 'var(--background-secondary-alt)',
                 borderRadius: '6px', borderLeft: '3px solid var(--interactive-accent)', fontSize: '0.85em', opacity: '0.8'
             });
-            stealthTip.setText("💡 Tip: You can also use the 'Toggle stealth mode' command (e.g., Ctrl+Shift+Q). This can be customized in Obsidian's hotkey settings.");
+            stealthTip.setText(t("settings.stealth_tip"));
 
             const hiddenListContainer = stealthCard.createDiv({ cls: 'cf-hidden-list-container' });
             hiddenListContainer.setCssStyles({ marginTop: "20px" });

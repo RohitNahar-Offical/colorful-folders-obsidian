@@ -621,7 +621,7 @@ const sk: Partial<LocaleDictionary> = {
     "modal.divider.subtitle": "Oddeľovač sekcie",
     "modal.divider.organizing": "Organizácia: {{name}}",
     "modal.divider.pill_mode.hide": "Skryť pilulku (iba text a čiary)",
-    "modal.password.enter_password_desc": "Zadajte heslo trezora pre pokračovanie.",
+    "modal.password.enter_password_desc": "Pre pokračovanie zadajte svoje heslo trezoru.",
 };
 
 export default sk;
