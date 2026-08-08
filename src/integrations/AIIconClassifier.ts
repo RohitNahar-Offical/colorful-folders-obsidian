@@ -221,7 +221,7 @@ export class AIIconClassifier {
                 });
 
                 if (settings.iconDebugMode) {
-                    console.log(`🤖 [Colorful Folders AI] Batch ${currentBatch}/${batchChunks.length} Context Payload Sent:`, contextPayload);
+                    console.debug(`🤖 [Colorful Folders AI] Batch ${currentBatch}/${batchChunks.length} Context Payload Sent:`, contextPayload);
                 }
 
                 try {
@@ -243,7 +243,7 @@ export class AIIconClassifier {
                     }
 
                     if (settings.iconDebugMode) {
-                        console.log(`📦 [Colorful Folders AI] Batch ${currentBatch}/${batchChunks.length} Parsed Output:`, kvPairs);
+                        console.debug(`📦 [Colorful Folders AI] Batch ${currentBatch}/${batchChunks.length} Parsed Output:`, kvPairs);
                     }
 
                     const RESERVED_KEYS = new Set([
@@ -416,7 +416,7 @@ export class AIIconClassifier {
                             conceptMap.set(targetItem.path, matchedIcon);
                             conceptMap.set(normalizeKey(targetItem.path), matchedIcon);
                             if (winningTier > 1) {
-                                console.log(`Colorful Folders AI: "${targetItem.path}" resolved to "${matchedIcon}" via Candidate Tier ${winningTier} fallback.`);
+                                console.debug(`Colorful Folders AI: "${targetItem.path}" resolved to "${matchedIcon}" via Candidate Tier ${winningTier} fallback.`);
                             }
                         } else {
                             // Layer 4: Fallback to Native Auto-Icon System or Vector Embedding Engine
@@ -445,24 +445,28 @@ export class AIIconClassifier {
             });
 
             // Execute batch tasks with dynamic max concurrency
-            const executing: Promise<void>[] = [];
+            const executing: { p: Promise<void> }[] = [];
             for (const task of tasks) {
                 if (this.cancelRequested) {
                     notice.setMessage("Colorful Folders AI: Classification cancelled by user.");
                     window.setTimeout(() => notice.hide(), 4000);
                     break;
                 }
-                const p: Promise<void> = (async () => {
+                const item: { p: Promise<void> } = {
+                    p: Promise.resolve()
+                };
+                item.p = (async (): Promise<void> => {
                     await task();
-                    const idx = executing.indexOf(p);
+                    const idx = executing.indexOf(item);
                     if (idx !== -1) executing.splice(idx, 1);
                 })();
-                executing.push(p);
+                void item.p;
+                executing.push(item);
                 if (executing.length >= maxConcurrent) {
-                    await Promise.race(executing);
+                    await Promise.race(executing.map(x => x.p));
                 }
             }
-            await Promise.all(executing);
+            await Promise.all(executing.map(x => x.p));
 
             if (this.cancelRequested) {
                 return;
@@ -516,7 +520,7 @@ export class AIIconClassifier {
             }
 
             if (settings.iconDebugMode) {
-                console.log(`✨ [Colorful Folders AI] Successfully Assigned ${assignedCount} Icons directly from AI:`, assignedSummary);
+                console.debug(`✨ [Colorful Folders AI] Successfully Assigned ${assignedCount} Icons directly from AI:`, assignedSummary);
             }
 
             await this.plugin.saveSettings();
@@ -761,7 +765,7 @@ Correct Output:
 
     private parseJsonResponse(textResult: string): Record<string, unknown> {
         if (!textResult) return {};
-        console.log("🧠 [Colorful Folders AI] Raw LLM Response / Thinking:", textResult);
+        console.debug("🧠 [Colorful Folders AI] Raw LLM Response / Thinking:", textResult);
 
         // Step 0: Strip thinking blocks (<think>...</think>), markdown codeblock fences (```json, ```javascript, etc.)
         const cleanText = textResult
@@ -967,7 +971,7 @@ Correct Output:
         }
 
         if (Object.keys(extracted).length > 0) {
-            console.log("🧠 [Colorful Folders AI] Extracted key-value pairs via multi-pattern fallback:", extracted);
+            console.debug("🧠 [Colorful Folders AI] Extracted key-value pairs via multi-pattern fallback:", extracted);
             return extracted;
         }
 

@@ -882,7 +882,7 @@ export default class ColorfulFoldersPlugin
         // Fallback to jsdelivr CDN if raw.githubusercontent.com is blocked
         if (url.includes('raw.githubusercontent.com')) {
           const cdnUrl = url.replace('https://raw.githubusercontent.com/', 'https://cdn.jsdelivr.net/gh/').replace('/master/', '@master/').replace('/main/', '@main/');
-          console.log(`Colorful Folders: Retrying download via CDN mirror ${cdnUrl}...`);
+          console.debug(`Colorful Folders: Retrying download via CDN mirror ${cdnUrl}...`);
           success = await fetchUrl(cdnUrl);
         } else {
           throw err;

@@ -15,14 +15,7 @@ export default [
       "obsidianmd/no-sample-code": "error",
       "obsidianmd/prefer-active-doc": "warn",
       "obsidianmd/no-tfile-tfolder-cast": "error",
-      "obsidianmd/ui/sentence-case": "off",
-      "@typescript-eslint/unbound-method": "off",
-      "@typescript-eslint/no-unsafe-return": "error",
-      "no-console": "off",
-      "obsidianmd/rule-custom-message": "off",
-      "@typescript-eslint/no-floating-promises": "off",
-      "@typescript-eslint/no-deprecated": "off",
-      "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }]
+      "@typescript-eslint/unbound-method": "off"
     },
   },
 ];
