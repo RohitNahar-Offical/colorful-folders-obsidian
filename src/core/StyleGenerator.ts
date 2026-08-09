@@ -50,17 +50,6 @@ export class StyleGenerator {
         return escaped;
     }
 
-
-
-
-
-
-
-
-
-
-
-
     private _iconValidityCache = new Map<string, boolean>();
 
     private isValidIconStr(id: string | null | undefined): boolean {
@@ -211,15 +200,14 @@ export class StyleGenerator {
         // Process Files
         for (const child of copyFiles) {
                 const fileStyle = this.getStyle(child.path);
-                const hasCustomStyle = !!(fileStyle && (fileStyle.hex || fileStyle.iconId || fileStyle.iconColor || fileStyle.textColor || fileStyle.isBold || fileStyle.isItalic));
+                const hasCustomStyle = !!(fileStyle && (fileStyle.hex || fileStyle.iconId || fileStyle.iconColor || fileStyle.textColor || fileStyle.textGradient || fileStyle.isBold || fileStyle.isItalic));
                 const hasInherited = !!(inheritedStyle && inheritedStyle.applyToFiles);
-                const needsProcessing = hasCustomStyle || hasInherited || autoColorFiles || autoIcons || (passedColor !== null) || (this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground) || !!this.settings.globalBackgroundColor;
+                const isColorTextActive = this.settings.colorText !== 'none' && this.settings.colorText !== false;
+                const needsProcessing = hasCustomStyle || hasInherited || autoColorFiles || autoIcons || isColorTextActive || (passedColor !== null) || (this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground) || !!this.settings.globalBackgroundColor;
 
                 if (!needsProcessing) {
                     continue;
                 }
-
-
 
                 const safePath = this.getSafeEscape(child.path);
                 const parentName = child.parent?.name;
@@ -241,12 +229,13 @@ export class StyleGenerator {
                     this.settings.globalBackgroundColor || "",
                     this.settings.autoColorFiles,
                     this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground,
-                    this.settings.fileColorMode
+                    this.settings.fileColorMode,
+                    context.now
                 );
 
                 const hasExplicitFileOpacity = fileStyle?.opacity !== undefined && fileStyle.opacity > 0;
                 const shouldColorNative = this.settings.autoColorFiles || hasExplicitFileOpacity;
-                const shouldColorNN = (this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground) || hasExplicitFileOpacity;
+                const shouldColorNN = this.settings.notebookNavigatorSupport && (this.settings.notebookNavigatorFileBackground || hasExplicitFileOpacity);
 
                 const activeStyle = fileStyle || (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle : null);
                 const iconColor = fileStyle?.iconColor || (inheritedStyle?.applyToFiles && inheritedStyle.iconColor) || null;
@@ -327,8 +316,9 @@ export class StyleGenerator {
                     ${extraTypographyCssFiles}
                 `;
 
-                if (activeStyle && activeStyle.textGradient && activeStyle.textColor && activeStyle.textGradientEnd) {
-                    const stops = RainbowManager.resolveCustomStops(activeStyle.textColor, activeStyle.textGradientEnd, activeStyle.rainbowBrightness, isDark);
+                if (activeStyle && activeStyle.textGradient && activeStyle.textGradientEnd) {
+                    const startCol = activeStyle.textColor || color.hex;
+                    const stops = RainbowManager.resolveCustomStops(startCol, activeStyle.textGradientEnd, activeStyle.rainbowBrightness, isDark);
                     fileTextCss = RainbowManager.buildGradientCss(stops, {
                         angle: this.settings.rainbowGradientAngle ?? 90,
                         isDark,
@@ -465,7 +455,9 @@ export class StyleGenerator {
                         0,
                         this.settings.globalBackgroundColor || "",
                         false,
-                        false
+                        false,
+                        "hierarchy",
+                        context.now
                     );
                     const parentActiveBg = (this.settings.useCustomActiveColor && this.settings.customActiveBg) ? this.settings.customActiveBg : `rgba(${parentFolderColor.rgb}, ${useGlass ? 0.14 : 0.12})`;
                     const parentActiveText = (this.settings.useCustomActiveColor && this.settings.customActiveText) ? this.settings.customActiveText : (parentFolderStyle?.textColor || parentFolderColor.hex);
@@ -587,7 +579,9 @@ export class StyleGenerator {
                 mtime,
                 "",
                 false,
-                false
+                false,
+                "hierarchy",
+                context.now
             );
 
             const safePath = this.getSafeEscape(child.path);
@@ -674,8 +668,9 @@ export class StyleGenerator {
 
             const isRainbowActiveForFolder = this.settings.rainbowRootText && depth === 0 && !customStyle?.textColor && (this.settings.rootStyle !== 'solid' || isRainbowBgTransparent || outlineOnly);
 
-            if (customStyle?.textGradient && customStyle?.textColor && customStyle?.textGradientEnd) {
-                const stops = RainbowManager.resolveCustomStops(customStyle.textColor, customStyle.textGradientEnd, customStyle.rainbowBrightness, isDark);
+            if (customStyle?.textGradient && customStyle?.textGradientEnd) {
+                const startCol = customStyle.textColor || color.hex;
+                const stops = RainbowManager.resolveCustomStops(startCol, customStyle.textGradientEnd, customStyle.rainbowBrightness, isDark);
                 textCss = RainbowManager.buildGradientCss(stops, {
                     angle: gradAngle,
                     isDark,
@@ -959,6 +954,7 @@ export class StyleGenerator {
     }
 
     async generateCss(): Promise<string> {
+        ColorResolver.clearCache();
         const context = this.prepareContext();
         if (!context) return "";
 

@@ -82,10 +82,9 @@ export default class ColorfulFoldersPlugin
       this.adoptedStyleSheetService = new AdoptedStyleSheetService(this);
       this.lifecycleService = new PluginLifecycleService(this);
 
-      // Initial document cache state
+      // Document tracking initialization
       this.lifecycleService.initializeDocumentTracking();
 
-      this.initializeStyles();
       this.registerCustomIcons();
       this.registerCommands();
 

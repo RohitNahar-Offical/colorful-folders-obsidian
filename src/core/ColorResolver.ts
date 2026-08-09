@@ -57,6 +57,44 @@ export function getFastFolderScopeDepth(path: string, isFile: boolean): number {
 }
 
 export class ColorResolver {
+    private static textColorCache = new Map<string, string>();
+
+    public static clearCache(): void {
+        this.textColorCache.clear();
+    }
+
+    private static getFolderColorByMode(
+        mode: string,
+        vIdx: number,
+        d: number,
+        rIdx: number,
+        cycleOffset: number,
+        palette: { rgb: string, hex: string }[],
+        heatmapMtime: number,
+        now: number
+    ): { rgb: string, hex: string } {
+        const len = palette.length;
+        if (len === 0) return { rgb: "120, 120, 120", hex: "#787878" };
+
+        if (mode === "heatmap") {
+            if (!heatmapMtime) return palette[len - 1];
+            const diffDays = (now - heatmapMtime) / 86400000;
+            if (diffDays <= 1) return palette[0];
+            if (diffDays <= 3) return palette[Math.min(2, len - 1)];
+            if (diffDays <= 7) return palette[Math.min(7, len - 1)];
+            if (diffDays <= 15) return palette[Math.min(4, len - 1)];
+            if (diffDays <= 30) return palette[Math.min(10, len - 1)];
+            return palette[len - 1];
+        } else if (mode === "monochromatic") {
+            if (d === 0) return palette[vIdx % len];
+            return palette[rIdx % len];
+        } else if (mode === "hierarchy") {
+            return palette[(d + cycleOffset) % len];
+        } else {
+            return palette[(vIdx + d + rIdx + cycleOffset) % len];
+        }
+    }
+
     public static resolveColor(
         path: string,
         name: string,
@@ -74,31 +112,12 @@ export class ColorResolver {
         globalBackgroundColor: string,
         autoColorFiles: boolean,
         isNNActive: boolean,
-        fileColorMode: string = "hierarchy"
+        fileColorMode: string = "mixed",
+        now: number = Date.now()
     ): { rgb: string, hex: string } {
         const isHierarchyMode = colorMode === "hierarchy";
         const fastDepth = isHierarchyMode ? getFastFolderScopeDepth(path, isFile) : depth;
         const effectiveDepth = isHierarchyMode ? fastDepth : depth;
-
-        const getFolderColor = (vIdx: number, d: number, rIdx: number) => {
-            if (colorMode === "heatmap") {
-                if (!heatmapMtime) return palette[palette.length - 1];
-                const diffDays = (Date.now() - heatmapMtime) / (1000 * 60 * 60 * 24);
-                if (diffDays <= 1) return palette[0];
-                if (diffDays <= 3) return palette[Math.min(2, palette.length - 1)];
-                if (diffDays <= 7) return palette[Math.min(7, palette.length - 1)];
-                if (diffDays <= 15) return palette[Math.min(4, palette.length - 1)];
-                if (diffDays <= 30) return palette[Math.min(10, palette.length - 1)];
-                return palette[palette.length - 1];
-            } else if (colorMode === "monochromatic") {
-                if (d === 0) return palette[vIdx % palette.length];
-                return palette[rIdx % palette.length];
-            } else if (isHierarchyMode) {
-                return palette[(d + cycleOffset) % palette.length];
-            } else {
-                return palette[(vIdx + d + rIdx + cycleOffset) % palette.length];
-            }
-        };
 
         if (customStyle?.hex) {
             const cp = parseCustomPalette(customStyle.hex);
@@ -115,39 +134,36 @@ export class ColorResolver {
                 ? cp[0]
                 : (rgb ? { rgb: `${rgb.r}, ${rgb.g}, ${rgb.b}`, hex: inheritedStyle.hex } : palette[0]);
         } else if (isFile) {
-            const parentColor = passedColor ?? (isHierarchyMode ? getFolderColor(0, effectiveDepth, rootIndex) : (depth > 0 ? getFolderColor(0, depth - 1, rootIndex) : null));
+            const parentColor = passedColor ?? (isHierarchyMode 
+                ? ColorResolver.getFolderColorByMode(colorMode, 0, effectiveDepth, rootIndex, cycleOffset, palette, heatmapMtime, now)
+                : (depth > 0 ? ColorResolver.getFolderColorByMode(colorMode, 0, depth, rootIndex, cycleOffset, palette, heatmapMtime, now) : null));
+            
             if (inheritedStyle?.applyToFiles && parentColor) {
                 const hObj = hexToRgbObj(inheritedStyle.hex ?? parentColor.hex) ?? { r: 235, g: 111, b: 146 };
                 const nameHash = hashString(name);
                 const offset = ((nameHash % 5) - 2) * 5;
                 return {
-                    rgb: `${Math.max(0, Math.min(255, hObj.r + offset))}, ${Math.max(0, Math.min(255, hObj.b + offset))}, ${Math.max(0, Math.min(255, hObj.b + offset))}`,
+                    rgb: `${Math.max(0, Math.min(255, hObj.r + offset))}, ${Math.max(0, Math.min(255, hObj.g + offset))}, ${Math.max(0, Math.min(255, hObj.b + offset))}`,
                     hex: inheritedStyle.hex ?? parentColor.hex,
                 };
-            } else if (autoColorFiles || isNNActive) {
-                if (fileColorMode === "folder_scope") {
-                    const treeDepth = isHierarchyMode ? getFastPathSlashes(path) : depth;
-                    return getFolderColor(validIndex, treeDepth, rootIndex);
-                } else if (fileColorMode === "parent" || fileColorMode === "hierarchy") {
-                    return parentColor ?? getFolderColor(validIndex, effectiveDepth, rootIndex);
-                } else if (fileColorMode === "sequential") {
-                    return palette[(validIndex + cycleOffset) % palette.length];
-                } else if (fileColorMode === "none") {
-                    const gHex = globalBackgroundColor || "";
-                    const gRgb = hexToRgbObj(gHex);
-                    return parentColor ?? (gRgb ? { rgb: `${gRgb.r}, ${gRgb.g}, ${gRgb.b}`, hex: gHex } : { rgb: "var(--text-normal-rgb)", hex: "var(--text-normal)" });
-                } else {
-                    // "mixed" (Name hash)
-                    const nameHash = hashString(name);
-                    return palette[(validIndex + nameHash + cycleOffset) % palette.length];
-                }
-            } else {
+            } else if (fileColorMode === "folder_scope") {
+                const treeDepth = isHierarchyMode ? getFastPathSlashes(path) : depth;
+                return ColorResolver.getFolderColorByMode(colorMode, validIndex, treeDepth, rootIndex, cycleOffset, palette, heatmapMtime, now);
+            } else if (fileColorMode === "parent" || fileColorMode === "hierarchy") {
+                return parentColor ?? ColorResolver.getFolderColorByMode(colorMode, validIndex, effectiveDepth, rootIndex, cycleOffset, palette, heatmapMtime, now);
+            } else if (fileColorMode === "sequential") {
+                return palette[(validIndex + cycleOffset) % palette.length];
+            } else if (fileColorMode === "none") {
                 const gHex = globalBackgroundColor || "";
                 const gRgb = hexToRgbObj(gHex);
                 return parentColor ?? (gRgb ? { rgb: `${gRgb.r}, ${gRgb.g}, ${gRgb.b}`, hex: gHex } : { rgb: "var(--text-normal-rgb)", hex: "var(--text-normal)" });
+            } else {
+                // "mixed" (Name hash)
+                const nameHash = hashString(name);
+                return palette[(validIndex + nameHash + cycleOffset) % palette.length];
             }
         } else {
-            return getFolderColor(validIndex, effectiveDepth, rootIndex);
+            return ColorResolver.getFolderColorByMode(colorMode, validIndex, effectiveDepth, rootIndex, cycleOffset, palette, heatmapMtime, now);
         }
     }
 
@@ -236,7 +252,13 @@ export class ColorResolver {
                 ? (brightnessAmount === 0 ? 0.45 : Math.max(brightnessAmount, 0.35))
                 : (brightnessAmount === 0 ? -0.40 : Math.min(brightnessAmount, -0.20));
 
-            return `rgb(${adjustBrightnessRgb(colorRgb, adjust)})`;
+            const cacheKey = `${colorHex}_${adjust}_${isDark}`;
+            let cached = ColorResolver.textColorCache.get(cacheKey);
+            if (!cached) {
+                cached = `rgb(${adjustBrightnessRgb(colorRgb, adjust)})`;
+                ColorResolver.textColorCache.set(cacheKey, cached);
+            }
+            return cached;
         }
         return "var(--text-normal)";
     }

@@ -37,6 +37,7 @@ export class PluginLifecycleService {
 
     public onLayoutReady(): void {
         this.plugin.app.workspace.onLayoutReady(async () => {
+            this.plugin.initializeStyles();
             this.plugin.invalidateExplorerContainersCache();
             this.plugin.initStaircaseStyleStripper();
             if (this.plugin.settings.notebookNavigatorSupport) {
@@ -45,6 +46,7 @@ export class PluginLifecycleService {
             void this.plugin.loadLocalIcons();
 
             if (this.plugin._abortStartupRender) return;
+            void this.plugin.generateStyles();
             this.plugin.getAllExplorerContainers().forEach((c) => this.plugin.domObserverService.tagExplorerItems(c));
             this.plugin.domObserverService.initDividerObserver();
             this.plugin.dividerManager.syncDividers();
