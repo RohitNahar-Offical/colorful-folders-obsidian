@@ -88,9 +88,9 @@ export class PasswordModal extends obsidian.Modal {
             cursor: "pointer",
             textDecoration: "underline"
         });
-        forgotLink.setText("Forgot password?");
+        forgotLink.setText(t("settings.vault_password.name"));
         forgotLink.onclick = () => {
-            new obsidian.Notice("To reset your password, perform a 'Factory reset' in the plugin settings or manually clear the password in your data.json file.", 8000);
+            new obsidian.Notice(t("notice.password_forgot_hint"), 8000);
         };
     }
 

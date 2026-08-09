@@ -550,8 +550,6 @@ const sk: Partial<LocaleDictionary> = {
     "settings.tag_color_placeholder": "#ffffff",
     "settings.new_tag_rule_default": "Nové_Pravidlo = #5ebd8e",
     "settings.nb_navigator.auto_color_desc": "Vloží jemný blok pozadia a ľavý okraj do kariet súborov. Vypnite pre natívny vzhľad.",
-    "settings.smart_connections.name": "Režim kompatibility so Smart Connections",
-    "settings.smart_connections.desc": "Zabezpečuje bezproblémovú kompatibilitu štýlov s panelmi doplňku Smart Connections.",
 
     // --- AI Section Strings ---
     "settings.ai.banner_header": "🧪 Experimentálna funkcia",
@@ -617,10 +615,12 @@ const sk: Partial<LocaleDictionary> = {
     "modal.hover_message.empty_preview": "Nie je nastavená žiadna správa. Popover bude skrytý.",
 
     // --- Extra Modal Strings ---
-    "modal.divider.subtitle": "Oddeľovač sekcie",
-    "modal.divider.organizing": "Organizácia: {{name}}",
-    "modal.divider.pill_mode.hide": "Skryť pilulku (iba text a čiary)",
-    "modal.password.enter_password_desc": "Pre pokračovanie zadajte svoje heslo trezoru.",
+    "notice.ai_stopping": "Colorful Folders AI: Zastavuje sa proces klasifikácie...",
+    "notice.ai_not_running": "Colorful Folders AI: V súčasnosti nebeží žiadna klasifikácia.",
+    "notice.ai_already_running": "Colorful Folders AI: Klasifikácia už prebieha...",
+    "notice.ai_gathering_items": "Colorful Folders AI: Zhromažďujú sa položky trezoru...",
+    "notice.ai_error_prefix": "Colorful Folders AI: {{msg}}",
+    "notice.password_forgot_hint": "Ak chcete resetovať heslo, vykonajte 'Factory reset' v nastaveniach doplňku alebo ručne vymažte heslo v súbore data.json.",
 };
 
 export default sk;

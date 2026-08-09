@@ -508,8 +508,6 @@ const de: Partial<LocaleDictionary> = {
     "settings.tag_color_placeholder": "#ffffff",
     "settings.new_tag_rule_default": "Neue_Regel = #5ebd8e",
     "settings.nb_navigator.auto_color_desc": "Fügt den dezenten Hintergrundblock und linken Rand zu Dateikarten hinzu. Deaktivieren für nativen Look.",
-    "settings.smart_connections.name": "Smart Connections Kompatibilitätsmodus",
-    "settings.smart_connections.desc": "Nahtlose Styling-Kompatibilität mit Smart Connections Panels sicherstellen.",
 
     // --- AI Section Strings ---
     "settings.ai.banner_header": "🧪 Experimentelles Feature",
@@ -577,11 +575,16 @@ const de: Partial<LocaleDictionary> = {
     "modal.hover_message.live_preview": "Live-Vorschau",
     "modal.hover_message.empty_preview": "Keine Nachricht festgelegt. Popover wird ausgeblendet.",
 
-    // --- Extra Modal Strings ---
     "modal.divider.subtitle": "Abschnittstrenner",
     "modal.divider.organizing": "Organisieren von: {{name}}",
     "modal.divider.pill_mode.hide": "Pill ausblenden (nur Text & Linien)",
     "modal.password.enter_password_desc": "Bitte geben Sie Ihr Tresor-Passwort ein, um fortzufahren.",
+    "notice.ai_stopping": "Colorful Folders AI: Stoppe Klassifizierungsprozess...",
+    "notice.ai_not_running": "Colorful Folders AI: Derzeit läuft keine Klassifizierung.",
+    "notice.ai_already_running": "Colorful Folders AI: Klassifizierung läuft bereits...",
+    "notice.ai_gathering_items": "Colorful Folders AI: Sammle Tresor-Elemente...",
+    "notice.ai_error_prefix": "Colorful Folders AI: {{msg}}",
+    "notice.password_forgot_hint": "Um Ihr Passwort zurückzusetzen, führen Sie einen 'Werkseinstellung'-Reset in den Einstellungen durch oder löschen Sie das Passwort manuell in data.json.",
 };
 
 export default de;

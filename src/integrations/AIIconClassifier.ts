@@ -2,6 +2,7 @@ import * as obsidian from 'obsidian';
 import { requestUrl, Notice, TFolder, TFile } from 'obsidian';
 import { IColorfulFoldersPlugin, ColorfulFoldersSettings } from '../common/types';
 import { normalizePathKey } from '../common/utils';
+import { t } from '../lang/helpers';
 
 export class AIIconClassifier {
     private isClassifying = false;
@@ -15,15 +16,15 @@ export class AIIconClassifier {
     public stopClassification(): void {
         if (this.isClassifying) {
             this.cancelRequested = true;
-            new Notice("Colorful folders AI: Stopping classification process...");
+            new Notice(t("notice.ai_stopping"));
         } else {
-            new Notice("Colorful folders AI: No classification is currently running.");
+            new Notice(t("notice.ai_not_running"));
         }
     }
 
     public async classifyVault(options?: { force?: boolean }): Promise<void> {
         if (this.isClassifying) {
-            new Notice("Colorful folders AI: Classification is already in progress...");
+            new Notice(t("notice.ai_already_running"));
             return;
         }
 
@@ -32,7 +33,7 @@ export class AIIconClassifier {
         const settings = this.plugin.settings;
 
         this.isClassifying = true;
-        const notice = new Notice("Colorful folders AI: Gathering vault items...", 0);
+        const notice = new Notice(t("notice.ai_gathering_items"), 0);
 
         try {
             // 1. Gather all vault folders and (optionally) markdown files with rich context
@@ -438,7 +439,7 @@ export class AIIconClassifier {
                 } catch (err) {
                     const msg = (err as Error)?.message || String(err);
                     console.error(`Colorful Folders AI: Batch ${currentBatch} classification failed`, err as Error);
-                    new Notice(`Colorful Folders AI: ${msg}`, 6000);
+                    new Notice(t("notice.ai_error_prefix", { msg }), 6000);
                 } finally {
                     completedBatches++;
                     const pct = Math.round((completedBatches / Math.max(1, batchChunks.length)) * 100);

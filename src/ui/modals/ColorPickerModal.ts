@@ -5,6 +5,7 @@ import { createVisualColorPicker } from '../components/ColorPicker';
 import { hexToRgbObj, adjustBrightnessRgb, normalizeVaultPath } from '../../common/utils';
 import { ColorResolver, isDarkMode } from '../../core/ColorResolver';
 import { RainbowManager } from '../../core/RainbowManager';
+import { t } from '../../lang/helpers';
 
 
 
@@ -76,10 +77,10 @@ modifiedFields: Set<string>;
 
         // ── TOP TAB NAVIGATION BAR ──────────────────────────────────────────
         const tabs = [
-            { id: "appearance", label: "Appearance", icon: "palette" },
-            { id: "icon", label: "Icon", icon: "smile" },
-            ...(this.isFolder ? [{ id: "inherit", label: "Inheritance", icon: "git-branch" }] : []),
-            { id: "presets", label: "Presets", icon: "layers" }
+            { id: "appearance", label: t("modal.color_picker.tab.appearance"), icon: "palette" },
+            { id: "icon", label: t("modal.color_picker.tab.icons"), icon: "smile" },
+            ...(this.isFolder ? [{ id: "inherit", label: t("modal.color_picker.tab.inheritance"), icon: "git-branch" }] : []),
+            { id: "presets", label: t("modal.color_picker.tab.presets"), icon: "layers" }
         ];
 
         const tabBar = contentEl.createDiv({ cls: "cf-tab-bar" });
@@ -379,9 +380,9 @@ modifiedFields: Set<string>;
         bgHeader.setCssStyles({ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" });
         const bgLabel = bgHeader.createDiv();
         bgLabel.setCssStyles({ fontSize: "0.85em", fontWeight: "700", color: "var(--text-normal)", opacity: "0.9" });
-        bgLabel.textContent = 'Background styling';
+        bgLabel.textContent = t("modal.color_picker.bg_styling");
 
-        const applyBgBtn = bgHeader.createEl("button", { text: "Apply" });
+        const applyBgBtn = bgHeader.createEl("button", { text: t("modal.color_picker.apply_bg") });
         applyBgBtn.setCssStyles({
             padding: "2px 8px", borderRadius: "4px", fontSize: "0.7em", fontWeight: "600",
             cursor: "pointer", border: "1px solid var(--interactive-accent)",
@@ -463,7 +464,7 @@ modifiedFields: Set<string>;
             marginTop: '10px', padding: '8px 4px'
         });
 
-        const brLabel = brRow.createSpan({ text: 'Border radius' });
+        const brLabel = brRow.createSpan({ text: t("modal.color_picker.border_radius") });
         brLabel.setCssStyles({ fontSize: '0.78em', fontWeight: '700', color: 'var(--text-muted)', whiteSpace: 'nowrap' });
 
         const brSlider = brRow.createEl('input', { type: 'range' });
@@ -499,15 +500,15 @@ modifiedFields: Set<string>;
         txtHeader.setCssStyles({ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" });
         const txtLabel = txtHeader.createDiv();
         txtLabel.setCssStyles({ fontSize: "0.85em", fontWeight: "700", color: "var(--text-normal)", opacity: "0.9" });
-        txtLabel.textContent = 'Text styling';
+        txtLabel.textContent = t("modal.color_picker.text_styling");
 
         const txtActionsRow = txtHeader.createDiv();
         txtActionsRow.setCssStyles({ display: "flex", gap: "6px" });
 
-        const resetTxtBtn = txtActionsRow.createEl("button", { text: "Reset" });
+        const resetTxtBtn = txtActionsRow.createEl("button", { text: t("modal.color_picker.reset_txt") });
         resetTxtBtn.setCssStyles({ padding: "2px 6px", borderRadius: "4px", fontSize: "0.7em", border: "1px solid var(--background-modifier-border)", background: "none", color: "var(--text-muted)", cursor: "pointer" });
         
-        const applyTxtBtn = txtActionsRow.createEl("button", { text: "Apply" });
+        const applyTxtBtn = txtActionsRow.createEl("button", { text: t("modal.color_picker.apply_txt") });
         applyTxtBtn.setCssStyles({
             padding: "2px 8px", borderRadius: "4px", fontSize: "0.7em", fontWeight: "600",
             cursor: "pointer", border: "1px solid var(--interactive-accent)",
@@ -554,7 +555,7 @@ modifiedFields: Set<string>;
             this.close();
         };
 
-        const textPickerLabel = txtSection.createDiv({ text: this.folderStyle.textGradient ? "Start Color" : "Text Color" });
+        const textPickerLabel = txtSection.createDiv({ text: this.folderStyle.textGradient ? t("modal.color_picker.start_color") : t("modal.color_picker.text_color") });
         textPickerLabel.setCssStyles({ fontSize: "0.78em", fontWeight: "700", color: "var(--text-muted)", marginBottom: "4px" });
 
         const textPickerContainer = txtSection.createDiv();
@@ -577,7 +578,7 @@ modifiedFields: Set<string>;
             marginTop: "12px",
             display: this.folderStyle.textGradient ? "block" : "none"
         });
-        const gradEndLabel = gradEndSection.createDiv({ text: "End color" });
+        const gradEndLabel = gradEndSection.createDiv({ text: t("modal.color_picker.end_color") });
         gradEndLabel.setCssStyles({
             fontSize: "0.78em", fontWeight: "700", color: "var(--text-muted)", marginBottom: "4px"
         });
@@ -644,7 +645,7 @@ modifiedFields: Set<string>;
         typoContainer.setCssStyles({ marginTop: "12px", borderTop: "1px solid var(--background-modifier-border)", paddingTop: "8px" });
 
         new obsidian.Setting(typoContainer)
-            .setName("Bold text")
+            .setName(t("modal.color_picker.bold_text"))
             .addToggle(toggle => {
                 boldToggle = toggle;
                 toggle.setValue(!!this.folderStyle.isBold)
@@ -656,7 +657,7 @@ modifiedFields: Set<string>;
             });
 
         new obsidian.Setting(typoContainer)
-            .setName("Italic text")
+            .setName(t("modal.color_picker.italic_text"))
             .addToggle(toggle => {
                 italicToggle = toggle;
                 toggle.setValue(!!this.folderStyle.isItalic)
@@ -668,7 +669,7 @@ modifiedFields: Set<string>;
             });
 
         new obsidian.Setting(typoContainer)
-            .setName("Custom rainbow colors")
+            .setName(t("modal.color_picker.custom_rainbow"))
             .addToggle(toggle => {
                 gradToggle = toggle;
                 toggle.setValue(!!this.folderStyle.textGradient)
@@ -836,7 +837,7 @@ modifiedFields: Set<string>;
             backgroundColor: "var(--background-secondary)", color: "var(--text-normal)",
             fontSize: "0.85em", boxSizing: "border-box"
         });
-        searchInput.placeholder = "Search icons…";
+        searchInput.placeholder = t("modal.color_picker.search_placeholder");
         
         const searchIcon = searchInputWrap.createDiv();
         searchIcon.setCssStyles({
@@ -1031,23 +1032,23 @@ modifiedFields: Set<string>;
         // ── INHERITANCE TAB ─────────────────────────────────────────────────
         if (this.isFolder && tabPanels["inherit"]) {
             const inh = tabPanels["inherit"];
-            new obsidian.Setting(inh).setHeading().setName("Inheritance options");
-            new obsidian.Setting(inh).setName("Apply to subfolders")
-                .setDesc("Force nested folders to inherit this style with monolithic depth (retains parent opacity).")
-                .addToggle(t => t.setValue(this.folderStyle.applyToSubfolders || false).onChange(v => {
+            new obsidian.Setting(inh).setHeading().setName(t("modal.color_picker.inheritance_options"));
+            new obsidian.Setting(inh).setName(t("modal.color_picker.apply_to_subfolders"))
+                .setDesc(t("modal.color_picker.apply_to_subfolders.desc"))
+                .addToggle(tgl => tgl.setValue(this.folderStyle.applyToSubfolders || false).onChange(v => {
                     this.folderStyle.applyToSubfolders = v;
                     this.modifiedFields.add('applyToSubfolders');
                 }));
-            new obsidian.Setting(inh).setName("Apply to files")
-                .setDesc("Force files inside this folder to inherit this style.")
-                .addToggle(t => t.setValue(this.folderStyle.applyToFiles || false).onChange(v => {
+            new obsidian.Setting(inh).setName(t("modal.color_picker.apply_to_files"))
+                .setDesc(t("modal.color_picker.apply_to_files.desc"))
+                .addToggle(tgl => tgl.setValue(this.folderStyle.applyToFiles || false).onChange(v => {
                     this.folderStyle.applyToFiles = v;
                     this.modifiedFields.add('applyToFiles');
                 }));
         }
 
         const pr = tabPanels["presets"];
-        const prTitle = pr.createEl("h4", { text: "Saved presets", cls: "cf-section-title" });
+        const prTitle = pr.createEl("h4", { text: t("modal.color_picker.saved_presets"), cls: "cf-section-title" });
         prTitle.setCssStyles({ fontSize: "0.85em", marginBottom: "10px", opacity: "0.8" });
 
         const presetList = pr.createDiv({ cls: "cf-preset-list" });
@@ -1060,7 +1061,7 @@ modifiedFields: Set<string>;
         const presetNames = Object.keys(presets);
 
         if (presetNames.length === 0) {
-            const emptyPresets = presetList.createDiv({ text: "No presets saved yet.", cls: "cf-empty-state" });
+            const emptyPresets = presetList.createDiv({ text: t("modal.color_picker.no_presets"), cls: "cf-empty-state" });
             emptyPresets.setCssStyles({ fontSize: "0.8em", color: "var(--text-muted)", textAlign: "center", padding: "20px" });
         } else {
             presetNames.forEach(name => {
@@ -1080,7 +1081,7 @@ modifiedFields: Set<string>;
                 const nameLabel = item.createDiv({ text: name });
                 nameLabel.setCssStyles({ flex: "1", fontSize: "0.85em", fontWeight: "600", color: "var(--text-normal)" });
 
-                const applyBtn = item.createEl("button", { text: "Apply" });
+                const applyBtn = item.createEl("button", { text: t("modal.color_picker.apply_preset") });
                 applyBtn.setCssStyles({ padding: "2px 8px", fontSize: "0.75em", borderRadius: "4px", cursor: "pointer" });
                 applyBtn.onclick = () => {
                     this.folderStyle = { ...pData } as EffectiveStyle & FolderStyle;
@@ -1103,23 +1104,23 @@ modifiedFields: Set<string>;
             });
         }
 
-        const saveSection = pr.createDiv();
+        const saveSection = pr.createDiv({ cls: "cf-save-preset-section" });
         saveSection.setCssStyles({
             marginTop: "12px", padding: "12px", borderRadius: "8px",
             border: "1px dashed var(--background-modifier-border)",
             backgroundColor: "rgba(var(--mono-rgb-100), 0.02)"
         });
-        const saveTitle = saveSection.createDiv({ text: "Save current style" });
+        const saveTitle = saveSection.createDiv({ text: t("modal.color_picker.save_current_style") });
         saveTitle.setCssStyles({ fontSize: "0.75em", fontWeight: "700", color: "var(--text-muted)", marginBottom: "8px", textTransform: "uppercase" });
         
         const saveRow = saveSection.createDiv();
         saveRow.setCssStyles({ display: "flex", gap: "8px" });
         
         const newPresetInput = saveRow.createEl("input", { type: "text" });
-        newPresetInput.placeholder = "Preset name...";
+        newPresetInput.placeholder = t("modal.color_picker.preset_placeholder");
         newPresetInput.setCssStyles({ flex: "1", fontSize: "0.85em", padding: "6px 10px", borderRadius: "6px", border: "1px solid var(--background-modifier-border)", background: "var(--background-primary)" });
         
-        const savePresetBtn = saveRow.createEl("button", { text: "Save style" });
+        const savePresetBtn = saveRow.createEl("button", { text: t("modal.color_picker.save_style") });
         savePresetBtn.setCssStyles({ padding: "6px 12px", fontSize: "0.8em", fontWeight: "600", color: "var(--text-on-accent)", background: "var(--interactive-accent)", borderRadius: "6px", border: "none", cursor: "pointer" });
         
         savePresetBtn.onclick = async () => {
@@ -1142,7 +1143,6 @@ modifiedFields: Set<string>;
             
             this.plugin.settings.presets[name] = finalStyle;
             await this.plugin.saveSettings();
-            new obsidian.Notice(`Saved preset: ${name}`);
             this.onOpen();
         };
 
@@ -1154,7 +1154,7 @@ modifiedFields: Set<string>;
             marginTop: "4px", gap: "8px"
         });
         const clearBtn = footer.createEl("button");
-        clearBtn.setText("Clear style");
+        clearBtn.setText(t("modal.color_picker.clear_style"));
         clearBtn.setCssStyles({
             padding: "7px 14px", borderRadius: "6px", cursor: "pointer", fontSize: "0.85em",
             border: "1px solid var(--background-modifier-border)",
@@ -1168,7 +1168,7 @@ modifiedFields: Set<string>;
             this.close();
         };
         const saveBtn = footer.createEl("button");
-        saveBtn.setText("Save style");
+        saveBtn.setText(t("modal.color_picker.save_style"));
         saveBtn.setCssStyles({
             padding: "7px 18px", borderRadius: "6px", cursor: "pointer", fontSize: "0.85em",
             fontWeight: "600", background: "var(--interactive-accent)",
