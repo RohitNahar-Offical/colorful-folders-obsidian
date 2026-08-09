@@ -307,6 +307,9 @@ export class StyleGenerator {
                     border-radius: 4px;
                     --nav-tag-background: var(--cf-tag-bg, rgba(${color.rgb}, 0.15)) !important;
                     --nav-tag-color: var(--cf-tag-color, ${textNative}) !important;
+                    --cf-active-bg: ${activeBg};
+                    --cf-active-color: ${activeText};
+                    --cf-active-rgb: ${color.rgb};
                 `;
 
                 let fileTextCss = `
@@ -504,48 +507,19 @@ export class StyleGenerator {
                             `.notebook-navigator .nn-navitem.cf-active-parent > .nn-virtual-container[data-path="${safePath}"]`
                         ]);
                     }
-                } else {
-                    grouper.add(`
-                        background-color: var(--cf-active-bg, ${activeBg}) !important;
-                        color: var(--cf-active-color, ${activeText}) !important;
-                        outline: 1px solid ${activeGlowEnabled ? `rgba(${color.rgb}, 0.3)` : "transparent"} !important;
-                        outline-offset: -1px !important;
-                        ${activeGlowEnabled ? (useGlass ? `
+                    if (activeGlowEnabled && useGlass) {
+                        grouper.add(`
+                            outline: 1px solid rgba(${color.rgb}, 0.3) !important;
+                            outline-offset: -1px !important;
                             backdrop-filter: blur(12px) saturate(160%) !important;
                             -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
                             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 4px 12px rgba(0,0,0,0.2) !important;
-                        ` : `
-                            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 2px 8px rgba(0,0,0,0.1) !important;
-                        `) : (useGlass ? `
-                            backdrop-filter: blur(12px) saturate(160%) !important;
-                            -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
-                            box-shadow: none !important;
-                        ` : `
-                            box-shadow: none !important;
-                        `)}
-                    `, [
-                        `body .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file)`,
-                        `body .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nn-file)`
-                    ]);
-
-                    // Notebook Navigator Active File Glow (Flat Slot)
-                    grouper.add(`
-                        background-color: var(--cf-active-bg, ${activeBg}) !important;
-                        color: var(--cf-active-color, ${activeText}) !important;
-                        border-left: ${activeFolderThick}px solid var(--cf-active-color, ${activeText}) !important;
-                        box-sizing: border-box !important;
-                        box-shadow: none !important;
-                        border-radius: 0 !important;
-                    `, [`${NotebookNavigatorIntegration.getScopedFileSelector(child.path)}.is-active`]);
-
-                    grouper.add(`
-                        background-color: var(--cf-active-color, ${activeText}) !important;
-                    `, [
-                        `body .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file)::before`,
-                        `body .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem)::before`
-                    ]);
+                        `, [
+                            `body .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file)`,
+                            `body .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nn-file)`
+                        ]);
+                    }
                 }
-                // Increment skipped as fileIndex is unused
             }
 
         // Folder logic — tint is emitted per-child inside the loop below (using child's own color)

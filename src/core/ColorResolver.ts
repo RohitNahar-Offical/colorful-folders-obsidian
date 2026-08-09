@@ -91,7 +91,8 @@ export class ColorResolver {
         } else if (mode === "hierarchy") {
             return palette[(d + cycleOffset) % len];
         } else {
-            return palette[(vIdx + d + rIdx + cycleOffset) % len];
+            const effectiveRIdx = d === 0 ? 0 : rIdx;
+            return palette[(vIdx + d + effectiveRIdx + cycleOffset) % len];
         }
     }
 

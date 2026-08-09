@@ -208,6 +208,36 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             margin-top: 2px !important;
             margin-bottom: 2px !important;
         }
+
+        /* Universal O(1) Active File Selection Styling */
+        body .nav-files-container .nav-file-title.is-active:not(.nn-file),
+        body .nav-files-container .tree-item-self.is-active:not(.nn-file),
+        body .notebook-navigator .is-active {
+            background-color: var(--cf-active-bg, var(--nav-item-background-active, rgba(var(--interactive-accent-rgb), 0.15))) !important;
+            color: var(--cf-active-color, var(--text-accent, var(--interactive-accent))) !important;
+            border-left: none !important;
+            border-radius: 6px !important;
+            --nav-item-background: var(--cf-active-bg, var(--nav-item-background-active));
+            ${settings.glassmorphism ? `
+                backdrop-filter: blur(12px) saturate(160%) !important;
+                -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+                box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+                outline: 1px solid rgba(var(--cf-active-rgb, var(--interactive-accent-rgb)), 0.3) !important;
+                outline-offset: -1px !important;
+            ` : ''}
+        }
+
+        body .nav-files-container .nav-file-title.is-active:not(.nn-file) .nav-file-title-content,
+        body .nav-files-container .tree-item-self.is-active:not(.nn-file) .tree-item-inner,
+        body .notebook-navigator .is-active .nn-navitem-name,
+        body .notebook-navigator .is-active .nn-file-name {
+            color: var(--cf-active-color, var(--text-accent, var(--interactive-accent))) !important;
+        }
+
+        body .nav-files-container .nav-file-title.is-active:not(.nn-file)::before,
+        body .nav-files-container .tree-item-self.is-active:not(.nn-file):not(.nn-navitem)::before {
+            background-color: var(--cf-active-color, var(--interactive-accent)) !important;
+        }
     `;
 }
 

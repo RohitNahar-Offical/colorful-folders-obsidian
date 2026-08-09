@@ -294,7 +294,6 @@ export class NotebookNavigatorIntegration {
 
         if (shouldColor) {
             grouper.add(`
-                background-color: transparent !important;
                 border-left: ${outlineOnly ? 0 : nnThick}px solid rgba(${color.rgb}, ${outlineOnly ? 0 : tintOp}) !important;
                 ${!outlineOnly ? 'padding-left: 4px !important;' : ''}
                 margin-left: 2px !important;
