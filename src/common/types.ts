@@ -1,5 +1,5 @@
 import { App, MenuItem, Menu, EventRef, Debouncer } from 'obsidian';
-import type { DOMObserverService } from '../services/DOMObserverService';
+import { DOMObserverService } from '../services/DOMObserverService';
 import type { IconManager } from '../core/IconManager';
 import type { AIIconClassifier } from '../integrations/AIIconClassifier';
 
@@ -191,10 +191,7 @@ export interface IColorfulFoldersPlugin {
         clean(): void;
         hasAnyDividers(): boolean;
     };
-    styleGenerator: {
-        generateCss(): Promise<string>;
-        getResolvedStyle(path: string): { bg?: string; textColor?: string; border?: string; activeBg?: string; activeText?: string } | null;
-    };
+    styleGenerator: { generateCss(): Promise<string> };
     domObserverService: DOMObserverService;
     getAllExplorerContainers(): HTMLElement[];
     invalidateExplorerContainersCache(): void;

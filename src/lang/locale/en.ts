@@ -485,8 +485,6 @@ export default {
     "notice.cleaned_stale_entries": "Cleaned up {{count}} stale style entries.",
     "notice.no_stale_entries": "No stale style entries found. Your configuration is clean!",
     "notice.blue_topaz_disabled": "Colorful Folders: Conflicting Blue Topaz theme settings in Style Settings have been automatically disabled.",
-    "settings.smart_connections.name": "Smart Connections compatibility mode",
-    "settings.smart_connections.desc": "Ensures style compatibility with Smart Connections panels.",
     "notice.preset_deleted": "Deleted preset: {{name}}",
     "notice.preset_saved": "Saved preset: {{name}}",
     "notice.style_cleared_for": "Cleared styling for {{name}}",

@@ -363,30 +363,16 @@ export default class ColorfulFoldersPlugin
       }
     });
 
-    const containers = this.getAllExplorerContainers();
-    if (containers.length > 0) {
-      containers.forEach((container) => {
-        if (win._testerObserver) {
-          win._testerObserver.observe(container, {
-            childList: true,
-            subtree: true,
-            attributes: true,
-            attributeFilter: ["style"],
-          });
-        }
-      });
-    } else {
-      this.getOpenDocuments().forEach((doc) => {
-        if (win._testerObserver) {
-          win._testerObserver.observe(doc.body, {
-            childList: true,
-            subtree: true,
-            attributes: true,
-            attributeFilter: ["style"],
-          });
-        }
-      });
-    }
+    this.getOpenDocuments().forEach((doc) => {
+      if (win._testerObserver) {
+        win._testerObserver.observe(doc.body, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          attributeFilter: ["style"],
+        });
+      }
+    });
   }
 
   onunload() {

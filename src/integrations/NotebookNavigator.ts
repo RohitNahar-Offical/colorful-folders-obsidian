@@ -169,7 +169,7 @@ export class NotebookNavigatorIntegration {
         activeText: string,
         isBold: boolean,
         isItalic: boolean,
-        shouldColor: boolean,
+        shouldColorBg: boolean,
         useGlass: boolean = false,
         tintOp: number = 0,
         baseThick: number = 2.0,
@@ -277,34 +277,32 @@ export class NotebookNavigatorIntegration {
                 transition: background-color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
                 margin-bottom: 2px !important;
             `, baseSels, `nnFolderBg_${color.hex}_${finalBgAlpha}_${finalBorderAlpha}_${tintOp}_${useGlass}`);
-        } else if (shouldColor) {
+        } else if (shouldColorBg) {
             const fileBg = outlineOnly ? Math.max(bgAlpha, 0.12) : Math.max(bgAlpha, 0.18);
             grouper.add(`
                 background-color: rgba(${color.rgb}, ${fileBg}) !important;
                 border-left: ${nnThick}px solid rgba(${color.rgb}, 0.6) !important;
                 opacity: 1.0 !important;
-                color: ${textCol} !important;
-                font-weight: ${isBold ? 'bold' : 'normal'} !important;
-                font-style: ${isItalic ? 'italic' : 'normal'} !important;
                 border-radius: 6px;
-                transition: background-color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, color 0.2s ease !important;
+                transition: background-color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
                 margin-bottom: 2px !important;
-            `, baseSels, `nnFileBg_${color.hex}_${fileBg}_${textCol}_${isBold}_${isItalic}`);
+            `, baseSels, `nnFileBg_${color.hex}_${fileBg}`);
         }
 
-        if (shouldColor) {
+        if (shouldColorBg) {
             grouper.add(`
                 border-left: ${outlineOnly ? 0 : nnThick}px solid rgba(${color.rgb}, ${outlineOnly ? 0 : tintOp}) !important;
                 ${!outlineOnly ? 'padding-left: 4px !important;' : ''}
                 margin-left: 2px !important;
             `, baseSels.map(b => `body ${b}`), `nnBase_${color.hex}_${outlineOnly}_${tintOp}`);
-
-            grouper.add(`
-                color: ${textCol} !important;
-                ${isBold ? 'font-weight: bold !important;' : ''}
-                ${isItalic ? 'font-style: italic !important;' : ''}
-            `, baseSels.flatMap(b => [`body ${b} ${nameSel}`, `body ${b} ${countSel}`]), `nnName_${textCol}_${isBold}_${isItalic}`);
         }
+
+        // Text & Title styling evaluated independently of background toggle
+        grouper.add(`
+            color: ${textCol} !important;
+            ${isBold ? 'font-weight: bold !important;' : ''}
+            ${isItalic ? 'font-style: italic !important;' : ''}
+        `, baseSels.flatMap(b => [`body ${b} ${nameSel}`, `body ${b} ${countSel}`]), `nnName_${textCol}_${isBold}_${isItalic}`);
 
         // Active / Selected Glow (Premium)
         const activeSel = `body .notebook-navigator .is-active[data-path="${safePath}"]`;
