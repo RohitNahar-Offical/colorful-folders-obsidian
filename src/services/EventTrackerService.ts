@@ -114,19 +114,18 @@ export class EventTrackerService {
     }
 
     private _doUpdateActiveFolderClasses() {
-        const containers = this.plugin.getAllExplorerContainers();
-        containers.forEach(container => {
-            const doc = container.ownerDocument;
-            // Remove active classes from previous items inside explorer container
-            const oldParents = container.querySelectorAll('.cf-active-parent, .cf-is-active');
+        const docs = this.plugin.getOpenDocuments();
+        docs.forEach(doc => {
+            // Remove from previously active elements
+            const oldParents = doc.querySelectorAll('.cf-active-parent, .cf-is-active');
             for (let i = 0; i < oldParents.length; i++) {
                 oldParents[i].classList.remove('cf-active-parent', 'cf-is-active');
             }
             
-            // Add to currently active elements inside explorer container
-            const activeItems = container.querySelectorAll('.is-active');
+            // Add to currently active elements
+            const activeItems = doc.querySelectorAll('.is-active');
             for (let i = 0; i < activeItems.length; i++) {
-                const item = activeItems[i] as HTMLElement;
+                const item = activeItems[i];
                 if (!item) continue;
 
                 const path = item.getAttribute('data-path') || '';

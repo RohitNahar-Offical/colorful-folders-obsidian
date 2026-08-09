@@ -358,7 +358,7 @@ export class StyleGenerator {
                     font-size: 10px !important;
                 `, fileTagSels, `fileTag_${color.hex}`);
 
-                if (NotebookNavigatorIntegration.isSupported(this.settings)) {
+                if (nnFileBgActive) {
                     const isEmoji = this.plugin.iconManager.isEmojiIcon(iconId);
                     const iconSvg = !isEmoji && iconId ? this.plugin.iconManager.getIconSvg(iconId, true) : "";
 
