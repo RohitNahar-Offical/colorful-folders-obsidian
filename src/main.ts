@@ -209,7 +209,7 @@ export default class ColorfulFoldersPlugin
     const adapter = this.app.vault.adapter;
     const results: string[] = [];
     if (!(await adapter.exists(dir))) return results;
-    
+
     const list = await adapter.list(dir);
     for (const file of list.files) {
       if (file.toLowerCase().endsWith('.svg')) {
@@ -244,7 +244,7 @@ export default class ColorfulFoldersPlugin
           const parts = relPath.split(/[/\\]/);
           const filename = parts[parts.length - 1].slice(0, -4);
           const lowerFilename = filename.toLowerCase();
-          
+
           const relNoExt = relPath.slice(0, -4);
           const hyphenated = relNoExt.toLowerCase().replace(/[\s_]+/g, '-').replace(/[/\\]/g, '-');
           this.localFileSystemIcons[hyphenated] = content;
@@ -824,26 +824,26 @@ export default class ColorfulFoldersPlugin
           const l = typeof iconData.left === 'number' ? iconData.left : 0;
           const t = typeof iconData.top === 'number' ? iconData.top : 0;
           const body = iconData.body;
-          
+
           if (!body || typeof body !== 'string') return false;
 
           const parser = new DOMParser();
           const doc = parser.parseFromString(`<svg xmlns="http://www.w3.org/2000/svg">${body}</svg>`, 'image/svg+xml');
           const dangerousTags = ['script', 'iframe', 'object', 'embed', 'foreignobject'];
           for (const tag of dangerousTags) {
-              doc.querySelectorAll(tag).forEach(el => el.remove());
+            doc.querySelectorAll(tag).forEach(el => el.remove());
           }
           doc.querySelectorAll('use').forEach(el => {
-              const href = (el.getAttribute('href') || el.getAttribute('xlink:href') || '').trim().toLowerCase();
-              if (href.startsWith('http') || href.startsWith('//') || href.startsWith('javascript:') || href.startsWith('data:')) {
-                  el.remove();
-              }
+            const href = (el.getAttribute('href') || el.getAttribute('xlink:href') || '').trim().toLowerCase();
+            if (href.startsWith('http') || href.startsWith('//') || href.startsWith('javascript:') || href.startsWith('data:')) {
+              el.remove();
+            }
           });
           doc.querySelectorAll('*').forEach(el => {
-              const attrs = Array.from(el.attributes);
-              for (const attr of attrs) {
-                  if (attr.name.startsWith('on')) el.removeAttribute(attr.name);
-              }
+            const attrs = Array.from(el.attributes);
+            for (const attr of attrs) {
+              if (attr.name.startsWith('on')) el.removeAttribute(attr.name);
+            }
           });
           const sanitizedSvg = doc.querySelector('svg');
           if (!sanitizedSvg) return false;

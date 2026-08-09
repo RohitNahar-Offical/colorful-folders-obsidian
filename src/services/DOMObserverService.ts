@@ -24,11 +24,11 @@ export class DOMObserverService {
                         const target = m.target as HTMLElement;
                         const oldClass = m.oldValue || '';
                         const newClass = typeof target.className === 'string' ? target.className : (target.getAttribute('class') || '');
-                        
+
                         if (oldClass === newClass) continue;
-                        
+
                         const relevantClasses = ['theme-dark', 'theme-light', 'cf-show-hidden', 'cf-wrap-metadata'];
-                        
+
                         const oldClasses = oldClass.split(/\s+/);
                         const newClasses = newClass.split(/\s+/);
 
@@ -43,7 +43,7 @@ export class DOMObserverService {
                         if (shouldRegenerate) break;
                     }
                 }
-                
+
                 if (shouldRegenerate) {
                     this.plugin.generateStylesDebounced?.();
                 }
@@ -92,7 +92,7 @@ export class DOMObserverService {
 
             if (
                 (container as HTMLElement & { cfHasScrollListener?: boolean })
-                  .cfHasScrollListener
+                    .cfHasScrollListener
             )
                 return;
             (container as HTMLElement & { cfHasScrollListener?: boolean }).cfHasScrollListener = true;
