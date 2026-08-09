@@ -71,6 +71,35 @@ export class DOMObserverService {
                 item.setAttribute('data-cf-path', path);
             }
         }
+        this.applyPerElementStyles(container);
+    }
+
+    /**
+     * Apply per-element CSS custom properties using Obsidian's setCssProps helper.
+     * This eliminates the need for 50,000+ per-path CSS attribute rules.
+     */
+    public applyPerElementStyles(container: HTMLElement) {
+        if (this.isScrolling) return;
+        const items = container.querySelectorAll<HTMLElement>('[data-cf-path]');
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            const path = item.getAttribute('data-cf-path');
+            if (!path) continue;
+
+            const style = this.plugin.styleGenerator?.getResolvedStyle(path);
+            if (!style) continue;
+
+            const cssProps: Record<string, string> = {};
+            if (style.bg) cssProps['--cf-bg'] = style.bg;
+            if (style.textColor) cssProps['--cf-color'] = style.textColor;
+            if (style.border) cssProps['--cf-border'] = style.border;
+            if (style.activeBg) cssProps['--cf-active-bg'] = style.activeBg;
+            if (style.activeText) cssProps['--cf-active-color'] = style.activeText;
+
+            if (Object.keys(cssProps).length > 0) {
+                item.setCssProps(cssProps);
+            }
+        }
     }
 
     initDividerObserver() {

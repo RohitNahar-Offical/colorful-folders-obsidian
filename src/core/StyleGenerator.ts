@@ -31,6 +31,70 @@ export class StyleGenerator {
     private _cachedPalette: { rgb: string, hex: string }[] | null = null;
     private _cachedPaletteKey = '';
 
+    public _resolvedStyleCache = new Map<string, { bg?: string; textColor?: string; border?: string; activeBg?: string; activeText?: string }>();
+
+    public clearResolvedStyleCache() {
+        this._resolvedStyleCache.clear();
+        this._pathEscapeCache.clear();
+        this._iconValidityCache.clear();
+    }
+
+    public getResolvedStyle(path: string): { bg?: string; textColor?: string; border?: string; activeBg?: string; activeText?: string } | null {
+        if (this._resolvedStyleCache.has(path)) {
+            return this._resolvedStyleCache.get(path) || null;
+        }
+
+        const fileStyle = this.getStyle(path);
+        const file = this.app.vault.getAbstractFileByPath(path);
+        const isFolder = file instanceof obsidian.TFolder;
+        
+        const context = this.prepareContext();
+        if (!context) return null;
+
+        const depth = path.split('/').length - 1;
+        const color = ColorResolver.resolveColor(
+            path,
+            file?.name || '',
+            !isFolder,
+            depth,
+            0,
+            0,
+            fileStyle,
+            null,
+            null,
+            this.settings.colorMode,
+            this.settings.cycleOffset || 0,
+            context.currentPalette,
+            file instanceof obsidian.TFile ? file.stat.mtime : Date.now(),
+            this.settings.globalBackgroundColor || "",
+            this.settings.autoColorFiles,
+            this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground,
+            this.settings.fileColorMode,
+            context.now
+        );
+
+        const res: { bg?: string; textColor?: string; border?: string; activeBg?: string; activeText?: string } = {};
+
+        if (color) {
+            const op = isFolder ? (this.settings.rootOpacity || 0.8) : (this.settings.fileBackgroundOpacity || 0.6);
+            if (this.settings.outlineOnly) {
+                res.border = `2px solid rgba(${color.rgb}, 0.8)`;
+            } else {
+                res.bg = `rgba(${color.rgb}, ${op})`;
+            }
+            if (color.hex && this.settings.colorText !== 'none') {
+                res.textColor = color.hex;
+            }
+        }
+
+        if (fileStyle?.textColor) {
+            res.textColor = fileStyle.textColor;
+        }
+
+        this._resolvedStyleCache.set(path, res);
+        return res;
+    }
+
     constructor(plugin: IColorfulFoldersPlugin) {
         this.plugin = plugin;
         this.settings = plugin.settings;
@@ -929,6 +993,7 @@ export class StyleGenerator {
 
     async generateCss(): Promise<string> {
         ColorResolver.clearCache();
+        this.clearResolvedStyleCache();
         const context = this.prepareContext();
         if (!context) return "";
 

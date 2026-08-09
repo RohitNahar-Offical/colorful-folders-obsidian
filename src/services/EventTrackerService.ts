@@ -116,14 +116,14 @@ export class EventTrackerService {
     private _doUpdateActiveFolderClasses() {
         const docs = this.plugin.getOpenDocuments();
         docs.forEach(doc => {
-            // Remove from previously active elements
-            const oldParents = doc.querySelectorAll('.cf-active-parent, .cf-is-active');
+            // Remove from previously active elements in file explorer
+            const oldParents = doc.querySelectorAll('.nav-files-container .cf-active-parent, .nav-files-container .cf-is-active, .notebook-navigator .cf-active-parent, .notebook-navigator .cf-is-active');
             for (let i = 0; i < oldParents.length; i++) {
                 oldParents[i].classList.remove('cf-active-parent', 'cf-is-active');
             }
             
-            // Add to currently active elements
-            const activeItems = doc.querySelectorAll('.is-active');
+            // Add to currently active elements in file explorer
+            const activeItems = doc.querySelectorAll('.nav-files-container .is-active, .notebook-navigator .is-active');
             for (let i = 0; i < activeItems.length; i++) {
                 const item = activeItems[i];
                 if (!item) continue;

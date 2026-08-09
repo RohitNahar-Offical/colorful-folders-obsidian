@@ -209,6 +209,22 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             margin-bottom: 2px !important;
         }
 
+        /* Universal O(1) Per-Element CSS Variable Rules */
+        body .nav-files-container [data-cf-path],
+        body .nav-folder-title[data-cf-path],
+        body .nav-file-title[data-cf-path],
+        body .tree-item-self[data-cf-path] {
+            background-color: var(--cf-bg, transparent) !important;
+            color: var(--cf-color, inherit) !important;
+            border-left: var(--cf-border, none) !important;
+        }
+
+        body .nav-files-container [data-cf-path] .nav-folder-title-content,
+        body .nav-files-container [data-cf-path] .nav-file-title-content,
+        body .nav-files-container [data-cf-path] .tree-item-inner {
+            color: var(--cf-color, inherit) !important;
+        }
+
         /* Universal O(1) Active File Selection Styling */
         body .nav-files-container .nav-file-title.is-active:not(.nn-file),
         body .nav-files-container .tree-item-self.is-active:not(.nn-file),
