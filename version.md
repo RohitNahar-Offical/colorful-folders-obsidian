@@ -1,6 +1,6 @@
 # Updates for Colorful Folders
 
-## 🚀 5.0.0 - 5.0.0 - Architectural Overhaul & New Features
+## 🚀 5.0.0 - Architectural Overhaul & New Features
 
 Welcome to **Colorful Folders 5.0.0**! This major update brings smart AI icon matching, blistering performance improvements for large vaults, and bulletproof stability with other Obsidian plugins.
 
