@@ -16,31 +16,34 @@ Colorful Folders does **NOT** inject physical DOM wrapper elements (`.cf-icon-wr
 
 ### The Rendering Pipeline
 
+### The Rendering Pipeline
+
 ```mermaid
 graph TD
-    A[User Action / Plugin Load] --> B{DOMObserverService / EventTrackerService}
+    A[User Action / Plugin Load] --> B{PluginLifecycleService}
     B -->|Attribute Stamping data-cf-path| C[Debouncer Trigger]
     C --> D[main.generateStyles]
     D --> E[StyleGenerator.prepareContext]
     E --> F[StyleGenerator.generateCss]
     F --> G1[BaseCssGenerator]
     F --> G2[ColorResolver]
-    F --> G3[FocusModeEngine.generateCss]
+    F --> G3[TagColorSync]
     G1 --> H[Recursive Traversal & Flat Rule Generation]
     G2 --> H
     G3 --> H
-    H --> I[Build CSS String with SVG Data URIs]
+    H --> I[Build Complete CSS String with SVG Data URIs]
     I --> J[AdoptedStyleSheetService.updateStyles]
     J --> K[sheet.replaceSync CSS String]
     K --> L[Native C++ CSS Reflow & Paint on all windows]
 ```
 
 ### The Pipeline Steps:
-1. **Attribute Tagging**: `DOMObserverService` stamps lightweight `data-cf-path="<path>"` dataset attributes on `.nav-folder-title`, `.nav-file-title`, and `.tree-item-self` elements. Because attribute updates do **not** trigger `childList` mutations, third-party observer race conditions are physically impossible.
-2. **State Resolution**: `StyleResolver.getEffectiveStyle(target, plugin)` calculates the visual state for every folder/file.
-3. **Flat Rule & Data URI CSS Generation**: `StyleGenerator.traverse()` builds flat CSS attribute rules (`.nav-folder-title[data-cf-path="..."]`). Custom SVGs and auto-icons are encoded into SVG Data URIs (`-webkit-mask-image: url("data:image/svg+xml;utf8,...")`) targeting `::before` pseudo-elements.
-4. **Programmatic Stylesheet Adoption**: `AdoptedStyleSheetService` updates the programmatic `CSSStyleSheet` instance via `sheet.replaceSync(css)`. The sheet is attached directly to `document.adoptedStyleSheets` across all workspace windows without creating `<style>` elements or overwriting other plugins' sheets.
-5. **Browser Execution**: The native browser CSS engine applies styles instantly with $O(1)$ overhead as items enter the viewport.
+1. **Lifecycle Orchestration**: `PluginLifecycleService` manages event listeners (`create`, `modify`, `delete`), document tracking across workspace windows, layout ready hooks, and teardown on unload.
+2. **Attribute Tagging**: `DOMObserverService` stamps lightweight `data-cf-path="<path>"` dataset attributes on `.nav-folder-title`, `.nav-file-title`, and `.tree-item-self` elements. Because attribute updates do **not** trigger `childList` mutations, third-party observer race conditions are physically impossible.
+3. **State Resolution**: `StyleResolver.getEffectiveStyle(target, plugin)` calculates the visual state for every folder/file using `FolderTrie` for $O(\text{depth})$ path inheritance queries.
+4. **Flat Rule & Data URI CSS Generation**: `StyleGenerator.traverse()` builds complete flat CSS attribute rules (`.nav-folder-title[data-cf-path="..."]`). Custom SVGs and auto-icons are encoded into SVG Data URIs (`-webkit-mask-image: url("data:image/svg+xml;utf8,...")`) targeting `::before` pseudo-elements.
+5. **Programmatic Stylesheet Adoption**: `AdoptedStyleSheetService` updates the programmatic `CSSStyleSheet` instance via `sheet.replaceSync(css)`. The sheet is attached directly to `document.adoptedStyleSheets` across all workspace windows without creating `<style>` elements or overwriting other plugins' sheets.
+6. **Browser Execution**: The native browser CSS engine applies styles instantly with $O(1)$ overhead as items enter the viewport.
 
 ---
 
@@ -48,18 +51,39 @@ graph TD
 
 All color, opacity, and text color math is centralized into `ColorResolver` (`src/core/ColorResolver.ts`).
 
-### 2.1 `ColorResolver.resolveColor(...)` — The Color Priority Chain
+### 2.1 `ColorResolver.resolveColor(...)` — The Color Priority Chain & Color Modes
 
-Every item's final color is determined by this priority chain:
+Every item's final color is determined by this priority chain and active `colorMode` (`cycle`, `monochromatic`, `hierarchy`, or `heatmap`):
 
 1. **Custom Style Override**: If the item's path has a `FolderStyle` with a `hex` value set, that color is used unconditionally.
 2. **Inherited Subfolder Color**: If an ancestor has `applyToSubfolders: true` AND a `passedColor` (the ancestor's resolved color) is available, that color is returned directly.
 3. **Inherited Subfolder Hex**: If inheritance is active but `passedColor` is not yet resolved, falls back to the ancestor's own `hex` value.
 4. **File Color** (when `isFile: true`):
+   - Evaluated according to `fileColorMode` (`hierarchy`, `folder_scope`, `parent`, `sequential`, `mixed`, or `none`).
    - If `applyToFiles` is active on the inherited style, applies a per-name ±5-channel RGB jitter to the parent color for subtle variation.
-   - If `autoColorFiles` or Notebook Navigator file-background is active, uses a hash of the filename against the palette.
+   - If `autoColorFiles` or Notebook Navigator file-background is active, resolves file background according to `fileColorMode`.
    - Otherwise, falls back to `globalBackgroundColor`.
-5. **Palette Cycle** (default for folders): Uses `(validIndex + depth + rootIndex + cycleOffset) % palette.length`.
+5. **Folder Color Generation Modes**:
+   - **`hierarchy` (Hierarchy Level Mode)**: Each folder level's color is strictly determined by its nesting depth in the tree (`palette[(depth + cycleOffset) % palette.length]`). Uses `getFastFolderScopeDepth()` / `getFastPathSlashes()` for $O(1)$ zero-allocation depth calculations.
+   - **`cycle` (Sequential Mode)**: Uses `(validIndex + depth + rootIndex + cycleOffset) % palette.length`.
+   - **`monochromatic`**: Root folders pick sequential colors, and subfolders inherit their root folder's base color tint.
+   - **`heatmap`**: Colors items based on modification age (`heatmapMtime`).
+
+#### ⚡ Performance Optimization: Fast Path Slash Counting
+To compute hierarchy depth without heap allocations or string splitting, `ColorResolver` uses a fast-path character scanner `getFastPathSlashes(path: string)`:
+```typescript
+export function getFastPathSlashes(path: string): number {
+    let slashes = 0;
+    const len = path.length;
+    for (let i = 0; i < len; i++) {
+        if (path.charCodeAt(i) === 47) { // '/' = 47
+            slashes++;
+        }
+    }
+    return slashes;
+}
+```
+This avoids `path.split('/')` array allocations entirely, executing in $O(\text{path.length})$ CPU cycles with **0 bytes of memory allocations**.
 
 ```mermaid
 graph TD
@@ -140,35 +164,82 @@ graph TD
     A[getAutoIconData name] --> B[Sanitize: Lowercase & Strip File Extensions]
     B --> C{Tier 1: Exact Pack Match}
     C -- Match --> Z1[Return Tier 1: Priority 1800 + packSource]
-    C -- Miss --> D{Tier 2 & 3: CategoryTrie Lookup}
+    C -- Miss --> D{Tier 2 & 3: Priority CategoryTrie Lookup}
     D --> E[Collect Candidates for ALL Word Prefixes]
-    E --> F[Test Candidate Regexes]
-    F -- Match --> Z2[Return Tier 2/3: Priority 1500/85 + packSource]
+    E --> F[Evaluate Regex Patterns & Sort by Priority]
+    F -- Match --> Z2[Return Highest Priority Category Match]
     F -- Miss --> G{Tier 4: Stem-Aware Fuzzy Search}
     G --> H[Filter Words via STOP_WORDS]
     H --> I[Strip Suffixes via stemWord]
     I --> J[Query IconPackIndex Right-to-Left]
     J -- Match --> Z3[Return Tier 4: Priority 50 + packSource]
-    J -- Miss --> Z4[Return Null -> Fallback to Default Icon]
+    J -- Miss --> K{Tier 5: Sentence & Concept Palette Hash}
+    K --> Z4[Return Hash-Picked Concept / Sentence Icon]
 ```
 
 1. **Tier 1: Exact Pack Match (Priority 1800)**
    - Hyphenates the sanitized name (`"my_project.md"` $\rightarrow$ `"my-project"`).
    - Performs $O(1)$ query via `IconPackIndex.findIcon()`. Returns exact matching custom SVG or installed pack icon.
 
-2. **Tier 2 & 3: Custom Regex Rules & Category Trie (Priority 1500 & 80–110)**
-   - Queries `CategoryTrie.lookup(lName)` which collects candidate rules for the initial characters of **every word** in the title.
-   - Evaluates custom user regex rules first (Tier 2, Priority 1500), then built-in `AUTO_ICON_CATEGORIES` (Tier 3, Priority 80–110).
-   - If `autoIconVariety` is enabled, hashes `hashString(name)` against the category's `emojis` / `lucides` array to pick diverse icons.
+2. **Tier 2 & 3: Custom Regex Rules & Priority-Sorted Category Trie (Priority 1500 & 80–140)**
+   - Queries `CategoryTrie.lookup(lName)` traversing a Node-based Prefix Trie (`TrieNode`) matching tokenized word prefixes.
+   - All candidate category results are explicitly sorted by descending priority: `results.sort((a, b) => (b.priority || 0) - (a.priority || 0))`.
+   - **Whole-Title & Mental Model Categories (Priority 110–140)**: Evaluates high-priority whole-title concept regexes before single-word categories:
+     - **Ideation & Brainstorming** (Priority 140): `generate ideas`, `ideation`, `brainstorm` $\rightarrow$ `lightbulb`, `brain`, `sparkles`
+     - **Mental Models & Growth** (Priority 130): `higher-order` (`layers`), `underestimate` (`hourglass`), `remember/mnemonic` (`brain`), `wu wei` (`sparkles`), `yin and yang` (`scale`), `vulnerability` (`heart`), `trust the process` (`compass`, `trending-up`), `use it or lose it` (`repeat`, `flame`)
+     - **Habits & Routines** (Priority 125): `words...habits`, `habit` $\rightarrow$ `repeat`, `calendar-check`, `target`
+     - **Narratives & Philosophy** (Priority 110–115): `quote`, `saying`, `journey`, `wander`, `story`, `agony` $\rightarrow$ `quote`, `compass`, `pen-tool`, `heart`
+   - If `autoIconVariety` is enabled, hashes `hashString(name)` against the top matching category's `emojis` / `lucides` array to pick diverse icons.
 
-3. **Tier 4: Stem-Aware Fuzzy Search (Priority 50)**
-   - Tokenizes filename into words, filtering out question words, auxiliary verbs, and filler nouns via `STOP_WORDS`.
-   - Strips suffixes (`-ing`, `-ed`, `-es`, `-s`) using `stemWord()`.
-   - Queries multi-word pairs (`"word1-word2"`) and single words from **right to left** to give priority to main subject nouns over leading filler terms.
+3. **Tier 4: Stem-Aware Optimized Fuzzy Search (Priority 50)**
+   - Executes fast-path O(1) query via `IconPackIndex.findIcon()`.
+   - Performs length-difference pruning (`Math.abs(lenA - lenB) / maxLen > (1 - threshold)`).
+   - Enforces word-boundary / prefix alignment checks to prevent false substring matches (e.g. "cat" inside "communication-category").
+   - Calculates Levenshtein distance using a 1D single-row buffer to eliminate 2D array allocations.
+
+4. **Tier 5: Multi-Word Sentence & Concept Palette Fallbacks (Priority 30)**
+   - For multi-word file titles (`!isFolder && title.includes(' ') && length > 12`), hashes `hashString(filename)` across a curated **Sentence Palette** (`['compass', 'sparkles', 'lightbulb', 'quote', 'brain', 'pen-tool', 'book-open', 'repeat', 'heart', 'star']`).
+   - For single-word file titles without category matches, hashes across a **Concept Palette** (`['sparkles', 'compass', 'pen-tool', 'lightbulb', 'brain', 'star', 'book-open', 'layers']`).
 
 ---
 
-### 3.3 Pack Priority & Tie-Breaking (`PACK_PRIORITY`)
+### 3.4 AI-Powered Icon Classification Service (`AIIconClassifier.ts`)
+
+For intelligent, context-aware icon assignment across entire vaults, `AIIconClassifier` operates as an instance service (`plugin.aiIconClassifier`) coordinating LLM providers with `IconRepository`:
+
+```mermaid
+graph TD
+    A[User Triggers AI Auto-Assign] --> B{Check aiKeyConfirmed Privacy Consent}
+    B -- Confirmed --> C[Collect Vault Folders & Markdown Files]
+    C --> D[Construct item_path & Context Payload]
+    D --> E[Sample Installed Icon Packs & Build Category System Prompt]
+    E --> F{Dispatch Provider queryGemini / queryClaude / queryOllama / queryOpenAI}
+    F --> G[Receive LLM Response]
+    G --> H[Pre-Sanitize => Arrow Notation & Strip Thinking Fences]
+    H --> I[Parse JSON & Recursively Flatten Nested Group Maps]
+    I --> J[Flexible Target Resolution: Match Path / Title / Subpath]
+    J --> K[Resolve Smart Icon via IconRepository.findIconInPacks]
+    K --> L[Save Matched iconId to customFolderColors in data.json]
+    L --> M[Trigger plugin.generateStyles Stylesheet Update]
+```
+
+#### How AI Icon Assignment Works:
+1. **Scope Selection & Payload**: Collects all vault folders and (if `aiIncludeFiles: true`) `.md` files, creating a clean `item_path` payload alongside tags, frontmatter, and content snippets.
+2. **Whole-Title Semantic Analysis & Item Differentiation (System Prompt)**:
+   - **`WHOLE-TITLE SEMANTIC ANALYSIS RULE`**: Instructs the LLM to evaluate multi-word titles, phrases, idioms, mental models, quotes, or philosophical concepts (e.g. *"Trust the process"*, *"Use it or Lose it"*, *"Vulnerability"*, *"Wu wei"*) **as a unified concept/mindset**.
+   - Strictly forbids isolating individual words out of context (e.g., prevents assigning construction/wrench icons for "process" in *"Trust the process"*).
+   - Instructs the AI model to output an array of 3 candidate icon names per item (`[Candidate 1: Specific/Brand, Candidate 2: Single-Word Visual, Candidate 3: General Fallback]`). Enforces structural container fallbacks for folders (`folder-code`, `layers`, `archive`, `folder`) and document fallbacks for files (`code`, `book`, `file-text`).
+3. **Multi-Syntax Resilient Parsing**:
+   - Pre-sanitizes non-standard `=>` and `->` arrow notation into standard JSON colons (`:`).
+   - Strips `<think>` tags and markdown codeblocks via `parseJsonResponse()`.
+   - Recursively flattens nested group/category maps (`unwrapOuterJsonObject`).
+4. **Flexible Target Resolution**: Matches returned JSON keys against `batchTargets` via full path (`"x/x/Atlas.md"`), normalized path (`normalizePathKey`), filename/title (`"Atlas"`), or trailing path segment (`".../atlas"`).
+5. **Sequential Candidate Evaluation & Tier Logging**: Iterates through candidates (`cand1` $\rightarrow$ `cand2` $\rightarrow$ `cand3`), validating against installed icon packs (`simple-icons`, `feather`, `remix`, `tabler`, `octicon`, `fa`, `lucide`) via `resolveSmartIcon`. Stops at the first installed icon, logs candidate tier wins in console, and falls back to native auto-icons if unmatched.
+6. **Persistence & Instant Render**: Stores resolved `iconId` directly in `settings.customFolderColors[path].iconId`, calls `saveSettings()`, and updates document stylesheets immediately via `generateStyles()`.
+
+---
+
+### 3.5 Pack Priority & Tie-Breaking (`PACK_PRIORITY`)
 
 When suffix matches overlap across multiple installed packs (e.g. `github` in `simple-icons` vs `feather`), `IconPackIndex` breaks ties at index-build time using `PACK_PRIORITY`:
 
@@ -211,3 +282,92 @@ All SVG transformations and resolutions run through bounded $O(1)$ `LRUCache(204
 - Attaches cleanly to `document.adoptedStyleSheets` for all active workspace windows on load without overwriting existing sheets (`doc.adoptedStyleSheets = [...doc.adoptedStyleSheets, this.sheet]`).
 - Updates styles synchronously via `updateStyles(cssString)` -> `sheet.replaceSync(cssString)`.
 - Detaches cleanly from `adoptedStyleSheets` in `onunload()`.
+
+---
+
+## 6. Vector Embedding Classification Engine
+
+The plugin includes an **offline-capable vector classification engine** operating independently of the LLM-based `AIIconClassifier`. It matches vault folder/file names to icon concepts using sparse and dense vector representations.
+
+### 6.1 Engine Selection
+
+Configured via `settings.embeddingEngine`:
+- `"builtin"` — Uses the **zero-dependency built-in local vector model** (0mb download, embedded at compile time). Achieves <5ms per item classification using token weights, character 3-grams, and TF-IDF domain hints.
+- `"custom"` — Delegates to a **local neural embedding model** (e.g. `bge-m3` via Ollama or a local OpenAI-compatible embedding API) for high semantic density.
+
+### 6.2 Dense Neural Cosine Similarity & Concept Mapping (`findBestIconsDense`)
+
+When custom neural embeddings are active:
+1. **Multi-Endpoint HTTP Resiliency**: Automatically attempts `/api/embeddings`, `/api/embed`, and `/v1/embeddings` API routes with appropriate payloads (`{ model, prompt }` vs `{ model, input }`).
+2. **Dense Concept Scoring (`DENSE_CONCEPTS`)**: Computes cosine similarity between the item's dense vector and predefined concept prompts (`quotes_wisdom`, `stories_writing`, `journey_voyage`, `imagination_vision`, `emotions_heart`, `coding`, `finance`, `tasks`, etc.).
+3. **Rank Weighting & Context Boost**: Scales scores by candidate rank (`1.0 - idx * 0.1`) and applies `applyContextBoost` to reward filename/folder context alignment.
+
+```mermaid
+graph TD
+    A[User triggers vector auto-assign] --> B{embeddingEngine setting}
+    B -- builtin --> C[BuiltinVectorEngine.findBestIcons]
+    B -- custom --> D[fetchNeuralEmbedding via Multi-Endpoint HTTP]
+    D --> E[findBestIconsDense: Cosine Similarity vs DENSE_CONCEPTS]
+    C --> F[Sparse TF-IDF / 3-Gram Vector Cosine Matching]
+    E --> G[Apply Rank Weighting & applyContextBoost]
+    F --> G
+    G --> H{Score Threshold Met?}
+    H -- Yes --> I[Rank Top K Matches & Assign High/Med Confidence]
+    H -- No --> J[Fallback to Multi-Word Sentence or Concept Palette Hash]
+    I --> K[Save iconId to customFolderColors & Call generateStyles]
+    J --> K
+```
+
+### 6.3 Sentence & Concept Palette Deterministic Fallbacks
+
+When vector similarity falls below the confidence threshold:
+- **Multi-Word Sentence Titles** (`!isFolder && title.includes(' ') && length > 12`): Hashes the title across a curated **Sentence Palette** (`['compass', 'sparkles', 'lightbulb', 'quote', 'brain', 'pen-tool', 'book-open', 'repeat', 'heart', 'star']`).
+- **Single-Word Concept Titles**: Hashes across a curated **Concept Palette** (`['sparkles', 'compass', 'pen-tool', 'lightbulb', 'brain', 'star', 'book-open', 'layers']`).
+
+### 6.4 Notices & Progress
+
+The engine reports progress via localized notices (`t("notice.vector_scanning")`, `t("notice.vector_progress")`, `t("notice.vector_success")`, `t("notice.vector_error")`). The button text in `AISettingSection.ts` dynamically updates from `t("settings.ai.btn_vector_auto_assign")` $\rightarrow$ `t("settings.ai.btn_vector_progress", { pct, completed, total })` during scanning.
+
+---
+
+## 7. Internationalization (i18n) Architecture
+
+All user-facing strings across every setting panel, modal, notice, and tooltip are served through a **compile-time typed localization system**.
+
+### 7.1 Key Components
+
+| File | Role |
+|:---|:---|
+| `src/lang/helpers.ts` | `t()` translation function, `getLanguage()` detection, `localeMap` registry |
+| `src/lang/locale/en.ts` | **Source of truth** — 624+ keys, all typed `as const` |
+| `src/lang/locale/sk.ts` | Slovak (full coverage) |
+| `src/lang/locale/de.ts` | German (full coverage) |
+| `src/lang/locale/es.ts` | Spanish (full coverage) |
+| `src/lang/locale/fr.ts` | French (full coverage) |
+| `src/lang/locale/ja.ts` | Japanese (full coverage) |
+| `src/lang/locale/zh-cn.ts` | Simplified Chinese (full coverage) |
+| `src/lang/locale/zh-tw.ts` | Traditional Chinese / HK (full coverage) |
+
+### 7.2 Type Safety Mechanism
+
+```typescript
+// TranslationKey is automatically derived from en.ts
+export type TranslationKey = keyof typeof en;
+
+// t() is strictly typed — wrong keys are caught at compile time
+export function t(key: TranslationKey, vars?: Record<string, string | number>): string
+```
+
+Passing a string that is not a key in `en.ts` produces a TypeScript error at the `t()` call site — **no runtime surprises, no silent mismatches**.
+
+### 7.3 Variable Interpolation
+
+Template variables use `{{name}}` syntax:
+
+```typescript
+t("notice.vector_progress", { engineName: "Built-in", pct: 42, completed: 420, total: 1000 })
+// → "⏳ Built-in: 42% (420/1000 items processed)..."
+```
+
+For full documentation: [`docs/LOCALIZATION.md`](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/LOCALIZATION.md).
+

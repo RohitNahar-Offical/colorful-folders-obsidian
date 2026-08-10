@@ -16,8 +16,10 @@ export class ChangelogModal extends obsidian.Modal {
         contentEl.addClass("cf-changelog-modal");
         
         modalEl.setCssStyles({
-            width: "800px",
-            maxWidth: "90vw"
+            maxWidth: "800px",
+            width: "min(800px, 92vw)",
+            maxHeight: "88vh",
+            overflowY: "auto"
         });
 
         // Premium styling
@@ -40,7 +42,7 @@ export class ChangelogModal extends obsidian.Modal {
         });
         this.renderComponent.load();
         obsidian.MarkdownRenderer.render(this.app, this.content, body, "", this.renderComponent).catch(err => {
-            console.error("Failed to render changelog markdown", err);
+            console.error("Failed to render changelog markdown", err as Error);
         });
 
         const footer = contentEl.createDiv({ cls: "cf-changelog-footer" });

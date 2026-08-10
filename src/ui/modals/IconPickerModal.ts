@@ -19,7 +19,9 @@ export class IconPickerModal extends obsidian.Modal {
         contentEl.empty();
         modalEl.setCssStyles({
             maxWidth: "520px",
-            width: "90vw",
+            width: "min(520px, 92vw)",
+            maxHeight: "88vh",
+            overflowY: "auto",
             borderRadius: "12px"
         });
 
@@ -76,7 +78,10 @@ export class IconPickerModal extends obsidian.Modal {
             backgroundColor: "var(--background-secondary)", color: "var(--text-normal)", fontSize: "0.9em"
         });
         Array.from(prefixes).sort().forEach(p => {
-            const opt = filterSelect.createEl("option", { text: p === 'all' ? t("settings.option.all_packs") : p.toUpperCase(), value: p });
+            let label = p.toUpperCase();
+            if (p === 'all') label = t("settings.option.all_packs");
+            else if (p === 'lucide') label = "✨ Obsidian Official (Lucide)";
+            const opt = filterSelect.createEl("option", { text: label, value: p });
             if (p === 'all') opt.selected = true;
         });
 
@@ -90,9 +95,10 @@ export class IconPickerModal extends obsidian.Modal {
             backgroundColor: "rgba(0,0,0,0.05)"
         });
 
-        const lucideIcons = (obsidian.getIconIds ? obsidian.getIconIds() : [])
-            .filter(id => id.startsWith('lucide-'))
-            .map(id => id.replace('lucide-', ''));
+        const lucideRaw = obsidian.getIconIds ? obsidian.getIconIds() : [];
+        const lucideIcons = Array.from(new Set(
+            lucideRaw.map(id => id.replace(/^lucide-/, ''))
+        )).filter(id => id.length > 0 && !id.includes(':'));
         
         const allIcons = Array.from(new Set([...customIds, ...localIds, ...lucideIcons]));
 
@@ -140,8 +146,7 @@ export class IconPickerModal extends obsidian.Modal {
                             svgEl.removeAttribute("height");
                             (svgEl as unknown as HTMLElement).setCssStyles({
                                 width: "24px", height: "24px",
-                                color: isSelected ? "white" : "var(--text-normal)",
-                                fill: "currentColor"
+                                color: isSelected ? "white" : "var(--text-normal)"
                             });
                             cell.appendChild(svgEl);
                         }

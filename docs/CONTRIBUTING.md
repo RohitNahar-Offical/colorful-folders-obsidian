@@ -67,12 +67,14 @@ To add a featured pack (like "Remix Icons"):
 
 | File | Responsibility |
 | :--- | :--- |
-| `main.ts` | Orchestrator & Plugin instance |
-| `DOMObserverService.ts` | UI layout observation (file explorer) & DOM mutations |
-| `EventTrackerService.ts` | Workspace/Vault event registration and cleanup |
+| `main.ts` | Plugin entry point & settings lifecycle orchestrator |
+| `PluginLifecycleService.ts` | Document tracking, window listeners, vault events, & unload cleanup |
+| `DOMObserverService.ts` | UI layout observation (file explorer) & DOM attribute tagging |
+| `EventTrackerService.ts` | Active file navigation & drag-and-drop event listeners |
+| `AdoptedStyleSheetService.ts` | Multi-window `document.adoptedStyleSheets` CSS manager |
 | `StyleGenerator.ts` | Recursive CSS engine & traversal |
 | `ColorResolver.ts` | Core mathematical colors, opacity, and text contrast resolving |
-| `StyleResolver.ts` | High-level `EffectiveStyle` compilation and customized overrides helper |
+| `StyleResolver.ts` | High-level `EffectiveStyle` compilation & `FolderTrie` path lookup helper |
 | `BaseCssGenerator.ts` | Renders base global base, interactive dividers, and stealth CSS properties |
 | `VaultUtils.ts` | Pure functions for Vault traversal caches and item counting |
 | `IconRepository.ts` | Core 4-tier icon resolution engine, stemming, and LRU cache coordinator |
@@ -80,6 +82,7 @@ To add a featured pack (like "Remix Icons"):
 | `CategoryTrie.ts` | Multi-word initial character prefix candidate trie for category rules |
 | `LRUCache.ts` | Bounded $O(1)$ Least-Recently-Used cache with `Map` key reordering |
 | `IconManager.ts` | Rendering facade & SVG normalization |
+| `AIIconClassifier.ts` | LLM context-aware classification & candidate synonym matcher |
 | `DividerManager.ts` | DOM reconciliation for dividers |
 | `ColorPickerModal.ts` | Primary manual styling UI |
 | `DividerModal.ts` | Divider & section configuration |

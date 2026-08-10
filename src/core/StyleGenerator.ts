@@ -1,6 +1,6 @@
-import { ColorfulFoldersSettings, FolderStyle, IColorfulFoldersPlugin, StyleContext } from '../common/types';
+import { AutoIconData, ColorfulFoldersSettings, FolderStyle, IColorfulFoldersPlugin, StyleContext } from '../common/types';
 import { PALETTES, CF_FOLDER_CLOSED, CF_FOLDER_OPEN } from '../common/constants';
-import { hexToRgbObj, adjustBrightnessRgb, safeEscape } from '../common/utils';
+import { hexToRgbObj, safeEscape } from '../common/utils';
 import * as obsidian from 'obsidian';
 import { NotebookNavigatorIntegration } from '../integrations/NotebookNavigator';
 import { TagColorSync } from '../integrations/TagColorSync';
@@ -9,22 +9,24 @@ import { countItems } from '../common/VaultUtils';
 import { isDarkMode, getCurrentPalette, ColorResolver } from './ColorResolver';
 import { generateGlobalBaseCss, generateDividerCss, generateStealthCss } from './BaseCssGenerator';
 import { CssGrouper } from './CssGrouper';
-
-
+import { StyleResolver } from './StyleResolver';
+import { RainbowManager } from './RainbowManager';
 
 export class StyleGenerator {
     plugin: IColorfulFoldersPlugin;
     settings: ColorfulFoldersSettings;
     app: obsidian.App;
 
-    // PERF FIX 3: Cache for the counter SVG template.
-    // The static SVG structure is pre-encoded once per unique color.
-    // Only the two count numbers are substituted per folder, saving
-    // encodeURIComponent() + regex replacements from running per-folder per-render.
-    private _counterSvgColor = '';
-    private _counterSvgPrefix = '';
-    private _counterSvgMid = '';
-    private _counterSvgSuffix = '';
+    private static readonly CF_FILE_TEXT_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px; opacity: 0.85;"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+    private static readonly SPACED_TEXT_CSS = `
+        letter-spacing: 1px !important;
+        word-spacing: 2px !important;
+    `;
+
+    private _pathEscapeCache = new Map<string, string>();
+    private _cachedGlobalBaseCss: { key: string; css: string } | null = null;
+    private _cachedDividerCss: { key: string; css: string } | null = null;
+    private _cachedStealthCss: { key: string; css: string } | null = null;
 
     private _cachedPalette: { rgb: string, hex: string }[] | null = null;
     private _cachedPaletteKey = '';
@@ -39,14 +41,33 @@ export class StyleGenerator {
         }
     }
 
+    private getSafeEscape(path: string): string {
+        let escaped = this._pathEscapeCache.get(path);
+        if (escaped === undefined) {
+            escaped = safeEscape(path);
+            this._pathEscapeCache.set(path, escaped);
+        }
+        return escaped;
+    }
 
+    private isValidIconStr(id: string | null | undefined): boolean {
+        if (!id) return false;
+        return this.plugin.iconManager.isValidIcon(id);
+    }
 
-
-
-
-
-
-
+    private resolveAutoIconCandidate(data: AutoIconData | null): string {
+        if (!data) return "";
+        if (this.settings.wideAutoIcons) {
+            if (data.lucide && this.isValidIconStr(data.lucide)) return data.lucide;
+            if (data.emoji) return data.emoji;
+            if (data.lucide) return data.lucide;
+        } else {
+            if (data.emoji) return data.emoji;
+            if (data.lucide && this.isValidIconStr(data.lucide)) return data.lucide;
+            if (data.lucide) return data.lucide;
+        }
+        return "";
+    }
 
     private prepareContext(): StyleContext | null {
         const root = this.app.vault.getRoot();
@@ -61,7 +82,7 @@ export class StyleGenerator {
         const wideScale = this.settings.wideAutoIcons ? 1.05 : 1.0;
         const folderIconW = `calc(1.3em * ${iconScale * wideScale})`;
         const effFileIconW = `calc(1.3em * ${iconScale * wideScale})`;
-        const nnIconScale = this.settings.notebookNavigatorIconScale ?? 0.8;
+        const nnIconScale = this.settings.notebookNavigatorIconScale ?? 1.0;
         const nnIconW = `calc(1.1em * ${nnIconScale * wideScale})`;
 
         const cpRes = getCurrentPalette(this.settings, this._cachedPalette, this._cachedPaletteKey);
@@ -117,10 +138,7 @@ export class StyleGenerator {
 
 
     getStyle(path: string): FolderStyle | null {
-        const style = this.settings.customFolderColors[path];
-        if (!style) return null;
-        if (typeof style === 'string') return { hex: style };
-        return style;
+        return StyleResolver.getStyle(this.plugin, path);
     }
 
 
@@ -158,37 +176,28 @@ export class StyleGenerator {
         const outlineOnly = this.settings.outlineOnly;
         const nnFileBgActive = NotebookNavigatorIntegration.showFileBg(this.settings);
         const tintOp = this.settings.tintOpacity;
-        const autoColorFiles = this.settings.autoColorFiles;
+        const autoColorFiles = outlineOnly ? false : this.settings.autoColorFiles;
         const autoIcons = this.settings.autoIcons;
         const baseThick = this.settings.pathLineThickness ?? 2.0;
         const folderThick = baseThick + 0.5;
         const activeFolderThick = baseThick + 2.0;
-        const CF_FILE_TEXT_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px; opacity: 0.85;"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`;
-
-        const SPACED_TEXT_CSS = `
-            letter-spacing: 1px !important;
-            word-spacing: 2px !important;
-        `;
-        const extraTypographyCssFiles = (this.settings.spacedTextMode === 'both' || this.settings.spacedTextMode === 'files') ? SPACED_TEXT_CSS : '';
-        const extraTypographyCssFolders = (this.settings.spacedTextMode === 'both' || this.settings.spacedTextMode === 'folders') ? SPACED_TEXT_CSS : '';
+        const CF_FILE_TEXT_ICON = StyleGenerator.CF_FILE_TEXT_ICON;
+        const extraTypographyCssFiles = (this.settings.spacedTextMode === 'both' || this.settings.spacedTextMode === 'files') ? StyleGenerator.SPACED_TEXT_CSS : '';
+        const extraTypographyCssFolders = (this.settings.spacedTextMode === 'both' || this.settings.spacedTextMode === 'folders') ? StyleGenerator.SPACED_TEXT_CSS : '';
 
         // Process Files
-        // Gate: process files if there's a parent color (applyToSubfolders), autoColorFiles, autoIcons, applyToFiles on the inheritedStyle, or NN is active.
-        if (passedColor || autoColorFiles || autoIcons || (inheritedStyle && inheritedStyle.applyToFiles) || (this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground)) {
-
-            for (const child of copyFiles) {
+        for (const child of copyFiles) {
                 const fileStyle = this.getStyle(child.path);
-                const hasCustomStyle = !!(fileStyle && (fileStyle.hex || fileStyle.iconId || fileStyle.textColor || fileStyle.isBold || fileStyle.isItalic));
+                const hasCustomStyle = !!(fileStyle && (fileStyle.hex || fileStyle.iconId || fileStyle.iconColor || fileStyle.textColor || fileStyle.textGradient || fileStyle.isBold || fileStyle.isItalic));
                 const hasInherited = !!(inheritedStyle && inheritedStyle.applyToFiles);
-                const needsProcessing = hasCustomStyle || hasInherited || autoColorFiles || autoIcons || (passedColor !== null) || (this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground) || !!this.settings.globalBackgroundColor;
+                const isColorTextActive = this.settings.colorText !== 'none' && this.settings.colorText !== false;
+                const needsProcessing = hasCustomStyle || hasInherited || autoColorFiles || autoIcons || isColorTextActive || (passedColor !== null) || (this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground) || !!this.settings.globalBackgroundColor;
 
                 if (!needsProcessing) {
                     continue;
                 }
 
-
-
-                const safePath = safeEscape(child.path);
+                const safePath = this.getSafeEscape(child.path);
                 const parentName = child.parent?.name;
                 const isFolderNote = !!(parentName && (child.basename === parentName || child.basename === 'index' || child.basename === '_about_'));
                 const color = ColorResolver.resolveColor(
@@ -207,13 +216,14 @@ export class StyleGenerator {
                     child.stat.mtime,
                     this.settings.globalBackgroundColor || "",
                     this.settings.autoColorFiles,
-                    this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground
+                    this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground,
+                    this.settings.fileColorMode,
+                    context.now
                 );
 
-                // isCustomOrInherited: true when file has a custom style, or a parent explicitly set applyToFiles
-                const isCustomOrInherited = !!(fileStyle && fileStyle.hex) || (!!(inheritedStyle && inheritedStyle.applyToFiles) && this.settings.autoColorFiles);
-                const shouldColorNative = isCustomOrInherited || this.settings.autoColorFiles || !!this.settings.globalBackgroundColor;
-                const shouldColorNN = isCustomOrInherited || (this.settings.notebookNavigatorSupport && this.settings.notebookNavigatorFileBackground);
+                const hasExplicitFileOpacity = fileStyle?.opacity !== undefined && fileStyle.opacity > 0;
+                const shouldColorNative = this.settings.autoColorFiles || hasExplicitFileOpacity;
+                const shouldColorNN = this.settings.notebookNavigatorSupport && (this.settings.notebookNavigatorFileBackground || hasExplicitFileOpacity);
 
                 const activeStyle = fileStyle || (inheritedStyle && inheritedStyle.applyToFiles ? inheritedStyle : null);
                 const iconColor = fileStyle?.iconColor || (inheritedStyle?.applyToFiles && inheritedStyle.iconColor) || null;
@@ -232,8 +242,19 @@ export class StyleGenerator {
                     isDark
                 );
 
-                const autoIconFile = (this.settings.autoIcons && !fileStyle?.iconId && !(inheritedStyle?.applyToFiles && inheritedStyle?.iconId)) ? this.plugin.iconManager.getAutoIconData(child.name, child.path) : null;
-                const iconId = fileStyle?.iconId || (inheritedStyle?.applyToFiles ? inheritedStyle.iconId : null) || (autoIconFile ? (this.settings.wideAutoIcons ? autoIconFile.lucide : autoIconFile.emoji) : "");
+                // Custom User Rules take top priority over saved data.json AI icons
+                const customUserRuleFile = this.plugin.iconManager.getAutoIconData(child.name, child.path);
+                const isUserCustomRuleFileMatch = customUserRuleFile && (customUserRuleFile.packSource === 'custom-rule' || customUserRuleFile.isCustom);
+
+                let iconId = "";
+                if (isUserCustomRuleFileMatch && customUserRuleFile) {
+                    iconId = this.resolveAutoIconCandidate(customUserRuleFile);
+                } else {
+                    const rawFileIcon = (fileStyle?.iconId && this.isValidIconStr(fileStyle.iconId)) ? fileStyle.iconId : null;
+                    const rawInheritedFileIcon = (inheritedStyle?.applyToFiles && inheritedStyle?.iconId && this.isValidIconStr(inheritedStyle.iconId)) ? inheritedStyle.iconId : null;
+                    const autoIconFile = (this.settings.autoIcons && !rawFileIcon && !rawInheritedFileIcon) ? customUserRuleFile : null;
+                    iconId = rawFileIcon || rawInheritedFileIcon || this.resolveAutoIconCandidate(autoIconFile);
+                }
 
                 const textNative = ColorResolver.resolveTextColor(
                     true,
@@ -274,6 +295,9 @@ export class StyleGenerator {
                     border-radius: 4px;
                     --nav-tag-background: var(--cf-tag-bg, rgba(${color.rgb}, 0.15)) !important;
                     --nav-tag-color: var(--cf-tag-color, ${textNative}) !important;
+                    --cf-active-bg: ${activeBg};
+                    --cf-active-color: ${activeText};
+                    --cf-active-rgb: ${color.rgb};
                 `;
 
                 let fileTextCss = `
@@ -283,32 +307,16 @@ export class StyleGenerator {
                     ${extraTypographyCssFiles}
                 `;
 
-                if (activeStyle && activeStyle.textGradient && activeStyle.textColor && activeStyle.textGradientEnd) {
-                    const angle = 90;
-                    let sC = activeStyle.textColor;
-                    let eC = activeStyle.textGradientEnd;
-                    const bVal = activeStyle.rainbowBrightness !== undefined ? activeStyle.rainbowBrightness : 50;
-                    if (bVal !== 50) {
-                        const amount = (bVal - 50) / 50;
-                        const rgbS = hexToRgbObj(sC);
-                        if (rgbS) sC = `rgb(${adjustBrightnessRgb(`${rgbS.r},${rgbS.g},${rgbS.b}`, amount)})`;
-                        const rgbE = hexToRgbObj(eC);
-                        if (rgbE) eC = `rgb(${adjustBrightnessRgb(`${rgbE.r},${rgbE.g},${rgbE.b}`, amount)})`;
-                    }
-                    fileTextCss = `
-                    background-image: linear-gradient(${angle}deg, ${sC}, ${eC}, ${sC}) !important;
-                    background-clip: text !important;
-                    -webkit-background-clip: text !important;
-                    -webkit-text-fill-color: transparent !important;
-                    color: transparent !important;
-                    font-weight: ${isBold ? '800' : 'normal'} !important;
-                    font-style: ${isItalic ? 'italic' : 'normal'} !important;
-                    ${extraTypographyCssFiles}
-                    display: flex !important;
-                    align-items: center !important;
-                    width: fit-content !important;
-                    flex: 0 1 auto !important;
-                `;
+                if (activeStyle && activeStyle.textGradient && activeStyle.textGradientEnd) {
+                    const startCol = activeStyle.textColor || color.hex;
+                    const stops = RainbowManager.resolveCustomStops(startCol, activeStyle.textGradientEnd, activeStyle.rainbowBrightness, isDark);
+                    fileTextCss = RainbowManager.buildGradientCss(stops, {
+                        angle: this.settings.rainbowGradientAngle ?? 90,
+                        isDark,
+                        isBold,
+                        isItalic,
+                        extraCss: extraTypographyCssFiles
+                    });
                 }
 
                 const fileRowSels = [
@@ -438,7 +446,9 @@ export class StyleGenerator {
                         0,
                         this.settings.globalBackgroundColor || "",
                         false,
-                        false
+                        false,
+                        "hierarchy",
+                        context.now
                     );
                     const parentActiveBg = (this.settings.useCustomActiveColor && this.settings.customActiveBg) ? this.settings.customActiveBg : `rgba(${parentFolderColor.rgb}, ${useGlass ? 0.14 : 0.12})`;
                     const parentActiveText = (this.settings.useCustomActiveColor && this.settings.customActiveText) ? this.settings.customActiveText : (parentFolderStyle?.textColor || parentFolderColor.hex);
@@ -485,50 +495,20 @@ export class StyleGenerator {
                             `.notebook-navigator .nn-navitem.cf-active-parent > .nn-virtual-container[data-path="${safePath}"]`
                         ]);
                     }
-                } else {
-                    grouper.add(`
-                        background-color: var(--cf-active-bg, ${activeBg}) !important;
-                        color: var(--cf-active-color, ${activeText}) !important;
-                        outline: 1px solid ${activeGlowEnabled ? `rgba(${color.rgb}, 0.3)` : "transparent"} !important;
-                        outline-offset: -1px !important;
-                        ${activeGlowEnabled ? (useGlass ? `
+                    if (activeGlowEnabled && useGlass) {
+                        grouper.add(`
+                            outline: 1px solid rgba(${color.rgb}, 0.3) !important;
+                            outline-offset: -1px !important;
                             backdrop-filter: blur(12px) saturate(160%) !important;
                             -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
                             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 4px 12px rgba(0,0,0,0.2) !important;
-                        ` : `
-                            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 2px 8px rgba(0,0,0,0.1) !important;
-                        `) : (useGlass ? `
-                            backdrop-filter: blur(12px) saturate(160%) !important;
-                            -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
-                            box-shadow: none !important;
-                        ` : `
-                            box-shadow: none !important;
-                        `)}
-                    `, [
-                        `body .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file)`,
-                        `body .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nn-file)`
-                    ]);
-
-                    // Notebook Navigator Active File Glow (Flat Slot)
-                    grouper.add(`
-                        background-color: var(--cf-active-bg, ${activeBg}) !important;
-                        color: var(--cf-active-color, ${activeText}) !important;
-                        border-left: ${activeFolderThick}px solid var(--cf-active-color, ${activeText}) !important;
-                        box-sizing: border-box !important;
-                        box-shadow: none !important;
-                        border-radius: 0 !important;
-                    `, [`${NotebookNavigatorIntegration.getScopedFileSelector(child.path)}.is-active`]);
-
-                    grouper.add(`
-                        background-color: var(--cf-active-color, ${activeText}) !important;
-                    `, [
-                        `body .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file)::before`,
-                        `body .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem)::before`
-                    ]);
+                        `, [
+                            `body .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file)`,
+                            `body .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nn-file)`
+                        ]);
+                    }
                 }
-                // Increment skipped as fileIndex is unused
             }
-        }
 
         // Folder logic — tint is emitted per-child inside the loop below (using child's own color)
 
@@ -561,10 +541,12 @@ export class StyleGenerator {
                 mtime,
                 "",
                 false,
-                false
+                false,
+                "hierarchy",
+                context.now
             );
 
-            const safePath = safeEscape(child.path);
+            const safePath = this.getSafeEscape(child.path);
             const op = ColorResolver.resolveOpacity(
                 false,
                 depth,
@@ -601,10 +583,20 @@ export class StyleGenerator {
                 `body .nav-files-container .tree-item-self[data-path="${safePath}"] + .tree-item-children`
             ], `folderBgTint_${color.hex}_${finalTintOp}_${outlineOnly}_${folderThick}`);
 
-            // Pre-calculate folder icons to avoid warnings
-            const autoIconFolder = (this.settings.autoIcons && !customStyle?.iconId && !inheritedStyle?.iconId) ? this.plugin.iconManager.getAutoIconData(child.name, child.path) : null;
-            const folderIconId = customStyle?.iconId || inheritedStyle?.iconId || (autoIconFolder ? (this.settings.wideAutoIcons ? autoIconFolder.lucide : autoIconFolder.emoji) : "");
-            const folderExpandedIconId = customStyle?.expandedIconId || inheritedStyle?.expandedIconId || "";
+            // Custom User Rules take top priority over saved data.json AI icons
+            const customUserRuleFolder = this.plugin.iconManager.getAutoIconData(child.name, child.path);
+            const isUserCustomRuleFolderMatch = customUserRuleFolder && (customUserRuleFolder.packSource === 'custom-rule' || customUserRuleFolder.isCustom);
+
+            let folderIconId = "";
+            if (isUserCustomRuleFolderMatch && customUserRuleFolder) {
+                folderIconId = this.resolveAutoIconCandidate(customUserRuleFolder);
+            } else {
+                const rawFolderIcon = (customStyle?.iconId && this.isValidIconStr(customStyle.iconId)) ? customStyle.iconId : null;
+                const rawInheritedFolderIcon = (inheritedStyle?.iconId && this.isValidIconStr(inheritedStyle.iconId)) ? inheritedStyle.iconId : null;
+                const autoIconFolder = (this.settings.autoIcons && !rawFolderIcon && !rawInheritedFolderIcon) ? customUserRuleFolder : null;
+                folderIconId = rawFolderIcon || rawInheritedFolderIcon || this.resolveAutoIconCandidate(autoIconFolder);
+            }
+            const folderExpandedIconId = (customStyle?.expandedIconId && this.isValidIconStr(customStyle.expandedIconId)) ? customStyle.expandedIconId : ((inheritedStyle?.expandedIconId && this.isValidIconStr(inheritedStyle.expandedIconId)) ? inheritedStyle.expandedIconId : "");
 
             const isRainbowBgTransparent = depth === 0 && this.settings.rainbowRootText && this.settings.rainbowRootBgTransparent;
             const folderStyles = {
@@ -627,48 +619,6 @@ export class StyleGenerator {
             const isBold = customStyle?.isBold !== undefined ? customStyle.isBold : (inheritedStyle?.isBold !== undefined ? inheritedStyle.isBold : true);
             const isItalic = customStyle?.isItalic !== undefined ? customStyle.isItalic : (inheritedStyle?.isItalic !== undefined ? inheritedStyle.isItalic : false);
 
-            let isUsingGradient = false;
-            let startCol = "";
-            let endCol = "";
-            let gradAngle = 90;
-            let gradWeight = isBold ? '800' : 'normal';
-
-            if (customStyle?.textGradient && customStyle?.textColor && customStyle?.textGradientEnd) {
-                isUsingGradient = true;
-                let sC = customStyle.textColor;
-                let eC = customStyle.textGradientEnd;
-                const bVal = customStyle.rainbowBrightness !== undefined ? customStyle.rainbowBrightness : 50;
-                if (bVal !== 50) {
-                    const amount = (bVal - 50) / 50;
-                    const rgbS = hexToRgbObj(sC);
-                    if (rgbS) sC = `rgb(${adjustBrightnessRgb(`${rgbS.r},${rgbS.g},${rgbS.b}`, amount)})`;
-                    const rgbE = hexToRgbObj(eC);
-                    if (rgbE) eC = `rgb(${adjustBrightnessRgb(`${rgbE.r},${rgbE.g},${rgbE.b}`, amount)})`;
-                }
-                startCol = sC;
-                endCol = eC;
-            } else if (this.settings.rainbowRootText && depth === 0 && !customStyle?.textColor) {
-                isUsingGradient = true;
-                const rainbowOpacity = 1.0;
-
-                const nextColor = currentPalette[(i + 1) % currentPalette.length];
-                startCol = color.hex;
-                endCol = nextColor.hex;
-
-                // Convert hex to rgb string for rgba opacity mix
-                if (startCol.startsWith("#")) {
-                    const rgb = hexToRgbObj(startCol);
-                    if (rgb) startCol = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${rainbowOpacity})`;
-                }
-                if (endCol.startsWith("#")) {
-                    const rgb = hexToRgbObj(endCol);
-                    if (rgb) endCol = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${rainbowOpacity})`;
-                }
-
-                gradAngle = 90;
-                gradWeight = "800"; // hardcoded thick default
-            }
-
             let textCss = `
                 color: var(--cf-folder-color, ${folderStyles.t}) !important;
                 font-weight: ${isBold ? '800' : 'normal'} !important;
@@ -676,21 +626,33 @@ export class StyleGenerator {
                 ${extraTypographyCssFolders}
             `;
 
-            if (isUsingGradient) {
-                textCss = `
-                    background-image: linear-gradient(${gradAngle}deg, ${startCol}, ${endCol}, ${startCol}) !important;
-                    background-clip: text !important;
-                    -webkit-background-clip: text !important;
-                    -webkit-text-fill-color: transparent !important;
-                    color: transparent !important;
-                    font-weight: ${gradWeight} !important;
-                    font-style: ${isItalic ? 'italic' : 'normal'} !important;
-                    ${extraTypographyCssFolders}
-                    display: flex !important;
-                    align-items: center !important;
-                    width: fit-content !important;
-                    flex: 0 1 auto !important;
-                `;
+            const gradAngle = this.settings.rainbowGradientAngle ?? 90;
+
+            const isRainbowActiveForFolder = this.settings.rainbowRootText && depth === 0 && !customStyle?.textColor && (this.settings.rootStyle !== 'solid' || isRainbowBgTransparent || outlineOnly);
+
+            if (customStyle?.textGradient && customStyle?.textGradientEnd) {
+                const startCol = customStyle.textColor || color.hex;
+                const stops = RainbowManager.resolveCustomStops(startCol, customStyle.textGradientEnd, customStyle.rainbowBrightness, isDark);
+                textCss = RainbowManager.buildGradientCss(stops, {
+                    angle: gradAngle,
+                    isDark,
+                    isBold,
+                    isItalic,
+                    extraCss: extraTypographyCssFolders,
+                    isTransparentBg: isRainbowBgTransparent,
+                    outlineOnly
+                });
+            } else if (isRainbowActiveForFolder) {
+                const stops = RainbowManager.resolveRootSpectrum(i, currentPalette, isDark);
+                textCss = RainbowManager.buildGradientCss(stops, {
+                    angle: gradAngle,
+                    isDark,
+                    isBold: true,
+                    isItalic,
+                    extraCss: extraTypographyCssFolders,
+                    isTransparentBg: isRainbowBgTransparent,
+                    outlineOnly
+                });
             }
 
             const activeBg = (this.settings.useCustomActiveColor && this.settings.customActiveBg) ? this.settings.customActiveBg : `rgba(${color.rgb}, ${useGlass ? 0.14 : 0.12})`;
@@ -729,38 +691,43 @@ export class StyleGenerator {
 
 
             /* Notebook Navigator Folder Integration (Native-Bridge Architecture) */
+            /* Only generated when notebookNavigatorSupport is explicitly enabled */
+            const effFolderIconColor = customStyle?.iconColor || inheritedStyle?.iconColor || color.hex || folderStyles.t;
 
-            const isEmoji = this.plugin.iconManager.isEmojiIcon(folderIconId);
-            const iconSvg = !isEmoji && folderIconId ? this.plugin.iconManager.getIconSvg(folderIconId, true) : "";
+            if (NotebookNavigatorIntegration.isSupported(this.settings)) {
+                const isEmoji = this.plugin.iconManager.isEmojiIcon(folderIconId);
+                const iconSvg = !isEmoji && folderIconId ? this.plugin.iconManager.getIconSvg(folderIconId, true) : "";
 
-            NotebookNavigatorIntegration.generateIntegratedStyles(
-                grouper,
-                child.path,
-                true,
-                color,
-                op,
-                folderStyles.t,
-                folderIconId,
-                customStyle?.iconColor || null,
-                isEmoji,
-                iconSvg,
-                activeBg,
-                activeText,
-                isBold,
-                isItalic,
-                true,
-                useGlass,
-                tintOp,
-                baseThick,
-                this.settings.notebookNavigatorOutlineOnly,
-                false, /* useRadiantPath is now managed via :has(.is-active) statically */
-                context.nnIconW,
-                this.settings.activeGlow !== false
-            );
+                NotebookNavigatorIntegration.generateIntegratedStyles(
+                    grouper,
+                    child.path,
+                    true,
+                    color,
+                    op,
+                    folderStyles.t,
+                    folderIconId,
+                    customStyle?.iconColor || inheritedStyle?.iconColor || null,
+                    isEmoji,
+                    iconSvg,
+                    activeBg,
+                    activeText,
+                    isBold,
+                    isItalic,
+                    true,
+                    useGlass,
+                    tintOp,
+                    baseThick,
+                    this.settings.notebookNavigatorOutlineOnly,
+                    false, /* useRadiantPath is now managed via :has(.is-active) statically */
+                    context.nnIconW,
+                    this.settings.activeGlow !== false
+                );
+            }
 
-            const nnNavSel = NotebookNavigatorIntegration.getScopedNavSelector(child.path);
             const nnNavNameSel = NotebookNavigatorIntegration.getNavNameSelector();
-            const nnSelectors = nnNavSel.split(',').map(s => `body ${s.trim()} ${nnNavNameSel}`);
+            const nnSelectors = NotebookNavigatorIntegration.isSupported(this.settings)
+                ? NotebookNavigatorIntegration.getScopedNavSelectors(child.path).map(s => `body ${s} ${nnNavNameSel}`)
+                : [];
 
             grouper.add(textCss, [
                 `.nav-folder-title[data-cf-path="${safePath}"] .nav-folder-title-content`,
@@ -768,7 +735,7 @@ export class StyleGenerator {
                 `.nav-folder-title[data-path="${safePath}"] .nav-folder-title-content`,
                 `.tree-item-self[data-path="${safePath}"] .tree-item-inner`,
                 ...nnSelectors
-            ], `folderText_${isUsingGradient ? 'grad_' + startCol.replace(/\s+/g, '') + '_' + endCol.replace(/\s+/g, '') : 'norm_' + folderStyles.t}_${isBold}_${isItalic}`);
+            ], `folderText_${customStyle?.textGradient || isRainbowActiveForFolder ? 'grad' : 'norm'}_${folderStyles.t}_${isBold}_${isItalic}`);
 
             const generateIconCss = (iconIdToUse: string, isExpandedState: boolean | null) => {
                 const isCustomEmoji = this.plugin.iconManager.isEmojiIcon(iconIdToUse);
@@ -825,12 +792,12 @@ export class StyleGenerator {
                             width: ${folderIconW} !important;
                             height: ${folderIconW} !important;
                             margin-right: 4px !important;
-                            background-color: ${customStyle?.iconColor || color.hex || folderStyles.t} !important;
+                            background-color: ${effFolderIconColor} !important;
                             -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(svgStr, true)}") !important;
                             -webkit-mask-repeat: no-repeat !important;
                             -webkit-mask-position: center !important;
                             -webkit-mask-size: contain !important;
-                        `, sels, `icon_${iconIdToUse}_svg_${folderIconW}_${isExpandedState ? 'expanded' : 'collapsed'}`);
+                        `, sels, `icon_${iconIdToUse}_svg_${folderIconW}_${effFolderIconColor.replace(/\s+/g, '')}_${isExpandedState ? 'expanded' : 'collapsed'}`);
                     }
                 }
             };
@@ -845,8 +812,10 @@ export class StyleGenerator {
                     generateIconCss(folderIconId, null);
                 }
             } else if (autoIcons) {
-                const closedSvg = this.plugin.iconManager.getIconSvg(this.settings.defaultClosedFolderIcon || "lucide-folder", true) || decodeURIComponent(CF_FOLDER_CLOSED);
-                const openSvg = this.plugin.iconManager.getIconSvg(this.settings.defaultOpenFolderIcon || "lucide-folder-open", true) || decodeURIComponent(CF_FOLDER_OPEN);
+                const closedIconId = this.settings.defaultClosedFolderIcon || "lucide-folder";
+                const openIconId = this.settings.defaultOpenFolderIcon || "lucide-folder-open";
+                const closedSvg = this.plugin.iconManager.getIconSvg(closedIconId, true) || decodeURIComponent(CF_FOLDER_CLOSED);
+                const openSvg = this.plugin.iconManager.getIconSvg(openIconId, true) || decodeURIComponent(CF_FOLDER_OPEN);
                 
                 const baseNav = `body .nav-files-container .nav-folder`;
                 const baseTree = `body .nav-files-container .tree-item`;
@@ -860,7 +829,7 @@ export class StyleGenerator {
                     width: ${folderIconW} !important;
                     height: ${folderIconW} !important;
                     margin-right: 4px !important;
-                    background-color: ${customStyle?.iconColor || color.hex || folderStyles.t} !important;
+                    background-color: ${effFolderIconColor} !important;
                     -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(closedSvg)}") !important;
                     -webkit-mask-repeat: no-repeat !important;
                     -webkit-mask-position: center !important;
@@ -868,7 +837,7 @@ export class StyleGenerator {
                 `, [
                     `${baseNav}.is-collapsed > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
                     `${baseTree}.is-collapsed > .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
-                ], `icon_closed_folder_${folderIconW}`);
+                ], `icon_closed_folder_${folderIconW}_${effFolderIconColor.replace(/\s+/g, '')}_${closedIconId}`);
 
                 // Open State
                 grouper.add(`
@@ -879,7 +848,7 @@ export class StyleGenerator {
                     width: ${folderIconW} !important;
                     height: ${folderIconW} !important;
                     margin-right: 4px !important;
-                    background-color: ${customStyle?.iconColor || color.hex || folderStyles.t} !important;
+                    background-color: ${effFolderIconColor} !important;
                     -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(openSvg)}") !important;
                     -webkit-mask-repeat: no-repeat !important;
                     -webkit-mask-position: center !important;
@@ -887,28 +856,29 @@ export class StyleGenerator {
                 `, [
                     `${baseNav}:not(.is-collapsed) > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
                     `${baseTree}:not(.is-collapsed) > .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
-                ], `icon_open_folder_${folderIconW}`);
+                ], `icon_open_folder_${folderIconW}_${effFolderIconColor.replace(/\s+/g, '')}_${openIconId}`);
             }
+
+            const collapseSels = [
+                `body .nav-files-container .nav-folder-title[data-path="${safePath}"] .nav-folder-collapse-indicator`,
+                `body .nav-files-container .nav-folder-title[data-path="${safePath}"] .collapse-icon`,
+                `body .nav-files-container .tree-item-self[data-path="${safePath}"] .tree-item-collapse-indicator`,
+                `body .nav-files-container .tree-item-self[data-path="${safePath}"] .collapse-icon`,
+                `body .nav-files-container .nav-folder-title[data-cf-path="${safePath}"] .nav-folder-collapse-indicator`,
+                `body .nav-files-container .nav-folder-title[data-cf-path="${safePath}"] .collapse-icon`,
+                `body .nav-files-container .tree-item-self[data-cf-path="${safePath}"] .tree-item-collapse-indicator`,
+                `body .nav-files-container .tree-item-self[data-cf-path="${safePath}"] .collapse-icon`
+            ];
+            grouper.add(`
+                color: ${effFolderIconColor} !important;
+            `, collapseSels, `collapseIcon_${color.hex}`);
 
             if (this.settings.showItemCounters) {
                 const counts = countItems(child, this.plugin);
                 const totalWidth = 110; // increased to 110 to allow 4 digits for both folders and files
 
-                // PERF FIX 3: Rebuild the static SVG template only when color changes.
-                // For large vaults, this avoids O(N) encodeURIComponent + regex calls
-                // per render cycle, replacing them with O(1) string concatenation.
-                if (color.hex !== this._counterSvgColor) {
-                    this._counterSvgColor = color.hex;
-                    const svgOpen = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="20" viewBox="0 0 ${totalWidth} 20" preserveAspectRatio="xMidYMid meet"><g stroke="${color.hex}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(0, 3) scale(0.65)"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></g><text x="21" y="10.5" dominant-baseline="central" fill="${color.hex}" font-family="sans-serif" font-size="11" font-weight="900">`;
-                    const svgMid = `</text><g stroke="${color.hex}" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(52, 3) scale(0.65)"><path d="M15.5 2H8.6c-.4 0-.8.2-1.1.5-.3.3-.5.7-.5 1.1v12.8c0 .4.2.8.5 1.1.3.3.7.5 1.1.5h9.8c.4 0 .8-.2 1.1-.5.3-.3.5-.7.5-1.1V7.5L15.5 2z"/><path d="M15 2v5h5"/><path d="M2 17.6V7.1c0-.4.2-.8.5-1.1.3-.3.7-.5 1.1-.5h3.3"/><path d="M13 22H3.6c-.4 0-.8-.2-1.1-.5-.3-.3-.5-.7-.5-1.1V10"/></g><text x="70" y="10.5" dominant-baseline="central" fill="${color.hex}" font-family="sans-serif" font-size="11" font-weight="900">`;
-                    const svgClose = `</text></svg>`;
-                    // Pre-encode the three static sections; only the count values need runtime concatenation
-                    this._counterSvgPrefix = encodeURIComponent(svgOpen);
-                    this._counterSvgMid = encodeURIComponent(svgMid);
-                    this._counterSvgSuffix = encodeURIComponent(svgClose);
-                }
-
-                const combinedIconUrl = `url("data:image/svg+xml,${this._counterSvgPrefix}${counts.folders}${this._counterSvgMid}${counts.files}${this._counterSvgSuffix}")`;
+                const svgOpen = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="20" viewBox="0 0 ${totalWidth} 20" preserveAspectRatio="xMidYMid meet"><g stroke="${color.hex}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(0, 3) scale(0.65)"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></g><text x="21" y="10.5" dominant-baseline="central" fill="${color.hex}" font-family="sans-serif" font-size="11" font-weight="900">${counts.folders}</text><g stroke="${color.hex}" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(52, 3) scale(0.65)"><path d="M15.5 2H8.6c-.4 0-.8.2-1.1.5-.3.3-.5.7-.5 1.1v12.8c0 .4.2.8.5 1.1.3.3.7.5 1.1.5h9.8c.4 0 .8-.2 1.1-.5.3-.3.5-.7.5-1.1V7.5L15.5 2z"/><path d="M15 2v5h5"/><path d="M2 17.6V7.1c0-.4.2-.8.5-1.1.3-.3.7-.5 1.1-.5h3.3"/><path d="M13 22H3.6c-.4 0-.8-.2-1.1-.5-.3-.3-.5-.7-.5-1.1V10"/></g><text x="70" y="10.5" dominant-baseline="central" fill="${color.hex}" font-family="sans-serif" font-size="11" font-weight="900">${counts.files}</text></svg>`;
+                const combinedIconUrl = `url("data:image/svg+xml,${encodeURIComponent(svgOpen)}")`;
 
                 grouper.addRaw(`
                     body .nav-folder-title[data-path="${safePath}"]::after,
@@ -946,6 +916,7 @@ export class StyleGenerator {
     }
 
     async generateCss(): Promise<string> {
+        ColorResolver.clearCache();
         const context = this.prepareContext();
         if (!context) return "";
 
@@ -956,12 +927,20 @@ export class StyleGenerator {
         await this.traverse(root, 0, 0, 0, null, null, context, grouper, 0, yieldState);
 
         const rawRules: string[] = [];
-        rawRules.push(generateGlobalBaseCss(this.settings));
+
+        const baseKey = `${this.settings.showCollapseIndicator !== false}|${this.settings.spacedTextMode}`;
+        if (!this._cachedGlobalBaseCss || this._cachedGlobalBaseCss.key !== baseKey) {
+            this._cachedGlobalBaseCss = { key: baseKey, css: generateGlobalBaseCss(this.settings) };
+        }
+        rawRules.push(this._cachedGlobalBaseCss.css);
 
         const baseThick = this.settings.pathLineThickness ?? 2.0;
 
-
-        rawRules.push(generateDividerCss(this.settings));
+        const dividerKey = `${this.settings.showFileDivider}|${this.settings.dividerSpacing}|${Object.keys(this.settings.customFolderColors).length}`;
+        if (!this._cachedDividerCss || this._cachedDividerCss.key !== dividerKey) {
+            this._cachedDividerCss = { key: dividerKey, css: generateDividerCss(this.settings) };
+        }
+        rawRules.push(this._cachedDividerCss.css);
 
         // Support for styling the vault root in Notebook Navigator
         const rootStyle = this.getStyle(root.path) || this.getStyle("/");
@@ -1029,10 +1008,15 @@ export class StyleGenerator {
             }
         }
 
-        rawRules.push(generateStealthCss(this.settings));
+        const stealthKey = `${this.settings.notebookNavigatorSupport}|${Object.keys(this.settings.customFolderColors).length}`;
+        if (!this._cachedStealthCss || this._cachedStealthCss.key !== stealthKey) {
+            this._cachedStealthCss = { key: stealthKey, css: generateStealthCss(this.settings) };
+        }
+        rawRules.push(this._cachedStealthCss.css);
         rawRules.push(TagColorSync.generateCss(this.plugin, context));
 
         rawRules.push(grouper.build());
+
         return rawRules.join('\n');
     }
 

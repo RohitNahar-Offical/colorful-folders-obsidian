@@ -15,7 +15,7 @@ interface NNPlugin {
  * Centralizes all DOM selectors and NN-specific logic.
  */
 export const NN_SELECTORS = {
-    CONTAINERS: '.nn-navigation-pane-content, .nn-virtual-container, .nn-list-view, .nn-explorer-content',
+    CONTAINERS: '.notebook-navigator, .nn-navigation-pane-content, .nn-list-view, .nn-explorer-content',
     NAV_ITEM: '.nn-navitem',
     FILE_ITEM: '.nn-file',
     NAV_NAME: '.nn-navitem-name',
@@ -36,8 +36,9 @@ export class NotebookNavigatorIntegration {
     /**
      * Returns the extra containers (NN navigation pane, etc.) that should be observed.
      */
-    static getExtraContainers(doc: Document): NodeListOf<Element> {
-        return doc.querySelectorAll(NN_SELECTORS.CONTAINERS);
+    static getExtraContainers(doc: Document, settings?: ColorfulFoldersSettings): Element[] {
+        if (settings && !settings.notebookNavigatorSupport) return [];
+        return Array.from(doc.querySelectorAll(NN_SELECTORS.CONTAINERS));
     }
 
     /**
@@ -64,10 +65,16 @@ export class NotebookNavigatorIntegration {
      * Returns a scoped selector that ONLY matches real vault items.
      * Hardened to exclude system views (Tags/Properties) via attribute filtering.
      */
-    static getScopedNavSelector(path: string): string {
+    static getScopedNavSelectors(path: string): string[] {
         const safePath = safeEscape(path);
-        return `.notebook-navigator .nn-navitem[data-path="${safePath}"]:not(.nn-header), 
-                .notebook-navigator .nn-shortcut-item[data-path="${safePath}"]`;
+        return [
+            `.notebook-navigator .nn-navitem[data-path="${safePath}"]:not(.nn-header)`,
+            `.notebook-navigator .nn-shortcut-item[data-path="${safePath}"]`
+        ];
+    }
+
+    static getScopedNavSelector(path: string): string {
+        return this.getScopedNavSelectors(path).join(', ');
     }
 
     static getScopedFileSelector(path: string): string {
@@ -112,8 +119,8 @@ export class NotebookNavigatorIntegration {
      * Checks if a container is a Notebook Navigator container.
      */
     static isNNContainer(container: Element): boolean {
-        return container.classList.contains('nn-navigation-pane-content') || 
-               container.classList.contains('nn-virtual-container') ||
+        return container.classList.contains('notebook-navigator') ||
+               container.classList.contains('nn-navigation-pane-content') || 
                container.classList.contains('nn-list-view') ||
                container.classList.contains('nn-explorer-content');
     }
@@ -121,8 +128,8 @@ export class NotebookNavigatorIntegration {
     /**
      * Returns true if dividers should be rendered for the given container.
      */
-    static shouldRenderDividers(container: Element, _settings: ColorfulFoldersSettings): boolean {
-        if (this.isNNContainer(container)) {
+    static shouldRenderDividers(container: Element, settings: ColorfulFoldersSettings): boolean {
+        if (this.isSupported(settings) && this.isNNContainer(container)) {
             return false;
         }
         return true; // Native explorer always supported
@@ -167,14 +174,14 @@ export class NotebookNavigatorIntegration {
         tintOp: number = 0,
         baseThick: number = 2.0,
         outlineOnly: boolean = false,
-        useRadiantPath: boolean = false,
+        _useRadiantPath: boolean = false,
         effIconW: string = '1.3em',
         activeGlow: boolean = true
     ): void {
         const nnThick = baseThick + 0.5; // Scaled for NN visibility
         const activeThick = baseThick + 2.0;
         const safePath = safeEscape(path);
-        const base = isFolder ? this.getScopedNavSelector(path) : this.getScopedFileSelector(path);
+        const baseSels = isFolder ? this.getScopedNavSelectors(path) : [this.getScopedFileSelector(path)];
         const nameSel = isFolder ? this.getNavNameSelector() : this.getFileNameSelector();
         const _iconSel = isFolder ? this.getNavIconSelector() : this.getFileIconSelector();
         const countSel = '.nn-navitem-count';
@@ -237,7 +244,7 @@ export class NotebookNavigatorIntegration {
                 content: "" !important;
                 opacity: 0.5 !important;
                 visibility: visible !important;
-            `, [target], `nnFallback_${fallbackSvg}_${effIconW}`);
+            `, [target], `nnFallback_${fallbackSvg}_${effIconW}_${(iconColor || color.hex || textCol).replace(/\s+/g, '')}`);
             grouper.add(`display: none !important;`, [`${target} *`], `nnDisplayNone`);
         }
 
@@ -247,15 +254,15 @@ export class NotebookNavigatorIntegration {
             z-index: 2 !important;
             ${glassCss}
         `;
-        grouper.add(hoverBody, [`${base}:hover`], `nnHover_${color.hex}_${bgAlpha}_${isFolder}_${outlineOnly}_${useGlass}`);
+        grouper.add(hoverBody, baseSels.map(b => `${b}:hover`), `nnHover_${color.hex}_${bgAlpha}_${isFolder}_${outlineOnly}_${useGlass}`);
 
         const metadataCol = `rgba(${color.rgb}, 0.65)`;
-        const metadataSels = [
-            `${base} .nn-navitem-date`,
-            `${base} .nn-navitem-subtitle`,
-            `${base} .nn-navitem-description`,
-            `${base} .nn-file-date`
-        ];
+        const metadataSels = baseSels.flatMap(b => [
+            `${b} .nn-navitem-date`,
+            `${b} .nn-navitem-subtitle`,
+            `${b} .nn-navitem-description`,
+            `${b} .nn-file-date`
+        ]);
         grouper.add(`color: ${metadataCol} !important; transition: color 0.2s ease !important;`, metadataSels, `nnMeta_${color.hex}`);
 
         if (isFolder) {
@@ -269,7 +276,7 @@ export class NotebookNavigatorIntegration {
                 ${tintOp > 0 ? `background-blend-mode: overlay;` : ''}
                 transition: background-color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
                 margin-bottom: 2px !important;
-            `, [base], `nnFolderBg_${color.hex}_${finalBgAlpha}_${finalBorderAlpha}_${tintOp}_${useGlass}`);
+            `, baseSels, `nnFolderBg_${color.hex}_${finalBgAlpha}_${finalBorderAlpha}_${tintOp}_${useGlass}`);
         } else if (shouldColor) {
             const fileBg = outlineOnly ? Math.max(bgAlpha, 0.12) : Math.max(bgAlpha, 0.18);
             grouper.add(`
@@ -282,22 +289,21 @@ export class NotebookNavigatorIntegration {
                 border-radius: 6px;
                 transition: background-color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, color 0.2s ease !important;
                 margin-bottom: 2px !important;
-            `, [base], `nnFileBg_${color.hex}_${fileBg}_${textCol}_${isBold}_${isItalic}`);
+            `, baseSels, `nnFileBg_${color.hex}_${fileBg}_${textCol}_${isBold}_${isItalic}`);
         }
 
         if (shouldColor) {
             grouper.add(`
-                background-color: transparent !important;
                 border-left: ${outlineOnly ? 0 : nnThick}px solid rgba(${color.rgb}, ${outlineOnly ? 0 : tintOp}) !important;
                 ${!outlineOnly ? 'padding-left: 4px !important;' : ''}
                 margin-left: 2px !important;
-            `, [`body ${base}`], `nnBase_${color.hex}_${outlineOnly}_${tintOp}`);
+            `, baseSels.map(b => `body ${b}`), `nnBase_${color.hex}_${outlineOnly}_${tintOp}`);
 
             grouper.add(`
                 color: ${textCol} !important;
                 ${isBold ? 'font-weight: bold !important;' : ''}
                 ${isItalic ? 'font-style: italic !important;' : ''}
-            `, [`body ${base} ${nameSel}`, `body ${base} ${countSel}`], `nnName_${textCol}_${isBold}_${isItalic}`);
+            `, baseSels.flatMap(b => [`body ${b} ${nameSel}`, `body ${b} ${countSel}`]), `nnName_${textCol}_${isBold}_${isItalic}`);
         }
 
         // Active / Selected Glow (Premium)
@@ -328,38 +334,42 @@ export class NotebookNavigatorIntegration {
         const interval = 2000; // 2 seconds
 
         const tryRegister = () => {
-            attempts++;
-            
-            interface InternalApp extends obsidian.App {
-                plugins: {
-                    getPlugin(id: string): Record<string, unknown> | null;
-                };
-            }
+            try {
+                attempts++;
+                
+                interface InternalApp extends obsidian.App {
+                    plugins: {
+                        getPlugin(id: string): Record<string, unknown> | null;
+                    };
+                }
 
-            const app = plugin.app as InternalApp;
-            if (!app.plugins) return false;
-            
-            const nnInstance = app.plugins.getPlugin('notebook-navigator');
-            if (!nnInstance) return false;
+                const app = plugin.app as InternalApp;
+                if (!app.plugins || typeof app.plugins.getPlugin !== 'function') return false;
+                
+                const nnInstance = app.plugins.getPlugin('notebook-navigator');
+                if (!nnInstance) return false;
 
-            // Some plugins expose API under .api
-            const nnPlugin = (nnInstance.api || nnInstance) as NNPlugin;
+                // Some plugins expose API under .api
+                const nnPlugin = ((nnInstance as { api?: NNPlugin }).api || nnInstance) as NNPlugin;
 
-            // Check if API methods exist
-            if (typeof nnPlugin.registerFileMenu !== 'function' || typeof nnPlugin.registerFolderMenu !== 'function') {
+                // Check if API methods exist
+                if (typeof nnPlugin.registerFileMenu !== 'function' || typeof nnPlugin.registerFolderMenu !== 'function') {
+                    return false;
+                }
+
+                // Register with NN's public menu API
+                nnPlugin.registerFileMenu((menu: obsidian.Menu, file: obsidian.TAbstractFile) => {
+                    MenuHelper.addContextMenuItems(menu, file, plugin);
+                });
+
+                nnPlugin.registerFolderMenu((menu: obsidian.Menu, folder: obsidian.TAbstractFile) => {
+                    MenuHelper.addContextMenuItems(menu, folder, plugin);
+                });
+
+                return true;
+            } catch {
                 return false;
             }
-
-            // Register with NN's public menu API
-            nnPlugin.registerFileMenu((menu: obsidian.Menu, file: obsidian.TAbstractFile) => {
-                MenuHelper.addContextMenuItems(menu, file, plugin);
-            });
-
-            nnPlugin.registerFolderMenu((menu: obsidian.Menu, folder: obsidian.TAbstractFile) => {
-                MenuHelper.addContextMenuItems(menu, folder, plugin);
-            });
-
-            return true;
         };
 
 
@@ -370,6 +380,17 @@ export class NotebookNavigatorIntegration {
                     window.clearInterval(timer);
                 }
             }, interval);
+        }
+
+        // Graceful degradation: invalidate cache when workspace layout changes
+        try {
+            plugin.registerEvent(
+                plugin.app.workspace.on('layout-change', () => {
+                    plugin.invalidateExplorerContainersCache();
+                })
+            );
+        } catch {
+            // Silently ignore: fallback if workspace is unavailable
         }
     }
 }

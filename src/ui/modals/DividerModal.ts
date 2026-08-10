@@ -1,5 +1,6 @@
 import { StyleResolver } from '../../core/StyleResolver';
 import * as obsidian from 'obsidian';
+import { t } from '../../lang/helpers';
 import { FolderStyle, IColorfulFoldersPlugin } from '../../common/types';
 import { IconPickerModal } from './IconPickerModal';
 import { HoverMessageModal } from './HoverMessageModal';
@@ -72,6 +73,9 @@ export class DividerModal extends obsidian.Modal {
         contentEl.empty();
         modalEl.setCssStyles({
             maxWidth: "440px",
+            width: "min(440px, 92vw)",
+            maxHeight: "88vh",
+            overflowY: "auto",
             borderRadius: "14px",
             boxShadow: "0 10px 40px rgba(0,0,0,0.3)"
         });
@@ -96,11 +100,11 @@ export class DividerModal extends obsidian.Modal {
         this._refreshHeaderIcon();
 
         const titleWrap = header.createDiv();
-        const mTitle = titleWrap.createDiv({ text: "Section divider", cls: "cf-modal-title" });
+        const mTitle = titleWrap.createDiv({ text: t("modal.divider.subtitle"), cls: "cf-modal-title" });
         mTitle.setCssStyles({
             fontSize: "1.2em", fontWeight: "700", color: "var(--text-normal)", lineHeight: "1.2"
         });
-        const mSub = titleWrap.createDiv({ text: `Organizing: ${this.item.name}` });
+        const mSub = titleWrap.createDiv({ text: t("modal.divider.organizing", { name: this.item.name }) });
         mSub.setCssStyles({
             fontSize: "0.8em", color: "var(--text-muted)", marginTop: "2px", opacity: "0.8"
         });
@@ -128,20 +132,20 @@ export class DividerModal extends obsidian.Modal {
             return c;
         };
 
-        const textSect = addSection("Label and appearance");
+        const textSect = addSection(t("section.label_and_appearance"));
         
         new obsidian.Setting(textSect)
-            .setName("Label text")
-            .setDesc("The display name for this section.")
+            .setName(t("modal.divider.text_label"))
+            .setDesc(t("modal.divider.text_label.desc"))
             .addText(text => text
-                .setPlaceholder("E.g. Assets")
+                .setPlaceholder(t("modal.divider.text_placeholder"))
                 .setValue(this.config.name)
                 .onChange(v => {
                     this.config.name = v;
                     this._liveSync();
                 }));
 
-        const colorSect = addSection("Divider color");
+        const colorSect = addSection(t("section.divider_color"));
         const cpCont = colorSect.createDiv();
         cpCont.setCssStyles({ marginTop: "8px" });
         createVisualColorPicker(cpCont, this.config.color, (hex) => {
@@ -152,11 +156,11 @@ export class DividerModal extends obsidian.Modal {
         }, { showAlpha: false });
 
         new obsidian.Setting(textSect)
-            .setName("Alignment")
+            .setName(t("modal.divider.alignment"))
             .addDropdown(d => d
-                .addOption("left", "Left")
-                .addOption("center", "Center")
-                .addOption("right", "Right")
+                .addOption("left", t("settings.option.left"))
+                .addOption("center", t("settings.option.center"))
+                .addOption("right", t("settings.option.right"))
                 .setValue(this.config.alignment)
                 .onChange(v => {
                     this.config.alignment = v;
@@ -164,22 +168,22 @@ export class DividerModal extends obsidian.Modal {
                 }));
 
         new obsidian.Setting(textSect)
-            .setName("Uppercase")
-            .addToggle(t => t
+            .setName(t("modal.divider.uppercase"))
+            .addToggle(tComp => tComp
                 .setValue(this.config.isUpper)
                 .onChange(v => {
                     this.config.isUpper = v;
                     this._liveSync();
                 }));
 
-        const iconSect = addSection("Icon settings");
+        const iconSect = addSection(t("section.icon_settings"));
 
         new obsidian.Setting(iconSect)
-            .setName("Divider icon")
-            .setDesc("Choose an icon or emoji for this section divider.")
+            .setName(t("modal.divider.divider_icon"))
+            .setDesc(t("modal.divider.divider_icon.desc"))
             .addButton(btn => {
                 btn.setIcon(this.config.icon || "image-plus")
-                    .setTooltip("Pick an icon")
+                    .setTooltip(t("modal.divider.pick_icon"))
                     .onClick(() => {
                         new IconPickerModal(this.app, this.plugin, this.config.icon, (selectedId: string) => {
                             this.config.icon = selectedId;
@@ -191,41 +195,39 @@ export class DividerModal extends obsidian.Modal {
             })
             .addExtraButton(btn => {
                 btn.setIcon("x")
-                    .setTooltip("Clear icon")
+                    .setTooltip(t("modal.divider.clear_icon"))
                     .onClick(() => {
                         this.config.icon = "";
                         this._refreshHeaderIcon();
                         this._liveSync();
-                        // We need to refresh the main button icon too, but Setting doesn't give easy access to it
-                        // So we just close and reopen or similar? No, I'll just refresh the whole modal or ignore.
-                        this.onOpen(); // Refresh UI
+                        this.onOpen();
                     });
             });
 
         new obsidian.Setting(iconSect)
-            .setName("Icon position")
+            .setName(t("modal.divider.icon_position"))
             .addDropdown(d => d
-                .addOption("left", "Left")
-                .addOption("right", "Right")
-                .addOption("both", "Both")
+                .addOption("left", t("settings.option.left"))
+                .addOption("right", t("settings.option.right"))
+                .addOption("both", t("settings.option.both_sides"))
                 .setValue(this.config.iconPosition)
                 .onChange(v => {
                     this.config.iconPosition = v as 'left' | 'right' | 'both';
                     this._liveSync();
                 }));
 
-        const styleSect = addSection("Style and shape");
+        const styleSect = addSection(t("section.style_and_shape"));
 
         new obsidian.Setting(styleSect)
-            .setName("Pill mode")
-            .setDesc("Force the capsule shape or hide it for this divider.")
+            .setName(t("modal.divider.pill_mode"))
+            .setDesc(t("modal.divider.pill_mode.desc"))
             .addDropdown(d => d
-                .addOption("on", "On")
-                .addOption("off", "Off")
+                .addOption("on", t("common.on"))
+                .addOption("off", t("common.off"))
                 .setValue(this.config.pillMode)
                 .onChange(v => {
                     this.config.pillMode = v as 'on' | 'off';
-                    this.onOpen(); // Refresh to show/hide pill color setting
+                    this.onOpen();
                     this._liveSync();
                 }));
 
@@ -236,11 +238,11 @@ export class DividerModal extends obsidian.Modal {
             let pTextComp: obsidian.TextComponent;
 
             new obsidian.Setting(pRow)
-                .setName("Pill background color")
-                .setDesc("Optional. Enter an rgba color. Leave empty to inherit folder color.")
+                .setName(t("modal.divider.pill_bg_color"))
+                .setDesc(t("modal.divider.pill_bg_color.desc"))
                 .addButton(btn => {
                     btn.setIcon('palette')
-                        .setTooltip('Open visual color picker')
+                        .setTooltip(t("common.open_visual_color_picker"))
                         .onClick(() => {
                             if (pPickerWrap) {
                                 pPickerWrap.remove();
@@ -265,7 +267,7 @@ export class DividerModal extends obsidian.Modal {
                 })
                 .addText(text => {
                     pTextComp = text;
-                    text.setPlaceholder("Inherit folder color...")
+                    text.setPlaceholder(t("modal.divider.inherit_folder_color"))
                         .setValue(this.config.pillColor || "")
                         .onChange(v => {
                             this.config.pillColor = v;
@@ -283,13 +285,15 @@ export class DividerModal extends obsidian.Modal {
         }
 
         new obsidian.Setting(styleSect)
-            .setName("Line style")
+            .setName(t("modal.divider.line_style"))
             .addDropdown(d => d
-                .addOption("global", "Global default")
-                .addOption("solid", "Solid")
-                .addOption("dashed", "Dashed")
-                .addOption("dotted", "Dotted")
-                .addOption("none", "None")
+                .addOption("global", t("modal.divider.line_style_global"))
+                .addOption("solid", t("settings.option.solid"))
+                .addOption("dashed", t("settings.option.dashed"))
+                .addOption("dotted", t("settings.option.dotted"))
+                .addOption("double", "Double")
+                .addOption("groove", "Groove")
+                .addOption("none", t("settings.option.none"))
                 .setValue(this.config.lineStyle)
                 .onChange(v => {
                     this.config.lineStyle = v;
@@ -297,9 +301,9 @@ export class DividerModal extends obsidian.Modal {
                 }));
 
         new obsidian.Setting(styleSect)
-            .setName("Modern glassmorphism")
-            .setDesc("Use a frosted-glass background for the pill.")
-            .addToggle(t => t
+            .setName(t("modal.divider.glassmorphism"))
+            .setDesc(t("modal.divider.glassmorphism.desc"))
+            .addToggle(tComp => tComp
                 .setValue(this.config.useGlass)
                 .onChange(v => {
                     this.config.useGlass = v;
@@ -307,7 +311,7 @@ export class DividerModal extends obsidian.Modal {
                 }));
 
         new obsidian.Setting(styleSect)
-            .setName("Line gap (left)")
+            .setName(t("modal.divider.line_gap_left"))
             .addSlider(s => s
                 .setLimits(-10, 40, 1)
                 .setValue(this.config.paddingLeft)
@@ -318,7 +322,7 @@ export class DividerModal extends obsidian.Modal {
                 }));
 
         new obsidian.Setting(styleSect)
-            .setName("Line gap (right)")
+            .setName(t("modal.divider.line_gap_right"))
             .addSlider(s => s
                 .setLimits(-10, 40, 1)
                 .setValue(this.config.paddingRight)
@@ -328,18 +332,18 @@ export class DividerModal extends obsidian.Modal {
                     this._liveSync();
                 }));
 
-        const interactiveSect = addSection("Interactive features");
+        const interactiveSect = addSection(t("section.interactive_features"));
 
         new obsidian.Setting(interactiveSect)
-            .setName("Hover message")
-            .setDesc("A premium popover with Markdown support (links, tags, etc).")
+            .setName(t("modal.divider.hover_message"))
+            .setDesc(t("modal.divider.hover_message.desc"))
             .addButton(btn => btn
-                .setButtonText(this.config.description ? "Edit detailed message" : "Add hover message")
+                .setButtonText(this.config.description ? t("modal.divider.edit_message") : t("modal.divider.add_message"))
                 .setCta()
                 .onClick(() => {
                     new HoverMessageModal(this.app, this.plugin, this.path, this.config.description, (newVal) => {
                         this.config.description = newVal;
-                        btn.setButtonText(newVal ? "Edit detailed message" : "Add hover message");
+                        btn.setButtonText(newVal ? t("modal.divider.edit_message") : t("modal.divider.add_message"));
                         this._liveSync();
                     }).open();
                 }));
@@ -352,7 +356,7 @@ export class DividerModal extends obsidian.Modal {
         });
 
         const leftGroup = footer.createDiv();
-        const removeBtn = leftGroup.createEl("button", { text: "Remove divider" });
+        const removeBtn = leftGroup.createEl("button", { text: t("modal.divider.remove_divider") });
         removeBtn.setCssStyles({
             color: "var(--text-error)", background: "transparent", border: "1px solid var(--background-modifier-border)",
             padding: "6px 14px", borderRadius: "6px", fontSize: "0.85em", cursor: "pointer", transition: "all 0.2s ease"
@@ -389,11 +393,11 @@ export class DividerModal extends obsidian.Modal {
         const rightGroup = footer.createDiv();
         rightGroup.setCssStyles({ display: "flex", gap: "10px" });
 
-        const cancelBtn = rightGroup.createEl("button", { text: "Cancel" });
+        const cancelBtn = rightGroup.createEl("button", { text: t("common.cancel") });
         cancelBtn.setCssStyles({ padding: "6px 16px" });
         cancelBtn.onclick = () => this.close();
 
-        const saveBtn = rightGroup.createEl("button", { text: "Add or update", cls: "mod-cta" });
+        const saveBtn = rightGroup.createEl("button", { text: t("modal.divider.save"), cls: "mod-cta" });
         saveBtn.setCssStyles({ padding: "6px 20px" });
         saveBtn.onclick = async () => {
             this.isSaved = true;

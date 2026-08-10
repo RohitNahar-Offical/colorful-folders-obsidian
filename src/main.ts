@@ -1,4 +1,5 @@
 import { StyleResolver } from './core/StyleResolver';
+import { getCurrentPalette } from './core/ColorResolver';
 import * as obsidian from "obsidian";
 import {
   ColorfulFoldersSettings,
@@ -18,8 +19,12 @@ import { DividerManager } from "./core/DividerManager";
 import { DOMObserverService } from "./services/DOMObserverService";
 import { EventTrackerService } from "./services/EventTrackerService";
 import { AdoptedStyleSheetService } from "./services/AdoptedStyleSheetService";
+import { PluginLifecycleService } from "./services/PluginLifecycleService";
 import { IconManager } from "./core/IconManager";
+import { AIIconClassifier } from './integrations/AIIconClassifier';
+import { EmbeddingModel } from './integrations/embedingmodel';
 import { t } from './lang/helpers';
+import { normalizeVaultPath } from './common/utils';
 
 declare module "obsidian" {
   interface Workspace {
@@ -32,9 +37,11 @@ export default class ColorfulFoldersPlugin
   implements IColorfulFoldersPlugin {
   declare settings: ColorfulFoldersSettings;
   iconManager: IconManager;
+  aiIconClassifier: AIIconClassifier;
   adoptedStyleSheetService: AdoptedStyleSheetService;
 
   iconCache: Map<string, string> = new Map();
+  customFolderColorsMap: Map<string, FolderStyle> = new Map();
   _dividerTimeout: number | null = null;
   heatmapCache: Map<string, number> | null = null;
   folderCountCache: Map<string, { files: number; folders: number }> | null =
@@ -50,10 +57,12 @@ export default class ColorfulFoldersPlugin
   _abortStartupRender: boolean = false;
   _isUnloading: boolean = false;
 
+  embeddingModel: EmbeddingModel;
   domObserverService: DOMObserverService;
   eventTrackerService: EventTrackerService;
   dividerManager: DividerManager;
   styleGenerator: StyleGenerator;
+  lifecycleService: PluginLifecycleService;
   isSyncingDividers: boolean = false;
   isDragging: boolean = false;
   isGeneratingStyles: boolean = false;
@@ -62,145 +71,131 @@ export default class ColorfulFoldersPlugin
   ribbonEl: HTMLElement | null = null;
 
   async onload() {
-    await this.loadSettings();
-    this.styleGenerator = new StyleGenerator(this);
-    this.iconManager = new IconManager(this);
-    this.dividerManager = new DividerManager(this);
-    this.domObserverService = new DOMObserverService(this);
-    this.eventTrackerService = new EventTrackerService(this);
-    this.adoptedStyleSheetService = new AdoptedStyleSheetService(this);
+    try {
+      await this.loadSettings();
+      this.styleGenerator = new StyleGenerator(this);
+      this.iconManager = new IconManager(this);
+      this.aiIconClassifier = new AIIconClassifier(this);
+      this.embeddingModel = new EmbeddingModel(this);
+      this.dividerManager = new DividerManager(this);
+      this.domObserverService = new DOMObserverService(this);
+      this.eventTrackerService = new EventTrackerService(this);
+      this.adoptedStyleSheetService = new AdoptedStyleSheetService(this);
+      this.lifecycleService = new PluginLifecycleService(this);
 
-    // Initial document cache state
-    this.cachedDocuments.add(activeDocument);
-    this.app.workspace.iterateAllLeaves((leaf) => {
-      const doc = leaf.view?.containerEl?.ownerDocument;
-      if (doc) this.cachedDocuments.add(doc);
-    });
+      // Document tracking initialization
+      this.lifecycleService.initializeDocumentTracking();
 
-    this.initializeStyles();
-    this.registerCustomIcons();
-    this.registerCommands();
+      this.registerCustomIcons();
+      this.registerCommands();
 
-    this.addSettingTab(new ColorfulFoldersSettingTab(this.app, this));
+      this.addSettingTab(new ColorfulFoldersSettingTab(this.app, this));
 
-    this.generateStylesDebounced = obsidian.debounce(
-      () => {
-        if (!this.isDragging) {
-          void this.generateStyles();
-        }
-      },
-      100,
-      true
-    );
-
-    this.saveDataDebounced = obsidian.debounce(
-      () => {
-        void this.saveData(this.settings);
-      },
-      1000, // 1-second trailing edge debounce for disk I/O
-      false
-    );
-
-
-
-
-
-    this.refreshRibbon();
-    this.eventTrackerService.registerEvents();
-    this.domObserverService.initStyleObservers();
-
-    this.cachedDocuments.forEach(doc => {
-      doc.body.classList.toggle(
-        "cf-show-hidden",
-        this.settings.showHiddenItems,
+      this.generateStylesDebounced = obsidian.debounce(
+        () => {
+          if (!this.isDragging) {
+            void this.generateStyles();
+          }
+        },
+        100,
+        true
       );
-      doc.body.classList.toggle(
-        "cf-wrap-metadata",
-        Boolean(this.settings.wrapMetadata),
+
+      this.saveDataDebounced = obsidian.debounce(
+        () => {
+          void this.saveData(this.settings);
+        },
+        1000, // 1-second trailing edge debounce for disk I/O
+        false
       );
-    });
 
-    this.initStaircaseStyleStripper();
-    void this.generateStyles();
+      this.refreshRibbon();
+      this.eventTrackerService.registerEvents();
+      this.domObserverService.initStyleObservers();
 
-    this.app.workspace.onLayoutReady(async () => {
-      this.initStaircaseStyleStripper();
-      await this.generateStyles();
-      NotebookNavigatorIntegration.registerMenuExtensions(this);
-      void this.loadLocalIcons();
+      // Invalidate caches on vault changes
+      this.lifecycleService.registerVaultCacheEvents();
 
-      if (this._abortStartupRender) return;
-      this.getAllExplorerContainers().forEach((c) => this.domObserverService.tagExplorerItems(c));
-      this.domObserverService.initDividerObserver();
-      this.dividerManager.syncDividers();
-
-      // Pre-warm icon caches during idle period
-      const warmCaches = () => {
-        if (this.iconManager) {
-          void this.iconManager.getIconSvg("lucide-folder", true);
-          void this.iconManager.getIconSvg("lucide-folder-open", true);
-          void this.iconManager.getIconSvg("lucide-file-text", true);
-        }
-      };
-      if (typeof window.requestIdleCallback === "function") {
-        window.requestIdleCallback(warmCaches);
-      } else {
-        window.setTimeout(warmCaches, 1000);
-      }
-
-      try {
-        const optimized = await this.optimizeBlueTopazStyleSettings();
-        if (optimized) {
-          new obsidian.Notice(t("notice.blue_topaz_disabled"));
-          void this.generateStyles();
-        }
-      } catch (err) {
-        console.error("Colorful Folders: Failed to optimize Blue Topaz settings", err);
-      }
-
-      // Check for first download or version update and ensure icon packs exist
-      const currentVersion = this.manifest.version;
-      const isFirstRunOrVersionChange = !this.settings.lastVersion || this.settings.lastVersion !== currentVersion;
-      if (isFirstRunOrVersionChange) {
-        const customIconKeys = Object.keys(this.settings.customIcons || {});
-        const hasSimpleIcons = customIconKeys.some(k => k.startsWith('simple-icons-') || k.startsWith('simple-'));
-        if (!hasSimpleIcons) {
-          window.setTimeout(() => {
-            void this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/simple-icons.json", "simple-icons");
-          }, 2000);
-        }
-
-        const hasFeatherIcons = customIconKeys.some(k => k.startsWith('feather-'));
-        if (!hasFeatherIcons) {
-          window.setTimeout(() => {
-            void this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/feather.json", "feather");
-          }, 5000);
-        }
-
-        this.settings.lastVersion = currentVersion;
-        await this.saveSettings();
-
-        // Show the collective changelog (Fetched from GitHub)
+      this.cachedDocuments.forEach(doc => {
         try {
-          const githubUrl = `https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/main/version.md`;
+          doc.body.classList.toggle(
+            "cf-show-hidden",
+            this.settings.showHiddenItems,
+          );
+          doc.body.classList.toggle(
+            "cf-wrap-metadata",
+            Boolean(this.settings.wrapMetadata),
+          );
+        } catch {
+          void 0;
+        }
+      });
 
-          const response = await obsidian.requestUrl({ url: githubUrl });
-          if (response.status === 200) {
-            const content = response.text;
-            new ChangelogModal(this.app, content).open();
+      this.lifecycleService.onLayoutReady();
+    } catch (err) {
+      console.error("Colorful Folders: Exception in plugin onload", err as Error);
+    }
+
+    // Defer non-critical background checks (Blue Topaz optimization & Changelog modal) so plugin loads instantly
+    window.setTimeout(() => {
+      void (async () => {
+        try {
+          const optimized = await this.optimizeBlueTopazStyleSettings();
+          if (optimized) {
+            new obsidian.Notice(t("notice.blue_topaz_disabled"));
+            void this.generateStyles();
           }
         } catch (err) {
-          console.error(
-            "Colorful folders: failed to fetch collective changelog from GitHub",
-            err,
-          );
+          console.error("Colorful Folders: Failed to optimize Blue Topaz settings", err as Error);
         }
-      }
-    });
+
+        // Check for first download or version update and ensure icon packs exist
+        const currentVersion = this.manifest.version;
+        const isFirstRunOrVersionChange = !this.settings.lastVersion || this.settings.lastVersion !== currentVersion;
+        if (isFirstRunOrVersionChange) {
+          const customIconKeys = Object.keys(this.settings.customIcons || {});
+          const hasSimpleIcons = customIconKeys.some(k => k.startsWith('simple-icons-') || k.startsWith('simple-'));
+          if (!hasSimpleIcons) {
+            window.setTimeout(() => {
+              void this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/simple-icons.json", "simple-icons");
+            }, 2000);
+          }
+
+          const hasTablerIcons = customIconKeys.some(k => k.startsWith('tabler-') || k.startsWith('tb-'));
+          if (!hasTablerIcons) {
+            window.setTimeout(() => {
+              void this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/tabler.json", "tabler");
+            }, 5000);
+          }
+
+          this.settings.lastVersion = currentVersion;
+          await this.saveSettings();
+
+          // Show the collective changelog (Fetched from GitHub)
+          try {
+            const githubUrl = `https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/main/version.md`;
+            const response = await obsidian.requestUrl({ url: githubUrl });
+            if (response.status === 200) {
+              const content = response.text;
+              new ChangelogModal(this.app, content).open();
+            }
+          } catch (err) {
+            console.error(
+              "Colorful folders: failed to fetch collective changelog from GitHub",
+              err as Error
+            );
+          }
+        }
+      })();
+    }, 1000);
   }
 
   getStyle(path: string): FolderStyle | null {
     return StyleResolver.getStyle(this, path);
+  }
+
+  getActivePalette(_isDark?: boolean): { rgb: string; hex: string }[] {
+    return getCurrentPalette(this.settings, null, "").palette;
   }
 
   processDividers(): void {
@@ -237,20 +232,22 @@ export default class ColorfulFoldersPlugin
         const svgFiles = await this.getAllSvgFiles(iconsPath);
 
         this.localFileSystemIcons = {};
+        const normIconsPath = normalizeVaultPath(iconsPath);
         const iconReads = svgFiles.map(async (file) => {
-          const relPath = file.substring(iconsPath.length + 1);
+          const normFile = normalizeVaultPath(file);
+          const relPath = normFile.startsWith(normIconsPath) ? normFile.substring(normIconsPath.length + 1) : normFile;
           const content = await adapter.read(file);
           return { relPath, content };
         });
         const readResults = await Promise.all(iconReads);
 
         for (const { relPath, content } of readResults) {
-          const parts = relPath.split('/');
+          const parts = relPath.split(/[/\\]/);
           const filename = parts[parts.length - 1].slice(0, -4);
           const lowerFilename = filename.toLowerCase();
           
           const relNoExt = relPath.slice(0, -4);
-          const hyphenated = relNoExt.toLowerCase().replace(/[\s_]+/g, '-').replace(/\//g, '-');
+          const hyphenated = relNoExt.toLowerCase().replace(/[\s_]+/g, '-').replace(/[/\\]/g, '-');
           this.localFileSystemIcons[hyphenated] = content;
 
           if (parts.length > 1) {
@@ -295,7 +292,7 @@ export default class ColorfulFoldersPlugin
         this.generateStylesDebounced();
       }
     } catch (e) {
-      console.error("Colorful Folders: Failed to load local icons", e);
+      console.error("Colorful Folders: Failed to load local icons", e as Error);
     }
   }
 
@@ -385,32 +382,7 @@ export default class ColorfulFoldersPlugin
       win._testerObserver.disconnect();
       delete win._testerObserver;
     }
-    this._isUnloading = true;
-    this.adoptedStyleSheetService.unload();
-    this.getOpenDocuments().forEach(doc => {
-      doc.body.classList.remove("cf-show-hidden", "cf-wrap-metadata");
-    });
-
-    // Cleanly destroy observers and events
-    this.domObserverService.destroy();
-    this.eventTrackerService.destroy();
-
-    this.cleanDividers();
-
-    // Cancel all debouncers to prevent ghost execution
-    this.generateStylesDebounced.cancel();
-    this.saveDataDebounced.cancel();
-
-    // Explicitly clear memory-heavy global caches
-    this.iconCache.clear();
-    if (this.heatmapCache) this.heatmapCache.clear();
-    if (this.folderCountCache) this.folderCountCache.clear();
-    if (this.folderSortCache) this.folderSortCache.clear();
-    if (this.rootSortCache) this.rootSortCache.clear();
-    if (this.parsedExclusionList) this.parsedExclusionList.clear();
-
-    // Remove CF-generated graph groups on plugin unload
-    void GraphColorSync.clearGraphColors(this);
+    this.lifecycleService.destroy();
   }
 
   cleanDividers() {
@@ -440,6 +412,7 @@ export default class ColorfulFoldersPlugin
     if (this.settings.heatmapData) {
       this.heatmapCache = new Map(Object.entries(this.settings.heatmapData));
     }
+    this.syncCustomFolderColorsMap();
     this.activePaletteCache = null;
     this.parsedExclusionList = new Set(
       (this.settings.exclusionList || "")
@@ -450,16 +423,39 @@ export default class ColorfulFoldersPlugin
     );
   }
 
+  public syncCustomFolderColorsMap(): void {
+    this.customFolderColorsMap.clear();
+    const custom = this.settings.customFolderColors || {};
+    for (const path in custom) {
+      if (Object.prototype.hasOwnProperty.call(custom, path)) {
+        const style = custom[path];
+        if (!style) continue;
+        const styleObj: FolderStyle = typeof style === "string" ? { hex: style } : style;
+        this.customFolderColorsMap.set(path, styleObj);
+        const norm = normalizeVaultPath(path);
+        if (norm !== path) {
+          this.customFolderColorsMap.set(norm, styleObj);
+        }
+      }
+    }
+  }
+
   // PERF FIX 3: Selective icon cache invalidation.
   // Snapshot the icon-relevant keys before saving. Only clear the SVG
   // cache if customIcons or customIconRules actually changed — saving
   // unrelated settings (opacity, tag colors, etc.) no longer thrashes the cache.
   private _lastIconRulesKey = '';
-  private _lastCustomIconsKey = '';
+  private _lastCustomIconsCount = -1;
+  private _lastCustomIconsRef: Record<string, string> | null = null;
 
   async saveSettings() {
+    this.syncCustomFolderColorsMap();
     const iconRulesChanged = (this.settings.customIconRules || '') !== this._lastIconRulesKey;
-    const customIconsChanged = JSON.stringify(this.settings.customIcons || {}) !== this._lastCustomIconsKey;
+    const currentCustomIcons = this.settings.customIcons || {};
+    const currentCustomCount = Object.keys(currentCustomIcons).length;
+    const customIconsChanged =
+      this._lastCustomIconsRef !== currentCustomIcons ||
+      this._lastCustomIconsCount !== currentCustomCount;
     const shouldClearIconCache = iconRulesChanged || customIconsChanged;
 
     if (this.heatmapCache) {
@@ -472,7 +468,8 @@ export default class ColorfulFoldersPlugin
       this.iconCache.clear();
       this.iconManager.invalidateCategoryCache();
       this._lastIconRulesKey = this.settings.customIconRules || '';
-      this._lastCustomIconsKey = JSON.stringify(this.settings.customIcons || {});
+      this._lastCustomIconsRef = currentCustomIcons;
+      this._lastCustomIconsCount = currentCustomCount;
     }
     this.activePaletteCache = null;
     this.parsedExclusionList = new Set(
@@ -487,11 +484,38 @@ export default class ColorfulFoldersPlugin
   }
 
   registerCustomIcons() {
-    for (const [id, svg] of Object.entries(this.settings.customIcons)) {
-      obsidian.addIcon(id, svg);
-      if (this.iconManager) {
-        this.iconManager.preNormalizeIcon(id, svg);
-      }
+    const doRegister = () => {
+      const entries = Object.entries(this.settings.customIcons || {});
+      if (entries.length === 0) return;
+
+      // Chunk icon registration into non-blocking idle batches to eliminate startup lag
+      const registerBatch = (startIndex: number) => {
+        const batchSize = 250;
+        const end = Math.min(startIndex + batchSize, entries.length);
+        for (let i = startIndex; i < end; i++) {
+          const [id, svg] = entries[i];
+          try {
+            obsidian.addIcon(id, svg);
+          } catch {
+            // Ignore duplicate icon registration
+          }
+        }
+        if (end < entries.length) {
+          if (typeof window.requestIdleCallback === "function") {
+            window.requestIdleCallback(() => registerBatch(end));
+          } else {
+            window.setTimeout(() => registerBatch(end), 50);
+          }
+        }
+      };
+
+      registerBatch(0);
+    };
+
+    if (typeof window.requestIdleCallback === "function") {
+      window.requestIdleCallback(doRegister);
+    } else {
+      window.setTimeout(doRegister, 1000);
     }
   }
 
@@ -572,6 +596,13 @@ export default class ColorfulFoldersPlugin
         void this.toggleStealthMode();
       },
     });
+    this.addCommand({
+      id: "ai-auto-assign-icons",
+      name: "AI auto-assign icons for vault",
+      callback: () => {
+        void this.aiIconClassifier.classifyVault();
+      },
+    });
   }
 
   async toggleStealthMode() {
@@ -628,20 +659,18 @@ export default class ColorfulFoldersPlugin
       settingsManager?: StyleSettingsManager;
     }
 
-    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- Accessing internal Obsidian app/plugins API for Blue Topaz theme detection */
-    const appAny = this.app as unknown as Record<string, unknown>;
-    const vaultAny = this.app.vault as unknown as Record<string, unknown>;
-    const getConfig = typeof vaultAny.getConfig === "function" ? (vaultAny.getConfig as (key: string) => string | null).bind(vaultAny) : null;
-    const customCss = appAny.customCss as { theme?: string } | undefined;
+    const vault = this.app.vault as obsidian.Vault & { getConfig?: (key: string) => unknown };
+    const getConfigFn = typeof vault.getConfig === "function" ? vault.getConfig : null;
+    const customCss = (this.app as obsidian.App & { customCss?: { theme?: string }; plugins?: { getPlugin?: (id: string) => StyleSettingsPlugin | null } }).customCss;
     const themeName = customCss?.theme || "";
-    const currentTheme = (getConfig ? getConfig("cssTheme") : null) || themeName;
+    const rawTheme = getConfigFn ? (vault as { getConfig: (key: string) => unknown }).getConfig("cssTheme") : null;
+    const currentTheme = (typeof rawTheme === "string" ? rawTheme : null) || themeName;
     if (!currentTheme || currentTheme.toLowerCase() !== "blue topaz") return false;
 
-    const pluginsObj = appAny.plugins as { getPlugin?: (id: string) => StyleSettingsPlugin | null } | undefined;
+    const pluginsObj = (this.app as obsidian.App & { plugins?: { getPlugin?: (id: string) => StyleSettingsPlugin | null } }).plugins;
     if (!pluginsObj?.getPlugin) return false;
     const styleSettingsPlugin = pluginsObj.getPlugin("obsidian-style-settings");
     if (!styleSettingsPlugin) return false;
-    /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access -- Re-enable linting rules */
 
     const manager = styleSettingsPlugin?.settingsManager;
     if (!manager || !manager.settings) return false;
@@ -690,6 +719,10 @@ export default class ColorfulFoldersPlugin
     }
     this.isGeneratingStyles = true;
     try {
+      this.cachedDocuments.forEach((doc) => {
+        doc.body.classList.toggle("cf-show-hidden", Boolean(this.settings.showHiddenItems));
+        doc.body.classList.toggle("cf-wrap-metadata", Boolean(this.settings.wrapMetadata));
+      });
       const css = await this.styleGenerator.generateCss();
       this.adoptedStyleSheetService.updateStyles(css);
       this.getAllExplorerContainers().forEach((c) => this.domObserverService.tagExplorerItems(c));
@@ -698,7 +731,7 @@ export default class ColorfulFoldersPlugin
         void GraphColorSync.syncGraphColors(this);
       }
     } catch (e) {
-      console.error("Colorful Folders: Error during generateStyles", e);
+      console.error("Colorful Folders: Error during generateStyles", e as Error);
     } finally {
       this.isGeneratingStyles = false;
       if (this.hasPendingGenerateStyles && !this._isUnloading) {
@@ -711,7 +744,13 @@ export default class ColorfulFoldersPlugin
 
 
 
+  private _explorerContainersCache: HTMLElement[] | null = null;
+  private _explorerContainersValid = false;
+
   getAllExplorerContainers(): HTMLElement[] {
+    if (this._explorerContainersValid && this._explorerContainersCache) {
+      return this._explorerContainersCache;
+    }
     const explorers: HTMLElement[] = [];
     this.app.workspace.iterateAllLeaves((leaf) => {
       if (!leaf || !leaf.view) return;
@@ -737,12 +776,21 @@ export default class ColorfulFoldersPlugin
     docs.add(activeDocument);
 
     const allContainers = [...explorers];
-    docs.forEach((doc) => {
-      const extra = NotebookNavigatorIntegration.getExtraContainers(doc);
-      if (extra) extra.forEach((e) => allContainers.push(e as HTMLElement));
-    });
+    if (this.settings.notebookNavigatorSupport) {
+      docs.forEach((doc) => {
+        const extra = NotebookNavigatorIntegration.getExtraContainers(doc, this.settings);
+        if (extra) extra.forEach((e) => allContainers.push(e as HTMLElement));
+      });
+    }
 
+    this._explorerContainersCache = allContainers;
+    this._explorerContainersValid = true;
     return allContainers;
+  }
+
+  invalidateExplorerContainersCache(): void {
+    this._explorerContainersValid = false;
+    this._explorerContainersCache = null;
   }
 
 
@@ -771,11 +819,12 @@ export default class ColorfulFoldersPlugin
     return Array.from(this.cachedDocuments);
   }
 
-  async autoDownloadPack(url: string, prefix: string) {
-    try {
-      const res = await obsidian.requestUrl({ url });
+  async autoDownloadPack(url: string, prefix: string): Promise<number> {
+    let count = 0;
+    const fetchUrl = async (targetUrl: string) => {
+      const res = await obsidian.requestUrl({ url: targetUrl });
       const data = res.json as Record<string, unknown>;
-      if (!data || typeof data !== 'object') return;
+      if (!data || typeof data !== 'object') return false;
 
       const icons = data.icons as Record<string, { width?: number; height?: number; left?: number; top?: number; body?: string }> | undefined;
       if (icons && typeof icons === 'object' && !Array.isArray(icons)) {
@@ -797,10 +846,32 @@ export default class ColorfulFoldersPlugin
           const body = iconData.body;
           
           if (!body || typeof body !== 'string') return false;
-          if (/<script|on\w+\s*=/i.test(body)) return false; // Sanitize XSS scripts/event handlers
 
-          const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${l} ${t} ${w} ${h}">${body}</svg>`;
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(`<svg xmlns="http://www.w3.org/2000/svg">${body}</svg>`, 'image/svg+xml');
+          const dangerousTags = ['script', 'iframe', 'object', 'embed', 'foreignobject'];
+          for (const tag of dangerousTags) {
+              doc.querySelectorAll(tag).forEach(el => el.remove());
+          }
+          doc.querySelectorAll('use').forEach(el => {
+              const href = (el.getAttribute('href') || el.getAttribute('xlink:href') || '').trim().toLowerCase();
+              if (href.startsWith('http') || href.startsWith('//') || href.startsWith('javascript:') || href.startsWith('data:')) {
+                  el.remove();
+              }
+          });
+          doc.querySelectorAll('*').forEach(el => {
+              const attrs = Array.from(el.attributes);
+              for (const attr of attrs) {
+                  if (attr.name.startsWith('on')) el.removeAttribute(attr.name);
+              }
+          });
+          const sanitizedSvg = doc.querySelector('svg');
+          if (!sanitizedSvg) return false;
+          const cleanBody = sanitizedSvg.innerHTML;
+
+          const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${l} ${t} ${w} ${h}">${cleanBody}</svg>`;
           this.settings.customIcons[id] = svg;
+          count++;
           return true;
         };
 
@@ -819,13 +890,35 @@ export default class ColorfulFoldersPlugin
             }
           }
         }
+        return true;
+      }
+      return false;
+    };
+
+    try {
+      let success = false;
+      try {
+        success = await fetchUrl(url);
+      } catch (err) {
+        // Fallback to jsdelivr CDN if raw.githubusercontent.com is blocked
+        if (url.includes('raw.githubusercontent.com')) {
+          const cdnUrl = url.replace('https://raw.githubusercontent.com/', 'https://cdn.jsdelivr.net/gh/').replace('/master/', '@master/').replace('/main/', '@main/');
+          console.debug(`Colorful Folders: Retrying download via CDN mirror ${cdnUrl}...`);
+          success = await fetchUrl(cdnUrl);
+        } else {
+          throw err;
+        }
       }
 
-      this.registerCustomIcons();
-      await this.saveSettings();
-      void this.generateStyles();
+      if (success) {
+        this.registerCustomIcons();
+        await this.saveSettings();
+        void this.generateStyles();
+      }
+      return count;
     } catch (e) {
-      console.error(`Colorful Folders: Failed to auto-download ${prefix} icons`, e);
+      console.error(`Colorful Folders: Failed to download ${prefix} icons`, e as Error);
+      throw e;
     }
   }
 

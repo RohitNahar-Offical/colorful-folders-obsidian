@@ -208,6 +208,36 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             margin-top: 2px !important;
             margin-bottom: 2px !important;
         }
+
+        /* Universal O(1) Active File Selection Styling */
+        body .nav-files-container .nav-file-title.is-active:not(.nn-file),
+        body .nav-files-container .tree-item-self.is-active:not(.nn-file),
+        body .notebook-navigator .is-active {
+            background-color: var(--cf-active-bg, var(--nav-item-background-active, rgba(var(--interactive-accent-rgb), 0.15))) !important;
+            color: var(--cf-active-color, var(--text-accent, var(--interactive-accent))) !important;
+            border-left: none !important;
+            border-radius: 6px !important;
+            --nav-item-background: var(--cf-active-bg, var(--nav-item-background-active));
+            ${settings.glassmorphism ? `
+                backdrop-filter: blur(12px) saturate(160%) !important;
+                -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+                box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+                outline: 1px solid rgba(var(--cf-active-rgb, var(--interactive-accent-rgb)), 0.3) !important;
+                outline-offset: -1px !important;
+            ` : ''}
+        }
+
+        body .nav-files-container .nav-file-title.is-active:not(.nn-file) .nav-file-title-content,
+        body .nav-files-container .tree-item-self.is-active:not(.nn-file) .tree-item-inner,
+        body .notebook-navigator .is-active .nn-navitem-name,
+        body .notebook-navigator .is-active .nn-file-name {
+            color: var(--cf-active-color, var(--text-accent, var(--interactive-accent))) !important;
+        }
+
+        body .nav-files-container .nav-file-title.is-active:not(.nn-file)::before,
+        body .nav-files-container .tree-item-self.is-active:not(.nn-file):not(.nn-navitem)::before {
+            background-color: var(--cf-active-color, var(--interactive-accent)) !important;
+        }
     `;
 }
 
@@ -466,33 +496,53 @@ export function generateStealthCss(settings: ColorfulFoldersSettings): string {
             stealthCss += `
                 body:not(.cf-show-hidden) .nav-folder-title[data-path="${safePath}"],
                 body:not(.cf-show-hidden) .nav-folder-title[data-path="${safePath}"] + .nav-folder-children,
+                body:not(.cf-show-hidden) .nav-folder-title[data-path="${safePath}"] + .tree-item-children,
                 body:not(.cf-show-hidden) .nav-file-title[data-path="${safePath}"],
-                body:not(.cf-show-hidden) .tree-item-self[data-path="${safePath}"] {
+                body:not(.cf-show-hidden) .tree-item-self[data-path="${safePath}"],
+                body:not(.cf-show-hidden) .tree-item[data-path="${safePath}"],
+                body:not(.cf-show-hidden) .nav-file[data-path="${safePath}"],
+                body:not(.cf-show-hidden) .nav-folder[data-path="${safePath}"] {
                     display: none !important;
                 }
 
-                body.cf-show-hidden .nav-folder-title[data-path="${safePath}"],
-                body.cf-show-hidden .nav-file-title[data-path="${safePath}"],
-                body.cf-show-hidden .tree-item-self[data-path="${safePath}"] {
-                    opacity: 0.3 !important;
-                    filter: grayscale(1) blur(0.5px) !important;
+                body.cf-show-hidden .nav-folder-title[data-path="${safePath}"]:not(.is-folder-note):not(.is-folder-note-hidden):not(.fn-hidden):not(.cf-fn-hidden):not(.folder-note-hidden):not([data-folder-note="true"]),
+                body.cf-show-hidden .nav-file-title[data-path="${safePath}"]:not(.is-folder-note):not(.is-folder-note-hidden):not(.fn-hidden):not(.cf-fn-hidden):not(.folder-note-hidden):not([data-folder-note="true"]),
+                body.cf-show-hidden .tree-item-self[data-path="${safePath}"]:not(.is-folder-note):not(.is-folder-note-hidden):not(.fn-hidden):not(.cf-fn-hidden):not(.folder-note-hidden):not([data-folder-note="true"]),
+                body.cf-show-hidden .tree-item[data-path="${safePath}"]:not(.is-folder-note):not(.is-folder-note-hidden):not(.fn-hidden):not(.cf-fn-hidden):not(.folder-note-hidden):not([data-folder-note="true"]),
+                body.cf-show-hidden .nav-file[data-path="${safePath}"]:not(.is-folder-note):not(.is-folder-note-hidden):not(.fn-hidden):not(.cf-fn-hidden):not(.folder-note-hidden):not([data-folder-note="true"]),
+                body.cf-show-hidden .nav-folder[data-path="${safePath}"]:not(.is-folder-note):not(.is-folder-note-hidden):not(.fn-hidden):not(.cf-fn-hidden):not(.folder-note-hidden):not([data-folder-note="true"]) {
+                    display: flex !important;
+                    visibility: visible !important;
+                    background-color: rgba(128, 128, 128, 0.15) !important;
+                    border-radius: 6px !important;
+                    opacity: 0.75 !important;
+                }
+
+                body.cf-show-hidden .nav-folder-title[data-path="${safePath}"] + .nav-folder-children,
+                body.cf-show-hidden .nav-folder-title[data-path="${safePath}"] + .tree-item-children {
+                    display: block !important;
+                    visibility: visible !important;
                 }
             `;
 
             if (settings.notebookNavigatorSupport) {
-                const nnSelector = NotebookNavigatorIntegration.getScopedNavSelector(path);
+                const nnSelectors = NotebookNavigatorIntegration.getScopedNavSelectors(path);
                 const nnFileSelector = NotebookNavigatorIntegration.getScopedFileSelector(path);
 
+                const hideSels = [...nnSelectors, nnFileSelector].map(s => `body:not(.cf-show-hidden) ${s}`).join(',\n');
+                const showSels = [...nnSelectors, nnFileSelector].map(s => `body.cf-show-hidden ${s}`).join(',\n');
+
                 stealthCss += `
-                    body:not(.cf-show-hidden) ${nnSelector},
-                    body:not(.cf-show-hidden) ${nnFileSelector} {
+                    ${hideSels} {
                         display: none !important;
                     }
 
-                    body.cf-show-hidden ${nnSelector},
-                    body.cf-show-hidden ${nnFileSelector} {
-                        opacity: 0.3 !important;
-                        filter: grayscale(1) blur(0.5px) !important;
+                    ${showSels} {
+                        display: flex !important;
+                        visibility: visible !important;
+                        background-color: rgba(128, 128, 128, 0.15) !important;
+                        border-radius: 6px !important;
+                        opacity: 0.75 !important;
                     }
                 `;
             }

@@ -7,30 +7,38 @@
 
 ## 1. `ColorfulFoldersPlugin` (Main Class)
 
-| Method | Purpose | Key Action |
+| Method / Property | Purpose | Key Action |
 | :--- | :--- | :--- |
-| `generateStyles` | Main update trigger | CSS Injection |
+| `generateStyles` | Main update trigger | CSS Injection via `AdoptedStyleSheetService` |
 | `registerCustomIcons` | Hydrates icon registry | `obsidian.addIcon()` |
 | `toggleStealthMode` | Privacy switching | `PasswordModal` trigger |
 | `loadLocalIcons` | Scans `.obsidian/icons` at startup | Parallel `Promise.all` reads into `localFileSystemIcons` |
 | `saveSettings` | Persists data and triggers re-render | Selectively clears icon cache only when icon settings change |
+| `lifecycleService` | Instance of `PluginLifecycleService` | Encapsulates document tracking, vault event listeners, and cleanup |
 
 ### `localFileSystemIcons: Record<string, string>`
 A map of SVG icon name → raw SVG content, populated by `loadLocalIcons()` at startup. Checked by `IconManager.getIconSvg()` after `customIcons` but before Lucide.
 
 ---
 
+## 1b. `PluginLifecycleService` (`src/services/PluginLifecycleService.ts`)
+
+Encapsulates plugin lifecycle management, window tracking, and vault event listeners:
+- `initializeDocumentTracking()`: Tracks all open workspace documents across popout windows.
+- `registerVaultCacheEvents()`: Listens to vault `create`, `modify`, `delete` events to invalidate container/folder caches.
+- `onLayoutReady()`: Runs layout initialization, icon pre-warming, menu extensions, and divider observer setup.
+- `destroy()`: Unregisters listeners, clears memory caches, and detaches stylesheets on plugin unload.
+
+---
+
 ## 2. `StyleGenerator` (CSS Traverser Engine)
 
 ### `generateCss(): string`
-Generates the full CSS bundle for the current vault state by calling `BaseCssGenerator` functions and traversing the vault structure.
+Generates the complete CSS bundle for the current vault state by calling `BaseCssGenerator` functions and recursively traversing the vault structure.
 
 ### `traverse(folder: TFolder, depth: number, state: TraversalState): void`
 Recursive engine that walks the file tree.
-- **State**: Tracks color indices, parent styles, and tint opacity.
-
-### Counter SVG Template Cache
-Private fields `_counterSvgColor`, `_counterSvgPrefix`, `_counterSvgMid`, `_counterSvgSuffix` cache the pre-encoded static segments of the folder counter SVG. The template is rebuilt only when the folder color changes, reducing per-folder CPU cost from O(N·regex) to O(1).
+- **State**: Tracks color indices, parent styles, and tint opacity. Guarantees complete CSS ruleset preservation for all active items across reloads.
 
 ---
 
@@ -94,21 +102,36 @@ Core resolution engine supporting a 4-tier priority system (`Tier 1`: Pack Exact
 - **`preNormalizeIcon(id: string, rawSvg: string): void`**: Eagerly normalizes and pre-caches raw and encoded Data-URI representations into `iconCache` and `_dataUriCache` at load time.
 - **`invalidateCache(): void`**: Flushes all internal LRU caches and invalidates `_packIndex` snapshot.
 
+### `AIIconClassifier` (`src/integrations/AIIconClassifier.ts`)
+Instance service (`plugin.aiIconClassifier`) for context-aware LLM icon classification across vault folders and Markdown files.
+- **`classifyVault(options?: { force?: boolean }): Promise<void>`**: Triggers privacy verification, context payload generation, LLM batch execution, smart icon resolution, and style updates.
+- **`stopClassification(): void`**: Cancels ongoing classification tasks gracefully via Notice feedback.
+- **`queryAI(payload: any[], systemPrompt: string): Promise<Record<string, unknown>>`**: Coordinates provider-specific subroutines (`queryGemini`, `queryClaude`, `queryOllama`, `queryOpenAI`).
+- **`parseJsonResponse(textResult: string): Record<string, unknown>`**: Pre-sanitizes `=>` / `->` arrow notation, strips `<think>` tags and markdown codeblocks, and returns key-value mapping arrays.
+- **`unwrapOuterJsonObject(parsed: Record<string, unknown>): Record<string, unknown>`**: Recursively flattens nested group/category maps into a single flat classification dictionary.
+
 ### `IconPackIndex` (`src/core/IconPackIndex.ts`)
-In-memory index maintaining `exactMap` and `suffixMap` to enable $O(1)$ lookups.
+In-memory index maintaining `exactMap`, `coreMap`, and `suffixMap` to enable $O(1)$ lookups.
 - **`build(localIcons, customIcons): void`**: Builds lookup maps with automatic pack priority tie-breaking using `PACK_PRIORITY`.
 - **`findIcon(searchKey: string): string | null`**: Performs $O(1)$ exact, prefix-stripped, and suffix-matched lookups.
+- **`searchFuzzy(searchKey: string, options?: { threshold?: number }): string | null`**: Optimized fuzzy search with $O(1)$ fast-path pre-check, length-difference pruning ratio `1 - threshold`, word-boundary similarity alignment, and single-row Levenshtein buffer.
 - **`getIsBuilt(): boolean`**: Returns index build status.
 
 ### `CategoryTrie` (`src/core/CategoryTrie.ts`)
-Character-indexed prefix trie for `AUTO_ICON_CATEGORIES`.
-- **`build(categories: AutoIconData[]): void`**: Maps literal initial character tokens of rules to candidate lists.
-- **`lookup(name: string): AutoIconData[]`**: Aggregates rule candidates for all word initial characters in the input title.
+Node-based prefix trie (`TrieNode`) for `AUTO_ICON_CATEGORIES`.
+- **`build(categories: AutoIconData[]): void`**: Inserts category words into the prefix trie node hierarchy (`insertWord`).
+- **`lookup(name: string): AutoIconData[]`**: Tokenizes input name and walks the node tree to return only matching category candidates.
 
-### `LRUCache<K, V>` (`src/common/LRUCache.ts`)
-Bounded $O(1)$ Least-Recently-Used cache with `Map` key reordering and auto-eviction.
-- **`get(key: K): V | undefined`**: Returns value and promotes key to MRU position.
-- **`set(key: K, value: V): void`**: Sets value and evicts LRU key when capacity (e.g., `2048`) is reached.
+### `Utils` (`src/common/utils.ts`)
+- **`normalizePathKey(path: string): string`**: Lowercases path and strips `.md` extension while preserving `/` slashes, preventing path collisions across subfolders.
+- **`normalizeIconName(iconId: string): string`**: Standardizes icon key cleaning across AI Classification, Auto-Icon resolution, and Pack Index lookups.
+
+### `AdoptedStyleSheetService` (`src/services/AdoptedStyleSheetService.ts`)
+Manages CSS injection directly into browser window `document.adoptedStyleSheets`.
+- **`initializeStyles(): void`**: Attaches the programmatic stylesheet to all workspace window documents.
+- **`updateStyles(cssString: string): void`**: Synchronously replaces sheet CSS rules via `sheet.replaceSync()`.
+- **`clearStyles(): void`**: Flushes all CSS rules from the stylesheet.
+- **`unload(): void`**: Detaches the stylesheet from all workspace window documents on plugin teardown.
 
 ---
 

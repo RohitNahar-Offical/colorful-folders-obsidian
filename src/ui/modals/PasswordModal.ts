@@ -1,4 +1,5 @@
 import * as obsidian from 'obsidian';
+import { t } from '../../lang/helpers';
 
 export class PasswordModal extends obsidian.Modal {
     private passwordValue: string = "";
@@ -17,6 +18,9 @@ export class PasswordModal extends obsidian.Modal {
 
         modalEl.setCssStyles({
             maxWidth: "400px",
+            width: "min(400px, 92vw)",
+            maxHeight: "88vh",
+            overflowY: "auto",
             borderRadius: "12px",
             boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
             border: "1px solid var(--background-modifier-border)"
@@ -25,7 +29,7 @@ export class PasswordModal extends obsidian.Modal {
         const header = contentEl.createDiv({ cls: "cf-modal-header" });
         header.setCssStyles({ textAlign: "center", marginBottom: "20px" });
         header.createEl("h2", { text: this.title }).setCssStyles({ margin: "0", fontSize: "1.5em" });
-        header.createEl("p", { text: "Please enter your vault password to continue." }).setCssStyles({ opacity: "0.6", fontSize: "0.9em", marginTop: "8px" });
+        header.createEl("p", { text: t("modal.password.enter_password_desc") }).setCssStyles({ opacity: "0.6", fontSize: "0.9em", marginTop: "8px" });
 
         const body = contentEl.createDiv({ cls: "cf-modal-body" });
         body.setCssStyles({ display: "flex", flexDirection: "column", gap: "15px" });
@@ -84,9 +88,9 @@ export class PasswordModal extends obsidian.Modal {
             cursor: "pointer",
             textDecoration: "underline"
         });
-        forgotLink.setText("Forgot password?");
+        forgotLink.setText(t("settings.vault_password.name"));
         forgotLink.onclick = () => {
-            new obsidian.Notice("To reset your password, perform a 'Factory reset' in the plugin settings or manually clear the password in your data.json file.", 8000);
+            new obsidian.Notice(t("notice.password_forgot_hint"), 8000);
         };
     }
 

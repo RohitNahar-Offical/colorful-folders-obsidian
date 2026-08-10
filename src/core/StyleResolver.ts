@@ -3,8 +3,22 @@ import { EffectiveStyle, FolderStyle, IColorfulFoldersPlugin } from '../common/t
 import { ColorResolver, getCurrentPalette, isDarkMode } from './ColorResolver';
 import { anyToHex, hexToRgbObj, parseCustomPalette, normalizeVaultPath } from '../common/utils';
 
+
 export class StyleResolver {
     public static getStyle(plugin: IColorfulFoldersPlugin, path: string): FolderStyle | null {
+        if (!path) return null;
+        if (plugin?.customFolderColorsMap) {
+            const mapStyle = plugin.customFolderColorsMap.get(path);
+            if (mapStyle !== undefined) {
+                return typeof mapStyle === "string" ? { hex: mapStyle } : mapStyle;
+            }
+            const normPath = normalizeVaultPath(path);
+            const normStyle = plugin.customFolderColorsMap.get(normPath);
+            if (normStyle !== undefined) {
+                return typeof normStyle === "string" ? { hex: normStyle } : normStyle;
+            }
+            return null;
+        }
         const normPath = normalizeVaultPath(path);
         const style = plugin.settings.customFolderColors[normPath] || plugin.settings.customFolderColors[path];
         if (!style) return null;
@@ -29,12 +43,7 @@ export class StyleResolver {
             const isFile = target instanceof obsidian.TFile;
             const path = target.path;
 
-            const getStyle = (p: string) => {
-                const style = plugin.settings.customFolderColors[p];
-                if (!style) return null;
-                if (typeof style === "string") return { hex: style };
-                return style;
-            };
+            const getStyle = (p: string) => StyleResolver.getStyle(plugin, p);
 
             let customStyle = getStyle(path);
 
@@ -135,6 +144,7 @@ export class StyleResolver {
                 }
             }
 
+            const autoColorFiles = plugin.settings.outlineOnly ? false : plugin.settings.autoColorFiles;
             const color = ColorResolver.resolveColor(
                 path,
                 target.name,
@@ -150,8 +160,9 @@ export class StyleResolver {
                 palette,
                 heatmapMtime,
                 plugin.settings.globalBackgroundColor || "",
-                plugin.settings.autoColorFiles,
-                isNNActive
+                autoColorFiles,
+                isNNActive,
+                plugin.settings.fileColorMode
             );
 
             const op = ColorResolver.resolveOpacity(
@@ -163,7 +174,7 @@ export class StyleResolver {
                 plugin.settings.rootOpacity,
                 plugin.settings.subfolderOpacity,
                 plugin.settings.rootStyle,
-                plugin.settings.autoColorFiles,
+                autoColorFiles,
                 isNNActive,
                 isDark
             );
@@ -224,7 +235,7 @@ export class StyleResolver {
                 applyToFiles: !!customStyle?.applyToFiles,
             };
         } catch (e) {
-            console.error("Colorful Folders: Failed to resolve getEffectiveStyle", e);
+            console.error("Colorful Folders: Failed to resolve getEffectiveStyle", e as Error);
             return {
                 hex: "#ffffff",
                 textColor: "#000000",

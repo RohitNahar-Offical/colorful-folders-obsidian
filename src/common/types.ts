@@ -1,6 +1,7 @@
 import { App, MenuItem, Menu, EventRef, Debouncer } from 'obsidian';
 import { DOMObserverService } from '../services/DOMObserverService';
 import type { IconManager } from '../core/IconManager';
+import type { AIIconClassifier } from '../integrations/AIIconClassifier';
 
 export interface FolderStyle {
     hex?: string;
@@ -35,6 +36,8 @@ export interface FolderStyle {
     textGradientEnd?: string;
     rainbowBrightness?: number;
     borderRadius?: number;
+    aiHash?: string;
+    iconSource?: 'ai' | 'ai-ollama' | 'ai-custom' | 'embedding' | 'manual' | 'auto' | (string & {});
 }
 
 export interface ColorfulFoldersSettings {
@@ -61,7 +64,9 @@ export interface ColorfulFoldersSettings {
     wideAutoIcons: boolean;
     rainbowRootText: boolean;
     rainbowRootBgTransparent: boolean;
+    rainbowGradientAngle?: number;
     autoColorFiles: boolean;
+    fileColorMode: string;
     colorText?: string | boolean;
     showItemCounters: boolean;
     rootTintOpacity: number;
@@ -112,13 +117,25 @@ export interface ColorfulFoldersSettings {
     showCollapseIndicator: boolean;
     folderBorderRadius: number;
     enableStaircaseHack: boolean;
-    smartConnectionsCompatMode?: boolean;
     heatmapData?: Record<string, number>;
+
+    aiProvider: 'ollama' | 'custom';
+    aiApiKey: string;
+    aiCustomEndpoint: string;
+    aiOllamaEndpoint: string;
+    aiModelName: string;
+    aiIncludeFiles?: boolean;
+    aiIncludeContentContext?: boolean;
+    aiKeyConfirmed?: boolean;
+
+    embeddingEngine?: 'builtin' | 'custom';
+    embeddingCustomModel?: string;
+    embeddingCustomEndpoint?: string;
 }
 
 
 export interface AutoIconData {
-    tier?: 0 | 1 | 2 | 3 | 4;
+    tier?: number;
     rex: RegExp;
     emoji: string;
     lucide: string;
@@ -159,6 +176,10 @@ export interface IColorfulFoldersPlugin {
     parsedExclusionList?: Set<string> | null;
     activePaletteCache?: { palette: { rgb: string; hex: string }[] } | null;
     iconManager: IconManager;
+    aiIconClassifier: AIIconClassifier;
+    embeddingModel?: import('../integrations/embedingmodel').EmbeddingModel;
+    customFolderColorsMap: Map<string, FolderStyle>;
+    syncCustomFolderColorsMap(): void;
     isSyncingDividers: boolean;
     isDragging: boolean;
     _dividerTimeout?: number | null;
@@ -170,14 +191,18 @@ export interface IColorfulFoldersPlugin {
     dividerManager: {
         syncDividers(): void;
         clean(): void;
+        hasAnyDividers(): boolean;
     };
     styleGenerator: { generateCss(): Promise<string> };
     domObserverService: DOMObserverService;
     getAllExplorerContainers(): HTMLElement[];
+    invalidateExplorerContainersCache(): void;
     getOpenDocuments(): Document[];
     getStyle(path: string): FolderStyle | null;
+    getActivePalette(isDark?: boolean): { rgb: string; hex: string }[];
     processDividers(): void;
     generateStyles(): Promise<void>;
+    autoDownloadPack(url: string, prefix: string): Promise<number>;
     initStaircaseStyleStripper(): void;
     generateStylesDebounced: Debouncer<[], void>;
     refreshIconsDebounced?: Debouncer<[], void>;

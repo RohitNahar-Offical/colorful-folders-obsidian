@@ -104,6 +104,9 @@ Do not have 4+ different container query blocks scattered across files. Consolid
 **RULE 4.7: Run the linter before pushing.**
 Always run `npm run lint` (or `node node_modules/eslint/bin/eslint.js`) before committing, especially after adding features that use generic objects or DOM manipulation. *(Incident #6)*
 
+**RULE 4.8: Pin `@typescript-eslint` to match `eslint-plugin-obsidianmd`'s bundled version.**
+Before running `npm install`, check what version of `typescript-eslint` is bundled inside `eslint-plugin-obsidianmd` by running `npm list eslint-plugin-obsidianmd`. Pin your top-level `@typescript-eslint/eslint-plugin` and `@typescript-eslint/parser` to that **exact same version** (e.g., `8.65.0`, not `^8.65.0`). A version mismatch causes type-aware rules (like `unbound-method`) to crash with `TypeError: Cannot read properties of undefined`, aborting ESLint silently — making your local linter pass while Obsidian's store bot finds hundreds of errors. If you see `"@typescript-eslint/unbound-method": "off"` in `eslint.config.mjs`, it is masking this crash — fix the versions instead. *(Incident #29)*
+
 ---
 
 ## 5. UI/UX Standards & Edge Cases
@@ -122,6 +125,9 @@ Any event listener registered on an element MUST be explicitly unregistered in t
 
 **RULE 5.5: Reset UI state on Reset buttons.**
 When providing "Reset" buttons in modals, store references to `ToggleComponent` and other interactive UI elements, and explicitly call `.setValue(false)` (or equivalent) to keep the UI in sync with the data model. *(Incident #23)*
+
+**RULE 5.6: All new user-facing strings MUST use `t()` from the i18n system.**
+Never add hardcoded strings (setting names, descriptions, button labels, tooltips, modal titles, notices, placeholders) to any UI file. Every new string must be added as a key in `src/lang/locale/en.ts` AND in all supported locale files (`sk.ts`, `de.ts`, `es.ts`, `fr.ts`, `ja.ts`, `zh-cn.ts`, `zh-tw.ts`). Use `t("your.key")` in the source file. TypeScript will emit a build error if the key doesn't exist in `en.ts`, providing automatic coverage enforcement. See `docs/LOCALIZATION.md` for the full workflow. *(Established post-localization refactor of all setting panels and modals)*
 
 ---
 
@@ -171,9 +177,13 @@ colorful-folders/
 │   │   └── DividerManager.ts  ← Divider DOM management
 │   ├── services/
 │   │   └── DOMObserverService.ts ← MutationObserver & scroll handling
+│   ├── lang/
+│   │   ├── helpers.ts         ← t() translation function & localeMap registry
+│   │   └── locale/            ← Locale dictionaries (en, sk, de, es, fr, ja, zh-cn, zh-tw)
 │   ├── ui/
 │   │   ├── SettingTab.ts      ← Settings panel UI
-│   │   └── modals/            ← All interactive UI modals
+│   │   ├── settings/          ← Per-tab setting sections
+│   │   └── modals/            ← All interactive UI modals (DividerModal, HoverMessageModal, PasswordModal, etc.)
 │   └── integrations/
 │       └── NotebookNavigator.ts ← NN plugin integration
 ├── styles.css                 ← Static base styles only
@@ -237,6 +247,8 @@ When starting a new session on this plugin, do the following **before writing an
 | 5.3 | #12, #23 |
 | 5.4 | #12 |
 | 5.5 | #23 |
+| 5.6 | Post-localization refactor |
 | 6.1 | #11 |
 | 6.2 | #11 |
 | 7 (Staircase) | #24, #25 |
+| 4.8 | #29 |

@@ -16,9 +16,9 @@ Colorful Folders hooks into the Obsidian event bus and DOM observers reactively:
 | `file-open` | `EventTrackerService` | Updates active folder path markers dynamically (`.is-active-path`). |
 | `dragstart` | `EventTrackerService` | Sets `plugin.isDragging = true` and suspends all styling and observer work during drag. |
 | `dragend` | `EventTrackerService` | Resets `isDragging` and runs a catch-up render. |
-| `create` / `delete` / `rename` | `EventTrackerService` | Vault structure changes; invalidates item count, heatmap, and icon caches. |
+| `create` / `delete` / `modify` | `PluginLifecycleService` | Vault structure changes; invalidates item count, container, and icon caches. |
 | `scroll` (container) | `DOMObserverService` | Suspends observer calculations during active scroll, queuing a single debounced catch-up sync after scroll stops. |
-| `layout-ready` | `main.ts` | Triggers startup cache pre-warming via `requestIdleCallback()` for core folder and document icons. |
+| `layout-ready` | `PluginLifecycleService` | Triggers startup cache pre-warming via `requestIdleCallback()` for core folder and document icons. |
 | `generateStyles` (post-render) | `main.ts / GraphColorSync` | Syncs folder colors to `.obsidian/graph.json` color groups if `graphColorSync` is enabled. |
 
 ---
@@ -60,21 +60,29 @@ graph TD
 ```
 
 ### 3.1 `IconPackIndex` (`src/core/IconPackIndex.ts`)
-- Maintains `exactMap` and `suffixMap` to enable $O(1)$ icon lookups.
+- Maintains `exactMap`, `coreMap`, and `suffixMap` to enable $O(1)$ icon lookups.
 - Builds once per session with version-snapshot checking (`_localVersion`, `_customVersion`).
 - Resolves suffix collisions at build time using `PACK_PRIORITY` weights:
   `custom` (100) > `lucide` (90) > `tabler` (80) > `simple-icons` (70) > `remix` (60) > `feather` (50) > `font-awesome` (40) > `material` (30).
+  - **Structure-Preserving Path Key Normalization**: `normalizePathKey(path)` preserving slashes `/` to eliminate key collision bugs across subfolders.
+  - **Memory-Efficient Hierarchy Depth Scanner (`getFastPathSlashes`)**: Zero-allocation $O(\text{len})$ char-code scanner (`charCodeAt(i) === 47`) replacing expensive `path.split('/')` heap allocations during color resolution.
+  - **Hierarchy Level Color Mode (`colorMode: "hierarchy"`)**: Directly maps folder color indices to tree depth (`(depth + cycleOffset) % palette.length`) with zero array allocations.
+  - **Stemming Engine & Fuzzy Optimizations**: `STOP_WORDS` filtering, `searchFuzzy` length-difference pruning, word-boundary alignment, and single-row Levenshtein memory buffer.
 
 ### 3.2 `CategoryTrie` (`src/core/CategoryTrie.ts`)
-- Indexes `AUTO_ICON_CATEGORIES` by initial character tokens of regex source strings.
-- `lookup(name)` collects initial characters for **all words** in a title to aggregate candidate category rules, reducing evaluated patterns from 80+ to $\le 5$ per query.
+- Indexes `AUTO_ICON_CATEGORIES` using a true Node-based Prefix Trie (`TrieNode`).
+- `lookup(name)` tokenizes input title words, walking character prefix branches to return matching category rules without dumping full fallback sets.
 
-### 3.3 Stemming & Stop-Word Engine (`STOP_WORDS` / `stemWord`)
+### 3.3 Path Key Normalization (`normalizePathKey` / `normalizeIconName`)
+- `normalizePathKey(path)` lowercases paths and strips `.md` extensions while preserving `/` path slashes. Prevents key collisions between subfolder files (`"Dev/Notes.md"` $\rightarrow$ `"dev/notes"`) and top-level files (`"DevNotes.md"` $\rightarrow$ `"devnotes"`).
+- `normalizeIconName(iconId)` unifies icon key formatting across AI classification, auto-icon matching, and pack index searches.
+
+### 3.4 Stemming & Stop-Word Engine (`STOP_WORDS` / `stemWord`)
 - `STOP_WORDS` filters out question words (`how`, `why`, `where`), auxiliary verbs (`is`, `are`, `works`), and structural nouns (`folder`, `file`).
 - `stemWord()` strips common English suffixes (`-ing`, `-ed`, `-es`, `-s`) before pack queries.
 - Single-word scanning iterates from right to left (last to first) to prioritize primary subject nouns over leading filler words.
 
-### 3.4 $O(1)$ LRU Cache Engine (`src/common/LRUCache.ts`)
+### 3.5 $O(1)$ LRU Cache Engine (`src/common/LRUCache.ts`)
 - All string and Data-URI transformations are bounded by `LRUCache(2048)` instances (`_normCache`, `_dataUriCache`, `_findPackIconCache`).
 - Uses `Map` delete-and-set key reordering for $O(1)$ amortized get/set/eviction operations.
 - `preNormalizeIcon()` eagerly populates raw (`0:`) and encoded (`1:`) Data-URIs into `iconCache` on icon load, bypassing `DOMParser` stalls during rendering.
@@ -90,8 +98,9 @@ graph TD
 
 ---
 
-## 5. AdoptedStyleSheet Lifecycle & Zero-DOM Storage
+## 5. AdoptedStyleSheet Lifecycle & Mobile Fallback Engine
 
 - Programmatic `CSSStyleSheet` instance owned by `AdoptedStyleSheetService`.
 - Attached to `activeDocument.adoptedStyleSheets` and all popout window documents.
 - `sheet.replaceSync(cssString)` executes in < 0.1ms without creating HTML `<style>` elements or modifying DOM child nodes.
+- **Mobile & Legacy WebKit Fallback**: For older mobile OS versions or webviews that lack `CSSStyleSheet` constructor or `adoptedStyleSheets` support, `AdoptedStyleSheetService` automatically injects and manages a fallback dynamic `<style id="cf-dynamic-styles">` element inside `doc.head`, guaranteeing 100% rendering compatibility across iOS, Android, Linux, and Windows.

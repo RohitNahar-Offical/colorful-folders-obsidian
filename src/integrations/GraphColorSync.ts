@@ -147,7 +147,7 @@ export class GraphColorSync {
             const raw = await plugin.app.vault.adapter.read(path);
             return JSON.parse(raw) as GraphJson;
         } catch (e) {
-            console.warn('[Colorful Folders] Could not read graph.json:', e);
+            console.warn('[Colorful Folders] Could not read graph.json:', e as Error);
             return {};
         }
     }
@@ -158,7 +158,7 @@ export class GraphColorSync {
         try {
             await plugin.app.vault.adapter.write(path, JSON.stringify(data, null, 2));
         } catch (e) {
-            console.error('[Colorful Folders] Could not write graph.json:', e);
+            console.error('[Colorful Folders] Could not write graph.json:', e as Error);
         }
     }
 

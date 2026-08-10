@@ -48,22 +48,28 @@ export const PALETTES: Record<string, Array<{ rgb: string, hex: string }>> = {
         { rgb: "255, 217, 236", hex: "#ffd9ec" }
     ],
     "Tailwind UI": [
-        { rgb: "59, 130, 246", hex: "#3b82f6" },
-        { rgb: "16, 185, 129", hex: "#10b981" },
-        { rgb: "239, 68, 68", hex: "#ef4444" },
-        { rgb: "139, 92, 246", hex: "#8b5cf6" },
-        { rgb: "245, 158, 11", hex: "#f59e0b" },
-        { rgb: "107, 114, 128", hex: "#6b7280" },
-        { rgb: "236, 72, 153", hex: "#ec4899" }
+        { rgb: "59, 130, 246", hex: "#3b82f6" },  // Blue
+        { rgb: "16, 185, 129", hex: "#10b981" },  // Emerald
+        { rgb: "239, 68, 68", hex: "#ef4444" },   // Red
+        { rgb: "139, 92, 246", hex: "#8b5cf6" },  // Purple
+        { rgb: "245, 158, 11", hex: "#f59e0b" },  // Amber
+        { rgb: "6, 182, 212", hex: "#06b6d4" },   // Cyan
+        { rgb: "236, 72, 153", hex: "#ec4899" },  // Pink
+        { rgb: "99, 102, 241", hex: "#6366f1" },  // Indigo
+        { rgb: "244, 63, 94", hex: "#f43f5e" },   // Rose
+        { rgb: "20, 184, 166", hex: "#14b8a6" }   // Teal
     ],
     "Tailwind UI Dark": [
-        { rgb: "2, 132, 199", hex: "#0284C7" },
-        { rgb: "22, 163, 74", hex: "#16A34A" },
-        { rgb: "220, 38, 38", hex: "#DC2626" },
-        { rgb: "217, 119, 6", hex: "#D97706" },
-        { rgb: "124, 58, 237", hex: "#7C3AED" },
-        { rgb: "75, 85, 99", hex: "#4B5563" },
-        { rgb: "219, 39, 119", hex: "#DB2777" }
+        { rgb: "56, 189, 248", hex: "#38bdf8" },  // Sky
+        { rgb: "52, 211, 153", hex: "#34d399" },  // Emerald
+        { rgb: "248, 113, 113", hex: "#f87171" },  // Red
+        { rgb: "192, 132, 252", hex: "#c084fc" },  // Purple
+        { rgb: "251, 191, 36", hex: "#fbbf24" },  // Amber
+        { rgb: "34, 211, 238", hex: "#22d3ee" },  // Cyan
+        { rgb: "244, 114, 182", hex: "#f472b6" },  // Pink
+        { rgb: "129, 140, 248", hex: "#818cf8" },  // Indigo
+        { rgb: "251, 113, 133", hex: "#fb7185" },  // Rose
+        { rgb: "45, 212, 191", hex: "#2dd4bf" }   // Teal
     ]
 };
 
@@ -82,7 +88,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     customFolderColors: {},
     presets: {},
     recentlyUsedIcons: [],
-    glassmorphism: false,
+    glassmorphism: true,
 
     autoIcons: true,
     autoIconVariety: true,
@@ -90,7 +96,9 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     wideAutoIcons: true,
     rainbowRootText: true,
     rainbowRootBgTransparent: false,
+    rainbowGradientAngle: 135,
     autoColorFiles: false,
+    fileColorMode: "mixed",
     colorText: "all",
     showItemCounters: true,
     rootTintOpacity: 0.06,
@@ -101,7 +109,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     notebookNavigatorSupport: true,
     notebookNavigatorFileBackground: true,
     iconScale: 1.1,
-    notebookNavigatorIconScale: 0.8,
+    notebookNavigatorIconScale: 1.0,
     customIcons: {},
     cycleOffset: 0,
     showFileDivider: false,
@@ -114,7 +122,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     dividerPillMode: true,
     dividerIconPosition: "left",
     fileBackgroundOpacity: 0.1,
-    notebookNavigatorOutlineOnly: false,
+    notebookNavigatorOutlineOnly: true,
     graphColorSync: false,
     vaultPassword: "",
     isVaultLocked: false,
@@ -142,10 +150,28 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     showCollapseIndicator: true,
     folderBorderRadius: 10,
     enableStaircaseHack: false,
-    smartConnectionsCompatMode: true
+    aiProvider: "ollama",
+    aiApiKey: "",
+    aiCustomEndpoint: "",
+    aiOllamaEndpoint: "http://localhost:11434",
+    aiModelName: "qwen2.5:1.5b",
+    aiIncludeFiles: false,
+    aiIncludeContentContext: true,
+    aiKeyConfirmed: false,
+    embeddingEngine: "builtin",
+    embeddingCustomModel: "bge-m3",
+    embeddingCustomEndpoint: "http://localhost:11434",
 };
 
 export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
+    // --- Dates, Years, Numbers & Percentages ---
+    { rex: /^(19|20)\d{2}$/, emoji: "📅", lucide: "calendar", priority: 150, emojis: ["📅", "📆", "⏳"], lucides: ["calendar", "calendar-days", "clock"] },
+    { rex: /^\d{4}-\d{2}(-\d{2})?$/, emoji: "📅", lucide: "calendar-days", priority: 150, emojis: ["📅", "📆"], lucides: ["calendar-days", "calendar-clock"] },
+    { rex: /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*$/i, emoji: "📅", lucide: "calendar", priority: 140 },
+    { rex: /^\d+$/, emoji: "🔢", lucide: "hash", priority: 130 },
+    { rex: /^\d+%$/, emoji: "📊", lucide: "percent", priority: 130 },
+    { rex: /^#\d+$/, emoji: "🏷️", lucide: "hash", priority: 130 },
+
     // --- Core categories ---
     { rex: /journal|daily|log|diary/i, emoji: "📅", lucide: "calendar", priority: 100, emojis: ["📅", "📆", "📝", "📔"], lucides: ["calendar", "calendar-days", "book", "pencil"] },
     { rex: /image|photo|pic|asset|gallery|album/i, emoji: "🖼️", lucide: "image", priority: 100, emojis: ["🖼️", "📷", "📸", "🎨"], lucides: ["image", "camera", "aperture", "palette"] },
@@ -158,7 +184,7 @@ export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
     { rex: /finance|money|bank|pay|cost|bill|price|tax|wallet/i, emoji: "💸", lucide: "banknote", priority: 100 },
     { rex: /health|fit|exercise|diet|gym|doctor|med|sport/i, emoji: "🥗", lucide: "activity", priority: 100 },
     { rex: /travel|trip|vacation|flight|plane|map|explore/i, emoji: "✈️", lucide: "plane", priority: 100 },
-    { rex: /tech|code|dev|script|bot|program|web|git|coding/i, emoji: "💻", lucide: "code", priority: 100, emojis: ["💻", "🖥️", "⌨️", "🔧"], lucides: ["code", "terminal", "cpu", "wrench"] },
+    { rex: /tech|code|dev|script|bot|program|web|git|coding/i, emoji: "💻", lucide: "code", priority: 100, emojis: ["💻", "🖥️", "⌨️", "👨‍💻"], lucides: ["code", "terminal", "cpu", "laptop"] },
     { rex: /music|audio|song|playlist|sound|record/i, emoji: "🎵", lucide: "music", priority: 100 },
     { rex: /video|movie|film|clip|youtube|stream/i, emoji: "🎬", lucide: "video", priority: 100 },
     { rex: /school|study|class|course|exam|edu|lecture|uni/i, emoji: "🎓", lucide: "graduation-cap", priority: 100 },
@@ -176,11 +202,11 @@ export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
     { rex: /design|ui|ux|figma|sketch|mockup/i, emoji: "✨", lucide: "layout", priority: 90 },
     { rex: /data|csv|excel|sheet|table|stats|analytics/i, emoji: "📊", lucide: "bar-chart-2", priority: 90 },
     { rex: /presentation|slides|ppt|deck/i, emoji: "📽️", lucide: "presentation", priority: 90 },
-    { rex: /document|doc|word|report|text/i, emoji: "📄", lucide: "file-text", priority: 90 },
-    { rex: /pdf|ebook/i, emoji: "📕", lucide: "file", priority: 90 },
+    { rex: /\b(document|doc|word|report|text)\b/i, emoji: "📄", lucide: "file-text", priority: 85 },
+    { rex: /pdf|ebook/i, emoji: "📕", lucide: "file-text", priority: 90 },
     { rex: /zip|rar|compressed|archive/i, emoji: "🗜️", lucide: "package", priority: 90 },
     { rex: /cloud|sync|drive|storage/i, emoji: "☁️", lucide: "cloud", priority: 90 },
-    { rex: /shopping|cart|store|shop|buy|order/i, emoji: "🛒", lucide: "shopping-cart", priority: 90 },
+    { rex: /\b(shopping|cart|store|shop|buy|checkout|purchases)\b|\b(purchase-order|store-order)\b/i, emoji: "🛒", lucide: "shopping-cart", priority: 90 },
     { rex: /food|recipe|meal|drink|cook|restaurant/i, emoji: "🍔", lucide: "utensils", priority: 90 },
     { rex: /nature|tree|plant|eco|environment/i, emoji: "🌱", lucide: "leaf", priority: 90 },
     { rex: /game|play|fun|console|steam/i, emoji: "🎮", lucide: "gamepad-2", priority: 90 },
@@ -190,8 +216,9 @@ export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
     { rex: /alert|warn|error|bug|issue/i, emoji: "⚠️", lucide: "alert-triangle", priority: 90 },
     { rex: /science|lab|experiment|chemistry|biology/i, emoji: "🔬", lucide: "flask-conical", priority: 90 },
     { rex: /career|job|resume|cv|work/i, emoji: "💼", lucide: "briefcase", priority: 90 },
-    { rex: /server|database|infra|network/i, emoji: "🖧", lucide: "server", priority: 90 },
-    { rex: /ai|ml|neural|model/i, emoji: "🤖", lucide: "cpu", priority: 90 },
+    { rex: /server|database|infra|network/i, emoji: "🖧", lucide: "server", priority: 105, emojis: ["🖧", "🖥️", "🗄️"], lucides: ["server", "database", "hard-drive"] },
+    { rex: /ai|ml|neural|model/i, emoji: "🤖", lucide: "cpu", priority: 95 },
+    { rex: /skull|death|danger|poison|skeleton|ghost|spooky/i, emoji: "💀", lucide: "skull", priority: 100, emojis: ["💀", "☠️", "👻"], lucides: ["skull", "ghost"] },
 
     // --- More diverse icons ---
     { rex: /photo-edit|design|art|draw|paint/i, emoji: "🎨", lucide: "brush", priority: 80 },
@@ -202,13 +229,12 @@ export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
     { rex: /tv|series|episode|show|drama|media/i, emoji: "📺", lucide: "tv", priority: 85, emojis: ["📺", "🎬", "🎭"], lucides: ["tv", "monitor-play", "clapperboard"] },
     { rex: /visual|view|display|watch|look|eye|see/i, emoji: "👁️", lucide: "eye", priority: 85, emojis: ["👁️", "👓", "🔭"], lucides: ["eye", "glasses", "telescope"] },
     { rex: /recent|update|history|mod|time|new/i, emoji: "🕒", lucide: "history", priority: 85, emojis: ["🕒", "🕙", "⏳", "📅"], lucides: ["history", "clock", "calendar-clock", "sparkles"] },
-    { rex: /source|origin|root|base|data|lib|bib/i, emoji: "📁", lucide: "database", priority: 85, emojis: ["📁", "📥", "📊"], lucides: ["database", "library", "binary"] },
+    { rex: /\b(source|origin|root|base|data|lib|bib)\b/i, emoji: "📁", lucide: "database", priority: 85, emojis: ["📁", "📥", "📊"], lucides: ["database", "library", "binary"] },
     { rex: /thing|object|stuff|entity|misc|item/i, emoji: "📦", lucide: "package", priority: 80, emojis: ["📦", "🎁", "🗳️"], lucides: ["package", "layers", "box"] },
     { rex: /review|crit|feedback|eval/i, emoji: "🔎", lucide: "search", priority: 85, lucides: ["search", "check-square", "clipboard-check"] },
-    { rex: /draft|wip|process|build/i, emoji: "🚧", lucide: "wrench", priority: 85, emojis: ["🚧", "🛠️", "🏗️"], lucides: ["wrench", "construction", "hammer"] },
+    { rex: /\b(draft|wip|work-in-progress|construction)\b/i, emoji: "🚧", lucide: "wrench", priority: 85, emojis: ["🚧", "🛠️", "🏗️"], lucides: ["wrench", "construction", "hammer"] },
     { rex: /security|auth|key|password/i, emoji: "🔑", lucide: "key", priority: 80 },
     { rex: /download|install|setup/i, emoji: "⬇️", lucide: "download", priority: 80 },
-    { rex: /upload|share|publish/i, emoji: "⬆️", lucide: "upload", priority: 80 },
     { rex: /trash|delete|remove|bin/i, emoji: "🗑️", lucide: "trash", priority: 80 },
     { rex: /energy|power|electric|battery/i, emoji: "🔋", lucide: "battery-charging", priority: 80 },
     { rex: /weather|climate|forecast|rain|sun/i, emoji: "⛅", lucide: "cloud-sun", priority: 80 },
@@ -226,7 +252,8 @@ export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
     { rex: /canvas|whiteboard|draw|excalidraw/i, emoji: "🎨", lucide: "frame", priority: 110, lucides: ["frame", "shapes", "pencil-ruler"] },
     { rex: /graph|link|relation|node|network/i, emoji: "🕸️", lucide: "share-2", priority: 110, lucides: ["share-2", "git-branch", "workflow"] },
 
-    // --- Advanced Dev & Infrastructure ---
+    // --- Plugins, Extensions & Addons ---
+    { rex: /\b(?:plugin|plugins|extension|extensions|addon|addons|widget|widgets|wxt)\b/i, emoji: "🧩", lucide: "puzzle", priority: 115, emojis: ["🧩", "🔌"], lucides: ["puzzle", "plugin", "simple-icons-wxt"] },
     { rex: /docker|k8s|kubernetes|container|pod/i, emoji: "🐳", lucide: "ship", priority: 95, lucides: ["ship", "container", "box"] },
     { rex: /aws|cloud|azure|gcp|lambda|serverless/i, emoji: "☁️", lucide: "cloud-lightning", priority: 95, lucides: ["cloud-lightning", "flame", "hard-drive"] },
     { rex: /api|json|yaml|xml|graphql|rest/i, emoji: "🔌", lucide: "plug", priority: 95, lucides: ["plug", "webhook", "bracket"] },
@@ -281,6 +308,25 @@ export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
     { rex: /thesaurus|dictionary|vocabulary|word/i, emoji: "📖", lucide: "book-open-check", priority: 90, emojis: ["📖", "📚", "🔤"], lucides: ["book-open-check", "spell-check", "languages"] },
     { rex: /estimate|underestimate|measure|math|scale/i, emoji: "📐", lucide: "gauge", priority: 85, emojis: ["📐", "⚖️", "📊"], lucides: ["gauge", "calculator", "ruler"] },
     { rex: /metadata|attribute|property|tag|meta/i, emoji: "🏷️", lucide: "tags", priority: 90, emojis: ["🏷️", "🔖", "🔑"], lucides: ["tags", "tag", "file-key"] },
+
+    // --- Sentences, Quotes, Wisdom, Philosophy & Narrative Stories ---
+    { rex: /generate\s*ideas|ideation|brainstorm|idea\s*generation|new\s*ideas|idea|ideas/i, emoji: "💡", lucide: "lightbulb", priority: 140, emojis: ["💡", "✨", "🧠"], lucides: ["lightbulb", "brain", "sparkles"] },
+    { rex: /higher-order|higher\s*order|order\s*of\s*magnitude|structural\s*order/i, emoji: "🥞", lucide: "layers", priority: 130, emojis: ["🥞", "🕸️", "🌳"], lucides: ["layers", "git-branch", "network", "list-tree"] },
+    { rex: /underestimate|how\s*long.*takes|time\s*estimate|estimation\s*fallacy|chronically/i, emoji: "⏳", lucide: "hourglass", priority: 130, emojis: ["⏳", "🕒", "⏱️"], lucides: ["hourglass", "clock", "calendar-clock", "timer"] },
+    { rex: /remember|mnemonic|memory\s*technique|stir|recall\s*more/i, emoji: "🧠", lucide: "brain", priority: 130, emojis: ["🧠", "💡", "💾"], lucides: ["brain", "brain-circuit", "lightbulb"] },
+    { rex: /wu\s*wei|daoism|effortless\s*action/i, emoji: "✨", lucide: "sparkles", priority: 130, emojis: ["✨", "🧭", "🍃"], lucides: ["sparkles", "compass", "wind", "leaf"] },
+    { rex: /yin\s*(and|&)?\s*yang|dualism|balance/i, emoji: "☯️", lucide: "scale", priority: 130, emojis: ["☯️", "⚖️", "🌓"], lucides: ["scale", "sun-moon", "circle-dot"] },
+    { rex: /vulnerability|vulnerable|openness/i, emoji: "❤️", lucide: "heart", priority: 130, emojis: ["❤️", "🔓", "🛡️"], lucides: ["heart", "shield-off", "unlock", "eye"] },
+    { rex: /trust\s*(the)?\s*process|process\s*of\s*growth|patience/i, emoji: "🧭", lucide: "compass", priority: 130, emojis: ["🧭", "📈", "⏳"], lucides: ["compass", "trending-up", "hourglass", "footprints"] },
+    { rex: /use\s*it\s*or\s*lose\s*it|maintenance|decay/i, emoji: "🔄", lucide: "repeat", priority: 130, emojis: ["🔄", "🔥", "⚡"], lucides: ["repeat", "flame", "activity", "zap"] },
+    { rex: /words.*habits|habit|habits|routine/i, emoji: "🔄", lucide: "repeat", priority: 125, emojis: ["🔄", "📅", "⚡"], lucides: ["repeat", "calendar-check", "activity", "target"] },
+    { rex: /wander|lost|voyage|journey|path|step|road|destination|miles|hike|flight/i, emoji: "🧭", lucide: "compass", priority: 110, emojis: ["🧭", "📍", "🗺️"], lucides: ["compass", "map-pin", "map", "route"] },
+    { rex: /story|narrative|untold|tale|legend|prose|fiction|author|script/i, emoji: "📜", lucide: "pen-tool", priority: 110, emojis: ["📜", "🪶", "📖"], lucides: ["pen-tool", "book-open", "feather", "scroll", "file-text"] },
+    { rex: /imagination|illusion|truth|vision|preview|attraction|wonder|amazed|spark/i, emoji: "✨", lucide: "sparkles", priority: 110, emojis: ["✨", "💡", "🧠", "⭐"], lucides: ["sparkles", "lightbulb", "brain", "wand-2", "star", "eye"] },
+    { rex: /agony|emotion|feeling|heart|soul|cherished|upset|love|mood/i, emoji: "❤️", lucide: "heart", priority: 110, emojis: ["❤️", "💖", "💭"], lucides: ["heart", "sparkles", "smile", "activity"] },
+    { rex: /quote|saying|proverb|aphorism|wisdom|philosophy|reflection|mindset|lesson|meaning|to-be/i, emoji: "💬", lucide: "quote", priority: 115, emojis: ["💬", "💡", "✨"], lucides: ["quote", "sparkles", "lightbulb", "compass", "book-open", "brain"] },
+    { rex: /eat|hungrier|food|feast|meal|utensil/i, emoji: "🍽️", lucide: "utensils", priority: 110, emojis: ["🍽️", "🍲", "🍎"], lucides: ["utensils", "soup", "chef-hat"] },
+    { rex: /future|distributed|innovation|cyber|tech/i, emoji: "🚀", lucide: "rocket", priority: 110, emojis: ["🚀", "⚡", "🔮"], lucides: ["rocket", "zap", "cpu", "globe"] },
 ];
 
 export const PACK_PRIORITY: Record<string, number> = {
@@ -289,15 +335,16 @@ export const PACK_PRIORITY: Record<string, number> = {
     'tabler': 80,        // 3. Main UI fallback (Massive library, same aesthetic)
     'simple-icons': 70,  // 4. Brands only (Logos for Google, GitHub, etc.)
     'remix': 60,         // 5. Secondary fallback
-    'feather': 50,       // 6. Deprecated (Lucide is the upgraded version)
-    'font-awesome': 40,  // 7. Utility fallback (Heavy, traditional style)
-    'material': 30       // 8. Geometric fallback (Different design language)
+    'bi': 55,            // 6. Bootstrap Icons (large general-purpose library)
+    'feather': 50,       // 7. Deprecated (Lucide is the upgraded version)
+    'font-awesome': 40,  // 8. Utility fallback (Heavy, traditional style)
+    'material': 30       // 9. Geometric fallback (Different design language)
 };
 
 export const PACK_PREFIXES: string[] = [
-    'custom', 'simple-icons', 'simple', 'lucide', 'feather', 
-    'fa', 'fas', 'far', 'fab', 'fontawesome', 'ri', 'remix', 
-    'tb', 'tabler', 'mdi', 'material', 'oct', 'octicons'
+    'custom', 'simple-icons', 'simple', 'lucide', 'feather',
+    'fa', 'fas', 'far', 'fab', 'fontawesome', 'ri', 'remix',
+    'tb', 'tabler', 'mdi', 'material', 'oct', 'octicons', 'bi', 'bootstrap'
 ];
 
 export const STOP_WORDS = new Set([
@@ -313,5 +360,17 @@ export const STOP_WORDS = new Set([
     'working', 'work', 'folder', 'file', 'notes', 'thoughts', 'draft', 'list', 'page',
     'doc', 'text', 'directory', 'items', 'item'
 ]);
+
+export const GENERIC_SUFFIX_WORDS = new Set([
+    'programming', 'program', 'project', 'projects', 'notes', 'note', 'thoughts',
+    'draft', 'drafts', 'tutorial', 'tutorials', 'guide', 'guides', 'course', 'courses',
+    'class', 'classes', 'management', 'system', 'systems', 'app', 'apps', 'application',
+    'applications', 'service', 'services', 'module', 'modules', 'repo', 'repository',
+    'structure', 'architecture', 'overview', 'summary', 'basics', 'advanced', 'intro',
+    'introduction', 'practice', 'exercise', 'exercises', 'examples', 'example', 'demo',
+    'test', 'tests', 'testing', 'doc', 'docs', 'document', 'documents', 'file', 'files',
+    'folder', 'folders', 'list', 'page', 'pages', 'item', 'items', 'stuff', 'misc'
+]);
+
 
 

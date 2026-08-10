@@ -1,4 +1,4 @@
-import { IColorfulFoldersPlugin, FolderStyle, AutoIconData } from '../common/types';
+import { IColorfulFoldersPlugin, AutoIconData } from '../common/types';
 import { IconRepository } from './IconRepository';
 
 export class IconManager {
@@ -26,6 +26,10 @@ export class IconManager {
         return this.repository.isEmojiIcon(iconId);
     }
 
+    isValidIcon(iconId?: string | null): boolean {
+        return this.repository.isValidIcon(iconId);
+    }
+
     getIconSvg(iconId: string, shouldEncode = true): string {
         return this.repository.getIconSvg(iconId, shouldEncode);
     }
@@ -42,16 +46,7 @@ export class IconManager {
         this.repository.preNormalizeIcon(id, rawSvg);
     }
 
-    /** Compatibility methods for Zero-DOM architecture. */
-    injectIconsForNodes(_nodes: NodeList | Node[]): void {
-        // Zero-DOM Architecture: Icons are rendered via adoptedStyleSheets CSS Data URIs.
-    }
-
-    injectIcon(_el: HTMLElement, _style: FolderStyle): void {
-        // Zero-DOM Architecture: Icons are rendered via adoptedStyleSheets CSS Data URIs.
-    }
-
-    doInjectIcon(_el: HTMLElement, _style: FolderStyle): void {
-        // Zero-DOM Architecture: Icons are rendered via adoptedStyleSheets CSS Data URIs.
+    searchFuzzy(searchKey: string, options?: { threshold?: number }): string | null {
+        return this.repository.searchFuzzy(searchKey, options);
     }
 }

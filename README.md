@@ -10,48 +10,36 @@
 Colorful Folders automatically applies premium color palettes, smart icons, and structural intelligence to your vault. Whether you prefer a strictly organized, monochromatic workspace or a neon-glowing cyberpunk aesthetic, this plugin makes navigation intuitive and your workspace absolutely beautiful.
 
 ---
-
 # Updates for Colorful Folders
 
-## 🚀 4.2.7 - Collapse Indicators Update
+## 🚀 5.0.0 - Architectural Overhaul & New Features
 
-This release introduces control over folder collapse indicators:
+---
+### 🌲 1. Perfect Folder Scope Hierarchy (New Mode under Hierarchy Mode)
+* **Matching Colors by Tree Depth**: Notes and subfolders at the exact same depth level receive matching colors for a clean, balanced layout:
+  - **Level 1** (Root folders & root notes) = Color A
+  - **Level 2** (Subfolders & notes inside root folders) = Color B
+  - **Level 3** (Deeper subfolders) = Color C
+* **No Level Mismatches**: Notes align visually with their exact folder depth in your sidebar.
 
-### 🌟 New Features & Fixes
-- **Individual Folder Border Radius**: Set a custom border-radius with a range slider for individual folders/files inside the **"Set Custom File Style"** context menu modal.
-
-- **Toggle Collapse Indicators**: Added a new setting toggle **Show collapse indicator** under the "Appearance and visibility" section in settings to let you hide or show folder collapse arrows in the file explorer.
-
-- **Custom Default Open/Closed Folder Icons**: You can now define custom global defaults for both closed and open folder icons directly in the settings. Additionally, you can override these icons individually for any folder via the **"Set Custom File Style"** context menu modal.
-
-- **Centered Icon and Text Alignment**: Fine-tuned visual alignment to ensure folder/file explorer items, their custom icons, collapse chevrons, and text titles are perfectly centered vertically and look extremely polished.
-
-- **Minor Fixes**: Fixed styling inconsistencies and optimized background settings.
+### ⚡ 2. Instant Auto-Icons (Offline & Free)
+* **No API Keys Needed**: Automatically pick perfect icons for your notes and folders in seconds—completely offline, private, and 100% free!
+* **Blazing Fast**: Classifies hundreds of notes in less than a second.
+* **Smart Matching**: Connect your favorite local AI models (via Ollama) for intelligent icon selection.
+* **Live Progress Bar**: Watch real-time scanning progress as your vault gets automatically styled.
 
 ---
 
-## 🌟 4.2.6 - The "Ultimate Performance" Update
+### 🤖 3. Smart AI Icon Assistant
+* **Context-Aware Styling**: Automatically style your vault based on the actual topics and content of your notes.
+* **Automatic Icon Fallbacks**: If a suggested icon isn't installed, the plugin automatically finds the closest matching alternative from Lucide, Simple Icons, or FontAwesome.
 
-### 🌟 Highlight: The Smart Icon Manager
+---
+### 🚀 4. Butter-Smooth Performance & Zero Conflicts
+* **Rebuilt Styling Engine**: Redesigned how colors are rendered under the hood for faster updates and zero layout glitches.
+* **Zero Lag in Large Vaults**: Ultra-optimized calculations keep scrolling completely smooth, even in vaults with 10,000+ files.
 
-* **Local Icon Packs Support:** You can now drop any custom SVG icon pack directly into your `.obsidian/icons` folder! The plugin automatically detects and loads them using a blazingly fast parallel scanner, meaning even thousands of custom icons won't slow down your startup.
-* **Completely Optimized Caching:** The Icon Manager has been completely rebuilt! The plugin now intelligently caches your custom SVG icons and strictly reloads them *only* when you change your icon settings. This completely eliminates unnecessary lag when tweaking other options, giving you a lightning-fast customization experience!
-
-### ⚡ Lightning Fast & Butter Smooth
-
-* **Instant Load Times:** The plugin now uses a highly optimized grouping engine to calculate styles instantly. No more waiting 10 seconds for colors to appear when you open Obsidian!
-* **Zero UI Freezing:** We've completely rewritten how the plugin processes huge folder trees in the background. It now gracefully pauses to let the app breathe, meaning you can scroll and click without any stuttering.
-* **Ultra-Snappy Responsiveness:** We slashed the refresh delay by 3x! When you change a setting or move a file, the UI updates almost instantaneously.
-* **Lighter Memory Footprint:** We streamlined the core engine to prevent memory bloat, keeping your Obsidian workspace incredibly light and fast.
-
-### 🎨 New Features, Fixes & Integrations
-
-* **Custom Rainbow Texts:** You can now enable and customize gorgeous rainbow gradient text on ANY individual file or folder in your vault via the right-click menu!
-* **Accurate Custom Opacity:** Setting a custom folder/file color now locks in the perfect background opacity (50% for folders, 15% for files) instead of improperly fading out based on folder depth. The UI slider now also perfectly reflects these defaults!
-* **New Tailwind UI Palettes:** Added two beautiful new built-in color palettes (`Tailwind UI` and `Tailwind UI Dark`) to bring modern, punchy web-design colors directly into your vault.
-* **Inheritance Problem SOLVED!:** Fixed a stubborn bug where subfolders and files were not correctly inheriting colors from their parent folders. Your entire tree will now flawlessly inherit and display the correct colors!
-* **Flawless Integrations:** Re-architected how third-party plugins (like Notebook Navigator) interact with our colors. Everything is now perfectly synchronized, eliminating duplicate styles and boosting overall speed.
-* **Squeaky Clean Codebase:** Cleared out all underlying code warnings and strict errors for a rock-solid, crash-free experience.
+---
 
 ## ✨ Core Features
 
@@ -59,49 +47,50 @@ This release introduces control over folder collapse indicators:
 
 * **Color-Coding Hierarchy:** Automatically assigns beautiful, distinct colors to top-level and nested folders.
 * **Visual Wayfinding:** Glowing connector lines create a clear "breadcrumb trail" to your currently active file.
-* **Smart Rainbow Logic:** Cycle files through your palette for a full rainbow effect, or use the **Adaptive Heatmap** to seamlessly sync with your chosen colors.
+* **Smart Rainbow Logic & Text:** Cycle files through your palette, enable custom rainbow text gradients on individual items, or use the **Adaptive Heatmap** to sync colors.
+* **Curated Palettes:** Premium built-in palettes (including Tailwind UI, Tailwind UI Dark, Cyberpunk, Nord, and Pastel).
 * **Minimalist Modes:** Force subfolders to inherit parent colors, or use **Outline Only Mode** to remove background tints while keeping bright connecting lines.
 
-### 🤖 Smart Iconography
+### 🤖 Smart Iconography & Custom Packs
 
-* **Auto-Icon Engine:** Automatically injects high-fidelity icons based on names (e.g., *Journal* -> 📅, *Finance* -> 💰).
-* **6 Built-in Offline Libraries:** Includes Material, FontAwesome, and Vibrant packs for instant, zero-latency styling without internet.
-* **Enhanced Iconify Support:** Import seamlessly with perfect alignment, alias preservation, and custom offsets.
+* **Auto-Icon Engine:** Automatically injects high-fidelity icons based on item names (e.g., *Journal* -> 📅, *Finance* -> 💰).
+* **Local Icon Pack Support:** Drop any custom SVG icon pack into `.obsidian/icons` for instant, parallel-scanned icon loading.
+* **Custom Open/Closed Icons:** Define custom global defaults or per-item overrides for open and closed folder states.
+* **Built-in Offline Libraries:** Includes Material, FontAwesome, Lucide, Tabler, Simple Icons, and Vibrant packs for instant offline rendering.
 * **Universal 18px Sizing:** All icons are standardized to a professional 18px baseline with perfect vertical centering.
-* **Independent Styling:** Change icons and emojis without overriding your custom colors.
 
 ### 📁 Advanced Customization & Typography
 
-* **Right-Click WYSIWYG Menu:** Select **"Set Custom File Style"** on any item to easily override its color, icon, and text formatting.
-* **Context-Aware Styling:** The style modal pre-fills with currently visible colors and adapts to dark-mode brightness.
-* **Advanced Typography:** Make key projects pop with bold, italic, and custom text color overrides.
+* **Right-Click WYSIWYG Menu:** Select **"Set Custom File Style"** on any item to easily override its color, icon, border radius, and text formatting.
+* **Custom Border Radius:** Adjust border-radius per folder or file using a smooth range slider in the style modal.
+* **Advanced Typography:** Make key projects pop with bold, italic, custom text colors, and rainbow gradients.
 * **Smart Inheritance:** Force a specific style down an entire folder tree with a single click.
 
-### 📐 Organization & Spacing
+### 📐 Organization & Appearance Controls
 
-* **Section Dividers:** Group files with vertical visual dividers. Supports Markdown glassmorphic popovers, asymmetrical spacing, and solid/dashed/dotted lines.
-* **Dynamic Item Counters:** Display recursive statistics showing the total folder and file count inside a directory, perfectly color-matched.
-* **Exclusion Lists:** Keep utility directories (like `attachments` or `templates`) standard and unaffected by plugin styling.
+* **Toggle Collapse Indicators:** Easily show or hide folder collapse arrows in the file explorer via settings.
+* **Section Dividers:** Group files with vertical visual dividers supporting glassmorphic popovers and custom line styles.
+* **Dynamic Item Counters:** Display recursive statistics showing total folder and file counts.
+* **Exclusion Lists:** Keep utility directories (like `attachments` or `templates`) standard and unaffected.
 
 ### 🎨 Synchronization & Ecosystem
 
-* **Tag Color Sync:** Automatically color tags that perfectly match a styled folder's name (e.g., styling the folder "Work" styles `#Work`).
+* **Tag Color Sync:** Automatically color tags matching styled folder names (e.g., styling "Work" styles `#Work`).
 * **Custom Tag Rules:** Manually map specific tags to any styled folder path (e.g., `#todo = /Projects/Active`).
-* **Graph View Sync:** Your beautiful folder colors now sync directly into Obsidian's built-in Graph View as color groups for a unified vault aesthetic.
+* **Graph View Sync:** Folder colors sync directly into Obsidian's built-in Graph View as color groups.
+* **Notebook Navigator Integration:** Seamless style synchronization with Notebook Navigator.
 
 ### 🕵️ Stealth & Privacy Engine
 
-* **Visual Privacy:** Hide any file or folder from the sidebar instantly via the context menu.
+* **Visual Privacy:** Hide any file or folder from the sidebar instantly via context menu.
 * **Ghost Mode:** Toggle semi-transparent viewing of hidden items with a sleek blur effect.
-* **Password Protection:** Secure your privacy settings with a custom modal (featuring shake animations for invalid attempts).
-* **Management Dashboard:** Manage all hidden items and recovery options from a dedicated settings card.
+* **Password Protection:** Secure privacy settings with a custom modal.
 
-### 🛡️ Stability & Network Privacy
+### 🛡️ Stability & Performance Engine
 
-* **Cross-Platform Engine:** Zero-lag performance on Windows, macOS, Linux, Android, and iOS.
-* **Static Premium Standards:** High-performance static visuals replace heavy animations to ensure absolutely zero GPU stutter.
-* **Vault Maintenance Tools:** One-click buttons to reset styling or clear icon libraries, plus an Icon Debug Mode.
-* **Strict Network Privacy:** Makes only **one** necessary network call to GitHub to fetch the changelog on updates. No user data is ever transmitted.
+* **Zero-DOM Engine:** High-performance `adoptedStyleSheets` engine with zero GPU lag, even in 10,000+ note vaults.
+* **Cross-Platform:** Flawless performance across Windows, macOS, Linux, Android, and iOS.
+* **Strict Network Privacy:** 100% private offline styling engine with zero user data transmission.
 
 ---
 
@@ -137,11 +126,11 @@ Access all styling configurations by navigating to **Settings > Colorful Folders
 
 Looking to understand the internal architecture, contribute features, or debug the styling engine? Check out our comprehensive technical guides:
 
-* **[Developer Master Guide](https://www.google.com/search?q=DEVELOPER.md):** The entry point for all technical documentation.
-* **[Internal Engine Architecture](https://www.google.com/search?q=docs/ARCHITECTURE.md):** Deep dive into the rendering pipeline and logic flow.
-* **[API Reference](https://www.google.com/search?q=docs/API_REFERENCE.md):** Detailed class and method documentation.
-* **[Customization Guide](https://www.google.com/search?q=docs/CUSTOMIZATION.md):** Advanced CSS snippets and styling overrides.
+* **[Master Documentation Index](docs/DOCUMENTATION_INDEX.md):** The entry point for all technical documentation and subsystem guides.
+* **[Internal Engine Architecture](docs/ARCHITECTURE.md):** Deep dive into the Zero-DOM rendering pipeline and logic flow.
+* **[API Reference](docs/API_REFERENCE.md):** Detailed class and method documentation.
+* **[Customization Guide](docs/CUSTOMIZATION.md):** Advanced CSS snippets and styling overrides.
 
 ---
 
-**Developed with ❤️ by [ROHIT-NAHAR**](https://github.com/RohitNahar-Offical)
+**Developed with ❤️ by [ROHIT-NAHAR](https://github.com/RohitNahar-Offical)**

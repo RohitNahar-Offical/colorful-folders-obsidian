@@ -25,7 +25,7 @@ export class DividerManager {
         this.app = plugin.app;
     }
 
-    // ΓöÇΓöÇΓöÇ Divider Node Factory ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    // --- Divider Node Factory ---
 
     public buildDividerNode(path: string, conf: FolderStyle, doc: Document): HTMLElement {
         const dividerThickness = this.plugin.settings.dividerThickness || 1.5;
@@ -439,8 +439,20 @@ export class DividerManager {
 
     // ΓöÇΓöÇΓöÇ Core Reconciliation ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
+    public hasAnyDividers(): boolean {
+        if (this.plugin.settings.showFileDivider) return true;
+        const colors = this.plugin.settings.customFolderColors;
+        if (!colors) return false;
+        for (const path in colors) {
+            const conf = colors[path];
+            if (typeof conf === 'object' && conf && conf.hasDivider) return true;
+        }
+        return false;
+    }
+
     syncDividers() {
         if (this.plugin.isSyncingDividers) return;
+        if (!this.hasAnyDividers()) return;
 
         const allContainers = this.plugin.getAllExplorerContainers();
 
@@ -574,7 +586,7 @@ export class DividerManager {
                 }
             }
         } catch (e) {
-            console.error("Colorful Folders: Failed to sync dividers for container", e);
+            console.error("Colorful Folders: Failed to sync dividers for container", e as Error);
         }
     }
 

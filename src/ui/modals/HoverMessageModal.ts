@@ -1,5 +1,6 @@
 import * as obsidian from 'obsidian';
 import { IColorfulFoldersPlugin } from '../../common/types';
+import { t } from '../../lang/helpers';
 
 export class HoverMessageModal extends obsidian.Modal {
     plugin: IColorfulFoldersPlugin;
@@ -29,7 +30,9 @@ export class HoverMessageModal extends obsidian.Modal {
 
         modalEl.setCssStyles({
             maxWidth: "600px",
-            width: "90vw",
+            width: "min(600px, 92vw)",
+            maxHeight: "88vh",
+            overflowY: "auto",
             borderRadius: "14px",
             boxShadow: "0 10px 40px rgba(0,0,0,0.4)"
         });
@@ -40,15 +43,15 @@ export class HoverMessageModal extends obsidian.Modal {
             display: "flex", flexDirection: "column", gap: "4px",
             padding: "24px 24px 16px 24px", borderBottom: "1px solid var(--background-modifier-border)"
         });
-        header.createEl("h2", { text: "Edit hover message", cls: "cf-modal-title" }).setCssStyles({ margin: "0", fontSize: "1.4em" });
-        header.createEl("p", { text: "Add context, links, or tags that appear when you hover over this divider." }).setCssStyles({ margin: "0", opacity: "0.6", fontSize: "0.9em" });
+        header.createEl("h2", { text: t("modal.hover_message.title"), cls: "cf-modal-title" }).setCssStyles({ margin: "0", fontSize: "1.4em" });
+        header.createEl("p", { text: t("modal.hover_message.desc") }).setCssStyles({ margin: "0", opacity: "0.6", fontSize: "0.9em" });
 
         const body = contentEl.createDiv();
         body.setCssStyles({ padding: "20px 24px", display: "flex", flexDirection: "column", gap: "20px" });
 
         // Editor Section
         const editorWrapper = body.createDiv();
-        editorWrapper.createEl("label", { text: "Markdown editor" }).setCssStyles({ display: "block", marginBottom: "8px", fontWeight: "600", fontSize: "0.85em", textTransform: "uppercase", letterSpacing: "0.05em", opacity: "0.8" });
+        editorWrapper.createEl("label", { text: t("modal.hover_message.markdown_editor") }).setCssStyles({ display: "block", marginBottom: "8px", fontWeight: "600", fontSize: "0.85em", textTransform: "uppercase", letterSpacing: "0.05em", opacity: "0.8" });
 
         const toolbar = editorWrapper.createDiv({ cls: 'cf-editor-toolbar' });
         toolbar.setCssStyles({
@@ -59,7 +62,7 @@ export class HoverMessageModal extends obsidian.Modal {
 
         const textArea = editorWrapper.createEl("textarea");
         textArea.value = this.description;
-        textArea.placeholder = "Write something beautiful... Use [[links]] to jump to notes, #tags to categorize, and **bold** or *italic* formatting.";
+        textArea.placeholder = t("modal.hover_message.placeholder");
         textArea.setCssStyles({
             width: "100%", height: "180px", borderRadius: "8px", padding: "12px",
             backgroundColor: "var(--background-primary)", border: "1px solid var(--background-modifier-border)",
@@ -103,13 +106,13 @@ export class HoverMessageModal extends obsidian.Modal {
             btn.buttonEl.onmouseleave = () => btn.buttonEl.setCssStyles({ backgroundColor: 'transparent' });
         };
 
-        addBtn('bold', 'Bold (Ctrl+B)', () => wrapText('**', '**'));
-        addBtn('italic', 'Italic (Ctrl+I)', () => wrapText('*', '*'));
-        addBtn('strikethrough', 'Strikethrough', () => wrapText('~~', '~~'));
-        addBtn('highlighter', 'Highlight', () => wrapText('==', '=='));
-        addBtn('code', 'Inline code', () => wrapText('`', '`'));
-        addBtn('file-code-2', 'Code block', () => wrapText('\n```\n', '\n```\n'));
-        addBtn('link', 'Link (Ctrl+K)', () => wrapText('[', ']()', 1 + (textArea.selectionEnd - textArea.selectionStart) + 2));
+        addBtn('bold', t("modal.hover_message.tooltip.bold"), () => wrapText('**', '**'));
+        addBtn('italic', t("modal.hover_message.tooltip.italic"), () => wrapText('*', '*'));
+        addBtn('strikethrough', t("modal.hover_message.tooltip.strikethrough"), () => wrapText('~~', '~~'));
+        addBtn('highlighter', t("modal.hover_message.tooltip.highlight"), () => wrapText('==', '=='));
+        addBtn('code', t("modal.hover_message.tooltip.code_inline"), () => wrapText('`', '`'));
+        addBtn('file-code-2', t("modal.hover_message.tooltip.code_block"), () => wrapText('\n```\n', '\n```\n'));
+        addBtn('link', t("modal.hover_message.tooltip.link"), () => wrapText('[', ']()', 1 + (textArea.selectionEnd - textArea.selectionStart) + 2));
 
         // Fix Native Clipboard (Unblock Obsidian's strict handlers)
         const stopNative = (e: Event) => e.stopPropagation();
@@ -120,7 +123,7 @@ export class HoverMessageModal extends obsidian.Modal {
 
         // Preview Section
         const previewWrapper = body.createDiv();
-        previewWrapper.createEl("label", { text: "Live preview" }).setCssStyles({ display: "block", marginBottom: "8px", fontWeight: "600", fontSize: "0.85em", textTransform: "uppercase", letterSpacing: "0.05em", opacity: "0.8" });
+        previewWrapper.createEl("label", { text: t("modal.hover_message.live_preview") }).setCssStyles({ display: "block", marginBottom: "8px", fontWeight: "600", fontSize: "0.85em", textTransform: "uppercase", letterSpacing: "0.05em", opacity: "0.8" });
 
         this.previewEl = previewWrapper.createDiv({ cls: "cf-premium-popover" });
         this.previewEl.setCssStyles({
@@ -132,7 +135,7 @@ export class HoverMessageModal extends obsidian.Modal {
         const updatePreview = async (val: string) => {
             previewContent.empty();
             if (!val.trim()) {
-                previewContent.createEl("i", { text: "No message set. Hover popover will be hidden." }).setCssStyles({ opacity: "0.5" });
+                previewContent.createEl("i", { text: t("modal.hover_message.empty_preview") }).setCssStyles({ opacity: "0.5" });
                 return;
             }
             await obsidian.MarkdownRenderer.render(this.app, val, previewContent, this.path, this.plugin as unknown as obsidian.Component);
