@@ -178,6 +178,8 @@ export interface IColorfulFoldersPlugin {
     iconManager: IconManager;
     aiIconClassifier: AIIconClassifier;
     embeddingModel?: import('../integrations/embedingmodel').EmbeddingModel;
+    customFolderColorsMap: Map<string, FolderStyle>;
+    syncCustomFolderColorsMap(): void;
     isSyncingDividers: boolean;
     isDragging: boolean;
     _dividerTimeout?: number | null;

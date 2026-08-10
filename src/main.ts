@@ -41,6 +41,7 @@ export default class ColorfulFoldersPlugin
   adoptedStyleSheetService: AdoptedStyleSheetService;
 
   iconCache: Map<string, string> = new Map();
+  customFolderColorsMap: Map<string, FolderStyle> = new Map();
   _dividerTimeout: number | null = null;
   heatmapCache: Map<string, number> | null = null;
   folderCountCache: Map<string, { files: number; folders: number }> | null =
@@ -411,6 +412,7 @@ export default class ColorfulFoldersPlugin
     if (this.settings.heatmapData) {
       this.heatmapCache = new Map(Object.entries(this.settings.heatmapData));
     }
+    this.syncCustomFolderColorsMap();
     this.activePaletteCache = null;
     this.parsedExclusionList = new Set(
       (this.settings.exclusionList || "")
@@ -419,6 +421,23 @@ export default class ColorfulFoldersPlugin
         .map((s) => s.trim())
         .filter((s) => s.length > 0)
     );
+  }
+
+  public syncCustomFolderColorsMap(): void {
+    this.customFolderColorsMap.clear();
+    const custom = this.settings.customFolderColors || {};
+    for (const path in custom) {
+      if (Object.prototype.hasOwnProperty.call(custom, path)) {
+        const style = custom[path];
+        if (!style) continue;
+        const styleObj: FolderStyle = typeof style === "string" ? { hex: style } : style;
+        this.customFolderColorsMap.set(path, styleObj);
+        const norm = normalizeVaultPath(path);
+        if (norm !== path) {
+          this.customFolderColorsMap.set(norm, styleObj);
+        }
+      }
+    }
   }
 
   // PERF FIX 3: Selective icon cache invalidation.
@@ -430,6 +449,7 @@ export default class ColorfulFoldersPlugin
   private _lastCustomIconsRef: Record<string, string> | null = null;
 
   async saveSettings() {
+    this.syncCustomFolderColorsMap();
     const iconRulesChanged = (this.settings.customIconRules || '') !== this._lastIconRulesKey;
     const currentCustomIcons = this.settings.customIcons || {};
     const currentCustomCount = Object.keys(currentCustomIcons).length;

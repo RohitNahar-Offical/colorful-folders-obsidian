@@ -17,11 +17,29 @@ export class IconRepository {
     private _dataUriCache = new LRUCache<string, string>(2048);
     private _findPackIconCache = new LRUCache<string, string | null>(2048);
     private _autoIconResultCache = new LRUCache<string, AutoIconData | null>(4096);
+    private _iconValidityCache = new LRUCache<string, boolean>(2048);
     private _packIndex: IconPackIndex = new IconPackIndex();
     private _domParser = typeof DOMParser !== 'undefined' ? new DOMParser() : null;
 
     constructor(plugin: IColorfulFoldersPlugin) {
         this.plugin = plugin;
+    }
+
+    isValidIcon(id: string | null | undefined): boolean {
+        if (!id) return false;
+        const cached = this._iconValidityCache.get(id);
+        if (cached !== undefined) return cached;
+
+        let isValid = false;
+        if (this.isEmojiIcon(id)) {
+            isValid = true;
+        } else {
+            const svg = this.getIconSvg(id, false);
+            isValid = !!svg && svg.length > 0;
+        }
+
+        this._iconValidityCache.set(id, isValid);
+        return isValid;
     }
 
     getAutoIconData(name: string, path?: string): AutoIconData | null {

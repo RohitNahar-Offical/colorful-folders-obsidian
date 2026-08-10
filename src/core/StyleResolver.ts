@@ -6,6 +6,19 @@ import { anyToHex, hexToRgbObj, parseCustomPalette, normalizeVaultPath } from '.
 
 export class StyleResolver {
     public static getStyle(plugin: IColorfulFoldersPlugin, path: string): FolderStyle | null {
+        if (!path) return null;
+        if (plugin?.customFolderColorsMap) {
+            const mapStyle = plugin.customFolderColorsMap.get(path);
+            if (mapStyle !== undefined) {
+                return typeof mapStyle === "string" ? { hex: mapStyle } : mapStyle;
+            }
+            const normPath = normalizeVaultPath(path);
+            const normStyle = plugin.customFolderColorsMap.get(normPath);
+            if (normStyle !== undefined) {
+                return typeof normStyle === "string" ? { hex: normStyle } : normStyle;
+            }
+            return null;
+        }
         const normPath = normalizeVaultPath(path);
         const style = plugin.settings.customFolderColors[normPath] || plugin.settings.customFolderColors[path];
         if (!style) return null;
@@ -30,12 +43,7 @@ export class StyleResolver {
             const isFile = target instanceof obsidian.TFile;
             const path = target.path;
 
-            const getStyle = (p: string) => {
-                const style = plugin.settings.customFolderColors[p];
-                if (!style) return null;
-                if (typeof style === "string") return { hex: style };
-                return style;
-            };
+            const getStyle = (p: string) => StyleResolver.getStyle(plugin, p);
 
             let customStyle = getStyle(path);
 

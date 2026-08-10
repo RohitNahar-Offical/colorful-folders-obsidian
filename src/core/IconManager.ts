@@ -26,6 +26,10 @@ export class IconManager {
         return this.repository.isEmojiIcon(iconId);
     }
 
+    isValidIcon(iconId?: string | null): boolean {
+        return this.repository.isValidIcon(iconId);
+    }
+
     getIconSvg(iconId: string, shouldEncode = true): string {
         return this.repository.getIconSvg(iconId, shouldEncode);
     }

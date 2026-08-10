@@ -50,21 +50,9 @@ export class StyleGenerator {
         return escaped;
     }
 
-    private _iconValidityCache = new Map<string, boolean>();
-
     private isValidIconStr(id: string | null | undefined): boolean {
         if (!id) return false;
-        const cached = this._iconValidityCache.get(id);
-        if (cached !== undefined) return cached;
-        let isValid = false;
-        if (this.plugin.iconManager.isEmojiIcon(id)) {
-            isValid = true;
-        } else {
-            const svg = this.plugin.iconManager.getIconSvg(id, false);
-            isValid = !!svg && svg.length > 0;
-        }
-        this._iconValidityCache.set(id, isValid);
-        return isValid;
+        return this.plugin.iconManager.isValidIcon(id);
     }
 
     private resolveAutoIconCandidate(data: AutoIconData | null): string {
