@@ -1,131 +1,113 @@
-# 🗺️ Colorful Folders — Comprehensive Documentation Index
+# 🗺️ Colorful Folders — Master Documentation Index
 
-Welcome to the **Colorful Folders** master documentation index. This document provides an exhaustive, in-depth directory of all documentation files, engineering specs, architectural diagrams, API surfaces, data schemas, security audits, and developer guides.
+Welcome to the **Colorful Folders** master documentation index. This directory contains 14 detailed architectural specs, data schemas, developer guides, security audits, and styling manuals.
 
 ---
 
-## 🏗️ 1. Architecture & Rendering Engine
+## 🏗️ 1. Architecture & Engineering Deep-Dives
 
-### **[ARCHITECTURE.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/ARCHITECTURE.md)** — Engine Architecture Deep-Dive
-- **Core Subject**: Architectural specification of the Zero-DOM / `document.adoptedStyleSheets` rendering engine.
-- **Inner Workings & Technical Details**:
-  - **Zero-DOM Rendering Strategy**: Explains why the plugin avoids injecting physical HTML wrapper elements into Obsidian's file explorer DOM tree (preventing third-party observer feedback loops such as Incident #27 with Smart Connections).
-  - **The 6-Step Rendering Pipeline**: Mermaid sequence flowchart tracking state resolution from `DOMObserverService` dataset attribute tagging (`data-cf-path`) to `AdoptedStyleSheetService` injection (`sheet.replaceSync()`).
-  - **Modular Color & Opacity Resolution**: Mathematical color priority chain in `ColorResolver.ts`.
-  - **The 4-Tier Icon Engine**: Exact pack matching, custom regex rules, true Node-based `CategoryTrie` prefix lookups, and optimized stemmed fuzzy searching.
-  - **AI Icon Classification Service**: Details `AIIconClassifier` instance service architecture, `item_path` context payloading, `=>` / `->` arrow notation pre-sanitization, recursive map flattening, and flexible target resolution (`full path`, `normalized path`, `title`, `subpath`).
-  - **Pack Priority Tie-Breaking**: `PACK_PRIORITY` hierarchy (`custom` > `lucide` > `tabler` > `simple-icons` > `remix` > `feather` > `font-awesome` > `material`).
+### **[ARCHITECTURE.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/ARCHITECTURE.md)** — Engine Architecture Specification
+* **Subject**: Full architectural specification of the Zero-DOM / `document.adoptedStyleSheets` rendering engine.
+* **Key Content**:
+  * Zero-DOM rendering strategy bypassing HTML node injection.
+  * The 6-step rendering pipeline from dataset attribute tagging (`data-cf-path`) to programmatic stylesheet adoption (`sheet.replaceSync()`).
+  * Modular color resolution priority chain and depth opacity progression formulas.
+  * The 5-Tier Icon Engine resolution chain.
+
+### **[CODEBASE_GUIDE.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/CODEBASE_GUIDE.md)** — Ultimate Codebase & Subsystem Reference
+* **Subject**: Exhaustive breakdown of **all 51 TypeScript source files** in `src/`.
+* **Key Content**:
+  * **Core Subsystem (`src/core/`)**: `StyleGenerator`, `StyleResolver`, `ColorResolver`, `BaseCssGenerator`, `CssGrouper`, `RainbowManager`, `DividerManager`, `IconManager`, `IconRepository`, `CategoryTrie`, `IconPackIndex`.
+  * **Services Subsystem (`src/services/`)**: `PluginLifecycleService`, `DOMObserverService`, `EventTrackerService`, `AdoptedStyleSheetService`.
+  * **Integrations Subsystem (`src/integrations/`)**: `embedingmodel`, `AIIconClassifier`, `NotebookNavigator`, `GraphColorSync`, `TagColorSync`.
+  * **Localization (`src/lang/`)**: Typed translation helper `t()` and 8 locale dictionaries (`en`, `de`, `es`, `fr`, `ja`, `sk`, `zh-cn`, `zh-tw`).
+  * **Common Utilities (`src/common/`)**: `LRUCache`, `utils` (fast-path `safeEscape`), `VaultUtils`, `constants`, `types`.
+  * **UI Subsystem (`src/` & `src/ui/`)**: Entry point (`main.ts`), `SettingTab`, 5 modular setting sections, `ColorPicker`, and 7 modals.
 
 ### **[ENGINE_INTERNALS.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/ENGINE_INTERNALS.md)** — Low-Level Logic & Lifecycle Bus
-- **Core Subject**: Reactive event bus mapping, low-level CSS attribute selectors, path key normalization, and string performance optimizations.
-- **Inner Workings & Technical Details**:
-  - **Global Event Lifecycle**: Event bus table mapping workspace/vault events (`modify`, `create`, `delete`, `layout-ready`, `dragstart`, `scroll`) to `PluginLifecycleService`, `DOMObserverService`, and `EventTrackerService`.
-  - **Low-Level CSS Selectors**: Attribute selectors targeting `.nav-folder-title[data-cf-path="..."]` and `.nav-file-title[data-cf-path="..."]`.
-  - **Structure-Preserving Path Key Normalization**: `normalizePathKey(path)` preserving slashes `/` to eliminate key collision bugs across subfolders.
-  - **Stemming Engine & Fuzzy Optimizations**: `STOP_WORDS` filtering, `searchFuzzy` length-difference pruning, word-boundary alignment, and single-row Levenshtein memory buffer.
-  - **$O(1)$ LRU Cache Systems**: Bounded 2048-capacity LRU caches (`_normCache`, `_dataUriCache`, `_findPackIconCache`).
+* **Subject**: Event bus mapping tables, low-level CSS attribute selectors, path key normalization, and fuzzy matching algorithms.
+* **Key Content**:
+  * Workspace & vault event bus reactive mapping (`create`, `rename`, `delete`, `scroll`, `window-open`).
+  * Low-level CSS attribute selectors targeting `.nav-folder-title[data-cf-path="..."]`.
+  * Structure-preserving path key normalization (`normalizePathKey`).
+  * Stem-aware 1D Levenshtein fuzzy search and memory buffer optimizations.
 
 ---
 
-## 📖 2. API Surface & Data Schema
+## 📖 2. API Reference & Data Schemas
 
 ### **[API_REFERENCE.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/API_REFERENCE.md)** — Public & Internal API Reference
-- **Core Subject**: Complete method signatures and parameter contracts across all core TypeScript modules.
-- **Inner Workings & Technical Details**:
-  - **`ColorfulFoldersPlugin`**: `generateStyles()`, `loadLocalIcons()`, `saveSettings()`.
-  - **`PluginLifecycleService`**: `initializeDocumentTracking()`, `registerVaultCacheEvents()`, `onLayoutReady()`, `destroy()`.
-  - **`StyleGenerator` & `StyleResolver`**: `generateCss()`, `traverse()`, `getStyle()`, and $O(\text{depth})$ path inheritance resolution using `FolderTrie`.
-  - **`ColorResolver` & `BaseCssGenerator`**: Mathematical color calculations, global base CSS, divider CSS, and stealth mode CSS builders.
-  - **`IconRepository`, `IconPackIndex`, `CategoryTrie`, & `AIIconClassifier`**: Auto-icon resolution, LRU caching, `searchFuzzy` single-row Levenshtein buffer, `CategoryTrie` prefix node lookup, and `AIIconClassifier` instance methods (`classifyVault`, `stopClassification`, `parseJsonResponse`, `unwrapOuterJsonObject`).
-  - **`AdoptedStyleSheetService`**: `initializeStyles()`, `updateStyles()`, `clearStyles()`, and `unload()`.
+* **Subject**: Method signatures, parameter contracts, and public API surfaces across all TypeScript core modules.
+* **Key Content**:
+  * `ColorfulFoldersPlugin` main class contracts.
+  * `StyleGenerator`, `StyleResolver`, `ColorResolver`, `BaseCssGenerator`, and `CssGrouper` class signatures.
+  * `IconManager`, `IconRepository`, `CategoryTrie`, `IconPackIndex`, and `AIIconClassifier` method specifications.
+  * `AdoptedStyleSheetService` multi-window stylesheet lifecycle API.
 
 ### **[DATA_SCHEMA.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/DATA_SCHEMA.md)** — Persistent Data & JSON Schema
-- **Core Subject**: Complete specification of persistent configuration files and JSON structures.
-- **Inner Workings & Technical Details**:
-  - **`ColorfulFoldersSettings`**: Exhaustive schema table covering 60+ settings keys (palettes, opacity sliders, auto-icons, section dividers, Notebook Navigator support, Tag Color Sync, Stealth Mode, and AI settings).
-  - **AI Settings Keys**: `aiProvider`, `aiApiKey`, `aiModelName`, `aiOllamaEndpoint`, `aiCustomEndpoint`, `aiKeyConfirmed`, `aiIncludeFiles`.
-  - **`FolderStyle` Interface**: Local override schema for hex colors, text gradients, icon IDs, bold/italic, and subfolder/file inheritance flags (`applyToSubfolders`, `applyToFiles`).
-  - **`AutoIconData` Interface**: Resolution metadata returned by `IconRepository`.
-  - **Linear Opacity Progression Formula**: Exact depth-based background transparency math (`depth 0: 50%` $\rightarrow$ `depth 5+: 5% hard floor`).
-  - **Backup & Restore Wrapper Schema**: JSON structures for `cf-folder-backup` and `cf-divider-backup`.
+* **Subject**: Full specification of `data.json` configuration structures and setting interfaces.
+* **Key Content**:
+  * `ColorfulFoldersSettings` specification covering 60+ settings keys.
+  * `FolderStyle` interface schema for local folder/file overrides (`hex`, `textColor`, `iconId`, `isBold`, `applyToSubfolders`, `applyToFiles`).
+  * Backup & restore JSON payload wrappers (`cf-folder-backup`, `cf-divider-backup`).
 
 ---
 
-## 🛡️ 3. Security & Roadmap Tracking
+## 🎨 3. Styling, Customization & Visual Effects
+
+### **[CUSTOMIZATION.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/CUSTOMIZATION.md)** — CSS Customization & User Styling Manual
+* **Subject**: Guide for overriding layout styles, custom CSS variables, user styling rules, and section dividers.
+* **Key Content**:
+  * Consuming custom CSS variables (`--cf-file-bg`, `--cf-folder-bg`).
+  * Configuring Zero-DOM section dividers (`data-cf-divider`) with bridge lines and pill label modes.
+
+### **[VISUAL_EFFECTS.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/VISUAL_EFFECTS.md)** — Visual Effects Engine Manual
+* **Subject**: Guide for glassmorphism backdrop filters, multi-stop neon rainbow text gradients, stealth mode, and active glow effects.
+* **Key Content**:
+  * Glassmorphism CSS specifications (`backdrop-filter: blur(8px)`).
+  * Neon rainbow gradient algorithms (`RainbowManager.buildGradientCss()`).
+  * Active selection glow and custom highlight states.
+
+### **[STYLE_GUIDE.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/STYLE_GUIDE.md)** — Design System Tokens & Aesthetics
+* **Subject**: Curated color palettes, visual design system tokens, typography standards, and contrast guidelines.
+* **Key Content**:
+  * Built-in light/dark theme palette arrays (`PALETTES`).
+  * WCAG AA/AAA contrast calculation standards (`ColorResolver.resolveTextColor`).
+
+### **[STAIRCASE_EFFECT.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/STAIRCASE_EFFECT.md)** — Layout Alignment & Tree Override Guide
+* **Subject**: Technical explanation of Obsidian layout alignment and dynamic CSS custom property overrides.
+* **Key Content**:
+  * Defeating native inline layout overrides using high-specificity selectors.
+  * Using `el.setCssProps()` and CSS custom properties instead of static inline styles.
+
+---
+
+## 🔌 4. Integrations & Internationalization
+
+### **[NOTEBOOK_NAVIGATOR.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/NOTEBOOK_NAVIGATOR.md)** — Notebook Navigator Integration Manual
+* **Subject**: Integration guide for styling the *Notebook Navigator* community plugin.
+* **Key Content**:
+  * Dynamic class generation to prevent style collisions in Notebook Navigator views.
+  * Document-based event tracking in `EventTrackerService`.
+
+### **[LOCALIZATION.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/LOCALIZATION.md)** — i18n Translation & Locale System
+* **Subject**: Guide to the compile-time typed localization system (`t()`).
+* **Key Content**:
+  * `TranslationKey` auto-derivation from `en.ts`.
+  * Adding new locale dictionaries (`src/lang/locale/`).
+
+---
+
+## 🛡️ 5. Security, Governance & Development
 
 ### **[SECURITY_AUDIT.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/SECURITY_AUDIT.md)** — Security & XSS Defense Audit
-- **Core Subject**: Security safeguards, SVG sanitization defense, and XSS prevention audit.
-- **Inner Workings & Technical Details**:
-  - **SVG Sanitization Defense**: DOMParser-based recursive tree walker that strips dangerous tags (`<script>`, `<iframe>`, `<object>`, `<embed>`, `<foreignobject>`), `on*` event attributes, and external `<use>` schemes while preserving internal symbol anchors (`<use href="#symbol-id">`).
-  - **CSS Mask Isolation**: SVG Data URIs rendered inside `-webkit-mask-image: url(...)` preventing script execution by the browser engine.
-  - **Path Selector Escaping**: Single quote, double quote, and backslash escaping in `safeEscape()`.
-  - **AI Privacy & Endpoint Security**: Explicit privacy consent modal (`aiKeyConfirmed`) and HTTPS/localhost URL scheme validation.
+* **Subject**: Audit of security controls, DOMParser SVG sanitization, and script execution prevention.
+* **Key Content**:
+  * DOMParser recursive tree walking defense stripping `<script>`, `<iframe>`, `<object>`, and `on*` attributes.
+  * CSS `-webkit-mask-image` URL isolation preventing script execution.
 
-### **[fix.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/fix.md)** — Optimization & Security Roadmap
-- **Core Subject**: Status tracker for security, performance, code quality, and architecture refactoring phases.
-- **Inner Workings & Technical Details**:
-  - Documents 100% completion across **Phase 1** (Security), **Phase 2** (Performance), **Phase 3** (Code Quality & Test Scaffolding), and **Phase 4** (Architecture Refactoring & `PluginLifecycleService`).
-
----
-
-## 🎨 4. User Customization & Design System
-
-### **[CUSTOMIZATION.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/CUSTOMIZATION.md)** — User Customization & Modal Guide
-- **Core Subject**: Complete user guide for manual folder styling, auto-icons, and settings.
-- **Inner Workings & Technical Details**:
-  - **The Color Picker Modal**: Guide to Appearance, Icon, Inheritance, Dividers, and Presets tabs.
-  - **Inheritance Rules**: Difference between `applyToSubfolders` (cascades recursively) and `applyToFiles` (applies to files in the directory).
-  - **Custom Icon Packs**: Installing featured icon packs (Simple Icons, Feather, Remix, Tabler, FontAwesome) and mapping brand assets.
-
-### **[STYLE_GUIDE.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/STYLE_GUIDE.md)** — Design Tokens & UI Aesthetics
-- **Core Subject**: UI/UX design tokens, modern aesthetic guidelines, and styling standards.
-- **Inner Workings & Technical Details**:
-  - **Design System**: Typography standards, curated HSL color palettes, frosted glassmorphism rules (`backdrop-filter: blur()`), and active item glow effects.
-  - **UI Principles**: Sentence-case labels, dynamic slider tooltips, and instant reset buttons.
-
-### **[VISUAL_EFFECTS.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/VISUAL_EFFECTS.md)** — Animations & Radiant Path
-- **Core Subject**: Guide to visual animations, radiant path indentation, and text typography.
-- **Inner Workings & Technical Details**:
-  - **Radiant Path**: Configurable stroke thickness (`pathLineThickness`) and indentation line guides.
-  - **Typography Effects**: Rainbow text gradients (`textGradient`, `textGradientEnd`) and letter/word spacing modes (`spacedTextMode`).
-
----
-
-## 🛠️ 5. Integrations & Developer Guides
-
-### **[CONTRIBUTING.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/CONTRIBUTING.md)** — Developer Guidelines & Standards
-- **Core Subject**: Step-by-step developer contribution guidelines and mandatory engineering rules.
-- **Inner Workings & Technical Details**:
-  - **Adding Features**: How to add new color modes, icon packs, or third-party plugin integrations.
-  - **Core Files Table**: Breakdown of all 18 core TypeScript files and their individual responsibilities.
-  - **Mandatory Development Rules**: Rules regarding immediate `npm run build` after TypeScript edits, non-static CSS property assignments (`el.setCssProps`), decoupled visual styling, package update synchronization, and zero-warning lint policies.
-
-### **[NOTEBOOK_NAVIGATOR.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/NOTEBOOK_NAVIGATOR.md)** — 3rd-Party Plugin Integration
-- **Core Subject**: Integration documentation for the third-party Notebook Navigator plugin.
-- **Inner Workings & Technical Details**:
-  - **Container Target Selectors**: Target selectors (`.nn-navitem`, `.nn-file`, `.nn-folder`).
-  - **ContextMenu Extension**: Right-click menu injection into Notebook Navigator item lists.
-  - **Integrated CSS Rules**: Synchronized color backgrounds, outlines, and icon scales for dual-navigation setups.
-
-### **[STAIRCASE_EFFECT.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/STAIRCASE_EFFECT.md)** — Theme Indentation Conflict Remedies
-- **Core Subject**: Technical explanation of theme layout conflict fixes and staircase indentation remedies.
-- **Inner Workings & Technical Details**:
-  - **Staircase Bug**: Remedies inline margin/padding overrides injected by certain Obsidian themes.
-  - **`initStaircaseStyleStripper()`**: MutationObserver that strips conflicting inline `style` attributes on `.tree-item-self` elements while preserving folder note titles.
-
----
-
-## 🌐 6. Localization (i18n) System
-
-### **[LOCALIZATION.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/LOCALIZATION.md)** — Internationalization Architecture
-- **Core Subject**: Complete i18n system specification — language detection, key namespaces, locale file structure, and developer workflow for adding new languages.
-- **Inner Workings & Technical Details**:
-  - **Compile-Time Typed Keys**: `TranslationKey` is derived as `keyof typeof en` — TypeScript emits a build error if a `t()` call references a key that doesn't exist in `en.ts`.
-  - **`t(key, vars?)` API**: Runtime translation function with `{{var}}` interpolation support. Defined in `src/lang/helpers.ts`.
-  - **Language Detection Chain**: `obsidian.getLanguage()` → `localStorage["language"]` → `moment.locale()` → `"en"` fallback.
-  - **Partial Locale Files**: All non-English locales are `Partial<LocaleDictionary>`, so missing keys automatically fall back to English without errors.
-  - **8 Supported Locales**: English (`en`), Slovak (`sk`), German (`de`), Spanish (`es`), French (`fr`), Japanese (`ja`), Simplified Chinese (`zh-cn`), Traditional Chinese (`zh-tw` / `zh-hk`).
-  - **Key Namespace Map**: 13 prefix namespaces covering `common.*`, `settings.tab.*`, `settings.ai.*`, `section.*`, `notice.*`, `modal.divider.*`, `modal.hover_message.*`, `modal.password.*`, etc.
-  - **Full UI Coverage**: All user-facing strings in `SettingTab.ts`, `GeneralSettingSection.ts`, `IconSettingSection.ts`, `FeaturesSettingSection.ts`, `AISettingSection.ts`, `HoverMessageModal.ts`, `DividerModal.ts`, and `PasswordModal.ts` use `t(...)`.
-  - **Sentence-Case Linter Compliance**: Placeholder strings with product names (e.g. `Bge-m3`) must capitalize only the first character to satisfy `obsidianmd/ui/sentence-case`.
-
+### **[CONTRIBUTING.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/CONTRIBUTING.md)** — Development Setup & Contribution Guide
+* **Subject**: Developer setup, build pipeline scripts, code style requirements, and pull request workflow.
+* **Key Content**:
+  * `npm run dev`, `npm run build`, `npm run lint` commands.
+  * Community linter compliance rules.

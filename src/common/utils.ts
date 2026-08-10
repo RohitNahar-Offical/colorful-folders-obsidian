@@ -1,5 +1,7 @@
-const MAX_CACHE_SIZE = 1000;
-const rgbCache = new Map<string, {r: number, g: number, b: number} | null>();
+import { LRUCache } from './LRUCache';
+
+const MAX_CACHE_SIZE = 1024;
+const rgbCache = new LRUCache<string, {r: number, g: number, b: number} | null>(MAX_CACHE_SIZE);
 
 function parseHexNibble(code: number): number {
     if (code >= 48 && code <= 57) return code - 48; // '0'-'9'
@@ -12,13 +14,6 @@ export function hexToRgbObj(hex: string): {r: number, g: number, b: number} | nu
     if (!hex || typeof hex !== 'string') return null;
     const cached = rgbCache.get(hex);
     if (cached !== undefined) return cached;
-
-    if (rgbCache.size > MAX_CACHE_SIZE) {
-        for (const k of rgbCache.keys()) {
-            rgbCache.delete(k);
-            break;
-        }
-    }
 
     // Strip leading/trailing whitespace & optional leading '#'
     let start = 0;
@@ -132,6 +127,9 @@ export function adjustBrightnessRgb(rgb: string, amount: number): string {
 
 export function normalizeVaultPath(path: string): string {
     if (!path) return "";
+    if (path.indexOf('\\') === -1 && path.indexOf('//') === -1 && !path.startsWith('/') && !path.endsWith('/')) {
+        return path.trim();
+    }
     return path
         .replace(/\\/g, '/')
         .replace(/\/+/g, '/')
@@ -142,29 +140,18 @@ export function normalizeVaultPath(path: string): string {
 export function safeEscape(path: string): string {
     if (!path) return "";
     const norm = normalizeVaultPath(path);
-    return norm
-        .replace(/\\/g, '\\\\')
-        .replace(/"/g, '\\"')
-        .replace(/'/g, "\\'")
-        .replace(/\[/g, '\\[')
-        .replace(/\]/g, '\\]')
-        .replace(/=/g, '\\=')
-        .replace(/\^/g, '\\^');
+    if (!/[\\"'[\]=^]/.test(norm)) {
+        return norm;
+    }
+    return norm.replace(/[\\"'[\]=^]/g, '\\$&');
 }
 
-const paletteCache = new Map<string, { rgb: string, hex: string }[] | null>();
+const paletteCache = new LRUCache<string, { rgb: string, hex: string }[] | null>(MAX_CACHE_SIZE);
 
 export function parseCustomPalette(hexString: string): { rgb: string, hex: string }[] | null {
     if (!hexString) return null;
     const cached = paletteCache.get(hexString);
     if (cached !== undefined) return cached;
-
-    if (paletteCache.size > MAX_CACHE_SIZE) {
-        for (const k of paletteCache.keys()) {
-            paletteCache.delete(k);
-            break;
-        }
-    }
 
     const hexes = hexString.split(',');
     const result: { rgb: string, hex: string }[] = [];

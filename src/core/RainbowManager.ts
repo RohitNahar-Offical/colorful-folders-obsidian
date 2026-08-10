@@ -1,4 +1,5 @@
 import { hexToRgbObj, adjustBrightnessValues, adjustBrightnessRgb } from '../common/utils';
+import { LRUCache } from '../common/LRUCache';
 
 export interface RainbowGradientOpts {
     angle?: number;
@@ -22,7 +23,7 @@ export class RainbowManager {
         ['#3b82f6', '#00e676', '#ff2a85']  // 5: Sapphire -> Emerald -> Neon Pink
     ];
 
-    private static gradientCssCache = new Map<string, string>();
+    private static gradientCssCache = new LRUCache<string, string>(1024);
 
     /**
      * Clears the memoized gradient CSS cache.

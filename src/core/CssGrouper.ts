@@ -34,14 +34,18 @@ export class CssGrouper {
      */
     build(): string {
         const chunks: string[] = [...this.rawBlocks];
+        const chunkSize = 500;
         for (const group of this.groups.values()) {
             const selectorArray = Array.from(group.selectors);
             if (selectorArray.length === 0) continue;
             // Chunk selectors into groups of 500 to avoid any browser selector limit edge cases
-            const chunkSize = 500;
-            for (let i = 0; i < selectorArray.length; i += chunkSize) {
-                const chunk = selectorArray.slice(i, i + chunkSize);
-                chunks.push(`${chunk.join(',\n')} {\n${group.body}\n}`);
+            if (selectorArray.length <= chunkSize) {
+                chunks.push(`${selectorArray.join(',\n')} {\n${group.body}\n}`);
+            } else {
+                for (let i = 0; i < selectorArray.length; i += chunkSize) {
+                    const chunk = selectorArray.slice(i, i + chunkSize);
+                    chunks.push(`${chunk.join(',\n')} {\n${group.body}\n}`);
+                }
             }
         }
         return chunks.join('\n\n');
