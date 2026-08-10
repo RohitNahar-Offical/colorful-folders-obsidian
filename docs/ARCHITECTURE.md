@@ -16,7 +16,7 @@ Colorful Folders does **NOT** inject physical DOM wrapper elements (`.cf-icon-wr
 
 ### The Rendering Pipeline
 
-### The Rendering Pipeline
+### The Rendering Pipeline 
 
 ```mermaid
 graph TD
