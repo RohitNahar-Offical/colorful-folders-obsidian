@@ -1239,7 +1239,7 @@ var init_IconRepository = __esm({
               });
               doc.querySelectorAll("a, use, image").forEach((el) => {
                 const href = (el.getAttribute("href") || el.getAttribute("xlink:href") || "").trim().toLowerCase();
-                if (href.startsWith("javascript:") || href.startsWith("http:") || href.startsWith("https:") || href.startsWith("//") || el.tagName.toLowerCase() === "use" && href.startsWith("data:")) {
+                if (href.startsWith("javascript:") || href.startsWith("vbscript:") || href.startsWith("http:") || href.startsWith("https:") || href.startsWith("//") || el.tagName.toLowerCase() === "use" && href.startsWith("data:")) {
                   el.remove();
                 }
               });

@@ -855,7 +855,7 @@ export default class ColorfulFoldersPlugin
           }
           doc.querySelectorAll('use').forEach(el => {
               const href = (el.getAttribute('href') || el.getAttribute('xlink:href') || '').trim().toLowerCase();
-              if (href.startsWith('http') || href.startsWith('//') || href.startsWith('javascript:') || href.startsWith('data:')) {
+              if (href.startsWith('http') || href.startsWith('//') || href.startsWith('javascript:') || href.startsWith('vbscript:') || href.startsWith('data:')) {
                   el.remove();
               }
           });
@@ -901,7 +901,17 @@ export default class ColorfulFoldersPlugin
         success = await fetchUrl(url);
       } catch (err) {
         // Fallback to jsdelivr CDN if raw.githubusercontent.com is blocked
-        if (url.includes('raw.githubusercontent.com')) {
+        let isRawGithub = false;
+        try {
+          const parsedUrl = new URL(url);
+          if (parsedUrl.hostname === 'raw.githubusercontent.com') {
+            isRawGithub = true;
+          }
+        } catch {
+          // ignore invalid URL
+        }
+
+        if (isRawGithub) {
           const cdnUrl = url.replace('https://raw.githubusercontent.com/', 'https://cdn.jsdelivr.net/gh/').replace('/master/', '@master/').replace('/main/', '@main/');
           console.debug(`Colorful Folders: Retrying download via CDN mirror ${cdnUrl}...`);
           success = await fetchUrl(cdnUrl);

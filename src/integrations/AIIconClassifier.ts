@@ -742,7 +742,7 @@ Correct Output:
         // Validate custom endpoint URL scheme
         try {
             const endpointUrl = new URL(url);
-            if (endpointUrl.protocol !== 'https:' && !endpointUrl.hostname.includes('localhost') && !endpointUrl.hostname.startsWith('127.')) {
+            if (endpointUrl.protocol !== 'https:' && endpointUrl.hostname !== 'localhost' && !endpointUrl.hostname.endsWith('.localhost') && !endpointUrl.hostname.startsWith('127.')) {
                 throw new Error("Custom local AI endpoint must use HTTPS or localhost/127.0.0.1.");
             }
         } catch (e) {
