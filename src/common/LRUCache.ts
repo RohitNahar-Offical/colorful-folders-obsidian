@@ -19,9 +19,9 @@ export class LRUCache<K, V> {
         if (this.map.has(key)) {
             this.map.delete(key);
         } else if (this.map.size >= this.capacity) {
-            for (const keyToEvict of this.map.keys()) {
-                this.map.delete(keyToEvict);
-                break;
+            const firstKey = this.map.keys().next().value as K | undefined;
+            if (firstKey !== undefined) {
+                this.map.delete(firstKey);
             }
         }
         this.map.set(key, value);

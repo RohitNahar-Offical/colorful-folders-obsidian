@@ -17,7 +17,10 @@ export class CategoryTrie {
         this.root = createTrieNode();
         this.fallbackCategories = [];
 
-        for (const cat of categories) {
+        // Pre-sort categories by descending priority so Trie nodes inherit priority order
+        const sortedCategories = [...categories].sort((a, b) => (b.priority || 0) - (a.priority || 0));
+
+        for (const cat of sortedCategories) {
             const source = cat.rex.source.toLowerCase();
             let isLiteralInserted = false;
 
@@ -88,7 +91,6 @@ export class CategoryTrie {
                 results.push(fb);
             }
         }
-        results.sort((a, b) => (b.priority || 0) - (a.priority || 0));
         return results;
     }
 }

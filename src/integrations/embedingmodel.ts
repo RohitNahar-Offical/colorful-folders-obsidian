@@ -1,6 +1,7 @@
 import { requestUrl, getIconIds } from 'obsidian';
 import { IColorfulFoldersPlugin } from '../common/types';
 import { AUTO_ICON_CATEGORIES } from '../common/constants';
+import { LRUCache } from '../common/LRUCache';
 
 export interface VectorMatchResult {
     iconId: string;
@@ -124,10 +125,10 @@ export class EmbeddingModel {
     private plugin: IColorfulFoldersPlugin;
     private iconVectors: Map<string, IconVector> = new Map();
     private isInitialized = false;
-    private queryCache: Map<string, { result: VectorMatchResult[]; timestamp: number }> = new Map();
+    private queryCache: LRUCache<string, { result: VectorMatchResult[]; timestamp: number }> = new LRUCache(MAX_CACHE_SIZE);
     private cacheHitCount = 0;
     private cacheMissCount = 0;
-    private conceptDenseVectors: Map<string, number[]> = new Map();
+    private conceptDenseVectors: Map<string, Float32Array> = new Map();
 
     private static readonly DENSE_CONCEPTS: Record<string, { prompt: string; icons: string[] }> = {
         quotes_wisdom: { prompt: "quotes sayings proverbs wisdom philosophy reflection mindset life lessons truth illusion quote-text sentence", icons: ['quote', 'sparkles', 'lightbulb', 'compass', 'brain', 'book-open'] },
@@ -610,12 +611,6 @@ export class EmbeddingModel {
         const minScore = options?.minScore ?? DEFAULT_MIN_SCORE;
         const context = this.buildQueryContext(titleOrPath, options?.isFolder ?? false);
 
-        if (this.queryCache.size >= MAX_CACHE_SIZE) {
-            for (const k of this.queryCache.keys()) {
-                this.queryCache.delete(k);
-                break;
-            }
-        }
 
         const directMatch = this.tryDirectDictionaryMatch(context.lowerName, topK, context);
         if (directMatch.length > 0) {
@@ -856,7 +851,7 @@ export class EmbeddingModel {
         return results;
     }
 
-    public async fetchNeuralEmbedding(text: string): Promise<number[] | null> {
+    public async fetchNeuralEmbedding(text: string): Promise<Float32Array | null> {
         const settings = this.plugin?.settings;
         if (settings?.embeddingEngine === 'builtin') return null;
 
@@ -884,13 +879,13 @@ export class EmbeddingModel {
 
                 const data = res.json as Record<string, unknown>;
                 if (Array.isArray(data.embedding)) {
-                    return data.embedding as number[];
+                    return new Float32Array(data.embedding as number[]);
                 }
                 if (Array.isArray(data.embeddings) && Array.isArray(data.embeddings[0])) {
-                    return data.embeddings[0] as number[];
+                    return new Float32Array(data.embeddings[0] as number[]);
                 }
                 if (Array.isArray(data.data) && (data.data[0] as Record<string, unknown>)?.embedding) {
-                    return (data.data[0] as Record<string, unknown>).embedding as number[];
+                    return new Float32Array((data.data[0] as Record<string, unknown>).embedding as number[]);
                 }
             } catch {
                 // Try next endpoint
@@ -918,7 +913,7 @@ export class EmbeddingModel {
     /**
      * Computes Cosine Similarity between two dense N-dimensional floating point vectors.
      */
-    public computeDenseCosineSimilarity(vecA: number[], vecB: number[]): number {
+    public computeDenseCosineSimilarity(vecA: Float32Array | number[], vecB: Float32Array | number[]): number {
         if (!vecA || !vecB || vecA.length === 0 || vecB.length === 0) return 0;
         const len = Math.min(vecA.length, vecB.length);
         let dot = 0;
@@ -937,20 +932,28 @@ export class EmbeddingModel {
 
     public async findBestIconsDense(
         titleOrPath: string,
-        denseVector: number[],
+        denseVector: Float32Array | number[],
         options?: { topK?: number; minScore?: number; isFolder?: boolean }
     ): Promise<VectorMatchResult[]> {
         const topK = options?.topK ?? DEFAULT_TOP_K;
         const minScore = options?.minScore ?? 0.15;
         const context = this.buildQueryContext(titleOrPath, options?.isFolder ?? false);
 
-        for (const [conceptKey, conceptDef] of Object.entries(EmbeddingModel.DENSE_CONCEPTS)) {
-            if (!this.conceptDenseVectors.has(conceptKey)) {
-                const vec = await this.fetchNeuralEmbedding(conceptDef.prompt);
-                if (vec) {
-                    this.conceptDenseVectors.set(conceptKey, vec);
-                }
-            }
+        const missingKeys = Object.keys(EmbeddingModel.DENSE_CONCEPTS).filter(
+            key => !this.conceptDenseVectors.has(key)
+        );
+        if (missingKeys.length > 0) {
+            await Promise.all(
+                missingKeys.map(async (conceptKey) => {
+                    const conceptDef = EmbeddingModel.DENSE_CONCEPTS[conceptKey];
+                    if (conceptDef) {
+                        const vec = await this.fetchNeuralEmbedding(conceptDef.prompt);
+                        if (vec) {
+                            this.conceptDenseVectors.set(conceptKey, vec);
+                        }
+                    }
+                })
+            );
         }
 
         const iconScores = new Map<string, number>();
