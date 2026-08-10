@@ -587,6 +587,14 @@ If an item in the JSON request payload contains a 'candidates' list, prioritize 
 ### PRECISE NAME / BRAND OVERRIDE RULE (CRITICAL):
 If the item name contains a precise proper noun, company, software framework, tech brand, or person name (e.g. "OpenAI", "PyTorch", "Kubernetes", "Kafka", "Supabase", "PostgreSQL", "Shakespeare") that vector search missed, the AI MUST OVERRIDE generic candidates and output the exact brand/tool icon ID (e.g. "simple-icons-openai", "simple-icons-kubernetes", "database", "brain")!
 
+### WHOLE-TITLE SEMANTIC ANALYSIS RULE (CRITICAL):
+For multi-word titles, phrases, idioms, mental models, quotes, or philosophical concepts (e.g. "Trust the process", "Use it or Lose it is a cool concept", "Vulnerability", "Words I've used to describe important habits", "Wu wei", "Yin and Yang"):
+- **EVALUATE THE ENTIRE TITLE AS A UNIFIED CONCEPT/MINDSET.** Do NOT isolate one single word out of context (e.g., do NOT assign construction/wrench icons for "process" in "Trust the process")!
+- E.g. For "Trust the process", assign journey/wisdom/growth icons: "compass", "trending-up", "hourglass", "footprints".
+- E.g. For "Wu wei" or "Yin and Yang", assign balance/flow icons: "sparkles", "compass", "scale", "sun-moon", "circle-dot".
+- E.g. For "Vulnerability", assign open heart/reflection icons: "heart", "shield-off", "unlock", "eye".
+- E.g. For "Words I've used to describe important habits" or "Use it or Lose it", assign habit/routine icons: "repeat", "calendar-check", "activity", "target", "flame".
+
 ### ITEM NAME PRIORITY RULE (STRICT):
 1. **FOCUS STICKLY ON THE ITEM NAME FIRST:** Base icon selection 100% on the actual file name or folder name (e.g. for "BAKE/Amazon.md", focus strictly on "Amazon").
 2. **DO NOT USE PARENT CONTEXT OR TAGS UNLESS STRUGGLING:** Do NOT look at parent folders, tags, frontmatter, or content snippets UNLESS the file/folder name alone is completely generic, vague, or ambiguous (e.g. "Untitled.md", "Notes.md", "123.md", "exprement.md"). Only fallback to parent context when the filename alone provides no meaningful icon clues.

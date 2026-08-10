@@ -18,7 +18,7 @@ export class IconRepository {
     private _findPackIconCache = new LRUCache<string, string | null>(2048);
     private _autoIconResultCache = new LRUCache<string, AutoIconData | null>(4096);
     private _packIndex: IconPackIndex = new IconPackIndex();
-    private _domParser = new DOMParser();
+    private _domParser = typeof DOMParser !== 'undefined' ? new DOMParser() : null;
 
     constructor(plugin: IColorfulFoldersPlugin) {
         this.plugin = plugin;

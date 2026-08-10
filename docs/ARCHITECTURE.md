@@ -164,32 +164,42 @@ graph TD
     A[getAutoIconData name] --> B[Sanitize: Lowercase & Strip File Extensions]
     B --> C{Tier 1: Exact Pack Match}
     C -- Match --> Z1[Return Tier 1: Priority 1800 + packSource]
-    C -- Miss --> D{Tier 2 & 3: CategoryTrie Lookup}
+    C -- Miss --> D{Tier 2 & 3: Priority CategoryTrie Lookup}
     D --> E[Collect Candidates for ALL Word Prefixes]
-    E --> F[Test Candidate Regexes]
-    F -- Match --> Z2[Return Tier 2/3: Priority 1500/85 + packSource]
+    E --> F[Evaluate Regex Patterns & Sort by Priority]
+    F -- Match --> Z2[Return Highest Priority Category Match]
     F -- Miss --> G{Tier 4: Stem-Aware Fuzzy Search}
     G --> H[Filter Words via STOP_WORDS]
     H --> I[Strip Suffixes via stemWord]
     I --> J[Query IconPackIndex Right-to-Left]
     J -- Match --> Z3[Return Tier 4: Priority 50 + packSource]
-    J -- Miss --> Z4[Return Null -> Fallback to Default Icon]
+    J -- Miss --> K{Tier 5: Sentence & Concept Palette Hash}
+    K --> Z4[Return Hash-Picked Concept / Sentence Icon]
 ```
 
 1. **Tier 1: Exact Pack Match (Priority 1800)**
    - Hyphenates the sanitized name (`"my_project.md"` $\rightarrow$ `"my-project"`).
    - Performs $O(1)$ query via `IconPackIndex.findIcon()`. Returns exact matching custom SVG or installed pack icon.
 
-2. **Tier 2 & 3: Custom Regex Rules & Category Prefix Trie (Priority 1500 & 80–110)**
-   - Queries `CategoryTrie.lookup(lName)` which traverses a true Node-based Prefix Trie (`TrieNode`) matching tokenized words against character prefix branches without returning full fallback sets.
-   - Evaluates custom user regex rules first (Tier 2, Priority 1500), then built-in `AUTO_ICON_CATEGORIES` (Tier 3, Priority 80–110).
-   - If `autoIconVariety` is enabled, hashes `hashString(name)` against the category's `emojis` / `lucides` array to pick diverse icons.
+2. **Tier 2 & 3: Custom Regex Rules & Priority-Sorted Category Trie (Priority 1500 & 80–140)**
+   - Queries `CategoryTrie.lookup(lName)` traversing a Node-based Prefix Trie (`TrieNode`) matching tokenized word prefixes.
+   - All candidate category results are explicitly sorted by descending priority: `results.sort((a, b) => (b.priority || 0) - (a.priority || 0))`.
+   - **Whole-Title & Mental Model Categories (Priority 110–140)**: Evaluates high-priority whole-title concept regexes before single-word categories:
+     - **Ideation & Brainstorming** (Priority 140): `generate ideas`, `ideation`, `brainstorm` $\rightarrow$ `lightbulb`, `brain`, `sparkles`
+     - **Mental Models & Growth** (Priority 130): `higher-order` (`layers`), `underestimate` (`hourglass`), `remember/mnemonic` (`brain`), `wu wei` (`sparkles`), `yin and yang` (`scale`), `vulnerability` (`heart`), `trust the process` (`compass`, `trending-up`), `use it or lose it` (`repeat`, `flame`)
+     - **Habits & Routines** (Priority 125): `words...habits`, `habit` $\rightarrow$ `repeat`, `calendar-check`, `target`
+     - **Narratives & Philosophy** (Priority 110–115): `quote`, `saying`, `journey`, `wander`, `story`, `agony` $\rightarrow$ `quote`, `compass`, `pen-tool`, `heart`
+   - If `autoIconVariety` is enabled, hashes `hashString(name)` against the top matching category's `emojis` / `lucides` array to pick diverse icons.
 
 3. **Tier 4: Stem-Aware Optimized Fuzzy Search (Priority 50)**
    - Executes fast-path O(1) query via `IconPackIndex.findIcon()`.
    - Performs length-difference pruning (`Math.abs(lenA - lenB) / maxLen > (1 - threshold)`).
    - Enforces word-boundary / prefix alignment checks to prevent false substring matches (e.g. "cat" inside "communication-category").
    - Calculates Levenshtein distance using a 1D single-row buffer to eliminate 2D array allocations.
+
+4. **Tier 5: Multi-Word Sentence & Concept Palette Fallbacks (Priority 30)**
+   - For multi-word file titles (`!isFolder && title.includes(' ') && length > 12`), hashes `hashString(filename)` across a curated **Sentence Palette** (`['compass', 'sparkles', 'lightbulb', 'quote', 'brain', 'pen-tool', 'book-open', 'repeat', 'heart', 'star']`).
+   - For single-word file titles without category matches, hashes across a **Concept Palette** (`['sparkles', 'compass', 'pen-tool', 'lightbulb', 'brain', 'star', 'book-open', 'layers']`).
 
 ---
 
@@ -215,7 +225,10 @@ graph TD
 
 #### How AI Icon Assignment Works:
 1. **Scope Selection & Payload**: Collects all vault folders and (if `aiIncludeFiles: true`) `.md` files, creating a clean `item_path` payload alongside tags, frontmatter, and content snippets.
-2. **3-Tier Candidate System Prompt & Item Differentiation**: Instructs the AI model to output an array of 3 candidate icon names per item (`[Candidate 1: Specific/Brand, Candidate 2: Single-Word Visual, Candidate 3: General Fallback]`). Enforces structural container fallbacks for folders (`folder-code`, `layers`, `archive`, `folder`) and document fallbacks for files (`code`, `book`, `file-text`).
+2. **Whole-Title Semantic Analysis & Item Differentiation (System Prompt)**:
+   - **`WHOLE-TITLE SEMANTIC ANALYSIS RULE`**: Instructs the LLM to evaluate multi-word titles, phrases, idioms, mental models, quotes, or philosophical concepts (e.g. *"Trust the process"*, *"Use it or Lose it"*, *"Vulnerability"*, *"Wu wei"*) **as a unified concept/mindset**.
+   - Strictly forbids isolating individual words out of context (e.g., prevents assigning construction/wrench icons for "process" in *"Trust the process"*).
+   - Instructs the AI model to output an array of 3 candidate icon names per item (`[Candidate 1: Specific/Brand, Candidate 2: Single-Word Visual, Candidate 3: General Fallback]`). Enforces structural container fallbacks for folders (`folder-code`, `layers`, `archive`, `folder`) and document fallbacks for files (`code`, `book`, `file-text`).
 3. **Multi-Syntax Resilient Parsing**:
    - Pre-sanitizes non-standard `=>` and `->` arrow notation into standard JSON colons (`:`).
    - Strips `<think>` tags and markdown codeblocks via `parseJsonResponse()`.
@@ -274,32 +287,46 @@ All SVG transformations and resolutions run through bounded $O(1)$ `LRUCache(204
 
 ## 6. Vector Embedding Classification Engine
 
-The plugin includes a **Zero-LLM, offline-capable icon assignment engine** operating independently of the LLM-based `AIIconClassifier`. It uses dense vector embeddings to match vault folder/file names to icon concepts without network access.
+The plugin includes an **offline-capable vector classification engine** operating independently of the LLM-based `AIIconClassifier`. It matches vault folder/file names to icon concepts using sparse and dense vector representations.
 
 ### 6.1 Engine Selection
 
 Configured via `settings.embeddingEngine`:
-- `"builtin"` — Uses the **zero-dependency built-in local vector model** (0mb download, embedded at compile time). Achieves <5ms per item classification.
-- `"custom"` — Delegates to a **local neural model** (e.g. `bge-m3` via Ollama or a local OpenAI-compatible embedding API) for higher semantic accuracy.
+- `"builtin"` — Uses the **zero-dependency built-in local vector model** (0mb download, embedded at compile time). Achieves <5ms per item classification using token weights, character 3-grams, and TF-IDF domain hints.
+- `"custom"` — Delegates to a **local neural embedding model** (e.g. `bge-m3` via Ollama or a local OpenAI-compatible embedding API) for high semantic density.
 
-### 6.2 Vector Classification Flow
+### 6.2 Dense Neural Cosine Similarity & Concept Mapping (`findBestIconsDense`)
+
+When custom neural embeddings are active:
+1. **Multi-Endpoint HTTP Resiliency**: Automatically attempts `/api/embeddings`, `/api/embed`, and `/v1/embeddings` API routes with appropriate payloads (`{ model, prompt }` vs `{ model, input }`).
+2. **Dense Concept Scoring (`DENSE_CONCEPTS`)**: Computes cosine similarity between the item's dense vector and predefined concept prompts (`quotes_wisdom`, `stories_writing`, `journey_voyage`, `imagination_vision`, `emotions_heart`, `coding`, `finance`, `tasks`, etc.).
+3. **Rank Weighting & Context Boost**: Scales scores by candidate rank (`1.0 - idx * 0.1`) and applies `applyContextBoost` to reward filename/folder context alignment.
 
 ```mermaid
 graph TD
     A[User triggers vector auto-assign] --> B{embeddingEngine setting}
-    B -- builtin --> C[BuiltinVectorEngine.classify]
-    B -- custom --> D[CustomEmbeddingEngine.classify via HTTP]
-    C --> E[Compute cosine similarity against icon concept embeddings]
-    D --> E
-    E --> F[Rank candidates by similarity score]
-    F --> G[Resolve best icon via IconRepository.findIconInPacks]
-    G --> H[Save iconId to customFolderColors]
-    H --> I[Trigger generateStyles]
+    B -- builtin --> C[BuiltinVectorEngine.findBestIcons]
+    B -- custom --> D[fetchNeuralEmbedding via Multi-Endpoint HTTP]
+    D --> E[findBestIconsDense: Cosine Similarity vs DENSE_CONCEPTS]
+    C --> F[Sparse TF-IDF / 3-Gram Vector Cosine Matching]
+    E --> G[Apply Rank Weighting & applyContextBoost]
+    F --> G
+    G --> H{Score Threshold Met?}
+    H -- Yes --> I[Rank Top K Matches & Assign High/Med Confidence]
+    H -- No --> J[Fallback to Multi-Word Sentence or Concept Palette Hash]
+    I --> K[Save iconId to customFolderColors & Call generateStyles]
+    J --> K
 ```
 
-### 6.3 Notices & Progress
+### 6.3 Sentence & Concept Palette Deterministic Fallbacks
 
-The engine reports progress via localized notices (`t("notice.vector_scanning")`, `t("notice.vector_progress")`, `t("notice.vector_success")`, `t("notice.vector_error")`). The button text in `AISettingSection.ts` dynamically updates from `t("settings.ai.btn_vector_auto_assign")` → `t("settings.ai.btn_vector_progress", { pct, completed, total })` during scanning.
+When vector similarity falls below the confidence threshold:
+- **Multi-Word Sentence Titles** (`!isFolder && title.includes(' ') && length > 12`): Hashes the title across a curated **Sentence Palette** (`['compass', 'sparkles', 'lightbulb', 'quote', 'brain', 'pen-tool', 'book-open', 'repeat', 'heart', 'star']`).
+- **Single-Word Concept Titles**: Hashes across a curated **Concept Palette** (`['sparkles', 'compass', 'pen-tool', 'lightbulb', 'brain', 'star', 'book-open', 'layers']`).
+
+### 6.4 Notices & Progress
+
+The engine reports progress via localized notices (`t("notice.vector_scanning")`, `t("notice.vector_progress")`, `t("notice.vector_success")`, `t("notice.vector_error")`). The button text in `AISettingSection.ts` dynamically updates from `t("settings.ai.btn_vector_auto_assign")` $\rightarrow$ `t("settings.ai.btn_vector_progress", { pct, completed, total })` during scanning.
 
 ---
 

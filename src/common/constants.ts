@@ -206,7 +206,7 @@ export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
     { rex: /pdf|ebook/i, emoji: "📕", lucide: "file-text", priority: 90 },
     { rex: /zip|rar|compressed|archive/i, emoji: "🗜️", lucide: "package", priority: 90 },
     { rex: /cloud|sync|drive|storage/i, emoji: "☁️", lucide: "cloud", priority: 90 },
-    { rex: /shopping|cart|store|shop|buy|order/i, emoji: "🛒", lucide: "shopping-cart", priority: 90 },
+    { rex: /\b(shopping|cart|store|shop|buy|checkout|purchases)\b|\b(purchase-order|store-order)\b/i, emoji: "🛒", lucide: "shopping-cart", priority: 90 },
     { rex: /food|recipe|meal|drink|cook|restaurant/i, emoji: "🍔", lucide: "utensils", priority: 90 },
     { rex: /nature|tree|plant|eco|environment/i, emoji: "🌱", lucide: "leaf", priority: 90 },
     { rex: /game|play|fun|console|steam/i, emoji: "🎮", lucide: "gamepad-2", priority: 90 },
@@ -232,7 +232,7 @@ export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
     { rex: /\b(source|origin|root|base|data|lib|bib)\b/i, emoji: "📁", lucide: "database", priority: 85, emojis: ["📁", "📥", "📊"], lucides: ["database", "library", "binary"] },
     { rex: /thing|object|stuff|entity|misc|item/i, emoji: "📦", lucide: "package", priority: 80, emojis: ["📦", "🎁", "🗳️"], lucides: ["package", "layers", "box"] },
     { rex: /review|crit|feedback|eval/i, emoji: "🔎", lucide: "search", priority: 85, lucides: ["search", "check-square", "clipboard-check"] },
-    { rex: /draft|wip|process|build/i, emoji: "🚧", lucide: "wrench", priority: 85, emojis: ["🚧", "🛠️", "🏗️"], lucides: ["wrench", "construction", "hammer"] },
+    { rex: /\b(draft|wip|work-in-progress|construction)\b/i, emoji: "🚧", lucide: "wrench", priority: 85, emojis: ["🚧", "🛠️", "🏗️"], lucides: ["wrench", "construction", "hammer"] },
     { rex: /security|auth|key|password/i, emoji: "🔑", lucide: "key", priority: 80 },
     { rex: /download|install|setup/i, emoji: "⬇️", lucide: "download", priority: 80 },
     { rex: /trash|delete|remove|bin/i, emoji: "🗑️", lucide: "trash", priority: 80 },
@@ -308,6 +308,25 @@ export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
     { rex: /thesaurus|dictionary|vocabulary|word/i, emoji: "📖", lucide: "book-open-check", priority: 90, emojis: ["📖", "📚", "🔤"], lucides: ["book-open-check", "spell-check", "languages"] },
     { rex: /estimate|underestimate|measure|math|scale/i, emoji: "📐", lucide: "gauge", priority: 85, emojis: ["📐", "⚖️", "📊"], lucides: ["gauge", "calculator", "ruler"] },
     { rex: /metadata|attribute|property|tag|meta/i, emoji: "🏷️", lucide: "tags", priority: 90, emojis: ["🏷️", "🔖", "🔑"], lucides: ["tags", "tag", "file-key"] },
+
+    // --- Sentences, Quotes, Wisdom, Philosophy & Narrative Stories ---
+    { rex: /generate\s*ideas|ideation|brainstorm|idea\s*generation|new\s*ideas|idea|ideas/i, emoji: "💡", lucide: "lightbulb", priority: 140, emojis: ["💡", "✨", "🧠"], lucides: ["lightbulb", "brain", "sparkles"] },
+    { rex: /higher-order|higher\s*order|order\s*of\s*magnitude|structural\s*order/i, emoji: "🥞", lucide: "layers", priority: 130, emojis: ["🥞", "🕸️", "🌳"], lucides: ["layers", "git-branch", "network", "list-tree"] },
+    { rex: /underestimate|how\s*long.*takes|time\s*estimate|estimation\s*fallacy|chronically/i, emoji: "⏳", lucide: "hourglass", priority: 130, emojis: ["⏳", "🕒", "⏱️"], lucides: ["hourglass", "clock", "calendar-clock", "timer"] },
+    { rex: /remember|mnemonic|memory\s*technique|stir|recall\s*more/i, emoji: "🧠", lucide: "brain", priority: 130, emojis: ["🧠", "💡", "💾"], lucides: ["brain", "brain-circuit", "lightbulb"] },
+    { rex: /wu\s*wei|daoism|effortless\s*action/i, emoji: "✨", lucide: "sparkles", priority: 130, emojis: ["✨", "🧭", "🍃"], lucides: ["sparkles", "compass", "wind", "leaf"] },
+    { rex: /yin\s*(and|&)?\s*yang|dualism|balance/i, emoji: "☯️", lucide: "scale", priority: 130, emojis: ["☯️", "⚖️", "🌓"], lucides: ["scale", "sun-moon", "circle-dot"] },
+    { rex: /vulnerability|vulnerable|openness/i, emoji: "❤️", lucide: "heart", priority: 130, emojis: ["❤️", "🔓", "🛡️"], lucides: ["heart", "shield-off", "unlock", "eye"] },
+    { rex: /trust\s*(the)?\s*process|process\s*of\s*growth|patience/i, emoji: "🧭", lucide: "compass", priority: 130, emojis: ["🧭", "📈", "⏳"], lucides: ["compass", "trending-up", "hourglass", "footprints"] },
+    { rex: /use\s*it\s*or\s*lose\s*it|maintenance|decay/i, emoji: "🔄", lucide: "repeat", priority: 130, emojis: ["🔄", "🔥", "⚡"], lucides: ["repeat", "flame", "activity", "zap"] },
+    { rex: /words.*habits|habit|habits|routine/i, emoji: "🔄", lucide: "repeat", priority: 125, emojis: ["🔄", "📅", "⚡"], lucides: ["repeat", "calendar-check", "activity", "target"] },
+    { rex: /wander|lost|voyage|journey|path|step|road|destination|miles|hike|flight/i, emoji: "🧭", lucide: "compass", priority: 110, emojis: ["🧭", "📍", "🗺️"], lucides: ["compass", "map-pin", "map", "route"] },
+    { rex: /story|narrative|untold|tale|legend|prose|fiction|author|script/i, emoji: "📜", lucide: "pen-tool", priority: 110, emojis: ["📜", "🪶", "📖"], lucides: ["pen-tool", "book-open", "feather", "scroll", "file-text"] },
+    { rex: /imagination|illusion|truth|vision|preview|attraction|wonder|amazed|spark/i, emoji: "✨", lucide: "sparkles", priority: 110, emojis: ["✨", "💡", "🧠", "⭐"], lucides: ["sparkles", "lightbulb", "brain", "wand-2", "star", "eye"] },
+    { rex: /agony|emotion|feeling|heart|soul|cherished|upset|love|mood/i, emoji: "❤️", lucide: "heart", priority: 110, emojis: ["❤️", "💖", "💭"], lucides: ["heart", "sparkles", "smile", "activity"] },
+    { rex: /quote|saying|proverb|aphorism|wisdom|philosophy|reflection|mindset|lesson|meaning|to-be/i, emoji: "💬", lucide: "quote", priority: 115, emojis: ["💬", "💡", "✨"], lucides: ["quote", "sparkles", "lightbulb", "compass", "book-open", "brain"] },
+    { rex: /eat|hungrier|food|feast|meal|utensil/i, emoji: "🍽️", lucide: "utensils", priority: 110, emojis: ["🍽️", "🍲", "🍎"], lucides: ["utensils", "soup", "chef-hat"] },
+    { rex: /future|distributed|innovation|cyber|tech/i, emoji: "🚀", lucide: "rocket", priority: 110, emojis: ["🚀", "⚡", "🔮"], lucides: ["rocket", "zap", "cpu", "globe"] },
 ];
 
 export const PACK_PRIORITY: Record<string, number> = {

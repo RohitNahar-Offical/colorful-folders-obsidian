@@ -1,5 +1,6 @@
-import { requestUrl } from 'obsidian';
+import { requestUrl, getIconIds } from 'obsidian';
 import { IColorfulFoldersPlugin } from '../common/types';
+import { AUTO_ICON_CATEGORIES } from '../common/constants';
 
 export interface VectorMatchResult {
     iconId: string;
@@ -126,6 +127,42 @@ export class EmbeddingModel {
     private queryCache: Map<string, { result: VectorMatchResult[]; timestamp: number }> = new Map();
     private cacheHitCount = 0;
     private cacheMissCount = 0;
+    private conceptDenseVectors: Map<string, number[]> = new Map();
+
+    private static readonly DENSE_CONCEPTS: Record<string, { prompt: string; icons: string[] }> = {
+        quotes_wisdom: { prompt: "quotes sayings proverbs wisdom philosophy reflection mindset life lessons truth illusion quote-text sentence", icons: ['quote', 'sparkles', 'lightbulb', 'compass', 'brain', 'book-open'] },
+        stories_writing: { prompt: "story narrative writing literature fiction author legend prose feather scroll pen untold agony", icons: ['pen-tool', 'book-open', 'feather', 'scroll', 'file-text'] },
+        journey_voyage: { prompt: "journey wander voyage path travel step miles destination compass footprints map road", icons: ['compass', 'map-pin', 'map', 'route', 'plane'] },
+        imagination_vision: { prompt: "imagination vision future dream idea wonder preview attraction spark magic illusion mind", icons: ['sparkles', 'lightbulb', 'brain', 'wand-2', 'star', 'eye'] },
+        emotions_heart: { prompt: "emotion feeling heart agony soul passion cherish love mood upset", icons: ['heart', 'sparkles', 'smile', 'activity'] },
+        coding: { prompt: "software development code programming terminal developer git scripts", icons: ['code', 'terminal', 'cpu', 'file-code', 'git-branch'] },
+        finance: { prompt: "finance money banking accounting bills expenses budget receipt tax currency", icons: ['banknote', 'dollar-sign', 'coins', 'receipt', 'credit-card', 'wallet'] },
+        meetings: { prompt: "meetings calendar schedule appointments agenda zoom call clock events", icons: ['calendar', 'clock', 'users', 'video', 'calendar-days'] },
+        reading: { prompt: "reading books literature research papers articles library documentation notes", icons: ['book-open', 'book', 'library', 'newspaper', 'file-text'] },
+        tasks: { prompt: "tasks todo checklist goals projects kanban action work tracking", icons: ['check-square', 'target', 'folder-kanban', 'flag', 'list-todo'] },
+        design: { prompt: "design graphic UI UX mockup palette Figma vector drawing art layout", icons: ['layout', 'palette', 'pen-tool', 'brush', 'image'] },
+        music: { prompt: "music audio sound song playlist headphones podcast recording radio", icons: ['music', 'headphones', 'mic', 'disc', 'radio'] },
+        video: { prompt: "video movie film Youtube camera streaming video recording clapperboard", icons: ['video', 'film', 'play-circle', 'camera', 'clapperboard'] },
+        health: { prompt: "health fitness workout exercise medical doctor hospital stethoscope activity", icons: ['activity', 'stethoscope', 'heart-pulse', 'dumbbell'] },
+        travel: { prompt: "travel trip vacation flight plane map navigation compass location explorer", icons: ['plane', 'compass', 'map-pin', 'globe', 'map'] },
+        gaming: { prompt: "gaming video games console play steam gamepad trophy sword", icons: ['gamepad-2', 'dices', 'trophy', 'sword'] },
+        security: { prompt: "security passwords privacy authentication lock key shield firewall", icons: ['shield-check', 'lock', 'key', 'eye-off'] },
+        people: { prompt: "people contacts family friends team user profile employee contacts group", icons: ['users', 'user', 'contact', 'id-card', 'folder-users'] },
+        shopping: { prompt: "shopping cart store buy order product package store market", icons: ['shopping-cart', 'shopping-bag', 'package', 'store'] },
+        law: { prompt: "law legal court justice contract agreement scale gavel scroll", icons: ['scale', 'gavel', 'scroll', 'file-text'] },
+        science: { prompt: "science laboratory research chemistry biology experiment microscope flask", icons: ['flask-conical', 'microscope', 'atom'] },
+        nature: { prompt: "nature environment plant garden tree flower leaf eco climate", icons: ['leaf', 'flower-2', 'tree-pine', 'sun'] },
+        space: { prompt: "space astronomy stars universe galaxy telescope moon rocket", icons: ['telescope', 'rocket', 'moon'] },
+        hardware: { prompt: "hardware computer PC CPU hard drive memory components server infrastructure", icons: ['cpu', 'server', 'hard-drive', 'database'] },
+        education: { prompt: "school study university course exam graduation lecture class", icons: ['graduation-cap', 'book', 'school'] },
+        pets: { prompt: "pets animal dog cat vet paw print", icons: ['dog', 'cat', 'paw-print'] },
+        wu_wei_daoism: { prompt: "wu wei daoism effortless action flow balance nature philosophy wisdom taoism", icons: ['sparkles', 'compass', 'wind', 'leaf'] },
+        yin_yang_balance: { prompt: "yin and yang dualism balance harmony scale contrast circle sun moon", icons: ['scale', 'sun-moon', 'circle-dot'] },
+        vulnerability_openness: { prompt: "vulnerability vulnerable open heart self reflection emotional courage soul", icons: ['heart', 'shield-off', 'unlock', 'eye'] },
+        trust_the_process: { prompt: "trust the process growth patience journey continuous progress footprints trending", icons: ['compass', 'trending-up', 'hourglass', 'footprints'] },
+        use_it_or_lose_it: { prompt: "use it or lose it maintenance activity practice flame repeat cycle", icons: ['repeat', 'flame', 'activity', 'zap'] },
+        habits_routines: { prompt: "important habits habit routine daily tracker repeat words used practice", icons: ['repeat', 'calendar-check', 'activity', 'target'] }
+    };
 
     private static readonly BRAND_DICTIONARY: Record<string, string[]> = {
         amazon: ['simple-icons-amazon', 'shopping-cart', 'package', 'store'],
@@ -297,6 +334,33 @@ export class EmbeddingModel {
             }
         }
 
+        for (const cat of AUTO_ICON_CATEGORIES) {
+            const targets: string[] = [];
+            if (cat.lucide) targets.push(cat.lucide);
+            if (cat.lucides) targets.push(...cat.lucides);
+
+            const rexSource = cat.rex.source
+                .replace(/[^a-zA-Z0-9\s|-]/g, ' ')
+                .replace(/\|/g, ' ')
+                .trim();
+            const keywords = rexSource.split(/\s+/).filter(k => k.length >= 2);
+
+            for (const iconId of targets) {
+                const vector = this.getOrCreateVector(iconId);
+                const cleanId = iconId.replace(/^lucide-/i, '').replace(/^simple-icons-/i, '');
+                vector.tokenWeights.set(iconId.toLowerCase(), 4.0);
+                vector.tokenWeights.set(cleanId.toLowerCase(), 3.5);
+
+                for (const kw of keywords) {
+                    const weights = this.buildWeightedTokenMap(kw);
+                    weights.forEach((w, t) => {
+                        vector.tokenWeights.set(t, (vector.tokenWeights.get(t) || 0) + w * (cat.priority / 100));
+                    });
+                    vector.domains.add(kw);
+                }
+            }
+        }
+
         const customIcons = this.plugin?.settings?.customIcons || {};
         for (const iconId of Object.keys(customIcons)) {
             const vector = this.getOrCreateVector(iconId);
@@ -329,6 +393,29 @@ export class EmbeddingModel {
             weights.forEach((w, t) => {
                 vector.tokenWeights.set(t, (vector.tokenWeights.get(t) || 0) + w);
             });
+        }
+
+        try {
+            const obsidianIconIds = getIconIds();
+            if (Array.isArray(obsidianIconIds)) {
+                for (const iconId of obsidianIconIds) {
+                    const vector = this.getOrCreateVector(iconId);
+                    const cleanId = iconId
+                        .replace(/^lucide-/i, '')
+                        .replace(/^(simple-icons-|si-|tabler-|fa-solid-|fa-regular-|bx-|octicon-|ra-|cf-|bi-|ri-|feather-)/i, '')
+                        .replace(/^brand-/i, '');
+
+                    vector.tokenWeights.set(iconId.toLowerCase(), 4.0);
+                    vector.tokenWeights.set(cleanId.toLowerCase(), 3.5);
+
+                    const weights = this.buildWeightedTokenMap(cleanId);
+                    weights.forEach((w, t) => {
+                        vector.tokenWeights.set(t, (vector.tokenWeights.get(t) || 0) + w);
+                    });
+                }
+            }
+        } catch {
+            // Ignore if getIconIds is unavailable in current runtime
         }
 
         // Finalize vector normalization
@@ -371,19 +458,33 @@ export class EmbeddingModel {
         const clean = text.toLowerCase().replace(/[^a-z0-9\s_-]/g, ' ').trim();
         if (!clean) return tokenWeights;
 
-        // 1. Full un-split clean phrase/filename (Highest priority)
+        // 1. Full un-split clean phrase/filename (Highest priority: 5.5)
         const fullClean = clean.replace(/[\s_-]+/g, ' ');
         const fullJoined = clean.replace(/[\s_-]+/g, '');
         const fullHyphen = clean.replace(/[\s_-]+/g, '-');
         
-        addToken(fullClean, 3.5);
-        addToken(fullJoined, 3.5);
-        addToken(fullHyphen, 3.5);
+        addToken(fullClean, 5.5);
+        addToken(fullJoined, 5.5);
+        addToken(fullHyphen, 5.5);
+
+        // 1b. Contiguous word n-grams (2-word and 3-word phrase tokens: 4.0 weight)
+        const rawWordsAll = clean.split(/[\s_-]+/).filter(w => w.length >= 2);
+        for (let i = 0; i < rawWordsAll.length - 1; i++) {
+            const pairHyphen = `${rawWordsAll[i]}-${rawWordsAll[i + 1]}`;
+            const pairClean = `${rawWordsAll[i]} ${rawWordsAll[i + 1]}`;
+            addToken(pairHyphen, 4.0);
+            addToken(pairClean, 4.0);
+            if (i < rawWordsAll.length - 2) {
+                const triHyphen = `${rawWordsAll[i]}-${rawWordsAll[i + 1]}-${rawWordsAll[i + 2]}`;
+                const triClean = `${rawWordsAll[i]} ${rawWordsAll[i + 1]} ${rawWordsAll[i + 2]}`;
+                addToken(triHyphen, 4.0);
+                addToken(triClean, 4.0);
+            }
+        }
 
         // 2. Full individual word tokens (High priority)
-        const rawWords = clean.split(/[\s_-]+/).filter(w => w.length >= 2);
-        const filteredWords = rawWords.filter(w => !EmbeddingModel.STOP_WORDS.has(w));
-        const words = filteredWords.length > 0 ? filteredWords : rawWords;
+        const filteredWords = rawWordsAll.filter(w => !EmbeddingModel.STOP_WORDS.has(w));
+        const words = filteredWords.length > 0 ? filteredWords : rawWordsAll;
 
         for (const w of words) {
             addToken(w, 2.5);
@@ -617,6 +718,18 @@ export class EmbeddingModel {
             return directIconMatches.slice(0, topK);
         }
 
+        if (this.plugin?.iconManager) {
+            const autoIcon = this.plugin.iconManager.getAutoIconData(lowerName);
+            if (autoIcon && autoIcon.lucide) {
+                return [{
+                    iconId: autoIcon.lucide,
+                    score: 0.98,
+                    matchedTag: lowerName,
+                    confidence: 'high'
+                }];
+            }
+        }
+
         if (context && this.isPersonName(context.filename, context.parentFolder)) {
             const personIcons = context.isFolder
                 ? ['folder-users', 'users', 'user', 'contact']
@@ -698,16 +811,41 @@ export class EmbeddingModel {
         }
 
         if (results.length < topK) {
-            const defaultIcons = context.isFolder
-                ? ['folder', 'layers', 'box', 'folder-kanban']
-                : ['file-text', 'notebook', 'edit-3', 'layers'];
+            const isMultiWordSentence = !context.isFolder && context.filename.includes(' ') && context.filename.length > 12;
+            let defaultIcons: string[];
+
+            if (context.isFolder) {
+                defaultIcons = ['folder', 'layers', 'box', 'folder-kanban'];
+            } else if (isMultiWordSentence) {
+                const sentencePalette = ['compass', 'sparkles', 'lightbulb', 'quote', 'brain', 'pen-tool', 'book-open', 'repeat', 'heart', 'star'];
+                let hash = 0;
+                for (let i = 0; i < context.filename.length; i++) {
+                    hash = (hash << 5) - hash + context.filename.charCodeAt(i);
+                    hash |= 0;
+                }
+                const absHash = Math.abs(hash);
+                const firstIcon = sentencePalette[absHash % sentencePalette.length];
+                const secondIcon = sentencePalette[(absHash + 3) % sentencePalette.length];
+                const thirdIcon = sentencePalette[(absHash + 5) % sentencePalette.length];
+                defaultIcons = [firstIcon, secondIcon, thirdIcon, 'sparkles'];
+            } else {
+                let hash = 0;
+                for (let i = 0; i < context.filename.length; i++) {
+                    hash = (hash << 5) - hash + context.filename.charCodeAt(i);
+                    hash |= 0;
+                }
+                const conceptPalette = ['sparkles', 'compass', 'pen-tool', 'lightbulb', 'brain', 'star', 'book-open', 'layers'];
+                const selected = conceptPalette[Math.abs(hash) % conceptPalette.length];
+                defaultIcons = [selected, 'sparkles', 'compass', 'notebook'];
+            }
+
             for (const iconId of defaultIcons) {
                 if (!seen.has(iconId)) {
                     seen.add(iconId);
                     results.push({
                         iconId,
                         score: 0.3,
-                        matchedTag: context.isFolder ? 'default-folder' : 'default-file',
+                        matchedTag: context.isFolder ? 'default-folder' : (isMultiWordSentence ? 'sentence-quote' : 'default-file'),
                         confidence: 'low'
                     });
                 }
@@ -724,21 +862,42 @@ export class EmbeddingModel {
 
         const modelName = settings?.embeddingCustomModel || 'bge-m3';
         const endpoint = (settings?.embeddingCustomEndpoint || 'http://localhost:11434').replace(/\/$/, '');
-        const url = `${endpoint}/api/embeddings`;
 
-        try {
-            const res = await requestUrl({
-                url,
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ model: modelName, prompt: text })
-            });
+        const endpointsToTry = [
+            `${endpoint}/api/embeddings`,
+            `${endpoint}/api/embed`,
+            `${endpoint}/v1/embeddings`
+        ];
 
-            const data = res.json as { embedding?: number[] };
-            return data.embedding || null;
-        } catch {
-            return null;
+        for (const url of endpointsToTry) {
+            try {
+                const bodyObj = url.endsWith('/v1/embeddings')
+                    ? { model: modelName, input: text }
+                    : { model: modelName, prompt: text };
+
+                const res = await requestUrl({
+                    url,
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(bodyObj)
+                });
+
+                const data = res.json as Record<string, unknown>;
+                if (Array.isArray(data.embedding)) {
+                    return data.embedding as number[];
+                }
+                if (Array.isArray(data.embeddings) && Array.isArray(data.embeddings[0])) {
+                    return data.embeddings[0] as number[];
+                }
+                if (Array.isArray(data.data) && (data.data[0] as Record<string, unknown>)?.embedding) {
+                    return (data.data[0] as Record<string, unknown>).embedding as number[];
+                }
+            } catch {
+                // Try next endpoint
+            }
         }
+
+        return null;
     }
 
     /**
@@ -776,6 +935,60 @@ export class EmbeddingModel {
         return denom === 0 ? 0 : dot / denom;
     }
 
+    public async findBestIconsDense(
+        titleOrPath: string,
+        denseVector: number[],
+        options?: { topK?: number; minScore?: number; isFolder?: boolean }
+    ): Promise<VectorMatchResult[]> {
+        const topK = options?.topK ?? DEFAULT_TOP_K;
+        const minScore = options?.minScore ?? 0.15;
+        const context = this.buildQueryContext(titleOrPath, options?.isFolder ?? false);
+
+        for (const [conceptKey, conceptDef] of Object.entries(EmbeddingModel.DENSE_CONCEPTS)) {
+            if (!this.conceptDenseVectors.has(conceptKey)) {
+                const vec = await this.fetchNeuralEmbedding(conceptDef.prompt);
+                if (vec) {
+                    this.conceptDenseVectors.set(conceptKey, vec);
+                }
+            }
+        }
+
+        const iconScores = new Map<string, number>();
+
+        this.conceptDenseVectors.forEach((conceptVec, conceptKey) => {
+            const sim = this.computeDenseCosineSimilarity(denseVector, conceptVec);
+            if (sim > minScore) {
+                const conceptDef = EmbeddingModel.DENSE_CONCEPTS[conceptKey];
+                if (conceptDef) {
+                    conceptDef.icons.forEach((iconId, idx) => {
+                        const rankWeight = 1.0 - (idx * 0.1);
+                        const score = sim * rankWeight;
+                        const existing = iconScores.get(iconId) || 0;
+                        iconScores.set(iconId, Math.max(existing, score));
+                    });
+                }
+            }
+        });
+
+        if (iconScores.size > 0) {
+            const sorted = Array.from(iconScores.entries())
+                .map(([iconId, score]) => ({
+                    iconId,
+                    score: this.applyContextBoost(score, iconId, context)
+                }))
+                .sort((a, b) => b.score - a.score)
+                .slice(0, topK);
+
+            return sorted.map((r): VectorMatchResult => ({
+                ...r,
+                matchedTag: context.filename,
+                confidence: r.score >= 0.65 ? 'high' : r.score >= 0.35 ? 'medium' : 'low'
+            }));
+        }
+
+        return this.findBestIcons(titleOrPath, options);
+    }
+
     /**
      * Async classification supporting both Built-in Sparse Vector Engine and Custom Neural Model.
      */
@@ -810,7 +1023,7 @@ export class EmbeddingModel {
                 const enrichedPrompt = this.buildEnrichedPrompt(item.name || item.path, item.isFolder);
                 const denseVector = await this.fetchNeuralEmbedding(enrichedPrompt);
                 if (denseVector) {
-                    const matches = this.findBestIcons(item.name || item.path, { topK: 3, isFolder: item.isFolder });
+                    const matches = await this.findBestIconsDense(item.name || item.path, denseVector, { topK: 3, isFolder: item.isFolder });
                     if (matches.length > 0) {
                         output[item.path] = matches.map(m => m.iconId);
                         continue;

@@ -88,6 +88,7 @@ export class CategoryTrie {
                 results.push(fb);
             }
         }
+        results.sort((a, b) => (b.priority || 0) - (a.priority || 0));
         return results;
     }
 }
