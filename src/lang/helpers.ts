@@ -24,14 +24,19 @@ const localeMap: Record<string, Partial<LocaleDictionary>> = {
     sk,
 };
 
+let cachedLang: string | null = null;
+
 export function getLanguage(): string {
+    if (cachedLang) return cachedLang;
     const obs = obsidian as unknown as { getLanguage?: () => string };
-    const langKey = ["lang", "uage"].join("");
-    const obsidianLang = obs.getLanguage?.() || (typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem(langKey) : null);
+    const obsidianLang = obs.getLanguage?.();
     if (obsidianLang) {
-        return obsidianLang.toLowerCase();
+        cachedLang = obsidianLang.toLowerCase();
+        return cachedLang;
     }
-    return (obsidian.moment.locale() || 'en').toLowerCase();
+    const locale = (obsidian.moment?.locale() || (typeof navigator !== 'undefined' ? navigator.language : 'en')).toLowerCase();
+    cachedLang = locale;
+    return cachedLang;
 }
 
 export function t(key: TranslationKey, vars?: Record<string, string | number>): string {
