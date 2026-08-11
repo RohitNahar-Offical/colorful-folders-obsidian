@@ -12,7 +12,6 @@ export class IconPackIndex {
     private _customRef: Record<string, string> | undefined = undefined;
     private _localCount = -1;
     private _customCount = -1;
-    private _preferredPack: string = 'auto';
     private _priorityOrder: string[] = DEFAULT_ICON_PACK_ORDER;
     private _effectiveOrder: string[] = DEFAULT_ICON_PACK_ORDER;
     private _priorityOrderKey: string = '';
@@ -44,12 +43,6 @@ export class IconPackIndex {
 
     private getPackPriority(iconKey: string): number {
         const lower = iconKey.toLowerCase();
-        const preferred = this._preferredPack;
-        if (preferred && preferred !== 'auto') {
-            if (this.matchesPackId(lower, preferred)) {
-                return 1000;
-            }
-        }
         const userOrder = this._effectiveOrder;
         for (let i = 0; i < userOrder.length; i++) {
             if (this.matchesPackId(lower, userOrder[i])) {
@@ -67,7 +60,6 @@ export class IconPackIndex {
     public build(
         localIcons: Record<string, string | null> | undefined,
         customIcons: Record<string, string> | undefined,
-        preferredPack: string = 'auto',
         priorityOrder: string[] = DEFAULT_ICON_PACK_ORDER,
         wideAutoIcons: boolean = false
     ) {
@@ -81,14 +73,12 @@ export class IconPackIndex {
             this._customRef === customIcons &&
             this._localCount === localCount &&
             this._customCount === customCount &&
-            this._preferredPack === preferredPack &&
             this._priorityOrderKey === orderKey &&
             this._wideAutoIcons === wideAutoIcons
         ) {
             return; // No change — skip rebuild
         }
 
-        this._preferredPack = preferredPack;
         this._priorityOrder = priorityOrder;
         this._priorityOrderKey = orderKey;
         this._wideAutoIcons = wideAutoIcons;
