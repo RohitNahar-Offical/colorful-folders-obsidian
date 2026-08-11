@@ -124,9 +124,6 @@ export default {
     "settings.root_appearance.desc": "Solid uses vivid backgrounds for root folders. Translucent provides a softer, glowing look.",
     "settings.glassmorphism.name": "Glassmorphism blur",
     "settings.glassmorphism.desc": "Adds an iOS-style backdrop blur to folder backgrounds. Best with semi-translucent themes.",
-    "settings.preferred_icon_pack.name": "Preferred Icon Pack for All Modes",
-    "settings.preferred_icon_pack.desc": "Choose the primary icon pack style used across auto-icons, AI classification, candidate matching, and fallbacks.",
-    "settings.icon_pack.auto": "Auto (System Priority & Lucide)",
 
     "settings.root_opacity.name": "Root opacity (%)",
     "settings.root_opacity.desc": "Transparency of top-level folders in file explorer.",

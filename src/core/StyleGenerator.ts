@@ -79,29 +79,6 @@ export class StyleGenerator {
 
     private resolveAutoIconCandidate(data: AutoIconData | null): string {
         if (!data) return "";
-        const preferred = this.settings.preferredIconPack || 'auto';
-
-        if (preferred === 'emoji') {
-            if (data.emoji) return data.emoji;
-            if (data.lucide && this.isValidIconStr(data.lucide)) return data.lucide;
-        } else if (preferred !== 'auto') {
-            if (data.lucide && this.matchesPackPrefix(data.lucide, preferred) && this.isValidIconStr(data.lucide)) {
-                return data.lucide;
-            }
-            if (data.lucides && data.lucides.length > 0) {
-                for (let i = 0; i < data.lucides.length; i++) {
-                    const ic = data.lucides[i];
-                    if (this.matchesPackPrefix(ic, preferred) && this.isValidIconStr(ic)) return ic;
-                }
-            }
-            const keyword = data.lucide || data.emoji;
-            if (keyword) {
-                const packHit = this.plugin.iconManager.findIconInPacks(keyword);
-                if (packHit && this.matchesPackPrefix(packHit, preferred) && this.isValidIconStr(packHit)) {
-                    return packHit;
-                }
-            }
-        }
 
         const userOrder = this.getEffectivePackOrder();
         for (let i = 0; i < userOrder.length; i++) {

@@ -364,7 +364,7 @@ export class IconRepository {
 
         // Build index once; only rebuild if icon maps actually changed
         if (!this._packIndex.getIsBuilt()) {
-            this._packIndex.build(local, custom, this.plugin.settings.preferredIconPack || 'auto', this.plugin.settings.iconPackPriorityOrder, !!this.plugin.settings.wideAutoIcons);
+            this._packIndex.build(local, custom, this.plugin.settings.iconPackPriorityOrder, !!this.plugin.settings.wideAutoIcons);
         }
         const result = this._packIndex.findIcon(searchKey);
         this._findPackIconCache.set(searchKey, result);
@@ -382,7 +382,7 @@ export class IconRepository {
         const custom = this.plugin.settings.customIcons;
 
         if (!this._packIndex.getIsBuilt()) {
-            this._packIndex.build(local, custom, this.plugin.settings.preferredIconPack || 'auto', this.plugin.settings.iconPackPriorityOrder, !!this.plugin.settings.wideAutoIcons);
+            this._packIndex.build(local, custom, this.plugin.settings.iconPackPriorityOrder, !!this.plugin.settings.wideAutoIcons);
         }
         return this._packIndex.searchFuzzy(searchKey, options);
     }
