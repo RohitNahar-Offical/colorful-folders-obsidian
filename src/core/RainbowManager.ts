@@ -126,7 +126,8 @@ export class RainbowManager {
             color: transparent !important;
             font-weight: ${isBold ? '800' : 'normal'} !important;
             font-style: ${isItalic ? 'italic' : 'normal'} !important;
-            display: inline-block !important;
+            display: inline-flex !important;
+            align-items: center !important;
             width: fit-content !important;
             max-width: 100% !important;
             flex: 0 0 auto !important;
