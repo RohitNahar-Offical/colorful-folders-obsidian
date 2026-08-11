@@ -595,6 +595,7 @@ export class IconRepository {
         this._dataUriCache.clear();
         this._findPackIconCache.clear();
         this._autoIconResultCache.clear();
+        this._iconValidityCache.clear();
         this._packIndex.invalidate();
     }
 }

@@ -55,6 +55,28 @@ export class StyleGenerator {
         return this.plugin.iconManager.isValidIcon(id);
     }
 
+    private _cachedPackOrderKey: string = '';
+    private _cachedEffectivePackOrder: string[] = [];
+
+    private getEffectivePackOrder(): string[] {
+        const order = this.settings.iconPackPriorityOrder || DEFAULT_ICON_PACK_ORDER;
+        const isWide = !!this.settings.wideAutoIcons;
+        const key = `${isWide ? 'w' : 'n'}::${order.join(',')}`;
+
+        if (this._cachedPackOrderKey === key) {
+            return this._cachedEffectivePackOrder;
+        }
+
+        let effective = [...order];
+        if (isWide) {
+            effective = effective.filter(p => p !== 'emoji').concat(['emoji']);
+        }
+
+        this._cachedPackOrderKey = key;
+        this._cachedEffectivePackOrder = effective;
+        return effective;
+    }
+
     private resolveAutoIconCandidate(data: AutoIconData | null): string {
         if (!data) return "";
         const preferred = this.settings.preferredIconPack || 'auto';
@@ -67,8 +89,10 @@ export class StyleGenerator {
                 return data.lucide;
             }
             if (data.lucides && data.lucides.length > 0) {
-                const matchedInPack = data.lucides.find(ic => this.matchesPackPrefix(ic, preferred) && this.isValidIconStr(ic));
-                if (matchedInPack) return matchedInPack;
+                for (let i = 0; i < data.lucides.length; i++) {
+                    const ic = data.lucides[i];
+                    if (this.matchesPackPrefix(ic, preferred) && this.isValidIconStr(ic)) return ic;
+                }
             }
             const keyword = data.lucide || data.emoji;
             if (keyword) {
@@ -79,47 +103,27 @@ export class StyleGenerator {
             }
         }
 
-        let userOrder = [...(this.settings.iconPackPriorityOrder || DEFAULT_ICON_PACK_ORDER)];
-        if (this.settings.wideAutoIcons) {
-            userOrder = userOrder.filter(p => p !== 'emoji').concat(['emoji']);
-        }
-
-        const candidates: string[] = [];
-        if (this.settings.wideAutoIcons) {
-            if (data.lucide && this.isValidIconStr(data.lucide)) candidates.push(data.lucide);
-            if (data.lucides) {
-                for (const ic of data.lucides) {
-                    if (this.isValidIconStr(ic) && !candidates.includes(ic)) candidates.push(ic);
+        const userOrder = this.getEffectivePackOrder();
+        for (let i = 0; i < userOrder.length; i++) {
+            const packId = userOrder[i];
+            if (packId === 'emoji') {
+                if (data.emoji) return data.emoji;
+            } else {
+                if (data.lucide && this.matchesPackPrefix(data.lucide, packId) && this.isValidIconStr(data.lucide)) {
+                    return data.lucide;
                 }
-            }
-            if (data.emoji && !candidates.includes(data.emoji)) candidates.push(data.emoji);
-        } else {
-            if (data.emoji) candidates.push(data.emoji);
-            if (data.lucide && this.isValidIconStr(data.lucide)) candidates.push(data.lucide);
-            if (data.lucides) {
-                for (const ic of data.lucides) {
-                    if (this.isValidIconStr(ic) && !candidates.includes(ic)) candidates.push(ic);
+                if (data.lucides && data.lucides.length > 0) {
+                    for (let j = 0; j < data.lucides.length; j++) {
+                        const ic = data.lucides[j];
+                        if (this.matchesPackPrefix(ic, packId) && this.isValidIconStr(ic)) return ic;
+                    }
                 }
             }
         }
 
-        for (const packId of userOrder) {
-            for (const cand of candidates) {
-                if (this.matchesPackPrefix(cand, packId)) {
-                    return cand;
-                }
-            }
-        }
-
-        if (this.settings.wideAutoIcons) {
-            if (data.lucide && this.isValidIconStr(data.lucide)) return data.lucide;
-            if (data.lucide) return data.lucide;
-            if (data.emoji) return data.emoji;
-        } else {
-            if (data.emoji) return data.emoji;
-            if (data.lucide && this.isValidIconStr(data.lucide)) return data.lucide;
-            if (data.lucide) return data.lucide;
-        }
+        if (data.lucide && this.isValidIconStr(data.lucide)) return data.lucide;
+        if (data.lucide) return data.lucide;
+        if (data.emoji) return data.emoji;
         return "";
     }
 

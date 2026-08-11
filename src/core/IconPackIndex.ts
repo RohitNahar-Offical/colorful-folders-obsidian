@@ -2,6 +2,7 @@ import { PACK_PRIORITY, DEFAULT_ICON_PACK_ORDER } from '../common/constants';
 import { extractCoreIconKeyword } from '../common/utils';
 
 export class IconPackIndex {
+    private static readonly ALPHA_REGEX = /[a-zA-Z]/;
     private exactMap = new Map<string, string>();
     private coreMap = new Map<string, string>();
     private suffixMap = new Map<string, string>();
@@ -13,6 +14,7 @@ export class IconPackIndex {
     private _customCount = -1;
     private _preferredPack: string = 'auto';
     private _priorityOrder: string[] = DEFAULT_ICON_PACK_ORDER;
+    private _effectiveOrder: string[] = DEFAULT_ICON_PACK_ORDER;
     private _priorityOrderKey: string = '';
     private _wideAutoIcons: boolean = false;
 
@@ -20,7 +22,7 @@ export class IconPackIndex {
         const lower = iconKey.toLowerCase();
         if (packId === 'custom') return lower.startsWith('custom-');
         if (packId === 'lucide') return lower.startsWith('lucide-') || !lower.includes('-');
-        if (packId === 'emoji') return !/[a-zA-Z]/.test(iconKey);
+        if (packId === 'emoji') return !IconPackIndex.ALPHA_REGEX.test(iconKey);
         if (packId === 'bootstrap' || packId === 'bi') return lower.startsWith('bi-') || lower.includes('bootstrap');
         if (packId === 'simple-icons') return lower.startsWith('simple-') || lower.startsWith('si-');
         if (packId === 'tabler' || packId === 'tb') return lower.startsWith('tb-') || lower.startsWith('tabler-');
@@ -39,13 +41,9 @@ export class IconPackIndex {
                 return 1000;
             }
         }
-        let userOrder = [...(this._priorityOrder || DEFAULT_ICON_PACK_ORDER)];
-        if (this._wideAutoIcons) {
-            userOrder = userOrder.filter(p => p !== 'emoji').concat(['emoji']);
-        }
+        const userOrder = this._effectiveOrder;
         for (let i = 0; i < userOrder.length; i++) {
-            const packId = userOrder[i];
-            if (this.matchesPackId(lower, packId)) {
+            if (this.matchesPackId(lower, userOrder[i])) {
                 return (userOrder.length - i) * 100;
             }
         }
@@ -85,6 +83,12 @@ export class IconPackIndex {
         this._priorityOrder = priorityOrder;
         this._priorityOrderKey = orderKey;
         this._wideAutoIcons = wideAutoIcons;
+
+        let effective = [...(priorityOrder || DEFAULT_ICON_PACK_ORDER)];
+        if (wideAutoIcons) {
+            effective = effective.filter(p => p !== 'emoji').concat(['emoji']);
+        }
+        this._effectiveOrder = effective;
 
         this._localRef = localIcons;
         this._customRef = customIcons;
