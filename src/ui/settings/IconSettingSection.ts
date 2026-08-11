@@ -78,6 +78,11 @@ export class IconSettingSection extends SettingSection {
             for (const defaultPack of DEFAULT_ICON_PACK_ORDER) {
                 if (!order.includes(defaultPack)) order.push(defaultPack);
             }
+            if (order.includes('emoji') && order[order.length - 1] !== 'emoji') {
+                order = order.filter(p => p !== 'emoji').concat(['emoji']);
+                this.plugin.settings.iconPackPriorityOrder = order;
+                void this.plugin.saveSettings();
+            }
 
             order.forEach((packKey, index) => {
                 const row = listContainer.createDiv();

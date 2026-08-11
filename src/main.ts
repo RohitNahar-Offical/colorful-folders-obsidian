@@ -409,6 +409,12 @@ export default class ColorfulFoldersPlugin
     // loadedData from disk always provides complete values for any keys it defines,
     // making a deep clone of DEFAULT_SETTINGS unnecessary and wasteful.
     this.settings = Object.assign({} as ColorfulFoldersSettings, DEFAULT_SETTINGS, loadedData);
+    if (Array.isArray(this.settings.iconPackPriorityOrder) && this.settings.iconPackPriorityOrder.includes('emoji')) {
+      if (this.settings.iconPackPriorityOrder[this.settings.iconPackPriorityOrder.length - 1] !== 'emoji') {
+        this.settings.iconPackPriorityOrder = this.settings.iconPackPriorityOrder.filter(p => p !== 'emoji').concat(['emoji']);
+        void this.saveSettings();
+      }
+    }
     if (this.settings.heatmapData) {
       this.heatmapCache = new Map(Object.entries(this.settings.heatmapData));
     }
