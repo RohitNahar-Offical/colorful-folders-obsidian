@@ -1,6 +1,7 @@
 import { ColorfulFoldersSettings, FolderStyle } from '../common/types';
 import { PALETTES } from '../common/constants';
 import { hexToRgbObj, adjustBrightnessRgb, adjustBrightnessValues, parseCustomPalette, hashString } from '../common/utils';
+import { LRUCache } from '../common/LRUCache';
 
 export function isDarkMode(): boolean {
     return activeDocument.body.classList.contains('theme-dark');
@@ -57,7 +58,7 @@ export function getFastFolderScopeDepth(path: string, isFile: boolean): number {
 }
 
 export class ColorResolver {
-    private static textColorCache = new Map<string, string>();
+    private static textColorCache = new LRUCache<string, string>(1024);
 
     public static clearCache(): void {
         this.textColorCache.clear();

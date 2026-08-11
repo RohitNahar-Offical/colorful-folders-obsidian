@@ -12,6 +12,8 @@ import { CssGrouper } from './CssGrouper';
 import { StyleResolver } from './StyleResolver';
 import { RainbowManager } from './RainbowManager';
 
+import { LRUCache } from '../common/LRUCache';
+
 export class StyleGenerator {
     plugin: IColorfulFoldersPlugin;
     settings: ColorfulFoldersSettings;
@@ -23,7 +25,7 @@ export class StyleGenerator {
         word-spacing: 2px !important;
     `;
 
-    private _pathEscapeCache = new Map<string, string>();
+    private _pathEscapeCache = new LRUCache<string, string>(4096);
     private _cachedGlobalBaseCss: { key: string; css: string } | null = null;
     private _cachedDividerCss: { key: string; css: string } | null = null;
     private _cachedStealthCss: { key: string; css: string } | null = null;

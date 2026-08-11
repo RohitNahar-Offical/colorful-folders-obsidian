@@ -28,13 +28,10 @@ export class DOMObserverService {
                         if (oldClass === newClass) continue;
                         
                         const relevantClasses = ['theme-dark', 'theme-light', 'cf-show-hidden', 'cf-wrap-metadata'];
-                        
-                        const oldClasses = oldClass.split(/\s+/);
-                        const newClasses = newClass.split(/\s+/);
-
-                        for (const cls of relevantClasses) {
-                            const wasPresent = oldClasses.includes(cls);
-                            const isPresent = newClasses.includes(cls);
+                        for (let i = 0; i < relevantClasses.length; i++) {
+                            const cls = relevantClasses[i];
+                            const wasPresent = oldClass.includes(cls);
+                            const isPresent = newClass.includes(cls);
                             if (wasPresent !== isPresent) {
                                 shouldRegenerate = true;
                                 break;
