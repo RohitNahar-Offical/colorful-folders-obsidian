@@ -19,9 +19,9 @@ export class IconPackIndex {
     private _wideAutoIcons: boolean = false;
 
     public matchesPackId(iconKey: string, packId: string): boolean {
+        if (!iconKey) return false;
         const lower = iconKey.toLowerCase();
         if (packId === 'custom') return lower.startsWith('custom-');
-        if (packId === 'lucide') return lower.startsWith('lucide-') || !lower.includes('-');
         if (packId === 'emoji') return !IconPackIndex.ALPHA_REGEX.test(iconKey);
         if (packId === 'bootstrap' || packId === 'bi') return lower.startsWith('bi-') || lower.includes('bootstrap');
         if (packId === 'simple-icons') return lower.startsWith('simple-') || lower.startsWith('si-');
@@ -30,6 +30,15 @@ export class IconPackIndex {
         if (packId === 'font-awesome' || packId === 'fa') return lower.startsWith('fa-') || lower.startsWith('fas-') || lower.startsWith('fab-') || lower.startsWith('far-') || lower.includes('font-awesome');
         if (packId === 'material' || packId === 'mdi') return lower.startsWith('mdi-') || lower.includes('material');
         if (packId === 'feather') return lower.startsWith('feather-');
+        if (packId === 'lucide') {
+            if (lower.startsWith('lucide-')) return true;
+            const isOtherPack = lower.startsWith('bi-') || lower.startsWith('fa-') || lower.startsWith('fas-') ||
+                lower.startsWith('far-') || lower.startsWith('fab-') || lower.startsWith('tb-') ||
+                lower.startsWith('tabler-') || lower.startsWith('ri-') || lower.startsWith('remix-') ||
+                lower.startsWith('simple-') || lower.startsWith('si-') || lower.startsWith('mdi-') ||
+                lower.startsWith('feather-') || lower.startsWith('custom-');
+            return !isOtherPack && IconPackIndex.ALPHA_REGEX.test(iconKey);
+        }
         return false;
     }
 
