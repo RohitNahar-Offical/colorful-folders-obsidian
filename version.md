@@ -1,5 +1,21 @@
 # Updates for Colorful Folders
 
+## 🛠️ 5.0.1 - Bug Fixes and Improvements
+
+This maintenance release resolves vertical layout alignment issues and eliminates UI stutter for a smoother experience.
+
+---
+
+### 🎨 1. Root Folder & Text Vertical Alignment Fix
+* **Inline-Flex Alignment**: Restructured `RainbowManager` styling rules to use `display: inline-flex` with `align-items: center` for root folder elements.
+* **Pixel-Perfect Placement**: Prevents icon and folder label misalignments across different Obsidian themes and custom font settings.
+
+### ⚡ 2. Stutter & UI Performance Fixes
+* **Frame-Scheduled Observer**: Scheduled DOM observer queries via `requestAnimationFrame` batching to eliminate main-thread stutter during fast sidebar expand/collapse actions.
+* **Glassmorphism Scope Optimization**: Restricted glassmorphism CSS application strictly to file nodes, avoiding unnecessary heavy layout recalculations on parent folder containers.
+
+---
+
 ## 🚀 5.0.0 - Architectural Overhaul & New Features
 
 Welcome to **Colorful Folders 5.0.0**! This major update brings smart AI icon matching, blistering performance improvements for large vaults, and bulletproof stability with other Obsidian plugins.
