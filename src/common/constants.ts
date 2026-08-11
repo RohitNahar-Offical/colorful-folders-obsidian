@@ -92,7 +92,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
 
     autoIcons: true,
     preferredIconPack: 'auto',
-    iconPackPriorityOrder: ['custom', 'lucide', 'emoji', 'bootstrap', 'simple-icons', 'tabler', 'remix', 'font-awesome', 'material', 'feather'],
+    iconPackPriorityOrder: ['custom', 'lucide', 'bootstrap', 'simple-icons', 'tabler', 'remix', 'font-awesome', 'material', 'feather', 'emoji'],
     autoIconVariety: true,
     varietySeed: 0,
     wideAutoIcons: true,
@@ -334,14 +334,14 @@ export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
 export const DEFAULT_ICON_PACK_ORDER: string[] = [
     'custom',
     'lucide',
-    'emoji',
     'bootstrap',
     'simple-icons',
     'tabler',
     'remix',
     'font-awesome',
     'material',
-    'feather'
+    'feather',
+    'emoji'
 ];
 
 export const PACK_PRIORITY: Record<string, number> = {
