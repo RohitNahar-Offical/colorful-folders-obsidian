@@ -10,7 +10,7 @@ Version 5.0.1 is a targeted maintenance update resolving UI alignment issues and
 
 ### ⚡ UI Stutter & Performance Optimization
 - **Frame-Scheduled Observers**: Batched DOM observer checks via `requestAnimationFrame` to eliminate UI stuttering when rapidly expanding/collapsing deep folder trees.
-- **Glassmorphism Scoping**: Restricted glassmorphism CSS processing to file nodes, eliminating unnecessary main-thread recalculations on parent folder containers.
+- **Glassmorphism Scoping**: Restricted glassmorphism CSS strictly to active file selection when enabled in settings, eliminating unnecessary main-thread backdrop-blur recalculations on unselected file and folder rows.
 
 ### 💬 Divider Hover Message Preview Fix
 - **Inline Modal Preview**: Added `.cf-modal-preview` CSS specificity overrides so that hover message previews remain anchored inline (`position: relative`) within the "Edit hover message" modal instead of jumping off-screen.
