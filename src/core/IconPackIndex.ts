@@ -1,4 +1,4 @@
-import { PACK_PRIORITY } from '../common/constants';
+import { PACK_PRIORITY, DEFAULT_ICON_PACK_ORDER } from '../common/constants';
 import { extractCoreIconKeyword } from '../common/utils';
 
 export class IconPackIndex {
@@ -12,20 +12,37 @@ export class IconPackIndex {
     private _localCount = -1;
     private _customCount = -1;
     private _preferredPack: string = 'auto';
+    private _priorityOrder: string[] = DEFAULT_ICON_PACK_ORDER;
+    private _priorityOrderKey: string = '';
+
+    public matchesPackId(iconKey: string, packId: string): boolean {
+        const lower = iconKey.toLowerCase();
+        if (packId === 'custom') return lower.startsWith('custom-');
+        if (packId === 'lucide') return lower.startsWith('lucide-') || !lower.includes('-');
+        if (packId === 'emoji') return !/[a-zA-Z]/.test(iconKey);
+        if (packId === 'bootstrap' || packId === 'bi') return lower.startsWith('bi-') || lower.includes('bootstrap');
+        if (packId === 'simple-icons') return lower.startsWith('simple-') || lower.startsWith('si-');
+        if (packId === 'tabler' || packId === 'tb') return lower.startsWith('tb-') || lower.startsWith('tabler-');
+        if (packId === 'remix' || packId === 'ri') return lower.startsWith('ri-') || lower.startsWith('remix-');
+        if (packId === 'font-awesome' || packId === 'fa') return lower.startsWith('fa-') || lower.startsWith('fas-') || lower.startsWith('fab-') || lower.startsWith('far-') || lower.includes('font-awesome');
+        if (packId === 'material' || packId === 'mdi') return lower.startsWith('mdi-') || lower.includes('material');
+        if (packId === 'feather') return lower.startsWith('feather-');
+        return false;
+    }
 
     private getPackPriority(iconKey: string): number {
         const lower = iconKey.toLowerCase();
         const preferred = this._preferredPack;
         if (preferred && preferred !== 'auto') {
-            if (
-                (preferred === 'bootstrap' && (lower.startsWith('bi-') || lower.includes('bootstrap'))) ||
-                (preferred === 'font-awesome' && (lower.startsWith('fa-') || lower.startsWith('fas-') || lower.startsWith('fab-') || lower.startsWith('far-'))) ||
-                (preferred === 'tabler' && (lower.startsWith('tb-') || lower.startsWith('tabler-'))) ||
-                (preferred === 'remix' && (lower.startsWith('ri-') || lower.startsWith('remix-'))) ||
-                (preferred === 'simple-icons' && (lower.startsWith('simple-') || lower.startsWith('si-'))) ||
-                (preferred === 'lucide' && (lower.startsWith('lucide-') || !lower.includes('-')))
-            ) {
-                return 300;
+            if (this.matchesPackId(lower, preferred)) {
+                return 1000;
+            }
+        }
+        const userOrder = this._priorityOrder || DEFAULT_ICON_PACK_ORDER;
+        for (let i = 0; i < userOrder.length; i++) {
+            const packId = userOrder[i];
+            if (this.matchesPackId(lower, packId)) {
+                return (userOrder.length - i) * 100;
             }
         }
         for (const [pack, prio] of Object.entries(PACK_PRIORITY)) {
@@ -36,9 +53,15 @@ export class IconPackIndex {
         return 10;
     }
 
-    public build(localIcons: Record<string, string | null> | undefined, customIcons: Record<string, string> | undefined, preferredPack: string = 'auto') {
+    public build(
+        localIcons: Record<string, string | null> | undefined,
+        customIcons: Record<string, string> | undefined,
+        preferredPack: string = 'auto',
+        priorityOrder: string[] = DEFAULT_ICON_PACK_ORDER
+    ) {
         const localCount = localIcons ? Object.keys(localIcons).length : 0;
         const customCount = customIcons ? Object.keys(customIcons).length : 0;
+        const orderKey = (priorityOrder || []).join(',');
 
         if (
             this.isBuilt &&
@@ -46,12 +69,15 @@ export class IconPackIndex {
             this._customRef === customIcons &&
             this._localCount === localCount &&
             this._customCount === customCount &&
-            this._preferredPack === preferredPack
+            this._preferredPack === preferredPack &&
+            this._priorityOrderKey === orderKey
         ) {
             return; // No change — skip rebuild
         }
 
         this._preferredPack = preferredPack;
+        this._priorityOrder = priorityOrder;
+        this._priorityOrderKey = orderKey;
 
         this._localRef = localIcons;
         this._customRef = customIcons;
