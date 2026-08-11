@@ -78,11 +78,6 @@ export class IconSettingSection extends SettingSection {
             for (const defaultPack of DEFAULT_ICON_PACK_ORDER) {
                 if (!order.includes(defaultPack)) order.push(defaultPack);
             }
-            if (order.includes('emoji') && order[order.length - 1] !== 'emoji') {
-                order = order.filter(p => p !== 'emoji').concat(['emoji']);
-                this.plugin.settings.iconPackPriorityOrder = order;
-                void this.plugin.saveSettings();
-            }
 
             order.forEach((packKey, index) => {
                 const row = listContainer.createDiv();
@@ -116,32 +111,32 @@ export class IconSettingSection extends SettingSection {
                 const upBtn = btnGroup.createEl("button", { text: "▲" });
                 upBtn.setCssStyles({ padding: "2px 8px", fontSize: "0.8em" });
                 upBtn.disabled = index === 0;
-                upBtn.onclick = async () => {
+                upBtn.onclick = () => {
                     if (index > 0) {
                         const temp = order[index];
                         order[index] = order[index - 1];
                         order[index - 1] = temp;
-                        this.plugin.settings.iconPackPriorityOrder = order;
-                        await this.plugin.saveSettings();
+                        this.plugin.settings.iconPackPriorityOrder = [...order];
+                        renderPackPriorityList();
                         this.plugin.iconManager?.invalidateCategoryCache();
                         this.plugin.generateStylesDebounced();
-                        renderPackPriorityList();
+                        void this.plugin.saveSettings();
                     }
                 };
 
                 const downBtn = btnGroup.createEl("button", { text: "▼" });
                 downBtn.setCssStyles({ padding: "2px 8px", fontSize: "0.8em" });
                 downBtn.disabled = index === order.length - 1;
-                downBtn.onclick = async () => {
+                downBtn.onclick = () => {
                     if (index < order.length - 1) {
                         const temp = order[index];
                         order[index] = order[index + 1];
                         order[index + 1] = temp;
-                        this.plugin.settings.iconPackPriorityOrder = order;
-                        await this.plugin.saveSettings();
+                        this.plugin.settings.iconPackPriorityOrder = [...order];
+                        renderPackPriorityList();
                         this.plugin.iconManager?.invalidateCategoryCache();
                         this.plugin.generateStylesDebounced();
-                        renderPackPriorityList();
+                        void this.plugin.saveSettings();
                     }
                 };
             });
@@ -156,10 +151,10 @@ export class IconSettingSection extends SettingSection {
                 .setButtonText("Reset priority order")
                 .onClick(async () => {
                     this.plugin.settings.iconPackPriorityOrder = [...DEFAULT_ICON_PACK_ORDER];
-                    await this.plugin.saveSettings();
+                    renderPackPriorityList();
                     this.plugin.iconManager?.invalidateCategoryCache();
                     this.plugin.generateStylesDebounced();
-                    renderPackPriorityList();
+                    await this.plugin.saveSettings();
                 }));
 
         if (this.plugin.settings.autoIcons) {
