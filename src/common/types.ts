@@ -59,6 +59,7 @@ export interface ColorfulFoldersSettings {
     glassmorphism: boolean;
 
     autoIcons: boolean;
+    preferredIconPack?: 'auto' | 'emoji' | 'lucide' | 'bootstrap' | 'simple-icons' | 'font-awesome' | 'tabler' | 'remix';
     autoIconVariety: boolean;
     varietySeed: number;
     wideAutoIcons: boolean;

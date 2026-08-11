@@ -19,6 +19,26 @@ export class IconSettingSection extends SettingSection {
                     (this.settingTab as unknown as { display: () => void }).display();
                 }));
 
+        new obsidian.Setting(autoCard)
+            .setName(t("settings.preferred_icon_pack.name"))
+            .setDesc(t("settings.preferred_icon_pack.desc"))
+            .addDropdown(drop => drop
+                .addOption("auto", t("settings.icon_pack.auto"))
+                .addOption("lucide", "Lucide Icons (Default)")
+                .addOption("emoji", "Native Emojis")
+                .addOption("bootstrap", "Bootstrap Icons (bi)")
+                .addOption("simple-icons", "Simple Icons (Logos)")
+                .addOption("font-awesome", "FontAwesome (fa)")
+                .addOption("tabler", "Tabler Icons (tb)")
+                .addOption("remix", "Remix Icons (ri)")
+                .setValue(this.plugin.settings.preferredIconPack || "auto")
+                .onChange(async (val) => {
+                    this.plugin.settings.preferredIconPack = val as any;
+                    await this.plugin.saveSettings();
+                    this.plugin.iconManager?.invalidateCategoryCache();
+                    this.plugin.generateStylesDebounced();
+                }));
+
         if (this.plugin.settings.autoIcons) {
             new obsidian.Setting(autoCard)
                 .setName(t("settings.wide_icons.name"))
