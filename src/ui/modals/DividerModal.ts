@@ -1,6 +1,7 @@
 import { StyleResolver } from '../../core/StyleResolver';
 import * as obsidian from 'obsidian';
 import { t } from '../../lang/helpers';
+import { DividerManager } from '../../core/DividerManager';
 import { FolderStyle, IColorfulFoldersPlugin } from '../../common/types';
 import { IconPickerModal } from './IconPickerModal';
 import { HoverMessageModal } from './HoverMessageModal';
@@ -68,7 +69,7 @@ export class DividerModal extends obsidian.Modal {
     }
 
     onOpen() {
-        // ... (rest of onOpen header remains the same until settings start)
+        DividerManager.closeActivePopover();
         const { contentEl, modalEl } = this;
         contentEl.empty();
         modalEl.setCssStyles({

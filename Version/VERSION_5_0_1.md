@@ -12,6 +12,10 @@ Version 5.0.1 is a targeted maintenance update resolving UI alignment issues and
 - **Frame-Scheduled Observers**: Batched DOM observer checks via `requestAnimationFrame` to eliminate UI stuttering when rapidly expanding/collapsing deep folder trees.
 - **Glassmorphism Scoping**: Restricted glassmorphism CSS processing to file nodes, eliminating unnecessary main-thread recalculations on parent folder containers.
 
+### 💬 Divider Hover Message Preview Fix
+- **Inline Modal Preview**: Added `.cf-modal-preview` CSS specificity overrides so that hover message previews remain anchored inline (`position: relative`) within the "Edit hover message" modal instead of jumping off-screen.
+- **Active Popover Cleanup**: Added static cleanup logic to close active sidebar popovers whenever an edit modal opens.
+
 ---
 
 Thank you for using Colorful Folders!
