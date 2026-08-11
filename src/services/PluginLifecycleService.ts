@@ -43,10 +43,10 @@ export class PluginLifecycleService {
             if (this.plugin.settings.notebookNavigatorSupport) {
                 NotebookNavigatorIntegration.registerMenuExtensions(this.plugin);
             }
-            void this.plugin.loadLocalIcons();
+            await this.plugin.loadLocalIcons();
 
             if (this.plugin._abortStartupRender) return;
-            void this.plugin.generateStyles();
+            await this.plugin.generateStyles();
             this.plugin.getAllExplorerContainers().forEach((c) => this.plugin.domObserverService.tagExplorerItems(c));
             this.plugin.domObserverService.initDividerObserver();
             this.plugin.dividerManager.syncDividers();
