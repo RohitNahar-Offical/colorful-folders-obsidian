@@ -79,13 +79,27 @@ export class StyleGenerator {
             }
         }
 
-        const userOrder = this.settings.iconPackPriorityOrder || DEFAULT_ICON_PACK_ORDER;
+        let userOrder = [...(this.settings.iconPackPriorityOrder || DEFAULT_ICON_PACK_ORDER)];
+        if (this.settings.wideAutoIcons) {
+            userOrder = userOrder.filter(p => p !== 'emoji').concat(['emoji']);
+        }
+
         const candidates: string[] = [];
-        if (data.emoji) candidates.push(data.emoji);
-        if (data.lucide && this.isValidIconStr(data.lucide)) candidates.push(data.lucide);
-        if (data.lucides) {
-            for (const ic of data.lucides) {
-                if (this.isValidIconStr(ic) && !candidates.includes(ic)) candidates.push(ic);
+        if (this.settings.wideAutoIcons) {
+            if (data.lucide && this.isValidIconStr(data.lucide)) candidates.push(data.lucide);
+            if (data.lucides) {
+                for (const ic of data.lucides) {
+                    if (this.isValidIconStr(ic) && !candidates.includes(ic)) candidates.push(ic);
+                }
+            }
+            if (data.emoji && !candidates.includes(data.emoji)) candidates.push(data.emoji);
+        } else {
+            if (data.emoji) candidates.push(data.emoji);
+            if (data.lucide && this.isValidIconStr(data.lucide)) candidates.push(data.lucide);
+            if (data.lucides) {
+                for (const ic of data.lucides) {
+                    if (this.isValidIconStr(ic) && !candidates.includes(ic)) candidates.push(ic);
+                }
             }
         }
 
@@ -99,8 +113,8 @@ export class StyleGenerator {
 
         if (this.settings.wideAutoIcons) {
             if (data.lucide && this.isValidIconStr(data.lucide)) return data.lucide;
-            if (data.emoji) return data.emoji;
             if (data.lucide) return data.lucide;
+            if (data.emoji) return data.emoji;
         } else {
             if (data.emoji) return data.emoji;
             if (data.lucide && this.isValidIconStr(data.lucide)) return data.lucide;

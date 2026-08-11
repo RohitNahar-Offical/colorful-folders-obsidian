@@ -14,6 +14,7 @@ export class IconPackIndex {
     private _preferredPack: string = 'auto';
     private _priorityOrder: string[] = DEFAULT_ICON_PACK_ORDER;
     private _priorityOrderKey: string = '';
+    private _wideAutoIcons: boolean = false;
 
     public matchesPackId(iconKey: string, packId: string): boolean {
         const lower = iconKey.toLowerCase();
@@ -38,7 +39,10 @@ export class IconPackIndex {
                 return 1000;
             }
         }
-        const userOrder = this._priorityOrder || DEFAULT_ICON_PACK_ORDER;
+        let userOrder = [...(this._priorityOrder || DEFAULT_ICON_PACK_ORDER)];
+        if (this._wideAutoIcons) {
+            userOrder = userOrder.filter(p => p !== 'emoji').concat(['emoji']);
+        }
         for (let i = 0; i < userOrder.length; i++) {
             const packId = userOrder[i];
             if (this.matchesPackId(lower, packId)) {
@@ -57,7 +61,8 @@ export class IconPackIndex {
         localIcons: Record<string, string | null> | undefined,
         customIcons: Record<string, string> | undefined,
         preferredPack: string = 'auto',
-        priorityOrder: string[] = DEFAULT_ICON_PACK_ORDER
+        priorityOrder: string[] = DEFAULT_ICON_PACK_ORDER,
+        wideAutoIcons: boolean = false
     ) {
         const localCount = localIcons ? Object.keys(localIcons).length : 0;
         const customCount = customIcons ? Object.keys(customIcons).length : 0;
@@ -70,7 +75,8 @@ export class IconPackIndex {
             this._localCount === localCount &&
             this._customCount === customCount &&
             this._preferredPack === preferredPack &&
-            this._priorityOrderKey === orderKey
+            this._priorityOrderKey === orderKey &&
+            this._wideAutoIcons === wideAutoIcons
         ) {
             return; // No change — skip rebuild
         }
@@ -78,6 +84,7 @@ export class IconPackIndex {
         this._preferredPack = preferredPack;
         this._priorityOrder = priorityOrder;
         this._priorityOrderKey = orderKey;
+        this._wideAutoIcons = wideAutoIcons;
 
         this._localRef = localIcons;
         this._customRef = customIcons;
