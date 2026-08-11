@@ -658,7 +658,6 @@ export class StyleGenerator {
                 --cf-selection-bg: rgba(${color.rgb}, ${Math.min(1.0, adjustedOp + 0.15)});
                 opacity: 1.0 !important;
                 border-radius: ${folderBr}px;
-                ${glassCss}
             `, [
                 `body .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem)`,
                 `body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-navitem):not(.nn-file)`

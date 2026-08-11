@@ -186,12 +186,6 @@ export class NotebookNavigatorIntegration {
         const _iconSel = isFolder ? this.getNavIconSelector() : this.getFileIconSelector();
         const countSel = '.nn-navitem-count';
 
-        const glassCss = (useGlass && !isFolder) ? `
-            backdrop-filter: blur(12px) saturate(120%) !important; 
-            -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
-        ` : '';
-
         // CSS-Based Icon Injection (Match 4.1.4 for Zero-Flicker stability)
         if (iconId) {
             const target = `body .notebook-navigator [data-path="${safePath}"] :is(${_iconSel})`;
@@ -252,9 +246,8 @@ export class NotebookNavigatorIntegration {
             background-color: rgba(${color.rgb}, ${Math.min(1.0, (isFolder ? bgAlpha : (outlineOnly ? Math.max(bgAlpha, 0.12) : Math.max(bgAlpha, 0.18))) + 0.08)}) !important;
             filter: brightness(1.03) !important;
             z-index: 2 !important;
-            ${glassCss}
         `;
-        grouper.add(hoverBody, baseSels.map(b => `${b}:hover`), `nnHover_${color.hex}_${bgAlpha}_${isFolder}_${outlineOnly}_${useGlass}`);
+        grouper.add(hoverBody, baseSels.map(b => `${b}:hover`), `nnHover_${color.hex}_${bgAlpha}_${isFolder}_${outlineOnly}`);
 
         const metadataCol = `rgba(${color.rgb}, 0.65)`;
         const metadataSels = baseSels.flatMap(b => [
@@ -272,11 +265,10 @@ export class NotebookNavigatorIntegration {
                 background-color: rgba(${color.rgb}, ${finalBgAlpha}) !important;
                 border-left: ${nnThick}px solid rgba(${color.rgb}, ${finalBorderAlpha}) !important;
                 border-radius: 6px !important;
-                ${glassCss}
                 ${tintOp > 0 ? `background-blend-mode: overlay;` : ''}
                 transition: background-color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
                 margin-bottom: 2px !important;
-            `, baseSels, `nnFolderBg_${color.hex}_${finalBgAlpha}_${finalBorderAlpha}_${tintOp}_${useGlass}`);
+            `, baseSels, `nnFolderBg_${color.hex}_${finalBgAlpha}_${finalBorderAlpha}_${tintOp}`);
         } else if (shouldColor) {
             const fileBg = outlineOnly ? Math.max(bgAlpha, 0.12) : Math.max(bgAlpha, 0.18);
             grouper.add(`

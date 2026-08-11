@@ -12,7 +12,7 @@ This maintenance release resolves vertical layout alignment issues and eliminate
 
 ### ⚡ 2. Stutter & UI Performance Fixes
 * **Frame-Scheduled Observer**: Scheduled DOM observer queries via `requestAnimationFrame` batching to eliminate main-thread stutter during fast sidebar expand/collapse actions.
-* **Glassmorphism Scope Optimization**: Restricted glassmorphism CSS application strictly to file nodes, avoiding unnecessary heavy layout recalculations on parent folder containers.
+* **Glassmorphism Scope Optimization**: Restricted glassmorphism CSS strictly to active file selection when enabled in settings, eliminating heavy backdrop-blur recalculations on unselected file and folder rows.
 
 ### 💬 3. Divider Hover Message Preview Fix
 * **In-Modal Live Preview Positioning**: Added `.cf-modal-preview` CSS override to anchor hover message previews inline inside the editor modal, preventing preview popovers from rendering off-screen.
