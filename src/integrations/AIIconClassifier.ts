@@ -22,7 +22,7 @@ export class AIIconClassifier {
         }
     }
 
-    public async classifyVault(options?: { force?: boolean }): Promise<void> {
+    public async classifyVault(options?: { force?: boolean; onProgress?: (completed: number, total: number, pct: number) => void }): Promise<void> {
         if (this.isClassifying) {
             new Notice(t("notice.ai_already_running"));
             return;
@@ -444,6 +444,9 @@ export class AIIconClassifier {
                     completedBatches++;
                     const pct = Math.round((completedBatches / Math.max(1, batchChunks.length)) * 100);
                     notice.setMessage(`✨ Colorful Folders AI: ${pct}% (${completedBatches}/${batchChunks.length} batches processed)...`);
+                    if (options?.onProgress) {
+                        options.onProgress(completedBatches, batchChunks.length, pct);
+                    }
                 }
             });
 
