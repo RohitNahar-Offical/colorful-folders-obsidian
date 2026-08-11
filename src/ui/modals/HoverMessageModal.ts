@@ -1,6 +1,7 @@
 import * as obsidian from 'obsidian';
 import { IColorfulFoldersPlugin } from '../../common/types';
 import { t } from '../../lang/helpers';
+import { DividerManager } from '../../core/DividerManager';
 
 export class HoverMessageModal extends obsidian.Modal {
     plugin: IColorfulFoldersPlugin;
@@ -25,6 +26,7 @@ export class HoverMessageModal extends obsidian.Modal {
     }
 
     onOpen() {
+        DividerManager.closeActivePopover();
         const { contentEl, modalEl } = this;
         contentEl.empty();
 
@@ -125,11 +127,7 @@ export class HoverMessageModal extends obsidian.Modal {
         const previewWrapper = body.createDiv();
         previewWrapper.createEl("label", { text: t("modal.hover_message.live_preview") }).setCssStyles({ display: "block", marginBottom: "8px", fontWeight: "600", fontSize: "0.85em", textTransform: "uppercase", letterSpacing: "0.05em", opacity: "0.8" });
 
-        this.previewEl = previewWrapper.createDiv({ cls: "cf-premium-popover" });
-        this.previewEl.setCssStyles({
-            position: "relative", transform: "none", width: "100%", maxWidth: "none",
-            animation: "none", display: "block", marginBottom: "10px"
-        });
+        this.previewEl = previewWrapper.createDiv({ cls: "cf-premium-popover cf-modal-preview" });
         const previewContent = this.previewEl.createDiv({ cls: "cf-popover-content" });
 
         const updatePreview = async (val: string) => {

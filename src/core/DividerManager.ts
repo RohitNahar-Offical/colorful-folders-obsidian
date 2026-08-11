@@ -20,6 +20,13 @@ export class DividerManager {
     app: obsidian.App;
     static activePopover: HTMLElement | null = null;
 
+    public static closeActivePopover() {
+        if (DividerManager.activePopover) {
+            DividerManager.activePopover.remove();
+            DividerManager.activePopover = null;
+        }
+    }
+
     constructor(plugin: IColorfulFoldersPlugin) {
         this.plugin = plugin;
         this.app = plugin.app;
@@ -297,10 +304,7 @@ export class DividerManager {
                 if (popover) return;
                 
                 // Kill any existing global popover first
-                if (DividerManager.activePopover) {
-                    DividerManager.activePopover.remove();
-                    DividerManager.activePopover = null;
-                }
+                DividerManager.closeActivePopover();
                 
                 popover = activeDocument.body.createDiv({ cls: 'cf-premium-popover' });
                 DividerManager.activePopover = popover;

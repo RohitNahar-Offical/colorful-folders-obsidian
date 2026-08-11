@@ -294,6 +294,8 @@ export function generateDividerCss(settings: ColorfulFoldersSettings): string {
         /* Liquid Glass Markdown Popover */
         .cf-premium-popover {
             position: fixed !important;
+            top: var(--cf-popover-top, 0px) !important;
+            left: var(--cf-popover-left, 0px) !important;
             z-index: 10000 !important;
             background: rgba(26, 26, 36, 0.55) !important;
             backdrop-filter: blur(28px) saturate(210%) contrast(110%) !important;
@@ -314,6 +316,19 @@ export function generateDividerCss(settings: ColorfulFoldersSettings): string {
             font-size: 0.9em !important;
             pointer-events: auto !important;
             animation: cf-popover-appear 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+
+        .cf-premium-popover.cf-modal-preview {
+            position: relative !important;
+            top: auto !important;
+            left: auto !important;
+            transform: none !important;
+            width: 100% !important;
+            max-width: none !important;
+            animation: none !important;
+            display: block !important;
+            margin-bottom: 10px !important;
+            box-sizing: border-box !important;
         }
 
         .theme-light .cf-premium-popover {

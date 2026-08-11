@@ -14,6 +14,10 @@ This maintenance release resolves vertical layout alignment issues and eliminate
 * **Frame-Scheduled Observer**: Scheduled DOM observer queries via `requestAnimationFrame` batching to eliminate main-thread stutter during fast sidebar expand/collapse actions.
 * **Glassmorphism Scope Optimization**: Restricted glassmorphism CSS application strictly to file nodes, avoiding unnecessary heavy layout recalculations on parent folder containers.
 
+### 💬 3. Divider Hover Message Preview Fix
+* **In-Modal Live Preview Positioning**: Added `.cf-modal-preview` CSS override to anchor hover message previews inline inside the editor modal, preventing preview popovers from rendering off-screen.
+* **Active Popover Cleanup**: Automatically dismisses active sidebar popovers whenever opening divider configuration modals.
+
 ---
 
 ## 🚀 5.0.0 - Architectural Overhaul & New Features
