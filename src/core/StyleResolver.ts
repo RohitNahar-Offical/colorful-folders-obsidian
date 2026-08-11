@@ -86,11 +86,15 @@ export class StyleResolver {
                     if (!plugin.folderSortCache) plugin.folderSortCache = new Map();
                     if (plugin.folderSortCache.has(folder.path)) return plugin.folderSortCache.get(folder.path) || 0;
                     
-                    const siblings = folder.parent.children
-                        .filter((c): c is obsidian.TFolder => c instanceof obsidian.TFolder)
-                        .filter((c) => !c.name.startsWith('.'))
-                        .filter((c) => !excludeFolders.has(c.name.toLowerCase()))
-                        .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+                    const siblings: obsidian.TFolder[] = [];
+                    const children = folder.parent.children;
+                    for (let i = 0; i < children.length; i++) {
+                        const c = children[i];
+                        if (c instanceof obsidian.TFolder && !c.name.startsWith('.') && !excludeFolders.has(c.name.toLowerCase())) {
+                            siblings.push(c);
+                        }
+                    }
+                    siblings.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
                     
                     siblings.forEach((s, idx) => plugin.folderSortCache.set(s.path, idx));
                     return plugin.folderSortCache.get(folder.path) || 0;
@@ -108,11 +112,15 @@ export class StyleResolver {
                 if (plugin.rootSortCache.has(rootSegment)) {
                     rootIndex = plugin.rootSortCache.get(rootSegment) || 0;
                 } else {
-                    const rootSiblings = rootFolder.children
-                        .filter((c): c is obsidian.TFolder => c instanceof obsidian.TFolder)
-                        .filter((c) => !c.name.startsWith('.'))
-                        .filter((c) => !excludeFolders.has(c.name.toLowerCase()))
-                        .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+                    const rootSiblings: obsidian.TFolder[] = [];
+                    const rootChildren = rootFolder.children;
+                    for (let i = 0; i < rootChildren.length; i++) {
+                        const c = rootChildren[i];
+                        if (c instanceof obsidian.TFolder && !c.name.startsWith('.') && !excludeFolders.has(c.name.toLowerCase())) {
+                            rootSiblings.push(c);
+                        }
+                    }
+                    rootSiblings.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
                         
                     rootSiblings.forEach((s, idx) => {
                         plugin.rootSortCache.set(s.name, idx);
