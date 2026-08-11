@@ -221,7 +221,7 @@ export default class ColorfulFoldersPlugin
       const subFiles = await this.getAllSvgFiles(folder);
       results.push(...subFiles);
     }
-    return results;
+    return results.sort((a, b) => a.localeCompare(b));
   }
 
   async loadLocalIcons() {
@@ -240,6 +240,7 @@ export default class ColorfulFoldersPlugin
           return { relPath, content };
         });
         const readResults = await Promise.all(iconReads);
+        readResults.sort((a, b) => a.relPath.localeCompare(b.relPath));
 
         for (const { relPath, content } of readResults) {
           const parts = relPath.split(/[/\\]/);
@@ -288,7 +289,9 @@ export default class ColorfulFoldersPlugin
           }
         }
 
-        // Trigger style generation now that we know what icons exist
+        if (this.iconManager) {
+          this.iconManager.invalidateCategoryCache();
+        }
         this.generateStylesDebounced();
       }
     } catch (e) {

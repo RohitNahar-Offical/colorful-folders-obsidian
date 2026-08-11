@@ -137,13 +137,17 @@ export class IconPackIndex {
         };
 
         if (customIcons) {
-            for (const key of Object.keys(customIcons)) {
+            const customKeys = Object.keys(customIcons).sort();
+            for (let i = 0; i < customKeys.length; i++) {
+                const key = customKeys[i];
                 addIconKey(key, key);
             }
         }
 
         if (localIcons) {
-            for (const key of Object.keys(localIcons)) {
+            const localKeys = Object.keys(localIcons).sort();
+            for (let i = 0; i < localKeys.length; i++) {
+                const key = localKeys[i];
                 if (localIcons[key]) {
                     addIconKey(key, key);
                 }
