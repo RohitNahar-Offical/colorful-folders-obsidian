@@ -73,6 +73,8 @@ export class DOMObserverService {
         }
     }
 
+    private pendingSyncFrame: number | null = null;
+
     initDividerObserver() {
         if (this.plugin.isDragging) return;
         if (!this.plugin.dividerManager?.hasAnyDividers()) {
@@ -133,8 +135,15 @@ export class DOMObserverService {
             }
 
             if (hasRelevantChange) {
-                allContainers.forEach(c => this.tagExplorerItems(c));
-                this.plugin.dividerManager.syncDividers();
+                if (this.pendingSyncFrame !== null) {
+                    cancelAnimationFrame(this.pendingSyncFrame);
+                }
+                this.pendingSyncFrame = requestAnimationFrame(() => {
+                    this.pendingSyncFrame = null;
+                    if (this.plugin.isSyncingDividers || this.isScrolling || this.plugin.isDragging) return;
+                    allContainers.forEach(c => this.tagExplorerItems(c));
+                    this.plugin.dividerManager.syncDividers();
+                });
             }
         });
 
@@ -170,6 +179,10 @@ export class DOMObserverService {
     }
 
     disposeDividerObserver() {
+        if (this.pendingSyncFrame !== null) {
+            cancelAnimationFrame(this.pendingSyncFrame);
+            this.pendingSyncFrame = null;
+        }
         if (this.dividerObserver) {
             this.dividerObserver.disconnect();
             this.dividerObserver = null;
