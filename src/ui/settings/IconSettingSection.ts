@@ -2,6 +2,7 @@ import * as obsidian from 'obsidian';
 import { SettingSection } from './SettingSection';
 import { t } from '../../lang/helpers';
 import { IconPickerModal } from '../modals/IconPickerModal';
+import { DEFAULT_ICON_PACK_ORDER } from '../../common/constants';
 
 export class IconSettingSection extends SettingSection {
     render(containerEl: HTMLElement): void {
@@ -37,6 +38,123 @@ export class IconSettingSection extends SettingSection {
                     await this.plugin.saveSettings();
                     this.plugin.iconManager?.invalidateCategoryCache();
                     this.plugin.generateStylesDebounced();
+                }));
+
+        // 🏆 Icon Pack Priority Ranking Card
+        const priorityCard = this.settingTab.makeCard(containerEl, "🏆", "Icon pack priority hierarchy");
+        const priorityDesc = priorityCard.createEl('p', {
+            text: "Re-order the priority of all icon packs relative to each other. When resolving icons for auto-matching or AI classification, higher-ranked packs take precedence over lower-ranked packs."
+        });
+        priorityDesc.setCssStyles({ fontSize: "0.85em", color: "var(--text-muted)", marginBottom: "12px" });
+
+        const packLabels: Record<string, string> = {
+            'custom': 'Custom User Icons & Brand Overrides',
+            'lucide': 'Lucide Icons (Default Modern UI)',
+            'emoji': 'Native Emojis (System Unicode)',
+            'bootstrap': 'Bootstrap Icons (bi-)',
+            'simple-icons': 'Simple Icons (Brand & Tech Logos)',
+            'tabler': 'Tabler Icons (tb-)',
+            'remix': 'Remix Icons (ri-)',
+            'font-awesome': 'FontAwesome Icons (fa-)',
+            'material': 'Material Icons (mdi-)',
+            'feather': 'Feather Icons'
+        };
+
+        const listContainer = priorityCard.createDiv();
+        listContainer.setCssStyles({
+            display: "flex",
+            flexDirection: "column",
+            gap: "6px",
+            marginBottom: "12px",
+            backgroundColor: "var(--background-secondary-alt)",
+            padding: "10px",
+            borderRadius: "8px",
+            border: "1px solid var(--border-color)"
+        });
+
+        const renderPackPriorityList = () => {
+            listContainer.empty();
+            let order = [...(this.plugin.settings.iconPackPriorityOrder || DEFAULT_ICON_PACK_ORDER)];
+            for (const defaultPack of DEFAULT_ICON_PACK_ORDER) {
+                if (!order.includes(defaultPack)) order.push(defaultPack);
+            }
+
+            order.forEach((packKey, index) => {
+                const row = listContainer.createDiv();
+                row.setCssStyles({
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "6px 10px",
+                    backgroundColor: "var(--background-primary)",
+                    borderRadius: "6px",
+                    border: "1px solid var(--background-modifier-border)"
+                });
+
+                const leftInfo = row.createDiv();
+                leftInfo.setCssStyles({ display: "flex", alignItems: "center", gap: "10px" });
+
+                const badge = leftInfo.createSpan({ text: `#${index + 1}` });
+                badge.setCssStyles({
+                    fontWeight: "bold",
+                    fontSize: "0.85em",
+                    color: index === 0 ? "var(--interactive-accent)" : "var(--text-muted)",
+                    minWidth: "24px"
+                });
+
+                const label = leftInfo.createSpan({ text: packLabels[packKey] || packKey });
+                label.setCssStyles({ fontSize: "0.9em", fontWeight: index === 0 ? "600" : "normal" });
+
+                const btnGroup = row.createDiv();
+                btnGroup.setCssStyles({ display: "flex", gap: "4px" });
+
+                const upBtn = btnGroup.createEl("button", { text: "▲" });
+                upBtn.setCssStyles({ padding: "2px 8px", fontSize: "0.8em" });
+                upBtn.disabled = index === 0;
+                upBtn.onclick = async () => {
+                    if (index > 0) {
+                        const temp = order[index];
+                        order[index] = order[index - 1];
+                        order[index - 1] = temp;
+                        this.plugin.settings.iconPackPriorityOrder = order;
+                        await this.plugin.saveSettings();
+                        this.plugin.iconManager?.invalidateCategoryCache();
+                        this.plugin.generateStylesDebounced();
+                        renderPackPriorityList();
+                    }
+                };
+
+                const downBtn = btnGroup.createEl("button", { text: "▼" });
+                downBtn.setCssStyles({ padding: "2px 8px", fontSize: "0.8em" });
+                downBtn.disabled = index === order.length - 1;
+                downBtn.onclick = async () => {
+                    if (index < order.length - 1) {
+                        const temp = order[index];
+                        order[index] = order[index + 1];
+                        order[index + 1] = temp;
+                        this.plugin.settings.iconPackPriorityOrder = order;
+                        await this.plugin.saveSettings();
+                        this.plugin.iconManager?.invalidateCategoryCache();
+                        this.plugin.generateStylesDebounced();
+                        renderPackPriorityList();
+                    }
+                };
+            });
+        };
+
+        renderPackPriorityList();
+
+        new obsidian.Setting(priorityCard)
+            .setName("Reset pack priority order")
+            .setDesc("Restore all icon pack priorities to their default factory ranking.")
+            .addButton(btn => btn
+                .setButtonText("Reset priority order")
+                .onClick(async () => {
+                    this.plugin.settings.iconPackPriorityOrder = [...DEFAULT_ICON_PACK_ORDER];
+                    await this.plugin.saveSettings();
+                    this.plugin.iconManager?.invalidateCategoryCache();
+                    this.plugin.generateStylesDebounced();
+                    renderPackPriorityList();
                 }));
 
         if (this.plugin.settings.autoIcons) {

@@ -92,6 +92,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
 
     autoIcons: true,
     preferredIconPack: 'auto',
+    iconPackPriorityOrder: ['custom', 'lucide', 'emoji', 'bootstrap', 'simple-icons', 'tabler', 'remix', 'font-awesome', 'material', 'feather'],
     autoIconVariety: true,
     varietySeed: 0,
     wideAutoIcons: true,
@@ -328,6 +329,19 @@ export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
     { rex: /quote|saying|proverb|aphorism|wisdom|philosophy|reflection|mindset|lesson|meaning|to-be/i, emoji: "💬", lucide: "quote", priority: 115, emojis: ["💬", "💡", "✨"], lucides: ["quote", "sparkles", "lightbulb", "compass", "book-open", "brain"] },
     { rex: /eat|hungrier|food|feast|meal|utensil/i, emoji: "🍽️", lucide: "utensils", priority: 110, emojis: ["🍽️", "🍲", "🍎"], lucides: ["utensils", "soup", "chef-hat"] },
     { rex: /future|distributed|innovation|cyber|tech/i, emoji: "🚀", lucide: "rocket", priority: 110, emojis: ["🚀", "⚡", "🔮"], lucides: ["rocket", "zap", "cpu", "globe"] },
+];
+
+export const DEFAULT_ICON_PACK_ORDER: string[] = [
+    'custom',
+    'lucide',
+    'emoji',
+    'bootstrap',
+    'simple-icons',
+    'tabler',
+    'remix',
+    'font-awesome',
+    'material',
+    'feather'
 ];
 
 export const PACK_PRIORITY: Record<string, number> = {

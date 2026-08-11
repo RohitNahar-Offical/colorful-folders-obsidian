@@ -1,5 +1,5 @@
 import { AutoIconData, ColorfulFoldersSettings, FolderStyle, IColorfulFoldersPlugin, StyleContext } from '../common/types';
-import { PALETTES, CF_FOLDER_CLOSED, CF_FOLDER_OPEN } from '../common/constants';
+import { PALETTES, CF_FOLDER_CLOSED, CF_FOLDER_OPEN, DEFAULT_ICON_PACK_ORDER } from '../common/constants';
 import { hexToRgbObj, safeEscape } from '../common/utils';
 import * as obsidian from 'obsidian';
 import { NotebookNavigatorIntegration } from '../integrations/NotebookNavigator';
@@ -79,6 +79,24 @@ export class StyleGenerator {
             }
         }
 
+        const userOrder = this.settings.iconPackPriorityOrder || DEFAULT_ICON_PACK_ORDER;
+        const candidates: string[] = [];
+        if (data.emoji) candidates.push(data.emoji);
+        if (data.lucide && this.isValidIconStr(data.lucide)) candidates.push(data.lucide);
+        if (data.lucides) {
+            for (const ic of data.lucides) {
+                if (this.isValidIconStr(ic) && !candidates.includes(ic)) candidates.push(ic);
+            }
+        }
+
+        for (const packId of userOrder) {
+            for (const cand of candidates) {
+                if (this.matchesPackPrefix(cand, packId)) {
+                    return cand;
+                }
+            }
+        }
+
         if (this.settings.wideAutoIcons) {
             if (data.lucide && this.isValidIconStr(data.lucide)) return data.lucide;
             if (data.emoji) return data.emoji;
@@ -93,11 +111,15 @@ export class StyleGenerator {
 
     private matchesPackPrefix(iconId: string, pack: string): boolean {
         const lower = iconId.toLowerCase();
+        if (pack === 'custom') return lower.startsWith('custom-');
+        if (pack === 'emoji') return !/[a-zA-Z]/.test(iconId);
         if (pack === 'bootstrap' || pack === 'bi') return lower.startsWith('bi-') || lower.includes('bootstrap');
-        if (pack === 'font-awesome' || pack === 'fa') return lower.startsWith('fa-') || lower.startsWith('fas-') || lower.startsWith('fab-') || lower.startsWith('far-');
+        if (pack === 'font-awesome' || pack === 'fa') return lower.startsWith('fa-') || lower.startsWith('fas-') || lower.startsWith('fab-') || lower.startsWith('far-') || lower.includes('font-awesome');
         if (pack === 'tabler' || pack === 'tb') return lower.startsWith('tb-') || lower.startsWith('tabler-');
         if (pack === 'remix' || pack === 'ri') return lower.startsWith('ri-') || lower.startsWith('remix-');
         if (pack === 'simple-icons') return lower.startsWith('simple-') || lower.startsWith('si-');
+        if (pack === 'material' || pack === 'mdi') return lower.startsWith('mdi-') || lower.includes('material');
+        if (pack === 'feather') return lower.startsWith('feather-');
         if (pack === 'lucide') return lower.startsWith('lucide-') || !lower.includes('-');
         return false;
     }
