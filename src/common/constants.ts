@@ -91,6 +91,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     glassmorphism: true,
 
     autoIcons: true,
+    preferredIconPack: 'auto',
     autoIconVariety: true,
     varietySeed: 0,
     wideAutoIcons: true,

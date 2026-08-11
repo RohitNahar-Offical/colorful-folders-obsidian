@@ -11,8 +11,23 @@ export class IconPackIndex {
     private _customRef: Record<string, string> | undefined = undefined;
     private _localCount = -1;
     private _customCount = -1;
+    private _preferredPack: string = 'auto';
+
     private getPackPriority(iconKey: string): number {
         const lower = iconKey.toLowerCase();
+        const preferred = this._preferredPack;
+        if (preferred && preferred !== 'auto') {
+            if (
+                (preferred === 'bootstrap' && (lower.startsWith('bi-') || lower.includes('bootstrap'))) ||
+                (preferred === 'font-awesome' && (lower.startsWith('fa-') || lower.startsWith('fas-') || lower.startsWith('fab-') || lower.startsWith('far-'))) ||
+                (preferred === 'tabler' && (lower.startsWith('tb-') || lower.startsWith('tabler-'))) ||
+                (preferred === 'remix' && (lower.startsWith('ri-') || lower.startsWith('remix-'))) ||
+                (preferred === 'simple-icons' && (lower.startsWith('simple-') || lower.startsWith('si-'))) ||
+                (preferred === 'lucide' && (lower.startsWith('lucide-') || !lower.includes('-')))
+            ) {
+                return 300;
+            }
+        }
         for (const [pack, prio] of Object.entries(PACK_PRIORITY)) {
             if (lower.startsWith(pack) || lower.includes(`-${pack}-`) || lower.includes(`/${pack}/`)) {
                 return prio;
@@ -21,7 +36,7 @@ export class IconPackIndex {
         return 10;
     }
 
-    public build(localIcons: Record<string, string | null> | undefined, customIcons: Record<string, string> | undefined) {
+    public build(localIcons: Record<string, string | null> | undefined, customIcons: Record<string, string> | undefined, preferredPack: string = 'auto') {
         const localCount = localIcons ? Object.keys(localIcons).length : 0;
         const customCount = customIcons ? Object.keys(customIcons).length : 0;
 
@@ -30,10 +45,13 @@ export class IconPackIndex {
             this._localRef === localIcons &&
             this._customRef === customIcons &&
             this._localCount === localCount &&
-            this._customCount === customCount
+            this._customCount === customCount &&
+            this._preferredPack === preferredPack
         ) {
             return; // No change — skip rebuild
         }
+
+        this._preferredPack = preferredPack;
 
         this._localRef = localIcons;
         this._customRef = customIcons;
