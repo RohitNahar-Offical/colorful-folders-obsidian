@@ -11,7 +11,8 @@ var ws=Object.create;var Ut=Object.defineProperty;var Ss=Object.getOwnPropertyDe
             color: transparent !important;
             font-weight: ${n?"800":"normal"} !important;
             font-style: ${s?"italic":"normal"} !important;
-            display: inline-block !important;
+            display: inline-flex !important;
+            align-items: center !important;
             width: fit-content !important;
             max-width: 100% !important;
             flex: 0 0 auto !important;
