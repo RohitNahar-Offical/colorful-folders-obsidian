@@ -243,15 +243,18 @@ export class StyleGenerator {
                 );
 
                 // Custom User Rules take top priority over saved data.json AI icons
+                const isAiAssignedFile = !!(fileStyle?.iconSource && fileStyle.iconSource !== 'manual');
                 const customUserRuleFile = this.plugin.iconManager.getAutoIconData(child.name, child.path);
-                const isUserCustomRuleFileMatch = customUserRuleFile && (customUserRuleFile.packSource === 'custom-rule' || customUserRuleFile.isCustom);
+                const isFrontmatterFileIcon = customUserRuleFile?.packSource === 'frontmatter';
+                const isCustomFileRuleMatch = customUserRuleFile?.packSource === 'custom-rule' || (customUserRuleFile?.isCustom && !isFrontmatterFileIcon);
+                const isUserCustomRuleFileMatch = (this.settings.autoIcons || isFrontmatterFileIcon) && isCustomFileRuleMatch;
 
                 let iconId = "";
                 if (isUserCustomRuleFileMatch && customUserRuleFile) {
                     iconId = this.resolveAutoIconCandidate(customUserRuleFile);
                 } else {
-                    const rawFileIcon = (fileStyle?.iconId && this.isValidIconStr(fileStyle.iconId)) ? fileStyle.iconId : null;
-                    const rawInheritedFileIcon = (inheritedStyle?.applyToFiles && inheritedStyle?.iconId && this.isValidIconStr(inheritedStyle.iconId)) ? inheritedStyle.iconId : null;
+                    const rawFileIcon = (fileStyle?.iconId && (!isAiAssignedFile || this.settings.autoIcons) && this.isValidIconStr(fileStyle.iconId)) ? fileStyle.iconId : null;
+                    const rawInheritedFileIcon = (inheritedStyle?.applyToFiles && inheritedStyle?.iconId && (!inheritedStyle.iconSource || inheritedStyle.iconSource === 'manual' || this.settings.autoIcons) && this.isValidIconStr(inheritedStyle.iconId)) ? inheritedStyle.iconId : null;
                     const autoIconFile = (this.settings.autoIcons && !rawFileIcon && !rawInheritedFileIcon) ? customUserRuleFile : null;
                     iconId = rawFileIcon || rawInheritedFileIcon || this.resolveAutoIconCandidate(autoIconFile);
                 }
@@ -576,15 +579,18 @@ export class StyleGenerator {
             ], `folderBgTint_${color.hex}_${finalTintOp}_${outlineOnly}_${folderThick}`);
 
             // Custom User Rules take top priority over saved data.json AI icons
+            const isAiAssignedFolder = !!(customStyle?.iconSource && customStyle.iconSource !== 'manual');
             const customUserRuleFolder = this.plugin.iconManager.getAutoIconData(child.name, child.path);
-            const isUserCustomRuleFolderMatch = customUserRuleFolder && (customUserRuleFolder.packSource === 'custom-rule' || customUserRuleFolder.isCustom);
+            const isFrontmatterFolderIcon = customUserRuleFolder?.packSource === 'frontmatter';
+            const isCustomFolderRuleMatch = customUserRuleFolder?.packSource === 'custom-rule' || (customUserRuleFolder?.isCustom && !isFrontmatterFolderIcon);
+            const isUserCustomRuleFolderMatch = (this.settings.autoIcons || isFrontmatterFolderIcon) && isCustomFolderRuleMatch;
 
             let folderIconId = "";
             if (isUserCustomRuleFolderMatch && customUserRuleFolder) {
                 folderIconId = this.resolveAutoIconCandidate(customUserRuleFolder);
             } else {
-                const rawFolderIcon = (customStyle?.iconId && this.isValidIconStr(customStyle.iconId)) ? customStyle.iconId : null;
-                const rawInheritedFolderIcon = (inheritedStyle?.iconId && this.isValidIconStr(inheritedStyle.iconId)) ? inheritedStyle.iconId : null;
+                const rawFolderIcon = (customStyle?.iconId && (!isAiAssignedFolder || this.settings.autoIcons) && this.isValidIconStr(customStyle.iconId)) ? customStyle.iconId : null;
+                const rawInheritedFolderIcon = (inheritedStyle?.iconId && (!inheritedStyle.iconSource || inheritedStyle.iconSource === 'manual' || this.settings.autoIcons) && this.isValidIconStr(inheritedStyle.iconId)) ? inheritedStyle.iconId : null;
                 const autoIconFolder = (this.settings.autoIcons && !rawFolderIcon && !rawInheritedFolderIcon) ? customUserRuleFolder : null;
                 folderIconId = rawFolderIcon || rawInheritedFolderIcon || this.resolveAutoIconCandidate(autoIconFolder);
             }
