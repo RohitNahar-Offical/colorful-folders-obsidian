@@ -15,20 +15,14 @@ This release resolves layout alignment issues, eliminates UI stutter, introduces
 * **Glassmorphism Scope Optimization**: Restricted glassmorphism CSS strictly to active file selection when enabled in settings, eliminating heavy backdrop-blur recalculations on unselected file and folder rows.
 
 ### 🏆 3. Icon Pack Priority Hierarchy (Up ▲ & Down ▼ System)
-* **Instant Priority Reordering**: Re-order the priority ranking of all icon packs (Lucide, Bootstrap, Simple Icons, Tabler, Remix, FontAwesome, Material, Feather, Native Emojis) with instant (<1ms) Up/Down button responsiveness.
-* **Simplified Settings**: Removed redundant preferred icon pack dropdown in favor of the flexible, visual priority ranking list.
-* **Native Emoji Demotion**: Native emojis are ranked at the bottom of the priority order (#10) by default, ensuring vector SVG icons are always preferred.
+* **Instant Priority Reordering**: Re-order the priority ranking of all icon packs (Lucide, Bootstrap, Simple Icons, Tabler, Remix, FontAwesome, Material, Feather, Native Emojis)
 
-### 🔍 4. Lucide & Vector SVG Icon Resolver Fix
-* **Hyphenated Lucide Icon Resolution**: Fixed Lucide pack prefix matching for icons containing hyphens (e.g., `help-circle`, `message-square-question`, `badge-help`, `file-text`, `book-open`).
-* **No Unwanted Emoji Fallbacks**: Resolves vector SVG icons properly without falling back to native emojis when valid SVG candidates exist.
-
-### 🔄 5. Deterministic Icon Loading & Restart Stability
+### 🔄 4. Deterministic Icon Loading & Restart Stability
 * **Startup Race Condition Fix**: Awaits local filesystem icon loading (`await loadLocalIcons()`) before generating initial styles on vault launch.
 * **Deterministic File & Key Sorting**: Sorted filesystem traversal and icon index keys deterministically (`localeCompare()`), guaranteeing 100% consistent and static icon assignments across every restart.
 
-### 💬 6. Divider Hover Message Preview Fix
-* **In-Modal Live Preview Positioning**: Added `.cf-modal-preview` CSS override to anchor hover message previews inline inside the editor modal, preventing preview popovers from rendering off-screen.
+### 💬 5. Divider Hover Message Preview Fix
+* **In-Modal Live Preview Positioning**: Added anchor hover message previews inline inside the editor modal, preventing preview popovers from rendering off-screen.
 * **Active Popover Cleanup**: Automatically dismisses active sidebar popovers whenever opening divider configuration modals.
 
 ---

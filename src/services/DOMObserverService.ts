@@ -136,9 +136,9 @@ export class DOMObserverService {
 
             if (hasRelevantChange) {
                 if (this.pendingSyncFrame !== null) {
-                    cancelAnimationFrame(this.pendingSyncFrame);
+                    window.cancelAnimationFrame(this.pendingSyncFrame);
                 }
-                this.pendingSyncFrame = requestAnimationFrame(() => {
+                this.pendingSyncFrame = window.requestAnimationFrame(() => {
                     this.pendingSyncFrame = null;
                     if (this.plugin.isSyncingDividers || this.isScrolling || this.plugin.isDragging) return;
                     allContainers.forEach(c => this.tagExplorerItems(c));

@@ -1,5 +1,5 @@
 import { AutoIconData, ColorfulFoldersSettings, FolderStyle, IColorfulFoldersPlugin, StyleContext } from '../common/types';
-import { PALETTES, CF_FOLDER_CLOSED, CF_FOLDER_OPEN, DEFAULT_ICON_PACK_ORDER } from '../common/constants';
+import { PALETTES, DEFAULT_ICON_PACK_ORDER } from '../common/constants';
 import { hexToRgbObj, safeEscape } from '../common/utils';
 import * as obsidian from 'obsidian';
 import { NotebookNavigatorIntegration } from '../integrations/NotebookNavigator';
@@ -230,7 +230,6 @@ export class StyleGenerator {
         const folderIconW = context.folderIconW;
 
         const useGlass = this.settings.glassmorphism;
-        const glassCss = useGlass ? `backdrop-filter: blur(8px) saturate(120%); -webkit-backdrop-filter: blur(8px) saturate(120%);` : '';
         const cycleOff = this.settings.cycleOffset || 0;
         const outlineOnly = this.settings.outlineOnly;
         const nnFileBgActive = NotebookNavigatorIntegration.showFileBg(this.settings);
