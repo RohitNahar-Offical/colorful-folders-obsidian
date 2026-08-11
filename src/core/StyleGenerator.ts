@@ -128,6 +128,7 @@ export class StyleGenerator {
     }
 
     private matchesPackPrefix(iconId: string, pack: string): boolean {
+        if (!iconId) return false;
         const lower = iconId.toLowerCase();
         if (pack === 'custom') return lower.startsWith('custom-');
         if (pack === 'emoji') return !/[a-zA-Z]/.test(iconId);
@@ -138,7 +139,15 @@ export class StyleGenerator {
         if (pack === 'simple-icons') return lower.startsWith('simple-') || lower.startsWith('si-');
         if (pack === 'material' || pack === 'mdi') return lower.startsWith('mdi-') || lower.includes('material');
         if (pack === 'feather') return lower.startsWith('feather-');
-        if (pack === 'lucide') return lower.startsWith('lucide-') || !lower.includes('-');
+        if (pack === 'lucide') {
+            if (lower.startsWith('lucide-')) return true;
+            const isOtherPack = lower.startsWith('bi-') || lower.startsWith('fa-') || lower.startsWith('fas-') ||
+                lower.startsWith('far-') || lower.startsWith('fab-') || lower.startsWith('tb-') ||
+                lower.startsWith('tabler-') || lower.startsWith('ri-') || lower.startsWith('remix-') ||
+                lower.startsWith('simple-') || lower.startsWith('si-') || lower.startsWith('mdi-') ||
+                lower.startsWith('feather-') || lower.startsWith('custom-');
+            return !isOtherPack && /[a-zA-Z]/.test(iconId);
+        }
         return false;
     }
 
