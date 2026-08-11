@@ -352,6 +352,8 @@ export class PrivacySettingSection extends SettingSection {
                     new ConfirmModal(this.app, "Reset styles and presets", "Are you sure you want to delete all custom styling and presets? This cannot be undone.", async () => {
                         this.plugin.settings.customFolderColors = {};
                         this.plugin.settings.presets = {};
+                        this.plugin.settings.customIconRules = '';
+                        this.plugin.iconManager?.invalidateCategoryCache();
                         await this.plugin.saveSettings();
                         this.plugin.generateStylesDebounced();
                         new obsidian.Notice(t("notice.styles_reset"));
@@ -370,6 +372,7 @@ export class PrivacySettingSection extends SettingSection {
                 btn.onClick(() => {
                     new ConfirmModal(this.app, "Factory reset", "Are you sure you want to restore all settings to default? This will wipe ALL your customization!", async () => {
                         this.plugin.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS)) as ColorfulFoldersSettings;
+                        this.plugin.iconManager?.invalidateCategoryCache();
                         await this.plugin.saveSettings();
                         this.plugin.generateStylesDebounced();
                         this.plugin.dividerManager.clean();
