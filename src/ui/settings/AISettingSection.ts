@@ -189,22 +189,54 @@ export class AISettingSection extends SettingSection {
         scopeTip.appendText(t("settings.ai.scope_tip_desc"));
 
         const aiBtnWrap = aiCard.createDiv();
-        aiBtnWrap.setCssStyles({ display: "flex", gap: "10px", marginTop: "15px", marginBottom: "10px" });
+        aiBtnWrap.setCssStyles({ display: "flex", gap: "10px", marginTop: "15px", marginBottom: "10px", alignItems: "center", flexWrap: "wrap" });
 
         const aiRunBtn = aiBtnWrap.createEl("button", { text: t("settings.ai.btn_auto_assign"), cls: "mod-cta" });
-        aiRunBtn.onclick = () => {
-            void this.plugin.aiIconClassifier.classifyVault();
-        };
-
         const aiForceBtn = aiBtnWrap.createEl("button", { text: t("settings.ai.btn_force_reassign") });
-        aiForceBtn.onclick = () => {
-            void this.plugin.aiIconClassifier.classifyVault({ force: true });
-        };
-
         const aiStopBtn = aiBtnWrap.createEl("button", { text: t("settings.ai.btn_stop") });
         aiStopBtn.setCssStyles({ color: "var(--text-error)" });
+
+        const setAiButtonsState = (isBusy: boolean, activeBtnLabel?: string) => {
+            aiRunBtn.disabled = isBusy;
+            aiForceBtn.disabled = isBusy;
+            if (isBusy && activeBtnLabel) {
+                aiRunBtn.setText(activeBtnLabel);
+            } else if (!isBusy) {
+                aiRunBtn.setText(t("settings.ai.btn_auto_assign"));
+                aiForceBtn.setText(t("settings.ai.btn_force_reassign"));
+            }
+        };
+
+        aiRunBtn.onclick = async () => {
+            setAiButtonsState(true, "⏳ Gathering items...");
+            try {
+                await this.plugin.aiIconClassifier.classifyVault({
+                    onProgress: (completed, total, pct) => {
+                        setAiButtonsState(true, `⏳ Classifying ${pct}% (${completed}/${total})...`);
+                    }
+                });
+            } finally {
+                setAiButtonsState(false);
+            }
+        };
+
+        aiForceBtn.onclick = async () => {
+            setAiButtonsState(true, "⏳ Gathering items...");
+            try {
+                await this.plugin.aiIconClassifier.classifyVault({
+                    force: true,
+                    onProgress: (completed, total, pct) => {
+                        setAiButtonsState(true, `⏳ Re-assigning ${pct}% (${completed}/${total})...`);
+                    }
+                });
+            } finally {
+                setAiButtonsState(false);
+            }
+        };
+
         aiStopBtn.onclick = () => {
             this.plugin.aiIconClassifier.stopClassification();
+            setAiButtonsState(false);
         };
 
         // ⚡ Vector Embedding Model Card (Fast & Offline)
