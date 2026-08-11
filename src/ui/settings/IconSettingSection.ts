@@ -165,6 +165,7 @@ export class IconSettingSection extends SettingSection {
                     .onChange(async (value) => {
                         this.plugin.settings.wideAutoIcons = value;
                         await this.plugin.saveSettings();
+                        this.plugin.iconManager?.invalidateCategoryCache();
                         this.plugin.generateStylesDebounced();
                     }));
 
