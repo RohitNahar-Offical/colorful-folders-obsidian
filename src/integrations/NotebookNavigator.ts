@@ -186,7 +186,7 @@ export class NotebookNavigatorIntegration {
         const _iconSel = isFolder ? this.getNavIconSelector() : this.getFileIconSelector();
         const countSel = '.nn-navitem-count';
 
-        const glassCss = useGlass ? `
+        const glassCss = (useGlass && !isFolder) ? `
             backdrop-filter: blur(12px) saturate(120%) !important; 
             -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;

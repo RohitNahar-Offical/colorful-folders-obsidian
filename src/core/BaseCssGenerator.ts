@@ -211,8 +211,8 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
 
         /* Universal O(1) Active File Selection Styling */
         body .nav-files-container .nav-file-title.is-active:not(.nn-file),
-        body .nav-files-container .tree-item-self.is-active:not(.nn-file),
-        body .notebook-navigator .is-active {
+        body .nav-files-container .tree-item-self.is-active:not(.nav-folder-title):not(.nn-file),
+        body .notebook-navigator .is-active:not(.nn-navitem) {
             background-color: var(--cf-active-bg, var(--nav-item-background-active, rgba(var(--interactive-accent-rgb), 0.15))) !important;
             color: var(--cf-active-color, var(--text-accent, var(--interactive-accent))) !important;
             border-left: none !important;

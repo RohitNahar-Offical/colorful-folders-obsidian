@@ -458,19 +458,11 @@ export class StyleGenerator {
                         color: var(--cf-active-color, ${parentActiveText}) !important;
                         outline: 1px solid ${activeGlowEnabled ? `rgba(${parentFolderColor.rgb}, 0.3)` : "transparent"} !important;
                         outline-offset: -1px !important;
-                        ${activeGlowEnabled ? (useGlass ? `
-                            backdrop-filter: blur(12px) saturate(160%) !important;
-                            -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
-                            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 4px 12px rgba(0,0,0,0.2) !important;
-                        ` : `
+                        ${activeGlowEnabled ? `
                             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 2px 8px rgba(0,0,0,0.1) !important;
-                        `) : (useGlass ? `
-                            backdrop-filter: blur(12px) saturate(160%) !important;
-                            -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
-                            box-shadow: none !important;
                         ` : `
                             box-shadow: none !important;
-                        `)}
+                        `}
                     `, [
                         `body .nav-files-container .nav-folder-title.cf-is-active[data-path="${safePath}"]`,
                         `body .nav-files-container .tree-item-self.cf-is-active[data-path="${safePath}"]`
@@ -504,7 +496,7 @@ export class StyleGenerator {
                             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 4px 12px rgba(0,0,0,0.2) !important;
                         `, [
                             `body .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file)`,
-                            `body .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nn-file)`
+                            `body .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nav-folder-title):not(.nn-file)`
                         ]);
                     }
                 }
@@ -675,15 +667,11 @@ export class StyleGenerator {
             grouper.add(`
                 background-color: var(--cf-active-color, ${bgTint}) !important;
                 border-radius: 4px !important;
-                ${(isDark && !useGlass) ? (`
+                ${isDark ? (`
                     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 2px 8px rgba(0,0,0,0.1) !important;
-                `) : (useGlass ? `
-                    backdrop-filter: blur(12px) saturate(160%) !important;
-                    -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+                `) : `
                     box-shadow: none !important;
-                ` : `
-                    box-shadow: none !important;
-                `)}
+                `}
             `, [
                 `body .nav-files-container .nav-folder.cf-active-parent > .nav-folder-title[data-path="${safePath}"]`,
                 `body .nav-files-container .tree-item.cf-active-parent > .tree-item-self[data-path="${safePath}"]`
@@ -802,61 +790,41 @@ export class StyleGenerator {
                 }
             };
 
-            if (folderIconId || folderExpandedIconId) {
-                if (folderExpandedIconId && folderIconId) {
-                    generateIconCss(folderIconId, false);
-                    generateIconCss(folderExpandedIconId, true);
-                } else if (folderExpandedIconId) {
-                    generateIconCss(folderExpandedIconId, true);
-                } else if (folderIconId) {
-                    generateIconCss(folderIconId, null);
+            const defaultClosed = this.settings.defaultClosedFolderIcon || "lucide-folder";
+            const defaultOpen = this.settings.defaultOpenFolderIcon || "lucide-folder-open";
+
+            let effClosedIconId = folderIconId;
+            let effOpenIconId = folderExpandedIconId;
+
+            if (!effClosedIconId && !effOpenIconId && autoIcons) {
+                effClosedIconId = defaultClosed;
+                effOpenIconId = defaultOpen;
+            } else if (effClosedIconId && !effOpenIconId) {
+                if (effClosedIconId === defaultClosed || effClosedIconId === "lucide-folder" || effClosedIconId === "folder") {
+                    effClosedIconId = defaultClosed;
+                    effOpenIconId = defaultOpen;
+                } else {
+                    let candidateOpen = effClosedIconId.replace(/folder/i, "folder-open");
+                    if (candidateOpen === effClosedIconId) candidateOpen = effClosedIconId + "-open";
+                    if (this.plugin.iconManager.getIconSvg(candidateOpen, true)) {
+                        effOpenIconId = candidateOpen;
+                    }
                 }
-            } else if (autoIcons) {
-                const closedIconId = this.settings.defaultClosedFolderIcon || "lucide-folder";
-                const openIconId = this.settings.defaultOpenFolderIcon || "lucide-folder-open";
-                const closedSvg = this.plugin.iconManager.getIconSvg(closedIconId, true) || decodeURIComponent(CF_FOLDER_CLOSED);
-                const openSvg = this.plugin.iconManager.getIconSvg(openIconId, true) || decodeURIComponent(CF_FOLDER_OPEN);
-                
-                const baseNav = `body .nav-files-container .nav-folder`;
-                const baseTree = `body .nav-files-container .tree-item`;
+            }
 
-                // Closed State
-                grouper.add(`
-                    content: '' !important;
-                    display: inline-flex !important;
-                    align-self: center !important;
-                    flex-shrink: 0 !important;
-                    width: ${folderIconW} !important;
-                    height: ${folderIconW} !important;
-                    margin-right: 4px !important;
-                    background-color: ${effFolderIconColor} !important;
-                    -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(closedSvg)}") !important;
-                    -webkit-mask-repeat: no-repeat !important;
-                    -webkit-mask-position: center !important;
-                    -webkit-mask-size: contain !important;
-                `, [
-                    `${baseNav}.is-collapsed > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
-                    `${baseTree}.is-collapsed > .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
-                ], `icon_closed_folder_${folderIconW}_${effFolderIconColor.replace(/\s+/g, '')}_${closedIconId}`);
-
-                // Open State
-                grouper.add(`
-                    content: '' !important;
-                    display: inline-flex !important;
-                    align-self: center !important;
-                    flex-shrink: 0 !important;
-                    width: ${folderIconW} !important;
-                    height: ${folderIconW} !important;
-                    margin-right: 4px !important;
-                    background-color: ${effFolderIconColor} !important;
-                    -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(openSvg)}") !important;
-                    -webkit-mask-repeat: no-repeat !important;
-                    -webkit-mask-position: center !important;
-                    -webkit-mask-size: contain !important;
-                `, [
-                    `${baseNav}:not(.is-collapsed) > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
-                    `${baseTree}:not(.is-collapsed) > .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
-                ], `icon_open_folder_${folderIconW}_${effFolderIconColor.replace(/\s+/g, '')}_${openIconId}`);
+            if (effClosedIconId || effOpenIconId) {
+                if (effClosedIconId && effOpenIconId) {
+                    if (effClosedIconId === effOpenIconId) {
+                        generateIconCss(effClosedIconId, null);
+                    } else {
+                        generateIconCss(effClosedIconId, false);
+                        generateIconCss(effOpenIconId, true);
+                    }
+                } else if (effOpenIconId) {
+                    generateIconCss(effOpenIconId, true);
+                } else if (effClosedIconId) {
+                    generateIconCss(effClosedIconId, null);
+                }
             }
 
             const collapseSels = [
