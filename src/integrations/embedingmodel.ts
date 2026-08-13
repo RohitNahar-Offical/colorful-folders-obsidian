@@ -362,7 +362,7 @@ export class EmbeddingModel {
             }
         }
 
-        const customIcons = this.plugin?.settings?.customIcons || {};
+        const customIcons = this.plugin?.getCustomIconsMap() || {};
         for (const iconId of Object.keys(customIcons)) {
             const vector = this.getOrCreateVector(iconId);
             const cleanId = iconId

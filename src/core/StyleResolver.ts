@@ -213,7 +213,8 @@ export class StyleResolver {
             } else if (plugin.settings.autoIcons && autoIcon) {
                 const lucideId = autoIcon.lucide;
                 const isCustom = lucideId.includes('-') && !lucideId.startsWith('lucide-');
-                if (isCustom && (!plugin.settings.customIcons || !plugin.settings.customIcons[lucideId])) {
+                const hasCustom = !!plugin.getCustomIcon(lucideId);
+                if (isCustom && !hasCustom) {
                     iconId = autoIcon.emoji;
                 } else {
                     iconId = plugin.settings.wideAutoIcons ? autoIcon.lucide : autoIcon.emoji;

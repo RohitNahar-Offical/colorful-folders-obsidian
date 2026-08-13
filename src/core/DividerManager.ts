@@ -157,11 +157,11 @@ export class DividerManager {
             if (!rawIcon) return;
 
             const iconColor = conf.dividerIconColor || color;
-            const isCustom = !!(this.plugin.settings.customIcons && this.plugin.settings.customIcons[rawIcon]);
+            const svgStr = this.plugin.getCustomIcon(rawIcon);
+            const isCustom = !!svgStr;
 
-            if (isCustom) {
+            if (isCustom && svgStr) {
                 // Custom SVG Icon - Use masking strategy for consistency and to override hardcoded SVG styles
-                const svgStr = this.plugin.settings.customIcons[rawIcon];
                 const normalized = this.plugin.iconManager.normalizeSvg(svgStr);
                 const iconWrap = chip.createSpan({ cls: 'cf-divider-custom-icon' });
                 iconWrap.setCssStyles({

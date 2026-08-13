@@ -189,6 +189,12 @@ export interface IColorfulFoldersPlugin {
     cleanUnusedStyles(): Promise<void>;
     refreshRibbon(): void;
     localFileSystemIcons?: Record<string, string | null>;
+    localCustomIcons: Record<string, string>;
+    getCustomIcon(id: string): string | undefined;
+    getCustomIconsMap(): Record<string, string>;
+    loadLocalCustomIcons(): Promise<void>;
+    saveLocalCustomIcons(): Promise<void>;
+    removePackIcons(prefix: string): Promise<number>;
     dividerManager: {
         syncDividers(): void;
         clean(): void;

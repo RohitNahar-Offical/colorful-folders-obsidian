@@ -848,8 +848,8 @@ modifiedFields: Set<string>;
         const ssvg = searchIcon.querySelector("svg") as unknown as HTMLElement | null;
         if (ssvg) ssvg.setCssStyles({ width: "14px", height: "14px" });
 
-        // Pack Filter Dropdown
-        const customIds = Object.keys(this.plugin.settings.customIcons);
+        const customMap = this.plugin.getCustomIconsMap();
+        const customIds = Object.keys(customMap);
         const prefixes = new Set(['all', 'lucide']);
         customIds.forEach(id => {
             const parts = id.split('-');

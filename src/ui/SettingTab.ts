@@ -134,7 +134,8 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 const viewBox = `${l} ${tVal} ${w} ${h}`;
                 const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" width="24" height="24">${body}</svg>`;
 
-                this.plugin.settings.customIcons[id] = svg;
+                if (!this.plugin.localCustomIcons) this.plugin.localCustomIcons = {};
+                this.plugin.localCustomIcons[id] = svg;
                 count++;
             };
 
@@ -144,13 +145,15 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         } else if (typeof data === "object" && data !== null) {
             for (const [key, value] of Object.entries(data)) {
                 if (typeof value === "string" && value.trim().startsWith("<svg")) {
-                    this.plugin.settings.customIcons[key] = value.trim();
+                    if (!this.plugin.localCustomIcons) this.plugin.localCustomIcons = {};
+                    this.plugin.localCustomIcons[key] = value.trim();
                     count++;
                 }
             }
         }
 
         if (count > 0) {
+            await this.plugin.saveLocalCustomIcons();
             this.plugin.registerCustomIcons();
             await this.plugin.saveSettings();
         }

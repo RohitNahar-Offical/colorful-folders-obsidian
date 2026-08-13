@@ -387,8 +387,9 @@ export class IconSettingSection extends SettingSection {
                 new obsidian.Notice(t("notice.valid_id_svg_required"));
                 return;
             }
-            if (!this.plugin.settings.customIcons) this.plugin.settings.customIcons = {};
-            this.plugin.settings.customIcons[id] = svg;
+            if (!this.plugin.localCustomIcons) this.plugin.localCustomIcons = {};
+            this.plugin.localCustomIcons[id] = svg;
+            await this.plugin.saveLocalCustomIcons();
             this.plugin.registerCustomIcons();
             await this.plugin.saveSettings();
 
@@ -429,7 +430,7 @@ export class IconSettingSection extends SettingSection {
 
         packs.forEach(p => {
             const prefix = p.prefix + "-";
-            const customIconsObj = this.plugin.settings.customIcons || {};
+            const customIconsObj = this.plugin.getCustomIconsMap();
             const installedCount = Object.keys(customIconsObj).filter(id => id.startsWith(prefix)).length;
             const isInstalled = installedCount > 0;
 
@@ -493,16 +494,7 @@ export class IconSettingSection extends SettingSection {
                 const removeBtn = btnGroup.createEl("button", { text: "Remove" });
                 removeBtn.setCssStyles({ minWidth: "80px", color: "var(--text-error)" });
                 removeBtn.onclick = async () => {
-                    let count = 0;
-                    const iconsMap = this.plugin.settings.customIcons || {};
-                    for (const id in iconsMap) {
-                        if (id.startsWith(prefix)) {
-                            delete this.plugin.settings.customIcons[id];
-                            count++;
-                        }
-                    }
-                    this.plugin.registerCustomIcons();
-                    await this.plugin.saveSettings();
+                    const count = await this.plugin.removePackIcons(p.prefix);
                     new obsidian.Notice(`Removed ${count} icons from ${p.name}.`);
 
                     (this.settingTab as unknown as { display: () => void }).display();
@@ -512,7 +504,7 @@ export class IconSettingSection extends SettingSection {
 
         // 📚 Custom Icon Library Card
         const libCard = this.settingTab.makeCard(containerEl, "📚", "Custom icon library");
-        const customIconList = Object.entries(this.plugin.settings.customIcons || {});
+        const customIconList = Object.entries(this.plugin.getCustomIconsMap());
 
         if (customIconList.length === 0) {
             const emptyMsg = libCard.createDiv({ text: t("settings.no_custom_icons") });
@@ -627,7 +619,9 @@ export class IconSettingSection extends SettingSection {
                     const del = item.createEl("button", { text: "×", cls: "cf-btn-remove" });
                     del.onclick = async (e) => {
                         e.stopPropagation();
-                        delete this.plugin.settings.customIcons[id];
+                        if (this.plugin.settings?.customIcons) delete this.plugin.settings.customIcons[id];
+                        if (this.plugin.localCustomIcons) delete this.plugin.localCustomIcons[id];
+                        await this.plugin.saveLocalCustomIcons();
                         await this.plugin.saveSettings();
                         (this.settingTab as unknown as { display: () => void }).display();
                     };

@@ -548,7 +548,8 @@ export class AIIconClassifier {
     }
 
     private buildSystemPrompt(): string {
-        const customKeys = this.plugin.settings.customIcons ? Object.keys(this.plugin.settings.customIcons) : [];
+        const customMap = this.plugin.getCustomIconsMap();
+        const customKeys = Object.keys(customMap);
 
         // Sort custom icon keys to prioritize recognizable brand/concept names over numeric keys
         const sortedCustomKeys = [...customKeys].sort((a, b) => {

@@ -405,6 +405,20 @@ export class PrivacySettingSection extends SettingSection {
                 btn.onClick(() => {
                     new ConfirmModal(this.app, "Clear icon library", "Are you sure you want to delete ALL custom icons?", async () => {
                         this.plugin.settings.customIcons = {};
+                        this.plugin.localCustomIcons = {};
+                        await this.plugin.saveLocalCustomIcons();
+                        try {
+                            const adapter = this.app.vault.adapter;
+                            const iconsDir = `${this.app.vault.configDir}/plugins/colorful-folders/icons`;
+                            if (await adapter.exists(iconsDir)) {
+                                const list = await adapter.list(iconsDir);
+                                for (const f of list.files) {
+                                    await adapter.remove(f);
+                                }
+                            }
+                        } catch {
+                            // ignore
+                        }
                         this.plugin.registerCustomIcons();
                         await this.plugin.saveSettings();
                         this.plugin.generateStylesDebounced();

@@ -352,6 +352,10 @@ export class IconRepository {
         return null;
     }
 
+    private _getCustomIcons(): Record<string, string> {
+        return this.plugin.getCustomIconsMap();
+    }
+
     findIconInPacks(searchKey: string): string | null {
         if (!searchKey) return null;
         const hit = this._findPackIconCache.get(searchKey);
@@ -360,7 +364,7 @@ export class IconRepository {
         }
 
         const local = this.plugin.localFileSystemIcons;
-        const custom = this.plugin.settings.customIcons;
+        const custom = this._getCustomIcons();
 
         // Build index once; only rebuild if icon maps actually changed
         if (!this._packIndex.getIsBuilt()) {
@@ -379,7 +383,7 @@ export class IconRepository {
     searchFuzzy(searchKey: string, options?: { threshold?: number }): string | null {
         if (!searchKey) return null;
         const local = this.plugin.localFileSystemIcons;
-        const custom = this.plugin.settings.customIcons;
+        const custom = this._getCustomIcons();
 
         if (!this._packIndex.getIsBuilt()) {
             this._packIndex.build(local, custom, this.plugin.settings.iconPackPriorityOrder, !!this.plugin.settings.wideAutoIcons);
@@ -400,7 +404,7 @@ export class IconRepository {
                 return false;
             }
         }
-        if (this.plugin.settings.customIcons && (this.plugin.settings.customIcons[iconId] || this.plugin.settings.customIcons[iconId.toLowerCase()])) {
+        if (this.plugin.getCustomIcon(iconId) || this.plugin.getCustomIcon(iconId.toLowerCase())) {
             return false;
         }
         if (obsidian.getIconIds?.().includes(`lucide-${iconId}`) || obsidian.getIconIds?.().includes(iconId)) {
@@ -421,13 +425,8 @@ export class IconRepository {
             if (cached) return cached;
         }
 
-        let svgStr = "";
-        const custom = this.plugin.settings.customIcons;
+        let svgStr = this.plugin.getCustomIcon(iconId) || this.plugin.getCustomIcon(iconId.toLowerCase()) || "";
         const local = this.plugin.localFileSystemIcons;
-
-        if (custom) {
-            svgStr = custom[iconId] || custom[iconId.toLowerCase()] || "";
-        }
         
         if (!svgStr && local) {
             const lId = iconId.toLowerCase();

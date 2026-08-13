@@ -62,8 +62,8 @@ export class IconPickerModal extends obsidian.Modal {
         const ssvg = searchIcon.querySelector("svg") as unknown as HTMLElement | null;
         if (ssvg) ssvg.setCssStyles({ width: "16px", height: "16px" });
 
-        // Pack Filter
-        const customIds = Object.keys(this.plugin.settings.customIcons);
+        const customMap = this.plugin.getCustomIconsMap();
+        const customIds = Object.keys(customMap);
         const localIds = this.plugin.localFileSystemIcons ? Object.keys(this.plugin.localFileSystemIcons) : [];
         const prefixes = new Set(['all', 'lucide']);
         [...customIds, ...localIds].forEach(id => {
