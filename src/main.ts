@@ -495,7 +495,6 @@ export default class ColorfulFoldersPlugin
 
     // Migration: Extract bloated customIcons from data.json to local JSON asset files
     if (loadedData.customIcons && Object.keys(loadedData.customIcons).length > 0) {
-      console.log("Colorful Folders: Migrating legacy customIcons from data.json to local storage...");
       Object.assign(this.localCustomIcons, loadedData.customIcons);
       await this.saveLocalCustomIcons();
       loadedData.customIcons = {};
