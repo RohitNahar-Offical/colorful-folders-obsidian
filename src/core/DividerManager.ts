@@ -41,7 +41,7 @@ export class DividerManager {
         const div = doc.createElementNS('http://www.w3.org/1999/xhtml', 'div');
         div.className = 'cf-interactive-divider';
         div.dataset.dividerTarget = path;
-        
+
         // Resolve per-divider config with fallbacks
         const name = conf.dividerText || 'Section';
         const color = conf.dividerColor || 'var(--interactive-accent)';
@@ -54,8 +54,8 @@ export class DividerManager {
             ? conf.dividerLineStyle
             : globalLineStyle;
         const iconPosition = conf.dividerIconPosition || 'left';
-        const pillMode = conf.dividerPillMode 
-            ? (conf.dividerPillMode === 'on') 
+        const pillMode = conf.dividerPillMode
+            ? (conf.dividerPillMode === 'on')
             : (this.plugin.settings.dividerPillMode !== false);
 
         // Resolve paddings and icon fallback
@@ -295,21 +295,21 @@ export class DividerManager {
         // ΓöÇΓöÇ Hover Message (Premium Markdown Popover) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         if (conf.dividerDescription && conf.dividerDescription.trim()) {
             chip.addClass('cf-has-description');
-            
+
             let popover: HTMLElement | null = null;
             let timeout: number | null = null;
             let outsideClickListener: ((e: MouseEvent) => void) | null = null;
 
             const showPopover = async () => {
                 if (popover) return;
-                
+
                 // Kill any existing global popover first
                 DividerManager.closeActivePopover();
-                
+
                 popover = activeDocument.body.createDiv({ cls: 'cf-premium-popover' });
                 DividerManager.activePopover = popover;
                 const content = popover.createDiv({ cls: 'cf-popover-content' });
-                
+
                 // Render Markdown
                 await obsidian.MarkdownRenderer.render(
                     this.plugin.app,
@@ -351,11 +351,11 @@ export class DividerManager {
                 const rect = chip.getBoundingClientRect();
                 const popWidth = popover.offsetWidth;
                 const popHeight = popover.offsetHeight;
-                
+
                 // Smart Adaptive Vertical Positioning
                 const spaceAbove = rect.top;
                 const needsFlip = spaceAbove < (popHeight + 40);
-                
+
                 const topVal = needsFlip ? `${rect.bottom + 12}px` : `${rect.top - 12}px`;
                 if (needsFlip) {
                     popover.addClass('is-below');
@@ -366,7 +366,7 @@ export class DividerManager {
                 // Smart Adaptive Horizontal Positioning
                 let targetLeft = rect.left + rect.width / 2;
                 const minPadding = 20;
-                
+
                 // Ensure doesn't go off right
                 if (targetLeft + popWidth / 2 > activeWindow.innerWidth - minPadding) {
                     targetLeft = activeWindow.innerWidth - popWidth / 2 - minPadding;
@@ -375,17 +375,17 @@ export class DividerManager {
                 if (targetLeft - popWidth / 2 < minPadding) {
                     targetLeft = popWidth / 2 + minPadding;
                 }
-                
+
                 popover.setCssProps({
                     '--cf-popover-top': topVal,
                     '--cf-popover-left': `${targetLeft}px`
                 });
-                
+
                 // Keep open on popover hover (The Bridge)
                 popover.onmouseenter = () => {
-                    if (timeout) { 
-                        window.clearTimeout(timeout); 
-                        timeout = null; 
+                    if (timeout) {
+                        window.clearTimeout(timeout);
+                        timeout = null;
                     }
                 };
                 popover.onmouseleave = () => hidePopover();
@@ -433,7 +433,7 @@ export class DividerManager {
                         void showPopover();
                     }, 250); // Faster trigger
                 };
-                
+
                 chip.onmouseleave = () => hidePopover();
             }
         }
@@ -531,12 +531,21 @@ export class DividerManager {
             });
 
             // ΓöÇΓöÇ Step 3: Reconcile ΓÇö add, update, or keep ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+            const domPathMap = new Map<string, HTMLElement>();
+            const pathEls = container.querySelectorAll<HTMLElement>('[data-path]');
+            for (let i = 0; i < pathEls.length; i++) {
+                const p = pathEls[i].getAttribute('data-path');
+                if (p && !domPathMap.has(p)) {
+                    domPathMap.set(p, pathEls[i]);
+                }
+            }
+
             const kept = new Set<string>();
 
             for (const [path, { conf, isGlobal }] of desired) {
                 kept.add(path);
 
-                const targetEl = this.findTargetElement(container, path, isGlobal);
+                const targetEl = this.findTargetElement(container, path, isGlobal, domPathMap);
                 if (!targetEl) {
                     const stale = existingByPath.get(path);
                     if (stale) {
@@ -621,7 +630,23 @@ export class DividerManager {
     private findTargetElement(
         container: Element,
         path: string,
-        isGlobal: boolean
+        isGlobal: boolean,
+        domPathMap?: Map<string, HTMLElement>
+    ): HTMLElement | null {
+        if (obsidian.Platform.isMobile) {
+            return this.findTargetElementMobile(container, path, isGlobal, domPathMap);
+        }
+        return this.findTargetElementDesktop(container, path, isGlobal, domPathMap);
+    }
+
+    /**
+     * Optimized target resolver for Desktop/PC. Zero overhead, O(1) map lookup.
+     */
+    private findTargetElementDesktop(
+        container: Element,
+        path: string,
+        isGlobal: boolean,
+        domPathMap?: Map<string, HTMLElement>
     ): HTMLElement | null {
         if (isGlobal) {
             let seenFolder = false;
@@ -639,12 +664,49 @@ export class DividerManager {
         }
 
         const safePath = safeEscape(path);
-        const titleEl = container.querySelector(`.nav-folder-title[data-path="${safePath}"], .nav-file-title[data-path="${safePath}"]`) ||
-                        NotebookNavigatorIntegration.findItemInDOM(container, path);
-        
+        const titleEl = (domPathMap ? domPathMap.get(path) : null) ||
+            container.querySelector(`.nav-folder-title[data-path="${safePath}"], .nav-file-title[data-path="${safePath}"]`) ||
+            NotebookNavigatorIntegration.findItemInDOM(container, path);
         if (!titleEl) return null;
 
         const wrapper = titleEl.closest(`.nav-folder, .nav-file, .nn-navitem, .nn-file`);
+        if (!wrapper) return null;
+        if (wrapper.classList.contains('nav-file-ghost') || wrapper.classList.contains('nav-folder-ghost')) return null;
+
+        return wrapper as HTMLElement;
+    }
+
+    /**
+     * Target resolver for Mobile Obsidian layout trees. Optimized with O(1) map lookup.
+     */
+    private findTargetElementMobile(
+        container: Element,
+        path: string,
+        isGlobal: boolean,
+        domPathMap?: Map<string, HTMLElement>
+    ): HTMLElement | null {
+        if (isGlobal) {
+            let seenFolder = false;
+            for (const node of Array.from(container.children)) {
+                if (node.classList.contains('cf-interactive-divider')) continue;
+                if (node.classList.contains('nav-file-ghost') || node.classList.contains('nav-folder-ghost')) continue;
+
+                if (NotebookNavigatorIntegration.isFolder(node)) {
+                    seenFolder = true;
+                } else if (seenFolder && NotebookNavigatorIntegration.isFile(node)) {
+                    return node as HTMLElement;
+                }
+            }
+            return null;
+        }
+
+        const safePath = safeEscape(path);
+        const titleEl = (domPathMap ? domPathMap.get(path) : null) ||
+            container.querySelector(`.nav-folder-title[data-path="${safePath}"], .nav-file-title[data-path="${safePath}"], .tree-item-self[data-path="${safePath}"], [data-path="${safePath}"]`) ||
+            NotebookNavigatorIntegration.findItemInDOM(container, path);
+        if (!titleEl) return null;
+
+        const wrapper = titleEl.closest(`.nav-folder, .nav-file, .tree-item, .nn-navitem, .nn-file`);
         if (!wrapper) return null;
         if (wrapper.classList.contains('nav-file-ghost') || wrapper.classList.contains('nav-folder-ghost')) return null;
 

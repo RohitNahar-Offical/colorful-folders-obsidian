@@ -242,7 +242,21 @@ export class PrivacySettingSection extends SettingSection {
                         }
                         triggerDownload({ type: "cf-divider-backup", version: "1.0", data: dividerData }, "colorful-dividers-backup.json");
                     } else {
-                        triggerDownload({ type: "cf-complete-backup", version: "1.0", data: this.plugin.settings.customFolderColors, presets: this.plugin.settings.presets }, "colorful-folders-complete-backup.json");
+                        const settingsExport = { ...this.plugin.settings };
+                        delete (settingsExport as Partial<ColorfulFoldersSettings>).vaultPassword;
+                        delete (settingsExport as Partial<ColorfulFoldersSettings>).isVaultLocked;
+                        delete (settingsExport as Partial<ColorfulFoldersSettings>).lastVersion;
+
+                        triggerDownload({
+                            type: "cf-complete-backup",
+                            version: "1.0",
+                            settings: settingsExport,
+                            data: this.plugin.settings.customFolderColors,
+                            presets: this.plugin.settings.presets,
+                            customIconRules: this.plugin.settings.customIconRules,
+                            tagSyncRules: this.plugin.settings.tagSyncRules,
+                            customIcons: this.plugin.getCustomIconsMap()
+                        }, "colorful-folders-complete-backup.json");
                     }
                 }));
 
@@ -272,8 +286,12 @@ export class PrivacySettingSection extends SettingSection {
                                 interface BackupData {
                                     type?: string;
                                     version?: string;
+                                    settings?: Record<string, unknown>;
                                     data?: Record<string, FolderStyle | string>;
                                     presets?: Record<string, FolderStyle>;
+                                    customIconRules?: string;
+                                    tagSyncRules?: string;
+                                    customIcons?: Record<string, string>;
                                 }
                                 const result = e.target?.result as string;
                                 if (!result) throw new Error("File is empty");
@@ -284,26 +302,10 @@ export class PrivacySettingSection extends SettingSection {
                                     return;
                                 }
 
-                                if (parsed.type === "cf-folder-backup" || parsed.type === "cf-complete-backup") {
-                                    if (parsed.data && typeof parsed.data === 'object') {
-                                        for (const [key, val] of Object.entries(parsed.data)) {
-                                            if (typeof val === 'string') {
-                                                this.plugin.settings.customFolderColors[key] = val;
-                                            } else if (val && typeof val === 'object') {
-                                                const existing = this.plugin.settings.customFolderColors[key];
-                                                if (existing && typeof existing === 'object') {
-                                                    this.plugin.settings.customFolderColors[key] = { ...existing, ...val };
-                                                } else {
-                                                    this.plugin.settings.customFolderColors[key] = val;
-                                                }
-                                            }
-                                        }
-                                    }
-                                    if (parsed.presets && typeof parsed.presets === 'object') {
-                                        this.plugin.settings.presets = { ...this.plugin.settings.presets, ...parsed.presets };
-                                    }
-                                    new obsidian.Notice(t("notice.folder_backup_restored"));
-                                } else if (parsed.type === "cf-divider-backup") {
+                                const isDividerBackup = parsed.type === "cf-divider-backup";
+                                const isFolderOrComplete = parsed.type === "cf-folder-backup" || parsed.type === "cf-complete-backup" || !parsed.type;
+
+                                if (isDividerBackup) {
                                     if (parsed.data && typeof parsed.data === 'object') {
                                         for (const [key, val] of Object.entries(parsed.data)) {
                                             if (val && typeof val === 'object') {
@@ -319,6 +321,42 @@ export class PrivacySettingSection extends SettingSection {
                                         }
                                     }
                                     new obsidian.Notice(t("notice.dividers_backup_restored"));
+                                } else if (isFolderOrComplete) {
+                                    if (parsed.settings && typeof parsed.settings === 'object') {
+                                        const { vaultPassword, isVaultLocked, lastVersion, ...restoredSettings } = parsed.settings;
+                                        this.plugin.settings = Object.assign({}, DEFAULT_SETTINGS, this.plugin.settings, restoredSettings);
+                                    }
+                                    const dataPayload = parsed.data || (parsed.type ? undefined : (parsed as unknown as Record<string, FolderStyle | string>));
+                                    if (dataPayload && typeof dataPayload === 'object') {
+                                        for (const [key, val] of Object.entries(dataPayload)) {
+                                            if (typeof val === 'string') {
+                                                this.plugin.settings.customFolderColors[key] = val;
+                                            } else if (val && typeof val === 'object') {
+                                                const existing = this.plugin.settings.customFolderColors[key];
+                                                if (existing && typeof existing === 'object') {
+                                                    this.plugin.settings.customFolderColors[key] = { ...existing, ...val };
+                                                } else {
+                                                    this.plugin.settings.customFolderColors[key] = val;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (parsed.presets && typeof parsed.presets === 'object') {
+                                        this.plugin.settings.presets = { ...this.plugin.settings.presets, ...parsed.presets };
+                                    }
+                                    if (parsed.customIconRules && typeof parsed.customIconRules === 'string') {
+                                        this.plugin.settings.customIconRules = parsed.customIconRules;
+                                    }
+                                    if (parsed.tagSyncRules && typeof parsed.tagSyncRules === 'string') {
+                                        this.plugin.settings.tagSyncRules = parsed.tagSyncRules;
+                                    }
+                                    if (parsed.customIcons && typeof parsed.customIcons === 'object' && Object.keys(parsed.customIcons).length > 0) {
+                                        if (!this.plugin.localCustomIcons) this.plugin.localCustomIcons = {};
+                                        Object.assign(this.plugin.localCustomIcons, parsed.customIcons);
+                                        await this.plugin.saveLocalCustomIcons();
+                                        this.plugin.registerCustomIcons();
+                                    }
+                                    new obsidian.Notice(t("notice.folder_backup_restored"));
                                 } else {
                                     new obsidian.Notice(t("notice.invalid_backup_format"));
                                     return;

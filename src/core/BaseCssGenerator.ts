@@ -277,9 +277,11 @@ export function generateDividerCss(settings: ColorfulFoldersSettings): string {
             flex-direction: column !important;
         }
 
-        /* Ensure folder lines/children start below the divider */
+        /* Ensure folder lines/children start below the divider on Desktop and Mobile */
         .cf-has-divider > .nav-folder-title,
-        .cf-has-divider > .nav-folder-children {
+        .cf-has-divider > .nav-folder-children,
+        .cf-has-divider > .tree-item-self,
+        .cf-has-divider > .tree-item-children {
             position: relative !important;
         }
 
@@ -289,6 +291,24 @@ export function generateDividerCss(settings: ColorfulFoldersSettings): string {
         .cf-interactive-divider:hover .cf-divider-chip {
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
             border-color: rgba(var(--mono-rgb-100), 0.3) !important;
+        }
+
+        /* Mobile phone responsive optimizations */
+        @media (max-width: 480px) {
+            .cf-divider-chip {
+                padding: 4px 10px !important;
+                font-size: 10px !important;
+                max-width: 85% !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                white-space: nowrap !important;
+            }
+            .cf-premium-popover {
+                width: 90vw !important;
+                max-width: 300px !important;
+                padding: 10px 14px !important;
+                font-size: 0.85em !important;
+            }
         }
 
         /* Liquid Glass Markdown Popover */
@@ -529,8 +549,24 @@ export function generateStealthCss(settings: ColorfulFoldersSettings): string {
                     display: flex !important;
                     visibility: visible !important;
                     background-color: rgba(128, 128, 128, 0.15) !important;
+                    color: var(--text-muted, #888888) !important;
                     border-radius: 6px !important;
                     opacity: 0.75 !important;
+                    filter: grayscale(100%) !important;
+                }
+
+                body.cf-show-hidden .nav-folder-title[data-path="${safePath}"] .nav-folder-title-content,
+                body.cf-show-hidden .nav-file-title[data-path="${safePath}"] .nav-file-title-content,
+                body.cf-show-hidden .tree-item-self[data-path="${safePath}"] .tree-item-inner,
+                body.cf-show-hidden .tree-item[data-path="${safePath}"] .tree-item-inner {
+                    color: var(--text-muted, #888888) !important;
+                }
+
+                body.cf-show-hidden .nav-folder-title[data-path="${safePath}"]::before,
+                body.cf-show-hidden .nav-file-title[data-path="${safePath}"]::before,
+                body.cf-show-hidden .tree-item-self[data-path="${safePath}"]::before {
+                    background-color: var(--text-muted, #888888) !important;
+                    filter: grayscale(100%) !important;
                 }
 
                 body.cf-show-hidden .nav-folder-title[data-path="${safePath}"] + .nav-folder-children,
@@ -546,6 +582,8 @@ export function generateStealthCss(settings: ColorfulFoldersSettings): string {
 
                 const hideSels = [...nnSelectors, nnFileSelector].map(s => `body:not(.cf-show-hidden) ${s}`).join(',\n');
                 const showSels = [...nnSelectors, nnFileSelector].map(s => `body.cf-show-hidden ${s}`).join(',\n');
+                const textSels = [...nnSelectors, nnFileSelector].map(s => `body.cf-show-hidden ${s} .nn-navitem-name, body.cf-show-hidden ${s} .nn-file-name`).join(',\n');
+                const iconSels = [...nnSelectors, nnFileSelector].map(s => `body.cf-show-hidden ${s}::before, body.cf-show-hidden ${s} .nn-icon`).join(',\n');
 
                 stealthCss += `
                     ${hideSels} {
@@ -556,8 +594,19 @@ export function generateStealthCss(settings: ColorfulFoldersSettings): string {
                         display: flex !important;
                         visibility: visible !important;
                         background-color: rgba(128, 128, 128, 0.15) !important;
+                        color: var(--text-muted, #888888) !important;
                         border-radius: 6px !important;
                         opacity: 0.75 !important;
+                        filter: grayscale(100%) !important;
+                    }
+
+                    ${textSels} {
+                        color: var(--text-muted, #888888) !important;
+                    }
+
+                    ${iconSels} {
+                        background-color: var(--text-muted, #888888) !important;
+                        filter: grayscale(100%) !important;
                     }
                 `;
             }

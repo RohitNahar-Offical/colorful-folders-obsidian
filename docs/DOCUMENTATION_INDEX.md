@@ -45,8 +45,10 @@ Welcome to the **Colorful Folders** master documentation index. This directory c
   * `AdoptedStyleSheetService` multi-window stylesheet lifecycle API.
 
 ### **[DATA_SCHEMA.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/DATA_SCHEMA.md)** — Persistent Data & JSON Schema
-* **Subject**: Full specification of `data.json` configuration structures and setting interfaces.
+* **Subject**: Full specification of `data.json` configuration structures, local icon asset storage, and setting interfaces.
 * **Key Content**:
+  * Lightweight `data.json` baseline design (~5KB) preventing WebDAV / Obsidian Sync data loss.
+  * Modular Local Icon Storage Schema (`.obsidian/plugins/colorful-folders/icons/`).
   * `ColorfulFoldersSettings` specification covering 60+ settings keys.
   * `FolderStyle` interface schema for local folder/file overrides (`hex`, `textColor`, `iconId`, `isBold`, `applyToSubfolders`, `applyToFiles`).
   * Backup & restore JSON payload wrappers (`cf-folder-backup`, `cf-divider-backup`).

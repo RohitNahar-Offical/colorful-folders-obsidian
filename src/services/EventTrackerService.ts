@@ -12,24 +12,11 @@ export class EventTrackerService {
     }
 
     public registerEvents() {
-        this.registerEvent(
-            this.plugin.app.workspace.on("file-menu", (menu, file) => {
-                MenuHelper.addContextMenuItems(menu, file, this.plugin);
-            }),
-        );
-
-        this.registerEvent(
-            this.plugin.app.workspace.on("layout-change", () => {
-                this.plugin.domObserverService.initDividerObserver();
-                this.updateActiveFolderClasses();
-            }),
-        );
-        
-        this.registerEvent(
-            this.plugin.app.workspace.on("file-open", () => {
-                this.updateActiveFolderClasses();
-            }),
-        );
+        if (obsidian.Platform.isMobile) {
+            this.registerMobileEvents();
+        } else {
+            this.registerDesktopEvents();
+        }
 
         this.plugin.getOpenDocuments().forEach(doc => {
             this.registerDragEventsForDoc(doc);
@@ -53,6 +40,24 @@ export class EventTrackerService {
         this.registerEvent(
             (this.plugin.app.workspace as obsidian.Events).on("window-close", (win: unknown, doc: Document) => {
                 this.plugin.cachedDocuments.delete(doc);
+            })
+        );
+
+        this.registerEvent(
+            this.plugin.app.vault.on("modify", (file) => {
+                if (file && file.path.endsWith("colorful-folders/data.json")) {
+                    void (async () => {
+                        await this.plugin.loadSettings();
+                        void this.plugin.generateStyles();
+                        if (this.plugin.dividerManager?.hasAnyDividers()) {
+                            this.plugin.dividerManager.syncDividers();
+                        }
+                    })();
+                    return;
+                }
+                if (file && (file.path.startsWith('.') || file.path.includes('/.'))) return;
+                this.invalidateCaches();
+                this.plugin.generateStylesDebounced();
             })
         );
 
@@ -92,6 +97,60 @@ export class EventTrackerService {
                 } else {
                     this.plugin.generateStylesDebounced();
                 }
+            }),
+        );
+    }
+
+    private registerDesktopEvents() {
+        this.registerEvent(
+            this.plugin.app.workspace.on("file-menu", (menu, file) => {
+                MenuHelper.addContextMenuItems(menu, file, this.plugin);
+            }),
+        );
+
+        this.registerEvent(
+            this.plugin.app.workspace.on("layout-change", () => {
+                this.plugin.domObserverService.initDividerObserver();
+                this.updateActiveFolderClasses();
+            }),
+        );
+        
+        this.registerEvent(
+            this.plugin.app.workspace.on("file-open", () => {
+                this.updateActiveFolderClasses();
+            }),
+        );
+    }
+
+    private registerMobileEvents() {
+        this.registerEvent(
+            this.plugin.app.workspace.on("file-menu", (menu, file) => {
+                MenuHelper.addContextMenuItems(menu, file, this.plugin);
+            }),
+        );
+
+        this.registerEvent(
+            this.plugin.app.workspace.on("layout-change", () => {
+                this.plugin.invalidateExplorerContainersCache();
+                this.plugin.domObserverService.initDividerObserver();
+                this.plugin.dividerManager?.syncDividers();
+                this.updateActiveFolderClasses();
+            }),
+        );
+        
+        this.registerEvent(
+            this.plugin.app.workspace.on("active-leaf-change", () => {
+                this.plugin.invalidateExplorerContainersCache();
+                if (this.plugin.dividerManager?.hasAnyDividers()) {
+                    this.plugin.dividerManager.syncDividers();
+                }
+                this.updateActiveFolderClasses();
+            }),
+        );
+
+        this.registerEvent(
+            this.plugin.app.workspace.on("file-open", () => {
+                this.updateActiveFolderClasses();
             }),
         );
     }

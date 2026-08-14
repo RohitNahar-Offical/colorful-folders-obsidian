@@ -164,6 +164,7 @@ export interface EffectiveStyle {
 export interface ColorPickerOpts {
     showAlpha?: boolean;
     initialAlpha?: number;
+    skipInitialChange?: boolean;
 }
 
 export interface IColorfulFoldersPlugin {

@@ -10,14 +10,22 @@
 | Method / Property | Purpose | Key Action |
 | :--- | :--- | :--- |
 | `generateStyles` | Main update trigger | CSS Injection via `AdoptedStyleSheetService` |
-| `registerCustomIcons` | Hydrates icon registry | `obsidian.addIcon()` |
+| `getCustomIcon` | Fast O(1) custom icon lookup | Returns SVG content string without object allocation |
+| `getCustomIconsMap` | Custom icons dictionary reference | Returns primary custom icons map reference |
+| `registerCustomIcons` | Hydrates icon registry | `obsidian.addIcon()` in non-blocking idle batches |
+| `loadLocalCustomIcons` | Loads local icon asset files | Reads `.obsidian/plugins/colorful-folders/icons/*.json` into `localCustomIcons` |
+| `saveLocalCustomIcons` | Persists custom icons locally | Writes `localCustomIcons` to `icons/custom-icons.json` |
+| `removePackIcons` | Removes downloaded icon pack | Deletes pack JSON file and removes keys from memory |
 | `toggleStealthMode` | Privacy switching | `PasswordModal` trigger |
 | `loadLocalIcons` | Scans `.obsidian/icons` at startup | Parallel `Promise.all` reads into `localFileSystemIcons` |
 | `saveSettings` | Persists data and triggers re-render | Selectively clears icon cache only when icon settings change |
 | `lifecycleService` | Instance of `PluginLifecycleService` | Encapsulates document tracking, vault event listeners, and cleanup |
 
+### `localCustomIcons: Record<string, string>`
+In-memory map of custom SVG icons loaded from `.obsidian/plugins/colorful-folders/icons/` asset files. Accessed via `getCustomIcon(id)` or `getCustomIconsMap()`.
+
 ### `localFileSystemIcons: Record<string, string>`
-A map of SVG icon name → raw SVG content, populated by `loadLocalIcons()` at startup. Checked by `IconManager.getIconSvg()` after `customIcons` but before Lucide.
+A map of SVG icon name → raw SVG content, populated by `loadLocalIcons()` at startup. Checked by `IconManager.getIconSvg()` after custom icons but before Lucide.
 
 ---
 

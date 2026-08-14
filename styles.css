@@ -782,10 +782,14 @@ body:not(.is-mobile):not(.is-grabbing) .nav-files-container .tree-item-self.is-s
         grid-template-columns: 1fr;
         gap: 12px;
     }
-    .cf-vcp {
+    .cf-vcp-board,
+    .cf-vcp-slider {
+        touch-action: none;
+    }
+    .cf-modal-footer {
         flex-wrap: wrap;
+        gap: 10px;
         justify-content: center;
-        gap: 12px;
     }
     .cf-premium-popover {
         width: 85vw;

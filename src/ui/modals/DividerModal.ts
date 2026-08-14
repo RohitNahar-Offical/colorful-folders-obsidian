@@ -154,7 +154,7 @@ export class DividerModal extends obsidian.Modal {
             this._headerIconWrap.setCssStyles({ backgroundColor: hex });
             this._refreshHeaderIcon();
             this._liveSync();
-        }, { showAlpha: false });
+        }, { showAlpha: false, skipInitialChange: true });
 
         new obsidian.Setting(textSect)
             .setName(t("modal.divider.alignment"))
@@ -263,7 +263,7 @@ export class DividerModal extends obsidian.Modal {
                                 pTextComp.setValue(rgba);
                                 pColorBox.setCssStyles({ backgroundColor: rgba });
                                 this._liveSync();
-                            }, { showAlpha: true, initialAlpha: current.alpha });
+                            }, { showAlpha: true, initialAlpha: current.alpha, skipInitialChange: true });
                         });
                 })
                 .addText(text => {
@@ -473,6 +473,10 @@ export class DividerModal extends obsidian.Modal {
     }
 
     onClose() {
+        if (this._liveSyncTimeout) {
+            window.clearTimeout(this._liveSyncTimeout);
+            this._liveSyncTimeout = null;
+        }
         if (!this.isSaved) {
             // Revert to original state if closed without saving
             if (this.originalStyle) {

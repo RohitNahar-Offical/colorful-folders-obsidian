@@ -1,12 +1,15 @@
 # 🗄️ Data and Schema
 
-This document defines how **Colorful Folders** stores and resolves its state. All persistent data lives in the plugin's `data.json` file.
+This document defines how **Colorful Folders** stores and resolves its state. Persistent settings and folder rules live in `data.json`, while downloaded icon packs and custom SVG definitions are stored as modular JSON asset files under `.obsidian/plugins/colorful-folders/icons/`.
 
 ---
 
 ## 1. `ColorfulFoldersSettings` (Global Config)
 
-Representing the entire `data.json` structure. Defined in `src/common/types.ts`.
+Representing the `data.json` structure. Defined in `src/common/types.ts`.
+
+> [!NOTE]
+> **Lightweight `data.json` Design (v5.0.1+):** `customIcons` inside `data.json` is kept empty (`{}`) to keep `data.json` lightweight (~5KB) and prevent WebDAV / Obsidian Sync conflicts or state resets. On startup, legacy `customIcons` entries in `data.json` are automatically migrated into local JSON files (`.obsidian/plugins/colorful-folders/icons/custom-icons.json`).
 
 | Key | Type | Description |
 | :--- | :--- | :--- |
@@ -38,7 +41,7 @@ Representing the entire `data.json` structure. Defined in `src/common/types.ts`.
 | `wideAutoIcons` | `boolean` | Prefers Lucide icons over emojis for automatic assignment. |
 | `customIconRules` | `string` | Simple pattern match string (e.g., `Work = briefcase @200`). |
 | `iconScale` | `number` | Multiplier for all folder/file icons. |
-| `customIcons` | `Record<string, string>` | Custom SVG icons mapping (ID to SVG content). |
+| `customIcons` | `Record<string, string>` | Legacy setting map — kept `{}` in `data.json` (migrated to `.obsidian/plugins/colorful-folders/icons/`). |
 | `iconDebugMode` | `boolean` | Enables debug logging for icon selection logic. |
 | **Typography & Structure** | | |
 | `rootStyle` | `string` | `translucent` or `solid` design for root folders. |
@@ -90,6 +93,27 @@ Representing the entire `data.json` structure. Defined in `src/common/types.ts`.
 | `vaultPassword` | `string` | Hashed password for privacy lock. |
 | `isVaultLocked` | `boolean` | Session state of the password lock. |
 | `lastVersion` | `string` | Tracks the last version to show the changelog on update. |
+
+---
+
+## 1.1 Modular Local Icon Storage Schema (`.obsidian/plugins/colorful-folders/icons/`)
+
+To prevent `data.json` bloat (~5KB baseline) and resolve WebDAV / Obsidian Sync data loss issues caused by massive settings payloads:
+
+- **Directory Path**: `.obsidian/plugins/colorful-folders/icons/`
+- **Custom User Icons**: Saved to `icons/custom-icons.json`.
+- **Downloaded Icon Packs**: Saved to `icons/[pack-prefix].json` (e.g. `icons/tabler.json`, `icons/simple-icons.json`, `icons/octicon.json`).
+
+### File Format:
+Each file is a key-value dictionary mapping icon IDs to SVG strings:
+```json
+{
+  "tabler-briefcase": "<svg xmlns=\"http://www.w3.org/2000/svg\" ...></svg>",
+  "simple-github": "<svg xmlns=\"http://www.w3.org/2000/svg\" ...></svg>"
+}
+```
+
+On plugin startup, `loadLocalCustomIcons()` asynchronously reads all JSON files in the `icons/` folder and populates `this.localCustomIcons` in memory. `getCustomIcon(id)` provides O(1) non-allocating access.
 
 ---
 

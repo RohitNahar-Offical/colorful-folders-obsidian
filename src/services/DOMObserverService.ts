@@ -106,24 +106,44 @@ export class DOMObserverService {
             for (const m of mutations) {
                 if (m.type !== 'childList') continue;
 
-                // Ignore mutations caused by our own divider elements
-                let isDividerMutation = false;
+                const targetEl = m.target as HTMLElement;
+                if (targetEl && (targetEl.classList?.contains('cf-interactive-divider') || !!targetEl.closest?.('.cf-interactive-divider'))) {
+                    continue;
+                }
+
+                const isDividerNode = (node: Node): boolean => {
+                    if (node.nodeType === 1) {
+                        const el = node as HTMLElement;
+                        return el.classList?.contains('cf-interactive-divider') ||
+                               !!el.querySelector?.('.cf-interactive-divider') ||
+                               !!el.closest?.('.cf-interactive-divider');
+                    }
+                    if (node.parentElement) {
+                        return !!node.parentElement.closest?.('.cf-interactive-divider');
+                    }
+                    return false;
+                };
+
+                let allNodesAreDividers = true;
+                const totalNodes = m.addedNodes.length + m.removedNodes.length;
+                if (totalNodes === 0) continue;
+
                 for (let i = 0; i < m.addedNodes.length; i++) {
-                    const node = m.addedNodes[i] as HTMLElement;
-                    if (node.classList?.contains('cf-interactive-divider') || node.querySelector?.('.cf-interactive-divider')) {
-                        isDividerMutation = true;
+                    if (!isDividerNode(m.addedNodes[i])) {
+                        allNodesAreDividers = false;
                         break;
                     }
                 }
-                if (isDividerMutation) continue;
-                for (let i = 0; i < m.removedNodes.length; i++) {
-                    const node = m.removedNodes[i] as HTMLElement;
-                    if (node.classList?.contains('cf-interactive-divider') || node.querySelector?.('.cf-interactive-divider')) {
-                        isDividerMutation = true;
-                        break;
+                if (allNodesAreDividers) {
+                    for (let i = 0; i < m.removedNodes.length; i++) {
+                        if (!isDividerNode(m.removedNodes[i])) {
+                            allNodesAreDividers = false;
+                            break;
+                        }
                     }
                 }
-                if (isDividerMutation) continue;
+
+                if (allNodesAreDividers) continue;
 
                 if (m.addedNodes.length > 0 || m.removedNodes.length > 0) {
                     hasRelevantChange = true;

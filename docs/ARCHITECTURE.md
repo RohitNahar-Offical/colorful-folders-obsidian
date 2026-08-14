@@ -47,6 +47,18 @@ graph TD
 
 ---
 
+### 1.1 Modular Local Icon Storage Architecture & Cache Optimizations
+
+To protect vault synchronization (WebDAV, Obsidian Sync) from data loss and state resets caused by bloated `data.json` files when users download large icon packs:
+
+1. **Decoupled Asset Storage**: Custom icons and downloaded icon packs are stored as discrete JSON files in `.obsidian/plugins/colorful-folders/icons/` (`custom-icons.json`, `[pack-prefix].json`). `data.json` remains lightweight (~5KB baseline).
+2. **O(1) Non-Allocating Lookups**: High-frequency rendering routines call `plugin.getCustomIcon(id)` directly against `this.localCustomIcons` in memory. This eliminates millions of intermediate object property copies (`Object.assign({}, ...)`) during tree rendering and scrolling.
+3. **Index & Cache Stability**:
+   - `getCustomIconsMap()` returns a stable dictionary reference. This prevents `IconPackIndex.build()` from unnecessarily rebuilding search tries on every query.
+   - `saveSettings()` compares reference stability and icon count, preventing `this.iconCache` from being thrashed and wiped on unrelated settings saves (e.g. opacity or line thickness tweaks).
+
+---
+
 ## 2. Color & Opacity Resolution (Modular Architecture)
 
 All color, opacity, and text color math is centralized into `ColorResolver` (`src/core/ColorResolver.ts`).

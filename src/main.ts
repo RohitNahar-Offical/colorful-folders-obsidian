@@ -872,6 +872,15 @@ export default class ColorfulFoldersPlugin
     if (this._explorerContainersValid && this._explorerContainersCache) {
       return this._explorerContainersCache;
     }
+    const containers = obsidian.Platform.isMobile
+      ? this.getMobileExplorerContainers()
+      : this.getDesktopExplorerContainers();
+    this._explorerContainersCache = containers;
+    this._explorerContainersValid = true;
+    return containers;
+  }
+
+  private getDesktopExplorerContainers(): HTMLElement[] {
     const explorers: HTMLElement[] = [];
     this.app.workspace.iterateAllLeaves((leaf) => {
       if (!leaf || !leaf.view) return;
@@ -885,9 +894,7 @@ export default class ColorfulFoldersPlugin
           view.getViewType() === "nav-files")
       ) {
         if (!view.containerEl) return;
-        const container = view.containerEl.querySelector(
-          ".nav-files-container",
-        );
+        const container = view.containerEl.querySelector(".nav-files-container");
         if (container) explorers.push(container as HTMLElement);
       }
     });
@@ -904,8 +911,40 @@ export default class ColorfulFoldersPlugin
       });
     }
 
-    this._explorerContainersCache = allContainers;
-    this._explorerContainersValid = true;
+    return allContainers;
+  }
+
+  private getMobileExplorerContainers(): HTMLElement[] {
+    const explorers: HTMLElement[] = [];
+    this.app.workspace.iterateAllLeaves((leaf) => {
+      if (!leaf || !leaf.view) return;
+      const view = leaf.view as obsidian.View & {
+        getViewType(): string;
+        containerEl: HTMLElement;
+      };
+      if (
+        typeof view.getViewType === 'function' &&
+        (view.getViewType() === "file-explorer" ||
+          view.getViewType() === "nav-files")
+      ) {
+        if (!view.containerEl) return;
+        const container = view.containerEl.querySelector(".nav-files-container, .tree-item-children, .view-content") || view.containerEl;
+        if (container) explorers.push(container as HTMLElement);
+      }
+    });
+
+    const docs = new Set<Document>();
+    explorers.forEach((e) => docs.add(e.ownerDocument));
+    docs.add(activeDocument);
+
+    const allContainers = [...explorers];
+    if (this.settings.notebookNavigatorSupport) {
+      docs.forEach((doc) => {
+        const extra = NotebookNavigatorIntegration.getExtraContainers(doc, this.settings);
+        if (extra) extra.forEach((e) => allContainers.push(e as HTMLElement));
+      });
+    }
+
     return allContainers;
   }
 

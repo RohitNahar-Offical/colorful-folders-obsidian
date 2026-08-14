@@ -84,7 +84,7 @@ export function createVisualColorPicker(
         });
     }
 
-    function syncFromHSV() {
+    function syncFromHSV(triggerChange = true) {
         const rgb = hsvToRgb(hsv.h, hsv.s, hsv.v);
         const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
         
@@ -110,7 +110,9 @@ export function createVisualColorPicker(
                 background: `linear-gradient(to right, transparent, ${hex}), repeating-conic-gradient(#ccc 0% 25%, #fff 0% 50%) 50% / 12px 12px`
             });
         }
-        onChange(hex, currentAlpha);
+        if (triggerChange) {
+            onChange(hex, currentAlpha);
+        }
     }
 
     function syncFromHex(hex: string) {
@@ -118,7 +120,7 @@ export function createVisualColorPicker(
         if (!rgb) return;
         hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
         hueSlider.value = hsv.h.toString();
-        syncFromHSV();
+        syncFromHSV(true);
     }
 
     function handleBoardPointer(e: PointerEvent) {
@@ -127,7 +129,7 @@ export function createVisualColorPicker(
         const y = Math.max(0, Math.min(e.clientY - rect.top, rect.height));
         hsv.s = Math.round((x / rect.width) * 100);
         hsv.v = Math.round((1 - y / rect.height) * 100);
-        syncFromHSV();
+        syncFromHSV(true);
     }
 
     board.addEventListener('pointerdown', (e) => {
@@ -156,7 +158,7 @@ export function createVisualColorPicker(
         }
     });
 
-    syncFromHSV();
+    syncFromHSV(!opts.skipInitialChange);
 
     return {
         setHex(hex: string) { syncFromHex(hex); },
