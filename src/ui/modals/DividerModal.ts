@@ -183,12 +183,45 @@ export class DividerModal extends obsidian.Modal {
             .setName(t("modal.divider.divider_icon"))
             .setDesc(t("modal.divider.divider_icon.desc"))
             .addButton(btn => {
-                btn.setIcon(this.config.icon || "image-plus")
-                    .setTooltip(t("modal.divider.pick_icon"))
+                const updateBtnVisuals = (selectedId: string) => {
+                    btn.buttonEl.empty();
+                    if (!selectedId) {
+                        obsidian.setIcon(btn.buttonEl, "image-plus");
+                        return;
+                    }
+                    if (this.plugin.iconManager.isEmojiIcon(selectedId)) {
+                        btn.buttonEl.setText(selectedId);
+                        btn.buttonEl.setCssStyles({ fontSize: "1.2em" });
+                        return;
+                    }
+                    const customSvg = this.plugin.iconManager.getIconSvg(selectedId, false);
+                    if (customSvg) {
+                        try {
+                            // eslint-disable-next-line no-unsanitized/method -- Contextual fragment is safe here as svg content comes from curated internal asset maps or local files
+                            const frag = activeDocument.createRange().createContextualFragment(customSvg);
+                            const svgEl = frag.querySelector("svg");
+                            if (svgEl) {
+                                (svgEl as unknown as HTMLElement).setCssStyles({ width: "16px", height: "16px" });
+                                btn.buttonEl.appendChild(svgEl);
+                                return;
+                            }
+                        } catch {
+                            // fallback
+                        }
+                    }
+                    try {
+                        obsidian.setIcon(btn.buttonEl, selectedId);
+                    } catch {
+                        obsidian.setIcon(btn.buttonEl, "image-plus");
+                    }
+                };
+
+                updateBtnVisuals(this.config.icon);
+                btn.setTooltip(t("modal.divider.pick_icon"))
                     .onClick(() => {
                         new IconPickerModal(this.app, this.plugin, this.config.icon, (selectedId: string) => {
                             this.config.icon = selectedId;
-                            btn.setIcon(selectedId || "image-plus");
+                            updateBtnVisuals(selectedId);
                             this._refreshHeaderIcon();
                             this._liveSync();
                         }).open();
@@ -462,13 +495,39 @@ export class DividerModal extends obsidian.Modal {
         if (!this._previewIconEl) return;
         this._previewIconEl.empty();
         const iconId = this.config.icon || "separator-horizontal";
-        obsidian.setIcon(this._previewIconEl, iconId);
-        const svg = this._previewIconEl.querySelector("svg") as unknown as HTMLElement | null;
-        if (svg) {
-            svg.setCssStyles({ width: "20px", height: "20px", color: this.config.color });
-        } else {
-            this._previewIconEl.setText(this.config.icon);
+        if (this.plugin.iconManager.isEmojiIcon(iconId)) {
+            this._previewIconEl.setText(iconId);
             this._previewIconEl.setCssStyles({ fontSize: "1.2em" });
+            return;
+        }
+        const customSvg = this.plugin.iconManager.getIconSvg(iconId, false);
+        if (customSvg) {
+            try {
+                // eslint-disable-next-line no-unsanitized/method -- Contextual fragment is safe here as svg content comes from curated internal asset maps or local files
+                const frag = activeDocument.createRange().createContextualFragment(customSvg);
+                const svgEl = frag.querySelector("svg");
+                if (svgEl) {
+                    svgEl.removeAttribute("width");
+                    svgEl.removeAttribute("height");
+                    (svgEl as unknown as HTMLElement).setCssStyles({ width: "20px", height: "20px", color: this.config.color });
+                    this._previewIconEl.appendChild(svgEl);
+                    return;
+                }
+            } catch {
+                // fallback
+            }
+        }
+        try {
+            obsidian.setIcon(this._previewIconEl, iconId);
+            const svg = this._previewIconEl.querySelector("svg") as unknown as HTMLElement | null;
+            if (svg) {
+                svg.setCssStyles({ width: "20px", height: "20px", color: this.config.color });
+            } else {
+                this._previewIconEl.setText(iconId.slice(0, 3));
+                this._previewIconEl.setCssStyles({ fontSize: "1.2em" });
+            }
+        } catch {
+            obsidian.setIcon(this._previewIconEl, "separator-horizontal");
         }
     }
 

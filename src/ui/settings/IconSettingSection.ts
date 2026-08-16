@@ -411,6 +411,37 @@ export class IconSettingSection extends SettingSection {
                 };
             });
 
+        new obsidian.Setting(customIconCard)
+            .setName("Auto-detect existing icon packs")
+            .setDesc("Scan local vault storage and JSON assets to self-check and detect installed icon packs, repairing any missing icon registrations.")
+            .addButton(btn => btn
+                .setButtonText("Self-check & detect packs")
+                .setCta()
+                .onClick(async () => {
+                    btn.setButtonText("Scanning...");
+                    btn.disabled = true;
+                    try {
+                        await this.plugin.loadLocalCustomIcons();
+                        await this.plugin.loadLocalIcons();
+                        this.plugin.registerCustomIcons();
+                        await this.plugin.saveSettings();
+                        this.plugin.iconManager?.invalidateCategoryCache();
+                        this.plugin.generateStylesDebounced();
+
+                        const customMap = this.plugin.getCustomIconsMap();
+                        const localFsMap = this.plugin.localFileSystemIcons || {};
+                        const totalCount = new Set([...Object.keys(customMap), ...Object.keys(localFsMap)]).size;
+
+                        new obsidian.Notice(`Auto-detection complete: Found ${totalCount} custom icons across local vault packs.`);
+                    } catch (err) {
+                        new obsidian.Notice(`Auto-detection error: ${(err as Error)?.message || String(err)}`);
+                    } finally {
+                        btn.disabled = false;
+                        btn.setButtonText("Self-check & detect packs");
+                        (this.settingTab as unknown as { display: () => void }).display();
+                    }
+                }));
+
         // ⭐ Featured Icon Packs Card
         const featCard = this.settingTab.makeCard(containerEl, "⭐", "Featured icon packs");
         featCard.createDiv("cf-grid");
@@ -428,10 +459,37 @@ export class IconSettingSection extends SettingSection {
             { name: "🅱️ Bootstrap icons", desc: "Official Bootstrap icon library.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/bi.json", prefix: "bi" }
         ];
 
+        const matchPack = (id: string, pPrefix: string): boolean => {
+            const lower = id.toLowerCase();
+            if (pPrefix === 'ri' || pPrefix === 'remix') return lower.startsWith('ri-') || lower.startsWith('remix-');
+            if (pPrefix === 'feather') return lower.startsWith('feather-');
+            if (pPrefix === 'tabler' || pPrefix === 'tb') return lower.startsWith('tb-') || lower.startsWith('tabler-');
+            if (pPrefix === 'bx') return lower.startsWith('bx-') || lower.startsWith('bxs-') || lower.startsWith('bxi-');
+            if (pPrefix.startsWith('fa')) return lower.startsWith('fa-') || lower.startsWith('fas-') || lower.startsWith('fab-') || lower.startsWith('far-');
+            if (pPrefix === 'octicon') return lower.startsWith('octicon-');
+            if (pPrefix === 'ra') return lower.startsWith('ra-');
+            if (pPrefix === 'simple-icons' || pPrefix === 'si') return lower.startsWith('simple-') || lower.startsWith('si-');
+            if (pPrefix === 'bi' || pPrefix === 'bootstrap') return lower.startsWith('bi-') || lower.includes('bootstrap');
+            return lower.startsWith(pPrefix + '-');
+        };
+
+        const allAvailableIcons = new Set([
+            ...Object.keys(this.plugin.getCustomIconsMap()),
+            ...Object.keys(this.plugin.localFileSystemIcons || {}),
+            ...Object.keys(this.plugin.localCustomIcons || {})
+        ]);
+        const packCountsMap = new Map<string, number>();
+        allAvailableIcons.forEach(id => {
+            for (let i = 0; i < packs.length; i++) {
+                const p = packs[i];
+                if (matchPack(id, p.prefix)) {
+                    packCountsMap.set(p.prefix, (packCountsMap.get(p.prefix) || 0) + 1);
+                }
+            }
+        });
+
         packs.forEach(p => {
-            const prefix = p.prefix + "-";
-            const customIconsObj = this.plugin.getCustomIconsMap();
-            const installedCount = Object.keys(customIconsObj).filter(id => id.startsWith(prefix)).length;
+            const installedCount = packCountsMap.get(p.prefix) || 0;
             const isInstalled = installedCount > 0;
 
             const row = featCard.createDiv("setting-item");

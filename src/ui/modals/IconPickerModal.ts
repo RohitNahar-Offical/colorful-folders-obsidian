@@ -6,6 +6,9 @@ export class IconPickerModal extends obsidian.Modal {
     plugin: IColorfulFoldersPlugin;
     onSelect: (iconId: string) => void | Promise<void>;
     currentIconId: string;
+    private searchTimeout: number | null = null;
+    private currentRenderBatch = 0;
+    private currentFilteredList: string[] = [];
 
     constructor(app: obsidian.App, plugin: IColorfulFoldersPlugin, currentIconId: string, onSelect: (iconId: string) => void | Promise<void>) {
         super(app);
@@ -102,6 +105,88 @@ export class IconPickerModal extends obsidian.Modal {
         
         const allIcons = Array.from(new Set([...customIds, ...localIds, ...lucideIcons]));
 
+        const BATCH_SIZE = 60;
+        const svgTemplateCache = new Map<string, Element>();
+
+        const getSvgTemplate = (id: string, rawSvg: string): Element | null => {
+            let cached = svgTemplateCache.get(id);
+            if (cached) return cached;
+            try {
+                // eslint-disable-next-line no-unsanitized/method -- Contextual fragment is safe here as svg content comes from curated internal asset maps or local files
+                const frag = activeDocument.createRange().createContextualFragment(rawSvg);
+                const svgEl = frag.querySelector("svg");
+                if (svgEl) {
+                    svgEl.removeAttribute("width");
+                    svgEl.removeAttribute("height");
+                    svgTemplateCache.set(id, svgEl);
+                    return svgEl;
+                }
+            } catch {
+                return null;
+            }
+            return null;
+        };
+
+        const renderBatch = (targetContainer: HTMLElement, start: number, end: number) => {
+            const batchList = this.currentFilteredList.slice(start, end);
+            batchList.forEach(id => {
+                const isSelected = this.currentIconId === id;
+                const cell = targetContainer.createDiv({ cls: "cf-icon-cell" });
+                cell.setCssStyles({
+                    width: "48px", height: "48px", borderRadius: "8px",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    cursor: "pointer", transition: "all 0.1s ease",
+                    backgroundColor: isSelected ? "var(--interactive-accent)" : "transparent",
+                });
+                
+                if (this.plugin.iconManager.isEmojiIcon(id)) {
+                    cell.setText(id);
+                    cell.setCssStyles({ fontSize: "20px" });
+                } else {
+                    const rawSvg = this.plugin.iconManager.getIconSvg(id, false);
+                    if (rawSvg) {
+                        const templateSvg = getSvgTemplate(id, rawSvg);
+                        if (templateSvg) {
+                            const svgEl = templateSvg.cloneNode(true) as HTMLElement;
+                            svgEl.setCssStyles({
+                                width: "24px", height: "24px",
+                                color: isSelected ? "white" : "var(--text-normal)"
+                            });
+                            cell.appendChild(svgEl);
+                        } else {
+                            cell.setText(id.slice(0, 3));
+                        }
+                    } else {
+                        try {
+                            obsidian.setIcon(cell, id);
+                            const cellSvg = cell.querySelector("svg") as unknown as HTMLElement | null;
+                            if (cellSvg) {
+                                cellSvg.removeAttribute('width');
+                                cellSvg.removeAttribute('height');
+                                cellSvg.setCssStyles({
+                                    width: "24px", height: "24px",
+                                    color: isSelected ? "white" : "var(--text-normal)"
+                                });
+                            } else {
+                                cell.setText(id.slice(0, 3));
+                            }
+                        } catch {
+                            cell.setText(id.slice(0, 3));
+                        }
+                    }
+                }
+                
+                cell.title = id;
+                cell.onclick = async () => {
+                    await this.onSelect(id);
+                    this.close();
+                };
+                
+                cell.onmouseenter = () => { if (!isSelected) cell.setCssStyles({ backgroundColor: "var(--background-modifier-hover)" }); };
+                cell.onmouseleave = () => { if (!isSelected) cell.setCssStyles({ backgroundColor: "transparent" }); };
+            });
+        };
+
         const renderIcons = (search: string, packFilter: string) => {
             iconGrid.empty();
             let filtered = allIcons;
@@ -122,68 +207,43 @@ export class IconPickerModal extends obsidian.Modal {
                 filtered = filtered.filter(id => id.toLowerCase().includes(s));
             }
 
-            filtered.slice(0, 1000).forEach(id => {
-                const isSelected = this.currentIconId === id;
-                const cell = iconGrid.createDiv({ cls: "cf-icon-cell" });
-                cell.setCssStyles({
-                    width: "48px", height: "48px", borderRadius: "8px",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    cursor: "pointer", transition: "all 0.1s ease",
-                    backgroundColor: isSelected ? "var(--interactive-accent)" : "transparent",
-                });
-                
-                if (this.plugin.iconManager.isEmojiIcon(id)) {
-                    cell.setText(id);
-                    cell.setCssStyles({ fontSize: "20px" });
-                } else {
-                    const rawSvg = this.plugin.iconManager.getIconSvg(id, false);
-                    if (rawSvg) {
-                        // eslint-disable-next-line no-unsanitized/method -- Contextual fragment is safe here as svg content comes from curated internal asset maps or local files
-                        const frag = activeDocument.createRange().createContextualFragment(rawSvg);
-                        const svgEl = frag.querySelector("svg");
-                        if (svgEl) {
-                            svgEl.removeAttribute("width");
-                            svgEl.removeAttribute("height");
-                            (svgEl as unknown as HTMLElement).setCssStyles({
-                                width: "24px", height: "24px",
-                                color: isSelected ? "white" : "var(--text-normal)"
-                            });
-                            cell.appendChild(svgEl);
-                        }
-                    } else {
-                        obsidian.setIcon(cell, id);
-                        const cellSvg = cell.querySelector("svg") as unknown as HTMLElement | null;
-                        if (cellSvg) {
-                            cellSvg.removeAttribute('width');
-                            cellSvg.removeAttribute('height');
-                            cellSvg.setCssStyles({
-                                width: "24px", height: "24px",
-                                color: isSelected ? "white" : "var(--text-normal)"
-                            });
-                        }
-                    }
-                }
-                
-                cell.title = id;
-                cell.onclick = async () => {
-                    await this.onSelect(id);
-                    this.close();
-                };
-                
-                cell.onmouseenter = () => { if (!isSelected) cell.setCssStyles({ backgroundColor: "var(--background-modifier-hover)" }); };
-                cell.onmouseleave = () => { if (!isSelected) cell.setCssStyles({ backgroundColor: "transparent" }); };
-            });
+            this.currentFilteredList = filtered;
+            this.currentRenderBatch = BATCH_SIZE;
 
             if (filtered.length === 0) {
                 const emptyMsg = iconGrid.createDiv({ text: t("modal.icon_picker.no_icons_found"), cls: "cf-no-icons" });
                 emptyMsg.setCssStyles({
                     padding: "40px", textAlign: "center", color: "var(--text-muted)", fontSize: "0.9em", gridColumn: "1/-1"
                 });
+                return;
             }
+
+            renderBatch(iconGrid, 0, BATCH_SIZE);
         };
 
+        // Scroll listener for lazy loading remaining icon batches
+        iconGrid.addEventListener('scroll', () => {
+            if (this.currentRenderBatch >= this.currentFilteredList.length) return;
+            const scrollBottom = iconGrid.scrollTop + iconGrid.clientHeight;
+            if (scrollBottom >= iconGrid.scrollHeight - 100) {
+                const nextEnd = Math.min(this.currentRenderBatch + BATCH_SIZE, this.currentFilteredList.length);
+                renderBatch(iconGrid, this.currentRenderBatch, nextEnd);
+                this.currentRenderBatch = nextEnd;
+            }
+        }, { passive: true });
+
         renderIcons("", "all");
-        searchInput.oninput = () => renderIcons(searchInput.value, filterSelect.value);
+
+        const triggerSearch = () => {
+            if (this.searchTimeout !== null) {
+                window.clearTimeout(this.searchTimeout);
+            }
+            this.searchTimeout = window.setTimeout(() => {
+                renderIcons(searchInput.value, filterSelect.value);
+            }, 150);
+        };
+
+        searchInput.oninput = triggerSearch;
         filterSelect.onchange = () => renderIcons(searchInput.value, filterSelect.value);
         
         // Auto-focus search
@@ -191,6 +251,10 @@ export class IconPickerModal extends obsidian.Modal {
     }
 
     onClose() {
+        if (this.searchTimeout !== null) {
+            window.clearTimeout(this.searchTimeout);
+            this.searchTimeout = null;
+        }
         this.contentEl.empty();
     }
 }

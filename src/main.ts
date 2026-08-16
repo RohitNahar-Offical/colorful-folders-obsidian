@@ -218,9 +218,13 @@ export default class ColorfulFoldersPlugin
         results.push(file);
       }
     }
-    for (const folder of list.folders) {
-      const subFiles = await this.getAllSvgFiles(folder);
-      results.push(...subFiles);
+    if (list.folders.length > 0) {
+      const subFolderResults = await Promise.all(
+        list.folders.map((folder) => this.getAllSvgFiles(folder))
+      );
+      for (const subFiles of subFolderResults) {
+        results.push(...subFiles);
+      }
     }
     return results.sort((a, b) => a.localeCompare(b));
   }
@@ -370,12 +374,25 @@ export default class ColorfulFoldersPlugin
 
     this.getOpenDocuments().forEach((doc) => {
       if (win._testerObserver) {
-        win._testerObserver.observe(doc.body, {
-          childList: true,
-          subtree: true,
-          attributes: true,
-          attributeFilter: ["style"],
-        });
+        const explorers = doc.querySelectorAll('.workspace-leaf-content[data-type="file-explorer"], .nav-files-container');
+        if (explorers.length > 0) {
+          explorers.forEach((el) => {
+            win._testerObserver?.observe(el, {
+              childList: true,
+              subtree: true,
+              attributes: true,
+              attributeFilter: ["style"],
+            });
+          });
+        } else {
+          const root = doc.querySelector('.workspace') || doc.body;
+          win._testerObserver.observe(root, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ["style"],
+          });
+        }
       }
     });
   }

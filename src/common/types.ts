@@ -193,6 +193,7 @@ export interface IColorfulFoldersPlugin {
     localCustomIcons: Record<string, string>;
     getCustomIcon(id: string): string | undefined;
     getCustomIconsMap(): Record<string, string>;
+    loadLocalIcons(): Promise<void>;
     loadLocalCustomIcons(): Promise<void>;
     saveLocalCustomIcons(): Promise<void>;
     removePackIcons(prefix: string): Promise<number>;

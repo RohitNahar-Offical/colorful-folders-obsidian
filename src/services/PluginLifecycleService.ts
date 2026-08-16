@@ -36,20 +36,22 @@ export class PluginLifecycleService {
     }
 
     public onLayoutReady(): void {
-        this.plugin.app.workspace.onLayoutReady(async () => {
+        this.plugin.app.workspace.onLayoutReady(() => {
             this.plugin.initializeStyles();
             this.plugin.invalidateExplorerContainersCache();
             this.plugin.initStaircaseStyleStripper();
             if (this.plugin.settings.notebookNavigatorSupport) {
                 NotebookNavigatorIntegration.registerMenuExtensions(this.plugin);
             }
-            await this.plugin.loadLocalIcons();
 
             if (this.plugin._abortStartupRender) return;
-            await this.plugin.generateStyles();
+            void this.plugin.generateStyles();
             this.plugin.getAllExplorerContainers().forEach((c) => this.plugin.domObserverService.tagExplorerItems(c));
             this.plugin.domObserverService.initDividerObserver();
             this.plugin.dividerManager.syncDividers();
+
+            // Load local icons asynchronously in background without delaying startup
+            void this.plugin.loadLocalIcons();
 
             this.prewarmIconCaches();
         });
