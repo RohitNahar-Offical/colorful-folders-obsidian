@@ -505,8 +505,30 @@ export default class ColorfulFoldersPlugin
   }
 
   async loadSettings() {
-    const loadedData =
-      ((await this.loadData()) as Partial<ColorfulFoldersSettings>) || {};
+    let loadedData: Partial<ColorfulFoldersSettings> | null = null;
+    try {
+      loadedData = ((await this.loadData()) as Partial<ColorfulFoldersSettings>) || null;
+    } catch {
+      loadedData = null;
+    }
+
+    if (!loadedData) {
+      try {
+        const dataPath = `${this.app.vault.configDir}/plugins/colorful-folders/data.json`;
+        if (await this.app.vault.adapter.exists(dataPath)) {
+          const raw = await this.app.vault.adapter.read(dataPath);
+          if (raw && raw.trim().length > 0) {
+            loadedData = JSON.parse(raw) as Partial<ColorfulFoldersSettings>;
+          }
+        }
+      } catch (e) {
+        console.error("Colorful Folders: Direct data.json fallback read failed", e);
+      }
+    }
+
+    if (!loadedData) {
+      loadedData = {};
+    }
 
     await this.loadLocalCustomIcons();
 
