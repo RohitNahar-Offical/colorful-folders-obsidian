@@ -21,7 +21,7 @@ Colorful Folders does **NOT** inject physical DOM wrapper elements (`.cf-icon-wr
 ```mermaid
 graph TD
     A[User Action / Plugin Load] --> B{PluginLifecycleService}
-    B -->|Attribute Stamping data-cf-path| C[Debouncer Trigger]
+    B -->|Native data-path Matching| C[Debouncer Trigger]
     C --> D[main.generateStyles]
     D --> E[StyleGenerator.prepareContext]
     E --> F[StyleGenerator.generateCss]
@@ -38,10 +38,10 @@ graph TD
 ```
 
 ### The Pipeline Steps:
-1. **Lifecycle Orchestration**: `PluginLifecycleService` manages event listeners (`create`, `modify`, `delete`, `window-open`, `layout-change`), document tracking across workspace windows, non-blocking layout ready hooks (~0ms startup lag), and teardown on unload. Vault modification listeners automatically detect external changes to `data.json` and custom icon files in `${configDir}/icons` for real-time PC and Mobile sync.
-2. **Attribute Tagging**: `DOMObserverService` stamps lightweight `data-cf-path="<path>"` dataset attributes on `.nav-folder-title`, `.nav-file-title`, and `.tree-item-self` elements. Because attribute updates do **not** trigger `childList` mutations, third-party observer race conditions are physically impossible.
+1. **Lifecycle Orchestration**: `PluginLifecycleService` manages event listeners (`create`, `modify`, `delete`, `window-open`, `layout-change`, `css-change`), document tracking across workspace windows, non-blocking layout ready hooks (~0ms startup lag), and deferred idle background loading (`requestIdleCallback`). Vault modification listeners automatically detect external changes to `data.json` and custom icon files in `${configDir}/icons` for real-time PC and Mobile sync.
+2. **Native Selector Matching**: Relies directly on Obsidian's native `data-path="<path>"` dataset attributes on `.nav-folder-title`, `.nav-file-title`, and `.tree-item-self` elements. Zero DOM attributes are mutated by the plugin during boot, idle time, or layout changes, preventing dirty DOM layout flags.
 3. **State Resolution**: `StyleResolver.getEffectiveStyle(target, plugin)` calculates the visual state for every folder/file using `FolderTrie` for $O(\text{depth})$ path inheritance queries.
-4. **Flat Rule & Data URI CSS Generation**: `StyleGenerator.traverse()` builds complete flat CSS attribute rules (`.nav-folder-title[data-cf-path="..."]`). Custom SVGs and auto-icons are encoded into SVG Data URIs (`-webkit-mask-image: url("data:image/svg+xml;utf8,...")`) targeting `::before` pseudo-elements.
+4. **Flat Rule & Data URI CSS Generation**: `StyleGenerator.traverse()` builds complete flat CSS attribute rules (`.nav-folder-title[data-path="..."]`). Custom SVGs and auto-icons are encoded into SVG Data URIs (`-webkit-mask-image: url("data:image/svg+xml;utf8,...")`) targeting `::before` pseudo-elements. CodeMirror 6 tag selectors in `TagColorSync` use exact indexed class selectors (`.cm-tag-mytag`) for $O(1)$ hashtable style resolution.
 5. **Programmatic Stylesheet Adoption**: `AdoptedStyleSheetService` updates the programmatic `CSSStyleSheet` instance via `sheet.replaceSync(css)`. The sheet is attached directly to `document.adoptedStyleSheets` across all workspace windows without creating `<style>` elements or overwriting other plugins' sheets.
 6. **Browser Execution**: The native browser CSS engine applies styles instantly with $O(1)$ overhead as items enter the viewport.
 

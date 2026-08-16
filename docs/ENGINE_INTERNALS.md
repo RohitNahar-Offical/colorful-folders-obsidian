@@ -11,12 +11,12 @@ Colorful Folders hooks into the Obsidian event bus and DOM observers reactively:
 
 | Event | Handler | Rationale |
 | :--- | :--- | :--- |
-| `layout-change` | `DOMObserverService` | Re-attaches window document stylesheets and tags newly rendered explorer containers (`data-cf-path`). |
+| `layout-change` | `DOMObserverService` | Re-attaches window document stylesheets to newly rendered explorer containers. |
 | `css-change` | `EventTrackerService` | Theme switches (Light/Dark) trigger debounced contrast recalculations. |
 | `file-open` | `EventTrackerService` | Updates active folder path markers dynamically (`.is-active-path`). |
 | `dragstart` | `EventTrackerService` | Sets `plugin.isDragging = true` and suspends all styling and observer work during drag. |
 | `dragend` | `EventTrackerService` | Resets `isDragging` and runs a catch-up render. |
-| `create` / `delete` / `modify` | `PluginLifecycleService` | Vault structure changes; invalidates item count, container, and icon caches. |
+| `create` / `delete` / `modify` | `PluginLifecycleService` | Vault structure changes; invalidates item count, container, and icon caches. File modification events are strictly scoped to plugin files. |
 | `scroll` (container) | `DOMObserverService` | Suspends observer calculations during active scroll, queuing a single debounced catch-up sync after scroll stops. |
 | `layout-ready` | `PluginLifecycleService` | Triggers startup cache pre-warming via `requestIdleCallback()` for core folder and document icons. |
 | `generateStyles` (post-render) | `main.ts / GraphColorSync` | Syncs folder colors to `.obsidian/graph.json` color groups if `graphColorSync` is enabled. |
@@ -25,16 +25,16 @@ Colorful Folders hooks into the Obsidian event bus and DOM observers reactively:
 
 ## 2. Low-Level Flat Selector Map
 
-The Zero-DOM engine uses flat attribute selectors to target file explorer items directly:
+The Zero-DOM engine uses flat attribute selectors to target file explorer items directly via Obsidian's native `data-path` attribute:
 
 ### 📂 Folder Elements
-- `.nav-folder-title[data-cf-path="..."]`: Target folder title bar.
-- `.nav-folder-title[data-cf-path="..."] .nav-folder-title-content::before`: Icon rendered via SVG Data URI mask or Emoji.
-- `.nav-folder-title[data-cf-path="..."] ~ .nav-folder-children`: Container tint for nested items.
+- `.nav-folder-title[data-path="..."]`: Target folder title bar.
+- `.nav-folder-title[data-path="..."] .nav-folder-title-content::before`: Icon rendered via SVG Data URI mask or Emoji.
+- `.nav-folder-title[data-path="..."] ~ .nav-folder-children`: Container tint for nested items.
 
 ### 📄 File Elements
-- `.nav-file-title[data-cf-path="..."]`: File title bar.
-- `.nav-file-title[data-cf-path="..."] .nav-file-title-content::before`: File icon rendered via SVG Data URI mask.
+- `.nav-file-title[data-path="..."]`: File title bar.
+- `.nav-file-title[data-path="..."] .nav-file-title-content::before`: File icon rendered via SVG Data URI mask.
 
 ### 📏 Section Dividers
 - `.cf-has-divider[data-cf-divider="true"]::before`: Section divider bridge line and pill label.

@@ -6,12 +6,12 @@ Welcome to the comprehensive technical documentation for **Colorful Folders**. T
 
 ## 🏗️ 1. Architecture Overview & High-Level Execution Flow
 
-Colorful Folders operates on a **Zero-DOM Adopted Stylesheet Engine**. Instead of injecting physical HTML wrapper elements into Obsidian's File Explorer tree (which triggers observer race conditions with other plugins), it stamps lightweight dataset attributes (`data-cf-path`) on native elements and injects flat CSS rules into programmatic `CSSStyleSheet` instances attached to `document.adoptedStyleSheets`.
+Colorful Folders operates on a **Zero-DOM Adopted Stylesheet Engine**. Instead of injecting physical HTML wrapper elements into Obsidian's File Explorer tree (which triggers observer race conditions with other plugins), it targets Obsidian's native `data-path` dataset attributes and injects flat CSS rules into programmatic `CSSStyleSheet` instances attached to `document.adoptedStyleSheets`.
 
 ```mermaid
 graph TD
     A[Obsidian Load / User Mutation] --> B[Plugin Lifecycle Service PluginLifecycleService]
-    B --> C[Dataset Attribute Stamping DOMObserverService]
+    B --> C[Native Selector Matching BaseCssGenerator / StyleGenerator]
     C --> D[Debounced Style Generator main.generateStyles]
     D --> E[Context Preparation StyleGenerator.prepareContext]
     E --> F[Recursive Vault Traversal StyleGenerator.traverse]
@@ -41,10 +41,10 @@ This directory contains the primary rendering engine, styling resolution math, i
 | [BaseCssGenerator.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/BaseCssGenerator.ts) | Generates global layout rules, stealth mode styles, active glow effects, and pseudo-element section divider lines (`::before` / `::after`). | `generateGlobalBaseCss()`, `generateDividerCss()`, `generateStealthCss()` |
 | [CssGrouper.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/CssGrouper.ts) | High-performance CSS rule deduplication engine. Groups identical style declarations by selector signature keys and chunks selectors into groups of 500 to prevent browser selector limits. | `add()`, `addRaw()`, `build()` |
 | [RainbowManager.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/RainbowManager.ts) | Multi-stop neon rainbow and text gradient generator. Creates theme-aware linear-gradient rules for title text with contrast boosting and bounded `LRUCache(1024)` memoization. | `buildGradientCss()`, `resolveRootSpectrum()`, `resolveCustomStops()` |
-| [DividerManager.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/DividerManager.ts) | Section divider manager. Stamps dataset attributes (`data-cf-divider`, `data-cf-path`) on target parent items without modifying physical child nodes. | `syncDividers()`, `hasAnyDividers()`, `clean()` |
+| [DividerManager.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/DividerManager.ts) | Section divider manager. Syncs section divider chips and Markdown hover popovers without modifying physical child tree nodes. | `syncDividers()`, `hasAnyDividers()`, `clean()` |
 | [IconManager.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/IconManager.ts) | Public facade API for the icon engine. Delegates SVG fetching, Data-URI generation, and icon validation to `IconRepository`. | `getAutoIconData()`, `getIconSvg()`, `getDataUri()`, `isValidIcon()`, `preNormalizeIcon()` |
 | [IconRepository.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/IconRepository.ts) | Coordinates the 5-Tier icon resolution engine. Manages 5 bounded LRU caches (`_normCache`, `_dataUriCache`, `_findPackIconCache`, `_autoIconResultCache`, `_iconValidityCache`) for zero-allocation SVG operations. | `getAutoIconData()`, `getIconSvg()`, `isValidIcon()`, `findIconInPacks()` |
-| [CategoryTrie.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/CategoryTrie.ts) | Node-based Prefix Trie (`TrieNode`) matching tokenized words against character prefix branches. Pre-sorts categories by priority at build time for instant $O(N)$ priority returns. | `build()`, `lookup()`, `insertWord()` |
+| [CategoryTrie.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/CategoryTrie.ts) | Node-based Prefix Trie (`TrieNode`) matching tokenized words against character prefix branches. Pre-sorts categories by priority at build time for instant $O(N)$ priority returns. Uses static regular expression tokenization to prevent memory allocation during lookups. | `build()`, `lookup()`, `insertWord()` |
 | [IconPackIndex.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/IconPackIndex.ts) | Icon pack registry and search engine. Manages custom & installed packs (Lucide, Simple Icons, Tabler, FontAwesome), breaks ties using `PACK_PRIORITY`, and performs stem-aware 1D Levenshtein fuzzy search. | `registerPack()`, `findIcon()`, `searchFuzzy()` |
 
 ---
@@ -55,9 +55,9 @@ Services manage workspace window integration, background DOM observation, event 
 
 | File | Purpose & Responsibilities | Key Functions / Methods |
 | :--- | :--- | :--- |
-| [PluginLifecycleService.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/services/PluginLifecycleService.ts) | Coordinates plugin initialization, multi-window hooks (`window-open`), document tracking, layout ready hooks, and clean teardown on unload. | `init()`, `onLayoutReady()`, `registerWindowHooks()`, `unload()` |
-| [DOMObserverService.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/services/DOMObserverService.ts) | Stamps lightweight `data-cf-path` dataset attributes on explorer nodes. Monitors document body class changes (`theme-dark`, `theme-light`) while preventing observer loops with third-party plugins. | `initStyleObservers()`, `tagExplorerItems()`, `initDividerObserver()`, `handleScroll()` |
-| [EventTrackerService.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/services/EventTrackerService.ts) | Listens to vault events (`create`, `modify`, `delete`, `rename`). Automatically updates `customFolderColorsMap` keys on path renames and tracks active files across all workspace documents. | `registerVaultEvents()`, `registerActiveFileTracker()`, `updateActiveDocumentState()` |
+| [PluginLifecycleService.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/services/PluginLifecycleService.ts) | Coordinates plugin initialization, multi-window hooks (`window-open`), document tracking, layout ready hooks, and deferred idle background task scheduling (`requestIdleCallback`). | `init()`, `onLayoutReady()`, `registerWindowHooks()`, `unload()` |
+| [DOMObserverService.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/services/DOMObserverService.ts) | Manages high-performance divider mutation observers strictly scoped to file explorer containers. Eliminates body class observers in favor of native workspace events. | `initStyleObservers()`, `tagExplorerItems()`, `initDividerObserver()`, `handleScroll()` |
+| [EventTrackerService.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/services/EventTrackerService.ts) | Listens to vault events (`create`, `modify`, `delete`, `rename`, `css-change`). Automatically updates `customFolderColorsMap` keys on path renames and tracks active files across all workspace documents. Scopes file modification events to prevent unnecessary note editing reflows. | `registerVaultEvents()`, `registerActiveFileTracker()`, `updateActiveDocumentState()` |
 | [AdoptedStyleSheetService.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/services/AdoptedStyleSheetService.ts) | Manages programmatic `CSSStyleSheet` instances attached directly to `document.adoptedStyleSheets` across all workspace windows for zero-DOM layout reflowing. | `updateStyles()`, `attachToDocument()`, `detachFromDocument()`, `unload()` |
 
 ---

@@ -10,7 +10,7 @@ Welcome to the **Colorful Folders** master documentation index. This directory c
 * **Subject**: Full architectural specification of the Zero-DOM / `document.adoptedStyleSheets` rendering engine.
 * **Key Content**:
   * Zero-DOM rendering strategy bypassing HTML node injection.
-  * The 6-step rendering pipeline from dataset attribute tagging (`data-cf-path`) to programmatic stylesheet adoption (`sheet.replaceSync()`).
+  * The 6-step rendering pipeline from native dataset attribute matching (`data-path`) to programmatic stylesheet adoption (`sheet.replaceSync()`).
   * Modular color resolution priority chain and depth opacity progression formulas.
   * The 5-Tier Icon Engine resolution chain.
 
@@ -27,8 +27,8 @@ Welcome to the **Colorful Folders** master documentation index. This directory c
 ### **[ENGINE_INTERNALS.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/ENGINE_INTERNALS.md)** — Low-Level Logic & Lifecycle Bus
 * **Subject**: Event bus mapping tables, low-level CSS attribute selectors, path key normalization, and fuzzy matching algorithms.
 * **Key Content**:
-  * Workspace & vault event bus reactive mapping (`create`, `rename`, `delete`, `scroll`, `window-open`).
-  * Low-level CSS attribute selectors targeting `.nav-folder-title[data-cf-path="..."]`.
+  * Workspace & vault event bus reactive mapping (`create`, `rename`, `delete`, `scroll`, `window-open`, `css-change`).
+  * Low-level CSS attribute selectors targeting `.nav-folder-title[data-path="..."]`.
   * Structure-preserving path key normalization (`normalizePathKey`).
   * Stem-aware 1D Levenshtein fuzzy search and memory buffer optimizations.
 
