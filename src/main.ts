@@ -233,8 +233,15 @@ export default class ColorfulFoldersPlugin
     try {
       const adapter = this.app.vault.adapter;
       const iconsPath = `${this.app.vault.configDir}/icons`;
-      if (await adapter.exists(iconsPath)) {
-        const svgFiles = await this.getAllSvgFiles(iconsPath);
+      if (!(await adapter.exists(iconsPath))) {
+        this.localFileSystemIcons = {};
+        return;
+      }
+      const svgFiles = await this.getAllSvgFiles(iconsPath);
+      if (svgFiles.length === 0) {
+        this.localFileSystemIcons = {};
+        return;
+      }
 
         this.localFileSystemIcons = {};
         const normIconsPath = normalizeVaultPath(iconsPath);
@@ -298,7 +305,6 @@ export default class ColorfulFoldersPlugin
           this.iconManager.invalidateCategoryCache();
         }
         this.generateStylesDebounced();
-      }
     } catch (e) {
       console.error("Colorful Folders: Failed to load local icons", e as Error);
     }
@@ -359,11 +365,12 @@ export default class ColorfulFoldersPlugin
               const el = node as HTMLElement;
               if (el.classList?.contains("tree-item-self")) {
                 stripStyle(el);
-              }
-              const children = el.querySelectorAll?.(".tree-item-self");
-              if (children) {
-                for (let k = 0; k < children.length; k++) {
-                  stripStyle(children[k]);
+              } else if (el.classList?.contains("tree-item") || el.classList?.contains("nav-folder") || el.classList?.contains("nav-file")) {
+                const children = el.querySelectorAll?.(".tree-item-self");
+                if (children) {
+                  for (let k = 0; k < children.length; k++) {
+                    stripStyle(children[k]);
+                  }
                 }
               }
             }
@@ -383,14 +390,6 @@ export default class ColorfulFoldersPlugin
               attributes: true,
               attributeFilter: ["style"],
             });
-          });
-        } else {
-          const root = doc.querySelector('.workspace') || doc.body;
-          win._testerObserver.observe(root, {
-            childList: true,
-            subtree: true,
-            attributes: true,
-            attributeFilter: ["style"],
           });
         }
       }

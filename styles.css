@@ -183,7 +183,7 @@ body .nav-files-container .cf-divider-icon svg {
     display: flex;
     align-items: center;
     width: 100%;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, opacity 0.2s ease;
     padding-top: var(--preview-spacing, 16px);
     padding-bottom: var(--preview-spacing, 16px);
 }
@@ -376,7 +376,7 @@ body .colorful-folders-config .cf-tab-btn {
     border: 1px solid rgba(var(--interactive-accent-rgb, 120, 120, 255), 0.18);
     box-shadow: none;
     position: relative;
-    transition: all 0.2s ease-in-out;
+    transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, color 0.2s ease-in-out;
 }
 
 .cf-tab-btn span {

@@ -56,7 +56,7 @@ export class EventTrackerService {
                     return;
                 }
                 const configDir = this.plugin.app.vault.configDir;
-                if (file && (file.path.includes("colorful-folders/icons/") || (configDir && file.path.includes(`${configDir}/icons`)) || file.path.endsWith(".json"))) {
+                if (file && (file.path.includes("colorful-folders/icons/") || (configDir && file.path.includes(`${configDir}/icons`)))) {
                     void (async () => {
                         await this.plugin.loadLocalCustomIcons();
                         await this.plugin.loadLocalIcons();
@@ -66,9 +66,6 @@ export class EventTrackerService {
                     })();
                     return;
                 }
-                if (file && (file.path.startsWith('.') || file.path.includes('/.'))) return;
-                this.invalidateCaches();
-                this.plugin.generateStylesDebounced();
             })
         );
 
@@ -122,6 +119,7 @@ export class EventTrackerService {
         this.registerEvent(
             this.plugin.app.workspace.on("layout-change", () => {
                 this.plugin.domObserverService.initDividerObserver();
+                this.plugin.initStaircaseStyleStripper();
                 this.updateActiveFolderClasses();
             }),
         );
@@ -129,6 +127,12 @@ export class EventTrackerService {
         this.registerEvent(
             this.plugin.app.workspace.on("file-open", () => {
                 this.updateActiveFolderClasses();
+            }),
+        );
+
+        this.registerEvent(
+            this.plugin.app.workspace.on("css-change", () => {
+                this.plugin.generateStylesDebounced();
             }),
         );
     }
@@ -144,6 +148,7 @@ export class EventTrackerService {
             this.plugin.app.workspace.on("layout-change", () => {
                 this.plugin.invalidateExplorerContainersCache();
                 this.plugin.domObserverService.initDividerObserver();
+                this.plugin.initStaircaseStyleStripper();
                 this.plugin.dividerManager?.syncDividers();
                 this.updateActiveFolderClasses();
             }),

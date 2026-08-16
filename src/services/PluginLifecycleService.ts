@@ -50,10 +50,21 @@ export class PluginLifecycleService {
             this.plugin.domObserverService.initDividerObserver();
             this.plugin.dividerManager.syncDividers();
 
-            // Load local icons asynchronously in background without delaying startup
-            void this.plugin.loadLocalIcons();
+            // Defer disk scanning and cache prewarming to post-startup idle time (~1s delay)
+            const scheduleIdle = (fn: () => void) => {
+                const win = window as unknown as Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number };
+                if (typeof win.requestIdleCallback === "function") {
+                    win.requestIdleCallback(fn, { timeout: 2000 });
+                } else {
+                    window.setTimeout(fn, 1000);
+                }
+            };
 
-            this.prewarmIconCaches();
+            scheduleIdle(() => {
+                if (this.plugin._isUnloading) return;
+                void this.plugin.loadLocalIcons();
+                this.prewarmIconCaches();
+            });
         });
     }
 

@@ -54,8 +54,6 @@ export class TagColorSync {
 
             css += `
 /* Unified styling for Live Preview and Reading Mode */
-body [class*="cm-tag-${tag}" i],
-body [class~="cm-tag-${tag}" i],
 body .cm-tag-${tag},
 body .cm-tag-${tag.toLowerCase()},
 body .cm-tag-${tag.toUpperCase()},
@@ -65,7 +63,6 @@ body .cm-hashtag.cm-tag-${tag.toUpperCase()},
 body .tag.cm-tag-${tag},
 body .tag.cm-tag-${tag.toLowerCase()},
 body .tag.cm-tag-${tag.toUpperCase()},
-body .markdown-rendered a.tag[href="#${tag}" i],
 body .markdown-rendered a.tag[href="#${tag}"],
 body .markdown-rendered a.tag[href="#${tag.toLowerCase()}"],
 body .markdown-rendered a.tag[href="#${tag.toUpperCase()}"] {
@@ -76,14 +73,12 @@ body .markdown-rendered a.tag[href="#${tag.toUpperCase()}"] {
 }
 
 /* Reading mode & Live Preview widgets border and shape */
-body .markdown-rendered a.tag[href="#${tag}" i],
 body .markdown-rendered a.tag[href="#${tag}"],
 body .markdown-rendered a.tag[href="#${tag.toLowerCase()}"],
 body .markdown-rendered a.tag[href="#${tag.toUpperCase()}"],
 body .tag.cm-tag-${tag},
 body .tag.cm-tag-${tag.toLowerCase()},
-body .tag.cm-tag-${tag.toUpperCase()},
-body .tag[class*="cm-tag-${tag}" i] {
+body .tag.cm-tag-${tag.toUpperCase()} {
     border: 1px solid rgba(${rgbStr}, 0.3) !important;
     border-radius: 12px !important;
     padding: 2px 8px !important;
@@ -97,7 +92,6 @@ body .cm-hashtag.cm-tag-${tag.toUpperCase()} {
     border-bottom: 1px solid rgba(${rgbStr}, 0.3) !important;
 }
 
-body [class~="cm-hashtag-begin"][class*="cm-tag-${tag}" i],
 body .cm-hashtag-begin.cm-tag-${tag},
 body .cm-hashtag-begin.cm-tag-${tag.toLowerCase()},
 body .cm-hashtag-begin.cm-tag-${tag.toUpperCase()} {
@@ -109,7 +103,6 @@ body .cm-hashtag-begin.cm-tag-${tag.toUpperCase()} {
     padding-right: 0 !important;
 }
 
-body [class~="cm-hashtag-end"][class*="cm-tag-${tag}" i],
 body .cm-hashtag-end.cm-tag-${tag},
 body .cm-hashtag-end.cm-tag-${tag.toLowerCase()},
 body .cm-hashtag-end.cm-tag-${tag.toUpperCase()} {
@@ -122,15 +115,12 @@ body .cm-hashtag-end.cm-tag-${tag.toUpperCase()} {
 }
 
 /* Hover effects */
-body [class*="cm-tag-${tag}" i]:hover,
-body [class~="cm-tag-${tag}" i]:hover,
 body .cm-hashtag.cm-tag-${tag}:hover,
 body .cm-hashtag.cm-tag-${tag.toLowerCase()}:hover,
 body .cm-hashtag.cm-tag-${tag.toUpperCase()}:hover,
 body .tag.cm-tag-${tag}:hover,
 body .tag.cm-tag-${tag.toLowerCase()}:hover,
 body .tag.cm-tag-${tag.toUpperCase()}:hover,
-body .markdown-rendered a.tag[href="#${tag}" i]:hover,
 body .markdown-rendered a.tag[href="#${tag}"]:hover,
 body .markdown-rendered a.tag[href="#${tag.toLowerCase()}"]:hover,
 body .markdown-rendered a.tag[href="#${tag.toUpperCase()}"]:hover {

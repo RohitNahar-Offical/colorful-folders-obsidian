@@ -9,6 +9,8 @@ function createTrieNode(): TrieNode {
     return { children: new Map(), categories: [] };
 }
 
+const WORD_SPLIT_REGEX = /[^\p{L}\p{N}]+/gu;
+
 export class CategoryTrie {
     private root: TrieNode = createTrieNode();
     private fallbackCategories: AutoIconData[] = [];
@@ -67,7 +69,7 @@ export class CategoryTrie {
 
     public lookup(name: string): AutoIconData[] {
         if (!name) return this.fallbackCategories;
-        const words = name.toLowerCase().split(/[^\p{L}\p{N}]+/gu);
+        const words = name.toLowerCase().split(WORD_SPLIT_REGEX);
 
         const matchedSet = new Set<AutoIconData>();
 

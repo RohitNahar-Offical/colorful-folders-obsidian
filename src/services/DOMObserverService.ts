@@ -15,43 +15,6 @@ export class DOMObserverService {
     initStyleObservers() {
         this.disposeStyleObservers();
         this.styleObservers = [];
-
-        this.plugin.getOpenDocuments().forEach(doc => {
-            const observer = new MutationObserver((mutations) => {
-                let shouldRegenerate = false;
-                for (const m of mutations) {
-                    if (m.type === 'attributes' && m.attributeName === 'class') {
-                        const target = m.target as HTMLElement;
-                        const oldClass = m.oldValue || '';
-                        const newClass = typeof target.className === 'string' ? target.className : (target.getAttribute('class') || '');
-                        
-                        if (oldClass === newClass) continue;
-                        
-                        const relevantClasses = ['theme-dark', 'theme-light', 'cf-show-hidden', 'cf-wrap-metadata'];
-                        for (let i = 0; i < relevantClasses.length; i++) {
-                            const cls = relevantClasses[i];
-                            const wasPresent = oldClass.includes(cls);
-                            const isPresent = newClass.includes(cls);
-                            if (wasPresent !== isPresent) {
-                                shouldRegenerate = true;
-                                break;
-                            }
-                        }
-                        if (shouldRegenerate) break;
-                    }
-                }
-                
-                if (shouldRegenerate) {
-                    this.plugin.generateStylesDebounced?.();
-                }
-            });
-            observer.observe(doc.body, {
-                attributes: true,
-                attributeFilter: ['class'],
-                attributeOldValue: true,
-            });
-            this.styleObservers.push(observer);
-        });
     }
 
     /**
@@ -114,12 +77,11 @@ export class DOMObserverService {
                 const isDividerNode = (node: Node): boolean => {
                     if (node.nodeType === 1) {
                         const el = node as HTMLElement;
-                        return el.classList?.contains('cf-interactive-divider') ||
-                               !!el.querySelector?.('.cf-interactive-divider') ||
-                               !!el.closest?.('.cf-interactive-divider');
-                    }
-                    if (node.parentElement) {
-                        return !!node.parentElement.closest?.('.cf-interactive-divider');
+                        if (el.classList?.contains('cf-interactive-divider')) return true;
+                        if (el.classList?.contains('tree-item') || el.classList?.contains('nav-file') || el.classList?.contains('nav-folder')) {
+                            return false;
+                        }
+                        return !!el.querySelector?.('.cf-interactive-divider');
                     }
                     return false;
                 };
