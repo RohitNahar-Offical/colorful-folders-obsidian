@@ -1,46 +1,28 @@
 # Updates for Colorful Folders
 
-## ⚡ 5.0.3 - Ultra-Fast Startup, Auto-Detect Icon Packs & Freeze-Free Picker
+## 🛠️ 5.0.2 - Performance, Auto-Detect Icons, Mobile Dividers & Sync
 
-This release restores the ultra-fast (~0ms) plugin reload and startup performance from v5.0.0, introduces an automatic **Self-Check & Auto-Detect Icon Packs** tool in Settings, eliminates UI freezing when picking or searching icons, and adds real-time PC and Mobile sync proofing.
+This release restores ultra-fast (~0ms) startup speeds, introduces an automatic **Self-Check & Auto-Detect Icon Packs** tool in Settings, fixes section dividers on mobile devices, eliminates UI freezing in the icon picker, and adds real-time PC & Mobile sync proofing.
 
 ---
 
-### ⚡ 1. Ultra-Fast Startup & Non-Blocking Layout Ready
-* **~0ms Startup Lag**: Made plugin initialization and layout-ready hooks non-blocking. Initial folder styles render immediately in <1ms, while local icon scans run asynchronously in the background.
-* **Parallel Icon Scanning**: Parallelized subdirectory SVG file scanning using `Promise.all`, drastically reducing local icon loading time on disk.
-* **Targeted Workspace Observer**: Scoped style-stripping observers strictly to file explorer containers instead of observing the entire workspace `doc.body`.
+### ⚡ 1. Ultra-Fast Startup & Non-Blocking Initialization
+* **~0ms Startup Lag**: Plugin initialization and layout-ready hooks are non-blocking; initial folder styles render immediately (<1ms) while local icon scans run in the background.
+* **Parallel Icon Scanning**: Parallelized SVG file scanning on disk using `Promise.all` for fast local asset loading.
+* **Targeted Workspace Observers**: Scoped style-stripping mutation observers strictly to file explorer containers instead of watching `doc.body`.
 
 ### 🔍 2. Auto-Detect & Self-Check Icon Packs
-* **Self-Check Icon Packs Tool**: Added an **"Auto-detect existing icon packs"** button in **Settings -> Custom icon management** that scans local vault storage (`.obsidian/icons` and `colorful-folders/icons/`), self-checks missing icon pack registrations, repairs indices, and reports installed icon counts accurately.
-* **Comprehensive Alias Matching**: Updated pack installation detection to recognize all pack ID aliases (`tb-`, `si-`, `fa-`, `ri-`, local SVGs, and custom JSON files). Featured Icon Packs now accurately display `✓ Installed (X icons)`.
+* **Self-Check Icon Packs Tool**: Added an **"Auto-detect existing icon packs"** button in **Settings -> Custom icon management** that scans local vault storage (`.obsidian/icons` and `colorful-folders/icons/`), repairs registrations, and reports accurate icon counts.
+* **Comprehensive Alias Detection**: Installation detection now recognizes all pack ID aliases (`tb-`, `si-`, `fa-`, `ri-`, local SVGs) so Featured Icon Packs accurately display `✓ Installed (X icons)`.
 
-### 🚀 3. Freeze-Free Icon Picker & Safe Divider Rendering
-* **Chunked Batch Grid Rendering**: Updated `IconPickerModal` to render icons in smooth incremental batches of 60 items with scroll-based lazy loading, preventing main-thread freezes.
-* **O(1) DOM Template Cloning**: Cached parsed SVG template elements (`svgTemplateCache`) and populated grid cells using `cloneNode(true)`, eliminating DOMParser overhead.
-* **Debounced Search**: Added a 150ms search input debounce to ensure smooth, freeze-free typing when filtering thousands of icons.
-* **Safe Divider Icon Renderer**: Updated `DividerModal` header previews and setting buttons to safely support custom SVGs, emojis, Lucide icons, and fallbacks without throwing unhandled exceptions.
+### 🚀 3. Freeze-Free Icon Picker & Divider Rendering
+* **Chunked Batch Grid Rendering**: `IconPickerModal` renders icons in smooth incremental batches of 60 items with scroll-based lazy loading and 150ms search debouncing to eliminate main-thread freezes.
+* **O(1) DOM Template Cloning**: Parsed SVG template elements are cached and cloned with `cloneNode(true)` for fast DOM cell creation.
+* **Safe Divider Icon Renderer**: `DividerModal` header previews and setting buttons safely support custom SVGs, emojis, Lucide icons, and fallbacks without JS errors.
 
-### 📱 4. Real-Time PC & Mobile Sync Proofing
-* **Automatic Vault Sync Listener**: Added vault modification event handlers for custom icon files and `data.json`. Any icon packs or settings added or edited on PC automatically sync and load in real-time on Mobile (and vice-versa) when using Obsidian Sync, Git, or WebDAV.
-
----
-
-## 🛠️ 5.0.2 - Mobile Dividers, Instant Sync & Smooth Editing
-
-This release fixes section dividers on mobile devices, ensures separators show up immediately when opening your file list, fixes app freezing while editing dividers, and adds seamless sync across all your phones and computers.
-
----
-
-### 📱 1. Mobile Dividers & Instant Display Fixes
-* **Full Mobile Support**: Section dividers now display properly in the mobile phone file list just like on desktop.
-* **Instant Separator Display**: Dividers now show up immediately when you open your sidebar or change tabs—no more clicking required to make them appear!
-* **No More App Freezing**: Fixed an issue where editing a divider caused Obsidian to freeze and become unresponsive. Editing is now instant and smooth.
-
-### ⚡ 2. Mobile Speed & Automatic Cross-Device Sync
-* **Blazing Fast Performance**: Optimized divider calculations on phones for instant rendering with zero battery or memory drain.
-* **Seamless Cross-Device Sync**: Any divider changes or settings you make on your PC now automatically sync to your phone (and vice versa) when using Obsidian Sync, WebDAV, Git, or iCloud.
-* **Mobile-Friendly Design**: Improved color picker touch controls, smart text trimming for long divider titles on small phone screens, and responsive popup menus.
+### 📱 4. Mobile Dividers & Real-Time Cross-Device Sync
+* **Mobile Dividers Support**: Section dividers now render properly in mobile phone file lists with smart text trimming and touch controls.
+* **Real-Time Cross-Device Sync**: Vault modification listeners on `data.json` and custom icon directories automatically sync settings and icons between PC and Mobile in real-time across Obsidian Sync, WebDAV, Git, or iCloud.
 
 ---
 
