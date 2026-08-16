@@ -383,23 +383,18 @@ export class StyleGenerator {
                 }
 
                 const fileRowSels = [
-                    `.nav-file-title[data-cf-path="${safePath}"]:not(.nn-file)`,
-                    `.tree-item-self[data-cf-path="${safePath}"]:not(.nn-file):not(.nn-navitem)`,
                     `.nav-file-title[data-path="${safePath}"]:not(.nn-file)`,
                     `.tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem)`
                 ];
                 grouper.add(fileRowCss, fileRowSels, `fileRow_${color.hex}_${fileBgAlpha}_${shouldColorNative ? 1 : 0}_${baseThick}`);
 
                 const fileTextSels = [
-                    `.nav-file-title[data-cf-path="${safePath}"]:not(.nn-file) .nav-file-title-content`,
-                    `.tree-item-self[data-cf-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner`,
                     `.nav-file-title[data-path="${safePath}"]:not(.nn-file) .nav-file-title-content`,
                     `.tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner`
                 ];
                 grouper.add(fileTextCss, fileTextSels, `fileText_${activeStyle?.textGradient ? 'grad' : 'norm'}_${isBold}_${isItalic}_${color.hex}`);
 
                 const fileTagSels = [
-                    `[data-cf-path="${safePath}"] .nav-file-tag`,
                     `[data-path="${safePath}"] .nav-file-tag`,
                     `[data-path="${safePath}"] .tree-item-flair`
                 ];
@@ -783,8 +778,6 @@ export class StyleGenerator {
                 : [];
 
             grouper.add(textCss, [
-                `.nav-folder-title[data-cf-path="${safePath}"] .nav-folder-title-content`,
-                `.tree-item-self[data-cf-path="${safePath}"] .tree-item-inner`,
                 `.nav-folder-title[data-path="${safePath}"] .nav-folder-title-content`,
                 `.tree-item-self[data-path="${safePath}"] .tree-item-inner`,
                 ...nnSelectors
@@ -799,23 +792,17 @@ export class StyleGenerator {
                     
                     if (expanded === true) {
                         return [
-                            `${baseNav}:not(.is-collapsed) > .nav-folder-title[data-cf-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
                             `${baseNav}:not(.is-collapsed) > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
-                            `${baseTree}:not(.is-collapsed) > .tree-item-self[data-cf-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`,
                             `${baseTree}:not(.is-collapsed) > .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
                         ];
                     } else if (expanded === false) {
                         return [
-                            `${baseNav}.is-collapsed > .nav-folder-title[data-cf-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
                             `${baseNav}.is-collapsed > .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
-                            `${baseTree}.is-collapsed > .tree-item-self[data-cf-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`,
                             `${baseTree}.is-collapsed > .tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
                         ];
                     }
                     return [
-                        `.nav-folder-title[data-cf-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
                         `.nav-folder-title[data-path="${safePath}"]:not(.nn-navitem) .nav-folder-title-content::before`,
-                        `.tree-item-self[data-cf-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`,
                         `.tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
                     ];
                 };
@@ -896,11 +883,7 @@ export class StyleGenerator {
                 `body .nav-files-container .nav-folder-title[data-path="${safePath}"] .nav-folder-collapse-indicator`,
                 `body .nav-files-container .nav-folder-title[data-path="${safePath}"] .collapse-icon`,
                 `body .nav-files-container .tree-item-self[data-path="${safePath}"] .tree-item-collapse-indicator`,
-                `body .nav-files-container .tree-item-self[data-path="${safePath}"] .collapse-icon`,
-                `body .nav-files-container .nav-folder-title[data-cf-path="${safePath}"] .nav-folder-collapse-indicator`,
-                `body .nav-files-container .nav-folder-title[data-cf-path="${safePath}"] .collapse-icon`,
-                `body .nav-files-container .tree-item-self[data-cf-path="${safePath}"] .tree-item-collapse-indicator`,
-                `body .nav-files-container .tree-item-self[data-cf-path="${safePath}"] .collapse-icon`
+                `body .nav-files-container .tree-item-self[data-path="${safePath}"] .collapse-icon`
             ];
             grouper.add(`
                 color: ${effFolderIconColor} !important;

@@ -22,15 +22,7 @@ export class DOMObserverService {
      * Attribute updates do NOT trigger childList mutations, eliminating race conditions.
      */
     public tagExplorerItems(container: HTMLElement) {
-        if (this.isScrolling) return;
-        const items = container.querySelectorAll<HTMLElement>('.nav-folder-title, .nav-file-title, .tree-item-self');
-        for (let i = 0; i < items.length; i++) {
-            const item = items[i];
-            const path = item.dataset.path;
-            if (path && item.getAttribute('data-cf-path') !== path) {
-                item.setAttribute('data-cf-path', path);
-            }
-        }
+        // NO-OP: Obsidian native data-path attributes are used directly by CSS selectors.
     }
 
     private pendingSyncFrame: number | null = null;
