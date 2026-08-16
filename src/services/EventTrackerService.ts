@@ -55,6 +55,17 @@ export class EventTrackerService {
                     })();
                     return;
                 }
+                const configDir = this.plugin.app.vault.configDir;
+                if (file && (file.path.includes("colorful-folders/icons/") || (configDir && file.path.includes(`${configDir}/icons`)) || file.path.endsWith(".json"))) {
+                    void (async () => {
+                        await this.plugin.loadLocalCustomIcons();
+                        await this.plugin.loadLocalIcons();
+                        this.plugin.registerCustomIcons();
+                        this.plugin.iconManager?.invalidateCategoryCache();
+                        this.plugin.generateStylesDebounced();
+                    })();
+                    return;
+                }
                 if (file && (file.path.startsWith('.') || file.path.includes('/.'))) return;
                 this.invalidateCaches();
                 this.plugin.generateStylesDebounced();

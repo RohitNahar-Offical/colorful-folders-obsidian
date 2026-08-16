@@ -38,7 +38,7 @@ graph TD
 ```
 
 ### The Pipeline Steps:
-1. **Lifecycle Orchestration**: `PluginLifecycleService` manages event listeners (`create`, `modify`, `delete`), document tracking across workspace windows, layout ready hooks, and teardown on unload.
+1. **Lifecycle Orchestration**: `PluginLifecycleService` manages event listeners (`create`, `modify`, `delete`, `window-open`, `layout-change`), document tracking across workspace windows, non-blocking layout ready hooks (~0ms startup lag), and teardown on unload. Vault modification listeners automatically detect external changes to `data.json` and custom icon files in `${configDir}/icons` for real-time PC and Mobile sync.
 2. **Attribute Tagging**: `DOMObserverService` stamps lightweight `data-cf-path="<path>"` dataset attributes on `.nav-folder-title`, `.nav-file-title`, and `.tree-item-self` elements. Because attribute updates do **not** trigger `childList` mutations, third-party observer race conditions are physically impossible.
 3. **State Resolution**: `StyleResolver.getEffectiveStyle(target, plugin)` calculates the visual state for every folder/file using `FolderTrie` for $O(\text{depth})$ path inheritance queries.
 4. **Flat Rule & Data URI CSS Generation**: `StyleGenerator.traverse()` builds complete flat CSS attribute rules (`.nav-folder-title[data-cf-path="..."]`). Custom SVGs and auto-icons are encoded into SVG Data URIs (`-webkit-mask-image: url("data:image/svg+xml;utf8,...")`) targeting `::before` pseudo-elements.
@@ -47,13 +47,15 @@ graph TD
 
 ---
 
-### 1.1 Modular Local Icon Storage Architecture & Cache Optimizations
+### 1.1 Modular Local Icon Storage Architecture, Auto-Detection & Cache Optimizations
 
 To protect vault synchronization (WebDAV, Obsidian Sync) from data loss and state resets caused by bloated `data.json` files when users download large icon packs:
 
 1. **Decoupled Asset Storage**: Custom icons and downloaded icon packs are stored as discrete JSON files in `.obsidian/plugins/colorful-folders/icons/` (`custom-icons.json`, `[pack-prefix].json`). `data.json` remains lightweight (~5KB baseline).
-2. **O(1) Non-Allocating Lookups**: High-frequency rendering routines call `plugin.getCustomIcon(id)` directly against `this.localCustomIcons` in memory. This eliminates millions of intermediate object property copies (`Object.assign({}, ...)`) during tree rendering and scrolling.
-3. **Index & Cache Stability**:
+2. **O(1) Template Node Cloning**: Modal UI elements (like `IconPickerModal`) use parsed SVG template element caching (`svgTemplateCache`) combined with native `templateSvg.cloneNode(true)` node cloning. This guarantees $O(1)$ DOM element construction and bypasses repeated `createContextualFragment` DOMParser invocations.
+3. **Self-Check & Auto-Detection Engine**: `IconSettingSection` includes an automated self-check engine that scans local vault assets, detects all installed icon pack aliases (`tb-`, `si-`, `fa-`, `ri-`, local SVGs), repairs icon index registrations, and reports installed pack counts accurately.
+4. **O(1) Non-Allocating Lookups**: High-frequency rendering routines call `plugin.getCustomIcon(id)` directly against `this.localCustomIcons` in memory. This eliminates millions of intermediate object property copies (`Object.assign({}, ...)`) during tree rendering and scrolling.
+5. **Index & Cache Stability**:
    - `getCustomIconsMap()` returns a stable dictionary reference. This prevents `IconPackIndex.build()` from unnecessarily rebuilding search tries on every query.
    - `saveSettings()` compares reference stability and icon count, preventing `this.iconCache` from being thrashed and wiped on unrelated settings saves (e.g. opacity or line thickness tweaks).
 
