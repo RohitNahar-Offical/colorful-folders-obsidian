@@ -61,6 +61,22 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             flex-grow: 1 !important;
         }
 
+        /* ── BLUE TOPAZ & UNIVERSAL FILE ICON ALIGNMENT FIX ──────────────── */
+        /* Files do not have a collapse indicator arrow. Adding a matching 24px ::before spacer
+           aligns file icons and file titles directly beneath folder icons and folder titles. */
+        body .nav-files-container .nav-file-title:not(.nav-folder-title)::before,
+        body .nav-files-container .tree-item-self:not(.nav-folder-title):not(.nn-navitem):not(.nn-file)::before,
+        body.cf-blue-topaz .nav-file-title::before,
+        body.cf-blue-topaz .tree-item-self:not(.nav-folder-title)::before {
+            content: "" !important;
+            display: inline-block !important;
+            width: var(--cf-collapse-spacer-width, var(--collapse-icon-width, 24px)) !important;
+            min-width: var(--cf-collapse-spacer-width, var(--collapse-icon-width, 24px)) !important;
+            height: 100% !important;
+            flex-shrink: 0 !important;
+            pointer-events: none !important;
+        }
+
         /* ── ICON SUPPRESSION & CONFLICT PREVENTION ─────────────────────── */
         body [data-path] .nav-folder-title-content > svg:not(.cf-icon-wrapper svg),
         body [data-path] .nav-file-title-content > svg:not(.cf-icon-wrapper svg),
