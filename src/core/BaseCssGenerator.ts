@@ -7,20 +7,9 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
         /* ── NUCLEAR SPECIFICITY NAV ITEM LAYOUT ───────────────────────────────
            We use high-specificity selectors to defeat theme overrides (like Prism).
         ──────────────────────────────────────────────────────────────────────── */
-        /* ── FOLDER NOTE INTEGRATION & CONFLICT PREVENTION ────────────────── */
-        body .is-folder-note,
-        body .is-folder-note-hidden,
-        body .fn-hidden,
-        body .folder-note-hidden,
-        body .cf-fn-hidden,
-        body [data-folder-note="true"],
-        body [data-is-folder-note="true"] {
-            display: none !important;
-        }
-
         body .nav-folder-title:not([style*="display: none"]),
         body .nav-file-title:not([style*="display: none"]),
-        body .tree-item-self:not([style*="display: none"]):not(.is-folder-note):not(.fn-hidden) {
+        body .tree-item-self:not([style*="display: none"]) {
             display: flex;
             align-items: center !important;
             justify-content: flex-start !important;
@@ -535,12 +524,12 @@ export function generateStealthCss(settings: ColorfulFoldersSettings): string {
                     display: none !important;
                 }
 
-                body.cf-show-hidden .nav-folder-title[data-path="${safePath}"]:not(.is-folder-note):not(.is-folder-note-hidden):not(.fn-hidden):not(.cf-fn-hidden):not(.folder-note-hidden):not([data-folder-note="true"]),
-                body.cf-show-hidden .nav-file-title[data-path="${safePath}"]:not(.is-folder-note):not(.is-folder-note-hidden):not(.fn-hidden):not(.cf-fn-hidden):not(.folder-note-hidden):not([data-folder-note="true"]),
-                body.cf-show-hidden .tree-item-self[data-path="${safePath}"]:not(.is-folder-note):not(.is-folder-note-hidden):not(.fn-hidden):not(.cf-fn-hidden):not(.folder-note-hidden):not([data-folder-note="true"]),
-                body.cf-show-hidden .tree-item[data-path="${safePath}"]:not(.is-folder-note):not(.is-folder-note-hidden):not(.fn-hidden):not(.cf-fn-hidden):not(.folder-note-hidden):not([data-folder-note="true"]),
-                body.cf-show-hidden .nav-file[data-path="${safePath}"]:not(.is-folder-note):not(.is-folder-note-hidden):not(.fn-hidden):not(.cf-fn-hidden):not(.folder-note-hidden):not([data-folder-note="true"]),
-                body.cf-show-hidden .nav-folder[data-path="${safePath}"]:not(.is-folder-note):not(.is-folder-note-hidden):not(.fn-hidden):not(.cf-fn-hidden):not(.folder-note-hidden):not([data-folder-note="true"]) {
+                body.cf-show-hidden .nav-folder-title[data-path="${safePath}"],
+                body.cf-show-hidden .nav-file-title[data-path="${safePath}"],
+                body.cf-show-hidden .tree-item-self[data-path="${safePath}"],
+                body.cf-show-hidden .tree-item[data-path="${safePath}"],
+                body.cf-show-hidden .nav-file[data-path="${safePath}"],
+                body.cf-show-hidden .nav-folder[data-path="${safePath}"] {
                     display: flex !important;
                     visibility: visible !important;
                     background-color: rgba(128, 128, 128, 0.15) !important;

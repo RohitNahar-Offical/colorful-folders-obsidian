@@ -487,6 +487,7 @@ export class StyleGenerator {
 
                 const activeGlowEnabled = this.settings.activeGlow !== false;
                 if (isFolderNote) {
+                    const safeFolderPath = this.getSafeEscape(folder.path);
                     const parentFolderStyle = this.getStyle(folder.path);
                     const parentFolderColor = passedColor || ColorResolver.resolveColor(
                         folder.path,
@@ -522,15 +523,15 @@ export class StyleGenerator {
                             box-shadow: none !important;
                         `}
                     `, [
-                        `body .nav-files-container .nav-folder-title.cf-is-active[data-path="${safePath}"]`,
-                        `body .nav-files-container .tree-item-self.cf-is-active[data-path="${safePath}"]`
+                        `body .nav-files-container .nav-folder-title.cf-is-active[data-path="${safeFolderPath}"]`,
+                        `body .nav-files-container .tree-item-self.cf-is-active[data-path="${safeFolderPath}"]`
                     ]);
 
                     grouper.add(`
                         background-color: var(--cf-active-color, ${parentActiveText}) !important;
                     `, [
-                        `body .nav-files-container .nav-folder.cf-active-parent > .nav-folder-title[data-path="${safePath}"]::before`,
-                        `body .nav-files-container .tree-item.cf-active-parent > .tree-item-self[data-path="${safePath}"]:not(.nn-navitem)::before`
+                        `body .nav-files-container .nav-folder.cf-active-parent > .nav-folder-title[data-path="${safeFolderPath}"]::before`,
+                        `body .nav-files-container .tree-item.cf-active-parent > .tree-item-self[data-path="${safeFolderPath}"]:not(.nn-navitem)::before`
                     ]);
 
                     if (this.settings.notebookNavigatorSupport) {
@@ -542,7 +543,7 @@ export class StyleGenerator {
                             box-shadow: none !important;
                             border-radius: 0 !important;
                         `, [
-                            `.notebook-navigator .nn-navitem.cf-active-parent > .nn-virtual-container[data-path="${safePath}"]`
+                            `.notebook-navigator .nn-navitem.cf-active-parent > .nn-virtual-container[data-path="${safeFolderPath}"]`
                         ]);
                     }
                     if (activeGlowEnabled && useGlass) {

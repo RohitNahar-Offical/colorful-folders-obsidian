@@ -212,41 +212,21 @@ export class EventTrackerService {
                     continue;
                 }
                 
-                // Helper to check if item is a Folder Note
-                const isFolderNote = (): boolean => {
+                // Helper to check if item is explicitly hidden by a folder note plugin
+                const isFolderNoteHidden = (): boolean => {
                     const styleAttr = item.getAttribute('style') || '';
                     const parentStyle = parentTreeItem?.getAttribute('style') || '';
                     
-                    if (
+                    return (
                         styleAttr.includes('display: none') || styleAttr.includes('display:none') ||
                         parentStyle.includes('display: none') || parentStyle.includes('display:none') ||
-                        item.matches('.is-folder-note, .is-folder-note-hidden, .fn-hidden, .folder-note-hidden, [data-folder-note="true"], [data-is-folder-note="true"]') ||
-                        (parentTreeItem && parentTreeItem.matches('.is-folder-note, .is-folder-note-hidden, .fn-hidden, .folder-note-hidden, [data-folder-note="true"], [data-is-folder-note="true"]'))
-                    ) {
-                        return true;
-                    }
-
-                    if (!path || !parentFolderNode) return false;
-                    const folderTitleEl = parentFolderNode.querySelector(':scope > .tree-item-self, :scope > .nav-folder-title');
-                    const folderPath = folderTitleEl?.getAttribute('data-path') || '';
-                    if (!folderPath) return false;
-
-                    const normPath = normalizeVaultPath(path);
-                    const normFolderPath = normalizeVaultPath(folderPath);
-                    const parts = normPath.split('/');
-                    const fileName = parts[parts.length - 1];
-                    const folderParts = normFolderPath.split('/');
-                    const folderName = folderParts[folderParts.length - 1];
-                    const baseName = fileName.replace(/\.[^/.]+$/, '');
-
-                    return baseName.toLowerCase() === folderName.toLowerCase() || fileName.toLowerCase() === 'index.md';
+                        item.matches('.is-folder-note-hidden, .fn-hidden, .folder-note-hidden') ||
+                        (parentTreeItem ? parentTreeItem.matches('.is-folder-note-hidden, .fn-hidden, .folder-note-hidden') : false)
+                    );
                 };
 
-                if (isFolderNote()) {
-                    // Keep the file element hidden via a CSS class
-                    item.classList.add('cf-fn-hidden');
-
-                    // Highlight the parent folder title instead
+                if (isFolderNoteHidden()) {
+                    // Highlight the parent folder title when the note file itself is hidden
                     if (parentFolderNode) {
                         parentFolderNode.classList.add('cf-active-parent');
                         const folderTitleEl = parentFolderNode.querySelector(':scope > .tree-item-self, :scope > .nav-folder-title');

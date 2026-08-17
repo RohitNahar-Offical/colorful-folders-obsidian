@@ -325,11 +325,10 @@ export default class ColorfulFoldersPlugin
         const parentTreeItem = el.closest(".tree-item, .nav-file, .nav-folder");
 
         const isHiddenFolderNote =
-          el.matches('.is-folder-note, .is-folder-note-hidden, .fn-hidden, .folder-note-hidden, [data-folder-note="true"], [data-is-folder-note="true"]') ||
-          (parentTreeItem && parentTreeItem.matches('.is-folder-note, .is-folder-note-hidden, .fn-hidden, .folder-note-hidden, [data-folder-note="true"], [data-is-folder-note="true"]'));
+          el.matches('.is-folder-note-hidden, .fn-hidden, .folder-note-hidden') ||
+          (parentTreeItem && parentTreeItem.matches('.is-folder-note-hidden, .fn-hidden, .folder-note-hidden'));
 
         if (isHiddenFolderNote) {
-          el.classList.add("cf-fn-hidden");
           return;
         }
 
