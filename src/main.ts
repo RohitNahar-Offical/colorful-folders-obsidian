@@ -865,15 +865,9 @@ export default class ColorfulFoldersPlugin
     return false;
   }
 
-  isBlueTopazTheme(): boolean {
-    const vault = this.app.vault as obsidian.Vault & { getConfig?: (key: string) => unknown };
-    const getConfigFn = typeof vault.getConfig === "function" ? vault.getConfig : null;
-    const customCss = (this.app as obsidian.App & { customCss?: { theme?: string } }).customCss;
-    const themeName = customCss?.theme || "";
-    const rawTheme = getConfigFn ? (vault as { getConfig: (key: string) => unknown }).getConfig("cssTheme") : null;
-    const currentTheme = (typeof rawTheme === "string" ? rawTheme : null) || themeName;
-    return Boolean(currentTheme && currentTheme.toLowerCase() === "blue topaz");
-  }
+
+
+
 
   async generateStyles() {
     if (this._isUnloading) return;
@@ -883,11 +877,9 @@ export default class ColorfulFoldersPlugin
     }
     this.isGeneratingStyles = true;
     try {
-      const isBlueTopaz = this.isBlueTopazTheme();
       this.cachedDocuments.forEach((doc) => {
         doc.body.classList.toggle("cf-show-hidden", Boolean(this.settings.showHiddenItems));
         doc.body.classList.toggle("cf-wrap-metadata", Boolean(this.settings.wrapMetadata));
-        doc.body.classList.toggle("cf-blue-topaz", isBlueTopaz);
       });
       const css = await this.styleGenerator.generateCss();
       this.adoptedStyleSheetService.updateStyles(css);
