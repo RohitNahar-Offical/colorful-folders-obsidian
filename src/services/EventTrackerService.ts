@@ -1,7 +1,6 @@
 import * as obsidian from "obsidian";
 import type ColorfulFoldersPlugin from "../main";
 import { MenuHelper } from "../ui/MenuHelper";
-import { normalizeVaultPath } from "../common/utils";
 export class EventTrackerService {
     private plugin: ColorfulFoldersPlugin;
     private eventRefs: obsidian.EventRef[] = [];
@@ -203,7 +202,6 @@ export class EventTrackerService {
                 const item = activeItems[i];
                 if (!item) continue;
 
-                const path = item.getAttribute('data-path') || '';
                 const parentFolderNode = item.closest('.tree-item.nav-folder, .nav-folder');
                 const parentTreeItem = item.closest('.tree-item, .nav-file');
 
