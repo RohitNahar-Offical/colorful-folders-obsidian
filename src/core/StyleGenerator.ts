@@ -884,10 +884,16 @@ export class StyleGenerator {
                 `body .nav-files-container .nav-folder-title[data-path="${safePath}"] .nav-folder-collapse-indicator`,
                 `body .nav-files-container .nav-folder-title[data-path="${safePath}"] .collapse-icon`,
                 `body .nav-files-container .tree-item-self[data-path="${safePath}"] .tree-item-collapse-indicator`,
-                `body .nav-files-container .tree-item-self[data-path="${safePath}"] .collapse-icon`
+                `body .nav-files-container .tree-item-self[data-path="${safePath}"] .collapse-icon`,
+                `body .nav-files-container .nav-folder-title[data-path="${safePath}"] .nav-folder-collapse-indicator svg`,
+                `body .nav-files-container .nav-folder-title[data-path="${safePath}"] .collapse-icon svg`,
+                `body .nav-files-container .tree-item-self[data-path="${safePath}"] .tree-item-collapse-indicator svg`,
+                `body .nav-files-container .tree-item-self[data-path="${safePath}"] .collapse-icon svg`
             ];
             grouper.add(`
-                color: ${effFolderIconColor} !important;
+                color: ${folderStyles.t} !important;
+                stroke: currentColor !important;
+                opacity: 0.85 !important;
             `, collapseSels, `collapseIcon_${color.hex}`);
 
             if (this.settings.showItemCounters) {

@@ -124,11 +124,13 @@ const FOLDER_HINT_DOMAINS: Record<string, string[]> = {
 export class EmbeddingModel {
     private plugin: IColorfulFoldersPlugin;
     private iconVectors: Map<string, IconVector> = new Map();
+    private cleanIconIdMap: Map<string, string> = new Map();
     private isInitialized = false;
     private queryCache: LRUCache<string, { result: VectorMatchResult[]; timestamp: number }> = new LRUCache(MAX_CACHE_SIZE);
     private cacheHitCount = 0;
     private cacheMissCount = 0;
     private conceptDenseVectors: Map<string, Float32Array> = new Map();
+    private invertedIndex: Map<string, string[]> = new Map();
 
     private static readonly DENSE_CONCEPTS: Record<string, { prompt: string; icons: string[] }> = {
         quotes_wisdom: { prompt: "quotes sayings proverbs wisdom philosophy reflection mindset life lessons truth illusion quote-text sentence", icons: ['quote', 'sparkles', 'lightbulb', 'compass', 'brain', 'book-open'] },
@@ -321,8 +323,16 @@ export class EmbeddingModel {
         this.cacheMissCount = 0;
     }
 
+    private extractCleanIconId(iconId: string): string {
+        return iconId
+            .replace(/^(lucide-|simple-icons-|si-|tabler-|fa-solid-|fa-regular-|bx-|octicon-|ra-|cf-|bi-|ri-|feather-|brand-)/i, '')
+            .toLowerCase();
+    }
+
     public initializeIndex(): void {
         if (this.isInitialized) return;
+
+        this.cleanIconIdMap.clear();
 
         for (const [brand, candidates] of Object.entries(EmbeddingModel.BRAND_DICTIONARY)) {
             for (const iconId of candidates) {
@@ -348,9 +358,9 @@ export class EmbeddingModel {
 
             for (const iconId of targets) {
                 const vector = this.getOrCreateVector(iconId);
-                const cleanId = iconId.replace(/^lucide-/i, '').replace(/^simple-icons-/i, '');
+                const cleanId = this.extractCleanIconId(iconId);
                 vector.tokenWeights.set(iconId.toLowerCase(), 4.0);
-                vector.tokenWeights.set(cleanId.toLowerCase(), 3.5);
+                vector.tokenWeights.set(cleanId, 3.5);
 
                 for (const kw of keywords) {
                     const weights = this.buildWeightedTokenMap(kw);
@@ -365,12 +375,10 @@ export class EmbeddingModel {
         const customIcons = this.plugin?.getCustomIconsMap() || {};
         for (const iconId of Object.keys(customIcons)) {
             const vector = this.getOrCreateVector(iconId);
-            const cleanId = iconId
-                .replace(/^(simple-icons-|si-|tabler-|fa-solid-|fa-regular-|bx-|octicon-|ra-|cf-|bi-|ri-|feather-)/i, '')
-                .replace(/^brand-/i, '');
+            const cleanId = this.extractCleanIconId(iconId);
 
             vector.tokenWeights.set(iconId.toLowerCase(), 4.0);
-            vector.tokenWeights.set(cleanId.toLowerCase(), 3.5);
+            vector.tokenWeights.set(cleanId, 3.5);
 
             const weights = this.buildWeightedTokenMap(cleanId);
             weights.forEach((w, t) => {
@@ -382,13 +390,10 @@ export class EmbeddingModel {
         for (const iconId of Object.keys(localIcons)) {
             if (!localIcons[iconId]) continue;
             const vector = this.getOrCreateVector(iconId);
-            const cleanId = iconId
-                .replace(/^lucide-/i, '')
-                .replace(/^(simple-icons-|si-|tabler-|fa-solid-|fa-regular-|bx-|octicon-|ra-|cf-|bi-|ri-|feather-)/i, '')
-                .replace(/^brand-/i, '');
+            const cleanId = this.extractCleanIconId(iconId);
 
             vector.tokenWeights.set(iconId.toLowerCase(), 4.0);
-            vector.tokenWeights.set(cleanId.toLowerCase(), 3.5);
+            vector.tokenWeights.set(cleanId, 3.5);
 
             const weights = this.buildWeightedTokenMap(cleanId);
             weights.forEach((w, t) => {
@@ -401,13 +406,10 @@ export class EmbeddingModel {
             if (Array.isArray(obsidianIconIds)) {
                 for (const iconId of obsidianIconIds) {
                     const vector = this.getOrCreateVector(iconId);
-                    const cleanId = iconId
-                        .replace(/^lucide-/i, '')
-                        .replace(/^(simple-icons-|si-|tabler-|fa-solid-|fa-regular-|bx-|octicon-|ra-|cf-|bi-|ri-|feather-)/i, '')
-                        .replace(/^brand-/i, '');
+                    const cleanId = this.extractCleanIconId(iconId);
 
                     vector.tokenWeights.set(iconId.toLowerCase(), 4.0);
-                    vector.tokenWeights.set(cleanId.toLowerCase(), 3.5);
+                    vector.tokenWeights.set(cleanId, 3.5);
 
                     const weights = this.buildWeightedTokenMap(cleanId);
                     weights.forEach((w, t) => {
@@ -419,10 +421,26 @@ export class EmbeddingModel {
             // Ignore if getIconIds is unavailable in current runtime
         }
 
-        // Finalize vector normalization
-        this.iconVectors.forEach(vec => {
+        // Finalize vector normalization, populate cleanIconIdMap & build inverted index
+        this.invertedIndex.clear();
+        this.iconVectors.forEach((vec, iconId) => {
             vec.normalized = this.normalizeVectorFromMap(vec.tokenWeights);
             vec.tokens = Array.from(vec.normalized.keys());
+            for (const token of vec.tokens) {
+                let list = this.invertedIndex.get(token);
+                if (!list) {
+                    list = [];
+                    this.invertedIndex.set(token, list);
+                }
+                list.push(iconId);
+            }
+
+            const lower = iconId.toLowerCase();
+            const clean = this.extractCleanIconId(iconId);
+            const normClean = clean.replace(/[\s_-]+/g, '');
+            this.cleanIconIdMap.set(lower, iconId);
+            this.cleanIconIdMap.set(clean, iconId);
+            this.cleanIconIdMap.set(normClean, iconId);
         });
 
         this.isInitialized = true;
@@ -459,17 +477,13 @@ export class EmbeddingModel {
         const clean = text.toLowerCase().replace(/[^a-z0-9\s_-]/g, ' ').trim();
         if (!clean) return tokenWeights;
 
-        // 1. Full un-split clean phrase/filename (Highest priority: 5.5)
-        const fullClean = clean.replace(/[\s_-]+/g, ' ');
-        const fullJoined = clean.replace(/[\s_-]+/g, '');
-        const fullHyphen = clean.replace(/[\s_-]+/g, '-');
-        
-        addToken(fullClean, 5.5);
-        addToken(fullJoined, 5.5);
-        addToken(fullHyphen, 5.5);
-
         // 1b. Contiguous word n-grams (2-word and 3-word phrase tokens: 4.0 weight)
         const rawWordsAll = clean.split(/[\s_-]+/).filter(w => w.length >= 2);
+
+        // 1. Full un-split clean phrase/filename (Highest priority: 5.5)
+        addToken(rawWordsAll.join(' '), 5.5);
+        addToken(rawWordsAll.join(''), 5.5);
+        addToken(rawWordsAll.join('-'), 5.5);
         for (let i = 0; i < rawWordsAll.length - 1; i++) {
             const pairHyphen = `${rawWordsAll[i]}-${rawWordsAll[i + 1]}`;
             const pairClean = `${rawWordsAll[i]} ${rawWordsAll[i + 1]}`;
@@ -562,22 +576,35 @@ export class EmbeddingModel {
     }
 
     private getExtensionBoosts(extension: string): string[] {
-        return FILE_EXTENSION_DOMAINS[extension] || [];
+        if (Object.prototype.hasOwnProperty.call(FILE_EXTENSION_DOMAINS, extension)) {
+            const arr = FILE_EXTENSION_DOMAINS[extension];
+            return Array.isArray(arr) ? arr : [];
+        }
+        return [];
     }
 
     private getFolderHintBoosts(folderName: string): string[] {
         const normalized = folderName.toLowerCase().replace(/[^a-z0-9]/g, '');
-        return FOLDER_HINT_DOMAINS[normalized] || FOLDER_HINT_DOMAINS[folderName.toLowerCase()] || [];
+        if (Object.prototype.hasOwnProperty.call(FOLDER_HINT_DOMAINS, normalized)) {
+            const arr = FOLDER_HINT_DOMAINS[normalized];
+            if (Array.isArray(arr)) return arr;
+        }
+        const lower = folderName.toLowerCase();
+        if (Object.prototype.hasOwnProperty.call(FOLDER_HINT_DOMAINS, lower)) {
+            const arr = FOLDER_HINT_DOMAINS[lower];
+            if (Array.isArray(arr)) return arr;
+        }
+        return [];
     }
 
-    private applyContextBoost(baseScore: number, iconId: string, context: QueryContext): number {
+    private applyContextBoost(baseScore: number, iconId: string, context: QueryContext, precalculatedTokens?: string[]): number {
         let boost = 1.0;
         const lowerIcon = iconId.toLowerCase();
 
-        const extensionBoosts = this.getExtensionBoosts(context.extension);
-        const folderHints = context.isFolder ? this.getFolderHintBoosts(context.parentFolder) : [];
-
-        const relevantTokens = [...extensionBoosts, ...folderHints];
+        const relevantTokens = precalculatedTokens || [
+            ...this.getExtensionBoosts(context.extension),
+            ...(context.isFolder ? this.getFolderHintBoosts(context.parentFolder) : [])
+        ];
         
         for (const token of relevantTokens) {
             const lowerToken = token.toLowerCase();
@@ -596,7 +623,7 @@ export class EmbeddingModel {
         return baseScore * boost;
     }
 
-    public findBestIcons(titleOrPath: string, options?: { topK?: number; minScore?: number; isFolder?: boolean }): VectorMatchResult[] {
+    public findBestIcons(titleOrPath: string, options?: { topK?: number; minScore?: number; isFolder?: boolean; queryContext?: QueryContext }): VectorMatchResult[] {
         this.initializeIndex();
 
         const cacheKey = `${titleOrPath}:${options?.topK ?? DEFAULT_TOP_K}:${options?.minScore ?? DEFAULT_MIN_SCORE}:${options?.isFolder ?? false}`;
@@ -609,15 +636,19 @@ export class EmbeddingModel {
 
         const topK = options?.topK ?? DEFAULT_TOP_K;
         const minScore = options?.minScore ?? DEFAULT_MIN_SCORE;
-        const context = this.buildQueryContext(titleOrPath, options?.isFolder ?? false);
+        const context = options?.queryContext ?? this.buildQueryContext(titleOrPath, options?.isFolder ?? false);
 
+        const relevantTokens = [
+            ...this.getExtensionBoosts(context.extension),
+            ...(context.isFolder ? this.getFolderHintBoosts(context.parentFolder) : [])
+        ];
 
         const directMatch = this.tryDirectDictionaryMatch(context.lowerName, topK, context);
         if (directMatch.length > 0) {
             const enriched: VectorMatchResult[] = directMatch.map((r): VectorMatchResult => ({
                 ...r,
                 confidence: 'high',
-                score: this.applyContextBoost(r.score, r.iconId, context)
+                score: this.applyContextBoost(r.score, r.iconId, context, relevantTokens)
             })).sort((a, b) => b.score - a.score).slice(0, topK);
             
             this.queryCache.set(cacheKey, { result: enriched, timestamp: Date.now() });
@@ -634,17 +665,30 @@ export class EmbeddingModel {
         const queryVector = this.normalizeVectorFromMap(queryTokenWeights);
         const scored: { iconId: string; rawScore: number }[] = [];
 
-        this.iconVectors.forEach((iconVec, iconId) => {
-            const rawScore = this.computeCosineSimilarity(queryVector, iconVec.normalized);
-            if (rawScore >= minScore) {
-                scored.push({ iconId, rawScore });
+        const candidateIconIds = new Set<string>();
+        queryVector.forEach((_, token) => {
+            const matches = this.invertedIndex.get(token);
+            if (matches) {
+                for (let i = 0; i < matches.length; i++) {
+                    candidateIconIds.add(matches[i]);
+                }
+            }
+        });
+
+        candidateIconIds.forEach(iconId => {
+            const iconVec = this.iconVectors.get(iconId);
+            if (iconVec) {
+                const rawScore = this.computeCosineSimilarity(queryVector, iconVec.normalized);
+                if (rawScore >= minScore) {
+                    scored.push({ iconId, rawScore });
+                }
             }
         });
 
         const boosted = scored
             .map(s => ({
                 iconId: s.iconId,
-                score: this.applyContextBoost(s.rawScore, s.iconId, context)
+                score: this.applyContextBoost(s.rawScore, s.iconId, context, relevantTokens)
             }))
             .sort((a, b) => b.score - a.score)
             .slice(0, topK);
@@ -686,31 +730,16 @@ export class EmbeddingModel {
     }
 
     private tryDirectDictionaryMatch(lowerName: string, topK: number, context?: QueryContext): VectorMatchResult[] {
-        // Direct icon name & clean ID match against available icon library
         const normLowerName = lowerName.replace(/[\s_-]+/g, '');
-        const directIconMatches: VectorMatchResult[] = [];
 
-        this.iconVectors.forEach((_vec, iconId) => {
-            const cleanId = iconId
-                .replace(/^lucide-/i, '')
-                .replace(/^(simple-icons-|si-|tabler-|fa-solid-|fa-regular-|bx-|octicon-|ra-|cf-|bi-|ri-|feather-)/i, '')
-                .replace(/^brand-/i, '')
-                .toLowerCase();
-            const normCleanId = cleanId.replace(/[\s_-]+/g, '');
-            const lowerIcon = iconId.toLowerCase();
-
-            if (lowerIcon === lowerName || cleanId === lowerName || normCleanId === normLowerName) {
-                directIconMatches.push({
-                    iconId,
-                    score: 0.99,
-                    matchedTag: lowerName,
-                    confidence: 'high'
-                });
-            }
-        });
-
-        if (directIconMatches.length > 0) {
-            return directIconMatches.slice(0, topK);
+        const matchedDirectId = this.cleanIconIdMap.get(normLowerName) || this.cleanIconIdMap.get(lowerName);
+        if (matchedDirectId) {
+            return [{
+                iconId: matchedDirectId,
+                score: 0.99,
+                matchedTag: lowerName,
+                confidence: 'high'
+            }];
         }
 
         if (this.plugin?.iconManager) {
@@ -737,14 +766,16 @@ export class EmbeddingModel {
             }));
         }
 
-        const direct = EmbeddingModel.BRAND_DICTIONARY[lowerName];
-        if (direct) {
-            return direct.slice(0, topK).map(iconId => ({
-                iconId,
-                score: 1.0,
-                matchedTag: lowerName,
-                confidence: 'high'
-            }));
+        if (Object.prototype.hasOwnProperty.call(EmbeddingModel.BRAND_DICTIONARY, lowerName)) {
+            const direct = EmbeddingModel.BRAND_DICTIONARY[lowerName];
+            if (Array.isArray(direct)) {
+                return direct.slice(0, topK).map(iconId => ({
+                    iconId,
+                    score: 1.0,
+                    matchedTag: lowerName,
+                    confidence: 'high'
+                }));
+            }
         }
 
         const prefixMatches: { iconId: string; brand: string }[] = [];
@@ -851,6 +882,19 @@ export class EmbeddingModel {
         return results;
     }
 
+    private normalizeFloat32Array(vec: Float32Array): Float32Array {
+        let normSq = 0;
+        for (let i = 0; i < vec.length; i++) {
+            const val = vec[i];
+            normSq += val * val;
+        }
+        const norm = Math.sqrt(normSq) || 1.0;
+        for (let i = 0; i < vec.length; i++) {
+            vec[i] /= norm;
+        }
+        return vec;
+    }
+
     public async fetchNeuralEmbedding(text: string): Promise<Float32Array | null> {
         const settings = this.plugin?.settings;
         if (settings?.embeddingEngine === 'builtin') return null;
@@ -879,13 +923,13 @@ export class EmbeddingModel {
 
                 const data = res.json as Record<string, unknown>;
                 if (Array.isArray(data.embedding)) {
-                    return new Float32Array(data.embedding as number[]);
+                    return this.normalizeFloat32Array(new Float32Array(data.embedding as number[]));
                 }
                 if (Array.isArray(data.embeddings) && Array.isArray(data.embeddings[0])) {
-                    return new Float32Array(data.embeddings[0] as number[]);
+                    return this.normalizeFloat32Array(new Float32Array(data.embeddings[0] as number[]));
                 }
                 if (Array.isArray(data.data) && (data.data[0] as Record<string, unknown>)?.embedding) {
-                    return new Float32Array((data.data[0] as Record<string, unknown>).embedding as number[]);
+                    return this.normalizeFloat32Array(new Float32Array((data.data[0] as Record<string, unknown>).embedding as number[]));
                 }
             } catch {
                 // Try next endpoint
@@ -911,23 +955,16 @@ export class EmbeddingModel {
     }
 
     /**
-     * Computes Cosine Similarity between two dense N-dimensional floating point vectors.
+     * Computes Cosine Similarity between two pre-normalized dense N-dimensional floating point vectors.
      */
     public computeDenseCosineSimilarity(vecA: Float32Array | number[], vecB: Float32Array | number[]): number {
         if (!vecA || !vecB || vecA.length === 0 || vecB.length === 0) return 0;
         const len = Math.min(vecA.length, vecB.length);
         let dot = 0;
-        let normA = 0;
-        let normB = 0;
         for (let i = 0; i < len; i++) {
-            const a = vecA[i];
-            const b = vecB[i];
-            dot += a * b;
-            normA += a * a;
-            normB += b * b;
+            dot += vecA[i] * vecB[i];
         }
-        const denom = (Math.sqrt(normA) * Math.sqrt(normB));
-        return denom === 0 ? 0 : dot / denom;
+        return dot;
     }
 
     public async findBestIconsDense(
@@ -989,7 +1026,7 @@ export class EmbeddingModel {
             }));
         }
 
-        return this.findBestIcons(titleOrPath, options);
+        return this.findBestIcons(titleOrPath, { ...options, queryContext: context });
     }
 
     /**

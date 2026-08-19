@@ -45,6 +45,16 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             height: auto !important;
         }
 
+        body .nav-folder-collapse-indicator svg,
+        body .tree-item-collapse-indicator svg,
+        body .collapse-indicator svg,
+        body .tree-item-icon.collapse-indicator svg,
+        body .collapse-icon svg,
+        body .tree-item-icon.collapse-icon svg {
+            color: inherit !important;
+            stroke: currentColor !important;
+        }
+
         /* ── CONTENT ELEMENT: always flex row, icon or not ───────────────── */
         body .nav-folder-title-content,
         body .nav-file-title-content,
