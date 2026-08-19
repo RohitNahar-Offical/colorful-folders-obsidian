@@ -58,12 +58,15 @@ Add `if (this.isDragging) return;` at the start of observer re-initialization fu
 Defer layout queries to `app.workspace.onLayoutReady()`, and chunk file I/O using `setTimeout(..., 0)` to prevent startup freezes. Batch large filesystem operations (e.g., custom SVG file reads) in chunks of 50. Skip hidden dot-folders (`.smart-env`, `.git`, `.obsidian`) at the root level. *(Incident #18, #26)*
 
 **RULE 2.6: Debounce Settings Persistence.**
-Aggressively debounce disk writes (`saveData()`) and stylesheet generation when the user is interacting with UI sliders or color pickers. Keep visual feedback synchronous but defer persistence to a 300ms+ trailing edge. *(Incident #19)*
+Settings disk writes must be debounced by at least 1,000ms using `saveDataDebounced`. Avoid synchronous `saveData()` calls inside loops or high-frequency UI events. *(Incident #19)*
 
-**RULE 2.7: Zero-DOM Data-Attribute Tagging.**
+**RULE 2.7: $O(1)$ Keystroke & High-Frequency Event Handlers.**
+Never allocate arrays or iterate over LRU cache keys inside high-frequency event handlers like `metadataCache.on('changed')` or `vault.on('modify')`. All keystroke event listeners must execute in < 0.01ms (using $O(1)$ direct key operations) to preserve the 16.6ms budget required for Smooth Cursor and 60 FPS editor responsiveness. *(Incident #31)*
+
+**RULE 2.8: Zero-DOM Data-Attribute Tagging.**
 Tag file tree nodes using `data-cf-path` dataset attributes instead of modifying child DOM structure. Dataset attribute updates do NOT fire `childList` mutation events, eliminating third-party observer race conditions with plugins like *Smart Connections*. *(Incident #27 [superseded], #28)*
 
-**RULE 2.8: Whitelist MutationObserver class filters.**
+**RULE 2.9: Whitelist MutationObserver class filters.**
 Never bind `MutationObserver` to high-traffic elements like `document.body` without extreme filtering. Always whitelist the specific classes you care about (e.g., `theme-dark`, `theme-light`, `cf-show-hidden`) and ignore noisy interaction classes (`is-dragging`, `is-focused`, `workspace-leaf-active`). *(Incident #13)*
 
 **RULE 2.9: Cache expensive computations.**

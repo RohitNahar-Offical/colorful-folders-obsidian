@@ -20,6 +20,7 @@ export class StyleGenerator {
     app: obsidian.App;
 
     private static readonly CF_FILE_TEXT_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px; opacity: 0.85;"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+    private static readonly CF_FILE_TEXT_ICON_MASK_URL = `url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22currentColor%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20style%3D%22width%3A%2018px%3B%20height%3A%2018px%3B%20opacity%3A%200.85%3B%22%3E%3Cpath%20d%3D%22M14.5%202H6a2%202%200%200%200-2%202v16a2%202%200%200%202%202h12a2%202%200%200%202-2V7.5L14.5%202z%22%2F%3E%3Cpolyline%20points%3D%2214%202%2014%208%2020%208%22%2F%3E%3C%2Fsvg%3E")`;
     private static readonly SPACED_TEXT_CSS = `
         letter-spacing: 1px !important;
         word-spacing: 2px !important;
@@ -450,8 +451,8 @@ export class StyleGenerator {
                             margin-right: 4px !important;
                         `, fileTextSels.map(s => s + '::before'));
                     } else {
-                        const svgStr = this.plugin.iconManager.getIconSvg(iconId, true);
-                        if (svgStr) {
+                        const maskUrl = this.plugin.iconManager.getMaskDataUri(iconId);
+                        if (maskUrl) {
                             grouper.add(`
                                 content: '' !important;
                                 display: inline-flex !important;
@@ -461,7 +462,7 @@ export class StyleGenerator {
                                 height: ${effFileIconW} !important;
                                 margin-right: 4px !important;
                                 background-color: ${iconColor || color.hex || textNative} !important;
-                                -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(svgStr, true)}") !important;
+                                -webkit-mask-image: ${maskUrl} !important;
                                 -webkit-mask-repeat: no-repeat !important;
                                 -webkit-mask-position: center !important;
                                 -webkit-mask-size: contain !important;
@@ -477,7 +478,7 @@ export class StyleGenerator {
                         width: ${effFileIconW} !important;
                         height: ${effFileIconW} !important;
                         background-color: ${iconColor || color.hex || textNative} !important;
-                        -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(decodeURIComponent(CF_FILE_TEXT_ICON))}") !important;
+                        -webkit-mask-image: ${StyleGenerator.CF_FILE_TEXT_ICON_MASK_URL} !important;
                         -webkit-mask-repeat: no-repeat !important;
                         -webkit-mask-position: center !important;
                         -webkit-mask-size: contain !important;
@@ -823,8 +824,8 @@ export class StyleGenerator {
                         -webkit-mask-image: none !important;
                     `, sels, `icon_${iconIdToUse}_emoji_${folderIconW}`);
                 } else {
-                    const svgStr = this.plugin.iconManager.getIconSvg(iconIdToUse, true);
-                    if (svgStr) {
+                    const maskUrl = this.plugin.iconManager.getMaskDataUri(iconIdToUse);
+                    if (maskUrl) {
                         grouper.add(`
                             content: '' !important;
                             display: inline-flex !important;
@@ -834,7 +835,7 @@ export class StyleGenerator {
                             height: ${folderIconW} !important;
                             margin-right: 4px !important;
                             background-color: ${effFolderIconColor} !important;
-                            -webkit-mask-image: url("data:image/svg+xml,${this.plugin.iconManager.normalizeSvg(svgStr, true)}") !important;
+                            -webkit-mask-image: ${maskUrl} !important;
                             -webkit-mask-repeat: no-repeat !important;
                             -webkit-mask-position: center !important;
                             -webkit-mask-size: contain !important;

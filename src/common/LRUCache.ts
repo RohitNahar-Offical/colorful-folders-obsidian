@@ -39,6 +39,10 @@ export class LRUCache<K, V> {
         this.map.clear();
     }
 
+    public keys(): IterableIterator<K> {
+        return this.map.keys();
+    }
+
     public get size(): number {
         return this.map.size;
     }

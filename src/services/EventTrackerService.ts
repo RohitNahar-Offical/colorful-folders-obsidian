@@ -43,6 +43,14 @@ export class EventTrackerService {
         );
 
         this.registerEvent(
+            this.plugin.app.metadataCache.on("changed", (file) => {
+                if (file && file.path && this.plugin.settings.autoIcons) {
+                    this.plugin.iconManager?.invalidateAutoIconCache(file.path);
+                }
+            })
+        );
+
+        this.registerEvent(
             this.plugin.app.vault.on("modify", (file) => {
                 if (file && file.path.endsWith("colorful-folders/data.json")) {
                     void (async () => {
@@ -65,12 +73,34 @@ export class EventTrackerService {
                     })();
                     return;
                 }
+                if (file && !(file.path.startsWith('.') || file.path.includes('/.'))) {
+                    if (this.plugin.settings.colorMode === "heatmap" && this.plugin.heatmapCache) {
+                        let p = file.parent;
+                        const mtime = Date.now();
+                        while (p) {
+                            if ((this.plugin.heatmapCache.get(p.path) || 0) < mtime) {
+                                this.plugin.heatmapCache.set(p.path, mtime);
+                            }
+                            p = p.parent;
+                        }
+                    }
+                }
             })
         );
 
         this.registerEvent(
             this.plugin.app.vault.on("create", (file) => {
                 if (file && (file.path.startsWith('.') || file.path.includes('/.'))) return;
+                if (this.plugin.settings.colorMode === "heatmap" && this.plugin.heatmapCache) {
+                    let p = file.parent;
+                    const mtime = Date.now();
+                    while (p) {
+                        if ((this.plugin.heatmapCache.get(p.path) || 0) < mtime) {
+                            this.plugin.heatmapCache.set(p.path, mtime);
+                        }
+                        p = p.parent;
+                    }
+                }
                 this.invalidateCaches();
                 this.plugin.generateStylesDebounced();
             }),

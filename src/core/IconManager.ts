@@ -38,6 +38,14 @@ export class IconManager {
         return this.repository.getDataUri(iconId);
     }
 
+    getMaskDataUri(iconId: string, rawSvg?: string): string {
+        return this.repository.getMaskDataUri(iconId, rawSvg);
+    }
+
+    invalidateAutoIconCache(path?: string): void {
+        this.repository.invalidateAutoIconCache(path);
+    }
+
     normalizeSvg(svgStr: string, shouldEncode = true): string {
         return this.repository.normalizeSvg(svgStr, shouldEncode);
     }

@@ -506,6 +506,31 @@ export class IconRepository {
         return dataUri;
     }
 
+    getMaskDataUri(iconId: string, rawSvg?: string): string {
+        if (!iconId && !rawSvg) return "";
+        const cacheKey = `mask:${iconId || hashString(rawSvg || '')}`;
+        const hit = this._dataUriCache.get(cacheKey);
+        if (hit !== undefined) return hit;
+
+        const svg = rawSvg || this.getIconSvg(iconId, true);
+        const normalized = svg ? this.normalizeSvg(svg, true) : "";
+        const maskUrl = normalized ? `url("data:image/svg+xml,${normalized}")` : "";
+        this._dataUriCache.set(cacheKey, maskUrl);
+        return maskUrl;
+    }
+
+    invalidateAutoIconCache(path?: string): void {
+        if (path) {
+            this._autoIconResultCache.delete(path);
+            const fileName = path.includes('/') ? path.split('/').pop() : path;
+            if (fileName) {
+                this._autoIconResultCache.delete(`${fileName}::${path}`);
+            }
+        } else {
+            this._autoIconResultCache.clear();
+        }
+    }
+
     normalizeSvg(svgStr: string, shouldEncode = true): string {
         const cacheKey = `${shouldEncode ? '1:' : '0:'}${hashString(svgStr)}`;
         const hit = this._normCache.get(cacheKey);
