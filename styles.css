@@ -33,8 +33,13 @@
 /* ── 2. FILE EXPLORER ALIGNMENT ENGINE ───────────────────────────────── */
 /* Guaranteed High-Specificity Match to Working Snippet */
 
-body .nav-files-container .nav-folder-title,
-body .nav-files-container .nav-file-title {
+/* ── ULTRA-EFFICIENT FOLDER NOTE PROTECTION GUARD ───────────────────── */
+body .nav-files-container :is(.tree-item, .tree-item-self, .nav-file-title):is(.is-folder-note, .fn-hidden, .cf-fn-hidden, .folder-note-hidden, .is-folder-note-hidden, [data-folder-note], [style*="display: none"], [style*="display:none"]),
+body .nav-files-container .tree-item:has(> .tree-item-self:is(.is-folder-note, .fn-hidden, .cf-fn-hidden, .folder-note-hidden, [style*="display: none"], [style*="display:none"])) {
+    display: none !important;
+}
+
+body .nav-files-container :is(.nav-folder-title, .nav-file-title, .tree-item-self):not([style*="display: none"]):not([style*="display:none"]):not(.is-folder-note):not(.fn-hidden):not(.cf-fn-hidden) {
     display: flex;
     align-items: center;
     justify-content: flex-start;

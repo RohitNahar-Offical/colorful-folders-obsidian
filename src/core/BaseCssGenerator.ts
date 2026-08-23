@@ -7,9 +7,13 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
         /* ── NUCLEAR SPECIFICITY NAV ITEM LAYOUT ───────────────────────────────
            We use high-specificity selectors to defeat theme overrides (like Prism).
         ──────────────────────────────────────────────────────────────────────── */
-        body .nav-folder-title:not([style*="display: none"]),
-        body .nav-file-title:not([style*="display: none"]),
-        body .tree-item-self:not([style*="display: none"]) {
+        /* ── ULTRA-EFFICIENT FOLDER NOTE PROTECTION GUARD ───────────────────── */
+        body .nav-files-container :is(.tree-item, .tree-item-self, .nav-file-title):is(.is-folder-note, .fn-hidden, .cf-fn-hidden, .folder-note-hidden, .is-folder-note-hidden, [data-folder-note], [style*="display: none"], [style*="display:none"]),
+        body .nav-files-container .tree-item:has(> .tree-item-self:is(.is-folder-note, .fn-hidden, .cf-fn-hidden, .folder-note-hidden, [style*="display: none"], [style*="display:none"])) {
+            display: none !important;
+        }
+
+        body :is(.nav-folder-title, .nav-file-title, .tree-item-self):not([style*="display: none"]):not([style*="display:none"]):not(.is-folder-note):not(.fn-hidden):not(.cf-fn-hidden) {
             display: flex;
             align-items: center !important;
             justify-content: flex-start !important;

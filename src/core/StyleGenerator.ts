@@ -384,8 +384,8 @@ export class StyleGenerator {
                 }
 
                 const fileRowSels = [
-                    `.nav-file-title[data-path="${safePath}"]:not(.nn-file)`,
-                    `.tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem)`
+                    `.nav-file-title[data-path="${safePath}"]:not(.nn-file):not(.fn-hidden):not(.cf-fn-hidden):not([style*="display: none"]):not([style*="display:none"])`,
+                    `.tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem):not(.fn-hidden):not(.cf-fn-hidden):not([style*="display: none"]):not([style*="display:none"])`
                 ];
                 grouper.add(fileRowCss, fileRowSels, `fileRow_${color.hex}_${fileBgAlpha}_${shouldColorNative ? 1 : 0}_${baseThick}`);
 
