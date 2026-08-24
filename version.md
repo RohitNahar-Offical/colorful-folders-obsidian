@@ -1,23 +1,27 @@
 # Updates for Colorful Folders
 
-## 🛠️ 5.0.4 - Zero-Lag Keystroke Performance, $O(1)$ Caching & SVG Mask Optimization
+## 🛠️ 5.0.4 - Absolute Frontmatter Priority, Smooth Cursor Compatibility & Exact Icon Matching
 
-This release fixes editor typing stutter and Smooth Cursor lag by implementing $O(1)$ auto-icon cache invalidation, caching pre-normalized SVG mask Data URIs, adding incremental parent-chain Heatmap updates, and optimizing LRU key management.
+This release refines the icon assignment logic to guarantee that your manual choices always win, fixes stuttering issues with the Smooth Cursor plugin via $O(1)$ cache invalidation, and prioritizes exact icon names over smart categories.
 
 ---
 
-### ⚡ 1. Zero-Lag Keystroke Performance & $O(1)$ Metadata Cache Invalidation
-* **$O(1)$ Auto-Icon Cache Targeted Eviction**: Replaced 4,096-item array allocation and string regex loops with direct $O(1)$ Map key deletion (`path` and `${fileName}::${path}`) inside `IconRepository.invalidateAutoIconCache()`.
-* **Zero Keystroke Main-Thread Blocking**: Keystroke metadata cache processing time dropped from ~10ms down to < 0.0001ms, preserving 100% of the 16.6ms frame budget for 60 FPS typing and Smooth Cursor animations.
-* **Gated Event Processing**: Gated `app.metadataCache.on('changed')` invalidation handler to execute strictly when `settings.autoIcons` is enabled.
+### 👑 1. Frontmatter is the Absolute #1 Priority
+* **Total User Control (Tier 0)**: If you assign an `icon: ...` property in a note's frontmatter, it instantly overrides all algorithms, smart categories, and exact matches. Your explicit manual choice is the undisputed king of icon assignment.
 
-### 🖼️ 2. Pre-Normalized SVG Mask Data-URI Caching
-* **`getMaskDataUri()` Engine**: Added cached `-webkit-mask-image: url("data:image/svg+xml,...")` Data URI generation in `IconRepository` and `IconManager`.
-* **Pre-Normalized Default File Mask**: Static pre-normalization of `CF_FILE_TEXT_ICON_MASK_URL` eliminates `DOMParser` instantiation, regex sanitization loops, and `encodeURIComponent()` overhead during vault CSS traversal (~250x faster SVG mask resolution).
+### 🎯 2. "Literal First" Subject Noun Matching
+* **Tier 1 Exact Match Promotion**: When a file title contains a specific subject (e.g., "Docker" or "Spotify"), the plugin now directly assigns matching installed icons (e.g., `si-docker` or `si-spotify`) **before** resorting to broad semantic fallbacks. You get the exact icon you expect instead of abstract guesses.
+* **Expanded Icon Pack Support**: Added full auto-detection and prefix support for **RPG Awesome** (`ra-`), **Boxicons** (`bx-`), and GitHub **Octicons** (`octicon-`).
 
-### 📊 3. Incremental Heatmap Updates
-* **Parent-Chain Modification Tracking**: Updated `vault.on('modify')` and `vault.on('create')` handlers in `EventTrackerService` to incrementally update parent directory `mtime` values in $O(\text{depth})$ time (~0.01ms).
-* **Scan-Free CSS Rebuilds**: Bypasses 300ms+ full vault scans (`app.vault.getFiles()`) during routine style regenerations in Heatmap mode.
+### ⚡ 3. Smooth Cursor Plugin Compatibility & $O(1)$ Caching
+* **$O(1)$ Auto-Icon Cache Targeted Eviction**: Replaced 4,096-item array allocation and string regex loops with direct $O(1)$ Map key deletion inside `IconRepository.invalidateAutoIconCache()`.
+* **Smooth Cursor Lag Resolved**: Keystroke metadata cache processing time dropped from ~10ms down to < 0.0001ms, preserving 100% of the frame budget so typing and the "Smooth Cursor" plugin animations remain perfectly fluid.
+* **Instant Cache Coherence**: Renaming, creating, or deleting a file now instantly flushes the icon caches, ensuring UI icons update in real-time without needing a vault reload.
+
+### 🖼️ 4. SVG Mask & Heatmap Optimizations
+* **Pre-Normalized SVG Mask Caching**: Static pre-normalization of default file masks eliminates `DOMParser` instantiation and regex overhead during vault CSS traversal (~250x faster SVG mask resolution).
+* **Incremental Heatmap Updates**: Parent-chain modification tracking updates directory `mtime` values incrementally, bypassing full vault scans during style regenerations in Heatmap mode.
+* **Refined Fallbacks**: Cleaned out abstract category fallbacks (like `shield` from the Dragon/Phoenix category) so smart predictions return higher fidelity hits.
 
 ---
 

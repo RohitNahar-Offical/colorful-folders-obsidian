@@ -78,6 +78,65 @@ const FILE_EXTENSION_DOMAINS: Record<string, string[]> = {
 };
 
 const FOLDER_HINT_DOMAINS: Record<string, string[]> = {
+    'quotes': ['quote', 'sparkles', 'book-open'],
+    'quote': ['quote', 'sparkles', 'book-open'],
+    'statements': ['quote', 'lightbulb', 'brain'],
+    'statement': ['quote', 'lightbulb', 'brain'],
+    'questions': ['help-circle', 'lightbulb', 'compass'],
+    'question': ['help-circle', 'lightbulb', 'compass'],
+    'people': ['users', 'user', 'contact'],
+    'dots': ['circle-dot', 'layers', 'sparkles'],
+    'things': ['circle-dot', 'layers', 'sparkles'],
+    'thing': ['circle-dot', 'layers', 'sparkles'],
+    'sources': ['book-open', 'bookmark', 'library'],
+    'books': ['book-open', 'book', 'library'],
+    'book': ['book-open', 'book', 'library'],
+    'movies': ['film', 'video', 'tv'],
+    'movie': ['film', 'video', 'tv'],
+    'films': ['film', 'video', 'tv'],
+    'film': ['film', 'video', 'tv'],
+    'games': ['gamepad-2', 'sword', 'trophy'],
+    'game': ['gamepad-2', 'sword', 'trophy'],
+    'podcasts': ['mic', 'headphones', 'radio'],
+    'podcast': ['mic', 'headphones', 'radio'],
+    'articles': ['file-text', 'newspaper', 'pen-tool'],
+    'article': ['file-text', 'newspaper', 'pen-tool'],
+    'papers': ['file-text', 'book-open', 'bookmark'],
+    'paper': ['file-text', 'book-open', 'bookmark'],
+    'tv': ['tv', 'film', 'video'],
+    'songs': ['music', 'disc', 'headphones'],
+    'song': ['music', 'disc', 'headphones'],
+    'works': ['folder-kanban', 'layers', 'briefcase'],
+    'work': ['folder-kanban', 'layers', 'briefcase'],
+    'clippings': ['scissors', 'bookmark', 'newspaper'],
+    'cards': ['credit-card', 'layers', 'layout'],
+    'maps': ['map', 'compass', 'list-tree'],
+    'atlas': ['map', 'globe', 'compass'],
+    'calendar': ['calendar', 'clock', 'calendar-days'],
+    'daily': ['calendar', 'sun', 'book-open'],
+    'days': ['calendar', 'sun', 'clock'],
+    'day': ['calendar', 'sun', 'clock'],
+    'prompts': ['terminal', 'lightbulb', 'sparkles'],
+    'habits': ['repeat', 'flame', 'calendar-check'],
+    'fitness': ['dumbbell', 'heart-pulse', 'activity'],
+    'recipes': ['utensils', 'coffee', 'cake'],
+    'finance': ['dollar-sign', 'wallet', 'receipt'],
+    'taxes': ['dollar-sign', 'receipt', 'file-text'],
+    'tax': ['dollar-sign', 'receipt', 'file-text'],
+    'areas': ['layout-grid', 'layers', 'compass'],
+    'area': ['layout-grid', 'layers', 'compass'],
+    'efforts': ['zap', 'target', 'folder-kanban'],
+    'effort': ['zap', 'target', 'folder-kanban'],
+    'household': ['home', 'heart', 'users'],
+    'newsletters': ['mail', 'newspaper', 'send'],
+    'newsletter': ['mail', 'newspaper', 'send'],
+    'workshops': ['users', 'briefcase', 'presentation'],
+    'workshop': ['users', 'briefcase', 'presentation'],
+    'conferences': ['users', 'mic', 'globe'],
+    'conference': ['users', 'mic', 'globe'],
+    'entertainment': ['palette', 'film', 'music'],
+    'inbox': ['inbox', 'plus-circle', 'sparkles'],
+    '+': ['inbox', 'plus-circle', 'sparkles'],
     'projects': ['folder-kanban', 'layers', 'briefcase'],
     'notes': ['notebook', 'folder', 'file-text'],
     'documents': ['folder', 'file-text', 'book-open'],
@@ -100,6 +159,15 @@ const FOLDER_HINT_DOMAINS: Record<string, string[]> = {
     'docs': ['book-open', 'folder', 'file-text'],
     'templates': ['layout', 'folder', 'file-text'],
     'resources': ['package', 'folder', 'box'],
+    'resource': ['package', 'folder', 'box'],
+    'reviews': ['search', 'calendar', 'check-square'],
+    'review': ['search', 'calendar', 'check-square'],
+    'records': ['calendar', 'clock', 'archive'],
+    'record': ['calendar', 'clock', 'archive'],
+    'meetings': ['calendar', 'clock', 'users'],
+    'meeting': ['calendar', 'clock', 'users'],
+    'ideas': ['lightbulb', 'brain', 'sparkles'],
+    'idea': ['lightbulb', 'brain', 'sparkles'],
     'data': ['database', 'server', 'folder'],
     'backend': ['server', 'folder', 'code'],
     'frontend': ['layout', 'folder', 'code'],
@@ -121,50 +189,173 @@ const FOLDER_HINT_DOMAINS: Record<string, string[]> = {
     'obsidian': ['settings', 'folder', 'code']
 };
 
+export function cleanSemanticTitle(title: string): string {
+    if (!title) return '';
+    return title
+        .replace(/^\d{4}[-_.]\d{2}[-_.]\d{2}[-_.]?/, '') // Strip dates (e.g. 2026-08-24-, 2026.08.24)
+        .replace(/^\d{2}[-_.]\d{2}[-_.]\d{4}[-_.]?/, '') // Strip dates (e.g. 24-08-2026-)
+        .replace(/^v?\d+([._-]\d+)*[\s._-]+/i, '')       // Strip version/chapter prefixes (e.g. v1.0.3_, 01_, 1.2.)
+        .replace(/\.(md|png|svg|txt|json|py|js|ts|jsx|tsx|java|cpp|c|go|rs|rb|php|swift|kt|sql|yaml|yml|toml|xml|html|css|scss|pdf|docx|mp3|wav|mp4|mov|zip|tar|gz|env|canvas)$/i, '')
+        .replace(/([a-z])([A-Z])/g, '$1 $2')             // Split camelCase
+        .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')       // Split acronyms
+        .replace(/[\s._-]+/g, ' ')                        // Convert separators to spaces
+        .trim();
+}
+
+export const ICON_SYNONYMS: Record<string, string[]> = {
+    'trash-2': ['delete', 'remove', 'bin', 'garbage', 'rubbish', 'discard', 'cleanup', 'purge', 'clear', 'erase', 'junk', 'recycle-bin', 'destroy'],
+    'trash': ['delete', 'remove', 'bin', 'garbage', 'rubbish', 'discard', 'cleanup', 'purge', 'clear', 'erase', 'junk', 'recycle-bin'],
+    'database': ['sql', 'database', 'postgres', 'mysql', 'sqlite', 'mongodb', 'redis', 'storage', 'data', 'schema', 'query', 'records', 'tables', 'db', 'dataset', 'orm', 'migrations'],
+    'shield-check': ['security', 'protection', 'privacy', 'auth', 'authentication', 'firewall', 'safe', 'guard', 'defense', 'secure', 'verified', 'antivirus', 'shield', 'permission'],
+    'shield': ['security', 'protection', 'privacy', 'auth', 'authentication', 'firewall', 'safe', 'guard', 'defense', 'secure'],
+    'lock': ['password', 'credentials', 'secrets', 'vault', 'private', 'tokens', 'keys', 'encryption', 'confidential', 'secure', 'protect', 'restricted'],
+    'key': ['password', 'credentials', 'access', 'token', 'apikey', 'key', 'license', 'secret', 'auth', 'unlock'],
+    'wrench': ['config', 'settings', 'configuration', 'setup', 'tools', 'repair', 'maintenance', 'options', 'preferences', 'tweaks', 'service', 'util', 'utilities'],
+    'settings': ['config', 'settings', 'configuration', 'setup', 'options', 'preferences', 'system', 'admin', 'properties'],
+    'zap': ['speed', 'fast', 'quick', 'energy', 'power', 'lightning', 'electricity', 'charge', 'performance', 'boost', 'turbo', 'instant', 'flash', 'action'],
+    'flame': ['hot', 'fire', 'burn', 'streak', 'trending', 'passion', 'popular', 'energy', 'vitality', 'warmth'],
+    'utensils': ['food', 'cooking', 'recipe', 'meal', 'dinner', 'lunch', 'breakfast', 'diet', 'nutrition', 'kitchen', 'restaurant', 'cafe', 'baking', 'culinary', 'dish', 'cook'],
+    'coffee': ['coffee', 'tea', 'cafe', 'break', 'morning', 'espresso', 'drink', 'beverage', 'caffeine', 'mug'],
+    'dollar-sign': ['finance', 'money', 'budget', 'expense', 'income', 'salary', 'payment', 'billing', 'invoice', 'currency', 'cash', 'crypto', 'investment', 'stocks', 'trading', 'banking', 'revenue', 'tax', 'profit', 'cost'],
+    'banknote': ['money', 'cash', 'finance', 'payment', 'salary', 'currency', 'funds', 'wealth'],
+    'wallet': ['money', 'crypto', 'wallet', 'finances', 'payment', 'savings', 'budget', 'assets'],
+    'credit-card': ['payment', 'billing', 'checkout', 'card', 'subscription', 'transaction', 'visa', 'mastercard', 'purchase'],
+    'receipt': ['receipt', 'invoice', 'bill', 'expense', 'proof', 'transaction', 'statement', 'accounting'],
+    'heart-pulse': ['health', 'fitness', 'workout', 'exercise', 'gym', 'medical', 'cardio', 'doctor', 'hospital', 'medicine', 'wellness', 'body', 'training', 'pulse', 'vital', 'heart', 'healthcare'],
+    'activity': ['activity', 'fitness', 'workout', 'analytics', 'performance', 'metrics', 'stats', 'pulse', 'monitoring'],
+    'stethoscope': ['medical', 'doctor', 'clinic', 'health', 'hospital', 'medicine', 'checkup', 'physician'],
+    'dumbbell': ['gym', 'fitness', 'workout', 'exercise', 'weightlifting', 'bodybuilding', 'strength', 'training', 'muscles'],
+    'graduation-cap': ['education', 'study', 'school', 'university', 'college', 'course', 'degree', 'learning', 'lesson', 'lecture', 'student', 'exam', 'academy', 'homework', 'tutorial', 'diploma', 'academic', 'syllabus', 'session', 'semester', 'curriculum', 'high-school', 'ucla'],
+    'book-open': ['reading', 'books', 'book', 'literature', 'library', 'documentation', 'notes', 'novel', 'study', 'research', 'guide', 'manual', 'reference'],
+    'book': ['book', 'reading', 'novel', 'manual', 'handbook', 'guide', 'textbook'],
+    'palette': ['design', 'art', 'color', 'theme', 'ui', 'ux', 'drawing', 'illustration', 'graphic', 'visual', 'creative', 'paint', 'sketch', 'styling'],
+    'brush': ['art', 'paint', 'painting', 'drawing', 'creative', 'brush', 'artwork', 'canvas', 'illustration'],
+    'camera': ['photo', 'photography', 'pictures', 'gallery', 'camera', 'snapshots', 'wallpaper', 'media', 'shots', 'capture'],
+    'image': ['picture', 'photo', 'graphic', 'wallpaper', 'screenshot', 'artwork', 'banner', 'illustration'],
+    'video': ['movie', 'film', 'video', 'youtube', 'stream', 'recording', 'cinema', 'clip', 'broadcast', 'vlog', 'footage'],
+    'film': ['movie', 'cinema', 'film', 'video', 'production', 'theatre', 'show'],
+    'music': ['audio', 'music', 'song', 'sound', 'podcast', 'playlist', 'track', 'album', 'tune', 'melody', 'headphones', 'radio', 'beats', 'spotify'],
+    'headphones': ['music', 'audio', 'podcast', 'listening', 'sound', 'earphones', 'beats'],
+    'mic': ['podcast', 'recording', 'audio', 'voice', 'interview', 'microphone', 'speech', 'talk'],
+    'compass': ['travel', 'trip', 'journey', 'navigation', 'direction', 'vacation', 'destination', 'location', 'tour', 'explore', 'adventure', 'route', 'philosophy', 'guidance', 'vision'],
+    'map-pin': ['location', 'place', 'address', 'destination', 'spot', 'venue', 'coordinates', 'pin', 'geo', 'travel'],
+    'plane': ['flight', 'travel', 'trip', 'vacation', 'airport', 'holiday', 'voyage', 'flying', 'tourism', 'itinerary', 'paris', 'flight-ticket'],
+    'calendar': ['schedule', 'meeting', 'events', 'appointment', 'timeline', 'agenda', 'deadline', 'reminder', 'time', 'date', 'planning', 'daily', 'weekly', 'monthly'],
+    'clock': ['time', 'timer', 'history', 'deadline', 'schedule', 'clock', 'duration', 'stopwatch', 'hours', 'minutes', 'tracking'],
+    'check-square': ['tasks', 'todo', 'checklist', 'goals', 'milestone', 'action-items', 'progress', 'tracker', 'objectives', 'done', 'completed'],
+    'target': ['goals', 'milestone', 'target', 'objective', 'aim', 'focus', 'accuracy', 'strategy', 'kpi', 'okr'],
+    'git-branch': ['github', 'git', 'version-control', 'branch', 'repository', 'commit', 'pr', 'pull-request', 'merge', 'repo'],
+    'terminal': ['terminal', 'console', 'bash', 'command-line', 'cli', 'shell', 'scripts', 'powershell', 'zsh', 'exec'],
+    'code': ['code', 'programming', 'developer', 'software', 'source', 'script', 'algorithm', 'syntax', 'function'],
+    'cpu': ['hardware', 'processor', 'chip', 'cpu', 'computer', 'system', 'performance', 'benchmark', 'tech', 'device', 'deeplearning', 'neuralnet', 'ai', 'ml', 'weights'],
+    'server': ['server', 'backend', 'hosting', 'infrastructure', 'node', 'cluster', 'deployment', 'sysadmin', 'api'],
+    'cloud': ['cloud', 'aws', 'azure', 'gcp', 'hosting', 'storage', 'backup', 'network', 'online', 'sync'],
+    'mail': ['email', 'newsletter', 'inbox', 'messages', 'contact', 'communication', 'letters', 'outbox', 'correspondence', 'mail'],
+    'send': ['send', 'submit', 'dispatch', 'forward', 'outbox', 'publish', 'deliver'],
+    'message-square': ['chat', 'conversation', 'discussion', 'comments', 'feedback', 'messages', 'talk', 'forum', 'community'],
+    'brain': ['ideas', 'thoughts', 'concept', 'thinking', 'mindset', 'philosophy', 'innovation', 'brainstorm', 'wisdom', 'reflection', 'insights', 'psychology', 'iq', 'mental', 'ai', 'intellect'],
+    'lightbulb': ['idea', 'tips', 'insight', 'creativity', 'invention', 'solution', 'inspiration', 'eureka', 'bright', 'trick'],
+    'sparkles': ['magic', 'ai', 'generative', 'special', 'clean', 'awesome', 'shine', 'glow', 'wonder', 'glamour', 'new', 'meditation', 'zen', 'mindfulness', 'spark', 'sparks', 'ideaverse', 'callout', 'callouts'],
+    'file-text': ['notes', 'documentation', 'article', 'docs', 'readme', 'changelog', 'paper', 'summary', 'report', 'draft', 'memo', 'manuscript', 'content'],
+    'pen-tool': ['writing', 'author', 'authoring', 'blog', 'draft', 'story', 'novel', 'literature', 'pen', 'vector', 'compose', 'essay'],
+    'scale': ['legal', 'law', 'contract', 'agreement', 'terms', 'policy', 'compliance', 'court', 'justice', 'rules', 'regulations', 'lawyer', 'attorney', 'nda'],
+    'gavel': ['court', 'judge', 'legal', 'law', 'verdict', 'ruling', 'auction', 'bidding'],
+    'microscope': ['science', 'research', 'lab', 'biology', 'chemistry', 'physics', 'experiment', 'scientific', 'analysis', 'hypothesis', 'investigation'],
+    'flask-conical': ['chemistry', 'experiment', 'formula', 'lab', 'science', 'potion', 'reaction', 'test'],
+    'leaf': ['nature', 'plants', 'garden', 'ecology', 'environment', 'trees', 'flowers', 'green', 'agriculture', 'botany', 'organic', 'sustainability'],
+    'tree-pine': ['nature', 'forest', 'trees', 'woods', 'environment', 'camping', 'outdoor', 'park'],
+    'sun': ['weather', 'summer', 'day', 'light', 'morning', 'bright', 'sunny', 'energy', 'solar', 'warm'],
+    'moon': ['night', 'dark', 'evening', 'sleep', 'dream', 'lunar', 'nocturnal', 'astronomy'],
+    'gamepad-2': ['gaming', 'games', 'game', 'rpg', 'playstation', 'xbox', 'nintendo', 'steam', 'quest', 'arcade', 'achievement', 'esports', 'videogames'],
+    'sword': ['combat', 'rpg', 'war', 'attack', 'weapon', 'fight', 'strategy', 'defense', 'adventure'],
+    'trophy': ['reward', 'winner', 'achievement', 'championship', 'contest', 'award', 'victory', 'gold', 'medal', 'rank'],
+    'users': ['people', 'team', 'family', 'friends', 'contacts', 'community', 'clients', 'members', 'profile', 'colleagues', 'staff', 'group', 'audience', 'workshop', 'workshops', 'conference', 'conferences'],
+    'user': ['profile', 'account', 'person', 'individual', 'avatar', 'identity', 'bio', 'resume', 'cv'],
+    'shopping-cart': ['shopping', 'cart', 'buy', 'purchases', 'orders', 'ecommerce', 'products', 'market', 'checkout', 'storefront'],
+    'shopping-bag': ['shopping', 'bag', 'boutique', 'merchandise', 'retail', 'fashion', 'goods'],
+    'package': ['package', 'box', 'delivery', 'shipping', 'cargo', 'product', 'parcel', 'supplies', 'inventory'],
+    'bell': ['notification', 'alerts', 'warnings', 'notices', 'urgent', 'important', 'announcements', 'alarms', 'subscribe'],
+    'bookmark': ['bookmark', 'save', 'saved', 'favorites', 'reading-list', 'reference', 'pinned'],
+    'star': ['star', 'featured', 'important', 'favorite', 'rating', 'vip', 'premium', 'best', 'highlight'],
+    'folder-kanban': ['project', 'kanban', 'sprint', 'board', 'scrum', 'agile', 'workflow', 'management', 'roadmap', 'tracker'],
+    'repeat': ['habit', 'routines', 'repeat', 'loop', 'cycle', 'recurring', 'daily-habit', 'frequency', 'practice', 'refresh'],
+    'quote': ['quotes', 'sayings', 'proverbs', 'citation', 'wisdom', 'motto', 'statement', 'aphorism'],
+    'yin-yang': ['yin', 'yang', 'yin-yang', 'yinyang', 'taoism', 'daoism', 'balance', 'dualism', 'harmony', 'zen', 'opposite', 'contrast'],
+    'layout': ['layout', 'ui', 'ux', 'frontend', 'components', 'interface', 'template', 'wireframe', 'view', 'grid', 'drag-drop'],
+    'help-circle': ['question', 'questions', 'faq', 'help', 'ask', 'inquiry', 'curiosity', 'mystery', 'unknown', 'how-to'],
+    'inbox': ['inbox', 'capture', 'incoming', 'collect', 'plus', 'add', 'new-item'],
+    'circle-dot': ['circle', 'dot', 'dots', 'enso', 'ouroboros', 'infinity', 'cycle', 'atomic', 'core'],
+    'home': ['home', 'house', 'home-base', 'dashboard', 'hub', 'home-pro', 'start']
+};
+
+interface PostingItem {
+    iconId: string;
+    weight: number;
+}
+
+const HIGH_PRIORITY_CATEGORIES = AUTO_ICON_CATEGORIES.filter(cat => (cat.priority || 0) >= 110);
+
 export class EmbeddingModel {
     private plugin: IColorfulFoldersPlugin;
     private iconVectors: Map<string, IconVector> = new Map();
     private cleanIconIdMap: Map<string, string> = new Map();
+    private synonymExactMap: Map<string, string> = new Map();
+    private vectorNorms: Map<string, number> = new Map();
     private isInitialized = false;
     private queryCache: LRUCache<string, { result: VectorMatchResult[]; timestamp: number }> = new LRUCache(MAX_CACHE_SIZE);
     private cacheHitCount = 0;
     private cacheMissCount = 0;
     private conceptDenseVectors: Map<string, Float32Array> = new Map();
-    private invertedIndex: Map<string, string[]> = new Map();
+    private invertedIndex: Map<string, PostingItem[]> = new Map();
 
     private static readonly DENSE_CONCEPTS: Record<string, { prompt: string; icons: string[] }> = {
         quotes_wisdom: { prompt: "quotes sayings proverbs wisdom philosophy reflection mindset life lessons truth illusion quote-text sentence", icons: ['quote', 'sparkles', 'lightbulb', 'compass', 'brain', 'book-open'] },
         stories_writing: { prompt: "story narrative writing literature fiction author legend prose feather scroll pen untold agony", icons: ['pen-tool', 'book-open', 'feather', 'scroll', 'file-text'] },
         journey_voyage: { prompt: "journey wander voyage path travel step miles destination compass footprints map road", icons: ['compass', 'map-pin', 'map', 'route', 'plane'] },
         imagination_vision: { prompt: "imagination vision future dream idea wonder preview attraction spark magic illusion mind", icons: ['sparkles', 'lightbulb', 'brain', 'wand-2', 'star', 'eye'] },
-        emotions_heart: { prompt: "emotion feeling heart agony soul passion cherish love mood upset", icons: ['heart', 'sparkles', 'smile', 'activity'] },
-        coding: { prompt: "software development code programming terminal developer git scripts", icons: ['code', 'terminal', 'cpu', 'file-code', 'git-branch'] },
-        finance: { prompt: "finance money banking accounting bills expenses budget receipt tax currency", icons: ['banknote', 'dollar-sign', 'coins', 'receipt', 'credit-card', 'wallet'] },
-        meetings: { prompt: "meetings calendar schedule appointments agenda zoom call clock events", icons: ['calendar', 'clock', 'users', 'video', 'calendar-days'] },
-        reading: { prompt: "reading books literature research papers articles library documentation notes", icons: ['book-open', 'book', 'library', 'newspaper', 'file-text'] },
-        tasks: { prompt: "tasks todo checklist goals projects kanban action work tracking", icons: ['check-square', 'target', 'folder-kanban', 'flag', 'list-todo'] },
-        design: { prompt: "design graphic UI UX mockup palette Figma vector drawing art layout", icons: ['layout', 'palette', 'pen-tool', 'brush', 'image'] },
-        music: { prompt: "music audio sound song playlist headphones podcast recording radio", icons: ['music', 'headphones', 'mic', 'disc', 'radio'] },
-        video: { prompt: "video movie film Youtube camera streaming video recording clapperboard", icons: ['video', 'film', 'play-circle', 'camera', 'clapperboard'] },
-        health: { prompt: "health fitness workout exercise medical doctor hospital stethoscope activity", icons: ['activity', 'stethoscope', 'heart-pulse', 'dumbbell'] },
-        travel: { prompt: "travel trip vacation flight plane map navigation compass location explorer", icons: ['plane', 'compass', 'map-pin', 'globe', 'map'] },
-        gaming: { prompt: "gaming video games console play steam gamepad trophy sword", icons: ['gamepad-2', 'dices', 'trophy', 'sword'] },
-        security: { prompt: "security passwords privacy authentication lock key shield firewall", icons: ['shield-check', 'lock', 'key', 'eye-off'] },
-        people: { prompt: "people contacts family friends team user profile employee contacts group", icons: ['users', 'user', 'contact', 'id-card', 'folder-users'] },
-        shopping: { prompt: "shopping cart store buy order product package store market", icons: ['shopping-cart', 'shopping-bag', 'package', 'store'] },
-        law: { prompt: "law legal court justice contract agreement scale gavel scroll", icons: ['scale', 'gavel', 'scroll', 'file-text'] },
-        science: { prompt: "science laboratory research chemistry biology experiment microscope flask", icons: ['flask-conical', 'microscope', 'atom'] },
-        nature: { prompt: "nature environment plant garden tree flower leaf eco climate", icons: ['leaf', 'flower-2', 'tree-pine', 'sun'] },
-        space: { prompt: "space astronomy stars universe galaxy telescope moon rocket", icons: ['telescope', 'rocket', 'moon'] },
-        hardware: { prompt: "hardware computer PC CPU hard drive memory components server infrastructure", icons: ['cpu', 'server', 'hard-drive', 'database'] },
-        education: { prompt: "school study university course exam graduation lecture class", icons: ['graduation-cap', 'book', 'school'] },
-        pets: { prompt: "pets animal dog cat vet paw print", icons: ['dog', 'cat', 'paw-print'] },
+        emotions_heart: { prompt: "emotion feeling heart agony soul passion cherish love mood upset romance relationship", icons: ['heart', 'sparkles', 'smile', 'activity'] },
+        coding_development: { prompt: "software development code programming terminal developer git scripts syntax algorithms", icons: ['code', 'terminal', 'cpu', 'file-code', 'git-branch'] },
+        finance_money: { prompt: "finance money banking accounting bills expenses budget receipt tax currency revenue profit wallet investment stocks", icons: ['banknote', 'dollar-sign', 'coins', 'receipt', 'credit-card', 'wallet'] },
+        crypto_trading: { prompt: "cryptocurrency bitcoin ethereum crypto blockchain trading tokens wallet exchange ledger", icons: ['coins', 'wallet', 'trending-up', 'dollar-sign'] },
+        meetings_calendar: { prompt: "meetings calendar schedule appointments agenda zoom call clock events timeline deadlines", icons: ['calendar', 'clock', 'users', 'video', 'calendar-days'] },
+        reading_literature: { prompt: "reading books literature research papers articles library documentation notes publication review", icons: ['book-open', 'book', 'library', 'newspaper', 'file-text'] },
+        tasks_project: { prompt: "tasks todo checklist goals projects kanban sprint agile action work tracking milestone roadmap", icons: ['check-square', 'target', 'folder-kanban', 'flag', 'list-todo'] },
+        design_uiux: { prompt: "design graphic UI UX mockup palette Figma vector drawing art layout typography wireframe", icons: ['layout', 'palette', 'pen-tool', 'brush', 'image'] },
+        music_audio: { prompt: "music audio sound song playlist headphones podcast recording radio album track melody", icons: ['music', 'headphones', 'mic', 'disc', 'radio'] },
+        video_cinema: { prompt: "video movie film Youtube camera streaming video recording clapperboard cinema broadcast", icons: ['video', 'film', 'play-circle', 'camera', 'clapperboard'] },
+        photography_media: { prompt: "photography camera photo portrait snapshot gallery pictures landscape shutter", icons: ['camera', 'image', 'eye', 'film'] },
+        health_medical: { prompt: "health medical doctor hospital stethoscope checkup clinic pharmacy prescription disease wellness", icons: ['activity', 'stethoscope', 'heart-pulse', 'shield-check'] },
+        fitness_workout: { prompt: "fitness workout exercise gym dumbbell weightlifting cardio training bodybuilding muscles", icons: ['dumbbell', 'activity', 'heart-pulse', 'flame'] },
+        travel_vacation: { prompt: "travel trip vacation flight plane map navigation compass location explorer tourism hotel itinerary", icons: ['plane', 'compass', 'map-pin', 'globe', 'map'] },
+        gaming_esports: { prompt: "gaming video games console play steam gamepad trophy sword quest arcade rpg esports", icons: ['gamepad-2', 'dices', 'trophy', 'sword'] },
+        security_privacy: { prompt: "security passwords privacy authentication lock key shield firewall antivirus credentials token", icons: ['shield-check', 'lock', 'key', 'eye-off'] },
+        people_team: { prompt: "people contacts family friends team user profile employee contacts group network community", icons: ['users', 'user', 'contact', 'id-card', 'folder-users'] },
+        shopping_ecommerce: { prompt: "shopping cart store buy order product package store market retail ecommerce checkout", icons: ['shopping-cart', 'shopping-bag', 'package', 'store'] },
+        food_cooking: { prompt: "food cooking recipe culinary meal dinner lunch breakfast kitchen restaurant baking nutrition chef", icons: ['utensils', 'coffee', 'apple', 'flame'] },
+        coffee_beverages: { prompt: "coffee tea cafe drinks beverage espresso morning break barista mug caffeine", icons: ['coffee', 'utensils', 'sun'] },
+        law_legal: { prompt: "law legal court justice contract agreement scale gavel scroll compliance lawyer policy", icons: ['scale', 'gavel', 'scroll', 'file-text'] },
+        science_physics: { prompt: "science laboratory research chemistry biology experiment microscope flask physics quantum hypothesis", icons: ['flask-conical', 'microscope', 'atom'] },
+        nature_environment: { prompt: "nature environment plant garden tree flower leaf eco climate ecology organic botany", icons: ['leaf', 'flower-2', 'tree-pine', 'sun'] },
+        space_astronomy: { prompt: "space astronomy stars universe galaxy telescope moon rocket cosmos planets astronaut", icons: ['telescope', 'rocket', 'moon', 'star'] },
+        hardware_iot: { prompt: "hardware computer PC CPU hard drive memory components server infrastructure electronics raspberry", icons: ['cpu', 'server', 'hard-drive', 'database'] },
+        education_learning: { prompt: "school study university course exam graduation lecture class student homework tutorial degree", icons: ['graduation-cap', 'book', 'school', 'book-open'] },
+        pets_animals: { prompt: "pets animal dog cat vet paw print puppy kitten wildlife fauna", icons: ['dog', 'cat', 'paw-print'] },
+        psychology_mental: { prompt: "psychology mindset therapy mental health cognition consciousness emotions introspection", icons: ['brain', 'sparkles', 'heart', 'lightbulb'] },
+        devops_cloud: { prompt: "devops docker kubernetes terraform aws azure cloud container serverless ci cd deploy infrastructure", icons: ['cloud', 'server', 'terminal', 'box'] },
+        database_storage: { prompt: "database sql postgres mysql sqlite mongodb redis schema tables records query data warehouse", icons: ['database', 'server', 'hard-drive', 'layers'] },
+        ai_machinelearning: { prompt: "artificial intelligence machine learning deep learning neural network llm gpt model nlp data science", icons: ['sparkles', 'brain', 'cpu', 'wand-2'] },
+        architecture_realestate: { prompt: "architecture building house home property real estate construction floorplan interior blueprint", icons: ['home', 'layout', 'building', 'layers'] },
+        tools_maintenance: { prompt: "tools utility wrench repair configuration setup maintenance settings preferences fix troubleshoot", icons: ['wrench', 'settings', 'hammer', 'tool'] },
+        communication_email: { prompt: "email newsletter inbox messages letters correspondence dispatch mail outbox chat", icons: ['mail', 'send', 'message-square', 'inbox'] },
+        social_community: { prompt: "social media twitter community network followers audience engagement sharing connection", icons: ['users', 'share-2', 'message-circle', 'globe'] },
+        news_journalism: { prompt: "news journalism headlines press newspaper report breaking media broadcaster scoop", icons: ['newspaper', 'file-text', 'globe', 'radio'] },
+        spirituality_meditation: { prompt: "spirituality meditation mindfulness zen yoga peace soul prayer chakra temple tranquility", icons: ['sparkles', 'sun', 'moon', 'leaf'] },
         wu_wei_daoism: { prompt: "wu wei daoism effortless action flow balance nature philosophy wisdom taoism", icons: ['sparkles', 'compass', 'wind', 'leaf'] },
-        yin_yang_balance: { prompt: "yin and yang dualism balance harmony scale contrast circle sun moon", icons: ['scale', 'sun-moon', 'circle-dot'] },
+        yin_yang_balance: { prompt: "yin and yang dualism balance harmony scale contrast circle sun moon taoism daoism", icons: ['yin-yang', 'sun-moon', 'circle-dot', 'scale'] },
         vulnerability_openness: { prompt: "vulnerability vulnerable open heart self reflection emotional courage soul", icons: ['heart', 'shield-off', 'unlock', 'eye'] },
         trust_the_process: { prompt: "trust the process growth patience journey continuous progress footprints trending", icons: ['compass', 'trending-up', 'hourglass', 'footprints'] },
         use_it_or_lose_it: { prompt: "use it or lose it maintenance activity practice flame repeat cycle", icons: ['repeat', 'flame', 'activity', 'zap'] },
-        habits_routines: { prompt: "important habits habit routine daily tracker repeat words used practice", icons: ['repeat', 'calendar-check', 'activity', 'target'] }
+        habits_routines: { prompt: "important habits habit routine daily tracker repeat words used practice morning routine streak", icons: ['repeat', 'calendar-check', 'activity', 'target'] }
     };
 
     private static readonly BRAND_DICTIONARY: Record<string, string[]> = {
@@ -177,6 +368,7 @@ export class EmbeddingModel {
         node: ['simple-icons-nodedotjs', 'code', 'server'],
         docker: ['simple-icons-docker', 'box', 'container', 'server'],
         github: ['simple-icons-github', 'code-2', 'git-branch', 'terminal'],
+        gitlab: ['simple-icons-gitlab', 'code-2', 'git-branch', 'terminal'],
         youtube: ['simple-icons-youtube', 'video', 'play-circle', 'tv'],
         netflix: ['video', 'film', 'tv'],
         spotify: ['simple-icons-spotify', 'music', 'headphones', 'disc'],
@@ -190,105 +382,7 @@ export class EmbeddingModel {
         chrome: ['simple-icons-googlechrome', 'globe', 'search'],
         vscode: ['simple-icons-visualstudiocode', 'code', 'terminal'],
         obsidian: ['simple-icons-obsidian', 'notebook', 'book-open', 'file-text'],
-        markdown: ['simple-icons-markdown', 'file-text', 'pen-tool'],
-        database: ['database', 'server', 'hard-drive', 'layers'],
-        
-        people: ['users', 'user', 'contact', 'folder-users'],
-        person: ['user', 'contact', 'id-card', 'profile'],
-        user: ['user', 'contact', 'id-card', 'profile'],
-        users: ['users', 'contact', 'folder-users'],
-        contact: ['contact', 'user', 'id-card', 'phone'],
-        contacts: ['users', 'contact', 'folder-users', 'phone'],
-        client: ['user', 'contact', 'briefcase', 'id-card'],
-        clients: ['users', 'contact', 'briefcase', 'folder-users'],
-        customer: ['user', 'contact', 'shopping-bag', 'id-card'],
-        customers: ['users', 'contact', 'shopping-bag', 'folder-users'],
-        author: ['user', 'pen-tool', 'book-open', 'contact'],
-        authors: ['users', 'book-open', 'pen-tool', 'contact'],
-        speaker: ['user', 'mic', 'contact'],
-        biography: ['user', 'book-open', 'file-text'],
-        profile: ['user', 'id-card', 'contact'],
-        team: ['users', 'contact', 'folder-users', 'briefcase'],
-        member: ['user', 'contact', 'id-card'],
-        members: ['users', 'contact', 'folder-users'],
-        staff: ['users', 'contact', 'briefcase'],
-        employee: ['user', 'contact', 'id-card', 'briefcase'],
-        candidate: ['user-check', 'user', 'id-card'],
-        doctor: ['user', 'stethoscope', 'activity'],
-        dr: ['user', 'stethoscope', 'activity'],
-        prof: ['user', 'graduation-cap', 'book-open'],
-        professor: ['user', 'graduation-cap', 'book-open'],
-
-        finance: ['dollar-sign', 'coins', 'credit-card', 'trending-up', 'receipt', 'wallet'],
-        money: ['dollar-sign', 'coins', 'bank', 'credit-card'],
-        invoice: ['receipt', 'dollar-sign', 'credit-card', 'file-text'],
-        receipt: ['receipt', 'dollar-sign', 'shopping-bag'],
-        budget: ['dollar-sign', 'pie-chart', 'coins', 'bar-chart'],
-        accounting: ['calculator', 'dollar-sign', 'file-text', 'receipt'],
-        bills: ['receipt', 'dollar-sign', 'credit-card'],
-        expenses: ['dollar-sign', 'trending-down', 'receipt'],
-        tax: ['dollar-sign', 'calculator', 'file-text'],
-        
-        shopping: ['shopping-cart', 'shopping-bag', 'package', 'store'],
-        buy: ['shopping-cart', 'shopping-bag', 'tag'],
-        orders: ['package', 'shopping-bag', 'truck'],
-
-        reading: ['book-open', 'book', 'notebook', 'library', 'bookmark'],
-        books: ['book-open', 'book', 'library'],
-        literature: ['book-open', 'book', 'library'],
-        articles: ['file-text', 'newspaper', 'book-open'],
-        papers: ['file-text', 'book-open', 'bookmark'],
-        research: ['search', 'book-open', 'microscope', 'file-text'],
-        notes: ['notebook', 'file-text', 'pen-tool', 'edit-3'],
-
-        meetings: ['calendar', 'clock', 'users', 'video', 'calendar-days'],
-        calendar: ['calendar', 'clock', 'target', 'calendar-days'],
-        schedule: ['calendar', 'clock', 'timer'],
-        deadline: ['clock', 'calendar', 'alert-circle'],
-        appointment: ['calendar', 'clock', 'user'],
-        agenda: ['list', 'calendar', 'file-text'],
-
-        tasks: ['check-square', 'check-circle', 'list-todo', 'target', 'flag'],
-        todo: ['check-square', 'check-circle', 'list'],
-        checklist: ['check-square', 'list', 'check-circle'],
-        goals: ['target', 'flag', 'trophy', 'trending-up'],
-        projects: ['folder-kanban', 'layers', 'target', 'briefcase'],
-
-        coding: ['code', 'terminal', 'git-branch', 'cpu', 'layers'],
-        programming: ['code', 'terminal', 'cpu', 'database'],
-        software: ['code', 'terminal', 'layers', 'box'],
-        backend: ['server', 'database', 'code', 'terminal'],
-        frontend: ['layout', 'code', 'palette', 'monitor'],
-        api: ['webhook', 'server', 'code', 'key'],
-        scripts: ['terminal', 'code', 'file-code'],
-
-        design: ['palette', 'pen-tool', 'layout', 'figma', 'brush', 'image'],
-        ui: ['layout', 'palette', 'monitor', 'smartphone'],
-        ux: ['user-check', 'layout', 'palette'],
-        mockups: ['layout', 'image', 'figma'],
-        assets: ['folder', 'image', 'layers'],
-
-        music: ['music', 'headphones', 'disc', 'radio'],
-        audio: ['headphones', 'mic', 'radio', 'volume-2'],
-        podcasts: ['mic', 'headphones', 'radio'],
-        video: ['video', 'film', 'play-circle', 'camera'],
-        movies: ['film', 'video', 'tv'],
-
-        health: ['heart-pulse', 'activity', 'medical', 'sun'],
-        fitness: ['activity', 'heart-pulse', 'dumbbell'],
-        workout: ['activity', 'heart-pulse', 'dumbbell'],
-        medical: ['activity', 'heart-pulse', 'stethoscope'],
-
-        travel: ['plane', 'compass', 'map-pin', 'globe', 'navigation'],
-        vacation: ['sun', 'palmtree', 'plane', 'map-pin'],
-        trips: ['plane', 'compass', 'map-pin'],
-
-        gaming: ['gamepad-2', 'sword', 'trophy', 'sparkles'],
-        games: ['gamepad-2', 'trophy', 'sparkles'],
-
-        security: ['shield-check', 'lock', 'key', 'eye', 'file-lock'],
-        passwords: ['key', 'lock', 'shield-check'],
-        privacy: ['shield-check', 'eye-off', 'lock']
+        markdown: ['simple-icons-markdown', 'file-text', 'pen-tool']
     };
 
     private static readonly STOP_WORDS = new Set([
@@ -333,6 +427,54 @@ export class EmbeddingModel {
         if (this.isInitialized) return;
 
         this.cleanIconIdMap.clear();
+        this.synonymExactMap.clear();
+
+        // 1. Index Comprehensive Icon Synonyms Lexicon (Highest priority: 5.0)
+        for (const [iconId, synonyms] of Object.entries(ICON_SYNONYMS)) {
+            const vector = this.getOrCreateVector(iconId);
+            const cleanId = this.extractCleanIconId(iconId);
+            const lowerIcon = iconId.toLowerCase();
+            vector.tokenWeights.set(lowerIcon, 5.0);
+            vector.tokenWeights.set(cleanId, 4.5);
+
+            this.synonymExactMap.set(lowerIcon, iconId);
+            this.synonymExactMap.set(cleanId, iconId);
+
+            for (const syn of synonyms) {
+                const sLower = syn.toLowerCase();
+                if (!this.synonymExactMap.has(sLower)) {
+                    this.synonymExactMap.set(sLower, iconId);
+                }
+                const sNorm = sLower.replace(/[\s_-]+/g, '');
+                if (!this.synonymExactMap.has(sNorm)) {
+                    this.synonymExactMap.set(sNorm, iconId);
+                }
+
+                const weights = this.buildWeightedTokenMap(syn);
+                weights.forEach((w, t) => {
+                    vector.tokenWeights.set(t, (vector.tokenWeights.get(t) || 0) + w * 2.0);
+                });
+                vector.domains.add(syn);
+            }
+        }
+
+        // 1b. Index Dense Concept Prompts into Vector Token Weights (High priority: 4.5)
+        for (const [conceptKey, conceptDef] of Object.entries(EmbeddingModel.DENSE_CONCEPTS)) {
+            for (let i = 0; i < conceptDef.icons.length; i++) {
+                const iconId = conceptDef.icons[i];
+                const vector = this.getOrCreateVector(iconId);
+                const cleanId = this.extractCleanIconId(iconId);
+                const rankWeight = 1.0 - (i * 0.15);
+                vector.tokenWeights.set(iconId.toLowerCase(), Math.max(vector.tokenWeights.get(iconId.toLowerCase()) || 0, 4.0 * rankWeight));
+                vector.tokenWeights.set(cleanId, Math.max(vector.tokenWeights.get(cleanId) || 0, 3.5 * rankWeight));
+
+                const weights = this.buildWeightedTokenMap(conceptDef.prompt);
+                weights.forEach((w, t) => {
+                    vector.tokenWeights.set(t, (vector.tokenWeights.get(t) || 0) + (w * 1.8 * rankWeight));
+                });
+                vector.domains.add(conceptKey);
+            }
+        }
 
         for (const [brand, candidates] of Object.entries(EmbeddingModel.BRAND_DICTIONARY)) {
             for (const iconId of candidates) {
@@ -350,11 +492,12 @@ export class EmbeddingModel {
             if (cat.lucide) targets.push(cat.lucide);
             if (cat.lucides) targets.push(...cat.lucides);
 
-            const rexSource = cat.rex.source
+            const rexClean = cat.rex.source
+                .replace(/\\[sSwWdDbB][*+?]?/g, ' ')
                 .replace(/[^a-zA-Z0-9\s|-]/g, ' ')
                 .replace(/\|/g, ' ')
                 .trim();
-            const keywords = rexSource.split(/\s+/).filter(k => k.length >= 2);
+            const keywords = rexClean.split(/\s+/).filter(k => k.length >= 2);
 
             for (const iconId of targets) {
                 const vector = this.getOrCreateVector(iconId);
@@ -421,19 +564,24 @@ export class EmbeddingModel {
             // Ignore if getIconIds is unavailable in current runtime
         }
 
-        // Finalize vector normalization, populate cleanIconIdMap & build inverted index
+        // Finalize vector normalization, populate cleanIconIdMap, vectorNorms & build inverted posting lists
         this.invertedIndex.clear();
+        this.vectorNorms.clear();
+
         this.iconVectors.forEach((vec, iconId) => {
-            vec.normalized = this.normalizeVectorFromMap(vec.tokenWeights);
-            vec.tokens = Array.from(vec.normalized.keys());
-            for (const token of vec.tokens) {
+            let normSq = 0;
+            vec.tokenWeights.forEach(w => { normSq += w * w; });
+            const norm = Math.sqrt(normSq) || 1.0;
+            this.vectorNorms.set(iconId, norm);
+
+            vec.tokenWeights.forEach((weight, token) => {
                 let list = this.invertedIndex.get(token);
                 if (!list) {
                     list = [];
                     this.invertedIndex.set(token, list);
                 }
-                list.push(iconId);
-            }
+                list.push({ iconId, weight });
+            });
 
             const lower = iconId.toLowerCase();
             const clean = this.extractCleanIconId(iconId);
@@ -474,7 +622,12 @@ export class EmbeddingModel {
             tokenWeights.set(lower, Math.max(current, weight));
         };
 
-        const clean = text.toLowerCase().replace(/[^a-z0-9\s_-]/g, ' ').trim();
+        const clean = text
+            .replace(/([a-z])([A-Z])/g, '$1 $2')
+            .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+            .toLowerCase()
+            .replace(/[^a-z0-9\s_-]/g, ' ')
+            .trim();
         if (!clean) return tokenWeights;
 
         // 1b. Contiguous word n-grams (2-word and 3-word phrase tokens: 4.0 weight)
@@ -556,7 +709,8 @@ export class EmbeddingModel {
     private buildQueryContext(titleOrPath: string, isFolder = false): QueryContext {
         const parts = titleOrPath.split(/[/\\]/);
         const rawFilename = parts.pop() || titleOrPath;
-        const filename = rawFilename.replace(/\.(md|png|svg|txt|json|py|js|ts|jsx|tsx|java|cpp|c|go|rs|rb|php|swift|kt|sql|yaml|yml|toml|xml|html|css|scss|pdf|docx|mp3|wav|mp4|mov|zip|tar|gz|env)$/i, '');
+        const cleaned = cleanSemanticTitle(rawFilename);
+        const filename = cleaned || rawFilename.replace(/\.[a-z0-9]+$/i, '');
         const lowerName = filename.toLowerCase().trim();
         
         const lastDot = rawFilename.lastIndexOf('.');
@@ -584,6 +738,7 @@ export class EmbeddingModel {
     }
 
     private getFolderHintBoosts(folderName: string): string[] {
+        if (!folderName) return [];
         const normalized = folderName.toLowerCase().replace(/[^a-z0-9]/g, '');
         if (Object.prototype.hasOwnProperty.call(FOLDER_HINT_DOMAINS, normalized)) {
             const arr = FOLDER_HINT_DOMAINS[normalized];
@@ -593,6 +748,20 @@ export class EmbeddingModel {
         if (Object.prototype.hasOwnProperty.call(FOLDER_HINT_DOMAINS, lower)) {
             const arr = FOLDER_HINT_DOMAINS[lower];
             if (Array.isArray(arr)) return arr;
+        }
+
+        // Check 4-digit calendar years (e.g. "2020", "2024")
+        if (/^\d{4}$/.test(normalized)) {
+            return ['calendar', 'clock', 'calendar-days'];
+        }
+
+        // Check constituent words of folder name (e.g. "Taxes 2024" -> "taxes", "LYT Workshops" -> "workshops")
+        const tokens = lower.split(/[\s._-]+/).filter(t => t.length >= 2);
+        for (const tok of tokens) {
+            if (Object.prototype.hasOwnProperty.call(FOLDER_HINT_DOMAINS, tok)) {
+                const arr = FOLDER_HINT_DOMAINS[tok];
+                if (Array.isArray(arr)) return arr;
+            }
         }
         return [];
     }
@@ -662,26 +831,28 @@ export class EmbeddingModel {
             return fallback;
         }
 
-        const queryVector = this.normalizeVectorFromMap(queryTokenWeights);
-        const scored: { iconId: string; rawScore: number }[] = [];
+        // Fast Inverted Posting Accumulator (Only visits intersection tokens O(|Q ∩ D|))
+        const accumulators = new Map<string, number>();
+        let queryNormSq = 0;
 
-        const candidateIconIds = new Set<string>();
-        queryVector.forEach((_, token) => {
-            const matches = this.invertedIndex.get(token);
-            if (matches) {
-                for (let i = 0; i < matches.length; i++) {
-                    candidateIconIds.add(matches[i]);
-                }
+        queryTokenWeights.forEach((qWeight, token) => {
+            queryNormSq += qWeight * qWeight;
+            const postings = this.invertedIndex.get(token);
+            if (!postings) return;
+            for (let i = 0; i < postings.length; i++) {
+                const p = postings[i];
+                accumulators.set(p.iconId, (accumulators.get(p.iconId) || 0) + qWeight * p.weight);
             }
         });
 
-        candidateIconIds.forEach(iconId => {
-            const iconVec = this.iconVectors.get(iconId);
-            if (iconVec) {
-                const rawScore = this.computeCosineSimilarity(queryVector, iconVec.normalized);
-                if (rawScore >= minScore) {
-                    scored.push({ iconId, rawScore });
-                }
+        const queryNorm = Math.sqrt(queryNormSq) || 1.0;
+        const scored: { iconId: string; rawScore: number }[] = [];
+
+        accumulators.forEach((dotProduct, iconId) => {
+            const docNorm = this.vectorNorms.get(iconId) || 1.0;
+            const rawScore = dotProduct / (queryNorm * docNorm);
+            if (rawScore >= minScore) {
+                scored.push({ iconId, rawScore });
             }
         });
 
@@ -712,19 +883,15 @@ export class EmbeddingModel {
     private isPersonName(name: string, parentFolder?: string): boolean {
         if (!name) return false;
         const clean = name.replace(/\.(md|txt|docx|pdf)$/i, '').trim();
-        if (/^(dr|mr|mrs|ms|prof|professor|sir|lady|author|client|patient|member|staff|doctor)\b/i.test(clean)) {
+        // If title contains standard document nouns, it is a document, not a person profile
+        if (/\b(contract|agreement|nda|report|invoice|bill|receipt|statement|policy|terms|test|schedule|data|sheet|notes|summary|log|logs|flow|diagram|architecture)\b/i.test(clean)) {
+            return false;
+        }
+        if (/^(dr|mr|mrs|ms|prof|professor|sir|lady)\b/i.test(clean)) {
             return true;
         }
         if (parentFolder && /^(people|contacts|friends|family|team|members|staff|clients|customers|authors|speakers|patients|candidates)$/i.test(parentFolder.trim())) {
             return true;
-        }
-        const words = clean.split(/[\s._-]+/).filter(Boolean);
-        if (words.length >= 2 && words.length <= 4) {
-            const nonNameKeywords = /^(project|meeting|data|model|system|config|test|code|file|document|folder|report|summary|draft|final|version|script|app|index|main|log|track|build|page|site|web|task|list|plan|note|notes|idea|ideas|readme|changelog|package)$/i;
-            const hasNonNameWord = words.some(w => nonNameKeywords.test(w) || /^\d+$/.test(w));
-            if (!hasNonNameWord) {
-                return words.every(w => /^[A-Z][a-z]+$/.test(w));
-            }
         }
         return false;
     }
@@ -751,6 +918,111 @@ export class EmbeddingModel {
                     matchedTag: lowerName,
                     confidence: 'high'
                 }];
+            }
+        }
+
+        // Direct O(1) exact match against synonym map
+        const exactSynIcon = this.synonymExactMap.get(lowerName) || this.synonymExactMap.get(normLowerName);
+        if (exactSynIcon) {
+            return [{
+                iconId: exactSynIcon,
+                score: 0.99,
+                matchedTag: lowerName,
+                confidence: 'high'
+            }];
+        }
+
+        // 1. Check Brand Dictionary on individual tokens & pairs (e.g. "docker", "type" + "script" -> "typescript", "aws", "spotify")
+        if (context) {
+            const rawTokens = context.lowerName.split(/[\s._-]+/).filter(t => t.length >= 2 && !EmbeddingModel.STOP_WORDS.has(t));
+            const candidateTokens = [...rawTokens];
+            for (let i = 0; i < rawTokens.length - 1; i++) {
+                candidateTokens.push(`${rawTokens[i]}${rawTokens[i + 1]}`);
+                candidateTokens.push(`${rawTokens[i]}-${rawTokens[i + 1]}`);
+            }
+
+            for (const tok of candidateTokens) {
+                if (Object.prototype.hasOwnProperty.call(EmbeddingModel.BRAND_DICTIONARY, tok)) {
+                    const brandIcons = EmbeddingModel.BRAND_DICTIONARY[tok];
+                    if (Array.isArray(brandIcons) && brandIcons.length > 0) {
+                        return brandIcons.slice(0, topK).map(iconId => ({
+                            iconId,
+                            score: 1.0,
+                            matchedTag: tok,
+                            confidence: 'high'
+                        }));
+                    }
+                }
+            }
+        }
+
+        // 2. Non-Markdown explicit media / binary extension match (e.g. .png, .jpg, .mp3, .mp4, .pdf)
+        if (context && context.extension && !['.md', '.txt', '.json', '.yaml', '.yml', '.toml'].includes(context.extension)) {
+            const extIcons = this.getExtensionBoosts(context.extension);
+            if (['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.mp3', '.wav', '.mp4', '.mov'].includes(context.extension) && extIcons.length > 0) {
+                return extIcons.slice(0, topK).map((id, idx) => ({
+                    iconId: id,
+                    score: 0.98 - (idx * 0.02),
+                    matchedTag: context.extension,
+                    confidence: 'high'
+                }));
+            }
+        }
+
+        // 3. Check pre-filtered high-priority whole-phrase conceptual categories
+        if (context) {
+            for (let i = 0; i < HIGH_PRIORITY_CATEGORIES.length; i++) {
+                const cat = HIGH_PRIORITY_CATEGORIES[i];
+                if (cat.rex.test(context.filename) || cat.rex.test(context.lowerName)) {
+                    const targets: string[] = [];
+                    if (cat.lucide) targets.push(cat.lucide);
+                    if (cat.lucides) targets.push(...cat.lucides);
+                    if (targets.length > 0) {
+                        const unique = Array.from(new Set(targets));
+                        return unique.slice(0, topK).map((id, idx) => ({
+                            iconId: id,
+                            score: 0.98 - (idx * 0.02),
+                            matchedTag: 'concept-match',
+                            confidence: 'high'
+                        }));
+                    }
+                }
+            }
+        }
+
+        // 4. Fast O(1) constituent keyword match against synonym exact map
+        if (context) {
+            const rawTokens = context.lowerName.split(/[\s._-]+/).filter(t => t.length >= 2 && !EmbeddingModel.STOP_WORDS.has(t));
+            const candidateTokens = [...rawTokens];
+            for (let i = 0; i < rawTokens.length - 1; i++) {
+                candidateTokens.push(`${rawTokens[i]}${rawTokens[i + 1]}`);
+                candidateTokens.push(`${rawTokens[i]}-${rawTokens[i + 1]}`);
+            }
+
+            const matchedFromTokens: { iconId: string; score: number; token: string }[] = [];
+            for (const tok of candidateTokens) {
+                const synIcon = this.synonymExactMap.get(tok);
+                if (synIcon) {
+                    matchedFromTokens.push({
+                        iconId: synIcon,
+                        score: 0.95,
+                        token: tok
+                    });
+                }
+            }
+            if (matchedFromTokens.length > 0) {
+                const uniqueMap = new Map<string, { iconId: string; score: number; token: string }>();
+                for (const m of matchedFromTokens) {
+                    if (!uniqueMap.has(m.iconId)) {
+                        uniqueMap.set(m.iconId, m);
+                    }
+                }
+                return Array.from(uniqueMap.values()).slice(0, topK).map(m => ({
+                    iconId: m.iconId,
+                    score: m.score,
+                    matchedTag: m.token,
+                    confidence: 'high'
+                }));
             }
         }
 
@@ -806,6 +1078,24 @@ export class EmbeddingModel {
         const results: VectorMatchResult[] = [];
         const seen = new Set<string>();
 
+        // 1. If inside a semantically typed parent folder (e.g. Quotes/, Questions/, People/, Scripts/, Maps/), inherit parent domain
+        if (context.parentFolder) {
+            const folderHints = this.getFolderHintBoosts(context.parentFolder);
+            for (const iconId of folderHints) {
+                if (!seen.has(iconId) && !['folder', 'box', 'package'].includes(iconId)) {
+                    seen.add(iconId);
+                    results.push({
+                        iconId,
+                        score: 0.75,
+                        matchedTag: `folder:${context.parentFolder}`,
+                        confidence: 'medium'
+                    });
+                }
+                if (results.length >= topK) break;
+            }
+        }
+
+        // 2. Extension Hints
         const extensionHints = this.getExtensionBoosts(context.extension);
         for (const iconId of extensionHints) {
             if (!seen.has(iconId)) {
@@ -818,22 +1108,6 @@ export class EmbeddingModel {
                 });
             }
             if (results.length >= topK) break;
-        }
-
-        if (results.length < topK && context.isFolder) {
-            const folderHints = this.getFolderHintBoosts(context.parentFolder);
-            for (const iconId of folderHints) {
-                if (!seen.has(iconId)) {
-                    seen.add(iconId);
-                    results.push({
-                        iconId,
-                        score: 0.35,
-                        matchedTag: context.parentFolder,
-                        confidence: 'low'
-                    });
-                }
-                if (results.length >= topK) break;
-            }
         }
 
         if (results.length < topK) {
@@ -1009,6 +1283,14 @@ export class EmbeddingModel {
                 }
             }
         });
+
+        // Hybrid Scoring: Ingest sparse keyword matches to reinforce dense signals
+        const sparseMatches = this.findBestIcons(titleOrPath, { topK: 10, minScore: 0.1, isFolder: options?.isFolder, queryContext: context });
+        for (const sm of sparseMatches) {
+            const current = iconScores.get(sm.iconId) || 0;
+            // 60% Dense Neural Similarity + 40% Sparse Keyword BM25
+            iconScores.set(sm.iconId, Math.max(current, (current * 0.6) + (sm.score * 0.4)));
+        }
 
         if (iconScores.size > 0) {
             const sorted = Array.from(iconScores.entries())

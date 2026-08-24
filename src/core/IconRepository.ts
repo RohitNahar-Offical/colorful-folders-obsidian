@@ -80,34 +80,36 @@ export class IconRepository {
                     }
                 }
 
-                // Tier 0.5: Tag-driven auto icon
-                const tags: string[] = [];
-                if (cache?.frontmatter?.tags) {
-                    const rawTags = (cache.frontmatter as Record<string, unknown>).tags;
-                    const fmTags: string[] = Array.isArray(rawTags)
-                        ? rawTags.map(t => String(t))
-                        : typeof rawTags === 'string'
-                            ? rawTags.split(',').map(t => t.trim())
-                            : [];
-                    tags.push(...fmTags);
-                }
-                if (cache?.tags) {
-                    for (const tObj of cache.tags) {
-                        if (tObj.tag) tags.push(tObj.tag);
+                // Tier 0.5: Tag-driven auto icon (strictly gated by user setting tagSyncEnabled)
+                if (this.plugin.settings.tagSyncEnabled) {
+                    const tags: string[] = [];
+                    if (cache?.frontmatter?.tags) {
+                        const rawTags = (cache.frontmatter as Record<string, unknown>).tags;
+                        const fmTags: string[] = Array.isArray(rawTags)
+                            ? rawTags.map(t => String(t))
+                            : typeof rawTags === 'string'
+                                ? rawTags.split(',').map(t => t.trim())
+                                : [];
+                        tags.push(...fmTags);
                     }
-                }
+                    if (cache?.tags) {
+                        for (const tObj of cache.tags) {
+                            if (tObj.tag) tags.push(tObj.tag);
+                        }
+                    }
 
-                if (tags.length > 0) {
-                    const uniqueTags = Array.from(new Set(tags.map(t => t.replace(/^#/, '').trim().toLowerCase()))).filter(t => t.length > 0);
-                    for (const tag of uniqueTags) {
-                        // Query auto-icon for tag name (without path to prevent infinite recursion)
-                        const tagIcon = this.getAutoIconData(tag);
-                        if (tagIcon) {
-                            return {
-                                ...tagIcon,
-                                tier: 0.5,
-                                packSource: 'tag-sync'
-                            };
+                    if (tags.length > 0) {
+                        const uniqueTags = Array.from(new Set(tags.map(t => t.replace(/^#/, '').trim().toLowerCase()))).filter(t => t.length > 0);
+                        for (const tag of uniqueTags) {
+                            // Query auto-icon for tag name (without path to prevent infinite recursion)
+                            const tagIcon = this.getAutoIconData(tag);
+                            if (tagIcon) {
+                                return {
+                                    ...tagIcon,
+                                    tier: 0.5,
+                                    packSource: 'tag-sync'
+                                };
+                            }
                         }
                     }
                 }
@@ -254,7 +256,22 @@ export class IconRepository {
         }
 
         // Tier 1: Exact local pack / custom icon match (Priority 1800)
-        const exactMatchedIconId = this.findIconInPacks(fullHyphenated) || (cleanHyphenated ? this.findIconInPacks(cleanHyphenated) : null);
+        const wordsNoStop = cleanSanitized
+            .split(/[^\p{L}\p{N}]+/gu)
+            .map(w => w.toLowerCase())
+            .filter(w => w.length >= 1 && !STOP_WORDS.has(w));
+        const noStopHyphenated = wordsNoStop.length > 1 ? wordsNoStop.join('-') : null;
+        let exactMatchedIconId = this.findIconInPacks(fullHyphenated) || (cleanHyphenated ? this.findIconInPacks(cleanHyphenated) : null) || (noStopHyphenated ? this.findIconInPacks(noStopHyphenated) : null);
+        if (!exactMatchedIconId && wordsNoStop.length > 0) {
+            for (const word of wordsNoStop) {
+                const stemmed = stemWord(word);
+                const matched = this.findIconInPacks(word) || (stemmed !== word ? this.findIconInPacks(stemmed) : null);
+                if (matched) {
+                    exactMatchedIconId = matched;
+                    break;
+                }
+            }
+        }
         if (exactMatchedIconId) {
             const safeRexStr = sanitized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             return {

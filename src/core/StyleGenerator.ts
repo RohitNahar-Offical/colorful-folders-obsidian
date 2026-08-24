@@ -119,13 +119,17 @@ export class StyleGenerator {
         if (pack === 'simple-icons') return lower.startsWith('simple-') || lower.startsWith('si-');
         if (pack === 'material' || pack === 'mdi') return lower.startsWith('mdi-') || lower.includes('material');
         if (pack === 'feather') return lower.startsWith('feather-');
+        if (pack === 'rpg-awesome' || pack === 'ra') return lower.startsWith('ra-') || lower.includes('rpg-awesome');
+        if (pack === 'boxicons' || pack === 'bx') return lower.startsWith('bx-') || lower.includes('boxicons');
+        if (pack === 'octicons' || pack === 'octicon') return lower.startsWith('octicon-');
         if (pack === 'lucide') {
             if (lower.startsWith('lucide-')) return true;
             const isOtherPack = lower.startsWith('bi-') || lower.startsWith('fa-') || lower.startsWith('fas-') ||
                 lower.startsWith('far-') || lower.startsWith('fab-') || lower.startsWith('tb-') ||
                 lower.startsWith('tabler-') || lower.startsWith('ri-') || lower.startsWith('remix-') ||
                 lower.startsWith('simple-') || lower.startsWith('si-') || lower.startsWith('mdi-') ||
-                lower.startsWith('feather-') || lower.startsWith('custom-');
+                lower.startsWith('feather-') || lower.startsWith('custom-') || lower.startsWith('ra-') ||
+                lower.startsWith('bx-') || lower.startsWith('octicon-');
             return !isOtherPack && /[a-zA-Z]/.test(iconId);
         }
         return false;
@@ -242,7 +246,6 @@ export class StyleGenerator {
         const baseThick = this.settings.pathLineThickness ?? 2.0;
         const folderThick = baseThick + 0.5;
         const activeFolderThick = baseThick + 2.0;
-        const CF_FILE_TEXT_ICON = StyleGenerator.CF_FILE_TEXT_ICON;
         const extraTypographyCssFiles = (this.settings.spacedTextMode === 'both' || this.settings.spacedTextMode === 'files') ? StyleGenerator.SPACED_TEXT_CSS : '';
         const extraTypographyCssFolders = (this.settings.spacedTextMode === 'both' || this.settings.spacedTextMode === 'folders') ? StyleGenerator.SPACED_TEXT_CSS : '';
 
@@ -341,7 +344,7 @@ export class StyleGenerator {
 
                 const fileBgAlpha = op;
 
-                const activeBg = (this.settings.useCustomActiveColor && this.settings.customActiveBg) ? this.settings.customActiveBg : `rgba(${color.rgb}, ${useGlass ? 0.14 : 0.12})`;
+                const activeBg = (this.settings.useCustomActiveColor && this.settings.customActiveBg) ? this.settings.customActiveBg : `rgba(${color.rgb}, ${useGlass ? 0.22 : 0.18})`;
                 const activeText = (this.settings.useCustomActiveColor && this.settings.customActiveText) ? this.settings.customActiveText : textNative;
 
                 let fileRowCss = `
@@ -471,6 +474,7 @@ export class StyleGenerator {
                         }
                     }
                 } else if (autoIcons) {
+                    const fileTextMask = this.plugin.iconManager.getMaskDataUri("lucide-file-text") || this.plugin.iconManager.getMaskDataUri("file-text") || StyleGenerator.CF_FILE_TEXT_ICON_MASK_URL;
                     grouper.add(`
                         content: '' !important;
                         display: inline-flex !important;
@@ -478,7 +482,7 @@ export class StyleGenerator {
                         width: ${effFileIconW} !important;
                         height: ${effFileIconW} !important;
                         background-color: ${iconColor || color.hex || textNative} !important;
-                        -webkit-mask-image: ${StyleGenerator.CF_FILE_TEXT_ICON_MASK_URL} !important;
+                        -webkit-mask-image: ${fileTextMask} !important;
                         -webkit-mask-repeat: no-repeat !important;
                         -webkit-mask-position: center !important;
                         -webkit-mask-size: contain !important;
@@ -510,17 +514,22 @@ export class StyleGenerator {
                         "hierarchy",
                         context.now
                     );
-                    const parentActiveBg = (this.settings.useCustomActiveColor && this.settings.customActiveBg) ? this.settings.customActiveBg : `rgba(${parentFolderColor.rgb}, ${useGlass ? 0.14 : 0.12})`;
+                    const parentActiveBg = (this.settings.useCustomActiveColor && this.settings.customActiveBg) ? this.settings.customActiveBg : `rgba(${parentFolderColor.rgb}, ${useGlass ? 0.22 : 0.18})`;
                     const parentActiveText = (this.settings.useCustomActiveColor && this.settings.customActiveText) ? this.settings.customActiveText : (parentFolderStyle?.textColor || parentFolderColor.hex);
 
                     grouper.add(`
                         background-color: var(--cf-active-bg, ${parentActiveBg}) !important;
                         color: var(--cf-active-color, ${parentActiveText}) !important;
-                        outline: 1px solid ${activeGlowEnabled ? `rgba(${parentFolderColor.rgb}, 0.3)` : "transparent"} !important;
+                        outline: 1px solid ${activeGlowEnabled ? (useGlass ? `rgba(${parentFolderColor.rgb}, 0.45)` : `rgba(${parentFolderColor.rgb}, 0.35)`) : "transparent"} !important;
                         outline-offset: -1px !important;
-                        ${activeGlowEnabled ? `
-                            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 2px 8px rgba(0,0,0,0.1) !important;
+                        ${activeGlowEnabled ? (useGlass ? `
+                            background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(${parentFolderColor.rgb}, 0.12) 50%, rgba(${parentFolderColor.rgb}, 0.24) 100%) !important;
+                            backdrop-filter: blur(16px) saturate(180%) !important;
+                            -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+                            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), inset 0 -1px 1px rgba(0, 0, 0, 0.15), 0 4px 14px rgba(0, 0, 0, 0.2), 0 0 12px rgba(${parentFolderColor.rgb}, 0.35) !important;
                         ` : `
+                            box-shadow: 0 0 10px rgba(${parentFolderColor.rgb}, 0.3) !important;
+                        `) : `
                             box-shadow: none !important;
                         `}
                     `, [

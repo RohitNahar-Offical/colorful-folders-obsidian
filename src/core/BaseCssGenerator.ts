@@ -207,22 +207,25 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             margin-bottom: 2px !important;
         }
 
-        /* Universal O(1) Active File Selection Styling */
+        /* Universal O(1) Active File Selection Styling (Liquid Glass & Luminous Sheen) */
         body .nav-files-container .nav-file-title.is-active:not(.nn-file),
         body .nav-files-container .tree-item-self.is-active:not(.nav-folder-title):not(.nn-file),
         body .notebook-navigator .is-active:not(.nn-navitem) {
-            background-color: var(--cf-active-bg, var(--nav-item-background-active, rgba(var(--interactive-accent-rgb), 0.15))) !important;
+            background-color: var(--cf-active-bg, var(--nav-item-background-active, rgba(var(--interactive-accent-rgb), 0.22))) !important;
             color: var(--cf-active-color, var(--text-accent, var(--interactive-accent))) !important;
             border-left: none !important;
             border-radius: 6px !important;
             --nav-item-background: var(--cf-active-bg, var(--nav-item-background-active));
             ${settings.glassmorphism ? `
-                backdrop-filter: blur(12px) saturate(160%) !important;
-                -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
-                box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 4px 12px rgba(0, 0, 0, 0.2) !important;
-                outline: 1px solid rgba(var(--cf-active-rgb, var(--interactive-accent-rgb)), 0.3) !important;
+                background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(var(--cf-active-rgb, var(--interactive-accent-rgb)), 0.12) 50%, rgba(var(--cf-active-rgb, var(--interactive-accent-rgb)), 0.24) 100%) !important;
+                backdrop-filter: blur(16px) saturate(180%) !important;
+                -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+                box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), inset 0 -1px 1px rgba(0, 0, 0, 0.15), 0 4px 14px rgba(0, 0, 0, 0.2), 0 0 12px rgba(var(--cf-active-rgb, var(--interactive-accent-rgb)), 0.35) !important;
+                outline: 1px solid rgba(var(--cf-active-rgb, var(--interactive-accent-rgb)), 0.45) !important;
                 outline-offset: -1px !important;
-            ` : ''}
+            ` : (settings.activeGlow !== false ? `
+                box-shadow: 0 0 10px rgba(var(--cf-active-rgb, var(--interactive-accent-rgb)), 0.3) !important;
+            ` : '')}
         }
 
         body .nav-files-container .nav-file-title.is-active:not(.nn-file) .nav-file-title-content,

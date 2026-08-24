@@ -3,6 +3,7 @@ import { requestUrl, Notice, TFolder, TFile } from 'obsidian';
 import { IColorfulFoldersPlugin, ColorfulFoldersSettings } from '../common/types';
 import { normalizePathKey } from '../common/utils';
 import { t } from '../lang/helpers';
+import { cleanSemanticTitle } from './embedingmodel';
 
 export class AIIconClassifier {
     private isClassifying = false;
@@ -159,6 +160,11 @@ export class AIIconClassifier {
                     await Promise.all(chunk.map(async t => {
                         try {
                             const rawContent = await this.plugin.app.vault.cachedRead(t.fileObj);
+                            const headingMatches = rawContent.match(/^#{1,2}\s+(.+)$/gm);
+                            let headingContext = '';
+                            if (headingMatches && headingMatches.length > 0) {
+                                headingContext = headingMatches.slice(0, 2).map(h => h.replace(/^#+\s+/, '').trim()).join(' | ');
+                            }
                             const cleanContent = rawContent
                                 .replace(/^---[\s\S]*?---/, '')
                                 .replace(/#+\s+/g, '')
@@ -166,8 +172,10 @@ export class AIIconClassifier {
                                 .replace(/`{1,3}[\s\S]*?`{1,3}/g, '')
                                 .replace(/\s+/g, ' ')
                                 .trim();
-                            if (cleanContent) {
-                                t.contentSnippet = cleanContent.substring(0, 150);
+                            if (headingContext || cleanContent) {
+                                t.contentSnippet = headingContext
+                                    ? `[Headings: ${headingContext}] ${cleanContent.substring(0, 100)}`
+                                    : cleanContent.substring(0, 150);
                             }
                         } catch {
                             // ignore read error
@@ -202,8 +210,10 @@ export class AIIconClassifier {
                     : {};
 
                 const contextPayload = batchTargets.map(t => {
+                    const cleanName = cleanSemanticTitle(t.name);
                     const itemObj: Record<string, unknown> = {
                         item_path: t.path,
+                        semantic_name: cleanName || t.name,
                         type: t.isFolder ? 'Folder' : 'File'
                     };
                     const vecCandidates = vectorCandidateMap[t.path];

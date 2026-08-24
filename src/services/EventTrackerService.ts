@@ -205,6 +205,8 @@ export class EventTrackerService {
         this.plugin.folderCountCache = null;
         this.plugin.folderSortCache = null;
         this.plugin.rootSortCache = null;
+        this.plugin.iconManager?.invalidateAutoIconCache();
+        this.plugin.embeddingModel?.clearCache();
     }
 
     private _activeClassRaf: number | null = null;
