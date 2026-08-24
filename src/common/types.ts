@@ -2,6 +2,7 @@ import { App, MenuItem, Menu, EventRef, Debouncer } from 'obsidian';
 import { DOMObserverService } from '../services/DOMObserverService';
 import type { IconManager } from '../core/IconManager';
 import type { AIIconClassifier } from '../integrations/AIIconClassifier';
+import type { LRUCache } from './LRUCache';
 
 export interface FolderStyle {
     hex?: string;
@@ -172,7 +173,7 @@ export interface IColorfulFoldersPlugin {
     settings: ColorfulFoldersSettings;
     heatmapCache: Map<string, number> | null;
     folderCountCache: Map<string, { files: number, folders: number }> | null;
-    iconCache: Map<string, string>;
+    iconCache: LRUCache<string, string>;
     folderSortCache?: Map<string, number> | null;
     rootSortCache?: Map<string, number> | null;
     parsedExclusionList?: Set<string> | null;

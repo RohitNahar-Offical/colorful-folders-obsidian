@@ -217,6 +217,17 @@ graph TD
 
 ---
 
+### 3.3 Live Animated SMIL Icons Subsystem (`AnimatedIconService.ts`)
+
+Static CSS mask Data URIs (`-webkit-mask-image`) cannot execute SMIL animation loops or SVG keyframes in Chromium. To provide seamless animated SVG icon support without regressing Zero-DOM performance:
+
+1. **Isolated Dynamic Injection**: `AnimatedIconService` detects whether an assigned icon contains animation tags (`<animate>`, `<animateTransform>`, `<animateMotion>`, `<set>`, `@keyframes`).
+2. **Dedicated DOM Container (`.cf-live-animated-icon`)**: For animated icons only, mounts a single pre-compiled SVG DOM node inside a `.cf-live-animated-icon` container directly in the target row.
+3. **Template Memoization with LRU Caching**: Pre-compiles and sanitizes animated SVG templates inside `_animatedTemplateCache: LRUCache<string, HTMLElement>(256)`, ensuring $O(1)$ cloning overhead (`wrap.cloneNode(true)`).
+4. **Leak-Free Unmounting & Cache Flushing**: When styles change, icons are removed, or hard resets occur, all active animated DOM nodes are synchronously detached and memory caches purged.
+
+---
+
 ### 3.4 AI-Powered Icon Classification Service (`AIIconClassifier.ts`)
 
 For intelligent, context-aware icon assignment across entire vaults, `AIIconClassifier` operates as an instance service (`plugin.aiIconClassifier`) coordinating LLM providers with `IconRepository`:

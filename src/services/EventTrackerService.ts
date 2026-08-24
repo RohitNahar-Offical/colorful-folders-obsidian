@@ -109,7 +109,26 @@ export class EventTrackerService {
         this.registerEvent(
             this.plugin.app.vault.on("delete", (file) => {
                 if (file && (file.path.startsWith('.') || file.path.includes('/.'))) return;
+                const path = file.path;
                 this.invalidateCaches();
+                this.plugin.customFolderColorsMap.delete(path);
+                this.plugin.heatmapCache?.delete(path);
+                this.plugin.folderCountCache?.delete(path);
+                this.plugin.folderSortCache?.delete(path);
+                this.plugin.rootSortCache?.delete(path);
+                this.plugin.iconCache?.delete(path);
+                this.plugin.iconManager?.invalidateAutoIconCache(path);
+
+                const prefix = path + "/";
+                for (const k of Array.from(this.plugin.customFolderColorsMap.keys())) {
+                    if (k.startsWith(prefix)) this.plugin.customFolderColorsMap.delete(k);
+                }
+                if (this.plugin.heatmapCache) {
+                    for (const k of Array.from(this.plugin.heatmapCache.keys())) {
+                        if (k.startsWith(prefix)) this.plugin.heatmapCache.delete(k);
+                    }
+                }
+
                 this.plugin.generateStylesDebounced();
             }),
         );

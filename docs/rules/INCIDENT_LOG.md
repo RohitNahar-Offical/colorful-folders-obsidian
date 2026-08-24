@@ -291,3 +291,53 @@
 **Lesson**:
 1. Never allocate arrays or loop over LRU cache keys inside high-frequency event handlers like `metadataCache.on('changed')` or `vault.on('modify')`. Always use $O(1)$ direct key operations.
 2. Keystroke event listeners must execute in < 0.01ms to preserve the 16.6ms budget required for Smooth Cursor and 60 FPS editor responsiveness.
+
+---
+
+## Incident #32 — SMIL Animation Sanitization Stripping in Modals & Explorer (2026-08-24)
+**What was attempted**: Sanitizing imported custom SVGs with `normalizeSvg` to prevent XSS.
+**What broke**: Animated SVGs (SMIL) froze as static images in `IconPickerModal`, `ColorPickerModal`, and File Explorer.
+**Root cause**: `dangerousTags` in `IconRepository.normalizeSvg` included `'animate'` and `'set'`, stripping legitimate SMIL elements.
+**Resolution**:
+1. Removed `'animate'` and `'set'` from `dangerousTags` while keeping dangerous executable tags (`script`, `iframe`, `object`, `embed`, `foreignobject`) stripped.
+2. Created `AnimatedIconService` to manage live SMIL SVG mounting inside `.cf-live-animated-icon` containers.
+3. Updated modals to use `getRawIconSvg()` for live animated preview in picker grids.
+**Lesson**: SMIL animation tags (`<animate>`, `<animateTransform>`, `<animateMotion>`, `<set>`) are safe vector instructions and must not be grouped with executable script tags.
+
+---
+
+## Incident #33 — Auto-Icon Keyword Match Overriding Manual Icon Selection (2026-08-24)
+**What was attempted**: Priority resolution for auto-icons in `StyleGenerator.ts`.
+**What broke**: When a user picked a custom icon for a file or folder whose title matched an auto-icon keyword (e.g. "book"), changing color caused the icon to revert to the auto-icon instead of preserving the user's manual choice.
+**Root cause**: `StyleGenerator.ts` gave auto-icons matching title keywords precedence over `fileStyle.iconId` whenever `isCustom` was true.
+**Resolution**: Refactored `StyleGenerator.ts` so manual icon selections (`fileStyle.iconId` / `customStyle.iconId`) take **unconditional top priority**. Auto-icon prediction only runs as a fallback when no manual icon is set.
+**Lesson**: User manual selections must always be the absolute top priority in style resolution pipelines.
+
+---
+
+## Incident #34 — Dual Location Vault Icon Accumulation & Hard Reset Bypassing (2026-08-24)
+**What was attempted**: Hard cleaning custom icons and resetting styles via settings.
+**What broke**: Even after clicking "Clear icon library" and "Factory reset", hundreds of icons remained visible in the icon picker.
+**Root cause**:
+1. Icons were loaded from two distinct directories: `.obsidian/plugins/colorful-folders/icons/` (plugin custom packs) AND `.obsidian/icons/` (vault-level SVG icons).
+2. "Clear icon library" only deleted files from the plugin folder, leaving `.obsidian/icons/` untouched and re-populating `localFileSystemIcons` in memory.
+3. `saveLocalCustomIcons()` was called immediately before deletion, re-writing `custom-icons.json` to disk.
+**Resolution**:
+1. Centralized cleanup into `clearAllIconPacksAndCustomIcons()` in `main.ts` to delete all files in both folders and wipe in-memory dictionaries.
+2. Cleared all caches (`iconCache`, `iconManager`, `animatedIconService`) and synchronously unmounted live animated DOM nodes.
+**Lesson**: All persistence layers (RAM dictionaries, multiple disk folders, and in-memory caches) must be purged in one atomic cleanup function.
+
+---
+
+## Incident #35 — Unbounded Icon Mask Cache & Narrow Viewport Tab Clipping (2026-08-24)
+**What was attempted**: Storing generated SVG mask strings in memory and rendering settings tabs in a fixed row.
+**What broke**: `iconCache` grew unbounded over long sessions, and the settings tab navigation bar clipped the "AI" and "Privacy" buttons on narrow windows.
+**Root cause**:
+1. `plugin.iconCache` was an unbounded plain `Map<string, string>`, accumulating mask data URIs indefinitely.
+2. `.cf-tab-bar` had rigid flex formatting without wrapping or horizontal overflow handling.
+**Resolution**:
+1. Converted `iconCache` to `LRUCache<string, string>(1024)` and right-sized all internal caches.
+2. Added dead-path garbage collection in `EventTrackerService.ts` on vault `"delete"` events.
+3. Added adaptive multi-line wrapping and horizontal scroll fallbacks to `.cf-tab-bar` in `styles.css`.
+**Lesson**: Always use bounded LRU caches for SVG strings/URIs and ensure all UI tab navigation bars support responsive multi-line wrapping.
+

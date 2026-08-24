@@ -26,6 +26,7 @@ import { AIIconClassifier } from './integrations/AIIconClassifier';
 import { EmbeddingModel } from './integrations/embedingmodel';
 import { t } from './lang/helpers';
 import { normalizeVaultPath } from './common/utils';
+import { LRUCache } from './common/LRUCache';
 
 declare module "obsidian" {
   interface Workspace {
@@ -41,7 +42,7 @@ export default class ColorfulFoldersPlugin
   aiIconClassifier: AIIconClassifier;
   adoptedStyleSheetService: AdoptedStyleSheetService;
 
-  iconCache: Map<string, string> = new Map();
+  iconCache: LRUCache<string, string> = new LRUCache<string, string>(1024);
   customFolderColorsMap: Map<string, FolderStyle> = new Map();
   _dividerTimeout: number | null = null;
   heatmapCache: Map<string, number> | null = null;

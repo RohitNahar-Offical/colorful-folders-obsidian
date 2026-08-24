@@ -1,27 +1,35 @@
 # Updates for Colorful Folders
 
-## 🛠️ 5.0.4 - Absolute Frontmatter Priority, Smooth Cursor Compatibility & Exact Icon Matching
+## 🛠️ 5.0.4 - Live Animated SMIL Icons, Absolute Manual Priority, Memory Optimization & Clean Resets
 
-This release refines the icon assignment logic to guarantee that your manual choices always win, fixes stuttering issues with the Smooth Cursor plugin via $O(1)$ cache invalidation, and prioritizes exact icon names over smart categories.
+This release introduces native **Live Animated SMIL Icons** with isolated DOM injection, guarantees that your **manual icon choices unconditionally win**, optimizes the plugin's entire **memory footprint via bounded LRU caches**, and hardens **Hard Reset / Clean Library** actions.
 
 ---
 
-### 👑 1. Frontmatter is the Absolute #1 Priority
-* **Total User Control (Tier 0)**: If you assign an `icon: ...` property in a note's frontmatter, it instantly overrides all algorithms, smart categories, and exact matches. Your explicit manual choice is the undisputed king of icon assignment.
+### 🎬 1. Native Live Animated Icons (SMIL Engine)
+* **Real-Time SMIL Motion in File Explorer**: Supports animated SVGs using native SMIL elements (`<animate>`, `<animateTransform>`, `<animateMotion>`, `<set>`) directly inside the file explorer sidebar via an isolated dynamic injector (`AnimatedIconService`).
+* **Clean DOM Containers (`.cf-live-animated-icon`)**: Animated icons are cleanly mounted and automatically synchronized across file/folder rows with zero animation freezing.
+* **Live Animation Picker Previews**: `IconPickerModal` and `ColorPickerModal` preserve SMIL elements without stripping animation tags, allowing you to preview real-time animated motion in grid cells before applying.
+* **Leak-Free Unmounting**: When styles are cleared or icons changed, animated DOM nodes are cleanly unmounted and dereferenced.
 
-### 🎯 2. "Literal First" Subject Noun Matching
-* **Tier 1 Exact Match Promotion**: When a file title contains a specific subject (e.g., "Docker" or "Spotify"), the plugin now directly assigns matching installed icons (e.g., `si-docker` or `si-spotify`) **before** resorting to broad semantic fallbacks. You get the exact icon you expect instead of abstract guesses.
-* **Expanded Icon Pack Support**: Added full auto-detection and prefix support for **RPG Awesome** (`ra-`), **Boxicons** (`bx-`), and GitHub **Octicons** (`octicon-`).
+### 👑 2. Absolute Manual Icon Priority
+* **Unconditional User Selection Precedence**: Explicit manual icon choices (`fileStyle.iconId` / `customStyle.iconId`) take top priority. Title-matched auto-icons and AI predictions only run as fallbacks when no custom icon is set.
+* **Zero Auto-Icon Hijacking**: Changing folder/file icon colors or editing items will never overwrite or revert your manual icon selection.
+* **Frontmatter Total Control (Tier 0)**: Frontmatter `icon: ...` properties override all automatic rules and categories.
 
-### ⚡ 3. Smooth Cursor Plugin Compatibility & $O(1)$ Caching
-* **$O(1)$ Auto-Icon Cache Targeted Eviction**: Replaced 4,096-item array allocation and string regex loops with direct $O(1)$ Map key deletion inside `IconRepository.invalidateAutoIconCache()`.
-* **Smooth Cursor Lag Resolved**: Keystroke metadata cache processing time dropped from ~10ms down to < 0.0001ms, preserving 100% of the frame budget so typing and the "Smooth Cursor" plugin animations remain perfectly fluid.
-* **Instant Cache Coherence**: Renaming, creating, or deleting a file now instantly flushes the icon caches, ensuring UI icons update in real-time without needing a vault reload.
+### ⚡ 3. Memory Optimization & Bounded LRU Caching
+* **Bounded `iconCache`**: Replaced unbounded plain Maps with `LRUCache<string, string>(1024)`, strictly capping memory consumed by generated SVG mask strings.
+* **Right-Sized Internal Caches**: Optimized `_dataUriCache`, `_normCache`, `_autoIconResultCache`, and `_pathEscapeCache` capacities to prevent memory accumulation in large vaults.
+* **Bounded Vector Caching**: Bounded `EmbeddingModel`'s `THREE_GRAM_CACHE` using `LRUCache(1024)` and capped `queryCache` size to 512.
+* **Dead-Path Garbage Collection**: Vault `delete` events automatically purge deleted paths and child prefixes from `customFolderColorsMap`, `heatmapCache`, `folderCountCache`, and icon result caches.
 
-### 🖼️ 4. SVG Mask & Heatmap Optimizations
-* **Pre-Normalized SVG Mask Caching**: Static pre-normalization of default file masks eliminates `DOMParser` instantiation and regex overhead during vault CSS traversal (~250x faster SVG mask resolution).
-* **Incremental Heatmap Updates**: Parent-chain modification tracking updates directory `mtime` values incrementally, bypassing full vault scans during style regenerations in Heatmap mode.
-* **Refined Fallbacks**: Cleaned out abstract category fallbacks (like `shield` from the Dragon/Phoenix category) so smart predictions return higher fidelity hits.
+### 🧹 4. Complete Hard Clean & Reset Purging
+* **"Clear icon library" (Hard Clean)**: Completely empties both `.obsidian/plugins/colorful-folders/icons/` and vault `.obsidian/icons/`, clears all in-memory dictionaries (`localFileSystemIcons`, `localCustomIcons`, `settings.customIcons`), purges all caches, and cleans animated DOM nodes.
+* **"Reset styles and presets"**: Instantly resets the in-memory lookup map (`customFolderColorsMap`), regenerates stylesheet CSS, and unmounts live animated icons.
+* **Red Danger Buttons**: Destructive actions (Factory Reset, Reset Styles, Clear Icon Library) are styled with high-contrast red warning buttons (`.cf-btn-danger`).
+
+### 📱 5. Responsive Tab Navigation Bar
+* **Adaptive Multi-Line Wrapping**: Settings navigation tabs (`General`, `Features`, `Icons`, `AI`, `Privacy`) automatically wrap into clean multi-row pills or scroll horizontally on narrow windows, eliminating tab clipping.
 
 ---
 

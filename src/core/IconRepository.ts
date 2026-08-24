@@ -13,11 +13,11 @@ export class IconRepository {
     private _categoryCache: AutoIconData[] | null = null;
     private _categoryTrie = new CategoryTrie();
     private _customRulesKey: string = '';
-    private _normCache = new LRUCache<string, string>(2048);
-    private _dataUriCache = new LRUCache<string, string>(2048);
-    private _findPackIconCache = new LRUCache<string, string | null>(2048);
-    private _autoIconResultCache = new LRUCache<string, AutoIconData | null>(4096);
-    private _iconValidityCache = new LRUCache<string, boolean>(2048);
+    private _normCache = new LRUCache<string, string>(1024);
+    private _dataUriCache = new LRUCache<string, string>(1024);
+    private _findPackIconCache = new LRUCache<string, string | null>(512);
+    private _autoIconResultCache = new LRUCache<string, AutoIconData | null>(1024);
+    private _iconValidityCache = new LRUCache<string, boolean>(512);
     private _packIndex: IconPackIndex = new IconPackIndex();
     private _domParser: DOMParser | null = typeof DOMParser !== 'undefined' ? new DOMParser() : null;
 

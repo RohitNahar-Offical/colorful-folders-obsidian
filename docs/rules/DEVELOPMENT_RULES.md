@@ -137,6 +137,20 @@ Never add hardcoded strings to UI files. Add every key in `src/lang/locale/en.ts
 
 ---
 
+**RULE 5.7: SMIL Animation Tag Preservation.**
+Never strip `<animate>`, `<animateTransform>`, `<animateMotion>`, or `<set>` tags from SVG sanitizers; preserve them for live SMIL vector rendering via `AnimatedIconService`. *(Incident #32)*
+
+**RULE 5.8: Manual Selection Top Priority.**
+Explicit user selections (`fileStyle.iconId` / `customStyle.iconId`) must unconditionally override title-matched auto-icons and AI predictions. *(Incident #33)*
+
+**RULE 5.9: Bounded LRU Caches for Long-Lived Data.**
+Never store unbounded SVGs, data URIs, or vector tokens in plain Maps; always use bounded `LRUCache` to cap maximum memory footprint. *(Incident #35)*
+
+**RULE 5.10: Atomic Clean Across Storage Layers.**
+When resetting or hard cleaning, purge both vault (`.obsidian/icons`) and plugin (`colorful-folders/icons`) directories, clear in-memory dictionaries, and synchronously unmount live DOM nodes. *(Incident #34)*
+
+---
+
 ## 6. CI/CD & Release Pipeline
 
 **RULE 6.1: GitHub Attestation requires explicit predicate configuration.**
@@ -167,9 +181,9 @@ While `read` is sufficient for building and attesting, `write` is mandatory for 
 | 2.4 | #15 |
 | 2.5 | #18, #26 |
 | 2.6 | #19 |
-| 2.7 | #27 *(superseded)*, #28 *(Zero-DOM)* |
+| 2.7 | #27 *(superseded)*, #28 *(Zero-DOM)*, #31 *(Keystroke O(1))* |
 | 2.8 | #13 |
-| 2.9 | #18 |
+| 2.9 | #18, #35 *(Bounded LRU)* |
 | 3.1 | #16 |
 | 3.2 | #10 |
 | 3.3 | #6, #16 |
@@ -187,5 +201,9 @@ While `read` is sufficient for building and attesting, `write` is mandatory for 
 | 5.4 | #12 |
 | 5.5 | #23 |
 | 5.6 | Post-localization refactor |
+| 5.7 | #32 *(SMIL Animation)* |
+| 5.8 | #33 *(Manual Priority)* |
+| 5.9 | #35 *(Bounded LRU)* |
+| 5.10 | #34 *(Atomic Clean)* |
 | 6.1 | #11 |
 | 6.2 | #11 |

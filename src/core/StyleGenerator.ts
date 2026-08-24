@@ -26,7 +26,7 @@ export class StyleGenerator {
         word-spacing: 2px !important;
     `;
 
-    private _pathEscapeCache = new LRUCache<string, string>(4096);
+    private _pathEscapeCache = new LRUCache<string, string>(1024);
     private _cachedGlobalBaseCss: { key: string; css: string } | null = null;
     private _cachedDividerCss: { key: string; css: string } | null = null;
     private _cachedStealthCss: { key: string; css: string } | null = null;

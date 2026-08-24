@@ -1,8 +1,9 @@
 import { IColorfulFoldersPlugin } from '../common/types';
+import { LRUCache } from '../common/LRUCache';
 
 export class AnimatedIconService {
     private plugin: IColorfulFoldersPlugin;
-    private _animatedTemplateCache: Map<string, HTMLElement> = new Map();
+    private _animatedTemplateCache: LRUCache<string, HTMLElement> = new LRUCache<string, HTMLElement>(256);
     private _domParser: DOMParser | null = typeof DOMParser !== 'undefined' ? new DOMParser() : null;
 
     constructor(plugin: IColorfulFoldersPlugin) {

@@ -26,7 +26,7 @@ interface QueryContext {
     isFolder: boolean;
 }
 
-const MAX_CACHE_SIZE = 2048;
+const MAX_CACHE_SIZE = 512;
 const DEFAULT_TOP_K = 3;
 const DEFAULT_MIN_SCORE = 0.25;
 const THREE_GRAM_MIN_LENGTH = 5;
@@ -397,7 +397,7 @@ export class EmbeddingModel {
         'where', 'which', 'while', 'who', 'whom', 'why', 'with', 'you', 'your', 'yours', 'yourself', 'yourselves'
     ]);
 
-    private static readonly THREE_GRAM_CACHE = new Map<string, string[]>();
+    private static readonly THREE_GRAM_CACHE = new LRUCache<string, string[]>(1024);
 
     constructor(plugin: IColorfulFoldersPlugin) {
         this.plugin = plugin;
