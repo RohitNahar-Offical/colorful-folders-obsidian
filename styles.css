@@ -395,6 +395,22 @@ body .colorful-folders-config .cf-tab-btn.is-active {
     box-shadow: 0 4px 16px rgba(var(--interactive-accent-rgb, 120, 120, 255), 0.4);
 }
 
+body .colorful-folders-config button.cf-btn-danger,
+body .colorful-folders-config button.mod-warning {
+    background-color: var(--text-error, #e53935) !important;
+    color: #ffffff !important;
+    border-color: var(--text-error, #e53935) !important;
+    font-weight: 600 !important;
+    transition: all 0.15s ease-in-out;
+}
+
+body .colorful-folders-config button.cf-btn-danger:hover,
+body .colorful-folders-config button.mod-warning:hover {
+    background-color: #c62828 !important;
+    border-color: #c62828 !important;
+    opacity: 0.95 !important;
+}
+
 .cf-settings-card {
     background: var(--cf-card-bg);
     border: 1px solid var(--cf-card-border);

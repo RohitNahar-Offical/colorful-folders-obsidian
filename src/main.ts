@@ -517,6 +517,54 @@ export default class ColorfulFoldersPlugin
     return removedCount;
   }
 
+  async clearAllIconPacksAndCustomIcons(): Promise<void> {
+    this.settings.customIcons = {};
+    this.localCustomIcons = {};
+    this.localFileSystemIcons = {};
+    this.iconCache?.clear();
+    this.iconManager?.invalidateCategoryCache();
+    this.animatedIconService?.invalidateCache();
+
+    const adapter = this.app.vault.adapter;
+
+    // 1. Clear plugin icons dir (.obsidian/plugins/colorful-folders/icons)
+    const pluginIconsDir = this.getIconsDirPath();
+    if (await adapter.exists(pluginIconsDir)) {
+      try {
+        const list = await adapter.list(pluginIconsDir);
+        for (const file of list.files) {
+          try { await adapter.remove(file); } catch (e) { console.error(`Failed to delete ${file}`, e); }
+        }
+        for (const folder of list.folders) {
+          try { await adapter.rmdir(folder, true); } catch (e) { console.error(`Failed to delete ${folder}`, e); }
+        }
+      } catch (e) {
+        console.error("Colorful Folders: Error listing plugin icons directory", e);
+      }
+    }
+
+    // 2. Clear vault icons dir (.obsidian/icons)
+    const vaultIconsDir = `${this.app.vault.configDir}/icons`;
+    if (await adapter.exists(vaultIconsDir)) {
+      try {
+        const list = await adapter.list(vaultIconsDir);
+        for (const file of list.files) {
+          try { await adapter.remove(file); } catch (e) { console.error(`Failed to delete ${file}`, e); }
+        }
+        for (const folder of list.folders) {
+          try { await adapter.rmdir(folder, true); } catch (e) { console.error(`Failed to delete ${folder}`, e); }
+        }
+      } catch (e) {
+        console.error("Colorful Folders: Error listing vault icons directory", e);
+      }
+    }
+
+    this.registerCustomIcons();
+    await this.saveSettings();
+    await this.generateStyles();
+    this.animatedIconService?.syncAnimatedIcons();
+  }
+
   async loadSettings() {
     let loadedData: Partial<ColorfulFoldersSettings> | null = null;
     try {
