@@ -1,35 +1,31 @@
 # Updates for Colorful Folders
 
-## 🛠️ 5.0.4 - Live Animated SMIL Icons, Absolute Manual Priority, Memory Optimization & Clean Resets
+## 🛠️ 5.0.4 - Live Animated Icons, Locked-In Custom Choices, Faster Performance & Clean Resets
 
-This release introduces native **Live Animated SMIL Icons** with isolated DOM injection, guarantees that your **manual icon choices unconditionally win**, optimizes the plugin's entire **memory footprint via bounded LRU caches**, and hardens **Hard Reset / Clean Library** actions.
+This update brings **moving animated icons** right into your sidebar, ensures your **manually chosen icons always stay locked in**, keeps the plugin **fast and lightweight**, and makes **resetting and cleaning settings reliable**.
 
 ---
 
-### 🎬 1. Native Live Animated Icons (SMIL Engine)
-* **Real-Time SMIL Motion in File Explorer**: Supports animated SVGs using native SMIL elements (`<animate>`, `<animateTransform>`, `<animateMotion>`, `<set>`) directly inside the file explorer sidebar via an isolated dynamic injector (`AnimatedIconService`).
-* **Clean DOM Containers (`.cf-live-animated-icon`)**: Animated icons are cleanly mounted and automatically synchronized across file/folder rows with zero animation freezing.
-* **Live Animation Picker Previews**: `IconPickerModal` and `ColorPickerModal` preserve SMIL elements without stripping animation tags, allowing you to preview real-time animated motion in grid cells before applying.
-* **Leak-Free Unmounting**: When styles are cleared or icons changed, animated DOM nodes are cleanly unmounted and dereferenced.
+### 🎬 1. Live Animated Icons
+* **Moving Icons in Your Sidebar**: You can now use animated SVG icons that play smooth animations right next to your folders and files in the sidebar!
+* **Live Previews in the Icon Picker**: When browsing icons in the icon picker or color modal, animated icons will animate in real-time so you can see how they move before picking them.
+* **Smooth & Battery-Friendly**: Animations run smoothly without slowing down your vault or draining battery.
 
-### 👑 2. Absolute Manual Icon Priority
-* **Unconditional User Selection Precedence**: Explicit manual icon choices (`fileStyle.iconId` / `customStyle.iconId`) take top priority. Title-matched auto-icons and AI predictions only run as fallbacks when no custom icon is set.
-* **Zero Auto-Icon Hijacking**: Changing folder/file icon colors or editing items will never overwrite or revert your manual icon selection.
-* **Frontmatter Total Control (Tier 0)**: Frontmatter `icon: ...` properties override all automatic rules and categories.
+### 👑 2. Your Chosen Icons Always Stay Locked In
+* **Your Choices Come First**: When you manually pick an icon for a folder or note, the plugin will never change it or overwrite it with an automatic guess.
+* **Color Changes Won't Reset Icons**: Changing a folder's background color or text color will safely keep your chosen icon intact.
+* **Frontmatter Control**: If you write `icon: ...` in a note's properties/frontmatter, that icon is guaranteed to show.
 
-### ⚡ 3. Memory Optimization & Bounded LRU Caching
-* **Bounded `iconCache`**: Replaced unbounded plain Maps with `LRUCache<string, string>(1024)`, strictly capping memory consumed by generated SVG mask strings.
-* **Right-Sized Internal Caches**: Optimized `_dataUriCache`, `_normCache`, `_autoIconResultCache`, and `_pathEscapeCache` capacities to prevent memory accumulation in large vaults.
-* **Bounded Vector Caching**: Bounded `EmbeddingModel`'s `THREE_GRAM_CACHE` using `LRUCache(1024)` and capped `queryCache` size to 512.
-* **Dead-Path Garbage Collection**: Vault `delete` events automatically purge deleted paths and child prefixes from `customFolderColorsMap`, `heatmapCache`, `folderCountCache`, and icon result caches.
+### ⚡ 3. Faster Performance & Lower Memory Usage
+* **Lighter on Memory**: Improved how icons and styles are stored in the background, keeping Obsidian fast and snappy even if you have thousands of notes.
+* **Automatic Vault Cleanup**: Deleting notes or folders immediately cleans up internal cache data so no unused memory is wasted over time.
 
-### 🧹 4. Complete Hard Clean & Reset Purging
-* **"Clear icon library" (Hard Clean)**: Completely empties both `.obsidian/plugins/colorful-folders/icons/` and vault `.obsidian/icons/`, clears all in-memory dictionaries (`localFileSystemIcons`, `localCustomIcons`, `settings.customIcons`), purges all caches, and cleans animated DOM nodes.
-* **"Reset styles and presets"**: Instantly resets the in-memory lookup map (`customFolderColorsMap`), regenerates stylesheet CSS, and unmounts live animated icons.
-* **Red Danger Buttons**: Destructive actions (Factory Reset, Reset Styles, Clear Icon Library) are styled with high-contrast red warning buttons (`.cf-btn-danger`).
+### 🧹 4. Reliable "Clean & Reset" Tools
+* **Complete Library Wipe**: Clicking **"Clear icon library"** in Settings now fully removes all downloaded icon packs and custom icons from both memory and disk.
+* **Red Warning Buttons**: Danger buttons (like *Factory reset*, *Reset styles*, and *Clear icon library*) are now styled in clear red so you can easily spot them.
 
-### 📱 5. Responsive Tab Navigation Bar
-* **Adaptive Multi-Line Wrapping**: Settings navigation tabs (`General`, `Features`, `Icons`, `AI`, `Privacy`) automatically wrap into clean multi-row pills or scroll horizontally on narrow windows, eliminating tab clipping.
+### 📱 5. Better Settings for Small Windows
+* **No More Cut-Off Tabs**: When the Obsidian window is narrow or small, the settings tabs (*General*, *Features*, *Icons*, *AI*, *Privacy*) automatically wrap onto multiple lines so every tab is easy to click.
 
 ---
 
@@ -53,96 +49,5 @@ This release modularizes core plugin architecture (introducing dedicated service
 
 ### 📚 4. Reorganized Documentation & Project Index
 * **Hierarchical Rules & Specs**: Reorganized technical documentation into categorized subdirectories (architecture, governance, integrations, rules, styling) with an updated master index.
-
----
-
-## 🛠️ 5.0.2 - Performance, Auto-Detect Icons, Mobile Dividers & Sync
-
-This release restores ultra-fast (~0ms) startup speeds, introduces an automatic **Self-Check & Auto-Detect Icon Packs** tool in Settings, fixes section dividers on mobile devices, eliminates UI freezing in the icon picker, and adds real-time PC & Mobile sync proofing.
-
----
-
-### ⚡ 1. Ultra-Fast Startup & Non-Blocking Initialization
-* **~0ms Startup Lag**: Plugin initialization and layout-ready hooks are non-blocking; initial folder styles render immediately (<1ms) while local icon scans run in the background.
-* **Parallel Icon Scanning**: Parallelized SVG file scanning on disk using `Promise.all` for fast local asset loading.
-* **Targeted Workspace Observers**: Scoped style-stripping mutation observers strictly to file explorer containers instead of watching `doc.body`.
-
-### 🔍 2. Auto-Detect & Self-Check Icon Packs
-* **Self-Check Icon Packs Tool**: Added an **"Auto-detect existing icon packs"** button in **Settings -> Custom icon management** that scans local vault storage (`.obsidian/icons` and `colorful-folders/icons/`), repairs registrations, and reports accurate icon counts.
-* **Comprehensive Alias Detection**: Installation detection now recognizes all pack ID aliases (`tb-`, `si-`, `fa-`, `ri-`, local SVGs) so Featured Icon Packs accurately display `✓ Installed (X icons)`.
-
-### 🚀 3. Freeze-Free Icon Picker & Divider Rendering
-* **Chunked Batch Grid Rendering**: `IconPickerModal` renders icons in smooth incremental batches of 60 items with scroll-based lazy loading and 150ms search debouncing to eliminate main-thread freezes.
-* **O(1) DOM Template Cloning**: Parsed SVG template elements are cached and cloned with `cloneNode(true)` for fast DOM cell creation.
-* **Safe Divider Icon Renderer**: `DividerModal` header previews and setting buttons safely support custom SVGs, emojis, Lucide icons, and fallbacks without JS errors.
-
-### 📱 4. Mobile Dividers & Real-Time Cross-Device Sync
-* **Mobile Dividers Support**: Section dividers now render properly in mobile phone file lists with smart text trimming and touch controls.
-* **Real-Time Cross-Device Sync**: Vault modification listeners on `data.json` and custom icon directories automatically sync settings and icons between PC and Mobile in real-time across Obsidian Sync, WebDAV, Git, or iCloud.
-
----
-
-## 🛠️ 5.0.1 - Bug Fixes and Improvements
-
-This release resolves layout alignment issues, eliminates UI stutter, introduces the Icon Pack Priority Hierarchy system, and fixes icon stability across vault restarts.
-
----
-
-### 🎨 1. Root Folder & Text Vertical Alignment Fix
-* **Inline-Flex Alignment**: Restructured `RainbowManager` styling rules to use `display: inline-flex` with `align-items: center` for root folder elements.
-* **Pixel-Perfect Placement**: Prevents icon and folder label misalignments across different Obsidian themes and custom font settings.
-
-### ⚡ 2. Stutter & UI Performance Fixes
-* **Frame-Scheduled Observer**: Scheduled DOM observer queries via `requestAnimationFrame` batching to eliminate main-thread stutter during fast sidebar expand/collapse actions.
-* **Glassmorphism Scope Optimization**: Restricted glassmorphism CSS strictly to active file selection when enabled in settings, eliminating heavy backdrop-blur recalculations on unselected file and folder rows.
-
-### 🏆 3. Icon Pack Priority Hierarchy (Up ▲ & Down ▼ System)
-* **Instant Priority Reordering**: Re-order the priority ranking of all icon packs (Lucide, Bootstrap, Simple Icons, Tabler, Remix, FontAwesome, Material, Feather, Native Emojis) with instant (<1ms) Up/Down button responsiveness.
-* **Simplified Settings**: Removed redundant preferred icon pack dropdown in favor of the flexible, visual priority ranking list.
-* **Native Emoji Demotion**: Native emojis are ranked at the bottom of the priority order (#10) by default, ensuring vector SVG icons are always preferred.
-* **Startup Race Condition Fix**: Awaits local filesystem icon loading (`await loadLocalIcons()`) before generating initial styles on vault launch.
-* **Deterministic File & Key Sorting**: Sorted filesystem traversal and icon index keys deterministically (`localeCompare()`), guaranteeing 100% consistent and static icon assignments across every restart.
-
-### 📱 6. Mobile Section Divider & Instant Drawer Sync Fixes
-* **Mobile DOM Tree Support**: Added native support for `.tree-item` and `.tree-item-self` DOM nodes used in Mobile Obsidian file explorer drawers.
-* **Instant Drawer Display**: Automatically invalidates stale container caches and syncs dividers on `layout-change` and `active-leaf-change`, eliminating the bug where separators only appeared after clicking.
-* **Modal Live-Sync Freeze Prevention**: Filtered out text nodes and internal child mutations inside `.cf-interactive-divider` in `DOMObserverService`, eliminating main-thread infinite re-render loops during modal editing.
-
-### ⚡ 7. Sub-Millisecond $O(1)$ Mobile Calculation & Memory Reclamation
-* **O(1) Indexed Map Resolution**: Replaced sequential DOM queries with single-pass `[data-path]` map indexing (`domPathMap`), delivering sub-millisecond calculation speeds on mobile phones.
-* **Immediate Garbage Collection**: Explicitly clears temporary map/set data structures in a `finally` block to instantly reclaim heap RAM without waiting for JS garbage collection.
-* **Cross-Device Settings & Divider Sync**: Listens to external modifications of `colorful-folders/data.json` via `vault.on("modify")`, automatically syncing divider configs and styles across devices when using WebDAV Sync, Obsidian Sync, Git, or iCloud.
-* **Mobile Phone Responsive UI**: Added `touch-action: none` to color pickers, auto-truncating section chips (`text-overflow: ellipsis`), and adaptive flex footers for mobile viewports.
-
----
-
-## 🚀 5.0.0 - Architectural Overhaul & New Features
-
-Welcome to **Colorful Folders 5.0.0**! This major update brings smart AI icon matching, blistering performance improvements for large vaults, and bulletproof stability with other Obsidian plugins.
-
----
-### 🌲 1. Perfect Folder Scope Hierarchy (New Mode under Hierarchy Mode)
-* **Matching Colors by Tree Depth**: Notes and subfolders at the exact same depth level receive matching colors for a clean, balanced layout:
-  - **Level 1** (Root folders & root notes) = Color A
-  - **Level 2** (Subfolders & notes inside root folders) = Color B
-  - **Level 3** (Deeper subfolders) = Color C
-* **No Level Mismatches**: Notes align visually with their exact folder depth in your sidebar.
-
-### ⚡ 2. Instant Auto-Icons (Offline & Free)
-* **No API Keys Needed**: Automatically pick perfect icons for your notes and folders in seconds—completely offline, private, and 100% free!
-* **Blazing Fast**: Classifies hundreds of notes in less than a second.
-* **Smart Matching**: Connect your favorite local AI models (via Ollama) for intelligent icon selection.
-* **Live Progress Bar**: Watch real-time scanning progress as your vault gets automatically styled.
-
----
-
-### 🤖 3. Smart AI Icon Assistant
-* **Context-Aware Styling**: Automatically style your vault based on the actual topics and content of your notes.
-* **Automatic Icon Fallbacks**: If a suggested icon isn't installed, the plugin automatically finds the closest matching alternative from Lucide, Simple Icons, or FontAwesome.
-
----
-### 🚀 4. Butter-Smooth Performance & Zero Conflicts
-* **Rebuilt Styling Engine**: Redesigned how colors are rendered under the hood for faster updates and zero layout glitches.
-* **Zero Lag in Large Vaults**: Ultra-optimized calculations keep scrolling completely smooth, even in vaults with 10,000+ files.
 
 ---

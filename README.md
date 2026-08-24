@@ -10,34 +10,31 @@
 Colorful Folders automatically applies premium color palettes, smart icons, and structural intelligence to your vault. Whether you prefer a strictly organized, monochromatic workspace or a neon-glowing cyberpunk aesthetic, this plugin makes navigation intuitive and your workspace absolutely beautiful.
 
 ---
-# Updates for Colorful Folders
+# What's New in Colorful Folders
 
-## 🚀 5.0.0 - Architectural Overhaul & New Features
-
----
-### 🌲 1. Perfect Folder Scope Hierarchy (New Mode under Hierarchy Mode)
-* **Matching Colors by Tree Depth**: Notes and subfolders at the exact same depth level receive matching colors for a clean, balanced layout:
-  - **Level 1** (Root folders & root notes) = Color A
-  - **Level 2** (Subfolders & notes inside root folders) = Color B
-  - **Level 3** (Deeper subfolders) = Color C
-* **No Level Mismatches**: Notes align visually with their exact folder depth in your sidebar.
-
-### ⚡ 2. Instant Auto-Icons (Offline & Free)
-* **No API Keys Needed**: Automatically pick perfect icons for your notes and folders in seconds—completely offline, private, and 100% free!
-* **Blazing Fast**: Classifies hundreds of notes in less than a second.
-* **Smart Matching**: Connect your favorite local AI models (via Ollama) for intelligent icon selection.
-* **Live Progress Bar**: Watch real-time scanning progress as your vault gets automatically styled.
+## 🚀 5.0.4 - Live Animated Icons, Locked-In Choices & Speed Optimization
 
 ---
+### 🎬 1. Live Animated Icons (Moving Sidebar Icons)
+* **Smooth Motion in Your Sidebar**: Bring your vault to life with animated SVG icons that play real-time animations right in your File Explorer sidebar.
+* **Live Picker Previews**: Browse and preview animated icons in real-time inside the icon picker and color modal before applying them.
+* **Zero Lag & Battery-Friendly**: Runs smoothly with dedicated, isolated DOM rendering and zero battery drain.
 
-### 🤖 3. Smart AI Icon Assistant
-* **Context-Aware Styling**: Automatically style your vault based on the actual topics and content of your notes.
-* **Automatic Icon Fallbacks**: If a suggested icon isn't installed, the plugin automatically finds the closest matching alternative from Lucide, Simple Icons, or FontAwesome.
+### 👑 2. Your Chosen Icons Always Stay Locked In
+* **Your Choices Come First**: Explicit manual icon selections always win. Automatic keyword matches will never overwrite or hijack your chosen icon.
+* **Color Changes Won't Reset Icons**: Adjusting background colors, text colors, or folder names preserves your custom icon permanently.
+* **Frontmatter Control**: Adding `icon: ...` in note frontmatter/properties guarantees instant display.
 
----
-### 🚀 4. Butter-Smooth Performance & Zero Conflicts
-* **Rebuilt Styling Engine**: Redesigned how colors are rendered under the hood for faster updates and zero layout glitches.
-* **Zero Lag in Large Vaults**: Ultra-optimized calculations keep scrolling completely smooth, even in vaults with 10,000+ files.
+### ⚡ 3. Memory Optimization & Faster Performance
+* **Ultra-Low Memory Footprint**: Smarter bounded caching keeps memory usage minimal, ensuring butter-smooth scrolling even in vaults with 10,000+ notes.
+* **Dead-Path Garbage Collection**: Deleting notes or folders immediately purges internal cache data to prevent memory accumulation.
+
+### 🧹 4. Complete Library Clean & Hard Reset
+* **One-Click Library Wipe**: Clicking **"Clear icon library"** completely purges all downloaded packs and custom imports from disk and memory.
+* **Red Danger Buttons**: Destructive actions (*Factory reset*, *Reset styles*, *Clear icon library*) are styled in clear red.
+
+### 📱 5. Responsive Settings on Small Windows
+* **No More Cut-Off Tabs**: Settings tabs (*General*, *Features*, *Icons*, *AI*, *Privacy*) automatically wrap onto multiple lines when the window is narrow.
 
 ---
 
@@ -53,8 +50,10 @@ Colorful Folders automatically applies premium color palettes, smart icons, and 
 
 ### 🤖 Smart Iconography & Custom Packs
 
+* **Live Animated Icons:** Full support for animated SVG icons that play real-time animations directly in your File Explorer sidebar.
 * **Auto-Icon Engine:** Automatically injects high-fidelity icons based on item names (e.g., *Journal* -> 📅, *Finance* -> 💰).
-* **Local Icon Pack Support:** Drop any custom SVG icon pack into `.obsidian/icons` for instant, parallel-scanned icon loading.
+* **Locked-In Manual Priority:** Explicit manual icon choices permanently override auto-icons and title predictions.
+* **Local Icon Pack Support:** Drop any custom SVG icon pack into `.obsidian/icons` or `.obsidian/plugins/colorful-folders/icons` for instant offline loading.
 * **Custom Open/Closed Icons:** Define custom global defaults or per-item overrides for open and closed folder states.
 * **Built-in Offline Libraries:** Includes Material, FontAwesome, Lucide, Tabler, Simple Icons, and Vibrant packs for instant offline rendering.
 * **Universal 18px Sizing:** All icons are standardized to a professional 18px baseline with perfect vertical centering.
@@ -127,9 +126,9 @@ Access all styling configurations by navigating to **Settings > Colorful Folders
 Looking to understand the internal architecture, contribute features, or debug the styling engine? Check out our comprehensive technical guides:
 
 * **[Master Documentation Index](docs/DOCUMENTATION_INDEX.md):** The entry point for all technical documentation and subsystem guides.
-* **[Internal Engine Architecture](docs/ARCHITECTURE.md):** Deep dive into the Zero-DOM rendering pipeline and logic flow.
-* **[API Reference](docs/API_REFERENCE.md):** Detailed class and method documentation.
-* **[Customization Guide](docs/CUSTOMIZATION.md):** Advanced CSS snippets and styling overrides.
+* **[Internal Engine Architecture](docs/architecture/ARCHITECTURE.md):** Deep dive into the Zero-DOM rendering pipeline and logic flow.
+* **[Codebase Subsystems Guide](docs/architecture/CODEBASE_GUIDE.md):** Comprehensive guide to all source files and services.
+* **[Customization Guide](docs/styling/CUSTOMIZATION.md):** Advanced CSS snippets and styling overrides.
 
 ---
 
