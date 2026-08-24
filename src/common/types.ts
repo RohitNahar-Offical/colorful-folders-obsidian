@@ -189,6 +189,8 @@ export interface IColorfulFoldersPlugin {
     registerCustomIcons(): void;
     cleanUnusedStyles(): Promise<void>;
     refreshRibbon(): void;
+    iconCache?: Map<string, string>;
+    getIconsDirPath(): string;
     localFileSystemIcons?: Record<string, string | null>;
     localCustomIcons: Record<string, string>;
     getCustomIcon(id: string): string | undefined;
@@ -204,6 +206,7 @@ export interface IColorfulFoldersPlugin {
     };
     styleGenerator: { generateCss(): Promise<string> };
     domObserverService: DOMObserverService;
+    animatedIconService: import('../services/AnimatedIconService').AnimatedIconService;
     getAllExplorerContainers(): HTMLElement[];
     invalidateExplorerContainersCache(): void;
     getOpenDocuments(): Document[];

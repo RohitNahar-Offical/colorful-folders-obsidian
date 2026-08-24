@@ -306,21 +306,15 @@ export class StyleGenerator {
                     isDark
                 );
 
-                // Custom User Rules take top priority over saved data.json AI icons
-                const isAiAssignedFile = !!(fileStyle?.iconSource && fileStyle.iconSource !== 'manual');
-                const customUserRuleFile = this.plugin.iconManager.getAutoIconData(child.name, child.path);
-                const isFrontmatterFileIcon = customUserRuleFile?.packSource === 'frontmatter';
-                const isCustomFileRuleMatch = customUserRuleFile?.packSource === 'custom-rule' || (customUserRuleFile?.isCustom && !isFrontmatterFileIcon);
-                const isUserCustomRuleFileMatch = (this.settings.autoIcons || isFrontmatterFileIcon) && isCustomFileRuleMatch;
+                const rawFileIcon = (fileStyle?.iconId && this.isValidIconStr(fileStyle.iconId)) ? fileStyle.iconId : null;
+                const rawInheritedFileIcon = (inheritedStyle?.applyToFiles && inheritedStyle?.iconId && this.isValidIconStr(inheritedStyle.iconId)) ? inheritedStyle.iconId : null;
 
-                let iconId = "";
-                if (isUserCustomRuleFileMatch && customUserRuleFile) {
-                    iconId = this.resolveAutoIconCandidate(customUserRuleFile);
-                } else {
-                    const rawFileIcon = (fileStyle?.iconId && (!isAiAssignedFile || this.settings.autoIcons) && this.isValidIconStr(fileStyle.iconId)) ? fileStyle.iconId : null;
-                    const rawInheritedFileIcon = (inheritedStyle?.applyToFiles && inheritedStyle?.iconId && (!inheritedStyle.iconSource || inheritedStyle.iconSource === 'manual' || this.settings.autoIcons) && this.isValidIconStr(inheritedStyle.iconId)) ? inheritedStyle.iconId : null;
-                    const autoIconFile = (this.settings.autoIcons && !rawFileIcon && !rawInheritedFileIcon) ? customUserRuleFile : null;
-                    iconId = rawFileIcon || rawInheritedFileIcon || this.resolveAutoIconCandidate(autoIconFile);
+                let iconId = rawFileIcon || rawInheritedFileIcon || "";
+                if (!iconId && this.settings.autoIcons) {
+                    const customUserRuleFile = this.plugin.iconManager.getAutoIconData(child.name, child.path);
+                    if (customUserRuleFile) {
+                        iconId = this.resolveAutoIconCandidate(customUserRuleFile);
+                    }
                 }
 
                 const textNative = ColorResolver.resolveTextColor(
@@ -439,38 +433,41 @@ export class StyleGenerator {
                 }
 
                 if (iconId) {
-                    const isCustomEmoji = this.plugin.iconManager.isEmojiIcon(iconId);
+                    const isAnimated = !!this.plugin.animatedIconService?.isAnimatedIcon(iconId);
+                    if (!isAnimated) {
+                        const isCustomEmoji = this.plugin.iconManager.isEmojiIcon(iconId);
 
-                    if (isCustomEmoji) {
-                        grouper.add(`
-                            content: "${iconId} " !important;
-                            display: inline-flex !important;
-                            align-items: center !important;
-                            justify-content: center !important;
-                            align-self: center !important;
-                            flex-shrink: 0 !important;
-                            height: ${effFileIconW} !important;
-                            width: ${effFileIconW} !important;
-                            margin-right: 4px !important;
-                        `, fileTextSels.map(s => s + '::before'));
-                    } else {
-                        const maskUrl = this.plugin.iconManager.getMaskDataUri(iconId);
-                        if (maskUrl) {
+                        if (isCustomEmoji) {
                             grouper.add(`
-                                content: '' !important;
+                                content: "${iconId} " !important;
                                 display: inline-flex !important;
+                                align-items: center !important;
+                                justify-content: center !important;
                                 align-self: center !important;
                                 flex-shrink: 0 !important;
-                                width: ${effFileIconW} !important;
                                 height: ${effFileIconW} !important;
+                                width: ${effFileIconW} !important;
                                 margin-right: 4px !important;
-                                background-color: ${iconColor || color.hex || textNative} !important;
-                                -webkit-mask-image: ${maskUrl} !important;
-                                -webkit-mask-repeat: no-repeat !important;
-                                -webkit-mask-position: center !important;
-                                -webkit-mask-size: contain !important;
-                                opacity: 0.85 !important;
-                             `, fileTextSels.map(s => s + '::before'));
+                            `, fileTextSels.map(s => s + '::before'));
+                        } else {
+                            const maskUrl = this.plugin.iconManager.getMaskDataUri(iconId);
+                            if (maskUrl) {
+                                grouper.add(`
+                                    content: '' !important;
+                                    display: inline-flex !important;
+                                    align-self: center !important;
+                                    flex-shrink: 0 !important;
+                                    width: ${effFileIconW} !important;
+                                    height: ${effFileIconW} !important;
+                                    margin-right: 4px !important;
+                                    background-color: ${iconColor || color.hex || textNative} !important;
+                                    -webkit-mask-image: ${maskUrl} !important;
+                                    -webkit-mask-repeat: no-repeat !important;
+                                    -webkit-mask-position: center !important;
+                                    -webkit-mask-size: contain !important;
+                                    opacity: 0.85 !important;
+                                `, fileTextSels.map(s => s + '::before'));
+                            }
                         }
                     }
                 } else if (autoIcons) {
@@ -644,21 +641,15 @@ export class StyleGenerator {
                 `body .nav-files-container .tree-item-self[data-path="${safePath}"] + .tree-item-children`
             ], `folderBgTint_${color.hex}_${finalTintOp}_${outlineOnly}_${folderThick}`);
 
-            // Custom User Rules take top priority over saved data.json AI icons
-            const isAiAssignedFolder = !!(customStyle?.iconSource && customStyle.iconSource !== 'manual');
-            const customUserRuleFolder = this.plugin.iconManager.getAutoIconData(child.name, child.path);
-            const isFrontmatterFolderIcon = customUserRuleFolder?.packSource === 'frontmatter';
-            const isCustomFolderRuleMatch = customUserRuleFolder?.packSource === 'custom-rule' || (customUserRuleFolder?.isCustom && !isFrontmatterFolderIcon);
-            const isUserCustomRuleFolderMatch = (this.settings.autoIcons || isFrontmatterFolderIcon) && isCustomFolderRuleMatch;
+            const rawFolderIcon = (customStyle?.iconId && this.isValidIconStr(customStyle.iconId)) ? customStyle.iconId : null;
+            const rawInheritedFolderIcon = (inheritedStyle?.iconId && this.isValidIconStr(inheritedStyle.iconId)) ? inheritedStyle.iconId : null;
 
-            let folderIconId = "";
-            if (isUserCustomRuleFolderMatch && customUserRuleFolder) {
-                folderIconId = this.resolveAutoIconCandidate(customUserRuleFolder);
-            } else {
-                const rawFolderIcon = (customStyle?.iconId && (!isAiAssignedFolder || this.settings.autoIcons) && this.isValidIconStr(customStyle.iconId)) ? customStyle.iconId : null;
-                const rawInheritedFolderIcon = (inheritedStyle?.iconId && (!inheritedStyle.iconSource || inheritedStyle.iconSource === 'manual' || this.settings.autoIcons) && this.isValidIconStr(inheritedStyle.iconId)) ? inheritedStyle.iconId : null;
-                const autoIconFolder = (this.settings.autoIcons && !rawFolderIcon && !rawInheritedFolderIcon) ? customUserRuleFolder : null;
-                folderIconId = rawFolderIcon || rawInheritedFolderIcon || this.resolveAutoIconCandidate(autoIconFolder);
+            let folderIconId = rawFolderIcon || rawInheritedFolderIcon || "";
+            if (!folderIconId && this.settings.autoIcons) {
+                const customUserRuleFolder = this.plugin.iconManager.getAutoIconData(child.name, child.path);
+                if (customUserRuleFolder) {
+                    folderIconId = this.resolveAutoIconCandidate(customUserRuleFolder);
+                }
             }
             const folderExpandedIconId = (customStyle?.expandedIconId && this.isValidIconStr(customStyle.expandedIconId)) ? customStyle.expandedIconId : ((inheritedStyle?.expandedIconId && this.isValidIconStr(inheritedStyle.expandedIconId)) ? inheritedStyle.expandedIconId : "");
 
@@ -820,35 +811,38 @@ export class StyleGenerator {
 
                 const sels = getSels(isExpandedState);
 
-                if (isCustomEmoji) {
-                    grouper.add(`
-                        content: "${iconIdToUse} " !important;
-                        display: inline-flex !important;
-                        align-items: center !important;
-                        justify-content: center !important;
-                        align-self: center !important;
-                        flex-shrink: 0 !important;
-                        margin-right: 4px !important;
-                        background-color: transparent !important;
-                        -webkit-mask-image: none !important;
-                    `, sels, `icon_${iconIdToUse}_emoji_${folderIconW}`);
-                } else {
-                    const maskUrl = this.plugin.iconManager.getMaskDataUri(iconIdToUse);
-                    if (maskUrl) {
+                const isAnimated = !!this.plugin.animatedIconService?.isAnimatedIcon(iconIdToUse);
+                if (!isAnimated) {
+                    if (isCustomEmoji) {
                         grouper.add(`
-                            content: '' !important;
+                            content: "${iconIdToUse} " !important;
                             display: inline-flex !important;
+                            align-items: center !important;
+                            justify-content: center !important;
                             align-self: center !important;
                             flex-shrink: 0 !important;
-                            width: ${folderIconW} !important;
-                            height: ${folderIconW} !important;
                             margin-right: 4px !important;
-                            background-color: ${effFolderIconColor} !important;
-                            -webkit-mask-image: ${maskUrl} !important;
-                            -webkit-mask-repeat: no-repeat !important;
-                            -webkit-mask-position: center !important;
-                            -webkit-mask-size: contain !important;
-                        `, sels, `icon_${iconIdToUse}_svg_${folderIconW}_${effFolderIconColor.replace(/\s+/g, '')}_${isExpandedState ? 'expanded' : 'collapsed'}`);
+                            background-color: transparent !important;
+                            -webkit-mask-image: none !important;
+                        `, sels, `icon_${iconIdToUse}_emoji_${folderIconW}`);
+                    } else {
+                        const maskUrl = this.plugin.iconManager.getMaskDataUri(iconIdToUse);
+                        if (maskUrl) {
+                            grouper.add(`
+                                content: '' !important;
+                                display: inline-flex !important;
+                                align-self: center !important;
+                                flex-shrink: 0 !important;
+                                width: ${folderIconW} !important;
+                                height: ${folderIconW} !important;
+                                margin-right: 4px !important;
+                                background-color: ${effFolderIconColor} !important;
+                                -webkit-mask-image: ${maskUrl} !important;
+                                -webkit-mask-repeat: no-repeat !important;
+                                -webkit-mask-position: center !important;
+                                -webkit-mask-size: contain !important;
+                            `, sels, `icon_${iconIdToUse}_svg_${folderIconW}_${effFolderIconColor.replace(/\s+/g, '')}_${isExpandedState ? 'expanded' : 'collapsed'}`);
+                        }
                     }
                 }
             };

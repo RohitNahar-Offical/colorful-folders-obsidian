@@ -224,7 +224,7 @@ modifiedFields: Set<string>;
                             target.setText(currentIconId);
                             target.setCssStyles({ fontSize: `${Math.round(sizePx * 0.85)}px` });
                         } else {
-                            const rawSvg = this.plugin.iconManager.getIconSvg(currentIconId, false);
+                            const rawSvg = this.plugin.iconManager.getRawIconSvg(currentIconId);
                             if (rawSvg) {
                                 // eslint-disable-next-line no-unsanitized/method -- Contextual fragment is safe here as svg content comes from curated internal asset maps or local files
                                 const frag = activeDocument.createRange().createContextualFragment(rawSvg);
@@ -905,7 +905,7 @@ modifiedFields: Set<string>;
                 cell.setText(id);
                 cell.setCssStyles({ fontSize: `${Math.round(gridIconW * 0.85)}px` });
             } else {
-                const rawSvg = this.plugin.iconManager.getIconSvg(id, false);
+                const rawSvg = this.plugin.iconManager.getRawIconSvg(id);
                 if (rawSvg) {
                     // eslint-disable-next-line no-unsanitized/method -- Contextual fragment is safe here as svg content comes from curated internal asset maps or local files
                     const frag = activeDocument.createRange().createContextualFragment(rawSvg);
@@ -1162,8 +1162,10 @@ modifiedFields: Set<string>;
         });
         clearBtn.onclick = async () => {
             delete this.plugin.settings.customFolderColors[this.item.path];
+            this.plugin.syncCustomFolderColorsMap();
             await this.plugin.saveSettings();
-            void this.plugin.generateStyles();
+            await this.plugin.generateStyles();
+            this.plugin.animatedIconService?.syncAnimatedIcons();
             new obsidian.Notice(`Cleared styling for ${this.item.name}`);
             this.close();
         };
@@ -1193,8 +1195,10 @@ modifiedFields: Set<string>;
             } else {
                 this.plugin.settings.customFolderColors[path] = finalStyle;
             }
+            this.plugin.syncCustomFolderColorsMap();
             await this.plugin.saveSettings();
-            void this.plugin.generateStyles();
+            await this.plugin.generateStyles();
+            this.plugin.animatedIconService?.syncAnimatedIcons();
             new obsidian.Notice(`Updated styling for ${this.item.name}`);
             this.close();
         };

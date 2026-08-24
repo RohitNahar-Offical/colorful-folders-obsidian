@@ -19,7 +19,7 @@ export class IconRepository {
     private _autoIconResultCache = new LRUCache<string, AutoIconData | null>(4096);
     private _iconValidityCache = new LRUCache<string, boolean>(2048);
     private _packIndex: IconPackIndex = new IconPackIndex();
-    private _domParser = typeof DOMParser !== 'undefined' ? new DOMParser() : null;
+    private _domParser: DOMParser | null = typeof DOMParser !== 'undefined' ? new DOMParser() : null;
 
     constructor(plugin: IColorfulFoldersPlugin) {
         this.plugin = plugin;
@@ -434,26 +434,23 @@ export class IconRepository {
         return /\p{Extended_Pictographic}|\p{Emoji_Presentation}/u.test(iconId);
     }
 
-    getIconSvg(iconId: string, shouldEncode = true): string {
+    getRawIconSvg(iconId: string): string {
         if (!iconId) return "";
-        const cacheKey = `${iconId}-${shouldEncode ? 'enc' : 'raw'}`;
-        if (this.plugin.iconCache) {
-            const cached = this.plugin.iconCache.get(cacheKey);
-            if (cached) return cached;
-        }
+        const lId = iconId.toLowerCase();
+        const cleanId = lId.replace(/^lucide-/, '');
+        const hyphenated = lId.replace(/[\s_:]+/g, '-').replace(/\//g, '-');
 
-        let svgStr = this.plugin.getCustomIcon(iconId) || this.plugin.getCustomIcon(iconId.toLowerCase()) || "";
+        // 1. Check custom icons & local custom icons
+        let svgStr = this.plugin.getCustomIcon(iconId) || this.plugin.getCustomIcon(lId) ||
+            this.plugin.localCustomIcons?.[iconId] || this.plugin.localCustomIcons?.[lId] ||
+            this.plugin.localCustomIcons?.[cleanId] || this.plugin.localCustomIcons?.[hyphenated] || "";
+
+        // 2. Check local file system pack icons
         const local = this.plugin.localFileSystemIcons;
-        
         if (!svgStr && local) {
-            const lId = iconId.toLowerCase();
-            const cleanId = lId.replace(/^lucide-/, '');
-            const hyphenated = lId.replace(/[\s_:]+/g, '-').replace(/\//g, '-');
-
             svgStr = local[iconId] || local[lId] || local[cleanId] || local[hyphenated] || "";
             if (!svgStr) {
                 const baseName = stripIconPrefix(lId);
-
                 if (local[baseName]) {
                     svgStr = local[baseName];
                 } else {
@@ -465,11 +462,12 @@ export class IconRepository {
             }
         }
 
+        // 3. Check Obsidian built-in icons
         if (!svgStr) {
             const candidateIds = [
                 iconId,
-                iconId.toLowerCase(),
-                iconId.replace(/^lucide-/, ''),
+                lId,
+                cleanId,
                 `lucide-${iconId}`,
                 iconId.replace(/:/g, '-'),
                 iconId.replace(/-/g, ':')
@@ -484,6 +482,18 @@ export class IconRepository {
             }
         }
 
+        return svgStr;
+    }
+
+    getIconSvg(iconId: string, shouldEncode = true): string {
+        if (!iconId) return "";
+        const cacheKey = `${iconId}-${shouldEncode ? 'enc' : 'raw'}`;
+        if (this.plugin.iconCache) {
+            const cached = this.plugin.iconCache.get(cacheKey);
+            if (cached) return cached;
+        }
+
+        const svgStr = this.getRawIconSvg(iconId);
         if (svgStr) {
             const normalized = this.normalizeSvg(svgStr, shouldEncode);
             if (this.plugin.iconCache) {
@@ -529,9 +539,8 @@ export class IconRepository {
         const hit = this._dataUriCache.get(cacheKey);
         if (hit !== undefined) return hit;
 
-        const svg = rawSvg || this.getIconSvg(iconId, true);
-        const normalized = svg ? this.normalizeSvg(svg, true) : "";
-        const maskUrl = normalized ? `url("data:image/svg+xml,${normalized}")` : "";
+        const svg = rawSvg ? this.normalizeSvg(rawSvg, true) : this.getIconSvg(iconId, true);
+        const maskUrl = svg ? `url("data:image/svg+xml,${svg}")` : "";
         this._dataUriCache.set(cacheKey, maskUrl);
         return maskUrl;
     }
@@ -565,7 +574,7 @@ export class IconRepository {
                     if (doc.getElementsByTagName("parsererror").length > 0) doc = parser.parseFromString(rawSvg, 'text/html');
 
                     // Remove dangerous tags
-                    const dangerousTags = ['script', 'iframe', 'object', 'embed', 'foreignobject', 'animate', 'set'];
+                    const dangerousTags = ['script', 'iframe', 'object', 'embed', 'foreignobject'];
                     for (const tag of dangerousTags) {
                         doc.querySelectorAll(tag).forEach(el => el.remove());
                     }

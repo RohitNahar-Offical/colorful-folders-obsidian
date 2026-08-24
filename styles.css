@@ -340,47 +340,41 @@ body .colorful-folders-config {
     display: none;
 }
 
-.cf-hero {
-    text-align: center;
-    margin-bottom: 40px;
-}
-
-.cf-hero h1 {
-    font-size: 2.5em;
-    font-weight: 800;
-    margin: 0;
-    color: var(--text-normal);
-    letter-spacing: -0.02em;
-}
-
-.cf-hero p {
-    font-size: 1.1em;
-    color: var(--text-muted);
-    margin: 8px 0 0 0;
-}
-
 .cf-tab-bar {
     display: flex;
     justify-content: center;
-    gap: 16px;
-    margin-bottom: 30px;
-    padding: 0;
+    align-items: center;
+    gap: 8px 12px;
+    margin-bottom: 24px;
+    padding: 4px 8px;
+    flex-wrap: wrap;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.cf-tab-bar::-webkit-scrollbar {
+    display: none;
 }
 
 body .colorful-folders-config .cf-tab-btn {
-    display: flex;
+    display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
-    padding: 8px 20px;
+    padding: 7px 16px;
     border-radius: 20px;
     cursor: pointer;
     font-weight: 700;
-    font-size: 1em;
+    font-size: 0.9em;
     color: var(--interactive-accent);
     background: rgba(var(--interactive-accent-rgb, 120, 120, 255), 0.08);
     border: 1px solid rgba(var(--interactive-accent-rgb, 120, 120, 255), 0.18);
     box-shadow: none;
     position: relative;
+    white-space: nowrap;
+    flex-shrink: 0;
     transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, color 0.2s ease-in-out;
 }
 

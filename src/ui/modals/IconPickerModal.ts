@@ -143,7 +143,7 @@ export class IconPickerModal extends obsidian.Modal {
                     cell.setText(id);
                     cell.setCssStyles({ fontSize: "20px" });
                 } else {
-                    const rawSvg = this.plugin.iconManager.getIconSvg(id, false);
+                    const rawSvg = this.plugin.iconManager.getRawIconSvg(id);
                     if (rawSvg) {
                         const templateSvg = getSvgTemplate(id, rawSvg);
                         if (templateSvg) {

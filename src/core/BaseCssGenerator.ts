@@ -104,6 +104,37 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             height: 0 !important;
         }
 
+        /* ── LIVE ANIMATED CUSTOM SVG ICONS ─────────── */
+        .cf-animated-icon-active::before,
+        .cf-animated-icon-active .nav-folder-title-content::before,
+        .cf-animated-icon-active .nav-file-title-content::before,
+        .cf-animated-icon-active .tree-item-inner::before {
+            display: none !important;
+            content: none !important;
+            -webkit-mask-image: none !important;
+            mask-image: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+
+        .cf-live-animated-icon {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex-shrink: 0 !important;
+            width: var(--cf-animated-icon-size, 1.3em) !important;
+            height: var(--cf-animated-icon-size, 1.3em) !important;
+            margin-right: 4px !important;
+            vertical-align: middle !important;
+            overflow: visible !important;
+        }
+
+        .cf-live-animated-icon svg {
+            width: 100% !important;
+            height: 100% !important;
+            display: block !important;
+        }
+
         .cf-icon-wrapper {
             display: inline-flex !important;
             align-items: center !important;

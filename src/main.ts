@@ -20,6 +20,7 @@ import { DOMObserverService } from "./services/DOMObserverService";
 import { EventTrackerService } from "./services/EventTrackerService";
 import { AdoptedStyleSheetService } from "./services/AdoptedStyleSheetService";
 import { PluginLifecycleService } from "./services/PluginLifecycleService";
+import { AnimatedIconService } from "./services/AnimatedIconService";
 import { IconManager } from "./core/IconManager";
 import { AIIconClassifier } from './integrations/AIIconClassifier';
 import { EmbeddingModel } from './integrations/embedingmodel';
@@ -60,6 +61,7 @@ export default class ColorfulFoldersPlugin
 
   embeddingModel: EmbeddingModel;
   domObserverService: DOMObserverService;
+  animatedIconService: AnimatedIconService;
   eventTrackerService: EventTrackerService;
   dividerManager: DividerManager;
   styleGenerator: StyleGenerator;
@@ -76,6 +78,7 @@ export default class ColorfulFoldersPlugin
       await this.loadSettings();
       this.styleGenerator = new StyleGenerator(this);
       this.iconManager = new IconManager(this);
+      this.animatedIconService = new AnimatedIconService(this);
       this.aiIconClassifier = new AIIconClassifier(this);
       this.embeddingModel = new EmbeddingModel(this);
       this.dividerManager = new DividerManager(this);
@@ -472,6 +475,13 @@ export default class ColorfulFoldersPlugin
         }
       }
     }
+    if (this.localFileSystemIcons) {
+      for (const id in this.localFileSystemIcons) {
+        if (id.startsWith(packPrefix) || id.startsWith(prefix + "/") || id.startsWith(prefix + ":")) {
+          delete this.localFileSystemIcons[id];
+        }
+      }
+    }
     const adapter = this.app.vault.adapter;
     const iconsDir = this.getIconsDirPath();
     const packFilePath = `${iconsDir}/${prefix}.json`;
@@ -497,8 +507,13 @@ export default class ColorfulFoldersPlugin
         // ignore
       }
     }
+    this.iconCache?.clear();
+    this.iconManager?.invalidateCategoryCache();
+    this.animatedIconService?.invalidateCache();
     this.registerCustomIcons();
     await this.saveSettings();
+    await this.generateStyles();
+    this.animatedIconService?.syncAnimatedIcons();
     return removedCount;
   }
 
@@ -884,6 +899,7 @@ export default class ColorfulFoldersPlugin
       const css = await this.styleGenerator.generateCss();
       this.adoptedStyleSheetService.updateStyles(css);
       this.getAllExplorerContainers().forEach((c) => this.domObserverService.tagExplorerItems(c));
+      this.animatedIconService?.syncAnimatedIcons();
       // Sync folder colors to Graph View groups if the feature is enabled
       if (this.settings.graphColorSync && !this.isDragging) {
         void GraphColorSync.syncGraphColors(this);

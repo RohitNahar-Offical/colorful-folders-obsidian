@@ -27,9 +27,31 @@ export class DOMObserverService {
 
     private pendingSyncFrame: number | null = null;
 
+    public hasAnyAnimatedIcons(): boolean {
+        const customFolderColors = this.plugin.settings.customFolderColors || {};
+        const customIcons = this.plugin.settings.customIcons || {};
+        for (const p in customFolderColors) {
+            const style = customFolderColors[p];
+            const iconId = (typeof style === 'object' && style !== null) ? style.iconId : undefined;
+            if (iconId && this.plugin.animatedIconService?.isAnimatedIcon(iconId)) return true;
+        }
+        for (const p in customIcons) {
+            const style = customIcons[p];
+            const iconId = typeof style === 'string' ? style : (typeof style === 'object' && style !== null ? (style as { iconId?: string }).iconId : undefined);
+            if (iconId && this.plugin.animatedIconService?.isAnimatedIcon(iconId)) return true;
+        }
+        return false;
+    }
+
+    public syncAnimatedIcons(): void {
+        this.plugin.animatedIconService?.syncAnimatedIcons();
+    }
+
     initDividerObserver() {
         if (this.plugin.isDragging) return;
-        if (!this.plugin.dividerManager?.hasAnyDividers()) {
+        const hasDividers = !!this.plugin.dividerManager?.hasAnyDividers();
+        const hasAnimated = this.hasAnyAnimatedIcons();
+        if (!hasDividers && !hasAnimated) {
             this.disposeDividerObserver();
             return;
         }
@@ -62,7 +84,7 @@ export class DOMObserverService {
                 if (m.type !== 'childList') continue;
 
                 const targetEl = m.target as HTMLElement;
-                if (targetEl && (targetEl.classList?.contains('cf-interactive-divider') || !!targetEl.closest?.('.cf-interactive-divider'))) {
+                if (targetEl && (targetEl.classList?.contains('cf-interactive-divider') || !!targetEl.closest?.('.cf-interactive-divider') || targetEl.classList?.contains('cf-live-animated-icon'))) {
                     continue;
                 }
 
@@ -113,7 +135,12 @@ export class DOMObserverService {
                     this.pendingSyncFrame = null;
                     if (this.plugin.isSyncingDividers || this.isScrolling || this.plugin.isDragging) return;
                     allContainers.forEach(c => this.tagExplorerItems(c));
-                    this.plugin.dividerManager.syncDividers();
+                    if (this.plugin.dividerManager?.hasAnyDividers()) {
+                        this.plugin.dividerManager.syncDividers();
+                    }
+                    if (this.hasAnyAnimatedIcons()) {
+                        this.syncAnimatedIcons();
+                    }
                 });
             }
         });

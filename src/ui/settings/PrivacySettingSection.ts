@@ -391,9 +391,13 @@ export class PrivacySettingSection extends SettingSection {
                         this.plugin.settings.customFolderColors = {};
                         this.plugin.settings.presets = {};
                         this.plugin.settings.customIconRules = '';
+                        this.plugin.syncCustomFolderColorsMap();
+                        this.plugin.iconCache?.clear();
                         this.plugin.iconManager?.invalidateCategoryCache();
+                        this.plugin.animatedIconService?.invalidateCache();
                         await this.plugin.saveSettings();
-                        this.plugin.generateStylesDebounced();
+                        await this.plugin.generateStyles();
+                        this.plugin.animatedIconService?.syncAnimatedIcons();
                         new obsidian.Notice(t("notice.styles_reset"));
 
                         (this.settingTab as unknown as { display: () => void }).display();
@@ -410,11 +414,15 @@ export class PrivacySettingSection extends SettingSection {
                 btn.onClick(() => {
                     new ConfirmModal(this.app, "Factory reset", "Are you sure you want to restore all settings to default? This will wipe ALL your customization!", async () => {
                         this.plugin.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS)) as ColorfulFoldersSettings;
+                        this.plugin.syncCustomFolderColorsMap();
+                        this.plugin.iconCache?.clear();
                         this.plugin.iconManager?.invalidateCategoryCache();
+                        this.plugin.animatedIconService?.invalidateCache();
                         await this.plugin.saveSettings();
-                        this.plugin.generateStylesDebounced();
+                        await this.plugin.generateStyles();
                         this.plugin.dividerManager.clean();
                         this.plugin.dividerManager.syncDividers();
+                        this.plugin.animatedIconService?.syncAnimatedIcons();
                         new obsidian.Notice(t("notice.factory_reset"));
 
                         (this.settingTab as unknown as { display: () => void }).display();
@@ -444,22 +452,37 @@ export class PrivacySettingSection extends SettingSection {
                     new ConfirmModal(this.app, "Clear icon library", "Are you sure you want to delete ALL custom icons?", async () => {
                         this.plugin.settings.customIcons = {};
                         this.plugin.localCustomIcons = {};
+                        this.plugin.localFileSystemIcons = {};
                         await this.plugin.saveLocalCustomIcons();
                         try {
                             const adapter = this.app.vault.adapter;
-                            const iconsDir = `${this.app.vault.configDir}/plugins/colorful-folders/icons`;
+                            const iconsDir = this.plugin.getIconsDirPath ? this.plugin.getIconsDirPath() : `${this.app.vault.configDir}/plugins/colorful-folders/icons`;
                             if (await adapter.exists(iconsDir)) {
                                 const list = await adapter.list(iconsDir);
                                 for (const f of list.files) {
                                     await adapter.remove(f);
                                 }
                             }
+                            const vaultIconsDir = `${this.app.vault.configDir}/icons`;
+                            if (await adapter.exists(vaultIconsDir)) {
+                                const list = await adapter.list(vaultIconsDir);
+                                for (const f of list.files) {
+                                    await adapter.remove(f);
+                                }
+                                for (const fol of list.folders) {
+                                    await adapter.rmdir(fol, true);
+                                }
+                            }
                         } catch {
                             // ignore
                         }
+                        this.plugin.iconCache?.clear();
+                        this.plugin.iconManager?.invalidateCategoryCache();
+                        this.plugin.animatedIconService?.invalidateCache();
                         this.plugin.registerCustomIcons();
                         await this.plugin.saveSettings();
-                        this.plugin.generateStylesDebounced();
+                        await this.plugin.generateStyles();
+                        this.plugin.animatedIconService?.syncAnimatedIcons();
                         new obsidian.Notice(t("notice.icon_library_cleared"));
 
                         (this.settingTab as unknown as { display: () => void }).display();
