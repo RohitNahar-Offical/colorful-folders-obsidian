@@ -95,6 +95,7 @@ export class PluginLifecycleService {
             });
 
             this.plugin.domObserverService?.destroy();
+            this.plugin.animatedIconService?.destroy();
             this.plugin.eventTrackerService?.destroy();
             this.plugin.cleanDividers();
 

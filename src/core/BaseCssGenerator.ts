@@ -127,6 +127,7 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             margin-right: 4px !important;
             vertical-align: middle !important;
             overflow: visible !important;
+            color: var(--cf-animated-icon-color, inherit) !important;
         }
 
         .cf-live-animated-icon svg {

@@ -341,3 +341,20 @@
 3. Added adaptive multi-line wrapping and horizontal scroll fallbacks to `.cf-tab-bar` in `styles.css`.
 **Lesson**: Always use bounded LRU caches for SVG strings/URIs and ensure all UI tab navigation bars support responsive multi-line wrapping.
 
+---
+
+## Incident #36 — SMIL Animated Icon Freezing on Scroll & Cold-Start Cache Poisoning (2026-08-25)
+**What was attempted**: Adding SMIL animated SVG icons (e.g. `boom`) to file and folder tree items, and optimizing startup performance.
+**What broke**:
+1. Applying an animated icon appeared blank / failed to render after restarting Obsidian.
+2. When scrolling away in the file explorer and scrolling back, the animated SVG froze on its initial frame and stopped animating.
+**Root cause**:
+1. `loadLocalCustomIcons()` was deferred to `scheduleIdle()`. On cold start, `hasAnyAnimatedIcons()` ran while `localCustomIcons` was `{}` and cached `_hasAnimatedCache = false` permanently. When custom icons loaded in the background, this cache was never invalidated, leaving the plugin permanently in static icon mode.
+2. In Chromium / Blink, SMIL animations with chained event syncbases (e.g. `begin="0;SVGBBjjneux.end+0.15s"`) rely on `endEvent` notifications. When an element is scrolled off-screen, Chromium suppresses event dispatches to save CPU. Because the `.end` event never fires while off-screen, the chained loop permanently dies. Calling `unpauseAnimations()` or `setCurrentTime(0)` on an already-evaluated SVG cannot recover broken chained syncbases.
+**Resolution**:
+1. Restored synchronous `await this.loadLocalCustomIcons()` in `loadSettings()` (~70ms for 10k icons) and added cache invalidation (`animatedIconService.invalidateCache()`) on icon load and `saveSettings()`.
+2. Created `wakeAnimatedElement(el)` in `AnimatedIconService` to replace the dead `<svg>` with a fresh cloned `<svg>` node (`el.replaceChild(freshSvg, oldSvg)`), creating a new active SMIL time container from $t=0$.
+3. Hooked `IntersectionObserver` to trigger `wakeAnimatedElement()` whenever animated icons scroll back into view, and triggered `syncAnimatedIcons()` immediately after scrolling settles (80ms debounce).
+**Lesson**: Off-screen Chromium SMIL animations with chained syncbases permanently die when off-screen event dispatches are skipped. To reliably resume them on scroll, replace the stalled `<svg>` with a fresh cloned `<svg>` node upon viewport re-entry.
+
+

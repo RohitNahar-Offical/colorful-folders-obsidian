@@ -447,6 +447,9 @@ export default class ColorfulFoldersPlugin
         }
       }
       this._localCustomIconsLoaded = true;
+      this.iconCache?.clear();
+      this.iconManager?.invalidateCategoryCache();
+      this.animatedIconService?.invalidateCache();
     } catch (e) {
       console.error("Colorful Folders: Error loading local custom icons", e);
     }
@@ -461,6 +464,8 @@ export default class ColorfulFoldersPlugin
       }
       const customPath = `${iconsDir}/custom-icons.json`;
       await adapter.write(customPath, JSON.stringify(this.localCustomIcons || {}));
+      this.animatedIconService?.invalidateCache();
+      this.iconCache?.clear();
     } catch (e) {
       console.error("Colorful Folders: Failed to save local custom icons", e);
     }
@@ -594,9 +599,10 @@ export default class ColorfulFoldersPlugin
       }
     }
 
+    await this.loadLocalCustomIcons();
+
     // Migration: Extract bloated customIcons from data.json to local JSON asset files
     if (loadedData.customIcons && Object.keys(loadedData.customIcons).length > 0) {
-      await this.loadLocalCustomIcons();
       Object.assign(this.localCustomIcons, loadedData.customIcons);
       await this.saveLocalCustomIcons();
       loadedData.customIcons = {};
@@ -693,6 +699,8 @@ export default class ColorfulFoldersPlugin
       this._lastCustomIconsRef = currentCustomIcons;
       this._lastCustomIconsCount = currentCustomCount;
     }
+    this.animatedIconService?.invalidateCache();
+    this.domObserverService?.initDividerObserver();
     this.activePaletteCache = null;
     this.parsedExclusionList = new Set(
       (this.settings.exclusionList || "")

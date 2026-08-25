@@ -1,5 +1,22 @@
 # Updates for Colorful Folders
 
+## 🛠️ 5.0.5 - Animated Icon Scroll Recovery, Instant Cold-Start & Notebook Navigator Isolation
+
+This update fixes **animated icons freezing after scrolling**, guarantees **instant icon loading on vault startup and reloads**, cleanly isolates **Notebook Navigator integration** to prevent startup lag, and adds **CodeQL security hardening**.
+
+---
+
+### 🎬 1. Live Animated Icon Scroll Recovery & Instant Startup
+* **Continuous Scroll Playback**: Animated icons no longer freeze when scrolling through large file trees. An `IntersectionObserver` automatically restarts SMIL animation timelines cleanly from frame 0 when icons scroll back into view.
+* **Instant Cold-Start Appearance**: Fixed animated icons failing to appear upon Obsidian startup or plugin reloads due to premature cache evaluation.
+* **Custom Color Inheritance**: Custom icon colors are now cleanly passed to live animated SVGs via CSS custom properties (`--cf-animated-icon-color`).
+
+### ⚡ 2. Notebook Navigator Isolation & Cold-Start Optimization
+* **Clean Selector Isolation**: Decoupled Notebook Navigator integration styles and excluded virtual containers from divider observers to eliminate cold-start loading clashes.
+* **Security Hardened**: Fully sanitized SVG DOM parsing and escaped CSS attribute selectors to resolve all CodeQL security alerts.
+
+---
+
 ## 🛠️ 5.0.4 - Live Animated Icons, Locked-In Custom Choices, Faster Performance & Clean Resets
 
 This update brings **moving animated icons** right into your sidebar, ensures your **manually chosen icons always stay locked in**, keeps the plugin **fast and lightweight**, and makes **resetting and cleaning settings reliable**.

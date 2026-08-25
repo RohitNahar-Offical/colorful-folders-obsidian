@@ -6,9 +6,47 @@ export class AnimatedIconService {
     private plugin: IColorfulFoldersPlugin;
     private _animatedTemplateCache: LRUCache<string, HTMLElement> = new LRUCache<string, HTMLElement>(256);
     private _domParser: DOMParser | null = typeof DOMParser !== 'undefined' ? new DOMParser() : null;
+    private _intersectionObserver: IntersectionObserver | null = null;
 
     constructor(plugin: IColorfulFoldersPlugin) {
         this.plugin = plugin;
+        if (typeof IntersectionObserver !== 'undefined') {
+            this._intersectionObserver = new IntersectionObserver((entries) => {
+                for (let i = 0; i < entries.length; i++) {
+                    const entry = entries[i];
+                    if (entry.isIntersecting && entry.target.instanceOf(HTMLElement)) {
+                        this.wakeAnimatedElement(entry.target);
+                    }
+                }
+            }, { rootMargin: '100px' });
+        }
+    }
+
+    /**
+     * Wakes or restarts SMIL animations if Chromium paused or broke syncbases while scrolled offscreen
+     */
+    public wakeAnimatedElement(el: HTMLElement): void {
+        const iconId = el.getAttribute('data-icon-id');
+        if (!iconId) return;
+
+        const template = this.getAnimatedIconElement(iconId);
+        if (!template) return;
+
+        const freshSvg = template.querySelector('svg')?.cloneNode(true);
+        if (!freshSvg) return;
+
+        const oldSvg = el.querySelector('svg');
+        if (oldSvg) {
+            el.replaceChild(freshSvg, oldSvg);
+        } else {
+            el.appendChild(freshSvg);
+        }
+    }
+
+    public destroy(): void {
+        this._intersectionObserver?.disconnect();
+        this._intersectionObserver = null;
+        this.invalidateCache();
     }
 
     /**
@@ -160,6 +198,7 @@ export class AnimatedIconService {
 
                 if (!rowPath || !currentAnimatedIconId || liveIcon.getAttribute('data-icon-id') !== currentAnimatedIconId) {
                     rowEl?.classList.remove('cf-animated-icon-active');
+                    this._intersectionObserver?.unobserve(liveIcon);
                     liveIcon.remove();
                 }
             }
@@ -171,25 +210,44 @@ export class AnimatedIconService {
 
                 const safePath = safeEscape(targetPath);
                 const titleEl = container.querySelector<HTMLElement>(
-                    `.nav-folder-title[data-path="${safePath}"], .nav-file-title[data-path="${safePath}"], .tree-item-self[data-path="${safePath}"]`
+                    `.nav-folder-title[data-path="${safePath}"], .nav-file-title[data-path="${safePath}"], .tree-item-self[data-path="${safePath}"], .nn-navitem[data-path="${safePath}"], .nn-file[data-path="${safePath}"]`
                 );
                 if (!titleEl) continue;
 
-                const textEl = titleEl.querySelector<HTMLElement>('.nav-folder-title-content, .nav-file-title-content, .tree-item-inner');
+                const textEl = titleEl.querySelector<HTMLElement>('.nav-folder-title-content, .nav-file-title-content, .tree-item-inner, .nn-navitem-name, .nn-file-name');
                 if (!textEl) continue;
+
+                const styleObj = customFolderColors[targetPath] || customIcons[targetPath];
+                const customIconColor = (typeof styleObj === 'object' && styleObj !== null) ? styleObj.iconColor : undefined;
 
                 const existingIcon = titleEl.querySelector<HTMLElement>('.cf-live-animated-icon');
                 if (!existingIcon) {
                     const cloned = template.cloneNode(true) as HTMLElement;
                     cloned.setAttribute('data-icon-id', iconId);
+                    if (customIconColor) {
+                        cloned.setCssProps({ '--cf-animated-icon-color': customIconColor });
+                    }
                     titleEl.classList.add('cf-animated-icon-active');
                     textEl.parentElement?.insertBefore(cloned, textEl);
+                    this._intersectionObserver?.observe(cloned);
+                    this.wakeAnimatedElement(cloned);
                 } else if (existingIcon.getAttribute('data-icon-id') !== iconId) {
+                    this._intersectionObserver?.unobserve(existingIcon);
                     existingIcon.remove();
                     const cloned = template.cloneNode(true) as HTMLElement;
                     cloned.setAttribute('data-icon-id', iconId);
+                    if (customIconColor) {
+                        cloned.setCssProps({ '--cf-animated-icon-color': customIconColor });
+                    }
                     titleEl.classList.add('cf-animated-icon-active');
                     textEl.parentElement?.insertBefore(cloned, textEl);
+                    this._intersectionObserver?.observe(cloned);
+                    this.wakeAnimatedElement(cloned);
+                } else {
+                    if (customIconColor) {
+                        existingIcon.setCssProps({ '--cf-animated-icon-color': customIconColor });
+                    }
+                    this.wakeAnimatedElement(existingIcon);
                 }
             }
         }

@@ -80,11 +80,11 @@ export class DOMObserverService {
                 const isDividerNode = (node: Node): boolean => {
                     if (node.nodeType === 1) {
                         const el = node as HTMLElement;
-                        if (el.classList?.contains('cf-interactive-divider')) return true;
+                        if (el.classList?.contains('cf-interactive-divider') || el.classList?.contains('cf-live-animated-icon')) return true;
                         if (el.classList?.contains('tree-item') || el.classList?.contains('nav-file') || el.classList?.contains('nav-folder')) {
                             return false;
                         }
-                        return !!el.querySelector?.('.cf-interactive-divider');
+                        return !!el.querySelector?.('.cf-interactive-divider, .cf-live-animated-icon');
                     }
                     return false;
                 };
@@ -157,7 +157,10 @@ export class DOMObserverService {
             this.isScrolling = false;
             this.isScrollingPublic = false;
             this.scrollTimeout = null;
-        }, 150);
+            if (this.hasAnyAnimatedIcons()) {
+                this.syncAnimatedIcons();
+            }
+        }, 80);
     };
 
     disposeStyleObservers() {

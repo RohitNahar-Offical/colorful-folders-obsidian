@@ -38,6 +38,9 @@ Do not target NN's wrapper classes (`.nn-navitem`) for layout mechanics. Rely on
 **RULE 1.10: Respect Third-Party Plugin Visibility (Folder Notes).**
 Never inject global nuclear `display: none !important` rules targeting class names or attributes owned by third-party plugins (e.g. `.is-folder-note`, `[data-folder-note="true"]`). Respect the host app's and target plugin's visibility state. *(Incident #30)*
 
+**RULE 1.11: SMIL SVG Animation Recovery on Scroll.**
+When rendering live SMIL animated SVGs, never rely on `unpauseAnimations()` or `setCurrentTime(0)` alone to recover chained-syncbase animations (`begin="0;prev.end+0.15s"`). Chromium suppresses time events when elements are offscreen, breaking the syncbase loop permanently. Always replace stalled `<svg>` elements with a freshly cloned template upon viewport entry using an `IntersectionObserver`. *(Incident #36)*
+
 ---
 
 ## 2. Main Thread Performance (Scroll, Drag, & Startup Lag)
