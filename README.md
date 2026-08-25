@@ -12,29 +12,17 @@ Colorful Folders automatically applies premium color palettes, smart icons, and 
 ---
 # What's New in Colorful Folders
 
-## 🚀 5.0.4 - Live Animated Icons, Locked-In Choices & Speed Optimization
+## 🚀 5.0.5 - Animated Icon Scroll Recovery, Instant Cold-Start & Notebook Navigator Isolation
 
 ---
-### 🎬 1. Live Animated Icons (Moving Sidebar Icons)
-* **Smooth Motion in Your Sidebar**: Bring your vault to life with animated SVG icons that play real-time animations right in your File Explorer sidebar.
-* **Live Picker Previews**: Browse and preview animated icons in real-time inside the icon picker and color modal before applying them.
-* **Zero Lag & Battery-Friendly**: Runs smoothly with dedicated, isolated DOM rendering and zero battery drain.
+### 🎬 1. Live Animated Icon Scroll Recovery & Instant Startup
+* **Continuous Scroll Playback**: Animated icons no longer freeze when scrolling through large file trees. An `IntersectionObserver` automatically restarts SMIL animation timelines cleanly from frame 0 when icons scroll back into view.
+* **Instant Cold-Start Appearance**: Fixed animated icons failing to appear upon Obsidian startup or plugin reloads due to premature cache evaluation.
+* **Custom Color Inheritance**: Custom icon colors are now cleanly passed to live animated SVGs via CSS custom properties (`--cf-animated-icon-color`).
 
-### 👑 2. Your Chosen Icons Always Stay Locked In
-* **Your Choices Come First**: Explicit manual icon selections always win. Automatic keyword matches will never overwrite or hijack your chosen icon.
-* **Color Changes Won't Reset Icons**: Adjusting background colors, text colors, or folder names preserves your custom icon permanently.
-* **Frontmatter Control**: Adding `icon: ...` in note frontmatter/properties guarantees instant display.
-
-### ⚡ 3. Memory Optimization & Faster Performance
-* **Ultra-Low Memory Footprint**: Smarter bounded caching keeps memory usage minimal, ensuring butter-smooth scrolling even in vaults with 10,000+ notes.
-* **Dead-Path Garbage Collection**: Deleting notes or folders immediately purges internal cache data to prevent memory accumulation.
-
-### 🧹 4. Complete Library Clean & Hard Reset
-* **One-Click Library Wipe**: Clicking **"Clear icon library"** completely purges all downloaded packs and custom imports from disk and memory.
-* **Red Danger Buttons**: Destructive actions (*Factory reset*, *Reset styles*, *Clear icon library*) are styled in clear red.
-
-### 📱 5. Responsive Settings on Small Windows
-* **No More Cut-Off Tabs**: Settings tabs (*General*, *Features*, *Icons*, *AI*, *Privacy*) automatically wrap onto multiple lines when the window is narrow.
+### ⚡ 2. Notebook Navigator Isolation & Cold-Start Optimization
+* **Clean Selector Isolation**: Decoupled Notebook Navigator integration styles and excluded virtual containers from divider observers to eliminate cold-start loading clashes.
+* **Security Hardened**: Fully sanitized SVG DOM parsing and escaped CSS attribute selectors to resolve all CodeQL security alerts.
 
 ---
 
