@@ -8,8 +8,7 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
            We use high-specificity selectors to defeat theme overrides (like Prism).
         ──────────────────────────────────────────────────────────────────────── */
         /* ── ULTRA-EFFICIENT FOLDER NOTE PROTECTION GUARD ───────────────────── */
-        body .nav-files-container :is(.tree-item, .tree-item-self, .nav-file-title):is(.is-folder-note, .fn-hidden, .cf-fn-hidden, .folder-note-hidden, .is-folder-note-hidden, [data-folder-note], [style*="display: none"], [style*="display:none"]),
-        body .nav-files-container .tree-item:has(> .tree-item-self:is(.is-folder-note, .fn-hidden, .cf-fn-hidden, .folder-note-hidden, [style*="display: none"], [style*="display:none"])) {
+        body .nav-files-container :is(.tree-item, .tree-item-self, .nav-file-title):is(.is-folder-note, .fn-hidden, .cf-fn-hidden, .folder-note-hidden, .is-folder-note-hidden, [data-folder-note]) {
             display: none !important;
         }
 
@@ -87,15 +86,12 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
         body .nav-folder-title-content.cf-icon-active::before,
         body .nav-file-title-content.cf-icon-active::before,
         body .tree-item-inner.cf-icon-active::before,
-        body .nav-folder-title-content:has(.cf-icon-wrapper)::before,
-        body .nav-file-title-content:has(.cf-icon-wrapper)::before,
-        body .tree-item-inner:has(.cf-icon-wrapper)::before,
+        body .cf-icon-active .nav-folder-title-content::before,
+        body .cf-icon-active .nav-file-title-content::before,
+        body .cf-icon-active .tree-item-inner::before,
         body .nav-files-container [data-path] .nav-folder-title-content.cf-icon-active::before,
         body .nav-files-container [data-path] .nav-file-title-content.cf-icon-active::before,
-        body .nav-files-container [data-path] .tree-item-inner.cf-icon-active::before,
-        body .nav-files-container [data-path] .nav-folder-title-content:has(.cf-icon-wrapper)::before,
-        body .nav-files-container [data-path] .nav-file-title-content:has(.cf-icon-wrapper)::before,
-        body .nav-files-container [data-path] .tree-item-inner:has(.cf-icon-wrapper)::before {
+        body .nav-files-container [data-path] .tree-item-inner.cf-icon-active::before {
             display: none !important;
             content: none !important;
             -webkit-mask-image: none !important;

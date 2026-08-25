@@ -96,7 +96,7 @@ export class NotebookNavigatorIntegration {
      */
     static getRadiantPathSelector(path: string): string {
         const safePath = safeEscape(path);
-        return `.notebook-navigator .nn-navitem:has(> [data-path="${safePath}"]) > .nn-virtual-container`;
+        return `.notebook-navigator .nn-navitem[data-path="${safePath}"] > .nn-virtual-container`;
     }
 
     static getNavNameSelector(): string {
