@@ -62,6 +62,9 @@ export class PluginLifecycleService {
 
             scheduleIdle(() => {
                 if (this.plugin._isUnloading) return;
+                void this.plugin.loadLocalCustomIcons().then(() => {
+                    this.plugin.registerCustomIcons();
+                });
                 void this.plugin.loadLocalIcons();
                 this.prewarmIconCaches();
             });

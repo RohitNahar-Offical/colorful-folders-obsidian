@@ -71,10 +71,41 @@ export class AnimatedIconService {
         }
     }
 
+    private _hasAnimatedCache: boolean | null = null;
+
     /**
-     * Invalidate cached templates when custom icons are imported or reloaded
+     * Fast O(1) check if any animated icons are currently configured
+     */
+    public hasAnyAnimatedIcons(): boolean {
+        if (this._hasAnimatedCache !== null) return this._hasAnimatedCache;
+
+        const customFolderColors = this.plugin.settings.customFolderColors || {};
+        const customIcons = this.plugin.settings.customIcons || {};
+        for (const p in customFolderColors) {
+            const style = customFolderColors[p];
+            const iconId = (typeof style === 'object' && style !== null) ? style.iconId : undefined;
+            if (iconId && this.isAnimatedIcon(iconId)) {
+                this._hasAnimatedCache = true;
+                return true;
+            }
+        }
+        for (const p in customIcons) {
+            const style = customIcons[p];
+            const iconId = typeof style === 'string' ? style : (typeof style === 'object' && style !== null ? (style as { iconId?: string }).iconId : undefined);
+            if (iconId && this.isAnimatedIcon(iconId)) {
+                this._hasAnimatedCache = true;
+                return true;
+            }
+        }
+        this._hasAnimatedCache = false;
+        return false;
+    }
+
+    /**
+     * Invalidate cached templates and animation flags when custom icons or styles change
      */
     public invalidateCache(iconId?: string): void {
+        this._hasAnimatedCache = null;
         if (iconId) {
             this._animatedTemplateCache.delete(iconId);
         } else {
@@ -84,9 +115,13 @@ export class AnimatedIconService {
 
     /**
      * Synchronizes all animated icons across all open file explorer views.
-     * O(1) targeted mounting using pre-compiled cloned templates.
+     * Pure O(1) NO-OP if no animated icons exist in user settings.
      */
     public syncAnimatedIcons(): void {
+        if (!this.hasAnyAnimatedIcons()) {
+            return;
+        }
+
         const customFolderColors = this.plugin.settings.customFolderColors || {};
         const customIcons = this.plugin.settings.customIcons || {};
 
@@ -105,6 +140,8 @@ export class AnimatedIconService {
                 animatedTargetsMap.set(p, iconId);
             }
         }
+
+        if (animatedTargetsMap.size === 0) return;
 
         const allContainers = this.plugin.getAllExplorerContainers();
         if (allContainers.length === 0) return;

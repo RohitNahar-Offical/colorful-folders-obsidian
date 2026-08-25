@@ -419,12 +419,17 @@ export default class ColorfulFoldersPlugin
     return `${this.app.vault.configDir}/plugins/colorful-folders/icons`;
   }
 
+  private _localCustomIconsLoaded: boolean = false;
+
   async loadLocalCustomIcons(): Promise<void> {
+    if (this._localCustomIconsLoaded) return;
     try {
       const adapter = this.app.vault.adapter;
       const iconsDir = this.getIconsDirPath();
       if (!(await adapter.exists(iconsDir))) {
-        await adapter.mkdir(iconsDir);
+        this.localCustomIcons = {};
+        this._localCustomIconsLoaded = true;
+        return;
       }
       this.localCustomIcons = {};
       const listResult = await adapter.list(iconsDir);
@@ -441,6 +446,7 @@ export default class ColorfulFoldersPlugin
           }
         }
       }
+      this._localCustomIconsLoaded = true;
     } catch (e) {
       console.error("Colorful Folders: Error loading local custom icons", e);
     }
@@ -588,14 +594,9 @@ export default class ColorfulFoldersPlugin
       }
     }
 
-    if (!loadedData) {
-      loadedData = {};
-    }
-
-    await this.loadLocalCustomIcons();
-
     // Migration: Extract bloated customIcons from data.json to local JSON asset files
     if (loadedData.customIcons && Object.keys(loadedData.customIcons).length > 0) {
+      await this.loadLocalCustomIcons();
       Object.assign(this.localCustomIcons, loadedData.customIcons);
       await this.saveLocalCustomIcons();
       loadedData.customIcons = {};
@@ -1110,29 +1111,13 @@ export default class ColorfulFoldersPlugin
           
           if (!body || typeof body !== 'string') return false;
 
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(`<svg xmlns="http://www.w3.org/2000/svg">${body}</svg>`, 'image/svg+xml');
-          const dangerousTags = ['script', 'iframe', 'object', 'embed', 'foreignobject'];
-          for (const tag of dangerousTags) {
-              doc.querySelectorAll(tag).forEach(el => el.remove());
-          }
-          doc.querySelectorAll('use').forEach(el => {
-              const href = (el.getAttribute('href') || el.getAttribute('xlink:href') || '').trim().toLowerCase();
-              if (href.startsWith('http') || href.startsWith('//') || href.startsWith('javascript:') || href.startsWith('vbscript:') || href.startsWith('data:')) {
-                  el.remove();
-              }
-          });
-          doc.querySelectorAll('*').forEach(el => {
-              const attrs = Array.from(el.attributes);
-              for (const attr of attrs) {
-                  if (attr.name.startsWith('on')) el.removeAttribute(attr.name);
-              }
-          });
-          const sanitizedSvg = doc.querySelector('svg');
-          if (!sanitizedSvg) return false;
-          const cleanBody = sanitizedSvg.innerHTML;
+          const sanitizedBody = body
+            .replace(/<\/?(script|iframe|object|embed|foreignobject)[^>]*>/gi, '')
+            .replace(/\son\w+\s*=\s*(['"]).*?\1/gi, '')
+            .replace(/\shref\s*=\s*(['"])(?:javascript|vbscript|data):.*?\1/gi, '')
+            .replace(/\sxlink:href\s*=\s*(['"])(?:javascript|vbscript|data):.*?\1/gi, '');
 
-          const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${l} ${t} ${w} ${h}">${cleanBody}</svg>`;
+          const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${l} ${t} ${w} ${h}">${sanitizedBody}</svg>`;
           packIcons[id] = svg;
           this.localCustomIcons[id] = svg;
           count++;

@@ -1,4 +1,5 @@
 import { IColorfulFoldersPlugin } from '../common/types';
+import { NotebookNavigatorIntegration } from '../integrations/NotebookNavigator';
 
 export class DOMObserverService {
     plugin: IColorfulFoldersPlugin;
@@ -28,19 +29,7 @@ export class DOMObserverService {
     private pendingSyncFrame: number | null = null;
 
     public hasAnyAnimatedIcons(): boolean {
-        const customFolderColors = this.plugin.settings.customFolderColors || {};
-        const customIcons = this.plugin.settings.customIcons || {};
-        for (const p in customFolderColors) {
-            const style = customFolderColors[p];
-            const iconId = (typeof style === 'object' && style !== null) ? style.iconId : undefined;
-            if (iconId && this.plugin.animatedIconService?.isAnimatedIcon(iconId)) return true;
-        }
-        for (const p in customIcons) {
-            const style = customIcons[p];
-            const iconId = typeof style === 'string' ? style : (typeof style === 'object' && style !== null ? (style as { iconId?: string }).iconId : undefined);
-            if (iconId && this.plugin.animatedIconService?.isAnimatedIcon(iconId)) return true;
-        }
-        return false;
+        return !!this.plugin.animatedIconService?.hasAnyAnimatedIcons();
     }
 
     public syncAnimatedIcons(): void {
@@ -60,7 +49,7 @@ export class DOMObserverService {
             this.dividerObserver.disconnect();
         }
 
-        const allContainers = this.plugin.getAllExplorerContainers();
+        const allContainers = this.plugin.getAllExplorerContainers().filter(c => !NotebookNavigatorIntegration.isNNContainer(c));
         if (allContainers.length === 0) return;
 
         allContainers.forEach((container) => {

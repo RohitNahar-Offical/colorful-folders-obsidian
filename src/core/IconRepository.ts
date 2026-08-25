@@ -408,8 +408,22 @@ export class IconRepository {
         return this._packIndex.searchFuzzy(searchKey, options);
     }
 
+    private _cachedObsidianIconIds: Set<string> | null = null;
+
+    private getObsidianIconIds(): Set<string> {
+        if (!this._cachedObsidianIconIds) {
+            const ids = obsidian.getIconIds?.() || [];
+            this._cachedObsidianIconIds = new Set(ids);
+        }
+        return this._cachedObsidianIconIds;
+    }
+
     isEmojiIcon(iconId?: string | null): boolean {
         if (!iconId) return false;
+        // Fast-path: If it contains Latin alphabet letters, it is a text ID / icon name, NOT an emoji
+        if (/[a-zA-Z]/.test(iconId)) {
+            return false;
+        }
         if (this.plugin.localFileSystemIcons) {
             const lId = iconId.toLowerCase();
             const cleanId = lId.replace(/^lucide-/, '');
@@ -424,11 +438,8 @@ export class IconRepository {
         if (this.plugin.getCustomIcon(iconId) || this.plugin.getCustomIcon(iconId.toLowerCase())) {
             return false;
         }
-        if (obsidian.getIconIds?.().includes(`lucide-${iconId}`) || obsidian.getIconIds?.().includes(iconId)) {
-            return false;
-        }
-        // If it contains letters, it is a text ID / title name, NOT an emoji
-        if (/[a-zA-Z]/.test(iconId)) {
+        const obsIds = this.getObsidianIconIds();
+        if (obsIds.has(`lucide-${iconId}`) || obsIds.has(iconId)) {
             return false;
         }
         return /\p{Extended_Pictographic}|\p{Emoji_Presentation}/u.test(iconId);
@@ -641,6 +652,7 @@ export class IconRepository {
     invalidateCache(): void {
         this._categoryCache = null;
         this._customRulesKey = '';
+        this._cachedObsidianIconIds = null;
         this._normCache.clear();
         this._dataUriCache.clear();
         this._findPackIconCache.clear();

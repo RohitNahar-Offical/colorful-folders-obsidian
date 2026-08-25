@@ -183,12 +183,14 @@ export class NotebookNavigatorIntegration {
         const safePath = safeEscape(path);
         const baseSels = isFolder ? this.getScopedNavSelectors(path) : [this.getScopedFileSelector(path)];
         const nameSel = isFolder ? this.getNavNameSelector() : this.getFileNameSelector();
-        const _iconSel = isFolder ? this.getNavIconSelector() : this.getFileIconSelector();
         const countSel = '.nn-navitem-count';
 
-        // CSS-Based Icon Injection (Match 4.1.4 for Zero-Flicker stability)
+        const iconTarget = isFolder
+            ? `body .notebook-navigator .nn-navitem[data-path="${safePath}"] .nn-navitem-icon`
+            : `body .notebook-navigator .nn-file[data-path="${safePath}"] .nn-file-icon`;
+
+        // CSS-Based Icon Injection (Clean O(1) targeting for Notebook Navigator)
         if (iconId) {
-            const target = `body .notebook-navigator [data-path="${safePath}"] :is(${_iconSel})`;
             if (isEmoji) {
                 grouper.add(`
                     display: inline-flex !important;
@@ -201,8 +203,8 @@ export class NotebookNavigatorIntegration {
                     background: none !important;
                     -webkit-mask-image: none !important;
                     visibility: visible !important;
-                `, [target], `nnEmoji_${iconId}_${effIconW}`);
-                grouper.add(`display: none !important;`, [`${target} *`], `nnDisplayNone`);
+                `, [iconTarget], `nnEmoji_${iconId}_${effIconW}`);
+                grouper.add(`display: none !important;`, [`${iconTarget} > svg`, `${iconTarget} > span`], `nnDisplayNone`);
             } else if (iconSvg) {
                 grouper.add(`
                     display: inline-flex !important;
@@ -218,11 +220,10 @@ export class NotebookNavigatorIntegration {
                     content: "" !important;
                     opacity: 0.85 !important;
                     visibility: visible !important;
-                `, [target], `nnSvg_${iconColor || color.hex || textCol}_${iconSvg}_${effIconW}`);
-                grouper.add(`display: none !important;`, [`${target} *`], `nnDisplayNone`);
+                `, [iconTarget], `nnSvg_${iconColor || color.hex || textCol}_${iconSvg}_${effIconW}`);
+                grouper.add(`display: none !important;`, [`${iconTarget} > svg`, `${iconTarget} > span`], `nnDisplayNone`);
             }
         } else {
-            const target = `body .notebook-navigator [data-path="${safePath}"] :is(${_iconSel})`;
             const fallbackSvg = isFolder ? CF_FOLDER_CLOSED : CF_FILE_DEFAULT;
             grouper.add(`
                 display: inline-flex !important;
@@ -238,8 +239,8 @@ export class NotebookNavigatorIntegration {
                 content: "" !important;
                 opacity: 0.5 !important;
                 visibility: visible !important;
-            `, [target], `nnFallback_${fallbackSvg}_${effIconW}_${(iconColor || color.hex || textCol).replace(/\s+/g, '')}`);
-            grouper.add(`display: none !important;`, [`${target} *`], `nnDisplayNone`);
+            `, [iconTarget], `nnFallback_${fallbackSvg}_${effIconW}_${(iconColor || color.hex || textCol).replace(/\s+/g, '')}`);
+            grouper.add(`display: none !important;`, [`${iconTarget} > svg`, `${iconTarget} > span`], `nnDisplayNone`);
         }
 
         const hoverBody = `
