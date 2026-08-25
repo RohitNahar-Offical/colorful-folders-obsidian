@@ -1,5 +1,6 @@
 import { IColorfulFoldersPlugin } from '../common/types';
 import { LRUCache } from '../common/LRUCache';
+import { safeEscape } from '../common/utils';
 
 export class AnimatedIconService {
     private plugin: IColorfulFoldersPlugin;
@@ -168,7 +169,7 @@ export class AnimatedIconService {
                 const template = this.getAnimatedIconElement(iconId);
                 if (!template) continue;
 
-                const safePath = targetPath.replace(/"/g, '\\"');
+                const safePath = safeEscape(targetPath);
                 const titleEl = container.querySelector<HTMLElement>(
                     `.nav-folder-title[data-path="${safePath}"], .nav-file-title[data-path="${safePath}"], .tree-item-self[data-path="${safePath}"]`
                 );

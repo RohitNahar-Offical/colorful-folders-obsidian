@@ -1111,15 +1111,10 @@ export default class ColorfulFoldersPlugin
           
           if (!body || typeof body !== 'string') return false;
 
-          const sanitizedBody = body
-            .replace(/<\/?(script|iframe|object|embed|foreignobject)[^>]*>/gi, '')
-            .replace(/\son\w+\s*=\s*(['"]).*?\1/gi, '')
-            .replace(/\shref\s*=\s*(['"])(?:javascript|vbscript|data):.*?\1/gi, '')
-            .replace(/\sxlink:href\s*=\s*(['"])(?:javascript|vbscript|data):.*?\1/gi, '');
-
-          const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${l} ${t} ${w} ${h}">${sanitizedBody}</svg>`;
-          packIcons[id] = svg;
-          this.localCustomIcons[id] = svg;
+          const rawSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${l} ${t} ${w} ${h}">${body}</svg>`;
+          const cleanSvg = this.iconManager ? this.iconManager.normalizeSvg(rawSvg, false) : rawSvg;
+          packIcons[id] = cleanSvg;
+          this.localCustomIcons[id] = cleanSvg;
           count++;
           return true;
         };
