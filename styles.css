@@ -34,9 +34,8 @@
 /* Guaranteed High-Specificity Match to Working Snippet */
 
 /* ── ULTRA-EFFICIENT FOLDER NOTE PROTECTION GUARD ───────────────────── */
-body .nav-files-container :is(.tree-item, .tree-item-self, .nav-file-title):is(.is-folder-note, .fn-hidden, .cf-fn-hidden, .folder-note-hidden, .is-folder-note-hidden, [data-folder-note], [style*="display: none"], [style*="display:none"]),
-body .nav-files-container .tree-item:has(> .tree-item-self:is(.is-folder-note, .fn-hidden, .cf-fn-hidden, .folder-note-hidden, [style*="display: none"], [style*="display:none"])) {
-    display: none !important;
+body .nav-files-container :is(.tree-item, .tree-item-self, .nav-file-title):is(.is-folder-note, .fn-hidden, .cf-fn-hidden, .folder-note-hidden, .is-folder-note-hidden, [data-folder-note]) {
+    display: none;
 }
 
 body .nav-files-container :is(.nav-folder-title, .nav-file-title, .tree-item-self):not([style*="display: none"]):not([style*="display:none"]):not(.is-folder-note):not(.fn-hidden):not(.cf-fn-hidden) {
@@ -350,8 +349,6 @@ body .colorful-folders-config {
     flex-wrap: wrap;
     max-width: 100%;
     overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
 }
 
 .cf-tab-bar::-webkit-scrollbar {
@@ -395,20 +392,28 @@ body .colorful-folders-config .cf-tab-btn.is-active {
     box-shadow: 0 4px 16px rgba(var(--interactive-accent-rgb, 120, 120, 255), 0.4);
 }
 
-body .colorful-folders-config button.cf-btn-danger,
-body .colorful-folders-config button.mod-warning {
-    background-color: var(--text-error, #e53935) !important;
-    color: #ffffff !important;
-    border-color: var(--text-error, #e53935) !important;
-    font-weight: 600 !important;
+body.theme-dark .colorful-folders-config button.cf-btn-danger,
+body.theme-dark .colorful-folders-config button.mod-warning,
+body.theme-light .colorful-folders-config button.cf-btn-danger,
+body.theme-light .colorful-folders-config button.mod-warning,
+body .modal .colorful-folders-config button.cf-btn-danger,
+body .modal .colorful-folders-config button.mod-warning {
+    background-color: var(--text-error, #e53935);
+    color: #ffffff;
+    border-color: var(--text-error, #e53935);
+    font-weight: 600;
     transition: all 0.15s ease-in-out;
 }
 
-body .colorful-folders-config button.cf-btn-danger:hover,
-body .colorful-folders-config button.mod-warning:hover {
-    background-color: #c62828 !important;
-    border-color: #c62828 !important;
-    opacity: 0.95 !important;
+body.theme-dark .colorful-folders-config button.cf-btn-danger:hover,
+body.theme-dark .colorful-folders-config button.mod-warning:hover,
+body.theme-light .colorful-folders-config button.cf-btn-danger:hover,
+body.theme-light .colorful-folders-config button.mod-warning:hover,
+body .modal .colorful-folders-config button.cf-btn-danger:hover,
+body .modal .colorful-folders-config button.mod-warning:hover {
+    background-color: #c62828;
+    border-color: #c62828;
+    opacity: 0.95;
 }
 
 .cf-settings-card {
@@ -570,12 +575,6 @@ body .colorful-folders-config .setting-item-control input[type="range"]::-webkit
     border-radius: 8px;
     max-height: 400px;
     overflow-y: auto;
-    /* doiuse-disable css-scrollbar */
-    /* stylelint-disable plugin/no-unsupported-browser-features, no-unsupported-browser-features */
-    scrollbar-width: thin;
-    scrollbar-color: var(--background-modifier-border) transparent;
-    /* stylelint-enable plugin/no-unsupported-browser-features, no-unsupported-browser-features */
-    /* doiuse-enable css-scrollbar */
 }
 .cf-icon-grid::-webkit-scrollbar {
     width: 5px;
