@@ -85,9 +85,9 @@ Colorful Folders automatically applies premium color palettes, smart icons, and 
 
 ### Via Obsidian Community Plugins (Official & Recommended)
 
-1. Open Obsidian and navigate to **Settings** > **Community plugins**.
+1. Open Obsidian and navigate to **Settings** > **[Community plugins](https://community.obsidian.md/plugins/colorful-folders)**.
 2. Click **Browse** next to Community plugins.
-3. Search for **Colorful Folders**.
+3. Search for **[Colorful Folders](https://community.obsidian.md/plugins/colorful-folders)**.
 4. Click **Install**, then click **Enable**.
 
 ### Via BRAT (For Beta Releases)
