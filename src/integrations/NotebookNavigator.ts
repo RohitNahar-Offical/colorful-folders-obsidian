@@ -321,69 +321,103 @@ export class NotebookNavigatorIntegration {
         `, [`${activeSel} ${countSel}`], `nnActiveCount_${activeText}`);
     }
 
-    static registerMenuExtensions(plugin: IColorfulFoldersPlugin) {
-        let attempts = 0;
-        const maxAttempts = 5;
-        const interval = 2000; // 2 seconds
+    static initDeferredIntegration(plugin: IColorfulFoldersPlugin) {
+        if (!this.isSupported(plugin.settings)) return;
 
-        const tryRegister = () => {
+        let attempts = 0;
+        const maxAttempts = 10;
+        const interval = 1500;
+        let registeredMenus = false;
+
+        const tryAttach = (): boolean => {
             try {
-                attempts++;
-                
                 interface InternalApp extends obsidian.App {
-                    plugins: {
+                    plugins?: {
                         getPlugin(id: string): Record<string, unknown> | null;
                     };
                 }
 
                 const app = plugin.app as InternalApp;
                 if (!app.plugins || typeof app.plugins.getPlugin !== 'function') return false;
-                
+
                 const nnInstance = app.plugins.getPlugin('notebook-navigator');
                 if (!nnInstance) return false;
 
-                // Some plugins expose API under .api
                 const nnPlugin = ((nnInstance as { api?: NNPlugin }).api || nnInstance) as NNPlugin;
 
-                // Check if API methods exist
-                if (typeof nnPlugin.registerFileMenu !== 'function' || typeof nnPlugin.registerFolderMenu !== 'function') {
-                    return false;
+                if (!registeredMenus && typeof nnPlugin.registerFileMenu === 'function' && typeof nnPlugin.registerFolderMenu === 'function') {
+                    nnPlugin.registerFileMenu((menu: obsidian.Menu, file: obsidian.TAbstractFile) => {
+                        MenuHelper.addContextMenuItems(menu, file, plugin);
+                    });
+
+                    nnPlugin.registerFolderMenu((menu: obsidian.Menu, folder: obsidian.TAbstractFile) => {
+                        MenuHelper.addContextMenuItems(menu, folder, plugin);
+                    });
+                    registeredMenus = true;
                 }
 
-                // Register with NN's public menu API
-                nnPlugin.registerFileMenu((menu: obsidian.Menu, file: obsidian.TAbstractFile) => {
-                    MenuHelper.addContextMenuItems(menu, file, plugin);
+                // Check if NN containers exist yet in any active document
+                let hasNNContainers = false;
+                const docs: Document[] = [activeDocument];
+                plugin.app.workspace.iterateAllLeaves((leaf) => {
+                    const doc = leaf.view?.containerEl?.ownerDocument;
+                    if (doc && !docs.includes(doc)) docs.push(doc);
                 });
 
-                nnPlugin.registerFolderMenu((menu: obsidian.Menu, folder: obsidian.TAbstractFile) => {
-                    MenuHelper.addContextMenuItems(menu, folder, plugin);
-                });
+                for (const doc of docs) {
+                    if (doc.querySelector(NN_SELECTORS.CONTAINERS)) {
+                        hasNNContainers = true;
+                        break;
+                    }
+                }
 
-                return true;
+                if (hasNNContainers) {
+                    plugin.invalidateExplorerContainersCache();
+                    void plugin.generateStyles();
+                    return registeredMenus;
+                }
+
+                return false;
             } catch {
                 return false;
             }
         };
 
+        // Schedule after initial startup idle window
+        const scheduleDeferred = (fn: () => void) => {
+            const win = window as unknown as Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number };
+            if (typeof win.requestIdleCallback === 'function') {
+                win.requestIdleCallback(fn, { timeout: 3000 });
+            } else {
+                window.setTimeout(fn, 1500);
+            }
+        };
 
-        // Initial attempt
-        if (!tryRegister()) {
-            const timer = window.setInterval(() => {
-                if (tryRegister() || attempts >= maxAttempts) {
-                    window.clearInterval(timer);
-                }
-            }, interval);
-        }
+        scheduleDeferred(() => {
+            if (plugin._isUnloading) return;
+            if (!tryAttach()) {
+                const timer = window.setInterval(() => {
+                    attempts++;
+                    if (plugin._isUnloading || tryAttach() || attempts >= maxAttempts) {
+                        window.clearInterval(timer);
+                    }
+                }, interval);
+            }
+        });
 
-        // Graceful degradation: invalidate cache when workspace layout changes
+        // Refresh container cache when workspace layout or active leaf changes
         try {
             plugin.registerEvent(
                 plugin.app.workspace.on('layout-change', () => {
+                    if (plugin._isUnloading) return;
                     plugin.invalidateExplorerContainersCache();
+                    if (!registeredMenus) {
+                        tryAttach();
+                    }
                 })
             );
         } catch {
-            // Silently ignore: fallback if workspace is unavailable
+            // Silently ignore if workspace unavailable
         }
     }
 }

@@ -410,9 +410,9 @@ export default class ColorfulFoldersPlugin
 
   cleanDividers() {
     activeDocument
-      .querySelectorAll(".cf-has-divider")
-      .forEach((el) => el.classList.remove("cf-has-divider"));
-    this.dividerManager.clean();
+      ?.querySelectorAll(".cf-has-divider")
+      ?.forEach((el) => el.classList.remove("cf-has-divider"));
+    this.dividerManager?.clean();
   }
 
   getIconsDirPath(): string {
@@ -601,29 +601,31 @@ export default class ColorfulFoldersPlugin
 
     await this.loadLocalCustomIcons();
 
+    const data = loadedData || {};
+
     // Migration: Extract bloated customIcons from data.json to local JSON asset files
-    if (loadedData.customIcons && Object.keys(loadedData.customIcons).length > 0) {
-      Object.assign(this.localCustomIcons, loadedData.customIcons);
+    if (data.customIcons && Object.keys(data.customIcons).length > 0) {
+      Object.assign(this.localCustomIcons, data.customIcons);
       await this.saveLocalCustomIcons();
-      loadedData.customIcons = {};
-      delete (loadedData as Record<string, unknown>).customIcons;
-      void this.saveData(Object.assign({}, DEFAULT_SETTINGS, loadedData, { customIcons: {} }));
+      data.customIcons = {};
+      delete (data as Record<string, unknown>).customIcons;
+      void this.saveData(Object.assign({}, DEFAULT_SETTINGS, data, { customIcons: {} }));
     }
 
     // Migration for independent divider padding
     if (
-      loadedData.dividerLinePadding !== undefined &&
-      loadedData.dividerLinePaddingLeft === undefined
+      data.dividerLinePadding !== undefined &&
+      data.dividerLinePaddingLeft === undefined
     ) {
-      loadedData.dividerLinePaddingLeft = loadedData.dividerLinePadding;
-      loadedData.dividerLinePaddingRight = loadedData.dividerLinePadding;
+      data.dividerLinePaddingLeft = data.dividerLinePadding;
+      data.dividerLinePaddingRight = data.dividerLinePadding;
     }
 
-    this.settings = Object.assign({} as ColorfulFoldersSettings, DEFAULT_SETTINGS, loadedData, { customIcons: {} });
+    this.settings = Object.assign({} as ColorfulFoldersSettings, DEFAULT_SETTINGS, data, { customIcons: {} });
     if (Array.isArray(this.settings.iconPackPriorityOrder) && this.settings.iconPackPriorityOrder.includes('emoji')) {
       if (this.settings.iconPackPriorityOrder[this.settings.iconPackPriorityOrder.length - 1] !== 'emoji') {
         this.settings.iconPackPriorityOrder = this.settings.iconPackPriorityOrder.filter(p => p !== 'emoji').concat(['emoji']);
-        void this.saveSettings();
+        void this.saveData(this.settings);
       }
     }
     if (this.settings.heatmapData) {

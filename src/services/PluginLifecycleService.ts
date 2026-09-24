@@ -41,7 +41,7 @@ export class PluginLifecycleService {
             this.plugin.invalidateExplorerContainersCache();
             this.plugin.initStaircaseStyleStripper();
             if (this.plugin.settings.notebookNavigatorSupport) {
-                NotebookNavigatorIntegration.registerMenuExtensions(this.plugin);
+                NotebookNavigatorIntegration.initDeferredIntegration(this.plugin);
             }
 
             if (this.plugin._abortStartupRender) return;
