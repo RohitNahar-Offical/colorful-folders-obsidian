@@ -64,6 +64,10 @@ Notebook Navigator cards use a denser typography scale than the standard file ex
 - **O(1) CSS Grouping**: Avoids string-hashing overhead by utilizing deterministic grouping keys.
 - **Zero DOM Observers**: Dataset attribute updates do NOT fire `childList` mutation events, eliminating race conditions with third-party observers (*Smart Connections*).
 - **Multi-Window Support**: Synchronizes stylesheets across popout windows automatically via `AdoptedStyleSheetService.ts` and `"window-open"` hooks.
+- **Deferred Non-Blocking Boot Sequence (`initDeferredIntegration`)**:
+  - Colorful Folders defers querying and integrating with Notebook Navigator until after Obsidian's critical layout boot completes.
+  - Integration logic runs inside `window.requestIdleCallback` (or a fallback timer), ensuring that Notebook Navigator boots and mounts its virtual tree without any CPU contention or layout thrashing.
+  - Automatically hooks into Obsidian's `workspace.on('layout-change')` to seamlessly attach context menu extensions and refresh style caches whenever Notebook Navigator panes are opened or repositioned.
 
 ---
 

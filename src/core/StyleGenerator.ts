@@ -4,6 +4,7 @@ import { hexToRgbObj, safeEscape } from '../common/utils';
 import * as obsidian from 'obsidian';
 import { NotebookNavigatorIntegration } from '../integrations/NotebookNavigator';
 import { TagColorSync } from '../integrations/TagColorSync';
+import { OutlineSync } from '../integrations/OutlineSync';
 
 import { countItems } from '../common/VaultUtils';
 import { isDarkMode, getCurrentPalette, ColorResolver } from './ColorResolver';
@@ -30,6 +31,7 @@ export class StyleGenerator {
     private _cachedGlobalBaseCss: { key: string; css: string } | null = null;
     private _cachedDividerCss: { key: string; css: string } | null = null;
     private _cachedStealthCss: { key: string; css: string } | null = null;
+    private _folderColorsForTags = new Map<string, string>();
 
     private _cachedPalette: { rgb: string, hex: string }[] | null = null;
     private _cachedPaletteKey = '';
@@ -604,6 +606,13 @@ export class StyleGenerator {
                 context.now
             );
 
+            if (this.settings.tagSyncEnabled && this.settings.tagSyncMatchFolders && child.name) {
+                const cleanTagName = child.name.replace(/[^\w-]/g, '').toLowerCase();
+                if (cleanTagName) {
+                    this._folderColorsForTags.set(cleanTagName, color.hex);
+                }
+            }
+
             const safePath = this.getSafeEscape(child.path);
             const op = ColorResolver.resolveOpacity(
                 false,
@@ -944,6 +953,7 @@ export class StyleGenerator {
 
     async generateCss(): Promise<string> {
         ColorResolver.clearCache();
+        this._folderColorsForTags.clear();
         const context = this.prepareContext();
         if (!context) return "";
 
@@ -1040,7 +1050,8 @@ export class StyleGenerator {
             this._cachedStealthCss = { key: stealthKey, css: generateStealthCss(this.settings) };
         }
         rawRules.push(this._cachedStealthCss.css);
-        rawRules.push(TagColorSync.generateCss(this.plugin, context));
+        rawRules.push(TagColorSync.generateCss(this.plugin, context, this._folderColorsForTags));
+        rawRules.push(OutlineSync.generateCss(this.plugin, context));
 
         rawRules.push(grouper.build());
 

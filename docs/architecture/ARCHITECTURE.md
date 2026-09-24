@@ -301,12 +301,19 @@ All SVG transformations and resolutions run through bounded $O(1)$ `LRUCache(204
 
 ---
 
-## 5. AdoptedStyleSheet Lifecycle (`AdoptedStyleSheetService.ts`)
+## 5. AdoptedStyleSheet & Plugin Lifecycle (`PluginLifecycleService.ts` & `AdoptedStyleSheetService.ts`)
 
 - Instantiates a programmatic `CSSStyleSheet` instance (`private sheet = new CSSStyleSheet();`).
 - Attaches cleanly to `document.adoptedStyleSheets` for all active workspace windows on load without overwriting existing sheets (`doc.adoptedStyleSheets = [...doc.adoptedStyleSheets, this.sheet]`).
 - Updates styles synchronously via `updateStyles(cssString)` -> `sheet.replaceSync(cssString)`.
 - Detaches cleanly from `adoptedStyleSheets` in `onunload()`.
+
+### 5.1 Fresh Boot Resilience & Null-Safe Initialization
+- **Fresh Install Defense**: On fresh installations (when `data.json` does not yet exist), `loadData()` returns `null`. `loadSettings()` guards all property access via normalized defaults (`const data = loadedData || {}`), preventing `TypeError` aborts during startup.
+- **Fail-Safe Teardown**: `cleanDividers()` and `PluginLifecycleService.destroy()` utilize optional chaining (`this.dividerManager?.clean()`) to guarantee that `onunload()` never throws exceptions even if disabling occurs immediately after a partial load.
+- **Non-Blocking Post-Startup Idle Scheduling**:
+  - Heavy I/O (local custom icon loading, pack registration) is deferred to post-startup idle time (`requestIdleCallback` with fallback).
+  - Integrations like **Notebook Navigator** (`initDeferredIntegration`) wait for NN's container to mount in the DOM before applying rules and attaching menus, leaving the initial layout phase 100% responsive.
 
 ---
 

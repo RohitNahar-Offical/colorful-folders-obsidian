@@ -32,6 +32,9 @@ Use this to instantly know WHICH file to edit for any task.
 ## "I want to fix Notebook Navigator compatibility"
 → Edit `src/integrations/NotebookNavigator.ts`. Read `docs/NOTEBOOK_NAVIGATOR.md` for architecture details.
 
+## "I want to change Outline pane or in-note heading synchronization"
+→ Edit `src/integrations/OutlineSync.ts`. Configured in `src/ui/settings/FeaturesSettingSection.ts`.
+
 ## "I want to change section dividers (Zero-DOM)"
 → Edit `src/core/DividerManager.ts` (`data-cf-divider` attribute tagging) & `src/core/BaseCssGenerator.ts` (pseudo-element divider CSS).
 

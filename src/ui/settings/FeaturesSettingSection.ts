@@ -341,6 +341,17 @@ export class FeaturesSettingSection extends SettingSection {
                 }));
 
         new obsidian.Setting(tagCard)
+            .setName(t("settings.tag_pane_sync.name"))
+            .setDesc(t("settings.tag_pane_sync.desc"))
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.tagPaneSyncEnabled !== false)
+                .onChange(async (value) => {
+                    this.plugin.settings.tagPaneSyncEnabled = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStylesDebounced();
+                }));
+
+        new obsidian.Setting(tagCard)
             .setName(t("settings.custom_tag_rules.name"))
             .setDesc(t("settings.custom_tag_rules.desc"));
 
@@ -544,5 +555,34 @@ export class FeaturesSettingSection extends SettingSection {
                 await this.plugin.saveSettings();
                 this.plugin.generateStylesDebounced();
             }));
+
+        // 📑 Outline & Headings Color Sync Card (Card 5)
+        const outlineCard = this.settingTab.makeCard(containerEl, "📑", "Outline & headings color sync");
+        outlineCard.createEl('p', {
+            text: '💡 Tip: Automatically applies hierarchical colors to heading levels (h1–h6) in your sidebar outline and note bodies.',
+            cls: 'setting-item-description'
+        }).setCssStyles({ fontSize: '0.85em', fontStyle: 'italic', marginBottom: '12px', color: 'var(--text-accent)' });
+
+        new obsidian.Setting(outlineCard)
+            .setName(t("settings.outline_sync.name"))
+            .setDesc(t("settings.outline_sync.desc"))
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.outlineSyncEnabled ?? false)
+                .onChange(async (value) => {
+                    this.plugin.settings.outlineSyncEnabled = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStylesDebounced();
+                }));
+
+        new obsidian.Setting(outlineCard)
+            .setName(t("settings.note_headings_sync.name"))
+            .setDesc(t("settings.note_headings_sync.desc"))
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.noteHeadingsSyncEnabled ?? false)
+                .onChange(async (value) => {
+                    this.plugin.settings.noteHeadingsSyncEnabled = value;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStylesDebounced();
+                }));
     }
 }

@@ -111,6 +111,9 @@ export interface ColorfulFoldersSettings {
     tagSyncEnabled: boolean;
     tagSyncMatchFolders: boolean;
     tagSyncRules: string;
+    tagPaneSyncEnabled?: boolean;
+    outlineSyncEnabled?: boolean;
+    noteHeadingsSyncEnabled?: boolean;
     spacedTextMode: string;
     indentSubfolderPills: boolean;
     folderSpacing: boolean;

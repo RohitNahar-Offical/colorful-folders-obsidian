@@ -1,6 +1,8 @@
 import * as obsidian from "obsidian";
 import type ColorfulFoldersPlugin from "../main";
 import { MenuHelper } from "../ui/MenuHelper";
+import { OutlineSync } from "../integrations/OutlineSync";
+import { TagColorSync } from "../integrations/TagColorSync";
 export class EventTrackerService {
     private plugin: ColorfulFoldersPlugin;
     private eventRefs: obsidian.EventRef[] = [];
@@ -167,7 +169,15 @@ export class EventTrackerService {
         this.registerEvent(
             this.plugin.app.workspace.on("layout-change", () => {
                 this.plugin.domObserverService.initDividerObserver();
+                this.plugin.domObserverService.syncTagPaneDataset();
                 this.plugin.initStaircaseStyleStripper();
+                this.updateActiveFolderClasses();
+            }),
+        );
+
+        this.registerEvent(
+            this.plugin.app.workspace.on("active-leaf-change", () => {
+                this.plugin.domObserverService.syncTagPaneDataset();
                 this.updateActiveFolderClasses();
             }),
         );
@@ -196,6 +206,7 @@ export class EventTrackerService {
             this.plugin.app.workspace.on("layout-change", () => {
                 this.plugin.invalidateExplorerContainersCache();
                 this.plugin.domObserverService.initDividerObserver();
+                this.plugin.domObserverService.syncTagPaneDataset();
                 this.plugin.initStaircaseStyleStripper();
                 this.plugin.dividerManager?.syncDividers();
                 this.updateActiveFolderClasses();
@@ -208,6 +219,7 @@ export class EventTrackerService {
                 if (this.plugin.dividerManager?.hasAnyDividers()) {
                     this.plugin.dividerManager.syncDividers();
                 }
+                this.plugin.domObserverService.syncTagPaneDataset();
                 this.updateActiveFolderClasses();
             }),
         );
@@ -226,6 +238,8 @@ export class EventTrackerService {
         this.plugin.rootSortCache = null;
         this.plugin.iconManager?.invalidateAutoIconCache();
         this.plugin.embeddingModel?.clearCache();
+        OutlineSync.clearCache();
+        TagColorSync.clearCache();
     }
 
     private _activeClassRaf: number | null = null;
@@ -247,8 +261,8 @@ export class EventTrackerService {
                 oldParents[i].classList.remove('cf-active-parent', 'cf-is-active');
             }
             
-            // Add to currently active elements
-            const activeItems = doc.querySelectorAll('.is-active');
+            // Add to currently active elements (strictly in file-explorer and notebook-navigator, not outline or tag view)
+            const activeItems = doc.querySelectorAll('.nav-files-container .is-active, .workspace-leaf-content[data-type="file-explorer"] .is-active, .notebook-navigator .is-active');
             for (let i = 0; i < activeItems.length; i++) {
                 const item = activeItems[i];
                 if (!item) continue;
