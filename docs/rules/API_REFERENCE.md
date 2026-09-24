@@ -181,8 +181,14 @@ Manages CSS injection directly into browser window `document.adoptedStyleSheets`
 - `buildColorGroups(plugin)`: Traverses the vault to build color query arrays for valid folders.
 
 ### `TagColorSync`
-- `generateCss(plugin, context)`: Generates CSS rules that colorize `#tags` in the editor and reading view to match folder colors or custom tag rules.
-- **Settings keys**: `tagSyncEnabled`, `tagSyncMatchFolders`, `tagSyncRules`.
+- `generateCss(plugin, context, folderColorMap?)`: Generates high-efficiency Flyweight CSS rules that colorize `#tags` in Live Preview, Reading view, and the Sidebar Tag Pane (`.tag-container`). Reuses in-flight folder colors (`folderColorMap`) to avoid duplicate vault sweeps, or performs an iterative stack DFS over `TFolder` nodes.
+- `clearCache()`: Resets the internal deterministic memoization cache.
+- **Settings keys**: `tagSyncEnabled`, `tagSyncMatchFolders`, `tagPaneSyncEnabled`, `tagSyncRules`.
+
+### `OutlineSync`
+- `generateCss(plugin, context)`: Generates memory-efficient Flyweight CSS rules synchronizing the Outline Pane table of contents (`.outline-view` / `[data-type="outline"]`) and in-note headings (H1–H6 in `.markdown-rendered` and `.cm-editor`). Structural styles are emitted once globally, with levels binding CSS custom variables (`--cf-h-*`).
+- `clearCache()`: Resets the internal deterministic state-keyed memoization cache.
+- **Settings keys**: `outlineSyncEnabled`, `noteHeadingsSyncEnabled`.
 
 ---
 

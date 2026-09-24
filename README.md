@@ -62,8 +62,9 @@ Colorful Folders automatically applies premium color palettes, smart icons, and 
 
 ### 🎨 Synchronization & Ecosystem
 
-* **Tag Color Sync:** Automatically color tags matching styled folder names (e.g., styling "Work" styles `#Work`).
-* **Custom Tag Rules:** Manually map specific tags to any styled folder path (e.g., `#todo = /Projects/Active`).
+* **Tag Color Sync:** Automatically color tags matching styled folder names (e.g., styling "Work" styles `#Work`) across Reading Mode, Live Preview, and the Sidebar Tag Pane.
+* **Custom Tag Rules:** Manually map specific tags to any hex color or folder path (e.g., `garden/plant = #5ebd8e`).
+* **Outline & Heading Sync:** Match the Outline Pane table of contents and in-note headings (H1–H6) to your active color palette with glow highlights.
 * **Graph View Sync:** Folder colors sync directly into Obsidian's built-in Graph View as color groups.
 * **Notebook Navigator Integration:** Seamless style synchronization with Notebook Navigator.
 

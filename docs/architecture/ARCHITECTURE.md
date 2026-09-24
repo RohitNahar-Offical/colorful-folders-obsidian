@@ -28,9 +28,11 @@ graph TD
     F --> G1[BaseCssGenerator]
     F --> G2[ColorResolver]
     F --> G3[TagColorSync]
+    F --> G4[OutlineSync]
     G1 --> H[Recursive Traversal & Flat Rule Generation]
     G2 --> H
     G3 --> H
+    G4 --> H
     H --> I[Build Complete CSS String with SVG Data URIs]
     I --> J[AdoptedStyleSheetService.updateStyles]
     J --> K[sheet.replaceSync CSS String]
@@ -41,7 +43,7 @@ graph TD
 1. **Lifecycle Orchestration**: `PluginLifecycleService` manages event listeners (`create`, `modify`, `delete`, `window-open`, `layout-change`, `css-change`), document tracking across workspace windows, non-blocking layout ready hooks (~0ms startup lag), and deferred idle background loading (`requestIdleCallback`). Vault modification listeners automatically detect external changes to `data.json` and custom icon files in `${configDir}/icons` for real-time PC and Mobile sync.
 2. **Native Selector Matching**: Relies directly on Obsidian's native `data-path="<path>"` dataset attributes on `.nav-folder-title`, `.nav-file-title`, and `.tree-item-self` elements. Zero DOM attributes are mutated by the plugin during boot, idle time, or layout changes, preventing dirty DOM layout flags.
 3. **State Resolution**: `StyleResolver.getEffectiveStyle(target, plugin)` calculates the visual state for every folder/file using `FolderTrie` for $O(\text{depth})$ path inheritance queries.
-4. **Flat Rule & Data URI CSS Generation**: `StyleGenerator.traverse()` builds complete flat CSS attribute rules (`.nav-folder-title[data-path="..."]`). Custom SVGs and auto-icons are encoded into SVG Data URIs (`-webkit-mask-image: url("data:image/svg+xml;utf8,...")`) targeting `::before` pseudo-elements. CodeMirror 6 tag selectors in `TagColorSync` use exact indexed class selectors (`.cm-tag-mytag`) for $O(1)$ hashtable style resolution.
+4. **Flat Rule, Flyweight & Data URI CSS Generation**: `StyleGenerator.traverse()` builds complete flat CSS attribute rules (`.nav-folder-title[data-path="..."]`). Custom SVGs and auto-icons are encoded into SVG Data URIs (`-webkit-mask-image: url("data:image/svg+xml;utf8,...")`) targeting `::before` pseudo-elements. CodeMirror 6 and Reading mode tags in `TagColorSync` and outline heading levels in `OutlineSync` employ the **Flyweight Pattern**—structural shape and hover rules are declared once globally, with each tag or heading level binding dynamic CSS custom properties (`--cf-tag-*`, `--cf-h-*`). In-flight folder colors are shared directly to eliminate duplicate filesystem sweeps, and deterministic state-keyed memoization returns pre-compiled CSS strings in $O(1)$ time.
 5. **Programmatic Stylesheet Adoption**: `AdoptedStyleSheetService` updates the programmatic `CSSStyleSheet` instance via `sheet.replaceSync(css)`. The sheet is attached directly to `document.adoptedStyleSheets` across all workspace windows without creating `<style>` elements or overwriting other plugins' sheets.
 6. **Browser Execution**: The native browser CSS engine applies styles instantly with $O(1)$ overhead as items enter the viewport.
 

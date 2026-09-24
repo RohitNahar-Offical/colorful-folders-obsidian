@@ -73,7 +73,8 @@ Integrations provide intelligent AI classification, offline vector matching, gra
 | [AIIconClassifier.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/integrations/AIIconClassifier.ts) | Online LLM auto-assignment service. Coordinates Gemini, Claude, OpenAI, and Ollama providers with candidate resolution, enforcing the `WHOLE-TITLE SEMANTIC ANALYSIS RULE` and sanitizing response payloads. | `classifyVault()`, `constructSystemPrompt()`, `parseJsonResponse()`, `resolveSmartIcon()` |
 | [NotebookNavigator.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/integrations/NotebookNavigator.ts) | Integration for the *Notebook Navigator* community plugin. Generates specialized CSS rules for note titles, font weights, background colors, and icon alignment. | `generateCss()`, `showFileBg()` |
 | [GraphColorSync.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/integrations/GraphColorSync.ts) | Synchronizes vault folder colors with Obsidian's native 2D/3D Graph View nodes. | `syncGraphColors()` |
-| [TagColorSync.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/integrations/TagColorSync.ts) | Generates dynamic CSS rules for colored tags (`#tag`) across notes and editor views. | `generateTagCss()` |
+| [TagColorSync.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/integrations/TagColorSync.ts) | Generates memory-efficient Flyweight CSS rules for colored tags (`#tag`) across editor, reading view, and sidebar Tag Pane. Supports O(0) in-flight folder color reuse and iterative stack DFS. | `generateCss()`, `clearCache()` |
+| [OutlineSync.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/integrations/OutlineSync.ts) | Generates Flyweight CSS rules synchronizing the Outline Pane table of contents and in-note headings (H1–H6) with active palettes and theme fallbacks. | `generateCss()`, `clearCache()` |
 
 ---
 
