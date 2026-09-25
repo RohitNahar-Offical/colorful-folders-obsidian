@@ -220,6 +220,7 @@ export interface IColorfulFoldersPlugin {
     generateStyles(): Promise<void>;
     autoDownloadPack(url: string, prefix: string): Promise<number>;
     initStaircaseStyleStripper(): void;
+    stripStaircaseStyles(): void;
     generateStylesDebounced: Debouncer<[], void>;
     refreshIconsDebounced?: Debouncer<[], void>;
 

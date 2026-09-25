@@ -144,7 +144,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     tagSyncMatchFolders: true,
     tagSyncRules: "",
     tagPaneSyncEnabled: true,
-    outlineSyncEnabled: false,
+    outlineSyncEnabled: true,
     noteHeadingsSyncEnabled: false,
     spacedTextMode: "folders",
     indentSubfolderPills: false,

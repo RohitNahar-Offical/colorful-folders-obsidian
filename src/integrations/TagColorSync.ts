@@ -199,6 +199,13 @@ body :is(${cmClass}, .tag${cmClass}, .markdown-rendered a.tag[href="#${tag}" i])
 
             chunks.push(`
 /* Tag Pane Shared Structural Styling */
+.workspace-leaf-content[data-type="tag"] .tree-item-self:is(${tagPaneSels}) {
+    margin-top: 2px !important;
+    margin-bottom: 2px !important;
+    border-radius: 6px !important;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
 .workspace-leaf-content[data-type="tag"] .tree-item-self:is(${tagPaneSels}) .tree-item-inner-text {
     color: var(--cf-tag-pane-color) !important;
 }

@@ -56,6 +56,8 @@ export class OutlineSync {
             chunks.push(`
 /* Outline Container Base & Flyweight Structure */
 .workspace-leaf-content[data-type="outline"] .tree-item-self {
+    margin-top: 2px !important;
+    margin-bottom: 2px !important;
     border-radius: 6px !important;
     transition: background-color 0.15s ease, color 0.15s ease;
 }

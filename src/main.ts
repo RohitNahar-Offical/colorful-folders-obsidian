@@ -342,10 +342,17 @@ export default class ColorfulFoldersPlugin
       }
     };
 
-    // 1. Initial Pass: Strip immediately from all current items
+    // 1. Initial Pass: Strip immediately from all current items (File Explorer, Outline, Tag Pane)
     let totalStripped = 0;
+    const itemsSelector = '.workspace-leaf-content[data-type="file-explorer"] .tree-item-self, ' +
+      '.workspace-leaf-content[data-type="outline"] .tree-item-self, ' +
+      '.workspace-leaf-content[data-type="tag"] .tree-item-self, ' +
+      '.nav-files-container .tree-item-self, ' +
+      '.outline-view .tree-item-self, ' +
+      '.tag-container .tree-item-self';
+
     this.getOpenDocuments().forEach((doc) => {
-      const items = doc.querySelectorAll('.workspace-leaf-content[data-type="file-explorer"] .tree-item-self');
+      const items = doc.querySelectorAll(itemsSelector);
       items.forEach(stripStyle);
       totalStripped += items.length;
     });
@@ -382,11 +389,18 @@ export default class ColorfulFoldersPlugin
       }
     });
 
+    const targetContainersSelector = '.workspace-leaf-content[data-type="file-explorer"], ' +
+      '.workspace-leaf-content[data-type="outline"], ' +
+      '.workspace-leaf-content[data-type="tag"], ' +
+      '.nav-files-container, ' +
+      '.outline-view, ' +
+      '.tag-container';
+
     this.getOpenDocuments().forEach((doc) => {
       if (win._testerObserver) {
-        const explorers = doc.querySelectorAll('.workspace-leaf-content[data-type="file-explorer"], .nav-files-container');
-        if (explorers.length > 0) {
-          explorers.forEach((el) => {
+        const targets = doc.querySelectorAll(targetContainersSelector);
+        if (targets.length > 0) {
+          targets.forEach((el) => {
             win._testerObserver?.observe(el, {
               childList: true,
               subtree: true,

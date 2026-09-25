@@ -177,8 +177,12 @@ export class EventTrackerService {
 
         this.registerEvent(
             this.plugin.app.workspace.on("active-leaf-change", (leaf) => {
-                if (leaf?.view?.getViewType() === "tag") {
+                const viewType = leaf?.view?.getViewType();
+                if (viewType === "tag") {
                     this.plugin.domObserverService.syncTagPaneDataset();
+                }
+                if (viewType === "outline" || viewType === "tag" || viewType === "file-explorer") {
+                    this.plugin.initStaircaseStyleStripper();
                 }
             }),
         );
@@ -186,6 +190,9 @@ export class EventTrackerService {
         this.registerEvent(
             this.plugin.app.workspace.on("file-open", () => {
                 this.updateActiveFolderClasses();
+                window.setTimeout(() => {
+                    this.plugin.initStaircaseStyleStripper();
+                }, 50);
             }),
         );
 
@@ -220,8 +227,12 @@ export class EventTrackerService {
                 if (this.plugin.dividerManager?.hasAnyDividers()) {
                     this.plugin.dividerManager.syncDividers();
                 }
-                if (leaf?.view?.getViewType() === "tag") {
+                const viewType = leaf?.view?.getViewType();
+                if (viewType === "tag") {
                     this.plugin.domObserverService.syncTagPaneDataset();
+                }
+                if (viewType === "outline" || viewType === "tag" || viewType === "file-explorer") {
+                    this.plugin.initStaircaseStyleStripper();
                 }
             }),
         );
@@ -229,6 +240,9 @@ export class EventTrackerService {
         this.registerEvent(
             this.plugin.app.workspace.on("file-open", () => {
                 this.updateActiveFolderClasses();
+                window.setTimeout(() => {
+                    this.plugin.initStaircaseStyleStripper();
+                }, 50);
             }),
         );
     }

@@ -567,7 +567,7 @@ export class FeaturesSettingSection extends SettingSection {
             .setName(t("settings.outline_sync.name"))
             .setDesc(t("settings.outline_sync.desc"))
             .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.outlineSyncEnabled ?? false)
+                .setValue(this.plugin.settings.outlineSyncEnabled ?? true)
                 .onChange(async (value) => {
                     this.plugin.settings.outlineSyncEnabled = value;
                     await this.plugin.saveSettings();

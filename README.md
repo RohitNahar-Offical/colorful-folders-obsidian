@@ -12,16 +12,17 @@ Colorful Folders automatically applies premium color palettes, smart icons, and 
 ---
 # What's New in Colorful Folders
 
-## 🚀 5.0.6 - Outline & Tag Pane Sync, Bloom Filter Fast Scrolling & Instant Note Loading
+## 🚀 5.0.6 - Colored Tags & Outline Sync, Silky-Smooth Scrolling & Instant Note Opening
 
 ---
-### 📑 1. Outline & Tag Pane Color Synchronization
-* **Sidebar Tag Pane Styling**: Synchronize the native Obsidian Tag Pane (`.tag-container`) to match folder colors or custom tag rules with glowing active pills and count badges.
-* **Outline Pane & Heading Sync**: Harmonize the Outline Pane table of contents and in-note Markdown headings (H1–H6) with your active palette using ultra-fast Flyweight CSS rules.
+### 🏷️ 1. Colored Tags in the Sidebar
+* **Tags Match Your Folders**: Tags in your sidebar Tag Pane now automatically match your folder colors or custom tag rules!
+* **Glow & Badges**: Selected tags light up with a soft glow, and count badges adopt matching colored background pills.
+* **Consistent Everywhere**: Your tag colors stay in sync across the sidebar, Live Preview, and Reading View.
 
-### ⚡ 2. 60 FPS Fast Scrolling & Instant Note Loading
-* **Ancestor Bloom Filter Acceleration**: Strictly scoped layout and tree item rules to `.nav-files-container`, eliminating scroll stutter and jitter across the File Explorer.
-* **Instant Note Transitions**: Optimized workspace event dispatching, eliminating main-thread pauses when switching active notes.
+### 📑 2. Outline (Table of Contents) & Heading Colors
+* **Vibrant Outline View**: Your document outline table of contents now displays headings in beautiful colors from your active palette.
+* **Colored Headings in Notes**: You can now colorize headings (H1 to H6) inside your notes to match your vault's color scheme.
 
 ---
 

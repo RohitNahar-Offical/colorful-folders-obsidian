@@ -1,5 +1,28 @@
 # Updates for Colorful Folders
 
+## 🚀 5.0.6 - Colored Tags & Outline Sync, Silky-Smooth Scrolling & Instant Note Opening
+
+This update brings **full color matching to your Tags sidebar and Outline table of contents**, lets you **color headings inside your notes**, eliminates **scrolling lag in the file list**, and makes **notes open instantly without delays**.
+
+---
+
+### 🏷️ 1. Colored Tags in the Sidebar
+* **Tags Match Your Folders**: Tags in your sidebar Tag Pane now automatically match your folder colors or custom tag rules!
+* **Glow & Badges**: Selected tags now light up with a soft glow, and the note count badges next to each tag get a matching colored background.
+* **Consistent Everywhere**: Your tag colors now stay in sync across the sidebar, Live Preview, and Reading View.
+
+### 📑 2. Outline (Table of Contents) & Heading Colors
+* **Vibrant Outline View**: Your document outline (Table of Contents) now displays headings in beautiful colors from your active palette.
+* **Colored Headings in Notes**: You can now colorize headings (H1 to H6) inside your notes so your content matches your vault's look and feel.
+* **Lightweight & Battery-Friendly**: Built to use almost no extra memory or battery, keeping Obsidian quick and responsive.
+
+### ⚡ 3. Silky-Smooth Scrolling & Instant Note Opening
+* **Lag-Free File List**: Fixed scrolling lag and stutter in the file explorer—scrolling through large vaults is now buttery smooth.
+* **Instant Note Opening**: Notes now open instantly when clicked, with zero hesitation or freeze.
+* **Clean Staircase Alignment**: Nested subfolders stay neat, beautifully aligned, and easy to read.
+
+---
+
 ## 🛠️ 5.0.5 - Animated Icon Scroll Recovery, Instant Cold-Start & Notebook Navigator Isolation
 
 This update fixes **animated icons freezing after scrolling**, guarantees **instant icon loading on vault startup and reloads**, cleanly isolates **Notebook Navigator integration** to prevent startup lag, and adds **CodeQL security hardening**.
