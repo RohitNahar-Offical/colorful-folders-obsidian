@@ -55,31 +55,31 @@ export class OutlineSync {
         if (outlineEnabled) {
             chunks.push(`
 /* Outline Container Base & Flyweight Structure */
-body :is([data-type="outline"], .outline-view, .outline) .tree-item-self {
+.workspace-leaf-content[data-type="outline"] .tree-item-self {
     border-radius: 6px !important;
     transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-body :is([data-type="outline"], .outline-view, .outline) .tree-item-self :is(.tree-item-inner, .tree-item-inner-text) {
+.workspace-leaf-content[data-type="outline"] .tree-item-self :is(.tree-item-inner, .tree-item-inner-text) {
     color: var(--cf-h-color, inherit) !important;
     font-weight: var(--cf-h-weight, 500) !important;
 }
 
-body :is([data-type="outline"], .outline-view, .outline) .tree-item-self .collapse-icon svg {
+.workspace-leaf-content[data-type="outline"] .tree-item-self .collapse-icon svg {
     color: var(--cf-h-color, inherit) !important;
     stroke: currentColor !important;
 }
 
-body :is([data-type="outline"], .outline-view, .outline) .tree-item-self:hover {
+.workspace-leaf-content[data-type="outline"] .tree-item-self:hover {
     background-color: var(--cf-h-hover-bg, var(--background-modifier-hover, rgba(255, 255, 255, 0.05))) !important;
 }
 
-body :is([data-type="outline"], .outline-view, .outline) .tree-item-self:is(.is-active, .cf-is-active) {
+.workspace-leaf-content[data-type="outline"] .tree-item-self:is(.is-active, .cf-is-active) {
     background-color: var(--cf-h-active-bg, var(--background-modifier-active-hover, rgba(255, 255, 255, 0.1))) !important;
     box-shadow: inset 0 0 0 1px var(--cf-h-glow, transparent), 0 0 8px var(--cf-h-glow-soft, transparent) !important;
 }
 
-body :is([data-type="outline"], .outline-view, .outline) .tree-item-self:is(.is-active, .cf-is-active) :is(.tree-item-inner, .tree-item-inner-text) {
+.workspace-leaf-content[data-type="outline"] .tree-item-self:is(.is-active, .cf-is-active) :is(.tree-item-inner, .tree-item-inner-text) {
     color: var(--cf-h-color, inherit) !important;
     font-weight: 700 !important;
 }
@@ -126,9 +126,9 @@ body :is([data-type="outline"], .outline-view, .outline) .tree-item-self:is(.is-
 
                 chunks.push(`
 /* Outline Pane - Level ${level} */
-body :is([data-type="outline"], .outline-view, .outline) > .view-content ${nestChain} > .tree-item-self,
-body :is([data-type="outline"], .outline-view, .outline) > .view-content > div ${nestChain} > .tree-item-self,
-body :is([data-type="outline"], .outline-view, .outline) :is(
+.workspace-leaf-content[data-type="outline"] > .view-content ${nestChain} > .tree-item-self,
+.workspace-leaf-content[data-type="outline"] > .view-content > div ${nestChain} > .tree-item-self,
+.workspace-leaf-content[data-type="outline"] :is(
     .tree-item-self[data-heading-depth="${level}"],
     .tree-item-self[data-depth="${level}"],
     .tree-item[data-depth="${level}"] > .tree-item-self,

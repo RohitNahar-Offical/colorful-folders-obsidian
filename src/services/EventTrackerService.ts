@@ -176,9 +176,10 @@ export class EventTrackerService {
         );
 
         this.registerEvent(
-            this.plugin.app.workspace.on("active-leaf-change", () => {
-                this.plugin.domObserverService.syncTagPaneDataset();
-                this.updateActiveFolderClasses();
+            this.plugin.app.workspace.on("active-leaf-change", (leaf) => {
+                if (leaf?.view?.getViewType() === "tag") {
+                    this.plugin.domObserverService.syncTagPaneDataset();
+                }
             }),
         );
         
@@ -214,13 +215,14 @@ export class EventTrackerService {
         );
         
         this.registerEvent(
-            this.plugin.app.workspace.on("active-leaf-change", () => {
+            this.plugin.app.workspace.on("active-leaf-change", (leaf) => {
                 this.plugin.invalidateExplorerContainersCache();
                 if (this.plugin.dividerManager?.hasAnyDividers()) {
                     this.plugin.dividerManager.syncDividers();
                 }
-                this.plugin.domObserverService.syncTagPaneDataset();
-                this.updateActiveFolderClasses();
+                if (leaf?.view?.getViewType() === "tag") {
+                    this.plugin.domObserverService.syncTagPaneDataset();
+                }
             }),
         );
 
@@ -262,7 +264,7 @@ export class EventTrackerService {
             }
             
             // Add to currently active elements (strictly in file-explorer and notebook-navigator, not outline or tag view)
-            const activeItems = doc.querySelectorAll('.nav-files-container .is-active, .workspace-leaf-content[data-type="file-explorer"] .is-active, .notebook-navigator .is-active');
+            const activeItems = doc.querySelectorAll('.nav-files-container .is-active, .notebook-navigator .is-active');
             for (let i = 0; i < activeItems.length; i++) {
                 const item = activeItems[i];
                 if (!item) continue;

@@ -38,15 +38,21 @@ body:not(#_) .nav-files-container .nav-file-title.is-active:not(.nn-file) {
 While the plugin has a global scale slider, you can fine-tune specific icon types (Lucide vs. Custom) using CSS.
 
 ```css
-/* Resize all custom icons */
-body .cf-icon-wrapper svg {
+/* Resize standard and custom pseudo-element icons */
+body .nav-files-container :is(.nav-folder-title, .nav-file-title) :is(.nav-folder-title-content, .nav-file-title-content)::before {
+    width: 20px !important;
+    height: 20px !important;
+}
+
+/* Resize live animated SVG icons */
+body .nav-files-container .cf-live-animated-icon svg {
     width: 20px !important;
     height: 20px !important;
 }
 
 /* Add a hover animation to icons */
-body .cf-icon-wrapper:hover {
-    transform: scale(1.2) rotate(5deg);
+body .nav-files-container :is(.nav-folder-title, .nav-file-title):hover :is(.nav-folder-title-content, .nav-file-title-content)::before {
+    transform: scale(1.15) rotate(4deg);
     transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 ```
@@ -341,20 +347,31 @@ body {
 
 ## Tag Color Sync Customization
 
-The **Tag Color Sync** feature injects CSS rules that colorize `#tags` in the editor and reading view to match your folder colors. You can override these styles using the exposed CSS variables.
+The **Tag Color Sync** feature injects CSS rules that colorize `#tags` in Live Preview, Reading View, and the Sidebar Tag Pane to match folder colors or custom rules. You can override these styles using the exposed CSS variables.
 
 ### CSS Variables Exposed by Tag Color Sync
 ```css
-/* All tag rules use these two variables */
-.cm-hashtag.cm-tag-mytag {
+/* Editor & Reading View tag rules */
+.cm-hashtag.cm-tag-mytag, .markdown-rendered a.tag[href="#mytag"] {
     --cf-tag-bg: rgba(r, g, b, 0.2);
     --cf-tag-color: #hexcolor;
+}
+
+/* Sidebar Tag Pane (.tag-container) variables */
+.workspace-leaf-content[data-type="tag"] .tree-item-self[data-tag-name="mytag"] {
+    --cf-tag-pane-bg: rgba(r, g, b, 0.12);
+    --cf-tag-pane-color: #hexcolor;
+    --cf-tag-pane-flair-bg: rgba(r, g, b, 0.22);
+    --cf-tag-pane-hover-bg: rgba(r, g, b, 0.18);
+    --cf-tag-pane-active-bg: rgba(r, g, b, 0.26);
+    --cf-tag-pane-glow: rgba(r, g, b, 0.35);
+    --cf-tag-pane-glow-soft: rgba(r, g, b, 0.18);
 }
 ```
 
 ### Customization Examples
 ```css
-/* Make ALL synced tags use a pill shape */
+/* Make ALL synced tags use a modern pill shape in the editor */
 body .cm-s-obsidian .cm-hashtag[class*="cm-tag-"] {
     border-radius: 999px !important;
     padding: 1px 8px !important;
@@ -366,6 +383,13 @@ body .markdown-rendered a.tag[href="#projects"] {
     --cf-tag-bg: rgba(255, 100, 0, 0.2) !important;
     --cf-tag-color: #ff6400 !important;
 }
+
+/* Custom flair count badge in the Sidebar Tag Pane */
+body .workspace-leaf-content[data-type="tag"] .tree-item-self .tree-item-flair {
+    font-weight: 600 !important;
+    padding: 2px 7px !important;
+    font-size: 0.75em !important;
+}
 ```
 
 ### Custom Tag Rules Format (in Settings)
@@ -374,8 +398,54 @@ Go to **Integrations → Tag Color Sync → Custom tag rules** and add lines in 
 tagname = #hexcolor
 projects = #ff6400
 areas = #00aaff
+work/tasks = #10b981
 ```
 Rules here take priority over automatic folder-name matching.
+
+---
+
+## Outline Pane & In-Note Heading Sync Customization
+
+The **Outline Sync** feature injects lightweight Flyweight CSS rules to harmonize the Outline Pane table of contents and in-note headings (H1–H6) with your active theme palette.
+
+### CSS Variables Exposed by Outline Sync
+```css
+/* Outline Pane Variables per Heading Level */
+.workspace-leaf-content[data-type="outline"] .tree-item-self {
+    --cf-h-color: #hexcolor;
+    --cf-h-hover-bg: rgba(r, g, b, 0.12);
+    --cf-h-active-bg: rgba(r, g, b, 0.24);
+    --cf-h-glow: rgba(r, g, b, 0.40);
+    --cf-h-glow-soft: rgba(r, g, b, 0.20);
+    --cf-h-weight: 600; /* Descends from 700 (H1) to 500 (H6) */
+}
+
+/* In-Note Headings Variables (H1 to H6) */
+:root {
+    --cf-h1-color: #hexcolor;
+    --cf-h2-color: #hexcolor;
+    --cf-h3-color: #hexcolor;
+    --cf-h4-color: #hexcolor;
+    --cf-h5-color: #hexcolor;
+    --cf-h6-color: #hexcolor;
+}
+```
+
+### Customization Examples
+```css
+/* Add left accent borders to active items in Outline Pane */
+body .workspace-leaf-content[data-type="outline"] .tree-item-self.is-active {
+    border-left: 3px solid var(--cf-h-color) !important;
+    padding-left: 8px !important;
+}
+
+/* Subtle gradient text on note H1 titles */
+body .markdown-rendered h1,
+body .cm-editor .HyperMD-header-1 {
+    color: var(--cf-h1-color) !important;
+    text-shadow: 0 0 12px rgba(var(--mono-rgb-100), 0.08);
+}
+```
 
 ---
 

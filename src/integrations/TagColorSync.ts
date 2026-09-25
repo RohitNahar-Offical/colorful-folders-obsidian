@@ -178,7 +178,7 @@ body :is(${cmClass}, .tag${cmClass}, .markdown-rendered a.tag[href="#${tag}" i])
             // 5. Sidebar Tag Pane Per-Tag Rule
             if (tagPaneEnabled) {
                 chunks.push(`
-body :is(.tag-container, [data-type="tag"], .tag-pane) .tree-item-self:is([data-tag-name="${tag}" i], [data-tag-name^="${tag}/" i]) {
+.workspace-leaf-content[data-type="tag"] .tree-item-self:is([data-tag-name="${tag}" i], [data-tag-name^="${tag}/" i]) {
     --cf-tag-pane-bg: rgba(${rgbStr}, 0.12);
     --cf-tag-pane-color: ${t};
     --cf-tag-pane-flair-bg: rgba(${rgbStr}, 0.22);
@@ -199,21 +199,21 @@ body :is(.tag-container, [data-type="tag"], .tag-pane) .tree-item-self:is([data-
 
             chunks.push(`
 /* Tag Pane Shared Structural Styling */
-body :is(.tag-container, [data-type="tag"], .tag-pane) .tree-item-self:is(${tagPaneSels}) .tree-item-inner-text {
+.workspace-leaf-content[data-type="tag"] .tree-item-self:is(${tagPaneSels}) .tree-item-inner-text {
     color: var(--cf-tag-pane-color) !important;
 }
 
-body :is(.tag-container, [data-type="tag"], .tag-pane) .tree-item-self:is(${tagPaneSels}) .tree-item-flair {
+.workspace-leaf-content[data-type="tag"] .tree-item-self:is(${tagPaneSels}) .tree-item-flair {
     background-color: var(--cf-tag-pane-flair-bg) !important;
     color: var(--cf-tag-pane-color) !important;
     border-radius: 10px !important;
 }
 
-body :is(.tag-container, [data-type="tag"], .tag-pane) .tree-item-self:is(${tagPaneSels}):hover {
+.workspace-leaf-content[data-type="tag"] .tree-item-self:is(${tagPaneSels}):hover {
     background-color: var(--cf-tag-pane-hover-bg) !important;
 }
 
-body :is(.tag-container, [data-type="tag"], .tag-pane) .tree-item-self:is(${tagPaneSels}):is(.is-active, .cf-is-active) {
+.workspace-leaf-content[data-type="tag"] .tree-item-self:is(${tagPaneSels}):is(.is-active, .cf-is-active) {
     background-color: var(--cf-tag-pane-active-bg) !important;
     box-shadow: inset 0 0 0 1px var(--cf-tag-pane-glow), 0 0 8px var(--cf-tag-pane-glow-soft) !important;
 }

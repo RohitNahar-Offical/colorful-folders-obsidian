@@ -357,4 +357,26 @@
 3. Hooked `IntersectionObserver` to trigger `wakeAnimatedElement()` whenever animated icons scroll back into view, and triggered `syncAnimatedIcons()` immediately after scrolling settles (80ms debounce).
 **Lesson**: Off-screen Chromium SMIL animations with chained syncbases permanently die when off-screen event dispatches are skipped. To reliably resume them on scroll, replace the stalled `<svg>` with a fresh cloned `<svg>` node upon viewport re-entry.
 
+---
+
+## Incident #37 — File Explorer Scroll Lag, Jitter, and Freezing after Outline/Tag Pane Integration (2026-09-25)
+**What was attempted**: Adding Outline Pane and Sidebar Tag Pane color synchronization with Flyweight CSS rules, and optimizing active leaf tracking.
+**What broke**:
+1. Fast scrolling in the File Explorer suffered from severe jitter, stutter, and frame drops (scrolling lag).
+2. Note files took noticeably longer to load on click.
+3. Gating the staircase stripper broke the staircase pill indentation layout.
+**Root cause**:
+1. **Unscoped Base CSS Selectors**: `BaseCssGenerator.ts` contained broad global selectors like `body :is(.nav-folder-title, .nav-file-title, .tree-item-self):not([style*="display: none"])`, `body .tree-item-self > *`, and `body .tree-item-inner`. Because `.tree-item-self` and `.tree-item-inner` are used by Obsidian across *all* sidebar panes (Outline, Tag pane, Search, Bookmarks, File Explorer), Chromium evaluated these rules on every DOM node during scrolling, defeating Blink's ancestor Bloom filter and forcing expensive style recalculations and layout cascades.
+2. **Broad Ancestor Pseudo-Class Matching**: Top-level compound `:is()` selectors in `OutlineSync.ts` (`body :is([data-type="outline"], .outline-view, .outline) .tree-item-self`) and `TagColorSync.ts` (`body :is(.tag-container, [data-type="tag"], .tag-pane) .tree-item-self`) forced Blink's style resolver to crawl parent ancestor trees on every tree item in the File Explorer.
+3. **Unfiltered `active-leaf-change` Handlers**: `EventTrackerService.ts` called `syncTagPaneDataset()` and `updateActiveFolderClasses()` on every leaf focus change, querying the entire workspace DOM and mutating classes even when opening standard markdown notes.
+4. **Ribbon Icon Selector Collision**: In `NotebookNavigator.ts`, `NN_SELECTORS.CONTAINERS` matched `.notebook-navigator`, which matched `<svg class="svg-icon notebook-navigator">` in the workspace ribbon, causing DOM observers to hook into SVG elements.
+5. **Third-Party Global MutationObserver Crashes**: When `initStaircaseStyleStripper()` stripped inline styles on `.tree-item-self`, global observers in third-party plugins (e.g., `special-callouts`) crashed on SVG elements (`cls.includes is not a function`), blocking the main JavaScript thread during scroll.
+**Resolution**:
+1. Strictly scoped all File Explorer base CSS rules in `BaseCssGenerator.ts` to `body .nav-files-container`.
+2. Strictly scoped Outline styles to `.workspace-leaf-content[data-type="outline"]` and Tag Pane styles to `.workspace-leaf-content[data-type="tag"]`, allowing Chromium's ancestor Bloom filter to instantly reject unrelated panes in $O(1)$ time.
+3. Filtered `active-leaf-change` in `EventTrackerService.ts` to only invoke `syncTagPaneDataset()` when `leaf?.view?.getViewType() === "tag"`, and removed redundant `updateActiveFolderClasses()` invocations on leaf change (already handled cleanly by `file-open`).
+4. Updated `NN_SELECTORS.CONTAINERS` in `NotebookNavigator.ts` to `.workspace-leaf-content[data-type="notebook-navigator"], .nn-navigation-pane-content, .nn-list-view, .nn-explorer-content, div.notebook-navigator`, preventing SVG ribbon icon matches.
+5. Maintained `initStaircaseStyleStripper()` unconditionally active to preserve the staircase design without regressions.
+**Lesson**: Never declare generic `.tree-item-self` or `:is()` rules without strictly anchoring them to their specific workspace leaf container (`.nav-files-container`, `.workspace-leaf-content[data-type="..."]`). Unscoped selectors cause Chromium's style resolver to crawl ancestor chains for every DOM element across the entire workspace, leading to severe scroll jitter.
+
 

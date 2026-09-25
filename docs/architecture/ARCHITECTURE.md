@@ -405,3 +405,50 @@ t("notice.vector_progress", { engineName: "Built-in", pct: 42, completed: 420, t
 
 For full documentation: [`docs/LOCALIZATION.md`](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/LOCALIZATION.md).
 
+---
+
+## 8. Flyweight Outline & Tag Pane Color Synchronization Architecture
+
+To synchronize visual themes across the Sidebar Tag Pane (`data-type="tag"`), the Outline Pane (`data-type="outline"`), and in-note Markdown headings without inflating generated stylesheets, **Colorful Folders** implements a **Flyweight CSS Pattern**.
+
+```mermaid
+graph TD
+    A[Vault Traversal in StyleGenerator] -->|Pass In-Flight folderColorMap| B(TagColorSync.generateCss)
+    A --> C(OutlineSync.generateCss)
+    B --> D[Emit Global Shared Structural Rules Once]
+    C --> E[Emit Global Outline Structural Rules Once]
+    B --> F[Emit Compact Custom Property Bindings: --cf-tag-pane-*]
+    C --> G[Emit Compact Custom Property Bindings: --cf-h-*]
+    D & F & E & G --> H[Deterministic State-Keyed Memoization Cache]
+    H --> I[AdoptedStyleSheetService.updateStyles]
+```
+
+### 8.1 The Flyweight Design Pattern
+In standard CSS generators, duplicating full visual definitions (border radii, padding, transitions, flex alignment, and box-shadow glows) across hundreds of tags or headings produces massive stylesheet strings (>500KB) that trigger layout lag.
+- **Shared Structural Rules (Emitted Once)**: Common transitions, hover states, active glows, flair badges, and typography alignments are declared a single time using high-specificity selectors.
+- **Dynamic CSS Variable Bindings (Emitted Per-Item)**: Individual tags and heading levels only emit compact custom property bindings:
+  ```css
+  /* Structural rule (emitted once) */
+  .workspace-leaf-content[data-type="tag"] .tree-item-self:is(...) .tree-item-inner-text {
+      color: var(--cf-tag-pane-color) !important;
+  }
+  
+  /* Per-tag binding (emitted per active tag) */
+  .workspace-leaf-content[data-type="tag"] .tree-item-self:is([data-tag-name="dev" i]) {
+      --cf-tag-pane-bg: rgba(99, 102, 241, 0.12);
+      --cf-tag-pane-color: #6366f1;
+      --cf-tag-pane-flair-bg: rgba(99, 102, 241, 0.22);
+  }
+  ```
+
+### 8.2 In-Flight Folder Color Sharing & Iterative Stack DFS
+1. **$O(0)$ In-Flight Sharing**: During normal vault styling traversals, `StyleGenerator.traverse()` records resolved folder colors into a map and passes it directly to `TagColorSync.generateCss(plugin, context, folderColorMap)`, eliminating redundant vault traversals entirely.
+2. **Iterative Stack DFS Fallback**: When called in isolation, `TagColorSync` resolves folder colors using an iterative stack DFS over `TFolder` nodes, avoiding recursion limits and memory allocations.
+
+### 8.3 Strict Viewport Container Scoping & Bloom Filter Acceleration
+To ensure silky-smooth, 60 FPS scrolling in Obsidian's File Explorer:
+- All Outline styles are strictly scoped to `.workspace-leaf-content[data-type="outline"]`.
+- All Tag Pane styles are strictly scoped to `.workspace-leaf-content[data-type="tag"]`.
+- Top-level compound `:is()` selectors without explicit container anchors are strictly forbidden. This allows Chromium's internal ancestor Bloom filter to instantly reject unrelated sidebar panes in $O(1)$ time during scrolling.
+
+

@@ -68,10 +68,14 @@ Representing the `data.json` structure. Defined in `src/common/types.ts`.
 | `notebookNavigatorFileBackground` | `boolean` | Applies background colors to NN file items. |
 | `notebookNavigatorOutlineOnly` | `boolean` | Force outline-only mode specifically for NN items. |
 | `notebookNavigatorIconScale` | `number` | Independent icon scale multiplier strictly for NN items. |
+| `enableStaircaseHack` | `boolean` | Enables the Staircase style stripper to prevent virtualized list indentation drift. |
 | `graphColorSync` | `boolean` | Syncs assigned folder colors to Graph View nodes. |
-| `tagSyncEnabled` | `boolean` | Enables syncing folder colors to their respective tags. |
+| `tagSyncEnabled` | `boolean` | Enables syncing folder colors to their respective tags in Live Preview and Reading View. |
 | `tagSyncMatchFolders` | `boolean` | Auto-syncs tags that perfectly match a styled folder name. |
-| `tagSyncRules` | `string` | Custom line-by-line mapping rules (`#tag = /path`). |
+| `tagPaneSyncEnabled` | `boolean` | Synchronizes sidebar Tag Pane items with folder colors or custom rules. |
+| `tagSyncRules` | `string` | Custom line-by-line mapping rules (`#tag = /path` or `#tag = #hex`). |
+| `outlineSyncEnabled` | `boolean` | Synchronizes Outline Pane table of contents heading items with active palette colors. |
+| `noteHeadingsSyncEnabled` | `boolean` | Synchronizes in-note H1–H6 Markdown rendered and Live Preview editor headings with active palette colors. |
 | **AI Icon Classification** | | |
 | `aiProvider` | `string` | Selected provider (`gemini`, `claude`, `ollama`, `openai`, or `custom`). |
 | `aiApiKey` | `string` | User API Key for Gemini, Claude, or OpenAI. |

@@ -41,6 +41,9 @@ Never inject global nuclear `display: none !important` rules targeting class nam
 **RULE 1.11: SMIL SVG Animation Recovery on Scroll.**
 When rendering live SMIL animated SVGs, never rely on `unpauseAnimations()` or `setCurrentTime(0)` alone to recover chained-syncbase animations (`begin="0;prev.end+0.15s"`). Chromium suppresses time events when elements are offscreen, breaking the syncbase loop permanently. Always replace stalled `<svg>` elements with a freshly cloned template upon viewport entry using an `IntersectionObserver`. *(Incident #36)*
 
+**RULE 1.12: Strict Viewport & Container Selector Scoping for Fast Scrolling.**
+Global layout resets and tree item selectors (`.tree-item-self`, `.tree-item-inner`, `> *`, collapse indicators) must ALWAYS be strictly anchored to their specific workspace leaf container (e.g., `body .nav-files-container`, `.workspace-leaf-content[data-type="outline"]`, `.workspace-leaf-content[data-type="tag"]`). Never write un-scoped selectors like `body .tree-item-self` or `:is([data-type="outline"], ...)` without an explicit leaf container anchor. Broad selectors defeat Chromium's ancestor Bloom filter, causing the browser to evaluate style rules across all sidebar panes (Outline, Tag pane, Search, Bookmarks) on every scroll frame and producing severe scrolling jitter. *(Incident #37)*
+
 ---
 
 ## 2. Main Thread Performance (Scroll, Drag, & Startup Lag)
@@ -72,8 +75,11 @@ Tag file tree nodes using `data-cf-path` dataset attributes instead of modifying
 **RULE 2.9: Whitelist MutationObserver class filters.**
 Never bind `MutationObserver` to high-traffic elements like `document.body` without extreme filtering. Always whitelist the specific classes you care about (e.g., `theme-dark`, `theme-light`, `cf-show-hidden`) and ignore noisy interaction classes (`is-dragging`, `is-focused`, `workspace-leaf-active`). *(Incident #13)*
 
-**RULE 2.9: Cache expensive computations.**
+**RULE 2.10: Cache expensive computations.**
 Cache color palette lookups (`_cachedPalette`, `_cachedPaletteKey`), hex-to-RGB parsing (`rgbCache`), and other frequently-called utility results. Avoid rebuilding palettes on every `getEffectiveStyle()` call. *(Incident #18)*
+
+**RULE 2.11: Filter workspace event handlers by view type.**
+In `EventTrackerService`, high-frequency workspace events like `active-leaf-change` must strictly check the view type (`leaf?.view?.getViewType() === "tag"`) before triggering subtree sweeps or dataset synchronizations. Never perform full document queries or DOM class updates unconditionally during note navigation. *(Incident #37)*
 
 ---
 
@@ -178,6 +184,8 @@ While `read` is sufficient for building and attesting, `write` is mandatory for 
 | 1.8 | #9 |
 | 1.9 | #8 |
 | 1.10 | #30 *(Folder Notes)* |
+| 1.11 | #36 *(SMIL Animation)* |
+| 1.12 | #37 *(Container Scoping)* |
 | 2.1 | #15 |
 | 2.2 | #14 *(superseded)* |
 | 2.3 | #24 |
@@ -186,7 +194,9 @@ While `read` is sufficient for building and attesting, `write` is mandatory for 
 | 2.6 | #19 |
 | 2.7 | #27 *(superseded)*, #28 *(Zero-DOM)*, #31 *(Keystroke O(1))* |
 | 2.8 | #13 |
-| 2.9 | #18, #35 *(Bounded LRU)* |
+| 2.9 | #13 |
+| 2.10 | #18, #35 *(Bounded LRU)* |
+| 2.11 | #37 *(Filtered Events)* |
 | 3.1 | #16 |
 | 3.2 | #10 |
 | 3.3 | #6, #16 |

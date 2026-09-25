@@ -12,56 +12,54 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             display: none !important;
         }
 
-        body :is(.nav-folder-title, .nav-file-title, .tree-item-self):not([style*="display: none"]):not([style*="display:none"]):not(.is-folder-note):not(.fn-hidden):not(.cf-fn-hidden) {
+        body .nav-files-container :is(.nav-folder-title, .nav-file-title, .tree-item-self):not(.is-folder-note):not(.fn-hidden):not(.cf-fn-hidden) {
             display: flex;
             align-items: center !important;
             justify-content: flex-start !important;
             overflow: visible !important;
         }
 
-
-
         /* Force all immediate children and pseudo-elements to perfectly center vertically */
-        body .nav-folder-title > *,
-        body .nav-file-title > *,
-        body .tree-item-self > *,
-        body .nav-folder-title:not(.nn-navitem)::before,
-        body .nav-file-title:not(.nn-file)::before,
-        body .tree-item-self:not(.nn-file):not(.nn-navitem)::before,
-        body .nav-folder-title::after,
-        body .nav-file-title::after,
-        body .tree-item-self::after {
+        body .nav-files-container .nav-folder-title > *,
+        body .nav-files-container .nav-file-title > *,
+        body .nav-files-container .tree-item-self > *,
+        body .nav-files-container .nav-folder-title:not(.nn-navitem)::before,
+        body .nav-files-container .nav-file-title:not(.nn-file)::before,
+        body .nav-files-container .tree-item-self:not(.nn-file):not(.nn-navitem)::before,
+        body .nav-files-container .nav-folder-title::after,
+        body .nav-files-container .nav-file-title::after,
+        body .nav-files-container .tree-item-self::after {
             align-self: center !important;
             margin-top: 0 !important;
             margin-bottom: 0 !important;
         }
 
-        body .nav-folder-collapse-indicator,
-        body .tree-item-collapse-indicator,
-        body .collapse-indicator,
-        body .tree-item-icon.collapse-indicator,
-        body .collapse-icon,
-        body .tree-item-icon.collapse-icon {
+        body .nav-files-container .nav-folder-collapse-indicator,
+        body .nav-files-container .tree-item-collapse-indicator,
+        body .nav-files-container .collapse-indicator,
+        body .nav-files-container .tree-item-icon.collapse-indicator,
+        body .nav-files-container .collapse-icon,
+        body .nav-files-container .tree-item-icon.collapse-icon {
             display: ${settings.showCollapseIndicator !== false ? 'flex' : 'none'} !important;
             align-items: center !important;
             justify-content: center !important;
             height: auto !important;
         }
 
-        body .nav-folder-collapse-indicator svg,
-        body .tree-item-collapse-indicator svg,
-        body .collapse-indicator svg,
-        body .tree-item-icon.collapse-indicator svg,
-        body .collapse-icon svg,
-        body .tree-item-icon.collapse-icon svg {
+        body .nav-files-container .nav-folder-collapse-indicator svg,
+        body .nav-files-container .tree-item-collapse-indicator svg,
+        body .nav-files-container .collapse-indicator svg,
+        body .nav-files-container .tree-item-icon.collapse-indicator svg,
+        body .nav-files-container .collapse-icon svg,
+        body .nav-files-container .tree-item-icon.collapse-icon svg {
             color: inherit !important;
             stroke: currentColor !important;
         }
 
         /* ── CONTENT ELEMENT: always flex row, icon or not ───────────────── */
-        body .nav-folder-title-content,
-        body .nav-file-title-content,
-        body .tree-item-inner {
+        body .nav-files-container .nav-folder-title-content,
+        body .nav-files-container .nav-file-title-content,
+        body .nav-files-container .tree-item-inner {
             display: flex !important;
             flex-direction: row !important;
             align-items: center !important;
@@ -75,11 +73,11 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
         }
 
         /* ── ICON SUPPRESSION & CONFLICT PREVENTION ─────────────────────── */
-        body [data-path] .nav-folder-title-content > svg:not(.cf-icon-wrapper svg),
-        body [data-path] .nav-file-title-content > svg:not(.cf-icon-wrapper svg),
-        body [data-path] .tree-item-inner > svg:not(.cf-icon-wrapper svg),
-        body [data-path] .nav-folder-title-content > .nav-folder-icon,
-        body [data-path] .nav-file-title-content > .nav-file-icon {
+        body .nav-files-container [data-path] .nav-folder-title-content > svg:not(.cf-icon-wrapper svg),
+        body .nav-files-container [data-path] .nav-file-title-content > svg:not(.cf-icon-wrapper svg),
+        body .nav-files-container [data-path] .tree-item-inner > svg:not(.cf-icon-wrapper svg),
+        body .nav-files-container [data-path] .nav-folder-title-content > .nav-folder-icon,
+        body .nav-files-container [data-path] .nav-file-title-content > .nav-file-icon {
             display: none !important;
         }
 
@@ -229,8 +227,7 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
         }
 
         /* Add spacing between folders */
-        body .nav-folder-title,
-        body .tree-item-self {
+        body .nav-files-container :is(.nav-folder-title, .tree-item-self) {
             margin-top: 2px !important;
             margin-bottom: 2px !important;
         }

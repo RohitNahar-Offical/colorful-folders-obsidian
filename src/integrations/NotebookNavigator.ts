@@ -15,7 +15,7 @@ interface NNPlugin {
  * Centralizes all DOM selectors and NN-specific logic.
  */
 export const NN_SELECTORS = {
-    CONTAINERS: '.notebook-navigator, .nn-navigation-pane-content, .nn-list-view, .nn-explorer-content',
+    CONTAINERS: '.workspace-leaf-content[data-type="notebook-navigator"], .nn-navigation-pane-content, .nn-list-view, .nn-explorer-content, div.notebook-navigator',
     NAV_ITEM: '.nn-navitem',
     FILE_ITEM: '.nn-file',
     NAV_NAME: '.nn-navitem-name',
