@@ -379,4 +379,24 @@
 5. Maintained `initStaircaseStyleStripper()` unconditionally active to preserve the staircase design without regressions.
 **Lesson**: Never declare generic `.tree-item-self` or `:is()` rules without strictly anchoring them to their specific workspace leaf container (`.nav-files-container`, `.workspace-leaf-content[data-type="..."]`). Unscoped selectors cause Chromium's style resolver to crawl ancestor chains for every DOM element across the entire workspace, leading to severe scroll jitter.
 
+---
+
+## Incident #38 — Tag Coloring & Custom Rules Blocked by Killswitch Gate & Case-Sensitivity (2026-09-25)
+**What was attempted**: Enabling tag color styling in notes and the Sidebar Tag Pane via `TagColorSync.ts` with custom rules.
+**What broke**:
+1. Custom tag color rules defined in settings (`tagSyncRules`) failed to apply in notes and the Tag Pane.
+2. In-note Live Preview tags (`#tag`) appeared cramped with zero visual spacing between `#` and the tag label.
+3. Tags with uppercase or mixed-case names failed to match in Live Preview editor nodes.
+**Root cause**:
+1. **Killswitch Blocking Decoupled Custom Rules**: `TagColorSync.generateCss()` contained an early `if (!settings.tagSyncEnabled) return "";` check. If the main toggle was disabled, custom rules were silently skipped even if explicitly configured by the user.
+2. **Case-Sensitive Class Matching**: Live Preview emits CSS classes formatted as `.cm-tag-myTag`. CSS class selectors without case-insensitivity flags (`.cm-tag-mytag`) failed when case differed between the rule and note text.
+3. **Rigid Parsing Regex**: Regex sanitization stripped non-ASCII/Unicode letters, preventing international tags from matching custom rules.
+4. **Hashtag Token Separation**: Live Preview renders tags as two distinct inline spans: `.cm-hashtag-begin` (`#`) and `.cm-hashtag-end` (tag text). Applying `margin-right` to `.cm-hashtag-begin` created an awkward transparent gap inside the colored pill background.
+**Resolution**:
+1. Decoupled custom rule execution so `tagSyncRules` always evaluate and emit styles regardless of general folder-matching toggle states, and set `DEFAULT_SETTINGS.tagSyncEnabled = true`.
+2. Updated Live Preview tag selector to case-insensitive word matching: `body :is([class~="cm-tag-${t}" i], a.tag[href="#${t}" i])`.
+3. Added 4px right padding directly on `.cm-hashtag-begin` (`padding-right: 4px !important;`) and `margin-right: 0.15em !important;` on `a.tag::first-letter` for Reading View. This creates a clean, readable separation while keeping the tag pill background, outline, and hover highlights unbroken.
+**Lesson**: Always decouple user-defined explicit override rules from automated heuristic toggles, use case-insensitive class attribute selectors (`[class~="..." i]`) for CodeMirror tag tokens, and style multi-token pill spacing using inline padding rather than margin gaps.
+
+
 

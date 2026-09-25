@@ -38,7 +38,7 @@ docs/
 * **[DEVELOPMENT_RULES.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/rules/DEVELOPMENT_RULES.md)** — Consolidated 'source of truth' development rules (v5.0.0 Zero-DOM).
 * **[FEATURE_FILE_MAP.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/rules/FEATURE_FILE_MAP.md)** — Quick reference mapping features directly to source files in `src/`.
 * **[API_REFERENCE.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/rules/API_REFERENCE.md)** — Public API reference for core services, resolvers, and subsystem integrations.
-* **[INCIDENT_LOG.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/rules/INCIDENT_LOG.md)** — Post-mortem log of 37 real incidents, root causes, and resolutions.
+* **[INCIDENT_LOG.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/rules/INCIDENT_LOG.md)** — Post-mortem log of 38 real incidents, root causes, and resolutions.
 
 ---
 

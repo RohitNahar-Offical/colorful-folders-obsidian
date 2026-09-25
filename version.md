@@ -1,25 +1,19 @@
 # Updates for Colorful Folders
 
-## 🚀 5.0.6 - Colored Tags & Outline Sync, Silky-Smooth Scrolling & Instant Note Opening
+## 🚀 5.0.6 - Outline & Sidebar Tag Pane Sync
 
-This update brings **full color matching to your Tags sidebar and Outline table of contents**, lets you **color headings inside your notes**, eliminates **scrolling lag in the file list**, and makes **notes open instantly without delays**.
+This update brings **Outline Pane and Sidebar Tag Pane color synchronization**, introduces the **Flyweight CSS Pattern** for ultra-efficient stylesheet generation.
 
 ---
 
 ### 🏷️ 1. Colored Tags in the Sidebar
 * **Tags Match Your Folders**: Tags in your sidebar Tag Pane now automatically match your folder colors or custom tag rules!
-* **Glow & Badges**: Selected tags now light up with a soft glow, and the note count badges next to each tag get a matching colored background.
-* **Consistent Everywhere**: Your tag colors now stay in sync across the sidebar, Live Preview, and Reading View.
+* **Glow & Badges**: Selected tags light up with a soft glow, and count badges adopt matching colored background pills.
+* **Consistent Everywhere**: Your tag colors stay in sync across the sidebar, Live Preview, and Reading View.
 
 ### 📑 2. Outline (Table of Contents) & Heading Colors
-* **Vibrant Outline View**: Your document outline (Table of Contents) now displays headings in beautiful colors from your active palette.
-* **Colored Headings in Notes**: You can now colorize headings (H1 to H6) inside your notes so your content matches your vault's look and feel.
-* **Lightweight & Battery-Friendly**: Built to use almost no extra memory or battery, keeping Obsidian quick and responsive.
-
-### ⚡ 3. Silky-Smooth Scrolling & Instant Note Opening
-* **Lag-Free File List**: Fixed scrolling lag and stutter in the file explorer—scrolling through large vaults is now buttery smooth.
-* **Instant Note Opening**: Notes now open instantly when clicked, with zero hesitation or freeze.
-* **Clean Staircase Alignment**: Nested subfolders stay neat, beautifully aligned, and easy to read.
+* **Vibrant Outline View**: Your document outline table of contents now displays headings in beautiful colors from your active palette.
+* **Colored Headings in Notes**: You can now colorize headings (H1 to H6) inside your notes to match your vault's color scheme.
 
 ---
 
@@ -37,57 +31,5 @@ This update fixes **animated icons freezing after scrolling**, guarantees **inst
 ### ⚡ 2. Notebook Navigator Isolation & Cold-Start Optimization
 * **Clean Selector Isolation**: Decoupled Notebook Navigator integration styles and excluded virtual containers from divider observers to eliminate cold-start loading clashes.
 * **Security Hardened**: Fully sanitized SVG DOM parsing and escaped CSS attribute selectors to resolve all CodeQL security alerts.
-
----
-
-## 🛠️ 5.0.4 - Live Animated Icons, Locked-In Custom Choices, Faster Performance & Clean Resets
-
-This update brings **moving animated icons** right into your sidebar, ensures your **manually chosen icons always stay locked in**, keeps the plugin **fast and lightweight**, and makes **resetting and cleaning settings reliable**.
-
----
-
-### 🎬 1. Live Animated Icons
-* **Moving Icons in Your Sidebar**: You can now use animated SVG icons that play smooth animations right next to your folders and files in the sidebar!
-* **Live Previews in the Icon Picker**: When browsing icons in the icon picker or color modal, animated icons will animate in real-time so you can see how they move before picking them.
-* **Smooth & Battery-Friendly**: Animations run smoothly without slowing down your vault or draining battery.
-
-### 👑 2. Your Chosen Icons Always Stay Locked In
-* **Your Choices Come First**: When you manually pick an icon for a folder or note, the plugin will never change it or overwrite it with an automatic guess.
-* **Color Changes Won't Reset Icons**: Changing a folder's background color or text color will safely keep your chosen icon intact.
-* **Frontmatter Control**: If you write `icon: ...` in a note's properties/frontmatter, that icon is guaranteed to show.
-
-### ⚡ 3. Faster Performance & Lower Memory Usage
-* **Lighter on Memory**: Improved how icons and styles are stored in the background, keeping Obsidian fast and snappy even if you have thousands of notes.
-* **Automatic Vault Cleanup**: Deleting notes or folders immediately cleans up internal cache data so no unused memory is wasted over time.
-
-### 🧹 4. Reliable "Clean & Reset" Tools
-* **Complete Library Wipe**: Clicking **"Clear icon library"** in Settings now fully removes all downloaded icon packs and custom icons from both memory and disk.
-* **Red Warning Buttons**: Danger buttons (like *Factory reset*, *Reset styles*, and *Clear icon library*) are now styled in clear red so you can easily spot them.
-
-### 📱 5. Better Settings for Small Windows
-* **No More Cut-Off Tabs**: When the Obsidian window is narrow or small, the settings tabs (*General*, *Features*, *Icons*, *AI*, *Privacy*) automatically wrap onto multiple lines so every tab is easy to click.
-
----
-
-## 🛠️ 5.0.3 - Architecture Modularization, Native Selector Optimization & Documentation
-
-This release modularizes core plugin architecture (introducing dedicated service classes), optimizes CSS selector resolution using native `data-path` attributes, enhances event tracking and hidden state detection, and updates complete project documentation.
-
----
-
-### 🏗️ 1. Architecture Modularization & Modular Core
-* **Dedicated Service Classes**: Modularized plugin codebase by extracting `BaseCssGenerator`, `EventTrackerService`, and `LRUCache` into decoupled core modules.
-* **Streamlined Plugin Entry**: Refactored `main.ts` entry point to delegate style generation and lifecycle tracking cleanly to specialized sub-services.
-
-### ⚡ 2. Native `data-path` Selector Optimization
-* **Native Selector Resolution**: Replaced custom `data-cf-path` attributes with native `data-path` selectors across `BaseCssGenerator` and `StyleGenerator`.
-* **Reduced CSS Payload**: Direct `data-path` attribute targeting eliminates duplicate attribute injection and reduces overall stylesheet payload size.
-
-### 🔍 3. Refined Event Tracking & Folder Note Detection
-* **Explicit Hidden State Handling**: Updated `EventTrackerService` to track explicit hidden state toggles accurately.
-* **Escaped Selector Specificity**: Improved parent path style calculations with escaped path rules for folder notes and nested structures.
-
-### 📚 4. Reorganized Documentation & Project Index
-* **Hierarchical Rules & Specs**: Reorganized technical documentation into categorized subdirectories (architecture, governance, integrations, rules, styling) with an updated master index.
 
 ---

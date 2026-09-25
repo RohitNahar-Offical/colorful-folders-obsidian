@@ -606,8 +606,8 @@ export class StyleGenerator {
                 context.now
             );
 
-            if (this.settings.tagSyncEnabled && this.settings.tagSyncMatchFolders && child.name) {
-                const cleanTagName = child.name.replace(/[^\w-]/g, '').toLowerCase();
+            if ((this.settings.tagSyncEnabled || this.settings.tagPaneSyncEnabled !== false) && this.settings.tagSyncMatchFolders && child.name) {
+                const cleanTagName = child.name.trim().replace(/^#+/, '').replace(/\s+/g, '-').toLowerCase();
                 if (cleanTagName) {
                     this._folderColorsForTags.set(cleanTagName, color.hex);
                 }

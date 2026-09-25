@@ -30,12 +30,18 @@ export class TagColorSync {
     }
 
     static generateCss(plugin: IColorfulFoldersPlugin, context: StyleContext, folderColorMap?: Map<string, string>): string {
-        if (!plugin.settings.tagSyncEnabled) return '';
+        const hasRules = Boolean(plugin.settings.tagSyncRules && plugin.settings.tagSyncRules.trim().length > 0);
+        const tagSyncEnabled = plugin.settings.tagSyncEnabled;
+        const tagPaneEnabled = plugin.settings.tagPaneSyncEnabled !== false;
+
+        // If tag sync is disabled, no explicit rules exist, and tag pane sync is disabled, nothing to generate
+        if (!tagSyncEnabled && !hasRules && !tagPaneEnabled) return '';
 
         const tagMap = new Map<string, string>(); // normalized tag name -> hex color
+        const explicitRuleTags = new Set<string>();
 
         // 1. Folders Matching
-        if (plugin.settings.tagSyncMatchFolders) {
+        if (plugin.settings.tagSyncMatchFolders && (tagSyncEnabled || tagPaneEnabled)) {
             if (folderColorMap && folderColorMap.size > 0) {
                 // Algorithmic optimization: Direct O(K) reuse of pre-resolved folder colors
                 for (const [cleanName, hex] of folderColorMap) {
@@ -53,7 +59,11 @@ export class TagColorSync {
                         if (!current.isRoot()) {
                             const effStyle = StyleResolver.getEffectiveStyle(current, plugin);
                             if (effStyle?.hex && current.name) {
-                                const cleanName = current.name.replace(/[^\w-]/g, '').toLowerCase();
+                                const cleanName = current.name
+                                    .trim()
+                                    .replace(/^#+/, '')
+                                    .replace(/\s+/g, '-')
+                                    .toLowerCase();
                                 if (cleanName) {
                                     tagMap.set(cleanName, effStyle.hex);
                                 }
@@ -78,14 +88,31 @@ export class TagColorSync {
             for (let i = 0, len = rules.length; i < len; i++) {
                 const rule = rules[i].trim();
                 if (!rule) continue;
-                const eqIdx = rule.indexOf('=');
+
+                // Support both '=' and ':' separators
+                let eqIdx = rule.indexOf('=');
+                if (eqIdx === -1) {
+                    eqIdx = rule.indexOf(':');
+                }
+
                 if (eqIdx !== -1) {
                     const rawName = rule.slice(0, eqIdx).trim();
-                    const rawColor = rule.slice(eqIdx + 1).trim();
+                    let rawColor = rule.slice(eqIdx + 1).trim();
+
+                    // Auto-prefix # if user provided 3, 4, 6, or 8 digit hex without #
+                    if (!rawColor.startsWith('#') && /^[0-9a-fA-F]{3,8}$/.test(rawColor)) {
+                        rawColor = '#' + rawColor;
+                    }
+
                     if (rawColor.startsWith('#')) {
-                        const cleanName = rawName.replace(/#/g, '').replace(/[^\w/-]/g, '').toLowerCase();
+                        const cleanName = rawName
+                            .trim()
+                            .replace(/^#+/, '')
+                            .replace(/\s+/g, '-')
+                            .toLowerCase();
                         if (cleanName) {
                             tagMap.set(cleanName, rawColor);
+                            explicitRuleTags.add(cleanName);
                         }
                     }
                 }
@@ -97,8 +124,7 @@ export class TagColorSync {
         // Deterministic cache validation
         const tagEntries = Array.from(tagMap.entries());
         const tagSig = tagEntries.map(([k, v]) => `${k}:${v}`).join(';');
-        const tagPaneEnabled = plugin.settings.tagPaneSyncEnabled !== false;
-        const cacheKey = `${tagPaneEnabled ? 1 : 0}:${context.isDark ? 1 : 0}:${context.brightnessAmount}:${tagSig}`;
+        const cacheKey = `${tagPaneEnabled ? 1 : 0}:${tagSyncEnabled ? 1 : 0}:${context.isDark ? 1 : 0}:${context.brightnessAmount}:${tagSig}`;
         if (this._cachedKey === cacheKey && this._cachedCss) {
             return this._cachedCss;
         }
@@ -109,11 +135,15 @@ export class TagColorSync {
             '   ========================================================= */'
         ];
 
-        // 3. Shared In-Note Tag Structural Rules (Flyweight)
-        const tagClasses = tagEntries.map(([t]) => `.cm-tag-${t.replace(/\//g, '')}`).join(', ');
-        const tagLinks = tagEntries.map(([t]) => `a.tag[href="#${t}" i]`).join(', ');
+        // Tags to style in editor/reading mode: all tags if tagSyncEnabled, or explicit rules if tagSyncEnabled is off
+        const inNoteEntries = tagSyncEnabled ? tagEntries : tagEntries.filter(([t]) => explicitRuleTags.has(t));
 
-        chunks.push(`
+        if (inNoteEntries.length > 0) {
+            // 3. Shared In-Note Tag Structural Rules (Flyweight)
+            const tagClasses = inNoteEntries.map(([t]) => `[class~="cm-tag-${t.replace(/\//g, '')}" i]`).join(', ');
+            const tagLinks = inNoteEntries.map(([t]) => `a.tag[href="#${t}" i]`).join(', ');
+
+            chunks.push(`
 /* In-Note Tag Base Structure & Shared Borders */
 body :is(${tagLinks}, .tag:is(${tagClasses})) {
     border: 1px solid var(--cf-tag-border) !important;
@@ -126,13 +156,23 @@ body .cm-hashtag:is(${tagClasses}) {
     border-bottom: 1px solid var(--cf-tag-border) !important;
 }
 
+body .cm-hashtag:is(${tagClasses}):not(.cm-hashtag-begin):not(.cm-hashtag-end) {
+    border: 1px solid var(--cf-tag-border) !important;
+    border-radius: 12px !important;
+    padding: 0 4px !important;
+}
+
 body .cm-hashtag-begin:is(${tagClasses}) {
     border-left: 1px solid var(--cf-tag-border) !important;
     border-right: none !important;
     border-top-left-radius: 12px !important;
     border-bottom-left-radius: 12px !important;
     padding-left: 8px !important;
-    padding-right: 0 !important;
+    padding-right: 4px !important;
+}
+
+body a.tag:is(${tagLinks})::first-letter {
+    margin-right: 0.15em !important;
 }
 
 body .cm-hashtag-end:is(${tagClasses}) {
@@ -149,23 +189,23 @@ body :is(.cm-hashtag:is(${tagClasses}), .tag:is(${tagClasses}), ${tagLinks}):hov
 }
 `);
 
-        // 4. Per-Tag Variable Binding (In-Note & Reading View)
-        for (let i = 0, len = tagEntries.length; i < len; i++) {
-            const [tag, hex] = tagEntries[i];
-            const rgb = hexToRgbObj(hex);
-            if (!rgb) continue;
-            const rgbStr = `${rgb.r}, ${rgb.g}, ${rgb.b}`;
+            // 4. Per-Tag Variable Binding (In-Note & Reading View)
+            for (let i = 0, len = inNoteEntries.length; i < len; i++) {
+                const [tag, hex] = inNoteEntries[i];
+                const rgb = hexToRgbObj(hex);
+                if (!rgb) continue;
+                const rgbStr = `${rgb.r}, ${rgb.g}, ${rgb.b}`;
 
-            const adjust = context.isDark
-                ? Math.max(context.brightnessAmount, 0)
-                : (context.brightnessAmount === 0 ? -0.5 : context.brightnessAmount);
-            const t = (context.isDark && adjust === 0) ? hex : `rgb(${adjustBrightnessRgb(rgbStr, adjust)})`;
+                const adjust = context.isDark
+                    ? Math.max(context.brightnessAmount, 0)
+                    : (context.brightnessAmount === 0 ? -0.5 : context.brightnessAmount);
+                const t = (context.isDark && adjust === 0) ? hex : `rgb(${adjustBrightnessRgb(rgbStr, adjust)})`;
 
-            const cmClass = `.cm-tag-${tag.replace(/\//g, '')}`;
+                const cleanCm = tag.replace(/\//g, '');
 
-            chunks.push(`
+                chunks.push(`
 /* Tag #${tag} */
-body :is(${cmClass}, .tag${cmClass}, .markdown-rendered a.tag[href="#${tag}" i]) {
+body :is([class~="cm-tag-${cleanCm}" i], .tag[class~="cm-tag-${cleanCm}" i], a.tag[href="#${tag}" i]) {
     --cf-tag-bg: rgba(${rgbStr}, 0.2);
     --cf-tag-color: ${t};
     --cf-tag-border: rgba(${rgbStr}, 0.3);
@@ -174,11 +214,24 @@ body :is(${cmClass}, .tag${cmClass}, .markdown-rendered a.tag[href="#${tag}" i])
     color: var(--cf-tag-color) !important;
 }
 `);
+            }
+        }
 
-            // 5. Sidebar Tag Pane Per-Tag Rule
-            if (tagPaneEnabled) {
+        // 5. Sidebar Tag Pane Per-Tag Rule
+        if (tagPaneEnabled) {
+            for (let i = 0, len = tagEntries.length; i < len; i++) {
+                const [tag, hex] = tagEntries[i];
+                const rgb = hexToRgbObj(hex);
+                if (!rgb) continue;
+                const rgbStr = `${rgb.r}, ${rgb.g}, ${rgb.b}`;
+
+                const adjust = context.isDark
+                    ? Math.max(context.brightnessAmount, 0)
+                    : (context.brightnessAmount === 0 ? -0.5 : context.brightnessAmount);
+                const t = (context.isDark && adjust === 0) ? hex : `rgb(${adjustBrightnessRgb(rgbStr, adjust)})`;
+
                 chunks.push(`
-.workspace-leaf-content[data-type="tag"] .tree-item-self:is([data-tag-name="${tag}" i], [data-tag-name^="${tag}/" i]) {
+:is(.workspace-leaf-content[data-type="tag"], .tag-container) .tree-item-self:is([data-tag-name="${tag}" i], [data-tag-name^="${tag}/" i]) {
     --cf-tag-pane-bg: rgba(${rgbStr}, 0.12);
     --cf-tag-pane-color: ${t};
     --cf-tag-pane-flair-bg: rgba(${rgbStr}, 0.22);
@@ -191,36 +244,38 @@ body :is(${cmClass}, .tag${cmClass}, .markdown-rendered a.tag[href="#${tag}" i])
 }
 `);
             }
-        }
 
-        // 6. Sidebar Tag Pane Shared Structural Rules
-        if (tagPaneEnabled) {
+            // 6. Sidebar Tag Pane Shared Structural Rules
             const tagPaneSels = tagEntries.map(([t]) => `[data-tag-name="${t}" i], [data-tag-name^="${t}/" i]`).join(', ');
 
             chunks.push(`
 /* Tag Pane Shared Structural Styling */
-.workspace-leaf-content[data-type="tag"] .tree-item-self:is(${tagPaneSels}) {
+:is(.workspace-leaf-content[data-type="tag"], .tag-container) .tree-item-self:is(${tagPaneSels}) {
     margin-top: 2px !important;
     margin-bottom: 2px !important;
     border-radius: 6px !important;
     transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.workspace-leaf-content[data-type="tag"] .tree-item-self:is(${tagPaneSels}) .tree-item-inner-text {
+:is(.workspace-leaf-content[data-type="tag"], .tag-container) .tree-item-self:is(${tagPaneSels}) .tree-item-inner-text {
     color: var(--cf-tag-pane-color) !important;
 }
 
-.workspace-leaf-content[data-type="tag"] .tree-item-self:is(${tagPaneSels}) .tree-item-flair {
+:is(.workspace-leaf-content[data-type="tag"], .tag-container) .tree-item-self:is(${tagPaneSels}) .tree-item-flair {
     background-color: var(--cf-tag-pane-flair-bg) !important;
     color: var(--cf-tag-pane-color) !important;
     border-radius: 10px !important;
 }
 
-.workspace-leaf-content[data-type="tag"] .tree-item-self:is(${tagPaneSels}):hover {
+:is(.workspace-leaf-content[data-type="tag"], .tag-container) .tree-item-self:is(${tagPaneSels}) .collapse-icon {
+    color: var(--cf-tag-pane-color) !important;
+}
+
+:is(.workspace-leaf-content[data-type="tag"], .tag-container) .tree-item-self:is(${tagPaneSels}):hover {
     background-color: var(--cf-tag-pane-hover-bg) !important;
 }
 
-.workspace-leaf-content[data-type="tag"] .tree-item-self:is(${tagPaneSels}):is(.is-active, .cf-is-active) {
+:is(.workspace-leaf-content[data-type="tag"], .tag-container) .tree-item-self:is(${tagPaneSels}):is(.is-active, .cf-is-active) {
     background-color: var(--cf-tag-pane-active-bg) !important;
     box-shadow: inset 0 0 0 1px var(--cf-tag-pane-glow), 0 0 8px var(--cf-tag-pane-glow-soft) !important;
 }

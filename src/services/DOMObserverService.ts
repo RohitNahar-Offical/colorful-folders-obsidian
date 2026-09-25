@@ -31,7 +31,11 @@ export class DOMObserverService {
      * Runs in O(T) without DOM querying or main thread blocking.
      */
     public syncTagPaneDataset(): void {
-        if (!this.plugin.settings.tagSyncEnabled || this.plugin.settings.tagPaneSyncEnabled === false) return;
+        const hasRules = Boolean(this.plugin.settings.tagSyncRules && this.plugin.settings.tagSyncRules.trim().length > 0);
+        const tagPaneEnabled = this.plugin.settings.tagPaneSyncEnabled !== false;
+        if (!tagPaneEnabled) return;
+        if (!this.plugin.settings.tagSyncEnabled && !hasRules && !this.plugin.settings.tagSyncMatchFolders) return;
+
         const leaves = this.plugin.app.workspace.getLeavesOfType('tag');
         for (let i = 0, len = leaves.length; i < len; i++) {
             const view = leaves[i].view as unknown as { tagDoms?: Record<string, { selfEl?: HTMLElement }> };
@@ -40,7 +44,8 @@ export class DOMObserverService {
                 for (const tag in tagDoms) {
                     const dom = tagDoms[tag];
                     if (dom?.selfEl && !dom.selfEl.hasAttribute('data-tag-name')) {
-                        dom.selfEl.setAttribute('data-tag-name', tag.startsWith('#') ? tag.slice(1).toLowerCase() : tag.toLowerCase());
+                        const cleanTag = tag.replace(/^#+/, '').trim().toLowerCase();
+                        dom.selfEl.setAttribute('data-tag-name', cleanTag);
                     }
                 }
             }

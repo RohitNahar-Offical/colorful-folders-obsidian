@@ -352,40 +352,47 @@ The **Tag Color Sync** feature injects CSS rules that colorize `#tags` in Live P
 ### CSS Variables Exposed by Tag Color Sync
 ```css
 /* Editor & Reading View tag rules */
-.cm-hashtag.cm-tag-mytag, .markdown-rendered a.tag[href="#mytag"] {
+body :is([class~="cm-tag-mytag" i], a.tag[href="#mytag" i]) {
     --cf-tag-bg: rgba(r, g, b, 0.2);
     --cf-tag-color: #hexcolor;
+    --cf-tag-border: rgba(r, g, b, 0.3);
+    --cf-tag-hover-bg: rgba(r, g, b, 0.3);
 }
 
-/* Sidebar Tag Pane (.tag-container) variables */
-.workspace-leaf-content[data-type="tag"] .tree-item-self[data-tag-name="mytag"] {
+/* Sidebar Tag Pane (:is(.workspace-leaf-content[data-type="tag"], .tag-container)) variables */
+:is(.workspace-leaf-content[data-type="tag"], .tag-container) .tree-item-self[data-tag-name="mytag" i] {
     --cf-tag-pane-bg: rgba(r, g, b, 0.12);
     --cf-tag-pane-color: #hexcolor;
     --cf-tag-pane-flair-bg: rgba(r, g, b, 0.22);
-    --cf-tag-pane-hover-bg: rgba(r, g, b, 0.18);
-    --cf-tag-pane-active-bg: rgba(r, g, b, 0.26);
-    --cf-tag-pane-glow: rgba(r, g, b, 0.35);
-    --cf-tag-pane-glow-soft: rgba(r, g, b, 0.18);
+    --cf-tag-pane-hover-bg: rgba(r, g, b, 0.20);
+    --cf-tag-pane-active-bg: rgba(r, g, b, 0.30);
+    --cf-tag-pane-glow: rgba(r, g, b, 0.50);
+    --cf-tag-pane-glow-soft: rgba(r, g, b, 0.25);
 }
 ```
 
+### In-Note Hashtag Pill Structure & Spacing
+In Live Preview, hashtag pills consist of two CodeMirror span tokens:
+- `.cm-hashtag-begin`: Contains the `#` character. Formatted with `padding-left: 8px; padding-right: 4px;` and left-side pill border radii (`12px`).
+- `.cm-hashtag-end`: Contains the tag text label. Formatted with `padding-left: 0; padding-right: 8px;` and right-side pill border radii (`12px`).
+In Reading View, `a.tag::first-letter` applies `margin-right: 0.15em` to ensure balanced spacing between `#` and the label across all view modes.
+
 ### Customization Examples
 ```css
-/* Make ALL synced tags use a modern pill shape in the editor */
-body .cm-s-obsidian .cm-hashtag[class*="cm-tag-"] {
-    border-radius: 999px !important;
-    padding: 1px 8px !important;
-    font-size: 0.85em !important;
+/* Adjust spacing between '#' and text in Live Preview */
+body .cm-hashtag-begin[class*="cm-tag-"] {
+    padding-right: 6px !important;
 }
 
 /* Override a specific tag's color without touching settings */
-body .markdown-rendered a.tag[href="#projects"] {
+body a.tag[href="#projects" i],
+body [class~="cm-tag-projects" i] {
     --cf-tag-bg: rgba(255, 100, 0, 0.2) !important;
     --cf-tag-color: #ff6400 !important;
 }
 
 /* Custom flair count badge in the Sidebar Tag Pane */
-body .workspace-leaf-content[data-type="tag"] .tree-item-self .tree-item-flair {
+body :is(.workspace-leaf-content[data-type="tag"], .tag-container) .tree-item-self .tree-item-flair {
     font-weight: 600 !important;
     padding: 2px 7px !important;
     font-size: 0.75em !important;
@@ -393,14 +400,19 @@ body .workspace-leaf-content[data-type="tag"] .tree-item-self .tree-item-flair {
 ```
 
 ### Custom Tag Rules Format (in Settings)
-Go to **Integrations → Tag Color Sync → Custom tag rules** and add lines in the format:
+Go to **Features → Tag Color Sync → Active Rules** (or define in `tagSyncRules`). Syntax options include:
 ```
+# Flexible separators (= or :)
 tagname = #hexcolor
-projects = #ff6400
-areas = #00aaff
+tagname: #hexcolor
+
+# Optional leading # and optional hex hash
+#projects = #ff6400
+areas = 00aaff
 work/tasks = #10b981
+café = #e06c75
 ```
-Rules here take priority over automatic folder-name matching.
+Custom tag rules are fully decoupled from folder matching and will always evaluate and apply across notes and the sidebar Tag Pane.
 
 ---
 

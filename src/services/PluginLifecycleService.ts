@@ -48,6 +48,7 @@ export class PluginLifecycleService {
             void this.plugin.generateStyles();
             this.plugin.getAllExplorerContainers().forEach((c) => this.plugin.domObserverService.tagExplorerItems(c));
             this.plugin.domObserverService.initDividerObserver();
+            this.plugin.domObserverService.syncTagPaneDataset();
             this.plugin.dividerManager.syncDividers();
 
             // Defer disk scanning and cache prewarming to post-startup idle time (~1s delay)

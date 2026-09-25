@@ -140,7 +140,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     customActiveText: "",
     pathLineThickness: 3,
     wrapMetadata: false,
-    tagSyncEnabled: false,
+    tagSyncEnabled: true,
     tagSyncMatchFolders: true,
     tagSyncRules: "",
     tagPaneSyncEnabled: true,

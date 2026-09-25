@@ -636,6 +636,9 @@ export default class ColorfulFoldersPlugin
     }
 
     this.settings = Object.assign({} as ColorfulFoldersSettings, DEFAULT_SETTINGS, data, { customIcons: {} });
+    if (this.settings.tagSyncEnabled === undefined) {
+      this.settings.tagSyncEnabled = true;
+    }
     if (Array.isArray(this.settings.iconPackPriorityOrder) && this.settings.iconPackPriorityOrder.includes('emoji')) {
       if (this.settings.iconPackPriorityOrder[this.settings.iconPackPriorityOrder.length - 1] !== 'emoji') {
         this.settings.iconPackPriorityOrder = this.settings.iconPackPriorityOrder.filter(p => p !== 'emoji').concat(['emoji']);
@@ -974,6 +977,7 @@ export default class ColorfulFoldersPlugin
       this.adoptedStyleSheetService.updateStyles(css);
       this.getAllExplorerContainers().forEach((c) => this.domObserverService.tagExplorerItems(c));
       this.animatedIconService?.syncAnimatedIcons();
+      this.domObserverService.syncTagPaneDataset();
       // Sync folder colors to Graph View groups if the feature is enabled
       if (this.settings.graphColorSync && !this.isDragging) {
         void GraphColorSync.syncGraphColors(this);
