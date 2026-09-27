@@ -26,20 +26,6 @@ Colorful Folders automatically applies premium color palettes, smart icons, and 
 
 ---
 
-## 🚀 5.0.5 - Animated Icon Scroll Recovery, Instant Cold-Start & Notebook Navigator Isolation
-
----
-### 🎬 1. Live Animated Icon Scroll Recovery & Instant Startup
-* **Continuous Scroll Playback**: Animated icons no longer freeze when scrolling through large file trees. An `IntersectionObserver` automatically restarts SMIL animation timelines cleanly from frame 0 when icons scroll back into view.
-* **Instant Cold-Start Appearance**: Fixed animated icons failing to appear upon Obsidian startup or plugin reloads due to premature cache evaluation.
-* **Custom Color Inheritance**: Custom icon colors are now cleanly passed to live animated SVGs via CSS custom properties (`--cf-animated-icon-color`).
-
-### ⚡ 2. Notebook Navigator Isolation & Cold-Start Optimization
-* **Clean Selector Isolation**: Decoupled Notebook Navigator integration styles and excluded virtual containers from divider observers to eliminate cold-start loading clashes.
-* **Security Hardened**: Fully sanitized SVG DOM parsing and escaped CSS attribute selectors to resolve all CodeQL security alerts.
-
----
-
 ## ✨ Core Features
 
 ### 🎨 Vivid Color & Visual Hierarchy
@@ -52,13 +38,12 @@ Colorful Folders automatically applies premium color palettes, smart icons, and 
 
 ### 🤖 Smart Iconography & Custom Packs
 
-* **Live Animated Icons:** Full support for animated SVG icons that play real-time animations directly in your File Explorer sidebar.
-* **Auto-Icon Engine:** Automatically injects high-fidelity icons based on item names (e.g., *Journal* -> 📅, *Finance* -> 💰).
-* **Locked-In Manual Priority:** Explicit manual icon choices permanently override auto-icons and title predictions.
-* **Local Icon Pack Support:** Drop any custom SVG icon pack into `.obsidian/icons` or `.obsidian/plugins/colorful-folders/icons` for instant offline loading.
-* **Custom Open/Closed Icons:** Define custom global defaults or per-item overrides for open and closed folder states.
-* **Built-in Offline Libraries:** Includes Material, FontAwesome, Lucide, Tabler, Simple Icons, and Vibrant packs for instant offline rendering.
-* **Universal 18px Sizing:** All icons are standardized to a professional 18px baseline with perfect vertical centering.
+* **Live Animated Icons:** Real-time animated SVG icons in your sidebar that play smoothly without freezing while scrolling and inherit custom folder colors.
+* **Smart Auto-Icons:** Automatically matches relevant icons to your folder and file names (e.g., *Journal* -> 📅, *Finance* -> 💰).
+* **Manual Override Priority:** Pin your preferred icons on any item to permanently override automatic suggestions.
+* **Custom & Offline Icon Packs:** Built-in offline libraries (Lucide, FontAwesome, Tabler, Material, Simple Icons) plus custom pack support via `.obsidian/icons`.
+* **Open & Closed States:** Set distinct icons for expanded versus collapsed folders globally or per folder.
+* **Pixel-Perfect Alignment:** All icons are automatically standardized and vertically centered with clean 18px baseline sizing.
 
 ### 📁 Advanced Customization & Typography
 
@@ -80,7 +65,7 @@ Colorful Folders automatically applies premium color palettes, smart icons, and 
 * **Custom Tag Rules:** Manually map specific tags to any hex color or folder path (e.g., `garden/plant = #5ebd8e`).
 * **Outline & Heading Sync:** Match the Outline Pane table of contents and in-note headings (H1–H6) to your active color palette with glow highlights.
 * **Graph View Sync:** Folder colors sync directly into Obsidian's built-in Graph View as color groups.
-* **Notebook Navigator Integration:** Seamless style synchronization with Notebook Navigator.
+* **Notebook Navigator Integration:** Cleanly isolated selector styles and virtual container exclusions ensure zero cold-start loading clashes with Notebook Navigator.
 
 ### 🕵️ Stealth & Privacy Engine
 
@@ -91,6 +76,7 @@ Colorful Folders automatically applies premium color palettes, smart icons, and 
 ### 🛡️ Stability & Performance Engine
 
 * **Zero-DOM Engine:** High-performance `adoptedStyleSheets` engine with zero GPU lag, even in 10,000+ note vaults.
+* **Security Hardened:** Fully sanitized SVG DOM parsing and escaped CSS attribute selectors for maximum vault safety.
 * **Cross-Platform:** Flawless performance across Windows, macOS, Linux, Android, and iOS.
 * **Strict Network Privacy:** 100% private offline styling engine with zero user data transmission.
 
