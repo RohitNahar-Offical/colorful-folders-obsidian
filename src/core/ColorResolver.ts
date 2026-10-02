@@ -80,6 +80,12 @@ export class ColorResolver {
         if (mode === "heatmap") {
             if (!heatmapMtime) return palette[len - 1];
             const diffDays = (now - heatmapMtime) / 86400000;
+            // Palettes of up to six colors map in order, hottest first:
+            // today, 3 days, a week, 15 days, 30 days, older.
+            if (len <= 6) {
+                const level = diffDays <= 1 ? 0 : diffDays <= 3 ? 1 : diffDays <= 7 ? 2 : diffDays <= 15 ? 3 : diffDays <= 30 ? 4 : 5;
+                return palette[Math.min(level, len - 1)];
+            }
             if (diffDays <= 1) return palette[0];
             if (diffDays <= 3) return palette[Math.min(2, len - 1)];
             if (diffDays <= 7) return palette[Math.min(7, len - 1)];

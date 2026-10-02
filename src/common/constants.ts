@@ -77,6 +77,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     paletteLight: "Tailwind UI",
     paletteDark: "Pastel Dreams",
     customPalette: "",
+    palettePairs: {},
     colorMode: "cycle",
     exclusionList: "",
     outlineOnly: false,

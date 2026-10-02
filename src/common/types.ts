@@ -46,6 +46,8 @@ export interface ColorfulFoldersSettings {
     paletteDark: string;
     palette?: string;
     customPalette: string;
+    /** Text/icon color paired with each palette color, keyed by lowercase hex. */
+    palettePairs?: Record<string, { text?: string; icon?: string }>;
     colorMode: string;
     exclusionList: string;
     outlineOnly: boolean;

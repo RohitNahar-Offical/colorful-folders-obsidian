@@ -196,6 +196,10 @@ export class GeneralSettingSection extends SettingSection {
                 let val = hexInp.value.trim();
                 if (!val.startsWith('#')) val = '#' + val;
                 if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+                    const pp = this.plugin.settings.palettePairs;
+                    if (pp && pp[colors[index].toLowerCase()] && !pp[val.toLowerCase()]) {
+                        pp[val.toLowerCase()] = pp[colors[index].toLowerCase()];
+                    }
                     colors[index] = val;
                     swatch.setCssStyles({ backgroundColor: val });
                     savePaletteDebounced();
@@ -203,6 +207,46 @@ export class GeneralSettingSection extends SettingSection {
                     hexInp.value = colors[index];
                 }
             };
+
+            // Paired text / icon colors for this palette color
+            const pairs = (this.plugin.settings.palettePairs ??= {});
+            const makePairSwatch = (kind: 'text' | 'icon', label: string) => {
+                const key = () => colors[index].toLowerCase();
+                const sw = row.createDiv({ text: kind === 'text' ? 'Aa' : '◆' });
+                sw.setAttribute('title', label);
+                const paint = () => {
+                    const val = pairs[key()]?.[kind];
+                    sw.setCssStyles({
+                        width: '28px', height: '28px', borderRadius: '6px', flexShrink: '0',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '0.8em', fontWeight: '700', cursor: 'pointer',
+                        border: val ? '1px solid var(--background-modifier-border)' : '1px dashed var(--background-modifier-border)',
+                        backgroundColor: colors[index],
+                        color: val || 'var(--text-faint)'
+                    });
+                };
+                paint();
+                sw.addEventListener('click', () => {
+                    pickerSide.empty();
+                    pickerSide.setCssStyles({ display: 'block', padding: '16px' });
+                    pickerSide.createDiv({ text: label }).setCssStyles({ marginBottom: '8px', fontWeight: '600' });
+                    const wrap = pickerSide.createDiv();
+                    createVisualColorPicker(wrap, pairs[key()]?.[kind] || '#ffffff', (newHex) => {
+                        pairs[key()] = { ...(pairs[key()] ?? {}), [kind]: newHex };
+                        paint();
+                        savePaletteDebounced();
+                    }, { showAlpha: false });
+                    const clear = pickerSide.createEl('button', { text: 'Use automatic color' });
+                    clear.setCssStyles({ marginTop: '8px' });
+                    clear.onclick = () => {
+                        if (pairs[key()]) { delete pairs[key()][kind]; }
+                        paint();
+                        savePaletteDebounced();
+                    };
+                });
+            };
+            makePairSwatch('text', 'Text color for this palette color');
+            makePairSwatch('icon', 'Icon color for this palette color');
 
             const delBtn = row.createEl('button', { text: '×' });
             delBtn.setCssStyles({

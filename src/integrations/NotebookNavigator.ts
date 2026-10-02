@@ -263,6 +263,8 @@ export class NotebookNavigatorIntegration {
             const finalBgAlpha = outlineOnly ? 0 : bgAlpha;
             const finalBorderAlpha = outlineOnly ? 0.9 : 0.8;
             grouper.add(`
+                --cf-color: ${color.hex};
+                --cf-color-rgb: ${color.rgb};
                 background-color: rgba(${color.rgb}, ${finalBgAlpha}) !important;
                 border-left: ${nnThick}px solid rgba(${color.rgb}, ${finalBorderAlpha}) !important;
                 border-radius: 6px !important;
@@ -273,6 +275,8 @@ export class NotebookNavigatorIntegration {
         } else if (shouldColor) {
             const fileBg = outlineOnly ? Math.max(bgAlpha, 0.12) : Math.max(bgAlpha, 0.18);
             grouper.add(`
+                --cf-color: ${color.hex};
+                --cf-color-rgb: ${color.rgb};
                 background-color: rgba(${color.rgb}, ${fileBg}) !important;
                 border-left: ${nnThick}px solid rgba(${color.rgb}, 0.6) !important;
                 opacity: 1.0 !important;
