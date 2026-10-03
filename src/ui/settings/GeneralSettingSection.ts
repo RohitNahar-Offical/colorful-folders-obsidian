@@ -229,9 +229,10 @@ export class GeneralSettingSection extends SettingSection {
                             dayInp.value = String(days[index]);
                         }
                     };
-                    band.createSpan({ text: 'days' });
+                    band.createSpan({ text: days[index] === 1 ? 'day' : 'days' });
                 } else {
-                    band.createSpan({ text: `older than ${days[Math.min(index, days.length) - 1] ?? 0} days` });
+                    const lastDay = days[Math.min(index, days.length) - 1] ?? 0;
+                    band.createSpan({ text: `older than ${lastDay} ${lastDay === 1 ? 'day' : 'days'}` });
                 }
             }
 

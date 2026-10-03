@@ -686,7 +686,8 @@ export class StyleGenerator {
             if (palettePair?.text && !customStyle?.textColor && !inheritedStyle?.textColor) {
                 folderStyles.t = palettePair.text;
             }
-            const pairedIconColor = customStyle?.iconColor || inheritedStyle?.iconColor || palettePair?.icon || null;
+            // Icons default to the same automatic color as the text, so they match.
+            const pairedIconColor = customStyle?.iconColor || inheritedStyle?.iconColor || palettePair?.icon || folderStyles.t;
 
             const isBold = customStyle?.isBold !== undefined ? customStyle.isBold : (inheritedStyle?.isBold !== undefined ? inheritedStyle.isBold : true);
             const isItalic = customStyle?.isItalic !== undefined ? customStyle.isItalic : (inheritedStyle?.isItalic !== undefined ? inheritedStyle.isItalic : false);
@@ -761,7 +762,7 @@ export class StyleGenerator {
 
             /* Notebook Navigator Folder Integration (Native-Bridge Architecture) */
             /* Only generated when notebookNavigatorSupport is explicitly enabled */
-            const effFolderIconColor = pairedIconColor || color.hex || folderStyles.t;
+            const effFolderIconColor = pairedIconColor;
 
             if (NotebookNavigatorIntegration.isSupported(this.settings)) {
                 const isEmoji = this.plugin.iconManager.isEmojiIcon(folderIconId);
