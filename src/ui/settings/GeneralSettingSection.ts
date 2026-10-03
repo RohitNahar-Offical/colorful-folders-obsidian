@@ -744,6 +744,34 @@ export class GeneralSettingSection extends SettingSection {
                 this.plugin.generateStylesDebounced();
             }));
 
+        const addLayoutSlider = (name: string, desc: string, key: 'nnRowBorder' | 'rowSpacing' | 'folderTextWeight', min: number, max: number, step: number) => {
+            let comp: obsidian.SliderComponent;
+            new obsidian.Setting(typeCard)
+                .setName(name)
+                .setDesc(desc)
+                .addSlider(slider => {
+                    comp = slider;
+                    slider.setLimits(min, max, step)
+                        .setValue((this.plugin.settings[key] as number | undefined) ?? (DEFAULT_SETTINGS[key] as number))
+                        .setDynamicTooltip()
+                        .onChange(async (value) => {
+                            this.plugin.settings[key] = value;
+                            await this.plugin.saveSettings();
+                            this.plugin.generateStylesDebounced();
+                        });
+                    return slider;
+                })
+                .addExtraButton(cb => cb.setIcon("reset").setTooltip(t("common.reset_to_default")).onClick(async () => {
+                    this.plugin.settings[key] = DEFAULT_SETTINGS[key] as number;
+                    comp.setValue(DEFAULT_SETTINGS[key] as number);
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStylesDebounced();
+                }));
+        };
+        addLayoutSlider('Row accent border', 'Width of the colored left border on Notebook Navigator rows. -1 = automatic, 0 = none.', 'nnRowBorder', -1, 8, 1);
+        addLayoutSlider('Row spacing', 'Gap below and beside each colored row in Notebook Navigator (default 2px).', 'rowSpacing', 0, 8, 1);
+        addLayoutSlider('Folder text weight', 'Boldness of colored folder names (400 regular, 700 bold, default 800).', 'folderTextWeight', 300, 900, 100);
+
         let sliderComp_pathLineThickness: obsidian.SliderComponent;
         new obsidian.Setting(typeCard)
             .setName(t("settings.path_line_thickness.name"))

@@ -365,7 +365,7 @@ export class StyleGenerator {
 
                 let fileTextCss = `
                     color: var(--cf-file-color, ${textNative}) !important;
-                    font-weight: ${isBold ? '800' : 'normal'} !important;
+                    font-weight: ${isBold ? (this.settings.folderTextWeight ?? 800) : 'normal'} !important;
                     font-style: ${isItalic ? 'italic' : 'normal'} !important;
                     ${extraTypographyCssFiles}
                 `;
@@ -694,7 +694,7 @@ export class StyleGenerator {
 
             let textCss = `
                 color: var(--cf-folder-color, ${folderStyles.t}) !important;
-                font-weight: ${isBold ? '800' : 'normal'} !important;
+                font-weight: ${isBold ? (this.settings.folderTextWeight ?? 800) : 'normal'} !important;
                 font-style: ${isItalic ? 'italic' : 'normal'} !important;
                 ${extraTypographyCssFolders}
             `;
@@ -736,6 +736,7 @@ export class StyleGenerator {
             grouper.add(`
                 --cf-color: ${color.hex};
                 --cf-color-rgb: ${color.rgb};
+                --cf-colored: 1;
                 background-color: var(--cf-folder-bg, ${folderStyles.b}) !important;
                 --nav-item-background: var(--cf-folder-bg, ${folderStyles.b});
                 --cf-selection-bg: rgba(${color.rgb}, ${Math.min(1.0, adjustedOp + 0.15)});

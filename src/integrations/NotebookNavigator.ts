@@ -25,6 +25,9 @@ export const NN_SELECTORS = {
 };
 
 export class NotebookNavigatorIntegration {
+    /** Row layout, set from settings on load/save. */
+    static layout = { border: -1, radius: 6, spacing: 2, weight: 800 };
+
     static isSupported(settings: ColorfulFoldersSettings): boolean {
         return !!settings.notebookNavigatorSupport;
     }
@@ -178,7 +181,8 @@ export class NotebookNavigatorIntegration {
         effIconW: string = '1.3em',
         activeGlow: boolean = true
     ): void {
-        const nnThick = baseThick + 0.5; // Scaled for NN visibility
+        const L = NotebookNavigatorIntegration.layout;
+        const nnThick = L.border >= 0 ? L.border : baseThick + 0.5; // Scaled for NN visibility
         const activeThick = baseThick + 2.0;
         const safePath = safeEscape(path);
         const baseSels = isFolder ? this.getScopedNavSelectors(path) : [this.getScopedFileSelector(path)];
@@ -264,28 +268,30 @@ export class NotebookNavigatorIntegration {
             const finalBorderAlpha = outlineOnly ? 0.9 : 0.8;
             grouper.add(`
                 --cf-color: ${color.hex};
+                --cf-colored: 1;
                 --cf-color-rgb: ${color.rgb};
                 background-color: rgba(${color.rgb}, ${finalBgAlpha}) !important;
                 border-left: ${nnThick}px solid rgba(${color.rgb}, ${finalBorderAlpha}) !important;
-                border-radius: 6px !important;
+                border-radius: ${L.radius}px !important;
                 ${tintOp > 0 ? `background-blend-mode: overlay;` : ''}
                 transition: background-color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
-                margin-bottom: 2px !important;
+                margin-bottom: ${L.spacing}px !important;
             `, baseSels, `nnFolderBg_${color.hex}_${finalBgAlpha}_${finalBorderAlpha}_${tintOp}`);
         } else if (shouldColor) {
             const fileBg = outlineOnly ? Math.max(bgAlpha, 0.12) : Math.max(bgAlpha, 0.18);
             grouper.add(`
                 --cf-color: ${color.hex};
+                --cf-colored: 1;
                 --cf-color-rgb: ${color.rgb};
                 background-color: rgba(${color.rgb}, ${fileBg}) !important;
                 border-left: ${nnThick}px solid rgba(${color.rgb}, 0.6) !important;
                 opacity: 1.0 !important;
                 color: ${textCol} !important;
-                font-weight: ${isBold ? 'bold' : 'normal'} !important;
+                font-weight: ${isBold ? L.weight : 'normal'} !important;
                 font-style: ${isItalic ? 'italic' : 'normal'} !important;
-                border-radius: 6px;
+                border-radius: ${L.radius}px;
                 transition: background-color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, color 0.2s ease !important;
-                margin-bottom: 2px !important;
+                margin-bottom: ${L.spacing}px !important;
             `, baseSels, `nnFileBg_${color.hex}_${fileBg}_${textCol}_${isBold}_${isItalic}`);
         }
 
@@ -293,12 +299,12 @@ export class NotebookNavigatorIntegration {
             grouper.add(`
                 border-left: ${outlineOnly ? 0 : nnThick}px solid rgba(${color.rgb}, ${outlineOnly ? 0 : tintOp}) !important;
                 ${!outlineOnly ? 'padding-left: 4px !important;' : ''}
-                margin-left: 2px !important;
+                margin-left: ${L.spacing}px !important;
             `, baseSels.map(b => `body ${b}`), `nnBase_${color.hex}_${outlineOnly}_${tintOp}`);
 
             grouper.add(`
                 color: ${textCol} !important;
-                ${isBold ? 'font-weight: bold !important;' : ''}
+                ${isBold ? `font-weight: ${L.weight} !important;` : ''}
                 ${isItalic ? 'font-style: italic !important;' : ''}
             `, baseSels.flatMap(b => [`body ${b} ${nameSel}`, `body ${b} ${countSel}`]), `nnName_${textCol}_${isBold}_${isItalic}`);
         }
@@ -317,7 +323,7 @@ export class NotebookNavigatorIntegration {
         
         grouper.add(`
             color: ${activeText} !important;
-            ${isBold ? 'font-weight: bold !important;' : ''}
+            ${isBold ? `font-weight: ${L.weight} !important;` : ''}
         `, [`${activeSel} ${nameSel}`], `nnActiveName_${activeText}_${isBold}`);
         
         grouper.add(`

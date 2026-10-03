@@ -658,6 +658,7 @@ export default class ColorfulFoldersPlugin
         .filter((s) => s.length > 0)
     );
     ColorResolver.heatmapDays = this.settings.heatmapDays?.length ? this.settings.heatmapDays : [1, 3, 7, 15, 30];
+    NotebookNavigatorIntegration.layout = { border: this.settings.nnRowBorder ?? -1, radius: this.settings.folderBorderRadius ?? 6, spacing: this.settings.rowSpacing ?? 2, weight: this.settings.folderTextWeight ?? 800 };
   }
 
   public syncCustomFolderColorsMap(): void {
@@ -696,6 +697,7 @@ export default class ColorfulFoldersPlugin
 
   async saveSettings() {
     ColorResolver.heatmapDays = this.settings.heatmapDays?.length ? this.settings.heatmapDays : [1, 3, 7, 15, 30];
+    NotebookNavigatorIntegration.layout = { border: this.settings.nnRowBorder ?? -1, radius: this.settings.folderBorderRadius ?? 6, spacing: this.settings.rowSpacing ?? 2, weight: this.settings.folderTextWeight ?? 800 };
     this.syncCustomFolderColorsMap();
     const iconRulesChanged = (this.settings.customIconRules || '') !== this._lastIconRulesKey;
     const currentCustomIcons = this.getCustomIconsMap();
