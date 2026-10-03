@@ -59,6 +59,8 @@ export function getFastFolderScopeDepth(path: string, isFile: boolean): number {
 
 export class ColorResolver {
     private static textColorCache = new LRUCache<string, string>(1024);
+    /** Heatmap age limits (days) for short palettes; set from settings. */
+    public static heatmapDays: number[] = [1, 3, 7, 15, 30];
 
     public static clearCache(): void {
         this.textColorCache.clear();
@@ -80,10 +82,12 @@ export class ColorResolver {
         if (mode === "heatmap") {
             if (!heatmapMtime) return palette[len - 1];
             const diffDays = (now - heatmapMtime) / 86400000;
-            // Palettes of up to six colors map in order, hottest first:
-            // today, 3 days, a week, 15 days, 30 days, older.
-            if (len <= 6) {
-                const level = diffDays <= 1 ? 0 : diffDays <= 3 ? 1 : diffDays <= 7 ? 2 : diffDays <= 15 ? 3 : diffDays <= 30 ? 4 : 5;
+            // Short palettes map in order, hottest first, using the
+            // user's age limits (default: 1, 3, 7, 15, 30 days, then older).
+            const limits = ColorResolver.heatmapDays;
+            if (len <= limits.length + 1) {
+                let level = limits.findIndex(d => diffDays <= d);
+                if (level === -1) level = limits.length;
                 return palette[Math.min(level, len - 1)];
             }
             if (diffDays <= 1) return palette[0];

@@ -48,6 +48,8 @@ export interface ColorfulFoldersSettings {
     customPalette: string;
     /** Text/icon color paired with each palette color, keyed by lowercase hex. */
     palettePairs?: Record<string, { text?: string; icon?: string }>;
+    /** Heatmap age limits in days for short palettes (color 1 = up to the first value, ..., last color = older). */
+    heatmapDays?: number[];
     colorMode: string;
     exclusionList: string;
     outlineOnly: boolean;

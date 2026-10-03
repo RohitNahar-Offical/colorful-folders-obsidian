@@ -1,5 +1,5 @@
 import { StyleResolver } from './core/StyleResolver';
-import { getCurrentPalette } from './core/ColorResolver';
+import { getCurrentPalette, ColorResolver } from './core/ColorResolver';
 import * as obsidian from "obsidian";
 import {
   ColorfulFoldersSettings,
@@ -657,6 +657,7 @@ export default class ColorfulFoldersPlugin
         .map((s) => s.trim())
         .filter((s) => s.length > 0)
     );
+    ColorResolver.heatmapDays = this.settings.heatmapDays?.length ? this.settings.heatmapDays : [1, 3, 7, 15, 30];
   }
 
   public syncCustomFolderColorsMap(): void {
@@ -694,6 +695,7 @@ export default class ColorfulFoldersPlugin
   private _lastCustomIconsRef: Record<string, string> | null = null;
 
   async saveSettings() {
+    ColorResolver.heatmapDays = this.settings.heatmapDays?.length ? this.settings.heatmapDays : [1, 3, 7, 15, 30];
     this.syncCustomFolderColorsMap();
     const iconRulesChanged = (this.settings.customIconRules || '') !== this._lastIconRulesKey;
     const currentCustomIcons = this.getCustomIconsMap();

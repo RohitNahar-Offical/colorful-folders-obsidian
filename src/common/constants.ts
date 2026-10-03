@@ -78,6 +78,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     paletteDark: "Pastel Dreams",
     customPalette: "",
     palettePairs: {},
+    heatmapDays: [1, 3, 7, 15, 30],
     colorMode: "cycle",
     exclusionList: "",
     outlineOnly: false,

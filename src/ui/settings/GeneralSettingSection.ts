@@ -208,6 +208,33 @@ export class GeneralSettingSection extends SettingSection {
                 }
             };
 
+            // Heatmap: label each color with its age band; limits are editable.
+            const days = (this.plugin.settings.heatmapDays ??= [1, 3, 7, 15, 30]);
+            if (this.plugin.settings.colorMode === 'heatmap' && colors.length <= days.length + 1) {
+                const band = row.createDiv();
+                band.setCssStyles({ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85em', color: 'var(--text-muted)', minWidth: '96px' });
+                if (index < colors.length - 1) {
+                    band.createSpan({ text: index === 0 ? 'up to' : `${days[index - 1]} to` });
+                    const dayInp = band.createEl('input', { type: 'number' });
+                    dayInp.value = String(days[index]);
+                    dayInp.min = '0';
+                    dayInp.setCssStyles({ width: '48px' });
+                    dayInp.onchange = () => {
+                        const v = Number(dayInp.value);
+                        if (Number.isFinite(v) && v >= 0) {
+                            days[index] = v;
+                            savePaletteDebounced();
+                            rebuildRows();
+                        } else {
+                            dayInp.value = String(days[index]);
+                        }
+                    };
+                    band.createSpan({ text: 'days' });
+                } else {
+                    band.createSpan({ text: `older than ${days[Math.min(index, days.length) - 1] ?? 0} days` });
+                }
+            }
+
             // Paired text / icon colors for this palette color
             const pairs = (this.plugin.settings.palettePairs ??= {});
             const makePairSwatch = (kind: 'text' | 'icon', label: string) => {
