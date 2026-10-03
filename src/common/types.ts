@@ -46,6 +46,16 @@ export interface ColorfulFoldersSettings {
     paletteDark: string;
     palette?: string;
     customPalette: string;
+    /** Text/icon color paired with each palette color, keyed by lowercase hex. */
+    palettePairs?: Record<string, { text?: string; icon?: string }>;
+    /** Heatmap age limits in days for short palettes (color 1 = up to the first value, ..., last color = older). */
+    heatmapDays?: number[];
+    /** Notebook Navigator row accent border width in px; -1 = automatic (path line thickness). */
+    nnRowBorder?: number;
+    /** Gap below and beside each colored row in Notebook Navigator, px. */
+    rowSpacing?: number;
+    /** Font weight of colored folder names (400 regular ... 900). */
+    folderTextWeight?: number;
     colorMode: string;
     exclusionList: string;
     outlineOnly: boolean;

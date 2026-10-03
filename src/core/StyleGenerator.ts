@@ -365,7 +365,7 @@ export class StyleGenerator {
 
                 let fileTextCss = `
                     color: var(--cf-file-color, ${textNative}) !important;
-                    font-weight: ${isBold ? '800' : 'normal'} !important;
+                    font-weight: ${isBold ? (this.settings.folderTextWeight ?? 800) : 'normal'} !important;
                     font-style: ${isItalic ? 'italic' : 'normal'} !important;
                     ${extraTypographyCssFiles}
                 `;
@@ -680,12 +680,21 @@ export class StyleGenerator {
                 )
             };
 
+            // Palette pairing: a palette color can carry its own text / icon color.
+            // Per-folder (custom or inherited) colors still win.
+            const palettePair = this.settings.palettePairs?.[String(color.hex).toLowerCase()];
+            if (palettePair?.text && !customStyle?.textColor && !inheritedStyle?.textColor) {
+                folderStyles.t = palettePair.text;
+            }
+            // Icons default to the same automatic color as the text, so they match.
+            const pairedIconColor = customStyle?.iconColor || inheritedStyle?.iconColor || palettePair?.icon || folderStyles.t;
+
             const isBold = customStyle?.isBold !== undefined ? customStyle.isBold : (inheritedStyle?.isBold !== undefined ? inheritedStyle.isBold : true);
             const isItalic = customStyle?.isItalic !== undefined ? customStyle.isItalic : (inheritedStyle?.isItalic !== undefined ? inheritedStyle.isItalic : false);
 
             let textCss = `
                 color: var(--cf-folder-color, ${folderStyles.t}) !important;
-                font-weight: ${isBold ? '800' : 'normal'} !important;
+                font-weight: ${isBold ? (this.settings.folderTextWeight ?? 800) : 'normal'} !important;
                 font-style: ${isItalic ? 'italic' : 'normal'} !important;
                 ${extraTypographyCssFolders}
             `;
@@ -725,6 +734,9 @@ export class StyleGenerator {
             const folderBr = customStyle?.borderRadius !== undefined ? customStyle.borderRadius : (inheritedStyle?.borderRadius !== undefined ? inheritedStyle.borderRadius : (this.settings.folderBorderRadius ?? 6));
 
             grouper.add(`
+                --cf-color: ${color.hex};
+                --cf-color-rgb: ${color.rgb};
+                --cf-colored: 1;
                 background-color: var(--cf-folder-bg, ${folderStyles.b}) !important;
                 --nav-item-background: var(--cf-folder-bg, ${folderStyles.b});
                 --cf-selection-bg: rgba(${color.rgb}, ${Math.min(1.0, adjustedOp + 0.15)});
@@ -751,7 +763,7 @@ export class StyleGenerator {
 
             /* Notebook Navigator Folder Integration (Native-Bridge Architecture) */
             /* Only generated when notebookNavigatorSupport is explicitly enabled */
-            const effFolderIconColor = customStyle?.iconColor || inheritedStyle?.iconColor || color.hex || folderStyles.t;
+            const effFolderIconColor = pairedIconColor;
 
             if (NotebookNavigatorIntegration.isSupported(this.settings)) {
                 const isEmoji = this.plugin.iconManager.isEmojiIcon(folderIconId);
@@ -765,7 +777,7 @@ export class StyleGenerator {
                     op,
                     folderStyles.t,
                     folderIconId,
-                    customStyle?.iconColor || inheritedStyle?.iconColor || null,
+                    pairedIconColor,
                     isEmoji,
                     iconSvg,
                     activeBg,

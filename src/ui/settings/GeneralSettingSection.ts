@@ -196,6 +196,10 @@ export class GeneralSettingSection extends SettingSection {
                 let val = hexInp.value.trim();
                 if (!val.startsWith('#')) val = '#' + val;
                 if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+                    const pp = this.plugin.settings.palettePairs;
+                    if (pp && pp[colors[index].toLowerCase()] && !pp[val.toLowerCase()]) {
+                        pp[val.toLowerCase()] = pp[colors[index].toLowerCase()];
+                    }
                     colors[index] = val;
                     swatch.setCssStyles({ backgroundColor: val });
                     savePaletteDebounced();
@@ -203,6 +207,74 @@ export class GeneralSettingSection extends SettingSection {
                     hexInp.value = colors[index];
                 }
             };
+
+            // Heatmap: label each color with its age band; limits are editable.
+            const days = (this.plugin.settings.heatmapDays ??= [1, 3, 7, 15, 30]);
+            if (this.plugin.settings.colorMode === 'heatmap' && colors.length <= days.length + 1) {
+                const band = row.createDiv();
+                band.setCssStyles({ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85em', color: 'var(--text-muted)', minWidth: '96px' });
+                if (index < colors.length - 1) {
+                    band.createSpan({ text: index === 0 ? 'up to' : `${days[index - 1]} to` });
+                    const dayInp = band.createEl('input', { type: 'number' });
+                    dayInp.value = String(days[index]);
+                    dayInp.min = '0';
+                    dayInp.setCssStyles({ width: '48px' });
+                    dayInp.onchange = () => {
+                        const v = Number(dayInp.value);
+                        if (Number.isFinite(v) && v >= 0) {
+                            days[index] = v;
+                            savePaletteDebounced();
+                            rebuildRows();
+                        } else {
+                            dayInp.value = String(days[index]);
+                        }
+                    };
+                    band.createSpan({ text: days[index] === 1 ? 'day' : 'days' });
+                } else {
+                    const lastDay = days[Math.min(index, days.length) - 1] ?? 0;
+                    band.createSpan({ text: `older than ${lastDay} ${lastDay === 1 ? 'day' : 'days'}` });
+                }
+            }
+
+            // Paired text / icon colors for this palette color
+            const pairs = (this.plugin.settings.palettePairs ??= {});
+            const makePairSwatch = (kind: 'text' | 'icon', label: string) => {
+                const key = () => colors[index].toLowerCase();
+                const sw = row.createDiv({ text: kind === 'text' ? 'Aa' : '◆' });
+                sw.setAttribute('title', label);
+                const paint = () => {
+                    const val = pairs[key()]?.[kind];
+                    sw.setCssStyles({
+                        width: '28px', height: '28px', borderRadius: '6px', flexShrink: '0',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '0.8em', fontWeight: '700', cursor: 'pointer',
+                        border: val ? '1px solid var(--background-modifier-border)' : '1px dashed var(--background-modifier-border)',
+                        backgroundColor: colors[index],
+                        color: val || 'var(--text-faint)'
+                    });
+                };
+                paint();
+                sw.addEventListener('click', () => {
+                    pickerSide.empty();
+                    pickerSide.setCssStyles({ display: 'block', padding: '16px' });
+                    pickerSide.createDiv({ text: label }).setCssStyles({ marginBottom: '8px', fontWeight: '600' });
+                    const wrap = pickerSide.createDiv();
+                    createVisualColorPicker(wrap, pairs[key()]?.[kind] || '#ffffff', (newHex) => {
+                        pairs[key()] = { ...(pairs[key()] ?? {}), [kind]: newHex };
+                        paint();
+                        savePaletteDebounced();
+                    }, { showAlpha: false });
+                    const clear = pickerSide.createEl('button', { text: 'Use automatic color' });
+                    clear.setCssStyles({ marginTop: '8px' });
+                    clear.onclick = () => {
+                        if (pairs[key()]) { delete pairs[key()][kind]; }
+                        paint();
+                        savePaletteDebounced();
+                    };
+                });
+            };
+            makePairSwatch('text', 'Text color for this palette color');
+            makePairSwatch('icon', 'Icon color for this palette color');
 
             const delBtn = row.createEl('button', { text: '×' });
             delBtn.setCssStyles({
@@ -671,6 +743,34 @@ export class GeneralSettingSection extends SettingSection {
                 await this.plugin.saveSettings();
                 this.plugin.generateStylesDebounced();
             }));
+
+        const addLayoutSlider = (name: string, desc: string, key: 'nnRowBorder' | 'rowSpacing' | 'folderTextWeight', min: number, max: number, step: number) => {
+            let comp: obsidian.SliderComponent;
+            new obsidian.Setting(typeCard)
+                .setName(name)
+                .setDesc(desc)
+                .addSlider(slider => {
+                    comp = slider;
+                    slider.setLimits(min, max, step)
+                        .setValue((this.plugin.settings[key] as number | undefined) ?? (DEFAULT_SETTINGS[key] as number))
+                        .setDynamicTooltip()
+                        .onChange(async (value) => {
+                            this.plugin.settings[key] = value;
+                            await this.plugin.saveSettings();
+                            this.plugin.generateStylesDebounced();
+                        });
+                    return slider;
+                })
+                .addExtraButton(cb => cb.setIcon("reset").setTooltip(t("common.reset_to_default")).onClick(async () => {
+                    this.plugin.settings[key] = DEFAULT_SETTINGS[key] as number;
+                    comp.setValue(DEFAULT_SETTINGS[key] as number);
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStylesDebounced();
+                }));
+        };
+        addLayoutSlider('Row accent border', 'Width of the colored left border on Notebook Navigator rows. -1 = automatic, 0 = none.', 'nnRowBorder', -1, 8, 1);
+        addLayoutSlider('Row spacing', 'Gap below and beside each colored row in Notebook Navigator (default 2px).', 'rowSpacing', 0, 8, 1);
+        addLayoutSlider('Folder text weight', 'Boldness of colored folder names (400 regular, 700 bold, default 800).', 'folderTextWeight', 300, 900, 100);
 
         let sliderComp_pathLineThickness: obsidian.SliderComponent;
         new obsidian.Setting(typeCard)
