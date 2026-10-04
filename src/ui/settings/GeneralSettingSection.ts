@@ -112,21 +112,16 @@ export class GeneralSettingSection extends SettingSection {
                     await applyAutoSettings();
                 }));
 
-        /* Custom colors: the heading row and the palette table share one framed group. */
-        const customColorsGroup = genCard.createDiv('cf-custom-colors-group');
-        customColorsGroup.setCssStyles({
-            marginTop: '24px',
-            padding: '0 12px 12px',
-            border: '1px solid var(--background-modifier-border)',
-            borderRadius: '8px'
-        });
-
-        new obsidian.Setting(customColorsGroup)
+        /* Custom colors: the palette table lives inside the Custom colors setting row, so both share one box. */
+        const customColorsSetting = new obsidian.Setting(genCard)
             .setName(t("settings.custom_colors.name"))
             .setDesc('Your custom palette colors. Click a swatch to pick visually, or type a hex code directly. Only active when "custom palette" is selected above.');
+        customColorsSetting.settingEl.addClass('cf-custom-colors-group');
+        customColorsSetting.settingEl.setCssStyles({ flexWrap: 'wrap', marginTop: '24px' });
 
-        const paletteBuilderContainer = customColorsGroup.createDiv('cf-palette-builder');
+        const paletteBuilderContainer = customColorsSetting.settingEl.createDiv('cf-palette-builder');
         paletteBuilderContainer.setCssStyles({
+            flexBasis: '100%',
             marginTop: '12px',
             background: 'transparent',
             padding: '0'
