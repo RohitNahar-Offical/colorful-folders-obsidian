@@ -579,8 +579,8 @@ export class FeaturesSettingSection extends SettingSection {
                     this.plugin.generateStylesDebounced();
                 }));
         };
-        addRowSlider('Row accent border', 'Width of the colored left border on rows. -1 = automatic, 0 = none.', 'nnRowBorder', -1, 8, 1);
-        addRowSlider('Row spacing', 'Gap below and beside each colored row (default 2px).', 'rowSpacing', 0, 8, 1);
+        addRowSlider(t('settings.row_border.name'), t('settings.row_border.desc'), 'nnRowBorder', -1, 8, 1);
+        addRowSlider(t('settings.row_spacing.name'), t('settings.row_spacing.desc'), 'rowSpacing', 0, 8, 1);
 
         // 📑 Outline & Headings Color Sync Card (Card 5)
         const outlineCard = this.settingTab.makeCard(containerEl, "📑", "Outline & headings color sync");

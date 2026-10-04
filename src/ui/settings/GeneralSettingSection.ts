@@ -79,8 +79,8 @@ export class GeneralSettingSection extends SettingSection {
         const heatmapOptions = genCard.createDiv('cf-heatmap-options');
         heatmapOptions.toggle(this.plugin.settings.colorMode === 'heatmap');
         new obsidian.Setting(heatmapOptions)
-            .setName('Heatmap age limits')
-            .setDesc('Days since the last edit where each color band ends, hottest first, separated by commas. Anything older gets the last color. Default 1, 3, 7, 15, 30.')
+            .setName(t('settings.heatmap_days.name'))
+            .setDesc(t('settings.heatmap_days.desc'))
             .addText(text => (heatmapDaysText = text)
                 .setPlaceholder('1, 3, 7, 15, 30')
                 .setValue((this.plugin.settings.heatmapDays ?? [1, 3, 7, 15, 30]).join(', '))
@@ -104,8 +104,8 @@ export class GeneralSettingSection extends SettingSection {
         };
 
         new obsidian.Setting(genCard)
-            .setName('Auto contrast')
-            .setDesc('Text and icon colors are picked automatically. Turn off to set custom text and icon colors per palette color.')
+            .setName(t('settings.auto_contrast.name'))
+            .setDesc(t('settings.auto_contrast.desc'))
             .addToggle(el => el
                 .setValue(this.plugin.settings.cfAutoContrast ?? true)
                 .onChange(async (v) => {
@@ -118,8 +118,8 @@ export class GeneralSettingSection extends SettingSection {
         autoOptions.toggle(this.plugin.settings.cfAutoContrast ?? true);
 
         new obsidian.Setting(autoOptions)
-            .setName('Auto contrast shift')
-            .setDesc('How far auto contrast moves each color, in palette steps (0.1 lightness each). Default 3.')
+            .setName(t('settings.auto_contrast_shift.name'))
+            .setDesc(t('settings.auto_contrast_shift.desc'))
             .addSlider(el => el
                 .setLimits(1, 6, 0.5)
                 .setValue(this.plugin.settings.cfAutoSteps ?? 3)
@@ -129,8 +129,8 @@ export class GeneralSettingSection extends SettingSection {
                 }));
 
         new obsidian.Setting(autoOptions)
-            .setName('Snap to black or white')
-            .setDesc('On: a shift that runs past the end becomes pure white or pure black. Off: it stops just short and keeps a tint.')
+            .setName(t('settings.auto_snap.name'))
+            .setDesc(t('settings.auto_snap.desc'))
             .addToggle(el => el
                 .setValue(this.plugin.settings.cfAutoSnap ?? true)
                 .onChange(async (v) => {
@@ -139,8 +139,8 @@ export class GeneralSettingSection extends SettingSection {
                 }));
 
         new obsidian.Setting(autoOptions)
-            .setName('Snap tolerance')
-            .setDesc('With snap on, a shifted color within this many percent of white or black goes all the way. 0 = only when it runs past the end.')
+            .setName(t('settings.auto_tolerance.name'))
+            .setDesc(t('settings.auto_tolerance.desc'))
             .addSlider(el => el
                 .setLimits(0, 30, 1)
                 .setValue(this.plugin.settings.cfAutoTolerance ?? 0)
@@ -152,7 +152,7 @@ export class GeneralSettingSection extends SettingSection {
         /* Custom colors: the palette table lives inside the Custom colors setting row, so both share one box. */
         const customColorsSetting = new obsidian.Setting(genCard)
             .setName(t("settings.custom_colors.name"))
-            .setDesc('Your custom palette colors. Click a swatch to pick visually, or type a hex code directly. Only active when "custom palette" is selected above.');
+            .setDesc(t("settings.custom_colors.desc"));
         customColorsSetting.settingEl.addClass('cf-custom-colors-group');
 
         const paletteBuilderContainer = customColorsSetting.settingEl.createDiv('cf-palette-builder');
@@ -254,7 +254,7 @@ export class GeneralSettingSection extends SettingSection {
             orderCell.setCssStyles({ whiteSpace: 'nowrap' });
             const move = (label: string, delta: number) => {
                 const btn = orderCell.createEl('button', { text: label });
-                btn.setAttribute('title', delta < 0 ? 'Move up' : 'Move down');
+                btn.setAttribute('title', delta < 0 ? t('settings.palette_table.move_up') : t('settings.palette_table.move_down'));
                 btn.disabled = index + delta < 0 || index + delta >= colors.length;
                 btn.setCssStyles({ cursor: 'pointer', padding: '0 6px', marginRight: '2px' });
                 btn.onclick = () => {
@@ -272,7 +272,7 @@ export class GeneralSettingSection extends SettingSection {
             const preview = td().createDiv();
             const pvIcon = preview.createSpan({ text: '◆' });
             const pvText = preview.createSpan({ text: 'Aa' });
-            preview.setAttribute('title', 'Preview: icon and text on this color');
+            preview.setAttribute('title', t('settings.palette_table.preview'));
             preview.setCssStyles({
                 width: '64px', height: '28px', display: 'flex', alignItems: 'center',
                 justifyContent: 'center', gap: '6px', fontWeight: '700', fontSize: '0.85em',
@@ -328,7 +328,7 @@ export class GeneralSettingSection extends SettingSection {
                 const ageCell = td();
                 ageCell.setCssStyles({ fontSize: '0.85em', color: 'var(--text-muted)', whiteSpace: 'nowrap' });
                 if (index < colors.length - 1) {
-                    ageCell.createSpan({ text: index === 0 ? 'up to ' : `${days[index - 1]} to ` });
+                    ageCell.createSpan({ text: (index === 0 ? t('settings.palette_table.up_to') : t('settings.palette_table.from_to', { from: days[index - 1] })) + ' ' });
                     const dayInp = ageCell.createEl('input', { type: 'number' });
                     dayInp.value = String(days[index]);
                     dayInp.min = '0';
@@ -344,10 +344,10 @@ export class GeneralSettingSection extends SettingSection {
                             dayInp.value = String(days[index]);
                         }
                     };
-                    ageCell.createSpan({ text: days[index] === 1 ? ' day' : ' days' });
+                    ageCell.createSpan({ text: ' ' + (days[index] === 1 ? t('settings.palette_table.day') : t('settings.palette_table.days')) });
                 } else {
                     const lastDay = days[Math.min(index, days.length) - 1] ?? 0;
-                    ageCell.createSpan({ text: `older than ${lastDay} ${lastDay === 1 ? 'day' : 'days'}` });
+                    ageCell.createSpan({ text: t('settings.palette_table.older_than', { n: lastDay, unit: lastDay === 1 ? t('settings.palette_table.day') : t('settings.palette_table.days') }) });
                 }
             }
 
@@ -369,14 +369,14 @@ export class GeneralSettingSection extends SettingSection {
             paintPreview();
 
             // Auto checkbox
-            const autoBox = td().createEl('input', { type: 'checkbox' });
-            autoBox.checked = isAuto();
-            autoBox.setAttribute('title', 'Auto contrast for this color');
-            autoBox.onchange = () => {
-                pairs[key()] = { ...(pairs[key()] ?? {}), auto: autoBox.checked };
-                savePaletteDebounced();
-                rebuildRows();
-            };
+            new obsidian.ToggleComponent(td())
+                .setValue(isAuto())
+                .setTooltip(t('settings.palette_table.auto_tip'))
+                .onChange((value) => {
+                    pairs[key()] = { ...(pairs[key()] ?? {}), auto: value };
+                    savePaletteDebounced();
+                    rebuildRows();
+                });
 
             // Text / Icon pickers, hidden while auto contrast owns this color
             const makePairCell = (kind: 'text' | 'icon', label: string) => {
@@ -409,8 +409,8 @@ export class GeneralSettingSection extends SettingSection {
                     }, { showAlpha: false });
                 });
             };
-            makePairCell('text', 'Text color for this palette color');
-            makePairCell('icon', 'Icon color for this palette color');
+            makePairCell('text', t('settings.palette_table.text_tip'));
+            makePairCell('icon', t('settings.palette_table.icon_tip'));
 
             const delBtn = td().createEl('button', { text: '×' });
             delBtn.setCssStyles({
@@ -443,7 +443,7 @@ export class GeneralSettingSection extends SettingSection {
             const table = list.createEl('table');
             table.setCssStyles({ borderCollapse: 'collapse', width: '100%' });
             const headRow = table.createEl('thead').createEl('tr');
-            ['Order', 'Color', 'Hex', ...(showAgeBand ? ['Age'] : []), 'Auto', 'Text', 'Icon', ''].forEach((h) => {
+            [t('settings.palette_table.order'), t('settings.palette_table.color'), t('settings.palette_table.hex'), ...(showAgeBand ? [t('settings.palette_table.age')] : []), t('settings.palette_table.auto'), t('settings.palette_table.text'), t('settings.palette_table.icon'), ''].forEach((h) => {
                 const th = headRow.createEl('th', { text: h });
                 th.setCssStyles({
                     textAlign: 'left',
@@ -898,7 +898,7 @@ export class GeneralSettingSection extends SettingSection {
                     this.plugin.generateStylesDebounced();
                 }));
         };
-        addLayoutSlider('Folder text weight', 'Boldness of colored folder names (400 regular, 700 bold, default 800).', 'folderTextWeight', 300, 900, 100);
+        addLayoutSlider(t('settings.folder_text_weight.name'), t('settings.folder_text_weight.desc'), 'folderTextWeight', 300, 900, 100);
 
         let sliderComp_pathLineThickness: obsidian.SliderComponent;
         new obsidian.Setting(typeCard)
