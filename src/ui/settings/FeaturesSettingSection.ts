@@ -556,6 +556,32 @@ export class FeaturesSettingSection extends SettingSection {
                 this.plugin.generateStylesDebounced();
             }));
 
+        const addRowSlider = (name: string, desc: string, key: 'nnRowBorder' | 'rowSpacing', min: number, max: number, step: number) => {
+            let comp: obsidian.SliderComponent;
+            new obsidian.Setting(intCard)
+                .setName(name)
+                .setDesc(desc)
+                .addSlider(slider => {
+                    comp = slider;
+                    slider.setLimits(min, max, step)
+                        .setValue(this.plugin.settings[key] ?? DEFAULT_SETTINGS[key])
+                        .onChange(async (value) => {
+                            this.plugin.settings[key] = value;
+                            await this.plugin.saveSettings();
+                            this.plugin.generateStylesDebounced();
+                        });
+                    return slider;
+                })
+                .addExtraButton(cb => cb.setIcon("reset").setTooltip(t("common.reset_to_default")).onClick(async () => {
+                    this.plugin.settings[key] = DEFAULT_SETTINGS[key];
+                    comp.setValue(DEFAULT_SETTINGS[key]);
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStylesDebounced();
+                }));
+        };
+        addRowSlider('Row accent border', 'Width of the colored left border on rows. -1 = automatic, 0 = none.', 'nnRowBorder', -1, 8, 1);
+        addRowSlider('Row spacing', 'Gap below and beside each colored row (default 2px).', 'rowSpacing', 0, 8, 1);
+
         // 📑 Outline & Headings Color Sync Card (Card 5)
         const outlineCard = this.settingTab.makeCard(containerEl, "📑", "Outline & headings color sync");
         outlineCard.createEl('p', {

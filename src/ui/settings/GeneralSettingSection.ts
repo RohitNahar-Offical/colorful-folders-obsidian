@@ -818,7 +818,7 @@ export class GeneralSettingSection extends SettingSection {
                 this.plugin.generateStylesDebounced();
             }));
 
-        const addLayoutSlider = (name: string, desc: string, key: 'nnRowBorder' | 'rowSpacing' | 'folderTextWeight', min: number, max: number, step: number) => {
+        const addLayoutSlider = (name: string, desc: string, key: 'folderTextWeight', min: number, max: number, step: number) => {
             let comp: obsidian.SliderComponent;
             new obsidian.Setting(typeCard)
                 .setName(name)
@@ -841,8 +841,6 @@ export class GeneralSettingSection extends SettingSection {
                     this.plugin.generateStylesDebounced();
                 }));
         };
-        addLayoutSlider('Row accent border', 'Width of the colored left border on Notebook Navigator rows. -1 = automatic, 0 = none.', 'nnRowBorder', -1, 8, 1);
-        addLayoutSlider('Row spacing', 'Gap below and beside each colored row in Notebook Navigator (default 2px).', 'rowSpacing', 0, 8, 1);
         addLayoutSlider('Folder text weight', 'Boldness of colored folder names (400 regular, 700 bold, default 800).', 'folderTextWeight', 300, 900, 100);
 
         let sliderComp_pathLineThickness: obsidian.SliderComponent;
