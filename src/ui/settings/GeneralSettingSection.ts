@@ -59,10 +59,6 @@ export class GeneralSettingSection extends SettingSection {
                     this.plugin.generateStylesDebounced();
                 }));
 
-        new obsidian.Setting(genCard)
-            .setName(t("settings.custom_colors.name"))
-            .setDesc('Your custom palette colors. Click a swatch to pick visually, or type a hex code directly. Only active when "custom palette" is selected above.');
-
         /* Auto contrast: master switch plus the three knobs the stylesheet reads from <body>. */
         const applyAutoSettings = async () => {
             await this.plugin.saveSettings();
@@ -111,6 +107,10 @@ export class GeneralSettingSection extends SettingSection {
                     this.plugin.settings.cfAutoTolerance = v;
                     await applyAutoSettings();
                 }));
+
+        new obsidian.Setting(genCard)
+            .setName(t("settings.custom_colors.name"))
+            .setDesc('Your custom palette colors. Click a swatch to pick visually, or type a hex code directly. Only active when "custom palette" is selected above.');
 
         const paletteBuilderContainer = genCard.createDiv('cf-palette-builder');
         paletteBuilderContainer.setCssStyles({
