@@ -2,6 +2,7 @@ import * as obsidian from 'obsidian';
 import { SettingSection } from './SettingSection';
 import { t } from '../../lang/helpers';
 import { DEFAULT_SETTINGS } from '../../common/constants';
+import { AutoContrastModal } from '../modals/AutoContrastModal';
 import { createVisualColorPicker } from '../components/ColorPicker';
 import { parseColorToHexAlpha, hexAlphaToRgba } from '../../common/utils';
 
@@ -59,7 +60,7 @@ export class GeneralSettingSection extends SettingSection {
                     this.plugin.generateStylesDebounced();
                 }));
 
-        /* Auto contrast: master switch plus the three knobs the stylesheet reads from <body>. */
+        /* Auto contrast: master switch here; the three knobs the stylesheet reads from <body> live in AutoContrastModal. */
         const applyAutoSettings = async () => {
             await this.plugin.saveSettings();
             await this.plugin.generateStyles();
@@ -74,39 +75,11 @@ export class GeneralSettingSection extends SettingSection {
                 .onChange(async (v) => {
                     this.plugin.settings.cfAutoContrast = v;
                     await applyAutoSettings();
-                }));
-
-        new obsidian.Setting(genCard)
-            .setName('Auto contrast shift')
-            .setDesc('How far auto contrast moves each color, in palette steps (0.1 lightness each). Default 3.')
-            .addSlider(el => el
-                .setLimits(1, 6, 0.5)
-                .setValue(this.plugin.settings.cfAutoSteps ?? 3)
-                .onChange(async (v) => {
-                    this.plugin.settings.cfAutoSteps = v;
-                    await applyAutoSettings();
-                }));
-
-        new obsidian.Setting(genCard)
-            .setName('Snap to black or white')
-            .setDesc('On: a shift that runs past the end becomes pure white or pure black. Off: it stops just short and keeps a tint.')
-            .addToggle(el => el
-                .setValue(this.plugin.settings.cfAutoSnap ?? true)
-                .onChange(async (v) => {
-                    this.plugin.settings.cfAutoSnap = v;
-                    await applyAutoSettings();
-                }));
-
-        new obsidian.Setting(genCard)
-            .setName('Snap tolerance')
-            .setDesc('With snap on, a shifted color within this many percent of white or black goes all the way. 0 = only when it runs past the end.')
-            .addSlider(el => el
-                .setLimits(0, 30, 1)
-                .setValue(this.plugin.settings.cfAutoTolerance ?? 0)
-                .onChange(async (v) => {
-                    this.plugin.settings.cfAutoTolerance = v;
-                    await applyAutoSettings();
-                }));
+                }))
+            .addExtraButton(cb => cb
+                .setIcon('settings')
+                .setTooltip('Shift and snap settings')
+                .onClick(() => new AutoContrastModal(this.app, this.plugin, applyAutoSettings).open()));
 
         new obsidian.Setting(genCard)
             .setName(t("settings.custom_colors.name"))
