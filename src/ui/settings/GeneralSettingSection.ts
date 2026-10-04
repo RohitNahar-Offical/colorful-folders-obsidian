@@ -63,6 +63,55 @@ export class GeneralSettingSection extends SettingSection {
             .setName(t("settings.custom_colors.name"))
             .setDesc('Your custom palette colors. Click a swatch to pick visually, or type a hex code directly. Only active when "custom palette" is selected above.');
 
+        /* Auto contrast: master switch plus the three knobs the stylesheet reads from <body>. */
+        const applyAutoSettings = async () => {
+            await this.plugin.saveSettings();
+            await this.plugin.generateStyles();
+            rebuildRows();
+        };
+
+        new obsidian.Setting(genCard)
+            .setName('Auto contrast')
+            .setDesc('Text and icon colors are picked automatically. Turn off to set custom text and icon colors per palette color.')
+            .addToggle(el => el
+                .setValue(this.plugin.settings.cfAutoContrast ?? true)
+                .onChange(async (v) => {
+                    this.plugin.settings.cfAutoContrast = v;
+                    await applyAutoSettings();
+                }));
+
+        new obsidian.Setting(genCard)
+            .setName('Auto contrast shift')
+            .setDesc('How far auto contrast moves each color, in palette steps (0.1 lightness each). Default 3.')
+            .addSlider(el => el
+                .setLimits(1, 6, 0.5)
+                .setValue(this.plugin.settings.cfAutoSteps ?? 3)
+                .onChange(async (v) => {
+                    this.plugin.settings.cfAutoSteps = v;
+                    await applyAutoSettings();
+                }));
+
+        new obsidian.Setting(genCard)
+            .setName('Snap to black or white')
+            .setDesc('On: a shift that runs past the end becomes pure white or pure black. Off: it stops just short and keeps a tint.')
+            .addToggle(el => el
+                .setValue(this.plugin.settings.cfAutoSnap ?? true)
+                .onChange(async (v) => {
+                    this.plugin.settings.cfAutoSnap = v;
+                    await applyAutoSettings();
+                }));
+
+        new obsidian.Setting(genCard)
+            .setName('Snap tolerance')
+            .setDesc('With snap on, a shifted color within this many percent of white or black goes all the way. 0 = only when it runs past the end.')
+            .addSlider(el => el
+                .setLimits(0, 30, 1)
+                .setValue(this.plugin.settings.cfAutoTolerance ?? 0)
+                .onChange(async (v) => {
+                    this.plugin.settings.cfAutoTolerance = v;
+                    await applyAutoSettings();
+                }));
+
         const paletteBuilderContainer = genCard.createDiv('cf-palette-builder');
         paletteBuilderContainer.setCssStyles({
             marginTop: '12px',
@@ -100,8 +149,9 @@ export class GeneralSettingSection extends SettingSection {
         const mainSplit = paletteBuilderContainer.createDiv();
         mainSplit.setCssStyles({
             display: 'flex',
+            flexDirection: 'column',
             gap: '20px',
-            alignItems: 'flex-start'
+            alignItems: 'stretch'
         });
 
         const list = mainSplit.createDiv();
@@ -144,42 +194,63 @@ export class GeneralSettingSection extends SettingSection {
             void this.plugin.saveSettings().then(() => this.plugin.generateStylesDebounced());
         };
 
+        let showAgeBand = false;
+        // Populated by rebuildRows before the first row is rendered.
+        let tbody!: HTMLTableSectionElement;
+
         const renderRow = (hex: string, index: number) => {
-            const row = list.createDiv();
-            row.setCssStyles({
-                display: 'flex',
-                gap: '10px',
-                alignItems: 'center'
-            });
+            const row = tbody.createEl('tr');
+            const td = () => {
+                const cell = row.createEl('td');
+                cell.setCssStyles({ padding: '4px 6px', verticalAlign: 'middle' });
+                return cell;
+            };
 
-            const swatch = row.createDiv();
-            swatch.setCssStyles({
-                width: '28px',
-                height: '28px',
-                borderRadius: '6px',
-                flexShrink: '0',
-                border: '1px solid var(--background-modifier-border)',
-                backgroundColor: hex,
-                cursor: 'pointer'
-            });
+            // Order: up / down
+            const orderCell = td();
+            orderCell.setCssStyles({ whiteSpace: 'nowrap' });
+            const move = (label: string, delta: number) => {
+                const btn = orderCell.createEl('button', { text: label });
+                btn.setAttribute('title', delta < 0 ? 'Move up' : 'Move down');
+                btn.disabled = index + delta < 0 || index + delta >= colors.length;
+                btn.setCssStyles({ cursor: 'pointer', padding: '0 6px', marginRight: '2px' });
+                btn.onclick = () => {
+                    const tmp = colors[index];
+                    colors[index] = colors[index + delta];
+                    colors[index + delta] = tmp;
+                    rebuildRows();
+                    savePaletteDebounced();
+                };
+            };
+            move('▲', -1);
+            move('▼', 1);
 
-            swatch.addEventListener('click', () => {
+            // Color: preview showing icon and text on this palette color
+            const preview = td().createDiv();
+            const pvIcon = preview.createSpan({ text: '◆' });
+            const pvText = preview.createSpan({ text: 'Aa' });
+            preview.setAttribute('title', 'Preview: icon and text on this color');
+            preview.setCssStyles({
+                width: '64px', height: '28px', display: 'flex', alignItems: 'center',
+                justifyContent: 'center', gap: '6px', fontWeight: '700', fontSize: '0.85em',
+                borderRadius: '6px', border: '1px solid var(--background-modifier-border)',
+                backgroundColor: hex, cursor: 'pointer'
+            });
+            let hexInp: HTMLInputElement;
+            preview.addEventListener('click', () => {
                 pickerSide.empty();
-                pickerSide.setCssStyles({
-                    display: 'block',
-                    padding: '16px'
-                });
-
-                const pickerWrap = pickerSide.createDiv();
-                createVisualColorPicker(pickerWrap, colors[index], (newHex) => {
+                pickerSide.setCssStyles({ display: 'block', padding: '16px' });
+                const wrap = pickerSide.createDiv();
+                createVisualColorPicker(wrap, colors[index], (newHex) => {
                     colors[index] = newHex;
-                    swatch.setCssStyles({ backgroundColor: newHex });
                     hexInp.value = newHex;
+                    paintPreview();
                     savePaletteDebounced();
                 }, { showAlpha: false });
             });
 
-            const hexInp = row.createEl('input', { type: 'text' });
+            // Hex
+            hexInp = td().createEl('input', { type: 'text' });
             hexInp.value = hex;
             hexInp.setCssStyles({
                 width: '90px',
@@ -201,21 +272,21 @@ export class GeneralSettingSection extends SettingSection {
                         pp[val.toLowerCase()] = pp[colors[index].toLowerCase()];
                     }
                     colors[index] = val;
-                    swatch.setCssStyles({ backgroundColor: val });
+                    paintPreview();
                     savePaletteDebounced();
                 } else {
                     hexInp.value = colors[index];
                 }
             };
 
-            // Heatmap: label each color with its age band; limits are editable.
+            // Age: heatmap band limits
             const days = (this.plugin.settings.heatmapDays ??= [1, 3, 7, 15, 30]);
-            if (this.plugin.settings.colorMode === 'heatmap' && colors.length <= days.length + 1) {
-                const band = row.createDiv();
-                band.setCssStyles({ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.85em', color: 'var(--text-muted)', minWidth: '96px' });
+            if (showAgeBand) {
+                const ageCell = td();
+                ageCell.setCssStyles({ fontSize: '0.85em', color: 'var(--text-muted)', whiteSpace: 'nowrap' });
                 if (index < colors.length - 1) {
-                    band.createSpan({ text: index === 0 ? 'up to' : `${days[index - 1]} to` });
-                    const dayInp = band.createEl('input', { type: 'number' });
+                    ageCell.createSpan({ text: index === 0 ? 'up to ' : `${days[index - 1]} to ` });
+                    const dayInp = ageCell.createEl('input', { type: 'number' });
                     dayInp.value = String(days[index]);
                     dayInp.min = '0';
                     dayInp.setCssStyles({ width: '48px' });
@@ -229,23 +300,51 @@ export class GeneralSettingSection extends SettingSection {
                             dayInp.value = String(days[index]);
                         }
                     };
-                    band.createSpan({ text: days[index] === 1 ? 'day' : 'days' });
+                    ageCell.createSpan({ text: days[index] === 1 ? ' day' : ' days' });
                 } else {
                     const lastDay = days[Math.min(index, days.length) - 1] ?? 0;
-                    band.createSpan({ text: `older than ${lastDay} ${lastDay === 1 ? 'day' : 'days'}` });
+                    ageCell.createSpan({ text: `older than ${lastDay} ${lastDay === 1 ? 'day' : 'days'}` });
                 }
             }
 
-            // Paired text / icon colors for this palette color
+            // Auto contrast + paired text / icon colors for this palette color
             const pairs = (this.plugin.settings.palettePairs ??= {});
-            const makePairSwatch = (kind: 'text' | 'icon', label: string) => {
-                const key = () => colors[index].toLowerCase();
-                const sw = row.createDiv({ text: kind === 'text' ? 'Aa' : '◆' });
+            const key = () => colors[index].toLowerCase();
+            const isAuto = (): boolean => {
+                const p = pairs[key()];
+                return !p || p.auto === true || (p.auto === undefined && !p.text && !p.icon);
+            };
+            const autoColor = () => `oklch(from ${colors[index]} var(--cf-auto-l) var(--cf-auto-c) h)`;
+            const paintPreview = () => {
+                const p = pairs[key()];
+                const manual = !isAuto();
+                preview.setCssStyles({ backgroundColor: colors[index] });
+                pvText.setCssStyles({ color: (manual && p?.text) || autoColor() });
+                pvIcon.setCssStyles({ color: (manual && (p?.icon || p?.text)) || autoColor() });
+            };
+            paintPreview();
+
+            // Auto checkbox
+            const autoBox = td().createEl('input', { type: 'checkbox' });
+            autoBox.checked = isAuto();
+            autoBox.setAttribute('title', 'Auto contrast for this color');
+            autoBox.onchange = () => {
+                pairs[key()] = { ...(pairs[key()] ?? {}), auto: autoBox.checked };
+                savePaletteDebounced();
+                rebuildRows();
+            };
+
+            // Text / Icon pickers, hidden while auto contrast owns this color
+            const makePairCell = (kind: 'text' | 'icon', label: string) => {
+                const cell = td();
+                if (isAuto()) return;
+                const sw = cell.createDiv({ text: kind === 'text' ? 'Aa' : '◆' });
                 sw.setAttribute('title', label);
                 const paint = () => {
+                    paintPreview();
                     const val = pairs[key()]?.[kind];
                     sw.setCssStyles({
-                        width: '28px', height: '28px', borderRadius: '6px', flexShrink: '0',
+                        width: '28px', height: '28px', borderRadius: '6px',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: '0.8em', fontWeight: '700', cursor: 'pointer',
                         border: val ? '1px solid var(--background-modifier-border)' : '1px dashed var(--background-modifier-border)',
@@ -260,37 +359,23 @@ export class GeneralSettingSection extends SettingSection {
                     pickerSide.createDiv({ text: label }).setCssStyles({ marginBottom: '8px', fontWeight: '600' });
                     const wrap = pickerSide.createDiv();
                     createVisualColorPicker(wrap, pairs[key()]?.[kind] || '#ffffff', (newHex) => {
-                        pairs[key()] = { ...(pairs[key()] ?? {}), [kind]: newHex };
+                        pairs[key()] = { ...(pairs[key()] ?? {}), [kind]: newHex, auto: false };
                         paint();
                         savePaletteDebounced();
                     }, { showAlpha: false });
-                    const clear = pickerSide.createEl('button', { text: 'Use automatic color' });
-                    clear.setCssStyles({ marginTop: '8px' });
-                    clear.onclick = () => {
-                        if (pairs[key()]) { delete pairs[key()][kind]; }
-                        paint();
-                        savePaletteDebounced();
-                    };
                 });
             };
-            makePairSwatch('text', 'Text color for this palette color');
-            makePairSwatch('icon', 'Icon color for this palette color');
+            makePairCell('text', 'Text color for this palette color');
+            makePairCell('icon', 'Icon color for this palette color');
 
-            const delBtn = row.createEl('button', { text: '×' });
+            const delBtn = td().createEl('button', { text: '×' });
             delBtn.setCssStyles({
                 color: 'var(--text-muted)',
                 cursor: 'pointer',
                 border: 'none',
                 background: 'transparent',
                 fontSize: '1.2em',
-                padding: '0 4px',
-                transition: 'color 0.15s ease'
-            });
-            delBtn.addEventListener('pointerenter', () => {
-                delBtn.setCssStyles({ color: 'var(--text-error)' });
-            });
-            delBtn.addEventListener('pointerleave', () => {
-                delBtn.setCssStyles({ color: 'var(--text-muted)' });
+                padding: '0 4px'
             });
             delBtn.onclick = () => {
                 pickerSide.empty();
@@ -309,6 +394,22 @@ export class GeneralSettingSection extends SettingSection {
 
         const rebuildRows = () => {
             list.empty();
+            const days = (this.plugin.settings.heatmapDays ??= [1, 3, 7, 15, 30]);
+            showAgeBand = this.plugin.settings.colorMode === 'heatmap' && colors.length <= days.length + 1;
+            const table = list.createEl('table');
+            table.setCssStyles({ borderCollapse: 'collapse', width: '100%' });
+            const headRow = table.createEl('thead').createEl('tr');
+            ['Order', 'Color', 'Hex', ...(showAgeBand ? ['Age'] : []), 'Auto', 'Text', 'Icon', ''].forEach((h) => {
+                const th = headRow.createEl('th', { text: h });
+                th.setCssStyles({
+                    textAlign: 'left',
+                    padding: '4px 6px',
+                    fontSize: '0.8em',
+                    color: 'var(--text-muted)',
+                    fontWeight: '600'
+                });
+            });
+            tbody = table.createEl('tbody');
             colors.forEach((c, i) => renderRow(c, i));
             if (colors.length === 0) {
                 list.createDiv({ text: t("settings.no_colors_defined") }).setCssStyles({ color: 'var(--text-muted)', fontStyle: 'italic', padding: '6px 0' });

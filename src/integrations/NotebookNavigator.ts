@@ -27,6 +27,9 @@ export const NN_SELECTORS = {
 export class NotebookNavigatorIntegration {
     /** Row layout, set from settings on load/save. */
     static layout = { border: -1, radius: 6, spacing: 2, weight: 800 };
+    /** Palette text/icon pairs, synced from settings before style generation so
+     *  static methods can read them without threading settings through. */
+    static pairs: Record<string, { text?: string; icon?: string; auto?: boolean }> = {};
 
     static isSupported(settings: ColorfulFoldersSettings): boolean {
         return !!settings.notebookNavigatorSupport;
@@ -279,10 +282,17 @@ export class NotebookNavigatorIntegration {
             `, baseSels, `nnFolderBg_${color.hex}_${finalBgAlpha}_${finalBorderAlpha}_${tintOp}`);
         } else if (shouldColor) {
             const fileBg = outlineOnly ? Math.max(bgAlpha, 0.12) : Math.max(bgAlpha, 0.18);
+            // Hand-picked text/icon colors for this palette color, when auto contrast is off for it.
+            const filePair = NotebookNavigatorIntegration.pairs[String(color.hex).toLowerCase()];
+            const filePairVars = filePair && filePair.auto !== true
+                ? `${filePair.text ? `--cf-pair-text: ${filePair.text};` : ''}
+                ${filePair.icon ? `--cf-pair-icon: ${filePair.icon};` : ''}`
+                : '';
             grouper.add(`
                 --cf-color: ${color.hex};
                 --cf-colored: 1;
                 --cf-color-rgb: ${color.rgb};
+                ${filePairVars}
                 background-color: rgba(${color.rgb}, ${fileBg}) !important;
                 border-left: ${nnThick}px solid rgba(${color.rgb}, 0.6) !important;
                 opacity: 1.0 !important;
@@ -292,7 +302,7 @@ export class NotebookNavigatorIntegration {
                 border-radius: ${L.radius}px;
                 transition: background-color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, color 0.2s ease !important;
                 margin-bottom: ${L.spacing}px !important;
-            `, baseSels, `nnFileBg_${color.hex}_${fileBg}_${textCol}_${isBold}_${isItalic}`);
+            `, baseSels, `nnFileBg_${color.hex}_${fileBg}_${textCol}_${isBold}_${isItalic}_${JSON.stringify(NotebookNavigatorIntegration.pairs[String(color.hex).toLowerCase()] || 0)}`);
         }
 
         if (shouldColor) {

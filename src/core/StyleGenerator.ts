@@ -682,7 +682,10 @@ export class StyleGenerator {
 
             // Palette pairing: a palette color can carry its own text / icon color.
             // Per-folder (custom or inherited) colors still win.
-            const palettePair = this.settings.palettePairs?.[String(color.hex).toLowerCase()];
+            // A pair whose `auto` flag is true is ignored entirely, so the automatic
+            // contrast picker in the settings table stays in charge of that color.
+            const rawPair = this.settings.palettePairs?.[String(color.hex).toLowerCase()];
+            const palettePair = rawPair && rawPair.auto !== true ? rawPair : undefined;
             if (palettePair?.text && !customStyle?.textColor && !inheritedStyle?.textColor) {
                 folderStyles.t = palettePair.text;
             }
@@ -805,6 +808,20 @@ export class StyleGenerator {
                 `.tree-item-self[data-path="${safePath}"] .tree-item-inner`,
                 ...nnSelectors
             ], `folderText_${customStyle?.textGradient || isRainbowActiveForFolder ? 'grad' : 'norm'}_${folderStyles.t}_${isBold}_${isItalic}`);
+
+            // Tell the stylesheet when this folder carries hand-picked text/icon colors.
+            // The auto-contrast rules stand down for that folder so they cannot fight the choice.
+            const hasCustomText = !!(palettePair?.text || customStyle?.textColor || inheritedStyle?.textColor);
+            const hasCustomIcon = !!(palettePair?.icon || customStyle?.iconColor || inheritedStyle?.iconColor);
+            grouper.add(`
+                --cf-custom-text: ${hasCustomText ? 1 : 0};
+                --cf-custom-icon: ${hasCustomIcon ? 1 : 0};
+            `, [
+                `body .nav-files-container .nav-folder-title[data-path="${safePath}"]`,
+                ...(NotebookNavigatorIntegration.isSupported(this.settings)
+                    ? NotebookNavigatorIntegration.getScopedNavSelectors(child.path).map(s => `body ${s}`)
+                    : [])
+            ], `cfCustom_${hasCustomText ? 1 : 0}${hasCustomIcon ? 1 : 0}`);
 
             const generateIconCss = (iconIdToUse: string, isExpandedState: boolean | null) => {
                 const isCustomEmoji = this.plugin.iconManager.isEmojiIcon(iconIdToUse);

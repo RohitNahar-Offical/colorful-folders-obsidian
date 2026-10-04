@@ -659,6 +659,7 @@ export default class ColorfulFoldersPlugin
     );
     ColorResolver.heatmapDays = this.settings.heatmapDays?.length ? this.settings.heatmapDays : [1, 3, 7, 15, 30];
     NotebookNavigatorIntegration.layout = { border: this.settings.nnRowBorder ?? -1, radius: this.settings.folderBorderRadius ?? 6, spacing: this.settings.rowSpacing ?? 2, weight: this.settings.folderTextWeight ?? 800 };
+    NotebookNavigatorIntegration.pairs = this.settings.palettePairs || {};
   }
 
   public syncCustomFolderColorsMap(): void {
@@ -698,6 +699,7 @@ export default class ColorfulFoldersPlugin
   async saveSettings() {
     ColorResolver.heatmapDays = this.settings.heatmapDays?.length ? this.settings.heatmapDays : [1, 3, 7, 15, 30];
     NotebookNavigatorIntegration.layout = { border: this.settings.nnRowBorder ?? -1, radius: this.settings.folderBorderRadius ?? 6, spacing: this.settings.rowSpacing ?? 2, weight: this.settings.folderTextWeight ?? 800 };
+    NotebookNavigatorIntegration.pairs = this.settings.palettePairs || {};
     this.syncCustomFolderColorsMap();
     const iconRulesChanged = (this.settings.customIconRules || '') !== this._lastIconRulesKey;
     const currentCustomIcons = this.getCustomIconsMap();
@@ -967,6 +969,14 @@ export default class ColorfulFoldersPlugin
 
   async generateStyles() {
     if (this._isUnloading) return;
+    try {
+      const s = this.settings;
+      const body = activeDocument.body;
+      body.classList.toggle('cf-folder-auto', s.cfAutoContrast ?? true);
+      body.style.setProperty('--cf-auto-steps', String(s.cfAutoSteps ?? 3));
+      body.classList.toggle('cf-folder-auto-snap', s.cfAutoSnap ?? true);
+      body.style.setProperty('--cf-auto-tolerance', String(s.cfAutoTolerance ?? 0));
+    } catch { /* no document body yet */ }
     if (this.isGeneratingStyles) {
       this.hasPendingGenerateStyles = true;
       return;
