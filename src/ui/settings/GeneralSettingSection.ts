@@ -853,8 +853,7 @@ export class GeneralSettingSection extends SettingSection {
                 .addSlider(slider => {
                     comp = slider;
                     slider.setLimits(min, max, step)
-                        .setValue((this.plugin.settings[key] as number | undefined) ?? (DEFAULT_SETTINGS[key] as number))
-                        .setDynamicTooltip()
+                        .setValue((this.plugin.settings[key]) ?? (DEFAULT_SETTINGS[key]))
                         .onChange(async (value) => {
                             this.plugin.settings[key] = value;
                             await this.plugin.saveSettings();
@@ -863,8 +862,8 @@ export class GeneralSettingSection extends SettingSection {
                     return slider;
                 })
                 .addExtraButton(cb => cb.setIcon("reset").setTooltip(t("common.reset_to_default")).onClick(async () => {
-                    this.plugin.settings[key] = DEFAULT_SETTINGS[key] as number;
-                    comp.setValue(DEFAULT_SETTINGS[key] as number);
+                    this.plugin.settings[key] = DEFAULT_SETTINGS[key];
+                    comp.setValue(DEFAULT_SETTINGS[key]);
                     await this.plugin.saveSettings();
                     this.plugin.generateStylesDebounced();
                 }));

@@ -973,9 +973,11 @@ export default class ColorfulFoldersPlugin
       const s = this.settings;
       const body = activeDocument.body;
       body.classList.toggle('cf-folder-auto', s.cfAutoContrast ?? true);
-      body.style.setProperty('--cf-auto-steps', String(s.cfAutoSteps ?? 3));
       body.classList.toggle('cf-folder-auto-snap', s.cfAutoSnap ?? true);
-      body.style.setProperty('--cf-auto-tolerance', String(s.cfAutoTolerance ?? 0));
+      body.setCssProps({
+        '--cf-auto-steps': String(s.cfAutoSteps ?? 3),
+        '--cf-auto-tolerance': String(s.cfAutoTolerance ?? 0),
+      });
     } catch { /* no document body yet */ }
     if (this.isGeneratingStyles) {
       this.hasPendingGenerateStyles = true;
