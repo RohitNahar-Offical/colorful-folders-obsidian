@@ -458,6 +458,21 @@ body .modal .colorful-folders-config button.mod-warning:hover {
     margin-bottom: 0;
 }
 
+/* Settings wrapped in a group (shown or hidden together) keep the same
+   12px gap below the group's last row, unless the group ends the card. */
+.cf-settings-card > :not(:last-child) > .setting-item:last-child {
+    margin-bottom: 12px;
+}
+
+/* Custom colors: the palette table wraps onto its own line inside the row. */
+.cf-settings-card .setting-item.cf-custom-colors-group {
+    flex-wrap: wrap;
+}
+
+.cf-custom-colors-group > .cf-palette-builder {
+    flex-basis: 100%;
+}
+
 .cf-settings-card .setting-item-name {
     font-weight: 700;
     font-size: 1.05em;
