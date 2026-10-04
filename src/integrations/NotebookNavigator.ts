@@ -273,6 +273,7 @@ export class NotebookNavigatorIntegration {
                 --cf-color: ${color.hex};
                 --cf-colored: 1;
                 --cf-color-rgb: ${color.rgb};
+                --cf-bg-alpha: ${finalBgAlpha};
                 background-color: rgba(${color.rgb}, ${finalBgAlpha}) !important;
                 border-left: ${nnThick}px solid rgba(${color.rgb}, ${finalBorderAlpha}) !important;
                 border-radius: ${L.radius}px !important;
@@ -293,6 +294,7 @@ export class NotebookNavigatorIntegration {
                 --cf-colored: 1;
                 --cf-color-rgb: ${color.rgb};
                 ${filePairVars}
+                --cf-bg-alpha: ${fileBg};
                 background-color: rgba(${color.rgb}, ${fileBg}) !important;
                 border-left: ${nnThick}px solid rgba(${color.rgb}, 0.6) !important;
                 opacity: 1.0 !important;

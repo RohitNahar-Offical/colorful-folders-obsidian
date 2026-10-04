@@ -740,6 +740,7 @@ export class StyleGenerator {
                 --cf-color: ${color.hex};
                 --cf-color-rgb: ${color.rgb};
                 --cf-colored: 1;
+                --cf-bg-alpha: ${folderStyles.b === 'transparent' ? 0 : (folderStyles.b === color.hex ? 1 : adjustedOp)};
                 background-color: var(--cf-folder-bg, ${folderStyles.b}) !important;
                 --nav-item-background: var(--cf-folder-bg, ${folderStyles.b});
                 --cf-selection-bg: rgba(${color.rgb}, ${Math.min(1.0, adjustedOp + 0.15)});

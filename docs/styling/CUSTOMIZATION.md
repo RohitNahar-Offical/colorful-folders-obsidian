@@ -287,6 +287,7 @@ On each colored folder row (core File Explorer and Notebook Navigator):
 | `--cf-color` | The folder color as hex. |
 | `--cf-color-rgb` | The same color as `r, g, b`. |
 | `--cf-colored` | `1` on rows Colorful Folders colors. Target them with `@container style(--cf-colored: 1)`. |
+| `--cf-bg-alpha` | The opacity Colorful Folders paints the row background at (0 to 1), after depth fading. Blend `--cf-color` by this amount to judge text against what is on screen. |
 | `--cf-custom-text` / `--cf-custom-icon` | `1` when the row has a hand-picked text or icon color, so automatic rules can stand down. |
 | `--cf-pair-text` / `--cf-pair-icon` | The palette pair colors from `palettePairs` (Notebook Navigator). |
 
