@@ -977,6 +977,7 @@ export default class ColorfulFoldersPlugin
       body.setCssProps({
         '--cf-auto-steps': String(s.cfAutoSteps ?? 3),
         '--cf-auto-tolerance': String(s.cfAutoTolerance ?? 0),
+        '--cf-subfolder-opacity': String(s.subfolderOpacity ?? 0.2),
       });
     } catch { /* no document body yet */ }
     if (this.isGeneratingStyles) {
