@@ -23,7 +23,7 @@ Representing the `data.json` structure. Defined in `src/common/types.ts`.
 | `cycleOffset` | `number` | Shifts the starting point of the color cycle. |
 | **Opacity & Accents** | | |
 | `rootOpacity` | `number` | Starting opacity for depth-0 folder title backgrounds. Default: `0.50`. Used as the base for the depth progression formula. |
-| `subfolderOpacity` | `number` | Legacy setting — currently not used in the depth progression formula. Reserved for future per-level overrides. |
+| `subfolderOpacity` | `number` | Starting opacity for depth-1 folder backgrounds; each deeper level subtracts `0.08` (see §5b). Default: `0.40`. Published to themes as `--cf-subfolder-opacity` on `<body>`. |
 | `tintOpacity` | `number` | Minimum opacity for `.nav-folder-children` container tints. Default: `0.028`. Floored to `0.12` at depth-0 and `0.05` at deeper levels. |
 | `rootTintOpacity` | `number` | Specific tint transparency for root folders. |
 | `fileBackgroundOpacity` | `number` | Transparency for file background highlights. |
@@ -63,6 +63,17 @@ Representing the `data.json` structure. Defined in `src/common/types.ts`.
 | `dividerPillMode` | `boolean` | Enables/Disables the "Modern Pill" design wrapper. |
 | `dividerPillColor` | `string` | Universal background color for all divider pills. |
 | `dividerIconPosition` | `string` | Universal position for divider icons (`left`, `right`, or `both`). |
+| **Palette Pairs, Heatmap & Auto Contrast** | | |
+| `palettePairs` | `Record<string, { text?: string; icon?: string; auto?: boolean }>` | Text and icon color per palette color, keyed by lowercase hex. `auto: true` (or unset) leaves text and icon to the theme. |
+| `heatmapDays` | `number[]` | Five increasing age limits in days where each heatmap color band ends. Default: `[1, 3, 7, 15, 30]`. Applies to every palette. |
+| `cfAutoContrast` | `boolean` | Adds `cf-folder-auto` to `<body>` so a theme can pick readable text and icon colors. Default: `true`. |
+| `cfAutoSteps` | `number` | Published as `--cf-auto-steps`: how far auto contrast shifts a color, in palette steps of 0.1 lightness. Default: `3`. |
+| `cfAutoSnap` | `boolean` | Adds `cf-folder-auto-snap` to `<body>`: a shift past the end becomes pure white or black. Default: `true`. |
+| `cfAutoTolerance` | `number` | Published as `--cf-auto-tolerance`: with snap on, a shift within this many percent of white or black goes all the way. Default: `0`. |
+| **Row Layout (Notebook Navigator)** | | |
+| `nnRowBorder` | `number` | Width of the colored left border on Notebook Navigator rows. `-1` = automatic, `0` = none. Default: `-1`. |
+| `rowSpacing` | `number` | Gap below and beside each colored Notebook Navigator row, in px. Default: `2`. |
+| `folderTextWeight` | `number` | Font weight of colored folder names (core File Explorer and Notebook Navigator). Default: `800`. |
 | **Integrations** | | |
 | `notebookNavigatorSupport` | `boolean` | Enables styling for Notebook Navigator items. |
 | `notebookNavigatorFileBackground` | `boolean` | Applies background colors to NN file items. |

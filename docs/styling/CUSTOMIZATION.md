@@ -276,6 +276,37 @@ The plugin's styling engine dynamically exposes standard **CSS Variable Hooks** 
 | `--cf-tag-bg` | Background for tags/flairs/metadata | Dynamic parent 15% opacity color tint |
 | `--cf-tag-color` | Text color for tags/flairs/metadata | Calculated contrast text color |
 
+### 🎨 Theme Hooks for Folder Color and Auto Contrast
+
+Colorful Folders also publishes the raw folder color and its own settings, so a theme can compute text and icon colors itself.
+
+On each colored folder row (core File Explorer and Notebook Navigator):
+
+| Hook Variable | Description |
+| :--- | :--- |
+| `--cf-color` | The folder color as hex. |
+| `--cf-color-rgb` | The same color as `r, g, b`. |
+| `--cf-colored` | `1` on rows Colorful Folders colors. Target them with `@container style(--cf-colored: 1)`. |
+| `--cf-custom-text` / `--cf-custom-icon` | `1` when the row has a hand-picked text or icon color, so automatic rules can stand down. |
+| `--cf-pair-text` / `--cf-pair-icon` | The palette pair colors from `palettePairs` (Notebook Navigator). |
+
+On `<body>`, in every open window:
+
+| Hook | Description |
+| :--- | :--- |
+| `.cf-folder-auto` | Present when *Auto contrast* is on. |
+| `.cf-folder-auto-snap` | Present when *Snap to black or white* is on. |
+| `--cf-auto-steps` | Shift amount in palette steps (0.1 lightness each). |
+| `--cf-auto-tolerance` | Snap tolerance in percent. |
+| `--cf-subfolder-opacity` | The *Subfolder opacity* setting, so a theme can judge text against what is painted on depth-1 rows. |
+
+```css
+/* Black or white folder names, chosen per folder from its own color */
+body.cf-folder-auto .nn-navitem.nn-folder .nn-navitem-name {
+  color: oklch(from var(--cf-color) clamp(0, (0.62 - l) * 1000, 1) 0 0);
+}
+```
+
 ### 🛠️ Hover and Selection Hook Override Examples
 
 Instead of writing high-specificity overrides that need `!important` to fight with the theme, you can seamlessly bind your custom color design tokens to these variables:

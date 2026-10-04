@@ -71,6 +71,7 @@ export class GeneralSettingSection extends SettingSection {
                 .onChange(async (value) => {
                     this.plugin.settings.colorMode = value;
                     heatmapOptions.toggle(value === 'heatmap');
+                    rebuildRows(); // the Age column only shows in heatmap mode
                     await this.plugin.saveSettings();
                     this.plugin.generateStylesDebounced();
                 }));
