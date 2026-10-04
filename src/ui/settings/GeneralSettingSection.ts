@@ -75,21 +75,25 @@ export class GeneralSettingSection extends SettingSection {
                     this.plugin.generateStylesDebounced();
                 }));
 
+        let heatmapDaysText: obsidian.TextComponent | undefined;
         const heatmapOptions = genCard.createDiv('cf-heatmap-options');
         heatmapOptions.toggle(this.plugin.settings.colorMode === 'heatmap');
         new obsidian.Setting(heatmapOptions)
             .setName('Heatmap age limits')
             .setDesc('Days since the last edit where each color band ends, hottest first, separated by commas. Anything older gets the last color. Default 1, 3, 7, 15, 30.')
-            .addText(text => text
+            .addText(text => (heatmapDaysText = text)
                 .setPlaceholder('1, 3, 7, 15, 30')
                 .setValue((this.plugin.settings.heatmapDays ?? [1, 3, 7, 15, 30]).join(', '))
                 .onChange(async (value) => {
                     const days = value.split(',').map(v => Number(v.trim()));
                     const valid = days.length === 5 && days.every((d, i) => Number.isFinite(d) && d > 0 && (i === 0 || d > days[i - 1]));
                     if (!valid) return;
-                    this.plugin.settings.heatmapDays = days;
+                    // Update in place: the palette table holds this same array for its age cells.
+                    const stored = (this.plugin.settings.heatmapDays ??= [1, 3, 7, 15, 30]);
+                    stored.splice(0, stored.length, ...days);
                     await this.plugin.saveSettings();
                     this.plugin.generateStylesDebounced();
+                    rebuildRows();
                 }));
 
         /* Auto contrast: master switch here; the three knobs the stylesheet reads from <body> show only while it is on. */
@@ -335,6 +339,7 @@ export class GeneralSettingSection extends SettingSection {
                         const v = Number(dayInp.value);
                         if (Number.isFinite(v) && v >= 0) {
                             days[index] = v;
+                            heatmapDaysText?.setValue(days.join(', '));
                             savePaletteDebounced();
                             rebuildRows();
                         } else {
