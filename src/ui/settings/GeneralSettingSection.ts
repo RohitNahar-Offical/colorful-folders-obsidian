@@ -59,6 +59,39 @@ export class GeneralSettingSection extends SettingSection {
                     this.plugin.generateStylesDebounced();
                 }));
 
+        new obsidian.Setting(genCard)
+            .setName(t("settings.color_mode.name"))
+            .setDesc('Cycle assigns colors sequentially. Monochromatic uses depth-based shading. Heatmap colors folders based on the most recently modified file inside.')
+            .addDropdown(drop => drop
+                .addOption('cycle', t("settings.color_mode.cycle"))
+                .addOption('monochromatic', t("settings.color_mode.monochromatic"))
+                .addOption('heatmap', t("settings.color_mode.heatmap"))
+                .addOption('hierarchy', t("settings.color_mode.hierarchy"))
+                .setValue(this.plugin.settings.colorMode || 'cycle')
+                .onChange(async (value) => {
+                    this.plugin.settings.colorMode = value;
+                    heatmapOptions.toggle(value === 'heatmap');
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStylesDebounced();
+                }));
+
+        const heatmapOptions = genCard.createDiv('cf-heatmap-options');
+        heatmapOptions.toggle(this.plugin.settings.colorMode === 'heatmap');
+        new obsidian.Setting(heatmapOptions)
+            .setName('Heatmap age limits')
+            .setDesc('Days since the last edit where each color band ends, hottest first, separated by commas. Anything older gets the last color. Default 1, 3, 7, 15, 30.')
+            .addText(text => text
+                .setPlaceholder('1, 3, 7, 15, 30')
+                .setValue((this.plugin.settings.heatmapDays ?? [1, 3, 7, 15, 30]).join(', '))
+                .onChange(async (value) => {
+                    const days = value.split(',').map(v => Number(v.trim()));
+                    const valid = days.length === 5 && days.every((d, i) => Number.isFinite(d) && d > 0 && (i === 0 || d > days[i - 1]));
+                    if (!valid) return;
+                    this.plugin.settings.heatmapDays = days;
+                    await this.plugin.saveSettings();
+                    this.plugin.generateStylesDebounced();
+                }));
+
         /* Auto contrast: master switch here; the three knobs the stylesheet reads from <body> show only while it is on. */
         const applyAutoSettings = async () => {
             await this.plugin.saveSettings();
@@ -459,38 +492,6 @@ export class GeneralSettingSection extends SettingSection {
                     this.plugin.generateStylesDebounced();
                 }));
 
-        new obsidian.Setting(genCard)
-            .setName(t("settings.color_mode.name"))
-            .setDesc('Cycle assigns colors sequentially. Monochromatic uses depth-based shading. Heatmap colors folders based on the most recently modified file inside.')
-            .addDropdown(drop => drop
-                .addOption('cycle', t("settings.color_mode.cycle"))
-                .addOption('monochromatic', t("settings.color_mode.monochromatic"))
-                .addOption('heatmap', t("settings.color_mode.heatmap"))
-                .addOption('hierarchy', t("settings.color_mode.hierarchy"))
-                .setValue(this.plugin.settings.colorMode || 'cycle')
-                .onChange(async (value) => {
-                    this.plugin.settings.colorMode = value;
-                    heatmapOptions.toggle(value === 'heatmap');
-                    await this.plugin.saveSettings();
-                    this.plugin.generateStylesDebounced();
-                }));
-
-        const heatmapOptions = genCard.createDiv('cf-heatmap-options');
-        heatmapOptions.toggle(this.plugin.settings.colorMode === 'heatmap');
-        new obsidian.Setting(heatmapOptions)
-            .setName('Heatmap age limits')
-            .setDesc('Days since the last edit where each color band ends, hottest first, separated by commas. Anything older gets the last color. Default 1, 3, 7, 15, 30.')
-            .addText(text => text
-                .setPlaceholder('1, 3, 7, 15, 30')
-                .setValue((this.plugin.settings.heatmapDays ?? [1, 3, 7, 15, 30]).join(', '))
-                .onChange(async (value) => {
-                    const days = value.split(',').map(v => Number(v.trim()));
-                    const valid = days.length === 5 && days.every((d, i) => Number.isFinite(d) && d > 0 && (i === 0 || d > days[i - 1]));
-                    if (!valid) return;
-                    this.plugin.settings.heatmapDays = days;
-                    await this.plugin.saveSettings();
-                    this.plugin.generateStylesDebounced();
-                }));
 
         new obsidian.Setting(genCard)
             .setName(t("settings.file_color_mode.name"))
