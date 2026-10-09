@@ -1,5 +1,4 @@
 import { IColorfulFoldersPlugin } from '../common/types';
-import { NotebookNavigatorIntegration } from '../integrations/NotebookNavigator';
 
 export class DOMObserverService {
     plugin: IColorfulFoldersPlugin;
@@ -75,7 +74,7 @@ export class DOMObserverService {
             this.dividerObserver.disconnect();
         }
 
-        const allContainers = this.plugin.getAllExplorerContainers().filter(c => !NotebookNavigatorIntegration.isNNContainer(c));
+        const allContainers = this.plugin.getAllExplorerContainers();
         if (allContainers.length === 0) return;
 
         allContainers.forEach((container) => {

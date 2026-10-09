@@ -3,7 +3,6 @@ import { IColorfulFoldersPlugin, FolderStyle } from '../common/types';
 import { DividerModal } from '../ui/modals/DividerModal';
 import { HoverMessageModal } from '../ui/modals/HoverMessageModal';
 import { safeEscape, hexToRgbObj } from '../common/utils';
-import { NotebookNavigatorIntegration } from '../integrations/NotebookNavigator';
 
 interface InternalPlugins {
     getPluginById(id: string): { instance: { openGlobalSearch(q: string): void } } | null;
@@ -474,7 +473,6 @@ export class DividerManager {
     }
 
     private syncContainer(container: Element) {
-        if (!NotebookNavigatorIntegration.shouldRenderDividers(container, this.plugin.settings)) return;
         try {
             // ΓöÇΓöÇ Step 1: Collect desired dividers ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
             const desired = new Map<string, { conf: FolderStyle; isGlobal: boolean }>();
@@ -496,9 +494,9 @@ export class DividerManager {
                 let seenFolder = false;
                 let hasFileAfterFolder = false;
                 for (const node of rootChildren) {
-                    if (NotebookNavigatorIntegration.isFolder(node)) {
+                    if (node.classList.contains('nav-folder') || node.classList.contains('nav-folder-title')) {
                         seenFolder = true;
-                    } else if (seenFolder && NotebookNavigatorIntegration.isFile(node)) {
+                    } else if (seenFolder && (node.classList.contains('nav-file') || node.classList.contains('nav-file-title'))) {
                         hasFileAfterFolder = true;
                         break;
                     }
@@ -654,9 +652,9 @@ export class DividerManager {
                 if (node.classList.contains('cf-interactive-divider')) continue;
                 if (node.classList.contains('nav-file-ghost') || node.classList.contains('nav-folder-ghost')) continue;
 
-                if (NotebookNavigatorIntegration.isFolder(node)) {
+                if (node.classList.contains('nav-folder') || node.classList.contains('nav-folder-title')) {
                     seenFolder = true;
-                } else if (seenFolder && NotebookNavigatorIntegration.isFile(node)) {
+                } else if (seenFolder && (node.classList.contains('nav-file') || node.classList.contains('nav-file-title'))) {
                     return node as HTMLElement;
                 }
             }
@@ -665,11 +663,10 @@ export class DividerManager {
 
         const safePath = safeEscape(path);
         const titleEl = (domPathMap ? domPathMap.get(path) : null) ||
-            container.querySelector(`.nav-folder-title[data-path="${safePath}"], .nav-file-title[data-path="${safePath}"]`) ||
-            NotebookNavigatorIntegration.findItemInDOM(container, path);
+            container.querySelector(`.nav-folder-title[data-path="${safePath}"], .nav-file-title[data-path="${safePath}"]`);
         if (!titleEl) return null;
 
-        const wrapper = titleEl.closest(`.nav-folder, .nav-file, .nn-navitem, .nn-file`);
+        const wrapper = titleEl.closest(`.nav-folder, .nav-file`);
         if (!wrapper) return null;
         if (wrapper.classList.contains('nav-file-ghost') || wrapper.classList.contains('nav-folder-ghost')) return null;
 
@@ -691,9 +688,9 @@ export class DividerManager {
                 if (node.classList.contains('cf-interactive-divider')) continue;
                 if (node.classList.contains('nav-file-ghost') || node.classList.contains('nav-folder-ghost')) continue;
 
-                if (NotebookNavigatorIntegration.isFolder(node)) {
+                if (node.classList.contains('nav-folder') || node.classList.contains('nav-folder-title')) {
                     seenFolder = true;
-                } else if (seenFolder && NotebookNavigatorIntegration.isFile(node)) {
+                } else if (seenFolder && (node.classList.contains('nav-file') || node.classList.contains('nav-file-title'))) {
                     return node as HTMLElement;
                 }
             }
@@ -702,11 +699,10 @@ export class DividerManager {
 
         const safePath = safeEscape(path);
         const titleEl = (domPathMap ? domPathMap.get(path) : null) ||
-            container.querySelector(`.nav-folder-title[data-path="${safePath}"], .nav-file-title[data-path="${safePath}"], .tree-item-self[data-path="${safePath}"], [data-path="${safePath}"]`) ||
-            NotebookNavigatorIntegration.findItemInDOM(container, path);
+            container.querySelector(`.nav-folder-title[data-path="${safePath}"], .nav-file-title[data-path="${safePath}"], .tree-item-self[data-path="${safePath}"], [data-path="${safePath}"]`);
         if (!titleEl) return null;
 
-        const wrapper = titleEl.closest(`.nav-folder, .nav-file, .tree-item, .nn-navitem, .nn-file`);
+        const wrapper = titleEl.closest(`.nav-folder, .nav-file, .tree-item`);
         if (!wrapper) return null;
         if (wrapper.classList.contains('nav-file-ghost') || wrapper.classList.contains('nav-folder-ghost')) return null;
 

@@ -1052,19 +1052,10 @@ export default class ColorfulFoldersPlugin
       }
     });
 
-    const docs = new Set<Document>();
-    explorers.forEach((e) => docs.add(e.ownerDocument));
-    docs.add(activeDocument);
-
-    const allContainers = [...explorers];
-    if (this.settings.notebookNavigatorSupport) {
-      docs.forEach((doc) => {
-        const extra = NotebookNavigatorIntegration.getExtraContainers(doc, this.settings);
-        if (extra) extra.forEach((e) => allContainers.push(e as HTMLElement));
-      });
-    }
-
-    return allContainers;
+    // Dividers are exclusively a native File Explorer feature.
+    // Notebook Navigator containers are deliberately excluded here so the
+    // divider pipeline (syncDividers, observer, clean) never sees NN DOM.
+    return explorers;
   }
 
   private getMobileExplorerContainers(): HTMLElement[] {
@@ -1086,19 +1077,10 @@ export default class ColorfulFoldersPlugin
       }
     });
 
-    const docs = new Set<Document>();
-    explorers.forEach((e) => docs.add(e.ownerDocument));
-    docs.add(activeDocument);
-
-    const allContainers = [...explorers];
-    if (this.settings.notebookNavigatorSupport) {
-      docs.forEach((doc) => {
-        const extra = NotebookNavigatorIntegration.getExtraContainers(doc, this.settings);
-        if (extra) extra.forEach((e) => allContainers.push(e as HTMLElement));
-      });
-    }
-
-    return allContainers;
+    // Dividers are exclusively a native File Explorer feature.
+    // Notebook Navigator containers are deliberately excluded here so the
+    // divider pipeline (syncDividers, observer, clean) never sees NN DOM.
+    return explorers;
   }
 
   invalidateExplorerContainersCache(): void {
