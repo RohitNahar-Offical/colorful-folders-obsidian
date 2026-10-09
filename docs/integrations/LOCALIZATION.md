@@ -132,9 +132,9 @@ The following UI components have been fully refactored to use `t(...)`:
 | Component File | Strings Covered |
 |:---|:---|
 | `SettingTab.ts` | Tab labels, import URL notices, icon pack import notices |
-| `GeneralSettingSection.ts` | Palette header, reset/add color buttons, text gradient angle setting |
+| `GeneralSettingSection.ts` | Palette header, reset/add color buttons, text gradient angle setting, auto contrast settings, heatmap age limits, folder text weight, palette table headers, tooltips and age labels |
 | `IconSettingSection.ts` | Download/Re-download/Downloading buttons, filter placeholder, empty notice, show-more button |
-| `FeaturesSettingSection.ts` | Live preview label, divider icon position dropdown, tag sync banner, Smart Connections setting |
+| `FeaturesSettingSection.ts` | Live preview label, divider icon position dropdown, tag sync banner, Smart Connections setting, Notebook Navigator row accent border and row spacing |
 | `AISettingSection.ts` | Experimental banner, provider/URL/model settings, token overview, AI action buttons, vector embedding card, scanning notices |
 | `HoverMessageModal.ts` | Editor label, textarea placeholder, toolbar tooltips (bold/italic/code/link), live preview label, empty preview notice |
 | `DividerModal.ts` | All section headers, setting names/descs, alignment/pill/line style dropdowns, hover message button, footer buttons |

@@ -46,6 +46,24 @@ export interface ColorfulFoldersSettings {
     paletteDark: string;
     palette?: string;
     customPalette: string;
+    /** Text/icon color paired with each palette color, keyed by lowercase hex. `auto` defaults true; set false to pin text/icon by hand. */
+    palettePairs?: Record<string, { text?: string; icon?: string; auto?: boolean }>;
+    /** Heatmap age limits in days for short palettes (color 1 = up to the first value, ..., last color = older). */
+    heatmapDays?: number[];
+    /** Notebook Navigator row accent border width in px; -1 = automatic (path line thickness). */
+    nnRowBorder?: number;
+    /** Master switch for automatic text/icon contrast. Publishes the `cf-folder-auto` class on <body>. */
+    cfAutoContrast?: boolean;
+    /** How far auto contrast moves each color, in palette steps (0.1 lightness each). Default 3. */
+    cfAutoSteps?: number;
+    /** On: a shift that runs past the end becomes pure white or pure black. Off: it stops just short and keeps a tint. */
+    cfAutoSnap?: boolean;
+    /** With snap on, a shifted color within this many percent of white or black goes all the way. 0 = only when it runs past the end. */
+    cfAutoTolerance?: number;
+    /** Gap below and beside each colored row in Notebook Navigator, px. */
+    rowSpacing?: number;
+    /** Font weight of colored folder names (400 regular ... 900). */
+    folderTextWeight?: number;
     colorMode: string;
     exclusionList: string;
     outlineOnly: boolean;

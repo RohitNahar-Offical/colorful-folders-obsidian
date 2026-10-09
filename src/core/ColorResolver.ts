@@ -59,6 +59,8 @@ export function getFastFolderScopeDepth(path: string, isFile: boolean): number {
 
 export class ColorResolver {
     private static textColorCache = new LRUCache<string, string>(1024);
+    /** Heatmap age limits (days) for short palettes; set from settings. */
+    public static heatmapDays: number[] = [1, 3, 7, 15, 30];
 
     public static clearCache(): void {
         this.textColorCache.clear();
@@ -80,12 +82,19 @@ export class ColorResolver {
         if (mode === "heatmap") {
             if (!heatmapMtime) return palette[len - 1];
             const diffDays = (now - heatmapMtime) / 86400000;
-            if (diffDays <= 1) return palette[0];
-            if (diffDays <= 3) return palette[Math.min(2, len - 1)];
-            if (diffDays <= 7) return palette[Math.min(7, len - 1)];
-            if (diffDays <= 15) return palette[Math.min(4, len - 1)];
-            if (diffDays <= 30) return palette[Math.min(10, len - 1)];
-            return palette[len - 1];
+            // Short palettes map in order, hottest first, using the
+            // user's age limits (default: 1, 3, 7, 15, 30 days, then older).
+            const limits = ColorResolver.heatmapDays;
+            if (len <= limits.length + 1) {
+                let level = limits.findIndex(d => diffDays <= d);
+                if (level === -1) level = limits.length;
+                return palette[Math.min(level, len - 1)];
+            }
+            // Longer palettes keep the original slot picks, banded by the same age limits.
+            const slots = [0, 2, 7, 4, 10];
+            const band = limits.findIndex(d => diffDays <= d);
+            if (band === -1 || band >= slots.length) return palette[len - 1];
+            return palette[Math.min(slots[band], len - 1)];
         } else if (mode === "monochromatic") {
             if (d === 0) return palette[vIdx % len];
             return palette[rIdx % len];

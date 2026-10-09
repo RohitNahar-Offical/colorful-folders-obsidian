@@ -1,5 +1,5 @@
 import { StyleResolver } from './core/StyleResolver';
-import { getCurrentPalette } from './core/ColorResolver';
+import { getCurrentPalette, ColorResolver } from './core/ColorResolver';
 import * as obsidian from "obsidian";
 import {
   ColorfulFoldersSettings,
@@ -657,6 +657,9 @@ export default class ColorfulFoldersPlugin
         .map((s) => s.trim())
         .filter((s) => s.length > 0)
     );
+    ColorResolver.heatmapDays = this.settings.heatmapDays?.length ? this.settings.heatmapDays : [1, 3, 7, 15, 30];
+    NotebookNavigatorIntegration.layout = { border: this.settings.nnRowBorder ?? -1, radius: this.settings.folderBorderRadius ?? 6, spacing: this.settings.rowSpacing ?? 2, weight: this.settings.folderTextWeight ?? 800 };
+    NotebookNavigatorIntegration.pairs = this.settings.palettePairs || {};
   }
 
   public syncCustomFolderColorsMap(): void {
@@ -694,6 +697,9 @@ export default class ColorfulFoldersPlugin
   private _lastCustomIconsRef: Record<string, string> | null = null;
 
   async saveSettings() {
+    ColorResolver.heatmapDays = this.settings.heatmapDays?.length ? this.settings.heatmapDays : [1, 3, 7, 15, 30];
+    NotebookNavigatorIntegration.layout = { border: this.settings.nnRowBorder ?? -1, radius: this.settings.folderBorderRadius ?? 6, spacing: this.settings.rowSpacing ?? 2, weight: this.settings.folderTextWeight ?? 800 };
+    NotebookNavigatorIntegration.pairs = this.settings.palettePairs || {};
     this.syncCustomFolderColorsMap();
     const iconRulesChanged = (this.settings.customIconRules || '') !== this._lastIconRulesKey;
     const currentCustomIcons = this.getCustomIconsMap();
@@ -961,8 +967,24 @@ export default class ColorfulFoldersPlugin
 
 
 
+  /** Publishes the auto contrast state and subfolder opacity on a window's <body> for themes to read. */
+  applyThemeState(doc: Document) {
+    const s = this.settings;
+    doc.body.classList.toggle('cf-folder-auto', s.cfAutoContrast ?? true);
+    doc.body.classList.toggle('cf-folder-auto-snap', s.cfAutoSnap ?? true);
+    doc.body.setCssProps({
+      '--cf-auto-steps': String(s.cfAutoSteps ?? 3),
+      '--cf-auto-tolerance': String(s.cfAutoTolerance ?? 0),
+      '--cf-subfolder-opacity': String(s.subfolderOpacity ?? 0.2),
+    });
+  }
+
   async generateStyles() {
     if (this._isUnloading) return;
+    try {
+      // Every open window (popouts included) gets the same theme-facing state.
+      this.getOpenDocuments().forEach((doc) => this.applyThemeState(doc));
+    } catch { /* no document body yet */ }
     if (this.isGeneratingStyles) {
       this.hasPendingGenerateStyles = true;
       return;

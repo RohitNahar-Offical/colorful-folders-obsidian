@@ -30,6 +30,7 @@ export class EventTrackerService {
                 
                 doc.body.classList.toggle("cf-show-hidden", this.plugin.settings.showHiddenItems);
                 doc.body.classList.toggle("cf-wrap-metadata", !!this.plugin.settings.wrapMetadata);
+                this.plugin.applyThemeState(doc);
                 
                 this.registerDragEventsForDoc(doc);
                 this.plugin.domObserverService.initStyleObservers();

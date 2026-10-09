@@ -587,6 +587,42 @@ const zhCN: Partial<LocaleDictionary> = {
     "settings.option.all": "文件夹和文件",
 
     // --- Spaced text options ---
+
+    // --- Theme hooks, auto contrast, row layout, palette table ---
+    "settings.heatmap_days.name": "热力图时间界限",
+    "settings.heatmap_days.desc": "每个颜色区间结束时距上次编辑的天数，从最新开始，用逗号分隔。更早的使用最后一种颜色。默认 1, 3, 7, 15, 30。",
+    "settings.auto_contrast.name": "自动对比度",
+    "settings.auto_contrast.desc": "自动选择文字和图标颜色。关闭后可为每种调色板颜色设置自定义文字和图标颜色。",
+    "settings.auto_contrast_shift.name": "对比度偏移",
+    "settings.auto_contrast_shift.desc": "自动对比度移动每种颜色的幅度，以调色板级数计（每级亮度 0.1）。默认 3。",
+    "settings.auto_snap.name": "吸附到黑色或白色",
+    "settings.auto_snap.desc": "开启：超出范围的偏移变为纯白或纯黑。关闭：在边界前停止并保留色调。",
+    "settings.auto_tolerance.name": "吸附容差",
+    "settings.auto_tolerance.desc": "开启吸附时，偏移后距白色或黑色在此百分比内的颜色将完全变为白或黑。0 = 仅在超出范围时。",
+    "settings.row_border.name": "行强调边框",
+    "settings.row_border.desc": "行左侧彩色边框的宽度。-1 = 自动，0 = 无。",
+    "settings.row_spacing.name": "行间距",
+    "settings.row_spacing.desc": "每个彩色行下方和侧面的间距（默认 2px）。",
+    "settings.folder_text_weight.name": "文件夹文字粗细",
+    "settings.folder_text_weight.desc": "彩色文件夹名称的粗细（400 常规，700 粗体，默认 800）。",
+    "settings.palette_table.order": "顺序",
+    "settings.palette_table.color": "颜色",
+    "settings.palette_table.hex": "Hex",
+    "settings.palette_table.age": "时间",
+    "settings.palette_table.auto": "自动",
+    "settings.palette_table.text": "文字",
+    "settings.palette_table.icon": "图标",
+    "settings.palette_table.move_up": "上移",
+    "settings.palette_table.move_down": "下移",
+    "settings.palette_table.preview": "预览：此颜色上的图标和文字",
+    "settings.palette_table.auto_tip": "此颜色的自动对比度",
+    "settings.palette_table.text_tip": "此调色板颜色的文字颜色",
+    "settings.palette_table.icon_tip": "此调色板颜色的图标颜色",
+    "settings.palette_table.up_to": "至多",
+    "settings.palette_table.from_to": "{{from}} 至",
+    "settings.palette_table.day": "天",
+    "settings.palette_table.days": "天",
+    "settings.palette_table.older_than": "超过 {{n}} {{unit}}",
 } as const;
 
 export default zhCN;

@@ -587,6 +587,42 @@ const zhTW: Partial<LocaleDictionary> = {
     "settings.option.all": "資料夾和檔案",
 
     // --- Spaced text options ---
+
+    // --- Theme hooks, auto contrast, row layout, palette table ---
+    "settings.heatmap_days.name": "熱力圖時間界限",
+    "settings.heatmap_days.desc": "每個顏色區間結束時距上次編輯的天數，從最新開始，以逗號分隔。更早的使用最後一種顏色。預設 1, 3, 7, 15, 30。",
+    "settings.auto_contrast.name": "自動對比度",
+    "settings.auto_contrast.desc": "自動選擇文字與圖示顏色。關閉後可為每種調色盤顏色設定自訂文字與圖示顏色。",
+    "settings.auto_contrast_shift.name": "對比度偏移",
+    "settings.auto_contrast_shift.desc": "自動對比度移動每種顏色的幅度，以調色盤級數計（每級亮度 0.1）。預設 3。",
+    "settings.auto_snap.name": "吸附到黑色或白色",
+    "settings.auto_snap.desc": "開啟：超出範圍的偏移變為純白或純黑。關閉：在邊界前停止並保留色調。",
+    "settings.auto_tolerance.name": "吸附容差",
+    "settings.auto_tolerance.desc": "開啟吸附時，偏移後距白色或黑色在此百分比內的顏色將完全變為白或黑。0 = 僅在超出範圍時。",
+    "settings.row_border.name": "行強調邊框",
+    "settings.row_border.desc": "行左側彩色邊框的寬度。-1 = 自動，0 = 無。",
+    "settings.row_spacing.name": "行間距",
+    "settings.row_spacing.desc": "每個彩色行下方與側面的間距（預設 2px）。",
+    "settings.folder_text_weight.name": "資料夾文字粗細",
+    "settings.folder_text_weight.desc": "彩色資料夾名稱的粗細（400 一般，700 粗體，預設 800）。",
+    "settings.palette_table.order": "順序",
+    "settings.palette_table.color": "顏色",
+    "settings.palette_table.hex": "Hex",
+    "settings.palette_table.age": "時間",
+    "settings.palette_table.auto": "自動",
+    "settings.palette_table.text": "文字",
+    "settings.palette_table.icon": "圖示",
+    "settings.palette_table.move_up": "上移",
+    "settings.palette_table.move_down": "下移",
+    "settings.palette_table.preview": "預覽：此顏色上的圖示與文字",
+    "settings.palette_table.auto_tip": "此顏色的自動對比度",
+    "settings.palette_table.text_tip": "此調色盤顏色的文字顏色",
+    "settings.palette_table.icon_tip": "此調色盤顏色的圖示顏色",
+    "settings.palette_table.up_to": "至多",
+    "settings.palette_table.from_to": "{{from}} 至",
+    "settings.palette_table.day": "天",
+    "settings.palette_table.days": "天",
+    "settings.palette_table.older_than": "超過 {{n}} {{unit}}",
 } as const;
 
 export default zhTW;
