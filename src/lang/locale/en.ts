@@ -560,6 +560,8 @@ export default {
     "settings.tag_color_placeholder": "#ffffff",
     "settings.new_tag_rule_default": "New_Rule = #5ebd8e",
     "settings.nb_navigator.auto_color_desc": "Injects the faint background block and left border to file cards. Disable this to keep the cards strictly native.",
+    "settings.smart_connections.name": "Smart Connections compatibility mode",
+    "settings.smart_connections.desc": "Ensures seamless style compatibility with Smart Connections panels.",
 
     // --- AI Section Strings ---
     "settings.ai.banner_header": "🧪 Experimental feature",

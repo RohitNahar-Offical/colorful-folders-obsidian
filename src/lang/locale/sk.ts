@@ -657,6 +657,25 @@ const sk: Partial<LocaleDictionary> = {
     "settings.palette_table.day": "deň",
     "settings.palette_table.days": "dní",
     "settings.palette_table.older_than": "staršie ako {{n}} {{unit}}",
+
+    // --- Missing keys from en.ts ---
+    "modal.color_picker.bg_styling": "Styl pozadia",
+    "modal.color_picker.border_radius": "Zaoblenie rohov",
+    "modal.color_picker.preset_placeholder": "Názov predvoľby...",
+    "modal.color_picker.search_placeholder": "Hľadať ikony...",
+    "modal.color_picker.text_styling": "Styl textu",
+    "modal.divider.organizing": "Organizujem: {{name}}",
+    "modal.divider.pill_mode.hide": "Skryť pilulku (iba text a čiary)",
+    "modal.divider.subtitle": "Oddeľovač sekcie",
+    "modal.password.enter_password_desc": "Prosím, zadajte heslo trezoru pre pokračovanie.",
+    "settings.note_headings_sync.desc": "Synchronizujte farby nadpisov priamo vo vašich poznámkach (Live Preview & Reading Mode) tak, aby zodpovedali hierarchii osnovy.",
+    "settings.note_headings_sync.name": "Farbenie nadpisov v poznámke (H1–H6)",
+    "settings.outline_sync.desc": "Aplikujte paletové úrovne a jemné pozadia do panela Osnova Obsidianu vo vašej postrannej lište, s úctou k farbám nadpisov motívu.",
+    "settings.outline_sync.name": "Farebná osnova (nadpisy)",
+    "settings.smart_connections.name": "Smart Connections kompatibilitný režim",
+    "settings.smart_connections.desc": "Zaisťuje bezproblémovú kompatibilitu štýlov s panelmi Smart Connections.",
+    "settings.tag_pane_sync.desc": "Aplikujte farby, jemné pozadia a dekoratívne počítadla priamo do panela Značky v Obsidiane vo vašej postrannej lište.",
+    "settings.tag_pane_sync.name": "Farebný panel značiek",
 };
 
 export default sk;
