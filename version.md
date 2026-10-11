@@ -4,8 +4,6 @@
 
 This update introduces a new **Auto contrast** section that lets your themes automatically pick readable text and icon colors, a redesigned **Custom colors** palette table with live previews and drag-to-reorder, and **editable heatmap age limits** so you control exactly how long a note stays a certain color. It also adds new row layout controls for Notebook Navigator and publishes extra information for theme makers.
 
-> *Note: This update was implemented by **Retron** ([@retronified](https://github.com/retronified) on GitHub). Thank you, Retron, for your excellent work on this release!*
-
 ---
 
 ### 🎨 1. Auto Contrast — Readable Text & Icons, Automatically
@@ -25,7 +23,7 @@ This update introduces a new **Auto contrast** section that lets your themes aut
 
 ### 🌡️ 3. Heatmap Age Limits — You Control the Clock
 
-* **Editable Age Bands**: In Heatmap mode, folders change color based on how recently their contents were edited. You can now type in your own five age limits (in days) instead of using the defaults.s
+* **Editable Age Bands**: In Heatmap mode, folders change color based on how recently their contents were edited. You can now type in your own five age limits (in days) instead of using the defaults.
 * **Applies to Every Palette**: Your custom age limits work across all palettes, not just the built-in ones.
 * **Palette Age Column**: The palette table now shows an Age column that reflects the color generation mode you have selected, so everything stays in sync.
 
@@ -47,8 +45,11 @@ This update introduces a new **Auto contrast** section that lets your themes aut
 * **Subfolder Opacity Published**: Themes can now read the subfolder opacity setting, so they can judge text contrast against what is actually painted on nested folder rows.
 * **Per-Row Background Alpha**: Each colored row now reports how transparent its background is, giving themes an even better picture of what is on screen.
 * **Hand-Picked Color Detection**: When you manually choose a text or icon color for a folder, the plugin now tells themes to stand back and let your choice win, instead of fighting it.
-* **Updated Obsidian 1.14+ API**: Updated type definitions and dependencies to match the latest Obsidian release.
+
 * **All Languages Updated**: Every setting label and description has been translated into all supported languages.
+
+> *Note: This update includes contributions by **Retron** ([@retronified](https://github.com/retronified) on GitHub), with additional modifications and refinements by Rohit Nahar. Thank you, Retron, for your valuable contributions!*
+
 ---
 
 ## 🚀 5.0.6 - Colored Tags & Outline Sync, Silky-Smooth Scrolling & Instant Note Opening

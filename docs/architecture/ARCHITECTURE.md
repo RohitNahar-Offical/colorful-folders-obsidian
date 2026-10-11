@@ -150,6 +150,33 @@ Opacity is determined by a fixed mathematical progression:
 
 ---
 
+### 2.3 Auto Contrast, Palette Pairing & Theme Variable Publishing
+
+In addition to color resolution and depth progressions, `StyleGenerator` coordinates text/icon readability and exposes reactive CSS hooks for Obsidian themes:
+
+#### 🎨 Palette Text & Icon Pairing
+- Custom text and icon color pairs can be assigned per palette color (`palettePairs: Record<string, { text?: string; icon?: string; auto?: boolean }>`).
+- Pre-indexed into an $O(1)$ normalized map `activePairs` upfront during style context generation (`prepareContext()`).
+- Folder-specific styles (`customStyle.textColor`, `customStyle.iconColor`) take highest precedence. When a pair's `auto` flag is `true` (or unset), automated theme contrast is preserved.
+- Paired icons automatically default to the paired or resolved text color for flawless harmony.
+
+#### 🪟 Cross-Window Theme Contrast Hooks
+`applyThemeState(doc)` publishes live contrast settings directly onto `document.body` across all open and popout workspace windows:
+- **Body Classes**:
+  - `cf-folder-auto`: Present when Auto Contrast is enabled.
+  - `cf-folder-auto-snap`: Present when snap to pure white/black is enabled.
+- **Dynamic CSS Properties on `<body>`**:
+  - `--cf-auto-steps`: Lightness shift multiplier (default: `3`).
+  - `--cf-auto-tolerance`: Snap boundary tolerance (default: `0`).
+  - `--cf-subfolder-opacity`: Depth-1 background opacity for nested contrast calculation.
+- **Per-Row CSS Variables**:
+  - `--cf-color`: Raw folder hex color.
+  - `--cf-color-rgb`: Raw RGB components (`r, g, b`).
+  - `--cf-colored: 1`: Flag for container queries (`@container style(--cf-colored: 1)`).
+  - `--cf-bg-alpha`: Background opacity after depth calculations (0.0 to 1.0).
+
+---
+
 ## 3. Tiered Icon Selection Engine Architecture
 
 `IconManager` (`src/core/IconManager.ts`) coordinates icon resolution and CSS Data-URI generation for both **Folders** and **Files**.
@@ -312,11 +339,31 @@ All SVG transformations and resolutions run through bounded $O(1)$ `LRUCache(204
 
 ---
 
-## 4. Zero-DOM Section Divider Engine
+## 4. Interactive Section Divider Engine (`DividerManager.ts`)
 
-`DividerManager` (`src/core/DividerManager.ts`) manages visual section dividers without prepending physical HTML nodes:
-- Stamping dataset attributes (`data-cf-divider="true"`, `data-cf-path`) on target parent elements.
-- Generating pure CSS pseudo-element rules (`::before` / `::after`) for bridge lines, pill labels, and gradient dividers.
+`DividerManager` (`src/core/DividerManager.ts`) renders and reconciles interactive visual section dividers without layout thrashing:
+
+### 4.1 Tri-Layer Architecture
+1. **DOM Controller (`DividerManager.ts`)**:
+   - Builds divider nodes as a responsive flex-row "bridge": `line — chip (pill label) — line` with custom Lucide/Emoji icons.
+   - Dividers are positioned at the top of their target elements (`.nav-folder`, `.nav-file`), while the target wrapper receives the `.cf-has-divider` class and dynamic `padding-top`.
+   - Supports alignment (left, center, right), glassmorphism, line styles (solid, dashed, dotted), per-divider padding, and Markdown hover popovers (`HoverMessageModal`).
+2. **Global CSS Specifications (`BaseCssGenerator.generateDividerCss()`)**:
+   - Defines styles for `.cf-interactive-divider`, `.cf-divider-bridge`, `.cf-divider-chip`, `.cf-divider-line`, and `.cf-premium-popover`.
+   - Enforces `.cf-has-divider > .nav-folder-children { border-left: none !important; }` to eliminate folder vertical connecting line collisions under dividers.
+3. **Reactive Synchronization (`DOMObserverService.initDividerObserver()`)**:
+   - Monitors explorer containers for `childList` DOM changes, ignoring mutation events triggered by dividers or animated icons.
+   - Batches updates cleanly inside `window.requestAnimationFrame`, guarded against drag (`isDragging`) and scroll (`isScrolling`) states.
+
+### 4.2 Reconciliation Strategy (Zero-Touch Hashing)
+- Existing `.cf-interactive-divider` nodes are indexed by their target path (`data-divider-target`).
+- Compares a comprehensive `configKey` hash (`name_color_isUpper_alignment_glass_lineStyle_pillMode_icon_...`).
+- When the configuration has not changed, the existing DOM element is preserved untouched—eliminating redundant DOM teardowns and repaints.
+
+### 4.3 Decoupling from Virtualized Lists (Notebook Navigator)
+- **Deliberate Separation**: The divider pipeline (`syncDividers`, `initDividerObserver`, and `clean`) exclusively targets native File Explorer containers (`.nav-files-container`).
+- **Eliminating Virtualization Thrashing**: Notebook Navigator (`.nn-navitem`, `.nn-file`) recycles and destroys DOM elements on scroll. Injecting absolutely-positioned dividers into a virtualized React list causes severe flickering, layout thrashing, and observer race conditions. 
+- Notebook Navigator containers are explicitly excluded from `getAllExplorerContainers()`, keeping the divider engine completely decoupled while NN retains full row color, border, and typography support.
 
 ---
 
@@ -468,4 +515,14 @@ To ensure silky-smooth, 60 FPS scrolling in Obsidian's File Explorer:
 - All Tag Pane styles are strictly scoped to `.workspace-leaf-content[data-type="tag"]`.
 - Top-level compound `:is()` selectors without explicit container anchors are strictly forbidden. This allows Chromium's internal ancestor Bloom filter to instantly reject unrelated sidebar panes in $O(1)$ time during scrolling.
 
+---
 
+## 9. Architectural Evolution & Performance Milestones
+
+| Architecture / Subsystem | Former Design | Current Engine (v5.0.7+) | Performance & Stability Gain |
+| :--- | :--- | :--- | :--- |
+| **Palette Text & Icon Pairs** | Runtime lowercase parsing & object lookups during tree traversal | Pre-normalized `Map<string, PalettePair>` indexed in `prepareContext()` | $O(1)$ pointer retrieval, **0 bytes** runtime heap allocation |
+| **Heatmap Age Evaluation** | Hardcoded day tiers with slotted array indexing | Dynamic 5-band user-configured `heatmapDays` with upper-bound binary search | $O(\log K)$ branchless search, zero garbage collector strain |
+| **Section Dividers** | Coupled containers traversing both native and virtualized lists | Decoupled pipeline strictly isolated to native `.nav-files-container` | Eliminates React virtualized list flicker, layout thrashing, and observer feedback loops |
+| **Divider Re-renders** | Repeated DOM teardowns on container changes | Deterministic `data-divider-target` index with full `configKey` hashing | Zero-touch reconciliation when configuration is unchanged |
+| **Theme Contrast Collaboration** | Heuristic styling approximations | Direct `<body>` class toggles (`.cf-folder-auto`) & CSS properties (`--cf-auto-*`, `--cf-color`) | Clean theme coordination without selector wars or `!important` clashes |

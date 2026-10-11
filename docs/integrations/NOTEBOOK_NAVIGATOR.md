@@ -57,6 +57,12 @@ Notebook Navigator cards use a denser typography scale than the standard file ex
 - **Standard Explorer**: Icons default to a **1.3em** base multiplier.
 - **Notebook Navigator**: Icons default to a **1.1em** base multiplier, configurable via the independent **Navigator icon scaling** setting (defaults to `0.8`).
 
+### D. Architectural Decoupling of Section Dividers (v5.0.7)
+Interactive Section Dividers are deliberately decoupled from Notebook Navigator:
+- Dividers are exclusively rendered in Obsidian's native File Explorer (`.nav-files-container`).
+- NN virtual containers are completely excluded from `getAllExplorerContainers()`, preventing DOM observer feedback loops, border-left layout clashes, and scroll jitter in virtualized lists.
+- Full row styling (backgrounds, border radius, row spacing, text weight, and `--cf-color` variables) remains 100% active in Notebook Navigator.
+
 ---
 
 ## 4. Stability & Performance
