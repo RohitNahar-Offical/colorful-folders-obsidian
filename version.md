@@ -51,6 +51,16 @@ This update introduces a new **Auto contrast** section that lets your themes aut
 
 ---
 
+## What's Changed
+* Palette text/icon pairing, `--cf-color` variable, and in-order heatmap for short palettes by @retronified in https://github.com/RohitNahar-Offical/colorful-folders-obsidian/pull/32
+
+## New Contributors
+* @retronified made their first contribution in https://github.com/RohitNahar-Offical/colorful-folders-obsidian/pull/32
+
+**Full Changelog**: https://github.com/RohitNahar-Offical/colorful-folders-obsidian/compare/5.0.6...5.0.7
+
+---
+
 ## 🚀 5.0.6 - Colored Tags & Outline Sync, Silky-Smooth Scrolling & Instant Note Opening
 
 This update brings **full color matching to your Tags sidebar and Outline table of contents**, lets you **color headings inside your notes**, eliminates **scrolling lag in the file list**, and makes **notes open instantly without delays**.
