@@ -1,6 +1,6 @@
 # Updates for Colorful Folders
 
-## 🚀 5.0.7 - Custom Palette Text & Icon Pairing, Auto Contrast, and Heatmap Age Limits
+## 🚀 5.0.7 — Smart Contrast, Palette Precision & Customizable Heatmaps
 
 This update introduces a new **Auto contrast** section that lets your themes automatically pick readable text and icon colors, a redesigned **Custom colors** palette table with live previews and drag-to-reorder, and **editable heatmap age limits** so you control exactly how long a note stays a certain color. It also adds new row layout controls for Notebook Navigator and publishes extra information for theme makers.
 

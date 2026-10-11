@@ -10,12 +10,11 @@
 Colorful Folders automatically applies premium color palettes, smart icons, and structural intelligence to your vault. Whether you prefer a strictly organized, monochromatic workspace or a neon-glowing cyberpunk aesthetic, this plugin makes navigation intuitive and your workspace absolutely beautiful.
 
 ---
-# What's New in Colorful Folders
-## 🚀 5.0.7 - Custom Palette Text & Icon Pairing, Auto Contrast, and Heatmap Age Limits
+## What's New in Colorful Folders
+
+## 🚀 5.0.7 — Smart Contrast, Palette Precision & Customizable Heatmaps
 
 This update introduces a new **Auto contrast** section that lets your themes automatically pick readable text and icon colors, a redesigned **Custom colors** palette table with live previews and drag-to-reorder, and **editable heatmap age limits** so you control exactly how long a note stays a certain color. It also adds new row layout controls for Notebook Navigator and publishes extra information for theme makers.
-
-> *Note: This update was implemented by **Retron** ([@retronified](https://github.com/retronified) on GitHub). Thank you, Retron, for your excellent work on this release!*
 
 ---
 
@@ -53,6 +52,9 @@ This update introduces a new **Auto contrast** section that lets your themes aut
 * **Per-Row Background Alpha**: Each colored row now reports how transparent its background is, giving themes an even better picture of what is on screen.
 * **Hand-Picked Color Detection**: When you manually choose a text or icon color for a folder, the plugin now tells themes to stand back and let your choice win, instead of fighting it.
 * **All Languages Updated**: Every setting label and description has been translated into all supported languages.
+ 
+> *Note: This update includes contributions by **Retron** ([@retronified](https://github.com/retronified) on GitHub), with additional modifications and refinements by Rohit Nahar. Thank you, Retron, for your valuable contributions!*
+
 ---
 
 # ✨ Core Features
