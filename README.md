@@ -55,7 +55,7 @@ This update introduces a new **Auto contrast** section that lets your themes aut
 * **All Languages Updated**: Every setting label and description has been translated into all supported languages.
 ---
 
-## ✨ Core Features
+# ✨ Core Features
 
 ### 🎨 Vivid Color & Visual Hierarchy
 
