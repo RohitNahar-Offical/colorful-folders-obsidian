@@ -160,6 +160,19 @@ export class StyleGenerator {
 
         const excludeFolders = this.plugin.parsedExclusionList || new Set<string>();
 
+        const activePairs = new Map<string, { text?: string; icon?: string }>();
+        const rawPairs = this.settings.palettePairs;
+        if (rawPairs) {
+            for (const hex in rawPairs) {
+                if (Object.prototype.hasOwnProperty.call(rawPairs, hex)) {
+                    const p = rawPairs[hex];
+                    if (p && p.auto !== true && (p.text || p.icon)) {
+                        activePairs.set(hex.toLowerCase(), p);
+                    }
+                }
+            }
+        }
+
         return {
             isDark,
             brightnessAmount,
@@ -169,7 +182,8 @@ export class StyleGenerator {
             effFileIconW,
             folderIconW,
             nnIconW,
-            now: Date.now()
+            now: Date.now(),
+            activePairs
         };
     }
 
@@ -684,8 +698,7 @@ export class StyleGenerator {
             // Per-folder (custom or inherited) colors still win.
             // A pair whose `auto` flag is true is ignored entirely, so the automatic
             // contrast picker in the settings table stays in charge of that color.
-            const rawPair = this.settings.palettePairs?.[String(color.hex).toLowerCase()];
-            const palettePair = rawPair && rawPair.auto !== true ? rawPair : undefined;
+            const palettePair = context.activePairs.get(color.hex.toLowerCase());
             if (palettePair?.text && !customStyle?.textColor && !inheritedStyle?.textColor) {
                 folderStyles.t = palettePair.text;
             }
@@ -814,15 +827,17 @@ export class StyleGenerator {
             // The auto-contrast rules stand down for that folder so they cannot fight the choice.
             const hasCustomText = !!(palettePair?.text || customStyle?.textColor || inheritedStyle?.textColor);
             const hasCustomIcon = !!(palettePair?.icon || customStyle?.iconColor || inheritedStyle?.iconColor);
-            grouper.add(`
+            const customFlagCss = `
                 --cf-custom-text: ${hasCustomText ? 1 : 0};
                 --cf-custom-icon: ${hasCustomIcon ? 1 : 0};
-            `, [
+            `;
+            const customFlagSelectors = [
                 `body .nav-files-container .nav-folder-title[data-path="${safePath}"]`,
                 ...(NotebookNavigatorIntegration.isSupported(this.settings)
                     ? NotebookNavigatorIntegration.getScopedNavSelectors(child.path).map(s => `body ${s}`)
                     : [])
-            ], `cfCustom_${hasCustomText ? 1 : 0}${hasCustomIcon ? 1 : 0}`);
+            ];
+            grouper.add(customFlagCss, customFlagSelectors, `cfCustom_${hasCustomText ? 1 : 0}_${hasCustomIcon ? 1 : 0}`);
 
             const generateIconCss = (iconIdToUse: string, isExpandedState: boolean | null) => {
                 const isCustomEmoji = this.plugin.iconManager.isEmojiIcon(iconIdToUse);

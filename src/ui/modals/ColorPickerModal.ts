@@ -433,7 +433,7 @@ modifiedFields: Set<string>;
             display: 'flex', alignItems: 'center', gap: '10px',
             marginTop: '10px', padding: '8px 4px'
         });
-        const opLabel = opRow.createSpan({ text: 'Background opacity' });
+        const opLabel = opRow.createSpan({ text: t("modal.color_picker.background_opacity") });
         opLabel.setCssStyles({ fontSize: '0.78em', fontWeight: '700', color: 'var(--text-muted)', whiteSpace: 'nowrap' });
 
         const opSlider = opRow.createEl('input', { type: 'range' });
@@ -594,7 +594,7 @@ modifiedFields: Set<string>;
             brightRow.setCssStyles({
                 display: 'flex', alignItems: 'center', gap: '10px', marginTop: '12px'
             });
-            const brightLabel = brightRow.createSpan({ text: 'Brightness' });
+            const brightLabel = brightRow.createSpan({ text: t("modal.color_picker.brightness") });
             brightLabel.setCssStyles({ fontSize: '0.78em', fontWeight: '700', color: 'var(--text-muted)', whiteSpace: 'nowrap' });
 
             brightSlider = brightRow.createEl('input', { type: 'range' });
@@ -717,10 +717,10 @@ modifiedFields: Set<string>;
 
         const icColorActions = icColorHeader.createDiv();
         icColorActions.setCssStyles({ display: "flex", gap: "6px" });
-        const resetIcBtn = icColorActions.createEl("button", { text: "Reset" });
+        const resetIcBtn = icColorActions.createEl("button", { text: t("modal.color_picker.icon_color_reset") });
         resetIcBtn.setCssStyles({ padding: "2px 6px", borderRadius: "4px", fontSize: "0.7em", border: "1px solid var(--background-modifier-border)", background: "none", color: "var(--text-muted)", cursor: "pointer" });
         
-        const applyIcBtn = icColorActions.createEl("button", { text: "Apply" });
+        const applyIcBtn = icColorActions.createEl("button", { text: t("modal.color_picker.icon_color_apply") });
         applyIcBtn.setCssStyles({
             padding: "2px 8px", borderRadius: "4px", fontSize: "0.7em", fontWeight: "600",
             cursor: "pointer", border: "1px solid var(--interactive-accent)",
@@ -863,7 +863,7 @@ modifiedFields: Set<string>;
             backgroundColor: "var(--background-secondary)", color: "var(--text-normal)", fontSize: "0.85em"
         });
         Array.from(prefixes).sort().forEach(p => {
-            const opt = filterSelect.createEl("option", { text: p === 'all' ? 'All packs' : p.toUpperCase(), value: p });
+            const opt = filterSelect.createEl("option", { text: p === 'all' ? t("settings.option.all_packs") : p.toUpperCase(), value: p });
             if (p === 'all') opt.selected = true;
         });
 
@@ -964,7 +964,7 @@ modifiedFields: Set<string>;
                 obsidian.setIcon(recentIcon, "history");
                 const rsvg = recentIcon.querySelector("svg") as unknown as HTMLElement | null;
                 if (rsvg) rsvg.setCssStyles({ width: "12px", height: "12px" });
-                recentHeader.createSpan({ text: "Recently used" });
+                recentHeader.createSpan({ text: t("modal.color_picker.recently_used") });
 
                 this.plugin.settings.recentlyUsedIcons.forEach(id => {
                     createIconCell(id, iconGrid);
@@ -977,7 +977,7 @@ modifiedFields: Set<string>;
                     padding: "12px 2px 4px", borderBottom: "1px solid var(--background-modifier-border)",
                     marginBottom: "4px"
                 });
-                allHeader.createDiv({ text: "All icons" });
+                allHeader.createDiv({ text: t("modal.color_picker.all_icons_header") });
             }
 
             let filtered = allIcons;

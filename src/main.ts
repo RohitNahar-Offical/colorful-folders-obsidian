@@ -659,7 +659,22 @@ export default class ColorfulFoldersPlugin
     );
     ColorResolver.heatmapDays = this.settings.heatmapDays?.length ? this.settings.heatmapDays : [1, 3, 7, 15, 30];
     NotebookNavigatorIntegration.layout = { border: this.settings.nnRowBorder ?? -1, radius: this.settings.folderBorderRadius ?? 6, spacing: this.settings.rowSpacing ?? 2, weight: this.settings.folderTextWeight ?? 800 };
-    NotebookNavigatorIntegration.pairs = this.settings.palettePairs || {};
+    this.syncNotebookNavigatorPairs();
+  }
+
+  public syncNotebookNavigatorPairs(): void {
+    NotebookNavigatorIntegration.activePairs.clear();
+    const rawPairs = this.settings.palettePairs;
+    if (rawPairs) {
+      for (const hex in rawPairs) {
+        if (Object.prototype.hasOwnProperty.call(rawPairs, hex)) {
+          const p = rawPairs[hex];
+          if (p && p.auto !== true && (p.text || p.icon)) {
+            NotebookNavigatorIntegration.activePairs.set(hex.toLowerCase(), p);
+          }
+        }
+      }
+    }
   }
 
   public syncCustomFolderColorsMap(): void {
@@ -699,7 +714,7 @@ export default class ColorfulFoldersPlugin
   async saveSettings() {
     ColorResolver.heatmapDays = this.settings.heatmapDays?.length ? this.settings.heatmapDays : [1, 3, 7, 15, 30];
     NotebookNavigatorIntegration.layout = { border: this.settings.nnRowBorder ?? -1, radius: this.settings.folderBorderRadius ?? 6, spacing: this.settings.rowSpacing ?? 2, weight: this.settings.folderTextWeight ?? 800 };
-    NotebookNavigatorIntegration.pairs = this.settings.palettePairs || {};
+    this.syncNotebookNavigatorPairs();
     this.syncCustomFolderColorsMap();
     const iconRulesChanged = (this.settings.customIconRules || '') !== this._lastIconRulesKey;
     const currentCustomIcons = this.getCustomIconsMap();

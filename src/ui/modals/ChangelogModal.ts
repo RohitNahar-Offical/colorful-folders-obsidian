@@ -1,4 +1,5 @@
 import * as obsidian from 'obsidian';
+import { t } from '../../lang/helpers';
 
 export class ChangelogModal extends obsidian.Modal {
     content: string;
@@ -34,7 +35,7 @@ export class ChangelogModal extends obsidian.Modal {
             borderBottom: "1px solid var(--background-modifier-border)",
             paddingBottom: "10px"
         });
-        header.createEl("h2", { text: "What's new in colorful folders" });
+        header.createEl("h2", { text: t("modal.changelog.title") });
 
         const body = contentEl.createDiv({ cls: "cf-changelog-body" });
         body.setCssStyles({
@@ -53,7 +54,7 @@ export class ChangelogModal extends obsidian.Modal {
             alignItems: "center"
         });
 
-        const sponsorBtn = footer.createEl("button", { text: "❤️ support the developer" });
+        const sponsorBtn = footer.createEl("button", { text: t("modal.changelog.sponsor") });
         sponsorBtn.setCssStyles({
             cursor: "pointer"
         });
@@ -61,7 +62,7 @@ export class ChangelogModal extends obsidian.Modal {
             window.open("https://github.com/sponsors/RohitNahar-Offical", "_blank");
         };
 
-        const closeBtn = footer.createEl("button", { text: "Got it!", cls: "mod-cta" });
+        const closeBtn = footer.createEl("button", { text: t("modal.changelog.got_it"), cls: "mod-cta" });
         closeBtn.onclick = () => this.close();
     }
 

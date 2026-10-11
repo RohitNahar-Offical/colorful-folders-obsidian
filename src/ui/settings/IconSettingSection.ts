@@ -224,7 +224,7 @@ export class IconSettingSection extends SettingSection {
                 padding: "10px", background: "var(--background-secondary-alt)", borderRadius: "6px",
                 borderLeft: "3px solid var(--interactive-accent)", lineHeight: "1.4"
             });
-            rulesDesc.createEl('strong', { text: 'Advanced regex rule builder' });
+            rulesDesc.createEl('strong', { text: t('settings.advanced_regex_rules') });
             rulesDesc.createEl('br');
             rulesDesc.appendText('Define rules to automatically assign icons based on folder/file names using regex patterns. Rules are evaluated top to bottom, highest priority first.');
 
@@ -242,7 +242,7 @@ export class IconSettingSection extends SettingSection {
                 header.setCssStyles({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' });
                 header.createEl('h4', { text: t("settings.active_rules") }).setCssStyles({ margin: '0' });
 
-                const addBtn = header.createEl('button', { text: 'Add rule', cls: 'mod-cta' });
+                const addBtn = header.createEl('button', { text: t('settings.add_rule'), cls: 'mod-cta' });
 
                 let rules = (this.plugin.settings.customIconRules || "").split('\n').filter(r => r.trim().length > 0);
 
@@ -379,7 +379,7 @@ export class IconSettingSection extends SettingSection {
         const svgInp = manualRow.createEl("input", { placeholder: "SVG code (<svg...)" });
         idInp.setCssStyles({ flex: "1" }); svgInp.setCssStyles({ flex: "3" });
 
-        const addBtn = manualRow.createEl("button", { text: "Add icon", cls: "mod-cta" });
+        const addBtn = manualRow.createEl("button", { text: t("settings.add_icon"), cls: "mod-cta" });
         addBtn.onclick = async () => {
             const id = idInp.value.trim();
             const svg = svgInp.value.trim();
@@ -402,7 +402,7 @@ export class IconSettingSection extends SettingSection {
             .setDesc("Enter a URL to a JSON icon pack { 'id': '<svg...>' }")
             .addText(text => {
                 text.setPlaceholder(t("settings.import_url_placeholder"));
-                const impBtn = customIconCard.createEl("button", { text: "Import" });
+                const impBtn = customIconCard.createEl("button", { text: t("settings.import_btn") });
                 impBtn.setCssStyles({ marginLeft: "8px" });
                 impBtn.onclick = async () => {
                     const url = text.getValue().trim();
@@ -523,7 +523,7 @@ export class IconSettingSection extends SettingSection {
             const pDesc = content.createDiv({ text: p.desc });
             pDesc.setCssStyles({ fontSize: "0.8em", marginTop: "4px" });
 
-            const link = content.createEl("a", { text: "View source", href: p.url });
+            const link = content.createEl("a", { text: t("settings.view_source"), href: p.url });
             link.setCssStyles({
                 fontSize: "0.7em", color: "var(--text-accent)", marginTop: "4px", display: "inline-block"
             });
@@ -549,7 +549,7 @@ export class IconSettingSection extends SettingSection {
             };
 
             if (isInstalled) {
-                const removeBtn = btnGroup.createEl("button", { text: "Remove" });
+                const removeBtn = btnGroup.createEl("button", { text: t("settings.remove_pack") });
                 removeBtn.setCssStyles({ minWidth: "80px", color: "var(--text-error)" });
                 removeBtn.onclick = async () => {
                     const count = await this.plugin.removePackIcons(p.prefix);
@@ -722,7 +722,7 @@ export class IconSettingSection extends SettingSection {
 
         // 📥 Manual Icon Pack Import Card
         const manImportCard = this.settingTab.makeCard(containerEl, "📥", "Manual icon pack import");
-        const packDesc = manImportCard.createEl('p', { text: 'You can manually paste the JSON content of an icon pack below to import it.' });
+        const packDesc = manImportCard.createEl('p', { text: t('settings.manual_import_desc') });
         packDesc.setCssStyles({ fontSize: "0.85em", color: "var(--text-muted)" });
 
         let manualJson = "";

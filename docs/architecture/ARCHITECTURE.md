@@ -83,7 +83,24 @@ Every item's final color is determined by this priority chain and active `colorM
    - **`hierarchy` (Hierarchy Level Mode)**: Each folder level's color is strictly determined by its nesting depth in the tree (`palette[(depth + cycleOffset) % palette.length]`). Uses `getFastFolderScopeDepth()` / `getFastPathSlashes()` for $O(1)$ zero-allocation depth calculations.
    - **`cycle` (Sequential Mode)**: Uses `(validIndex + depth + rootIndex + cycleOffset) % palette.length`.
    - **`monochromatic`**: Root folders pick sequential colors, and subfolders inherit their root folder's base color tint.
-   - **`heatmap`**: Colors items based on modification age (`heatmapMtime`).
+   - **`heatmap`**: Colors items based on modification age (`heatmapMtime`). For short palettes, maps strictly in order via age limits (`ColorResolver.heatmapDays`), while longer palettes preserve slotted intervals. Limits are resolved via an $O(\log K)$ branchless binary search with zero runtime heap allocation.
+
+#### ⚡ Performance Optimization: Heatmap Binary Search & Static Slot Hoisting
+In heatmap mode, determining an item's age band is resolved via an upper-bound binary search over `heatmapDays`:
+```typescript
+let low = 0, high = limLen;
+while (low < high) {
+    const mid = (low + high) >>> 1;
+    if (diffDays <= limits[mid]) high = mid;
+    else low = mid + 1;
+}
+```
+Combined with hoisting static slots (`HEATMAP_SLOTS = [0, 2, 7, 4, 10]`), vault-wide modification scans run with zero garbage collection overhead.
+
+#### ⚡ Performance Optimization: Pre-normalized `Map<string, PalettePair>` Caching
+During style generation over thousands of nodes, reading raw settings objects requires repeated lowercase transformations and object property checks. `StyleGenerator` and `NotebookNavigatorIntegration` pre-normalize active palette pairs into a dedicated `Map<string, { text?: string; icon?: string }>` upfront:
+- Lookups inside recursive tree traversal are instant $O(1)$ pointer hits with **0 byte allocations**.
+- Automatically invalidated and re-indexed whenever settings are modified via `saveSettings()`.
 
 #### ⚡ Performance Optimization: Fast Path Slash Counting
 To compute hierarchy depth without heap allocations or string splitting, `ColorResolver` uses a fast-path character scanner `getFastPathSlashes(path: string)`:

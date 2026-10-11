@@ -263,6 +263,7 @@ export interface StyleContext {
     folderIconW: string;
     nnIconW: string;
     now: number;
+    activePairs: Map<string, { text?: string; icon?: string }>;
 }
 export interface MenuItemWithSubmenu extends MenuItem {
     setSubmenu(): Menu;

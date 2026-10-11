@@ -27,9 +27,8 @@ export const NN_SELECTORS = {
 export class NotebookNavigatorIntegration {
     /** Row layout, set from settings on load/save. */
     static layout = { border: -1, radius: 6, spacing: 2, weight: 800 };
-    /** Palette text/icon pairs, synced from settings before style generation so
-     *  static methods can read them without threading settings through. */
-    static pairs: Record<string, { text?: string; icon?: string; auto?: boolean }> = {};
+    /** Palette text/icon pairs, synced and normalized from settings before style generation. */
+    static activePairs = new Map<string, { text?: string; icon?: string }>();
 
     static isSupported(settings: ColorfulFoldersSettings): boolean {
         return !!settings.notebookNavigatorSupport;
@@ -284,11 +283,12 @@ export class NotebookNavigatorIntegration {
         } else if (shouldColor) {
             const fileBg = outlineOnly ? Math.max(bgAlpha, 0.12) : Math.max(bgAlpha, 0.18);
             // Hand-picked text/icon colors for this palette color, when auto contrast is off for it.
-            const filePair = NotebookNavigatorIntegration.pairs[String(color.hex).toLowerCase()];
-            const filePairVars = filePair && filePair.auto !== true
+            const filePair = NotebookNavigatorIntegration.activePairs.get(color.hex.toLowerCase());
+            const filePairVars = filePair
                 ? `${filePair.text ? `--cf-pair-text: ${filePair.text};` : ''}
                 ${filePair.icon ? `--cf-pair-icon: ${filePair.icon};` : ''}`
                 : '';
+            const filePairKey = filePair ? `1_${filePair.text || ''}_${filePair.icon || ''}` : '0';
             grouper.add(`
                 --cf-color: ${color.hex};
                 --cf-colored: 1;
@@ -304,7 +304,7 @@ export class NotebookNavigatorIntegration {
                 border-radius: ${L.radius}px;
                 transition: background-color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, color 0.2s ease !important;
                 margin-bottom: ${L.spacing}px !important;
-            `, baseSels, `nnFileBg_${color.hex}_${fileBg}_${textCol}_${isBold}_${isItalic}_${JSON.stringify(NotebookNavigatorIntegration.pairs[String(color.hex).toLowerCase()] || 0)}`);
+            `, baseSels, `nnFileBg_${color.hex}_${fileBg}_${textCol}_${isBold}_${isItalic}_${filePairKey}`);
         }
 
         if (shouldColor) {

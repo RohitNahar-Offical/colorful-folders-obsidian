@@ -63,10 +63,10 @@ export class PasswordModal extends obsidian.Modal {
         const footer = contentEl.createDiv();
         footer.setCssStyles({ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "25px" });
 
-        const cancelBtn = footer.createEl("button", { text: "Cancel" });
+        const cancelBtn = footer.createEl("button", { text: t("modal.password.cancel_btn") });
         cancelBtn.onclick = () => this.close();
 
-        const confirmBtn = footer.createEl("button", { text: "Unlock", cls: "mod-cta" });
+        const confirmBtn = footer.createEl("button", { text: t("modal.password.unlock_btn"), cls: "mod-cta" });
         confirmBtn.setCssStyles({ padding: "8px 24px" });
         confirmBtn.onclick = async () => {
             const success = await this.onConfirm(inputEl.value);

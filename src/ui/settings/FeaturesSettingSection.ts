@@ -368,7 +368,7 @@ export class FeaturesSettingSection extends SettingSection {
             header.setCssStyles({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' });
             header.createEl('h4', { text: t("settings.active_rules") }).setCssStyles({ margin: '0' });
 
-            const addBtn = header.createEl('button', { text: 'Add rule', cls: 'mod-cta' });
+            const addBtn = header.createEl('button', { text: t('settings.add_rule'), cls: 'mod-cta' });
 
             let rules = (this.plugin.settings.tagSyncRules || "").split('\n').filter(r => r.trim().length > 0);
 
@@ -507,9 +507,28 @@ export class FeaturesSettingSection extends SettingSection {
         // 🔗 Notebook Navigator Card (Card 4)
         const intCard = this.settingTab.makeCard(containerEl, "🔗", "Notebook navigator");
         intCard.createEl('p', {
-            text: '💡 Tip: To change icons in notebook navigator, simply use the colorful folders menu in the standard explorer. All changes are automatically synchronized.',
+            text: '💡 Tip: To change icons in notebook navigator, use the colorful folders menu in the standard explorer. All changes are automatically synchronized.',
             cls: 'setting-item-description'
-        }).setCssStyles({ fontSize: '0.85em', fontStyle: 'italic', marginBottom: '12px', color: 'var(--text-accent)' });
+        }).setCssStyles({ fontSize: '0.85em', fontStyle: 'italic', marginBottom: '8px', color: 'var(--text-accent)' });
+
+        const nnTipBox = intCard.createDiv();
+        nnTipBox.setCssStyles({
+            background: 'var(--background-secondary)',
+            border: '1px solid var(--background-modifier-border)',
+            borderRadius: '6px',
+            padding: '10px 14px',
+            marginBottom: '16px',
+            fontSize: '0.85em',
+            color: 'var(--text-muted)'
+        });
+        nnTipBox.createEl('strong', { text: t('settings.nb_navigator.file_icons_note') }).setCssStyles({ color: 'var(--text-normal)' });
+        nnTipBox.createSpan({ text: t('settings.nb_navigator.file_icons_instruction') });
+        nnTipBox.createEl('code', { text: t('settings.nb_navigator.file_icons_code') });
+        nnTipBox.createSpan({ text: t('settings.nb_navigator.file_icons_and_ensure') });
+        nnTipBox.createEl('strong', { text: t('settings.nb_navigator.file_icons_show') });
+        nnTipBox.createSpan({ text: t('settings.nb_navigator.file_icons_and') });
+        nnTipBox.createEl('strong', { text: t('settings.nb_navigator.file_icons_by_type') });
+        nnTipBox.createSpan({ text: t('settings.nb_navigator.file_icons_enabled') });
 
         new obsidian.Setting(intCard)
             .setName(t("settings.notebook_navigator.name"))

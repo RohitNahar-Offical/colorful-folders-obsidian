@@ -11,12 +11,12 @@ export class GeneralSettingSection extends SettingSection {
         const infoIcon = infoBlock.createDiv('cf-info-icon');
         infoIcon.setText('💡');
         const infoContent = infoBlock.createDiv('cf-info-content');
-        infoContent.createEl('h4', { text: 'Context menu overrides' });
+        infoContent.createEl('h4', { text: t('settings.context_menu_overrides') });
         const infoText = infoContent.createEl('p');
         infoText.appendText(t("settings.info.context_menu_desc_1"));
-        infoText.createEl('strong', { text: '"set custom style"' });
+        infoText.createEl('strong', { text: t("settings.info.set_custom_style") });
         infoText.appendText(' to assign specific unique colors or icons, or click ');
-        infoText.createEl('strong', { text: '"add divider"' });
+        infoText.createEl('strong', { text: t("settings.info.add_divider") });
         infoText.appendText(' to insert horizontal section separators!');
 
         // 🎨 Global Visual Palette Card
@@ -376,42 +376,51 @@ export class GeneralSettingSection extends SettingSection {
                 .onChange((value) => {
                     pairs[key()] = { ...(pairs[key()] ?? {}), auto: value };
                     savePaletteDebounced();
-                    rebuildRows();
+                    updatePairCells();
                 });
 
             // Text / Icon pickers, hidden while auto contrast owns this color
-            const makePairCell = (kind: 'text' | 'icon', label: string) => {
-                const cell = td();
+            const textCell = td();
+            const iconCell = td();
+            const updatePairCells = () => {
+                paintPreview();
+                textCell.empty();
+                iconCell.empty();
                 if (isAuto()) return;
-                const sw = cell.createDiv({ text: kind === 'text' ? 'Aa' : '◆' });
-                sw.setAttribute('title', label);
-                const paint = () => {
-                    paintPreview();
-                    const val = pairs[key()]?.[kind];
-                    sw.setCssStyles({
-                        width: '28px', height: '28px', borderRadius: '6px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '0.8em', fontWeight: '700', cursor: 'pointer',
-                        border: val ? '1px solid var(--background-modifier-border)' : '1px dashed var(--background-modifier-border)',
-                        backgroundColor: colors[index],
-                        color: val || 'var(--text-faint)'
+
+                const setupCell = (cell: HTMLElement, kind: 'text' | 'icon', label: string) => {
+                    const sw = cell.createDiv({ text: kind === 'text' ? 'Aa' : '◆' });
+                    sw.setAttribute('title', label);
+                    const paint = () => {
+                        paintPreview();
+                        const val = pairs[key()]?.[kind];
+                        sw.setCssStyles({
+                            width: '28px', height: '28px', borderRadius: '6px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '0.8em', fontWeight: '700', cursor: 'pointer',
+                            border: val ? '1px solid var(--background-modifier-border)' : '1px dashed var(--background-modifier-border)',
+                            backgroundColor: colors[index],
+                            color: val || 'var(--text-faint)'
+                        });
+                    };
+                    paint();
+                    sw.addEventListener('click', () => {
+                        pickerSide.empty();
+                        pickerSide.setCssStyles({ display: 'block', padding: '16px' });
+                        pickerSide.createDiv({ text: label }).setCssStyles({ marginBottom: '8px', fontWeight: '600' });
+                        const wrap = pickerSide.createDiv();
+                        createVisualColorPicker(wrap, pairs[key()]?.[kind] || '#ffffff', (newHex) => {
+                            pairs[key()] = { ...(pairs[key()] ?? {}), [kind]: newHex, auto: false };
+                            paint();
+                            savePaletteDebounced();
+                        }, { showAlpha: false });
                     });
                 };
-                paint();
-                sw.addEventListener('click', () => {
-                    pickerSide.empty();
-                    pickerSide.setCssStyles({ display: 'block', padding: '16px' });
-                    pickerSide.createDiv({ text: label }).setCssStyles({ marginBottom: '8px', fontWeight: '600' });
-                    const wrap = pickerSide.createDiv();
-                    createVisualColorPicker(wrap, pairs[key()]?.[kind] || '#ffffff', (newHex) => {
-                        pairs[key()] = { ...(pairs[key()] ?? {}), [kind]: newHex, auto: false };
-                        paint();
-                        savePaletteDebounced();
-                    }, { showAlpha: false });
-                });
+
+                setupCell(textCell, 'text', t('settings.palette_table.text_tip'));
+                setupCell(iconCell, 'icon', t('settings.palette_table.icon_tip'));
             };
-            makePairCell('text', t('settings.palette_table.text_tip'));
-            makePairCell('icon', t('settings.palette_table.icon_tip'));
+            updatePairCells();
 
             const delBtn = td().createEl('button', { text: '×' });
             delBtn.setCssStyles({

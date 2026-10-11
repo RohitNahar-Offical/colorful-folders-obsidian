@@ -302,7 +302,7 @@ export class HoverMessageModal extends obsidian.Modal {
             background: "var(--background-secondary-alt)", borderBottomLeftRadius: "14px", borderBottomRightRadius: "14px"
         });
 
-        const cancelBtn = footer.createEl("button", { text: "Cancel" });
+        const cancelBtn = footer.createEl("button", { text: t("modal.hover_message.cancel_btn") });
         cancelBtn.setCssStyles({
             background: "transparent", border: "none", padding: "8px 16px", cursor: "pointer", opacity: "0.7"
         });
@@ -311,7 +311,7 @@ export class HoverMessageModal extends obsidian.Modal {
             this.close();
         };
 
-        const saveBtn = footer.createEl("button", { text: "Save message" });
+        const saveBtn = footer.createEl("button", { text: t("modal.hover_message.save_btn") });
         saveBtn.setCssStyles({
             backgroundColor: "var(--interactive-accent)", color: "var(--text-on-accent)",
             padding: "8px 24px", borderRadius: "8px", border: "none", fontWeight: "600", cursor: "pointer"

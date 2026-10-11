@@ -66,6 +66,9 @@ export class ColorResolver {
         this.textColorCache.clear();
     }
 
+    /** Default slots for longer palettes in heatmap mode */
+    private static readonly HEATMAP_SLOTS = [0, 2, 7, 4, 10];
+
     private static getFolderColorByMode(
         mode: string,
         vIdx: number,
@@ -85,15 +88,26 @@ export class ColorResolver {
             // Short palettes map in order, hottest first, using the
             // user's age limits (default: 1, 3, 7, 15, 30 days, then older).
             const limits = ColorResolver.heatmapDays;
-            if (len <= limits.length + 1) {
-                let level = limits.findIndex(d => diffDays <= d);
-                if (level === -1) level = limits.length;
-                return palette[Math.min(level, len - 1)];
+            const limLen = limits.length;
+            // Binary search (upper bound) since limits is sorted monotonically ascending
+            let low = 0;
+            let high = limLen;
+            while (low < high) {
+                const mid = (low + high) >>> 1;
+                if (diffDays <= limits[mid]) {
+                    high = mid;
+                } else {
+                    low = mid + 1;
+                }
+            }
+            const band = low;
+
+            if (len <= limLen + 1) {
+                return palette[Math.min(band, len - 1)];
             }
             // Longer palettes keep the original slot picks, banded by the same age limits.
-            const slots = [0, 2, 7, 4, 10];
-            const band = limits.findIndex(d => diffDays <= d);
-            if (band === -1 || band >= slots.length) return palette[len - 1];
+            const slots = ColorResolver.HEATMAP_SLOTS;
+            if (band >= slots.length) return palette[len - 1];
             return palette[Math.min(slots[band], len - 1)];
         } else if (mode === "monochromatic") {
             if (d === 0) return palette[vIdx % len];

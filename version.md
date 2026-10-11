@@ -29,18 +29,25 @@ This update introduces a new **Auto contrast** section that lets your themes aut
 * **Applies to Every Palette**: Your custom age limits work across all palettes, not just the built-in ones.
 * **Palette Age Column**: The palette table now shows an Age column that reflects the color generation mode you have selected, so everything stays in sync.
 
-### 🧩 4. Notebook Navigator Row Layout Controls
+### 🧩 4. Notebook Navigator Row Layout & Icon Controls
 
 * **Accent Border Width**: Adjust the colored left border on Notebook Navigator rows, or turn it off entirely.
 * **Row Spacing**: Change the gap between rows in the Notebook Navigator list for a more compact or more spacious look.
 * **Text Weight**: Make folder names in Notebook Navigator appear bolder or lighter to match your taste.
 * **Border Radius**: Notebook Navigator rows now follow your chosen corner radius setting.
 
-### 🔧 5. Behind the Scenes Improvements
+> [!TIP]
+> **To show file icons in the Notebook Navigator pane**: Open **Notebook Navigator Settings** → Navigate to **File display** → Under the **Icon** section, make sure **Show file icons** and **Icons by file type** are enabled. You can also customize your preferred icon pack via **File icon preset** or add custom rules under **File type icon map**.
 
+### 🔧 5. Behind the Scenes & High-Performance Improvements
+
+* **Pre-Normalized $O(1)$ Palette Lookups**: Custom text and icon pairs are pre-indexed into a normalized map upfront, eliminating thousands of runtime string allocations and object lookups during style generation.
+* **$O(\log K)$ Binary Search for Heatmaps**: Heatmap age bands are now calculated via an upper-bound binary search with zero heap allocations, keeping tree traversal instant even in large vaults.
+* **In-Place Settings Table Updates**: Toggling auto contrast or editing color pairs in settings updates cells in-place without tearing down or rebuilding the entire table DOM.
 * **Subfolder Opacity Published**: Themes can now read the subfolder opacity setting, so they can judge text contrast against what is actually painted on nested folder rows.
 * **Per-Row Background Alpha**: Each colored row now reports how transparent its background is, giving themes an even better picture of what is on screen.
 * **Hand-Picked Color Detection**: When you manually choose a text or icon color for a folder, the plugin now tells themes to stand back and let your choice win, instead of fighting it.
+* **Updated Obsidian 1.14+ API**: Updated type definitions and dependencies to match the latest Obsidian release.
 * **All Languages Updated**: Every setting label and description has been translated into all supported languages.
 ---
 
