@@ -44,8 +44,7 @@ This update introduces a new **Auto contrast** section that lets your themes aut
 * **In-Place Settings Table Updates**: Toggling auto contrast or editing color pairs in settings updates cells in-place without tearing down or rebuilding the entire table DOM.
 * **Subfolder Opacity Published**: Themes can now read the subfolder opacity setting, so they can judge text contrast against what is actually painted on nested folder rows.
 * **Per-Row Background Alpha**: Each colored row now reports how transparent its background is, giving themes an even better picture of what is on screen.
-* **Hand-Picked Color Detection**: When you manually choose a text or icon color for a folder, the plugin now tells themes to stand back and let your choice win, instead of fighting it.
-
+* **Robust Icon Repository Caching & Normalization**: Icon asset resolution and DOM sanitization passes now utilize internal SVG template caching and pre-normalized aspect ratios to deliver instant icon modal rendering with zero layout shifts.
 * **All Languages Updated**: Every setting label and description has been translated into all supported languages.
 
 > *Note: This update includes contributions by **Retron** ([@retronified](https://github.com/retronified) on GitHub), with additional modifications and refinements by Rohit Nahar. Thank you, Retron, for your valuable contributions!*

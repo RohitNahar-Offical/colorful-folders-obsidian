@@ -115,8 +115,12 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         const icons = data.icons as Record<string, { width?: number; height?: number; left?: number; top?: number; body?: string }> | undefined;
         if (icons && (data.prefix || data.info)) {
             const prefix = (data.prefix as string) || "cf";
-            const commonW = (data.width as number) || 24;
-            const commonH = (data.height as number) || 24;
+            const infoObj = (data.info && typeof data.info === 'object') ? (data.info as Record<string, unknown>) : null;
+            const infoH = typeof infoObj?.height === 'number' ? infoObj.height : undefined;
+            const infoW = typeof infoObj?.width === 'number' ? infoObj.width : undefined;
+            const defaultDim = (prefix === 'bi' || prefix === 'bootstrap') ? 16 : 24;
+            const commonW = (data.width as number) || infoW || infoH || defaultDim;
+            const commonH = (data.height as number) || infoH || defaultDim;
 
             const processIcon = (name: string, iconData: { width?: number; height?: number; left?: number; top?: number; body?: string }) => {
                 const id = `${prefix}-${name}`;

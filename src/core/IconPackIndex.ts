@@ -22,7 +22,7 @@ export class IconPackIndex {
         const lower = iconKey.toLowerCase();
         if (packId === 'custom') return lower.startsWith('custom-');
         if (packId === 'emoji') return !IconPackIndex.ALPHA_REGEX.test(iconKey);
-        if (packId === 'bootstrap' || packId === 'bi') return lower.startsWith('bi-') || lower.includes('bootstrap');
+        if (packId === 'bootstrap' || packId === 'bi') return lower.startsWith('bi-') || lower.startsWith('bootstrap-') || lower.startsWith('bi:');
         if (packId === 'simple-icons') return lower.startsWith('simple-') || lower.startsWith('si-');
         if (packId === 'tabler' || packId === 'tb') return lower.startsWith('tb-') || lower.startsWith('tabler-');
         if (packId === 'remix' || packId === 'ri') return lower.startsWith('ri-') || lower.startsWith('remix-');

@@ -618,11 +618,17 @@ export class IconRepository {
                         if (!svg.hasAttribute('xmlns')) svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
                         svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
                             
-                        const vbAttr = svg.getAttribute('viewBox');
+                        let vbAttr = svg.getAttribute('viewBox');
                         if (!vbAttr && (svg.hasAttribute('width') || svg.hasAttribute('height'))) {
                             const w = svg.getAttribute('width')?.replace('px', '') || "24";
                             const h = svg.getAttribute('height')?.replace('px', '') || "24";
                             svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+                            vbAttr = `0 0 ${w} ${h}`;
+                        }
+
+                        // Safeguard for Bootstrap icons (bi-*) or 16px assets that were mistakenly saved with 0 0 24 24
+                        if (vbAttr === '0 0 24 24' && (rawSvg.includes('class="bi ') || rawSvg.includes('bi-') || rawSvg.includes('xmlns:bi'))) {
+                            svg.setAttribute('viewBox', '0 0 16 16');
                         }
 
                         svg.removeAttribute('width');

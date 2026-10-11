@@ -1141,8 +1141,12 @@ export default class ColorfulFoldersPlugin
       if (icons && typeof icons === 'object' && !Array.isArray(icons)) {
         const rawPrefix = typeof data.prefix === 'string' ? data.prefix : prefix;
         const packPrefix = rawPrefix.replace(/[^a-z0-9-_]/gi, '');
-        const commonW = typeof data.width === 'number' ? data.width : 24;
-        const commonH = typeof data.height === 'number' ? data.height : 24;
+        const infoObj = (data.info && typeof data.info === 'object') ? (data.info as Record<string, unknown>) : null;
+        const infoH = typeof infoObj?.height === 'number' ? infoObj.height : undefined;
+        const infoW = typeof infoObj?.width === 'number' ? infoObj.width : undefined;
+        const defaultDim = (packPrefix === 'bi' || packPrefix === 'bootstrap') ? 16 : 24;
+        const commonW = typeof data.width === 'number' ? data.width : (infoW ?? infoH ?? defaultDim);
+        const commonH = typeof data.height === 'number' ? data.height : (infoH ?? defaultDim);
 
         const processIcon = (name: string, iconData: { width?: number; height?: number; left?: number; top?: number; body?: string }) => {
           if (!name || typeof name !== 'string') return false;

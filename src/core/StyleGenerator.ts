@@ -114,7 +114,7 @@ export class StyleGenerator {
         const lower = iconId.toLowerCase();
         if (pack === 'custom') return lower.startsWith('custom-');
         if (pack === 'emoji') return !/[a-zA-Z]/.test(iconId);
-        if (pack === 'bootstrap' || pack === 'bi') return lower.startsWith('bi-') || lower.includes('bootstrap');
+        if (pack === 'bootstrap' || pack === 'bi') return lower.startsWith('bi-') || lower.startsWith('bootstrap-') || lower.startsWith('bi:');
         if (pack === 'font-awesome' || pack === 'fa') return lower.startsWith('fa-') || lower.startsWith('fas-') || lower.startsWith('fab-') || lower.startsWith('far-') || lower.includes('font-awesome');
         if (pack === 'tabler' || pack === 'tb') return lower.startsWith('tb-') || lower.startsWith('tabler-');
         if (pack === 'remix' || pack === 'ri') return lower.startsWith('ri-') || lower.startsWith('remix-');

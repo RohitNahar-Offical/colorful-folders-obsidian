@@ -469,7 +469,7 @@ export class IconSettingSection extends SettingSection {
             if (pPrefix === 'octicon') return lower.startsWith('octicon-');
             if (pPrefix === 'ra') return lower.startsWith('ra-');
             if (pPrefix === 'simple-icons' || pPrefix === 'si') return lower.startsWith('simple-') || lower.startsWith('si-');
-            if (pPrefix === 'bi' || pPrefix === 'bootstrap') return lower.startsWith('bi-') || lower.includes('bootstrap');
+            if (pPrefix === 'bi' || pPrefix === 'bootstrap') return lower.startsWith('bi-') || lower.startsWith('bootstrap-') || lower.startsWith('bi:');
             return lower.startsWith(pPrefix + '-');
         };
 
