@@ -398,5 +398,37 @@
 3. Added 4px right padding directly on `.cm-hashtag-begin` (`padding-right: 4px !important;`) and `margin-right: 0.15em !important;` on `a.tag::first-letter` for Reading View. This creates a clean, readable separation while keeping the tag pill background, outline, and hover highlights unbroken.
 **Lesson**: Always decouple user-defined explicit override rules from automated heuristic toggles, use case-insensitive class attribute selectors (`[class~="..." i]`) for CodeMirror tag tokens, and style multi-token pill spacing using inline padding rather than margin gaps.
 
+---
+
+## Incident #39 — Bootstrap Icons Render Off-Centered, Asymmetrical, and Scaled-Down (2026-10-11)
+**What was attempted**: Using Bootstrap icons (`bi-*`) from local packs or downloading the remote Iconify raw icon pack (`https://raw.githubusercontent.com/iconify/icon-sets/master/json/bi.json`).
+**What broke**:
+1. All 2,090 Bootstrap icons rendered visibly off-centered, shifted toward the top-left, and lacked vertical/horizontal symmetry in both the File Explorer and the Icon Picker modal.
+2. Icons appeared ~33% smaller than standard 16x16 / 24x24 icons despite using identical CSS dimensions (`24px`).
+**Root cause**:
+1. **Iconify Coordinate Grid Standard**: Unlike standard 24x24 icon sets (Feather, Tabler, Boxicons), Bootstrap icons are authored natively on a `16x16` coordinate grid (`0..16`).
+2. **Missing Dimensions in Iconify JSON**: Iconify omits root `width` and `height` properties in `bi.json`, placing the default dimension under `info.height: 16`.
+3. **Hardcoded 24x24 Fallback**: The downloader (`autoDownloadPack()`), setting importer (`processIconData()`), and SVG normalizer fell back to `24x24` when root dimensions were undefined. Wrapping a 16x16 path into a `0 0 24 24` viewBox confined the vector to the top-left corner with 8px of empty space on the right and bottom, causing off-centering and shrinking.
+**Resolution**:
+1. Updated `autoDownloadPack()` in `main.ts` and `processIconData()` in `SettingTab.ts` to inspect `data.info?.height`, `data.info?.width`, and explicitly check if `packPrefix === 'bi' || packPrefix === 'bootstrap'` to set default dimensions to `16x16` and produce `viewBox="0 0 16 16"`.
+2. Updated all 2,090 stored icons in `icons/bi.json` to use `viewBox="0 0 16 16"`.
+3. Added a runtime safeguard in `IconRepository.ts` (`normalizeSvg()`) to automatically normalize legacy Bootstrap icons with `viewBox="0 0 24 24"` to `0 0 16 16` on the fly.
+**Lesson**: Always inspect `data.info.height`/`data.info.width` from Iconify manifests before falling back to default dimensions. Never assume all SVG icon packs use 24x24 grids—Bootstrap and Octicons use 16x16 native viewBoxes.
+
+---
+
+## Incident #40 — Uninstalled Icon Pack Shows "Installed (2 icons)" Due to Substring Matching (2026-10-11)
+**What was attempted**: Removing the Bootstrap icon pack via Settings → Featured Icon Packs → Remove.
+**What broke**:
+After clicking "Remove", the pack badge changed to `✓ Installed (2 icons)` (or `3 icons`) and the button showed "Re-Download" instead of "Not installed". The 2–3 phantom icons were nowhere to be found in the Icon Picker modal.
+**Root cause**:
+1. **Loose Substring Matching**: In `IconSettingSection.ts` (`matchPack()`), `StyleGenerator.ts` (`matchesPackPrefix()`), and `IconPackIndex.ts` (`matchesPackId()`), Bootstrap detection checked `lower.startsWith('bi-') || lower.includes('bootstrap')`.
+2. **Cross-Pack Icon Collisions**: Other installed packs (such as Simple Icons and Tabler) contained brand logos named `simple-icons-bootstrap`, `simple-icons-reactbootstrap`, and `tabler-brand-bootstrap`.
+3. Because these IDs contained the substring `'bootstrap'`, they were falsely tallied as installed Bootstrap icons even though `bi.json` was completely removed from disk.
+**Resolution**:
+Replaced `lower.includes('bootstrap')` with strict prefix matching: `lower.startsWith('bi-') || lower.startsWith('bootstrap-') || lower.startsWith('bi:')` across `IconSettingSection.ts`, `StyleGenerator.ts`, and `IconPackIndex.ts`.
+**Lesson**: Never use loose substring inclusion (`includes()`) for pack membership, counting, or categorization. Always match on strict pack prefix boundaries (`startsWith("<prefix>-")`).
+
+
 
 

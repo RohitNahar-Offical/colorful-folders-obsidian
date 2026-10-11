@@ -158,6 +158,12 @@ Never store unbounded SVGs, data URIs, or vector tokens in plain Maps; always us
 **RULE 5.10: Atomic Clean Across Storage Layers.**
 When resetting or hard cleaning, purge both vault (`.obsidian/icons`) and plugin (`colorful-folders/icons`) directories, clear in-memory dictionaries, and synchronously unmount live DOM nodes. *(Incident #34)*
 
+**RULE 5.11: Native Icon Grid ViewBox Detection.**
+Never assume all SVG icon packs use `24x24` viewBoxes. Check `data.info?.height` or pack prefixes (`bi`, `octicon`) before defaulting viewBox dimensions when importing Iconify JSON sets. A `16x16` vector placed in a `0 0 24 24` viewBox causes off-centering and scale loss. *(Incident #39)*
+
+**RULE 5.12: Strict Prefix Matching for Icon Packs.**
+Never use loose substring inclusion (`includes()`) for pack membership, counting, or categorization. Always match on strict prefix boundaries (`startsWith("<prefix>-")` or `startsWith("<prefix>:")`) to prevent cross-pack brand collisions (e.g. `simple-icons-bootstrap` falsely claiming to belong to Bootstrap Icons). *(Incident #40)*
+
 ---
 
 ## 6. CI/CD & Release Pipeline
@@ -218,5 +224,7 @@ While `read` is sufficient for building and attesting, `write` is mandatory for 
 | 5.8 | #33 *(Manual Priority)* |
 | 5.9 | #35 *(Bounded LRU)* |
 | 5.10 | #34 *(Atomic Clean)* |
+| 5.11 | #39 *(Iconify ViewBox)* |
+| 5.12 | #40 *(Strict Pack Prefix)* |
 | 6.1 | #11 |
 | 6.2 | #11 |
