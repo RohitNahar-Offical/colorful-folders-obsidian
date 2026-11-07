@@ -195,7 +195,7 @@ export class DOMObserverService {
 
     disposeDividerObserver() {
         if (this.pendingSyncFrame !== null) {
-            cancelAnimationFrame(this.pendingSyncFrame);
+            window.cancelAnimationFrame(this.pendingSyncFrame);
             this.pendingSyncFrame = null;
         }
         if (this.dividerObserver) {

@@ -97,8 +97,7 @@ export class DividerManager {
                 });
                 const mask = `linear-gradient(to ${gradDir}, transparent, black)`;
                 line.setCssStyles({
-                    maskImage: mask,
-                    webkitMaskImage: mask
+                    maskImage: mask
                 });
             }
             return line;
@@ -169,13 +168,9 @@ export class DividerManager {
                     height: '14px',
                     backgroundColor: iconColor,
                     maskImage: `url("data:image/svg+xml,${normalized}")`,
-                    webkitMaskImage: `url("data:image/svg+xml,${normalized}")`,
                     maskRepeat: 'no-repeat',
-                    webkitMaskRepeat: 'no-repeat',
                     maskPosition: 'center',
-                    webkitMaskPosition: 'center',
                     maskSize: 'contain',
-                    webkitMaskSize: 'contain',
                     verticalAlign: 'middle',
                     marginRight: '0px'
                 });

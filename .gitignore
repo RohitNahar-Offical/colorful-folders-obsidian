@@ -4,3 +4,4 @@ node_modules/
 *.txt
 lint_output.json
 scratch/
+.vscode/

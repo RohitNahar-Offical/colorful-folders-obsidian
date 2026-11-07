@@ -13,6 +13,9 @@
     "strictNullChecks": false,
     "lib": [
       "DOM",
+      "DOM.Iterable",
+      "ES2015",
+      "ES2022",
       "ESNext"
     ],
     "types": [
@@ -21,10 +24,14 @@
       "jest"
     ],
     "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
     "esModuleInterop": true
   },
   "include": [
     "src/**/*.ts",
     "tests/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
   ]
 }

@@ -153,7 +153,6 @@ modifiedFields: Set<string>;
             prevLabel.setCssStyles({
                 backgroundImage: initialBgGradient,
                 backgroundClip: "text",
-                webkitBackgroundClip: "text",
                 webkitTextFillColor: "transparent",
                 color: "transparent",
                 fontWeight: this.folderStyle.isBold ? "800" : "normal",
@@ -335,7 +334,6 @@ modifiedFields: Set<string>;
                     this._prevLabel.setCssStyles({
                         backgroundImage: bgGradient,
                         backgroundClip: "text",
-                        webkitBackgroundClip: "text",
                         webkitTextFillColor: "transparent",
                         color: "transparent",
                         fontWeight: this.folderStyle.isBold ? "800" : "normal",
@@ -346,7 +344,6 @@ modifiedFields: Set<string>;
                     this._prevLabel.setCssStyles({
                         backgroundImage: "none",
                         backgroundClip: "initial",
-                        webkitBackgroundClip: "initial",
                         webkitTextFillColor: "initial",
                         color: textCol || "var(--text-normal)",
                         fontWeight: this.folderStyle.isBold ? "800" : "normal",
