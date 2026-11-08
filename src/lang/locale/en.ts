@@ -786,7 +786,7 @@ export default {
     "settings.icon_rule.mode.exact": "Exact match",
     "settings.icon_rule.mode.starts_with": "Starts with",
     "settings.icon_rule.mode.ends_with": "Ends with",
-    "settings.icon_rule.mode.regex": "Regex pattern",
+    "settings.icon_rule.mode.regex": "Regex",
     "settings.icon_rule.scope_help_title": "Rule Scope & Item Matching Guide:",
     "settings.icon_rule.scope_help_folders": "📁 Folders: Targets ONLY folders matching this name. Child files inside the folder will NOT receive this icon.",
     "settings.icon_rule.scope_help_files": "📄 Files: Targets ONLY individual files matching this name (e.g. resource.md). Folders will NOT receive this icon.",

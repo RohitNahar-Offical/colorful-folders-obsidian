@@ -280,7 +280,13 @@ export class IconSettingSection extends SettingSection {
 
                 rules.forEach((rule, index) => {
                     const row = list.createDiv();
-                    row.setCssStyles({ display: 'flex', gap: '8px', alignItems: 'center' });
+                    row.setCssStyles({
+                        display: 'grid',
+                        gridTemplateColumns: '110px 135px 1fr 36px 55px 24px',
+                        gap: '8px',
+                        alignItems: 'center',
+                        width: '100%'
+                    });
 
                     const parsed = IconRuleSet.parseRule(rule);
                     const pattern = parsed.pattern;
@@ -294,21 +300,27 @@ export class IconSettingSection extends SettingSection {
                     scopeBtn.setCssStyles({
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '6px',
-                        padding: '4px 8px',
+                        justifyContent: 'space-between',
+                        padding: '0 8px',
+                        height: '32px',
+                        boxSizing: 'border-box',
                         fontSize: '0.85em',
                         borderRadius: '6px',
                         background: 'var(--background-secondary-alt)',
                         color: 'var(--text-normal)',
                         border: '1px solid var(--background-modifier-border)',
                         cursor: 'pointer',
-                        whiteSpace: 'nowrap'
+                        width: '100%',
+                        minWidth: '0'
                     });
 
                     const updateScopeVisuals = () => {
                         scopeBtn.empty();
-                        const iconSpan = scopeBtn.createSpan();
-                        iconSpan.setCssStyles({ display: 'inline-flex', alignItems: 'center' });
+                        const leftWrap = scopeBtn.createSpan();
+                        leftWrap.setCssStyles({ display: 'inline-flex', alignItems: 'center', gap: '6px', overflow: 'hidden', whiteSpace: 'nowrap' });
+
+                        const iconSpan = leftWrap.createSpan();
+                        iconSpan.setCssStyles({ display: 'inline-flex', alignItems: 'center', flexShrink: '0' });
                         const lucideName = target === 'folders' ? 'folder' : (target === 'files' ? 'file-text' : 'layers');
                         obsidian.setIcon(iconSpan, lucideName);
                         const svgEl = iconSpan.querySelector('svg');
@@ -319,10 +331,11 @@ export class IconSettingSection extends SettingSection {
                         const labelText = target === 'folders'
                             ? t("settings.icon_rule.target.folders")
                             : (target === 'files' ? t("settings.icon_rule.target.files") : t("settings.icon_rule.target.all"));
-                        scopeBtn.createSpan({ text: labelText });
+                        const labelSpan = leftWrap.createSpan({ text: labelText });
+                        labelSpan.setCssStyles({ overflow: 'hidden', textOverflow: 'ellipsis' });
 
                         const chev = scopeBtn.createSpan();
-                        chev.setCssStyles({ display: 'inline-flex', alignItems: 'center', opacity: '0.6' });
+                        chev.setCssStyles({ display: 'inline-flex', alignItems: 'center', opacity: '0.6', flexShrink: '0' });
                         obsidian.setIcon(chev, 'chevron-down');
                         const chevSvg = chev.querySelector('svg');
                         if (chevSvg) {
@@ -373,21 +386,27 @@ export class IconSettingSection extends SettingSection {
                     modeBtn.setCssStyles({
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '6px',
-                        padding: '4px 8px',
+                        justifyContent: 'space-between',
+                        padding: '0 8px',
+                        height: '32px',
+                        boxSizing: 'border-box',
                         fontSize: '0.85em',
                         borderRadius: '6px',
                         background: 'var(--background-secondary-alt)',
                         color: 'var(--text-normal)',
                         border: '1px solid var(--background-modifier-border)',
                         cursor: 'pointer',
-                        whiteSpace: 'nowrap'
+                        width: '100%',
+                        minWidth: '0'
                     });
 
                     const updateModeVisuals = () => {
                         modeBtn.empty();
-                        const iconSpan = modeBtn.createSpan();
-                        iconSpan.setCssStyles({ display: 'inline-flex', alignItems: 'center' });
+                        const leftWrap = modeBtn.createSpan();
+                        leftWrap.setCssStyles({ display: 'inline-flex', alignItems: 'center', gap: '6px', overflow: 'hidden', whiteSpace: 'nowrap' });
+
+                        const iconSpan = leftWrap.createSpan();
+                        iconSpan.setCssStyles({ display: 'inline-flex', alignItems: 'center', flexShrink: '0' });
                         let lucideName = 'search';
                         let labelText = t("settings.icon_rule.mode.contains");
 
@@ -411,10 +430,11 @@ export class IconSettingSection extends SettingSection {
                             (svgEl as unknown as HTMLElement).setCssStyles({ width: '14px', height: '14px', color: 'var(--text-accent)' });
                         }
 
-                        modeBtn.createSpan({ text: labelText });
+                        const labelSpan = leftWrap.createSpan({ text: labelText });
+                        labelSpan.setCssStyles({ overflow: 'hidden', textOverflow: 'ellipsis' });
 
                         const chev = modeBtn.createSpan();
-                        chev.setCssStyles({ display: 'inline-flex', alignItems: 'center', opacity: '0.6' });
+                        chev.setCssStyles({ display: 'inline-flex', alignItems: 'center', opacity: '0.6', flexShrink: '0' });
                         obsidian.setIcon(chev, 'chevron-down');
                         const chevSvg = chev.querySelector('svg');
                         if (chevSvg) {
@@ -481,10 +501,26 @@ export class IconSettingSection extends SettingSection {
 
                     const patInp = row.createEl('input', { type: 'text', placeholder: t("common.regex_name_placeholder") });
                     patInp.value = pattern;
-                    patInp.setCssStyles({ flex: '2', fontFamily: 'var(--font-monospace)' });
+                    patInp.setCssStyles({
+                        width: '100%',
+                        minWidth: '0',
+                        height: '32px',
+                        boxSizing: 'border-box',
+                        fontFamily: 'var(--font-monospace)'
+                    });
 
                     const iconBtn = row.createEl('button');
-                    iconBtn.setCssStyles({ flex: '1', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' });
+                    iconBtn.title = "Choose icon";
+                    iconBtn.setCssStyles({
+                        width: '100%',
+                        height: '32px',
+                        padding: '0',
+                        boxSizing: 'border-box',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        overflow: 'hidden'
+                    });
 
                     const setIconBtnVisuals = (currentIcon: string) => {
                         iconBtn.empty();
@@ -526,7 +562,12 @@ export class IconSettingSection extends SettingSection {
                     prioInp.max = "100";
                     prioInp.title = t("common.priority_placeholder");
                     prioInp.value = parsed.priority;
-                    prioInp.setCssStyles({ width: '70px' });
+                    prioInp.setCssStyles({
+                        width: '100%',
+                        height: '32px',
+                        boxSizing: 'border-box',
+                        textAlign: 'center'
+                    });
 
                     const updateRule = () => {
                         const formatted = IconRuleSet.formatRule(patInp.value, icon, prioInp.value, target, mode);
@@ -548,7 +589,20 @@ export class IconSettingSection extends SettingSection {
                     };
 
                     const delBtn = row.createEl('button', { text: '×' });
-                    delBtn.setCssStyles({ color: 'var(--text-error)', cursor: 'pointer', border: 'none', background: 'transparent' });
+                    delBtn.title = "Delete rule";
+                    delBtn.setCssStyles({
+                        width: '100%',
+                        height: '32px',
+                        padding: '0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--text-error)',
+                        cursor: 'pointer',
+                        border: 'none',
+                        background: 'transparent',
+                        fontSize: '1.2em'
+                    });
                     delBtn.onclick = () => {
                         rules.splice(index, 1);
                         void saveRules().then(() => renderRulesUI());
