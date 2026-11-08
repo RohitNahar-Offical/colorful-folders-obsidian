@@ -405,13 +405,13 @@ export class StyleGenerator {
                     `.nav-file-title[data-path="${safePath}"]:not(.nn-file):not(.fn-hidden):not(.cf-fn-hidden):not([style*="display: none"]):not([style*="display:none"])`,
                     `.tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem):not(.fn-hidden):not(.cf-fn-hidden):not([style*="display: none"]):not([style*="display:none"])`
                 ];
-                grouper.add(fileRowCss, fileRowSels, `fileRow_${color.hex}_${fileBgAlpha}_${shouldColorNative ? 1 : 0}_${baseThick}`);
+                grouper.add(fileRowCss, fileRowSels, `fileRow_${color.hex}_${effFileIconColor.replace(/\s+/g, '')}_${textNative.replace(/\s+/g, '')}_${fileBgAlpha}_${shouldColorNative ? 1 : 0}_${baseThick}`);
 
                 const fileTextSels = [
                     `.nav-file-title[data-path="${safePath}"]:not(.nn-file) .nav-file-title-content`,
                     `.tree-item-self[data-path="${safePath}"]:not(.nn-file):not(.nn-navitem) .tree-item-inner`
                 ];
-                grouper.add(fileTextCss, fileTextSels, `fileText_${activeStyle?.textGradient ? 'grad' : 'norm'}_${isBold}_${isItalic}_${color.hex}`);
+                grouper.add(fileTextCss, fileTextSels, `fileText_${activeStyle?.textGradient ? 'grad' : 'norm'}_${isBold}_${isItalic}_${textNative.replace(/\s+/g, '')}`);
 
                 const fileTagSels = [
                     `[data-path="${safePath}"] .nav-file-tag`,
@@ -421,7 +421,7 @@ export class StyleGenerator {
                     background-color: var(--cf-tag-bg, rgba(${color.rgb}, 0.15)) !important;
                     color: var(--cf-tag-color, ${textNative}) !important;
                     font-size: 10px !important;
-                `, fileTagSels, `fileTag_${color.hex}`);
+                `, fileTagSels, `fileTag_${color.hex}_${textNative.replace(/\s+/g, '')}`);
 
                 if (nnFileBgActive) {
                     const isEmoji = this.plugin.iconManager.isEmojiIcon(iconId);
@@ -770,7 +770,7 @@ export class StyleGenerator {
             `, [
                 `body .nav-files-container .nav-folder-title[data-path="${safePath}"]:not(.nn-navitem)`,
                 `body .nav-files-container .tree-item-self[data-path="${safePath}"]:not(.nn-navitem):not(.nn-file)`
-            ], `folderRow_${color.hex}_${folderStyles.b}_${adjustedOp}_${folderBr}_${useGlass ? 1 : 0}`);
+            ], `folderRow_${color.hex}_${effFolderIconColor.replace(/\s+/g, '')}_${folderStyles.b}_${adjustedOp}_${folderBr}_${useGlass ? 1 : 0}`);
 
             grouper.add(`
                 background-color: var(--cf-active-color, ${bgTint}) !important;
