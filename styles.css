@@ -1047,9 +1047,6 @@ body.cf-show-hidden .nav-files-container .tree-item.cf-hidden:hover {
     gap: 5px;
     color: var(--text-muted);
 }
-    color: var(--text-muted);
-    font-size: 0.9em;
-}
 
 @media (max-width: 600px) {
     .cf-rules-recipe-row {
