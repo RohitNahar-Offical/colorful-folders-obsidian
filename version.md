@@ -36,34 +36,10 @@ You no longer have to write complex regular expressions just to match an exact w
 
 ---
 
-### 🛡️ 3. Fixed: Folder Rules No Longer Leak Into Notes
-
-* **No More Accidental Icon Spills**: Previously, setting an icon rule for a folder name (like `Work` or `Resources`) could cause every single note inside that folder to get the same icon.
-* **Clean Isolation**: Folder rules now strictly change the folder itself. Your notes inside stay independent and keep their own appropriate icons.
-* **Smart Fallbacks**: Directory context is now used strictly as a secondary fallback hint when a note has no icon of its own.
-
----
-
-### 📐 4. Pixel-Perfect Active Rules Table
-
-* **Clean Grid Alignment**: The "Active rules" section in Settings now uses a rigid grid layout. Dropdown menus, text inputs, icon preview buttons, priority numbers, and delete buttons now line up in straight vertical columns across all rows, no matter what language or screen size you use.
-
----
-
-### ⚡ 5. Buttery-Smooth Performance & Instant Matching
-
-* **Native String Speed**: Matching modes (`contains`, `exact`, `starts_with`, `ends_with`) run on native V8 string comparisons (`includes`, `===`, `startsWith`, `endsWith`), bypassing regex engines for $< 0.001\text{ ms}$ evaluation time.
-* **Instant Lookups**: Rules with exact names match in a fraction of a millisecond via $O(1)$ lookup maps.
-* **Smart Memory Caching**: The plugin remembers matching results as you scroll, keeping the file explorer completely smooth and responsive even in vaults with thousands of notes.
-* **Instant Updates**: Any changes you make to your rules in settings appear on your files immediately without having to reload Obsidian.
-* **Under the Hood**: Core icon rule logic has been extracted into a modular `IconRuleSet` engine with pre-compiled priority regexes, 2,048-entry LRU caching, and ReDoS length guards.
-
----
-
-### 🎨 6. Restored Folder Hierarchy Colors & Polish
+### 🎨 3. Restored Folder Hierarchy Colors & Polish
 
 * **Vibrant Folder Colors Restored**: Fixed an issue where folders could turn plain black or gray in "Hierarchy level" coloring mode. Folders now always shine with their proper palette colors.
-* **All Languages Supported**: All new settings, buttons, and help guides are fully translated across English, German, Spanish, French, Japanese, Slovak, and Simplified/Traditional Chinese.
+
 
 ---
 

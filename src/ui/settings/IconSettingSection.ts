@@ -1,6 +1,6 @@
 import * as obsidian from 'obsidian';
 import { SettingSection } from './SettingSection';
-import { t } from '../../lang/helpers';
+import { t, TranslationKey } from '../../lang/helpers';
 import { IconPickerModal } from '../modals/IconPickerModal';
 import { DEFAULT_ICON_PACK_ORDER } from '../../common/constants';
 import { IconRuleSet } from '../../core/IconRuleSet';
@@ -224,31 +224,94 @@ export class IconSettingSection extends SettingSection {
 
             const rulesDesc = rulesCard.createDiv();
             rulesDesc.setCssStyles({
-                fontSize: "0.82em", color: "var(--text-muted)", marginBottom: "14px",
-                padding: "12px 14px", background: "var(--background-secondary-alt)", borderRadius: "8px",
-                borderLeft: "4px solid var(--interactive-accent)", lineHeight: "1.5"
+                fontSize: "0.85em",
+                color: "var(--text-muted)",
+                marginBottom: "14px",
+                lineHeight: "1.4"
             });
-            rulesDesc.createEl('strong', { text: t('settings.advanced_regex_rules') });
-            rulesDesc.createEl('br');
-            rulesDesc.appendText(t('settings.regex_rules_hint'));
+            rulesDesc.setText(t('settings.regex_rules_hint'));
 
-            const scopeHelp = rulesDesc.createDiv();
-            scopeHelp.setCssStyles({ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid var(--background-modifier-border)" });
-            scopeHelp.createDiv({ text: t('settings.icon_rule.scope_help_title') }).setCssStyles({ fontWeight: '600', marginBottom: '4px', color: 'var(--text-normal)' });
+            // Modern, collapsible guide with practical options and advanced regex recipes
+            const guideDetails = rulesCard.createEl('details', { cls: 'cf-rules-guide' });
+            guideDetails.open = true;
 
-            const ul = scopeHelp.createEl('ul');
-            ul.setCssStyles({ margin: '4px 0 0 16px', padding: '0', display: 'flex', flexDirection: 'column', gap: '3px' });
-            ul.createEl('li', { text: t('settings.icon_rule.scope_help_folders') });
-            ul.createEl('li', { text: t('settings.icon_rule.scope_help_files') });
-            ul.createEl('li', { text: t('settings.icon_rule.scope_help_all') });
-            ul.createEl('li', { text: t('settings.icon_rule.mode_help_contains') });
-            ul.createEl('li', { text: t('settings.icon_rule.mode_help_exact') });
-            ul.createEl('li', { text: t('settings.icon_rule.mode_help_starts') });
-            ul.createEl('li', { text: t('settings.icon_rule.mode_help_ends') });
-            ul.createEl('li', { text: t('settings.icon_rule.mode_help_regex') });
+            const summary = guideDetails.createEl('summary', { cls: 'cf-rules-guide-summary' });
 
-            const note = scopeHelp.createDiv({ text: t('settings.icon_rule.scope_help_note') });
-            note.setCssStyles({ marginTop: '6px', fontStyle: 'italic', fontSize: '0.9em', color: 'var(--text-accent)' });
+            const titleWrap = summary.createDiv('cf-rules-guide-title');
+            const iconSpan = titleWrap.createSpan();
+            obsidian.setIcon(iconSpan, 'code');
+            titleWrap.createSpan({ text: t('settings.icon_rule.guide_title') });
+
+            const rightWrap = summary.createDiv();
+            rightWrap.setCssStyles({ display: 'flex', alignItems: 'center', gap: '8px' });
+            const badge = rightWrap.createSpan({ text: t('settings.icon_rule.guide_subtitle') });
+            badge.setCssStyles({
+                fontSize: '0.8em',
+                padding: '2px 8px',
+                borderRadius: '12px',
+                background: 'var(--background-secondary)',
+                border: '1px solid var(--background-modifier-border)',
+                color: 'var(--text-muted)'
+            });
+            const chevronSpan = rightWrap.createSpan({ cls: 'cf-rules-guide-chevron' });
+            obsidian.setIcon(chevronSpan, 'chevron-down');
+
+            const guideBody = guideDetails.createDiv('cf-rules-guide-body');
+
+            // 1. Options breakdown mini-cards
+            const optionsGrid = guideBody.createDiv('cf-rules-options-grid');
+
+            // Card 1: Target Scope
+            const scopeCard = optionsGrid.createDiv('cf-rules-option-card');
+            const scopeHeader = scopeCard.createDiv('cf-rules-option-header');
+            const scopeIcon = scopeHeader.createSpan();
+            obsidian.setIcon(scopeIcon, 'folder');
+            scopeHeader.createSpan({ text: t('settings.icon_rule.opt_scope_title') });
+            scopeCard.createDiv({ cls: 'cf-rules-option-desc', text: t('settings.icon_rule.opt_scope_desc') });
+
+            // Card 2: Matching Modes
+            const modeCard = optionsGrid.createDiv('cf-rules-option-card');
+            const modeHeader = modeCard.createDiv('cf-rules-option-header');
+            const modeIcon = modeHeader.createSpan();
+            obsidian.setIcon(modeIcon, 'sliders');
+            modeHeader.createSpan({ text: t('settings.icon_rule.opt_mode_title') });
+            modeCard.createDiv({ cls: 'cf-rules-option-desc', text: t('settings.icon_rule.opt_mode_desc') });
+
+            // Card 3: Priority Order
+            const prioCard = optionsGrid.createDiv('cf-rules-option-card');
+            const prioHeader = prioCard.createDiv('cf-rules-option-header');
+            const prioIcon = prioHeader.createSpan();
+            obsidian.setIcon(prioIcon, 'list-ordered');
+            prioHeader.createSpan({ text: t('settings.icon_rule.opt_prio_title') });
+            prioCard.createDiv({ cls: 'cf-rules-option-desc', text: t('settings.icon_rule.opt_prio_desc') });
+
+            // 2. Practical Advanced Regex Recipes
+            const recipesTable = guideBody.createDiv('cf-rules-recipes-table');
+            const recipesHeader = recipesTable.createDiv('cf-rules-recipes-header');
+            const recIcon = recipesHeader.createSpan();
+            obsidian.setIcon(recIcon, 'code');
+            recipesHeader.createSpan({ text: t('settings.icon_rule.recipes_title') });
+
+            const recipes: Array<{ code: string; nameKey: TranslationKey; matchKey: TranslationKey }> = [
+                { code: '^v\\d+', nameKey: 'settings.icon_rule.recipe_version', matchKey: 'settings.icon_rule.recipe_version_match' },
+                { code: '^\\d{4}-\\d{2}', nameKey: 'settings.icon_rule.recipe_daily', matchKey: 'settings.icon_rule.recipe_daily_match' },
+                { code: '^(todo|task|inbox)', nameKey: 'settings.icon_rule.recipe_choice', matchKey: 'settings.icon_rule.recipe_choice_match' },
+                { code: '\\.(draft|temp)$', nameKey: 'settings.icon_rule.recipe_suffix', matchKey: 'settings.icon_rule.recipe_suffix_match' },
+                { code: '^\\[.+\\]', nameKey: 'settings.icon_rule.recipe_bracket', matchKey: 'settings.icon_rule.recipe_bracket_match' },
+            ];
+
+            recipes.forEach(r => {
+                const row = recipesTable.createDiv('cf-rules-recipe-row');
+                row.createEl('code', { cls: 'cf-rules-code-badge', text: r.code });
+                row.createSpan({ cls: 'cf-rules-recipe-name', text: t(r.nameKey) });
+                row.createSpan({ cls: 'cf-rules-recipe-matches', text: t(r.matchKey) });
+            });
+
+            // 3. Pro tip callout with shield icon
+            const proTip = guideBody.createDiv('cf-rules-pro-tip');
+            const tipIcon = proTip.createSpan();
+            obsidian.setIcon(tipIcon, 'shield-check');
+            proTip.createSpan({ text: t('settings.icon_rule.pro_tip') });
 
             // Advanced Icon Rule Builder
             const rulesUIContainer = rulesCard.createDiv('cf-rules-builder');

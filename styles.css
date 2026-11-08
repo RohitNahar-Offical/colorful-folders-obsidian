@@ -850,3 +850,204 @@ body.cf-show-hidden .nav-files-container .tree-item.cf-hidden:hover {
     filter: grayscale(0.5) blur(0px);
 }
 
+/* Custom Icon Rules & Regex Guide */
+.cf-rules-guide {
+    background: var(--background-secondary-alt);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    overflow: hidden;
+    transition: border-color 0.15s ease;
+}
+
+.cf-rules-guide[open] {
+    border-color: var(--interactive-accent);
+}
+
+.cf-rules-guide-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 0.88em;
+    font-weight: 600;
+    color: var(--text-normal);
+    user-select: none;
+    list-style: none;
+    background: var(--background-secondary);
+}
+
+.cf-rules-guide-summary::-webkit-details-marker {
+    display: none;
+}
+
+.cf-rules-guide-summary:hover {
+    background: var(--background-modifier-hover);
+}
+
+.cf-rules-guide-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cf-rules-guide-title svg {
+    width: 16px;
+    height: 16px;
+    color: var(--interactive-accent);
+}
+
+.cf-rules-guide-chevron {
+    display: inline-flex;
+    align-items: center;
+    transition: transform 0.2s ease;
+    opacity: 0.7;
+}
+
+.cf-rules-guide-chevron svg {
+    width: 14px;
+    height: 14px;
+}
+
+.cf-rules-guide[open] .cf-rules-guide-chevron {
+    transform: rotate(180deg);
+}
+
+.cf-rules-guide-body {
+    padding: 12px 14px 16px;
+    border-top: 1px solid var(--background-modifier-border);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    font-size: 0.85em;
+    line-height: 1.5;
+}
+
+.cf-rules-options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+}
+
+.cf-rules-option-card {
+    background: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.cf-rules-option-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+.cf-rules-option-header svg {
+    width: 14px;
+    height: 14px;
+    color: var(--text-accent);
+}
+
+.cf-rules-option-desc {
+    color: var(--text-muted);
+    font-size: 0.9em;
+    line-height: 1.4;
+}
+
+.cf-rules-recipes-table {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    padding: 10px 12px;
+}
+
+.cf-rules-recipes-header {
+    font-weight: 600;
+    color: var(--text-normal);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.cf-rules-recipes-header svg {
+    width: 14px;
+    height: 14px;
+    color: var(--interactive-accent);
+}
+
+.cf-rules-recipe-row {
+    display: grid;
+    grid-template-columns: 140px 130px 1fr;
+    gap: 10px;
+    align-items: center;
+    padding: 5px 0;
+    border-top: 1px solid var(--background-modifier-border);
+}
+
+.cf-rules-recipe-row:first-of-type {
+    border-top: none;
+}
+
+.cf-rules-code-badge {
+    font-family: var(--font-monospace);
+    font-size: 0.9em;
+    padding: 2px 7px;
+    background: var(--code-background, rgba(0, 0, 0, 0.25));
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    color: var(--text-accent);
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cf-rules-recipe-name {
+    font-weight: 500;
+    color: var(--text-normal);
+}
+
+.cf-rules-recipe-matches {
+    color: var(--text-muted);
+    font-size: 0.9em;
+}
+
+@media (max-width: 600px) {
+    .cf-rules-recipe-row {
+        grid-template-columns: 1fr;
+        gap: 3px;
+    }
+}
+
+.cf-rules-pro-tip {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: rgba(var(--interactive-accent-rgb, 120, 120, 255), 0.08);
+    border: 1px solid rgba(var(--interactive-accent-rgb, 120, 120, 255), 0.2);
+    color: var(--text-muted);
+    font-size: 0.88em;
+    line-height: 1.4;
+}
+
+.cf-rules-pro-tip svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: var(--interactive-accent);
+}
+
+
