@@ -10,13 +10,15 @@ export class IconRepository {
     plugin: IColorfulFoldersPlugin;
 
     private _customRulesCache: AutoIconData[] = [];
+    private _customExactRules: Map<string, AutoIconData> = new Map();
+    private _customRegexRules: AutoIconData[] = [];
     private _categoryCache: AutoIconData[] | null = null;
     private _categoryTrie = new CategoryTrie();
     private _customRulesKey: string = '';
     private _normCache = new LRUCache<string, string>(1024);
     private _dataUriCache = new LRUCache<string, string>(1024);
     private _findPackIconCache = new LRUCache<string, string | null>(512);
-    private _autoIconResultCache = new LRUCache<string, AutoIconData | null>(1024);
+    private _autoIconResultCache = new LRUCache<string, AutoIconData | null>(4096);
     private _iconValidityCache = new LRUCache<string, boolean>(512);
     private _packIndex: IconPackIndex = new IconPackIndex();
     private _domParser: DOMParser | null = typeof DOMParser !== 'undefined' ? new DOMParser() : null;
@@ -180,6 +182,9 @@ export class IconRepository {
         if (!this._categoryCache || this._customRulesKey !== currentKey) {
             const categories: AutoIconData[] = [...AUTO_ICON_CATEGORIES];
             const customRules: AutoIconData[] = [];
+            const customExactRules = new Map<string, AutoIconData>();
+            const customRegexRules: AutoIconData[] = [];
+
             if (currentKey) {
                 const rules = currentKey.split('\n').filter((r: string) => r.trim());
                 for (const rule of rules) {
@@ -210,14 +215,26 @@ export class IconRepository {
 
                         customRules.push(ruleData);
                         categories.push(ruleData);
+
+                        if (!isRegexMeta) {
+                            const cleanP = pattern.toLowerCase().trim();
+                            if (cleanP && !customExactRules.has(cleanP)) {
+                                customExactRules.set(cleanP, ruleData);
+                            }
+                        } else {
+                            customRegexRules.push(ruleData);
+                        }
                     } catch (e) {
                         console.error("Colorful Folders: Failed to parse custom icon rule", rule, e);
                     }
                 }
             }
             customRules.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+            customRegexRules.sort((a, b) => (b.priority || 0) - (a.priority || 0));
             categories.sort((a, b) => (b.priority || 0) - (a.priority || 0));
             this._customRulesCache = customRules;
+            this._customExactRules = customExactRules;
+            this._customRegexRules = customRegexRules;
             this._categoryCache = categories;
             this._categoryTrie.build(categories);
             this._customRulesKey = currentKey;
@@ -242,8 +259,44 @@ export class IconRepository {
 
         // Tier 0.8: Custom User Rules (Takes absolute top priority over standard pack names & defaults)
         if (this._customRulesCache && this._customRulesCache.length > 0) {
+            // Fast Path A: O(1) Exact & Substring Map Lookup for non-regex rules
+            if (this._customExactRules.size > 0) {
+                // 1. Direct exact context match
+                for (const ctx of searchContexts) {
+                    const exactHit = this._customExactRules.get(ctx);
+                    if (exactHit) {
+                        return {
+                            ...exactHit,
+                            tier: 1,
+                            packSource: 'custom-rule'
+                        };
+                    }
+                }
+
+                // 2. Word token match
+                const tokenSet = new Set<string>();
+                for (const ctx of searchContexts) {
+                    const words = ctx.split(/[^\p{L}\p{N}]+/gu);
+                    for (const w of words) {
+                        if (w.length >= 1) tokenSet.add(w);
+                    }
+                }
+                for (const token of tokenSet) {
+                    const tokenHit = this._customExactRules.get(token);
+                    if (tokenHit) {
+                        return {
+                            ...tokenHit,
+                            tier: 1,
+                            packSource: 'custom-rule'
+                        };
+                    }
+                }
+            }
+
+            // Fast Path B: Regex rules (only scan the regexes, not plain word rules)
+            const rulesToScan = this._customRegexRules.length > 0 ? this._customRegexRules : this._customRulesCache;
             for (const ctx of searchContexts) {
-                for (const rule of this._customRulesCache) {
+                for (const rule of rulesToScan) {
                     if (rule.rex.test(ctx)) {
                         return {
                             ...rule,
