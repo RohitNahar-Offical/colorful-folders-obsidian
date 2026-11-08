@@ -218,7 +218,10 @@ export class IconSettingSection extends SettingSection {
                     btn.buttonEl.setCssStyles({ marginLeft: "8px" });
                 });
 
-            const rulesDesc = autoCard.createDiv();
+            // 🎯 Advanced Icon Rules & Targeting Card (Dedicated card for rule autonomy)
+            const rulesCard = this.settingTab.makeCard(containerEl, "🎯", t("settings.icon_rules_card.title"));
+
+            const rulesDesc = rulesCard.createDiv();
             rulesDesc.setCssStyles({
                 fontSize: "0.8em", color: "var(--text-muted)", marginBottom: "12px",
                 padding: "10px", background: "var(--background-secondary-alt)", borderRadius: "6px",
@@ -226,10 +229,10 @@ export class IconSettingSection extends SettingSection {
             });
             rulesDesc.createEl('strong', { text: t('settings.advanced_regex_rules') });
             rulesDesc.createEl('br');
-            rulesDesc.appendText('Define rules to automatically assign icons based on folder/file names using regex patterns. Rules are evaluated top to bottom, highest priority first.');
+            rulesDesc.appendText(t('settings.regex_rules_hint'));
 
             // Advanced Icon Rule Builder
-            const rulesUIContainer = autoCard.createDiv('cf-rules-builder');
+            const rulesUIContainer = rulesCard.createDiv('cf-rules-builder');
             rulesUIContainer.setCssStyles({
                 marginTop: '15px', background: 'var(--background-secondary)', padding: '16px',
                 borderRadius: '8px', border: '1px solid var(--background-modifier-border)'
@@ -259,14 +262,53 @@ export class IconSettingSection extends SettingSection {
                     const row = list.createDiv();
                     row.setCssStyles({ display: 'flex', gap: '8px', alignItems: 'center' });
 
-                    let pattern = "", icon = "", priority = "";
-                    const match = rule.match(/^(.*?)\s*=\s*(.*?)\s*(?:@(\d+))?$/);
-                    if (match) {
-                        pattern = match[1].trim();
-                        icon = match[2].trim();
-                        priority = match[3] ? match[3].trim() : "";
+                    let pattern = "", icon = "", priority = "", target = "all";
+                    const eqIdx = rule.indexOf('=');
+                    if (eqIdx >= 0) {
+                        pattern = rule.slice(0, eqIdx).trim();
+                        let secondHalf = rule.slice(eqIdx + 1).trim();
+
+                        const scopeMatch = secondHalf.match(/::(\w+)\s*$/);
+                        if (scopeMatch) {
+                            const raw = scopeMatch[1].toLowerCase();
+                            if (raw === 'folders' || raw === 'folder') target = 'folders';
+                            else if (raw === 'files' || raw === 'file') target = 'files';
+                            else target = 'all';
+                            secondHalf = secondHalf.slice(0, secondHalf.length - scopeMatch[0].length).trim();
+                        }
+
+                        if (secondHalf.includes('@')) {
+                            const prioParts = secondHalf.split('@');
+                            secondHalf = prioParts[0].trim();
+                            priority = prioParts[1].trim();
+                        }
+                        icon = secondHalf.trim();
                     } else {
                         pattern = rule;
+                    }
+
+                    // Scope selector dropdown (Folders / Files / All)
+                    const scopeSelect = row.createEl('select');
+                    scopeSelect.title = t("settings.icon_rule.scope_tooltip");
+                    scopeSelect.setCssStyles({
+                        padding: '4px 6px',
+                        fontSize: '0.85em',
+                        borderRadius: '4px',
+                        background: 'var(--background-secondary-alt)',
+                        color: 'var(--text-normal)',
+                        border: '1px solid var(--background-modifier-border)',
+                        cursor: 'pointer'
+                    });
+
+                    const scopes: { val: string; label: string }[] = [
+                        { val: 'all', label: t("settings.icon_rule.target.all") },
+                        { val: 'folders', label: t("settings.icon_rule.target.folders") },
+                        { val: 'files', label: t("settings.icon_rule.target.files") }
+                    ];
+
+                    for (const sc of scopes) {
+                        const opt = scopeSelect.createEl('option', { value: sc.val, text: sc.label });
+                        if (sc.val === target) opt.selected = true;
                     }
 
                     const patInp = row.createEl('input', { type: 'text', placeholder: t("common.regex_name_placeholder") });
@@ -309,6 +351,7 @@ export class IconSettingSection extends SettingSection {
                     const updateRule = () => {
                         const p = patInp.value.trim();
                         let pr = prioInp.value.trim();
+                        const sc = scopeSelect.value;
 
                         let prNum = parseInt(pr);
                         if (!isNaN(prNum)) {
@@ -319,10 +362,16 @@ export class IconSettingSection extends SettingSection {
                         }
 
                         if (p && icon) {
-                            rules[index] = `${p} = ${icon}${pr ? ' @' + pr : ''}`;
+                            const prioPart = pr ? ` @${pr}` : '';
+                            const scopePart = sc && sc !== 'all' ? ` ::${sc}` : '';
+                            rules[index] = `${p} = ${icon}${prioPart}${scopePart}`;
                             void saveRules();
                         }
                     };
+
+                    scopeSelect.onchange = updateRule;
+                    patInp.onchange = updateRule;
+                    prioInp.onchange = updateRule;
 
                     iconBtn.onclick = () => {
                         new IconPickerModal(this.app, this.plugin, icon, (selectedIcon) => {
@@ -331,9 +380,6 @@ export class IconSettingSection extends SettingSection {
                             updateRule();
                         }).open();
                     };
-
-                    patInp.onchange = updateRule;
-                    prioInp.onchange = updateRule;
 
                     const delBtn = row.createEl('button', { text: '×' });
                     delBtn.setCssStyles({ color: 'var(--text-error)', cursor: 'pointer', border: 'none', background: 'transparent' });

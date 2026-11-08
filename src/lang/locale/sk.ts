@@ -788,6 +788,13 @@ const sk: Partial<LocaleDictionary> = {
 
     // --- Notices ---
     "notice.removed_icons_from_pack_msg": "Odstránených {{count}} ikón z {{name}}.",
+
+    // --- Custom Icon Rules & Targeting ---
+    "settings.icon_rules_card.title": "Vlastné pravidlá ikon a zacielenie",
+    "settings.icon_rule.target.all": "📁+📄 Všetko",
+    "settings.icon_rule.target.folders": "📁 Priečinky",
+    "settings.icon_rule.target.files": "📄 Súbory",
+    "settings.icon_rule.scope_tooltip": "Rozsah pravidla: iba priečinky, iba súbory alebo všetko",
 };
 
 export default sk;

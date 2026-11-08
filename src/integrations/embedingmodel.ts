@@ -910,7 +910,8 @@ export class EmbeddingModel {
         }
 
         if (this.plugin?.iconManager) {
-            const autoIcon = this.plugin.iconManager.getAutoIconData(lowerName);
+            const isFile = context?.isFolder !== undefined ? !context.isFolder : undefined;
+            const autoIcon = this.plugin.iconManager.getAutoIconData(lowerName, undefined, isFile);
             if (autoIcon && autoIcon.lucide) {
                 return [{
                     iconId: autoIcon.lucide,

@@ -792,6 +792,13 @@ const zhCN: Partial<LocaleDictionary> = {
 
     // --- Notices ---
     "notice.removed_icons_from_pack_msg": "从 {{name}} 移除了 {{count}} 个图标。",
+
+    // --- Custom Icon Rules & Targeting ---
+    "settings.icon_rules_card.title": "自定义图标规则与目标范围",
+    "settings.icon_rule.target.all": "📁+📄 全部",
+    "settings.icon_rule.target.folders": "📁 文件夹",
+    "settings.icon_rule.target.files": "📄 文件",
+    "settings.icon_rule.scope_tooltip": "规则范围：仅文件夹、仅文件或全部",
 } as const;
 
 export default zhCN;

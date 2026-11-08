@@ -206,7 +206,7 @@ export class StyleResolver {
                 inheritedStyle?.iconColor ??
                 color.hex;
 
-            const autoIcon = plugin.iconManager.getAutoIconData(target.name, target.path);
+            const autoIcon = plugin.iconManager.getAutoIconData(target.name, target.path, isFile);
             let iconId = "";
             if (customStyle?.iconId) {
                 iconId = customStyle.iconId;

@@ -135,7 +135,7 @@ export class AIIconClassifier {
                 }
 
                 // 2. Exclude items matching Custom User Rules (e.g. pattern = icon @ priority)
-                const customRule = this.plugin.iconManager.getAutoIconData(t.name, t.path);
+                const customRule = this.plugin.iconManager.getAutoIconData(t.name, t.path, !t.isFolder);
                 if (customRule && (customRule.packSource === 'custom-rule' || customRule.isCustom)) {
                     return false; // User custom rule match — do NOT send to AI
                 }
@@ -433,7 +433,7 @@ export class AIIconClassifier {
                             }
                         } else {
                             // Layer 4: Fallback to Native Auto-Icon System or Vector Embedding Engine
-                            const autoIcon = this.plugin.iconManager.getAutoIconData(targetItem.name, targetItem.path);
+                            const autoIcon = this.plugin.iconManager.getAutoIconData(targetItem.name, targetItem.path, !targetItem.isFolder);
                             const fallbackIcon = autoIcon?.lucide || autoIcon?.emoji;
                             if (fallbackIcon) {
                                 conceptMap.set(targetItem.path, fallbackIcon);
@@ -498,7 +498,7 @@ export class AIIconClassifier {
                 let iconId = conceptMap.get(item.path) || conceptMap.get(normPath) || conceptMap.get(normName) || conceptMap.get(item.name) || "";
 
                 // Priority 0: Explicit Custom User Rules ALWAYS take top priority over AI suggestions
-                const customRule = this.plugin.iconManager.getAutoIconData(item.name, item.path);
+                const customRule = this.plugin.iconManager.getAutoIconData(item.name, item.path, !item.isFolder);
                 if (customRule && (customRule.packSource === 'custom-rule' || customRule.isCustom)) {
                     const customIcon = customRule.lucide || customRule.emoji;
                     if (customIcon) {

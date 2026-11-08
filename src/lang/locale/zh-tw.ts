@@ -792,6 +792,13 @@ const zhTW: Partial<LocaleDictionary> = {
 
     // --- Notices ---
     "notice.removed_icons_from_pack_msg": "從 {{name}} 移除了 {{count}} 個圖示。",
+
+    // --- Custom Icon Rules & Targeting ---
+    "settings.icon_rules_card.title": "自訂圖示規則與目標範圍",
+    "settings.icon_rule.target.all": "📁+📄 全部",
+    "settings.icon_rule.target.folders": "📁 資料夾",
+    "settings.icon_rule.target.files": "📄 檔案",
+    "settings.icon_rule.scope_tooltip": "規則範圍：僅資料夾、僅檔案或全部",
 } as const;
 
 export default zhTW;

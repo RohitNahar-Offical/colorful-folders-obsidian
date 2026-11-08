@@ -762,6 +762,13 @@ const de: Partial<LocaleDictionary> = {
 
     // --- Notices ---
     "notice.removed_icons_from_pack_msg": "{{count}} Icons von {{name}} entfernt.",
+
+    // --- Custom Icon Rules & Targeting ---
+    "settings.icon_rules_card.title": "Benutzerdefinierte Symbolregeln & Zielgruppen",
+    "settings.icon_rule.target.all": "📁+📄 Alle",
+    "settings.icon_rule.target.folders": "📁 Ordner",
+    "settings.icon_rule.target.files": "📄 Dateien",
+    "settings.icon_rule.scope_tooltip": "Regelbereich: Nur Ordner, nur Dateien oder Alle",
 };
 
 export default de;

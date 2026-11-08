@@ -167,6 +167,8 @@ export interface AutoIconData {
     emojis?: string[];
     lucides?: string[];
     packSource?: string;
+    /** Scope restriction set by the user's custom rule (default: 'all'). */
+    targetScope?: 'all' | 'folders' | 'files';
 }
 
 export interface EffectiveStyle {

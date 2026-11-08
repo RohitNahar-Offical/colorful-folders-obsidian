@@ -763,6 +763,13 @@ const ja: Partial<LocaleDictionary> = {
 
     // --- Notices ---
     "notice.removed_icons_from_pack_msg": "{{name}}から{{count}}個のアイコンを削除しました。",
+
+    // --- Custom Icon Rules & Targeting ---
+    "settings.icon_rules_card.title": "カスタムアイコンルールとターゲット設定",
+    "settings.icon_rule.target.all": "📁+📄 すべて",
+    "settings.icon_rule.target.folders": "📁 フォルダ",
+    "settings.icon_rule.target.files": "📄 ファイル",
+    "settings.icon_rule.scope_tooltip": "ルールの適用範囲: フォルダのみ、ファイルのみ、またはすべて",
 } as const;
 
 export default ja;

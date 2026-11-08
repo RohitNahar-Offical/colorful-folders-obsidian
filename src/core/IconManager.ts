@@ -10,8 +10,8 @@ export class IconManager {
         this.repository = new IconRepository(plugin);
     }
 
-    getAutoIconData(name: string, path?: string): AutoIconData | null {
-        return this.repository.getAutoIconData(name, path);
+    getAutoIconData(name: string, path?: string, isFile?: boolean): AutoIconData | null {
+        return this.repository.getAutoIconData(name, path, isFile);
     }
 
     findIconInPacks(searchKey: string): string | null {

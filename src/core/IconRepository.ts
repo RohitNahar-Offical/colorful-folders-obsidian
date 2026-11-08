@@ -5,14 +5,13 @@ import { hashString, stemWord, stripIconPrefix } from '../common/utils';
 import { IconPackIndex } from './IconPackIndex';
 import { LRUCache } from '../common/LRUCache';
 import { CategoryTrie } from './CategoryTrie';
+import { IconRuleSet } from './IconRuleSet';
 
 export class IconRepository {
     plugin: IColorfulFoldersPlugin;
 
-    private _customRulesCache: AutoIconData[] = [];
-    private _customExactRules: Map<string, AutoIconData> = new Map();
-    private _customRegexRules: AutoIconData[] = [];
-    private _categoryCache: AutoIconData[] | null = null;
+    /** Compiled custom rule engine (SRP: rule concern isolated to IconRuleSet). */
+    private _ruleSet = new IconRuleSet();
     private _categoryTrie = new CategoryTrie();
     private _customRulesKey: string = '';
     private _normCache = new LRUCache<string, string>(1024);
@@ -44,20 +43,31 @@ export class IconRepository {
         return isValid;
     }
 
-    getAutoIconData(name: string, path?: string): AutoIconData | null {
+    /**
+     * Resolve the best auto-icon for a vault node.
+     *
+     * @param name    File/folder base name (no path).
+     * @param path    Full vault-relative path (optional, enables Tier 0 & Tier 0.7).
+     * @param isFile  true = file, false = folder, undefined = unknown.
+     *                When defined, custom rules are scoped to the correct type —
+     *                preventing folder-only rules from firing on files and vice-versa.
+     */
+    getAutoIconData(name: string, path?: string, isFile?: boolean): AutoIconData | null {
         if (!name) return null;
-        const cacheKey = path ? `${name}::${path}` : name;
+        // Cache key includes type prefix to prevent folder/file name collisions
+        const typePrefix = isFile === undefined ? 'u:' : (isFile ? 'file:' : 'dir:');
+        const cacheKey   = path ? `${typePrefix}${name}::${path}` : `${typePrefix}${name}`;
         const hit = this._autoIconResultCache.get(cacheKey);
         if (hit !== undefined) {
             return hit;
         }
 
-        const result = this._computeAutoIconData(name, path);
+        const result = this._computeAutoIconData(name, path, isFile);
         this._autoIconResultCache.set(cacheKey, result);
         return result;
     }
 
-    private _computeAutoIconData(name: string, path?: string): AutoIconData | null {
+    private _computeAutoIconData(name: string, path?: string, isFile?: boolean): AutoIconData | null {
         // Tier 0 & Tier 0.5: Frontmatter & Tag Auto-Icon Resolution (only for Markdown files)
         if (path && path.endsWith('.md') && this.plugin.app?.vault && this.plugin.app?.metadataCache) {
             const file = this.plugin.app.vault.getAbstractFileByPath(path);
@@ -104,7 +114,8 @@ export class IconRepository {
                         const uniqueTags = Array.from(new Set(tags.map(t => t.replace(/^#/, '').trim().toLowerCase()))).filter(t => t.length > 0);
                         for (const tag of uniqueTags) {
                             // Query auto-icon for tag name (without path to prevent infinite recursion)
-                            const tagIcon = this.getAutoIconData(tag);
+                            // isFile = undefined: tags apply to all types — do not let folder-scoped rules leak
+                            const tagIcon = this.getAutoIconData(tag, undefined, undefined);
                             if (tagIcon) {
                                 return {
                                     ...tagIcon,
@@ -181,60 +192,48 @@ export class IconRepository {
 
         if (!this._categoryCache || this._customRulesKey !== currentKey) {
             const categories: AutoIconData[] = [...AUTO_ICON_CATEGORIES];
-            const customRules: AutoIconData[] = [];
-            const customExactRules = new Map<string, AutoIconData>();
-            const customRegexRules: AutoIconData[] = [];
 
+            // Delegate all custom rule compilation to IconRuleSet (SRP)
+            this._ruleSet.build(currentKey);
+
+            // Build a flat list for CategoryTrie (which still needs AutoIconData[])
+            // We only push the AutoIconData-compatible view of compiled rules here.
+            // The rule engine itself lives in _ruleSet.
             if (currentKey) {
                 const rules = currentKey.split('\n').filter((r: string) => r.trim());
                 for (const rule of rules) {
                     try {
-                        const mainParts = rule.split('=').map((p: string) => p.trim());
-                        if (mainParts.length < 2) continue;
-
-                        const pattern = mainParts[0];
-                        let secondHalf = mainParts[1];
+                        const eqIdx = rule.indexOf('=');
+                        if (eqIdx < 0) continue;
+                        const pattern    = rule.slice(0, eqIdx).trim();
+                        let   secondHalf = rule.slice(eqIdx + 1).trim();
+                        // Strip ::target suffix before further parsing (backward compat)
+                        secondHalf = secondHalf.replace(/::(?:folders?|files?|all)\s*$/i, '').trim();
                         let priority = 1500;
-
                         if (secondHalf.includes('@')) {
-                            const prioParts = secondHalf.split('@').map((p: string) => p.trim());
-                            secondHalf = prioParts[0];
+                            const prioParts = secondHalf.split('@');
+                            secondHalf = prioParts[0].trim();
                             priority = parseInt(prioParts[1]) || 1500;
                         }
-
                         const isRegexMeta = /[.*+?^${}()|[\]\\]/.test(pattern);
-                        const rex = isRegexMeta ? new RegExp(pattern, 'i') : new RegExp(`^${pattern}$|\\b${pattern}\\b|${pattern}`, 'i');
-
+                        const rex = isRegexMeta
+                            ? new RegExp(pattern, 'i')
+                            : new RegExp(`^${pattern}$|\\b${pattern}\\b|${pattern}`, 'i');
                         const ruleData: AutoIconData = {
                             rex,
-                            emoji: secondHalf,
-                            lucide: secondHalf,
+                            emoji:    secondHalf,
+                            lucide:   secondHalf,
                             priority: priority,
                             isCustom: true
                         };
-
-                        customRules.push(ruleData);
                         categories.push(ruleData);
-
-                        if (!isRegexMeta) {
-                            const cleanP = pattern.toLowerCase().trim();
-                            if (cleanP && !customExactRules.has(cleanP)) {
-                                customExactRules.set(cleanP, ruleData);
-                            }
-                        } else {
-                            customRegexRules.push(ruleData);
-                        }
                     } catch (e) {
-                        console.error("Colorful Folders: Failed to parse custom icon rule", rule, e);
+                        console.error("Colorful Folders: Failed to parse custom icon rule for Trie", rule, e);
                     }
                 }
             }
-            customRules.sort((a, b) => (b.priority || 0) - (a.priority || 0));
-            customRegexRules.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+
             categories.sort((a, b) => (b.priority || 0) - (a.priority || 0));
-            this._customRulesCache = customRules;
-            this._customExactRules = customExactRules;
-            this._customRegexRules = customRegexRules;
             this._categoryCache = categories;
             this._categoryTrie.build(categories);
             this._customRulesKey = currentKey;
@@ -257,54 +256,22 @@ export class IconRepository {
             searchContexts.push(parentFolder.toLowerCase());
         }
 
-        // Tier 0.8: Custom User Rules (Takes absolute top priority over standard pack names & defaults)
-        if (this._customRulesCache && this._customRulesCache.length > 0) {
-            // Fast Path A: O(1) Exact & Substring Map Lookup for non-regex rules
-            if (this._customExactRules.size > 0) {
-                // 1. Direct exact context match
-                for (const ctx of searchContexts) {
-                    const exactHit = this._customExactRules.get(ctx);
-                    if (exactHit) {
-                        return {
-                            ...exactHit,
-                            tier: 1,
-                            packSource: 'custom-rule'
-                        };
-                    }
-                }
-
-                // 2. Word token match
-                const tokenSet = new Set<string>();
-                for (const ctx of searchContexts) {
-                    const words = ctx.split(/[^\p{L}\p{N}]+/gu);
-                    for (const w of words) {
-                        if (w.length >= 1) tokenSet.add(w);
-                    }
-                }
-                for (const token of tokenSet) {
-                    const tokenHit = this._customExactRules.get(token);
-                    if (tokenHit) {
-                        return {
-                            ...tokenHit,
-                            tier: 1,
-                            packSource: 'custom-rule'
-                        };
-                    }
-                }
-            }
-
-            // Fast Path B: Regex rules (only scan the regexes, not plain word rules)
-            const rulesToScan = this._customRegexRules.length > 0 ? this._customRegexRules : this._customRulesCache;
-            for (const ctx of searchContexts) {
-                for (const rule of rulesToScan) {
-                    if (rule.rex.test(ctx)) {
-                        return {
-                            ...rule,
-                            tier: 1,
-                            packSource: 'custom-rule'
-                        };
-                    }
-                }
+        // Tier 0.8: Custom User Rules — delegated to IconRuleSet (dual-bucket engine)
+        // O(1) exact match first, then O(n_regex) regex scan.
+        // isFile scoping ensures folder-only rules don't fire on files and vice-versa.
+        if (!this._ruleSet.isEmpty) {
+            const ruleHit = this._ruleSet.lookup(searchContexts, isFile);
+            if (ruleHit) {
+                return {
+                    tier: 0.8,
+                    rex:        ruleHit.rex,
+                    emoji:      ruleHit.emoji,
+                    lucide:     ruleHit.lucide,
+                    priority:   ruleHit.priority,
+                    isCustom:   true,
+                    targetScope: ruleHit.target,
+                    packSource: 'custom-rule'
+                };
             }
         }
 
@@ -615,6 +582,12 @@ export class IconRepository {
             const fileName = path.includes('/') ? path.split('/').pop() : path;
             if (fileName) {
                 this._autoIconResultCache.delete(`${fileName}::${path}`);
+                this._autoIconResultCache.delete(`file:${fileName}::${path}`);
+                this._autoIconResultCache.delete(`dir:${fileName}::${path}`);
+                this._autoIconResultCache.delete(`u:${fileName}::${path}`);
+                this._autoIconResultCache.delete(`file:${fileName}`);
+                this._autoIconResultCache.delete(`dir:${fileName}`);
+                this._autoIconResultCache.delete(`u:${fileName}`);
             }
         } else {
             this._autoIconResultCache.clear();
@@ -718,5 +691,6 @@ export class IconRepository {
         this._autoIconResultCache.clear();
         this._iconValidityCache.clear();
         this._packIndex.invalidate();
+        this._ruleSet.build('');
     }
 }

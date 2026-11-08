@@ -327,7 +327,7 @@ export class StyleGenerator {
 
                 let iconId = rawFileIcon || rawInheritedFileIcon || "";
                 if (!iconId && this.settings.autoIcons) {
-                    const customUserRuleFile = this.plugin.iconManager.getAutoIconData(child.name, child.path);
+                    const customUserRuleFile = this.plugin.iconManager.getAutoIconData(child.name, child.path, true);
                     if (customUserRuleFile) {
                         iconId = this.resolveAutoIconCandidate(customUserRuleFile);
                     }
@@ -669,7 +669,7 @@ export class StyleGenerator {
 
             let folderIconId = rawFolderIcon || rawInheritedFolderIcon || "";
             if (!folderIconId && this.settings.autoIcons) {
-                const customUserRuleFolder = this.plugin.iconManager.getAutoIconData(child.name, child.path);
+                const customUserRuleFolder = this.plugin.iconManager.getAutoIconData(child.name, child.path, false);
                 if (customUserRuleFolder) {
                     folderIconId = this.resolveAutoIconCandidate(customUserRuleFolder);
                 }

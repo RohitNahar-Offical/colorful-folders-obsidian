@@ -758,6 +758,13 @@ const es: Partial<LocaleDictionary> = {
 
     // --- Notices ---
     "notice.removed_icons_from_pack_msg": "Eliminados {{count}} iconos de {{name}}.",
+
+    // --- Custom Icon Rules & Targeting ---
+    "settings.icon_rules_card.title": "Reglas de iconos personalizadas y segmentación",
+    "settings.icon_rule.target.all": "📁+📄 Todos",
+    "settings.icon_rule.target.folders": "📁 Carpetas",
+    "settings.icon_rule.target.files": "📄 Archivos",
+    "settings.icon_rule.scope_tooltip": "Ámbito de la regla: solo carpetas, solo archivos o todos",
 } as const;
 
 export default es;

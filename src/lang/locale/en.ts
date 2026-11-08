@@ -774,4 +774,11 @@ export default {
     "settings.palette_table.day": "day",
     "settings.palette_table.days": "days",
     "settings.palette_table.older_than": "older than {{n}} {{unit}}",
+
+    // --- Custom Icon Rules & Targeting ---
+    "settings.icon_rules_card.title": "Custom icon rules & targeting",
+    "settings.icon_rule.target.all": "📁+📄 All",
+    "settings.icon_rule.target.folders": "📁 Folders",
+    "settings.icon_rule.target.files": "📄 Files",
+    "settings.icon_rule.scope_tooltip": "Rule scope: Folders only, Files only, or All",
 } as const;

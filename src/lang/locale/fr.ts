@@ -763,6 +763,13 @@ const fr: Partial<LocaleDictionary> = {
 
     // --- Notices ---
     "notice.removed_icons_from_pack_msg": "{{count}} icônes supprimées de {{name}}.",
+
+    // --- Custom Icon Rules & Targeting ---
+    "settings.icon_rules_card.title": "Règles d'icônes personnalisées et ciblage",
+    "settings.icon_rule.target.all": "📁+📄 Tous",
+    "settings.icon_rule.target.folders": "📁 Dossiers",
+    "settings.icon_rule.target.files": "📄 Fichiers",
+    "settings.icon_rule.scope_tooltip": "Portée de la règle: dossiers uniquement, fichiers uniquement ou tous",
 } as const;
 
 export default fr;
