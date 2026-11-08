@@ -795,10 +795,15 @@ const zhTW: Partial<LocaleDictionary> = {
 
     // --- Custom Icon Rules & Targeting ---
     "settings.icon_rules_card.title": "自訂圖示規則與目標範圍",
-    "settings.icon_rule.target.all": "📁+📄 全部",
-    "settings.icon_rule.target.folders": "📁 資料夾",
-    "settings.icon_rule.target.files": "📄 檔案",
+    "settings.icon_rule.target.all": "全部",
+    "settings.icon_rule.target.folders": "資料夾",
+    "settings.icon_rule.target.files": "檔案",
     "settings.icon_rule.scope_tooltip": "規則範圍：僅資料夾、僅檔案或全部",
+    "settings.icon_rule.scope_help_title": "規則範圍與比對指南：",
+    "settings.icon_rule.scope_help_folders": "📁 資料夾：僅比對資料夾名稱。該資料夾內的子檔案不會套用此圖示。",
+    "settings.icon_rule.scope_help_files": "📄 檔案：僅比對個別檔案名稱（例如 resource.md）。資料夾不會套用此圖示。",
+    "settings.icon_rule.scope_help_all": "📁+📄 全部：適用於任何名稱相符的資料夾或檔案。",
+    "settings.icon_rule.scope_help_note": "💡 隔離保證：規則僅比對項目本身名稱，父資料夾名稱絕不會意外影響內部檔案的圖示。",
 } as const;
 
 export default zhTW;

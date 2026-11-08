@@ -766,10 +766,15 @@ const fr: Partial<LocaleDictionary> = {
 
     // --- Custom Icon Rules & Targeting ---
     "settings.icon_rules_card.title": "Règles d'icônes personnalisées et ciblage",
-    "settings.icon_rule.target.all": "📁+📄 Tous",
-    "settings.icon_rule.target.folders": "📁 Dossiers",
-    "settings.icon_rule.target.files": "📄 Fichiers",
+    "settings.icon_rule.target.all": "Tous",
+    "settings.icon_rule.target.folders": "Dossiers",
+    "settings.icon_rule.target.files": "Fichiers",
     "settings.icon_rule.scope_tooltip": "Portée de la règle: dossiers uniquement, fichiers uniquement ou tous",
+    "settings.icon_rule.scope_help_title": "Guide de portée et correspondance:",
+    "settings.icon_rule.scope_help_folders": "📁 Dossiers: Cible UNIQUEMENT les dossiers. Les fichiers enfants du dossier ne recevront PAS cette icône.",
+    "settings.icon_rule.scope_help_files": "📄 Fichiers: Cible UNIQUEMENT les fichiers individuels (ex. resource.md). Les dossiers ne recevront PAS cette icône.",
+    "settings.icon_rule.scope_help_all": "📁+📄 Tous: S'applique à tout dossier ou fichier correspondant au motif.",
+    "settings.icon_rule.scope_help_note": "💡 Garantie d'isolation: Les règles testent uniquement le nom de l'élément lui-même, évitant qu'un dossier modifie ses fichiers internes.",
 } as const;
 
 export default fr;

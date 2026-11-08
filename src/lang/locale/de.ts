@@ -765,10 +765,15 @@ const de: Partial<LocaleDictionary> = {
 
     // --- Custom Icon Rules & Targeting ---
     "settings.icon_rules_card.title": "Benutzerdefinierte Symbolregeln & Zielgruppen",
-    "settings.icon_rule.target.all": "📁+📄 Alle",
-    "settings.icon_rule.target.folders": "📁 Ordner",
-    "settings.icon_rule.target.files": "📄 Dateien",
+    "settings.icon_rule.target.all": "Alle",
+    "settings.icon_rule.target.folders": "Ordner",
+    "settings.icon_rule.target.files": "Dateien",
     "settings.icon_rule.scope_tooltip": "Regelbereich: Nur Ordner, nur Dateien oder Alle",
+    "settings.icon_rule.scope_help_title": "Regelbereich & Zuordnungsleitfaden:",
+    "settings.icon_rule.scope_help_folders": "📁 Ordner: Zielt NUR auf Ordner ab. Untergeordnete Dateien erhalten dieses Symbol NICHT.",
+    "settings.icon_rule.scope_help_files": "📄 Dateien: Zielt NUR auf einzelne Dateien ab (z. B. resource.md). Ordner erhalten dieses Symbol NICHT.",
+    "settings.icon_rule.scope_help_all": "📁+📄 Alle: Gilt für jeden Ordner oder jede Datei mit passendem Namen.",
+    "settings.icon_rule.scope_help_note": "💡 Isolationsgarantie: Regeln prüfen nur den eigenen Namen, sodass ein Ordnername niemals Symbole seiner Dateien überschreibt.",
 };
 
 export default de;

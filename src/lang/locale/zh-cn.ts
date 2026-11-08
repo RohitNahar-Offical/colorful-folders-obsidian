@@ -795,10 +795,15 @@ const zhCN: Partial<LocaleDictionary> = {
 
     // --- Custom Icon Rules & Targeting ---
     "settings.icon_rules_card.title": "自定义图标规则与目标范围",
-    "settings.icon_rule.target.all": "📁+📄 全部",
-    "settings.icon_rule.target.folders": "📁 文件夹",
-    "settings.icon_rule.target.files": "📄 文件",
+    "settings.icon_rule.target.all": "全部",
+    "settings.icon_rule.target.folders": "文件夹",
+    "settings.icon_rule.target.files": "文件",
     "settings.icon_rule.scope_tooltip": "规则范围：仅文件夹、仅文件或全部",
+    "settings.icon_rule.scope_help_title": "规则范围与匹配指南：",
+    "settings.icon_rule.scope_help_folders": "📁 文件夹：仅匹配文件夹名称。该文件夹内的子文件不会继承此图标。",
+    "settings.icon_rule.scope_help_files": "📄 文件：仅匹配单个文件名称（例如 resource.md）。文件夹不会应用此图标。",
+    "settings.icon_rule.scope_help_all": "📁+📄 全部：适用于任何名称匹配的文件夹或文件。",
+    "settings.icon_rule.scope_help_note": "💡 隔离保证：规则仅根据项目自身名称进行匹配，父文件夹名称绝不会意外改变其子文件的图标。",
 } as const;
 
 export default zhCN;

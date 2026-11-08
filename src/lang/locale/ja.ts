@@ -766,10 +766,15 @@ const ja: Partial<LocaleDictionary> = {
 
     // --- Custom Icon Rules & Targeting ---
     "settings.icon_rules_card.title": "カスタムアイコンルールとターゲット設定",
-    "settings.icon_rule.target.all": "📁+📄 すべて",
-    "settings.icon_rule.target.folders": "📁 フォルダ",
-    "settings.icon_rule.target.files": "📄 ファイル",
+    "settings.icon_rule.target.all": "すべて",
+    "settings.icon_rule.target.folders": "フォルダ",
+    "settings.icon_rule.target.files": "ファイル",
     "settings.icon_rule.scope_tooltip": "ルールの適用範囲: フォルダのみ、ファイルのみ、またはすべて",
+    "settings.icon_rule.scope_help_title": "ルール適用範囲と照合ガイド:",
+    "settings.icon_rule.scope_help_folders": "📁 フォルダ: フォルダ名のみを対象とします。フォルダ内のファイルには適用されません。",
+    "settings.icon_rule.scope_help_files": "📄 ファイル: 個別のファイル名（例: resource.md）のみを対象とします。フォルダには適用されません。",
+    "settings.icon_rule.scope_help_all": "📁+📄 すべて: パターンに一致するすべてのフォルダまたはファイルに適用されます。",
+    "settings.icon_rule.scope_help_note": "💡 分離保証: ルールは項目自体の名前のみを照合するため、フォルダ名が内部のファイルのアイコンを変更することはありません。",
 } as const;
 
 export default ja;

@@ -761,10 +761,15 @@ const es: Partial<LocaleDictionary> = {
 
     // --- Custom Icon Rules & Targeting ---
     "settings.icon_rules_card.title": "Reglas de iconos personalizadas y segmentación",
-    "settings.icon_rule.target.all": "📁+📄 Todos",
-    "settings.icon_rule.target.folders": "📁 Carpetas",
-    "settings.icon_rule.target.files": "📄 Archivos",
+    "settings.icon_rule.target.all": "Todos",
+    "settings.icon_rule.target.folders": "Carpetas",
+    "settings.icon_rule.target.files": "Archivos",
     "settings.icon_rule.scope_tooltip": "Ámbito de la regla: solo carpetas, solo archivos o todos",
+    "settings.icon_rule.scope_help_title": "Guía de ámbito y coincidencia:",
+    "settings.icon_rule.scope_help_folders": "📁 Carpetas: Afecta ÚNICAMENTE a carpetas. Los archivos dentro de la carpeta NO recibirán este icono.",
+    "settings.icon_rule.scope_help_files": "📄 Archivos: Afecta ÚNICAMENTE a archivos individuales (p. ej. resource.md). Las carpetas NO recibirán este icono.",
+    "settings.icon_rule.scope_help_all": "📁+📄 Todos: Se aplica a cualquier carpeta o archivo cuyo nombre coincida.",
+    "settings.icon_rule.scope_help_note": "💡 Garantía de aislamiento: Las reglas solo evalúan el nombre propio del elemento, evitando que el nombre de una carpeta altere los archivos internos.",
 } as const;
 
 export default es;

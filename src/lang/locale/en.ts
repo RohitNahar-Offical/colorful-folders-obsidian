@@ -777,8 +777,13 @@ export default {
 
     // --- Custom Icon Rules & Targeting ---
     "settings.icon_rules_card.title": "Custom icon rules & targeting",
-    "settings.icon_rule.target.all": "📁+📄 All",
-    "settings.icon_rule.target.folders": "📁 Folders",
-    "settings.icon_rule.target.files": "📄 Files",
+    "settings.icon_rule.target.all": "All",
+    "settings.icon_rule.target.folders": "Folders",
+    "settings.icon_rule.target.files": "Files",
     "settings.icon_rule.scope_tooltip": "Rule scope: Folders only, Files only, or All",
+    "settings.icon_rule.scope_help_title": "Rule Scope & Item Matching Guide:",
+    "settings.icon_rule.scope_help_folders": "📁 Folders: Targets ONLY folders matching this name. Child files inside the folder will NOT receive this icon.",
+    "settings.icon_rule.scope_help_files": "📄 Files: Targets ONLY individual files matching this name (e.g. resource.md). Folders will NOT receive this icon.",
+    "settings.icon_rule.scope_help_all": "📁+📄 All: Applies to any folder or file whose own name matches the pattern.",
+    "settings.icon_rule.scope_help_note": "💡 Isolation guarantee: Custom rules test only the item's own name, so a folder name will never hijack the icons of files inside it.",
 } as const;

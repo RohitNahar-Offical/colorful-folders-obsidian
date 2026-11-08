@@ -791,10 +791,15 @@ const sk: Partial<LocaleDictionary> = {
 
     // --- Custom Icon Rules & Targeting ---
     "settings.icon_rules_card.title": "Vlastné pravidlá ikon a zacielenie",
-    "settings.icon_rule.target.all": "📁+📄 Všetko",
-    "settings.icon_rule.target.folders": "📁 Priečinky",
-    "settings.icon_rule.target.files": "📄 Súbory",
+    "settings.icon_rule.target.all": "Všetko",
+    "settings.icon_rule.target.folders": "Priečinky",
+    "settings.icon_rule.target.files": "Súbory",
     "settings.icon_rule.scope_tooltip": "Rozsah pravidla: iba priečinky, iba súbory alebo všetko",
+    "settings.icon_rule.scope_help_title": "Sprievodca rozsahom a zhodou:",
+    "settings.icon_rule.scope_help_folders": "📁 Priečinky: Cieľom sú IBA priečinky. Podradené súbory v priečinku túto ikonu nedostanú.",
+    "settings.icon_rule.scope_help_files": "📄 Súbory: Cieľom sú IBA jednotlivé súbory (napr. resource.md). Priečinky túto ikonu nedostanú.",
+    "settings.icon_rule.scope_help_all": "📁+📄 Všetko: Platí pre každý priečinok alebo súbor s vyhovujúcim názvom.",
+    "settings.icon_rule.scope_help_note": "💡 Záruka izolácie: Pravidlá overujú iba vlastný názov položky, takže názov priečinka nikdy neovplyvní ikony vnútorných súborov.",
 };
 
 export default sk;

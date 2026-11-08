@@ -223,13 +223,26 @@ export class IconSettingSection extends SettingSection {
 
             const rulesDesc = rulesCard.createDiv();
             rulesDesc.setCssStyles({
-                fontSize: "0.8em", color: "var(--text-muted)", marginBottom: "12px",
-                padding: "10px", background: "var(--background-secondary-alt)", borderRadius: "6px",
-                borderLeft: "3px solid var(--interactive-accent)", lineHeight: "1.4"
+                fontSize: "0.82em", color: "var(--text-muted)", marginBottom: "14px",
+                padding: "12px 14px", background: "var(--background-secondary-alt)", borderRadius: "8px",
+                borderLeft: "4px solid var(--interactive-accent)", lineHeight: "1.5"
             });
             rulesDesc.createEl('strong', { text: t('settings.advanced_regex_rules') });
             rulesDesc.createEl('br');
             rulesDesc.appendText(t('settings.regex_rules_hint'));
+
+            const scopeHelp = rulesDesc.createDiv();
+            scopeHelp.setCssStyles({ marginTop: "8px", paddingTop: "8px", borderTop: "1px solid var(--background-modifier-border)" });
+            scopeHelp.createDiv({ text: t('settings.icon_rule.scope_help_title') }).setCssStyles({ fontWeight: '600', marginBottom: '4px', color: 'var(--text-normal)' });
+
+            const ul = scopeHelp.createEl('ul');
+            ul.setCssStyles({ margin: '4px 0 0 16px', padding: '0', display: 'flex', flexDirection: 'column', gap: '3px' });
+            ul.createEl('li', { text: t('settings.icon_rule.scope_help_folders') });
+            ul.createEl('li', { text: t('settings.icon_rule.scope_help_files') });
+            ul.createEl('li', { text: t('settings.icon_rule.scope_help_all') });
+
+            const note = scopeHelp.createDiv({ text: t('settings.icon_rule.scope_help_note') });
+            note.setCssStyles({ marginTop: '6px', fontStyle: 'italic', fontSize: '0.9em', color: 'var(--text-accent)' });
 
             // Advanced Icon Rule Builder
             const rulesUIContainer = rulesCard.createDiv('cf-rules-builder');
@@ -288,29 +301,84 @@ export class IconSettingSection extends SettingSection {
                         pattern = rule;
                     }
 
-                    // Scope selector dropdown (Folders / Files / All)
-                    const scopeSelect = row.createEl('select');
-                    scopeSelect.title = t("settings.icon_rule.scope_tooltip");
-                    scopeSelect.setCssStyles({
-                        padding: '4px 6px',
+                    // Scope selector button using native Lucide icons
+                    const scopeBtn = row.createEl('button', { cls: 'cf-scope-btn' });
+                    scopeBtn.title = t("settings.icon_rule.scope_tooltip");
+                    scopeBtn.setCssStyles({
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '4px 8px',
                         fontSize: '0.85em',
-                        borderRadius: '4px',
+                        borderRadius: '6px',
                         background: 'var(--background-secondary-alt)',
                         color: 'var(--text-normal)',
                         border: '1px solid var(--background-modifier-border)',
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap'
                     });
 
-                    const scopes: { val: string; label: string }[] = [
-                        { val: 'all', label: t("settings.icon_rule.target.all") },
-                        { val: 'folders', label: t("settings.icon_rule.target.folders") },
-                        { val: 'files', label: t("settings.icon_rule.target.files") }
-                    ];
+                    const updateScopeVisuals = () => {
+                        scopeBtn.empty();
+                        const iconSpan = scopeBtn.createSpan();
+                        iconSpan.setCssStyles({ display: 'inline-flex', alignItems: 'center' });
+                        const lucideName = target === 'folders' ? 'folder' : (target === 'files' ? 'file-text' : 'layers');
+                        obsidian.setIcon(iconSpan, lucideName);
+                        const svgEl = iconSpan.querySelector('svg');
+                        if (svgEl) {
+                            (svgEl as unknown as HTMLElement).setCssStyles({ width: '14px', height: '14px', color: 'var(--text-accent)' });
+                        }
 
-                    for (const sc of scopes) {
-                        const opt = scopeSelect.createEl('option', { value: sc.val, text: sc.label });
-                        if (sc.val === target) opt.selected = true;
-                    }
+                        const labelText = target === 'folders'
+                            ? t("settings.icon_rule.target.folders")
+                            : (target === 'files' ? t("settings.icon_rule.target.files") : t("settings.icon_rule.target.all"));
+                        scopeBtn.createSpan({ text: labelText });
+
+                        const chev = scopeBtn.createSpan();
+                        chev.setCssStyles({ display: 'inline-flex', alignItems: 'center', opacity: '0.6' });
+                        obsidian.setIcon(chev, 'chevron-down');
+                        const chevSvg = chev.querySelector('svg');
+                        if (chevSvg) {
+                            (chevSvg as unknown as HTMLElement).setCssStyles({ width: '12px', height: '12px' });
+                        }
+                    };
+                    updateScopeVisuals();
+
+                    scopeBtn.onclick = (e: MouseEvent) => {
+                        e.preventDefault();
+                        const menu = new obsidian.Menu();
+                        menu.addItem(item => {
+                            item.setTitle(t("settings.icon_rule.target.all"))
+                                .setIcon("layers")
+                                .setChecked(target === 'all')
+                                .onClick(() => {
+                                    target = 'all';
+                                    updateScopeVisuals();
+                                    updateRule();
+                                });
+                        });
+                        menu.addItem(item => {
+                            item.setTitle(t("settings.icon_rule.target.folders"))
+                                .setIcon("folder")
+                                .setChecked(target === 'folders')
+                                .onClick(() => {
+                                    target = 'folders';
+                                    updateScopeVisuals();
+                                    updateRule();
+                                });
+                        });
+                        menu.addItem(item => {
+                            item.setTitle(t("settings.icon_rule.target.files"))
+                                .setIcon("file-text")
+                                .setChecked(target === 'files')
+                                .onClick(() => {
+                                    target = 'files';
+                                    updateScopeVisuals();
+                                    updateRule();
+                                });
+                        });
+                        menu.showAtMouseEvent(e);
+                    };
 
                     const patInp = row.createEl('input', { type: 'text', placeholder: t("common.regex_name_placeholder") });
                     patInp.value = pattern;
@@ -324,7 +392,10 @@ export class IconSettingSection extends SettingSection {
                         if (this.plugin.iconManager.isEmojiIcon(currentIcon)) {
                             iconBtn.setText(currentIcon || "Choose icon");
                         } else if (currentIcon) {
-                            const svg = this.plugin.iconManager.getIconSvg(currentIcon, false);
+                            const cleanId = currentIcon.replace(/^lucide-/, '');
+                            const svg = this.plugin.iconManager.getIconSvg(currentIcon, false) ||
+                                        this.plugin.iconManager.getIconSvg(cleanId, false) ||
+                                        this.plugin.iconManager.getIconSvg(`lucide-${cleanId}`, false);
                             if (svg) {
                                 // eslint-disable-next-line no-unsanitized/method -- Contextual fragment is safe here as svg content comes from curated internal asset maps or local files
                                 const frag = activeDocument.createRange().createContextualFragment(svg);
@@ -332,10 +403,19 @@ export class IconSettingSection extends SettingSection {
                                 if (svgEl) {
                                     (svgEl as unknown as HTMLElement).setCssStyles({ width: '16px', height: '16px', color: 'currentColor' });
                                     iconBtn.appendChild(svgEl);
+                                    return;
                                 }
-                            } else {
-                                iconBtn.setText(currentIcon);
                             }
+                            const iconSpan = iconBtn.createSpan();
+                            obsidian.setIcon(iconSpan, cleanId);
+                            if (iconSpan.childElementCount > 0) {
+                                const svgEl = iconSpan.querySelector('svg');
+                                if (svgEl) {
+                                    (svgEl as unknown as HTMLElement).setCssStyles({ width: '16px', height: '16px', color: 'currentColor' });
+                                }
+                                return;
+                            }
+                            iconBtn.setText(currentIcon);
                         } else {
                             iconBtn.setText("Choose icon");
                         }
@@ -352,7 +432,6 @@ export class IconSettingSection extends SettingSection {
                     const updateRule = () => {
                         const p = patInp.value.trim();
                         let pr = prioInp.value.trim();
-                        const sc = scopeSelect.value;
 
                         let prNum = parseInt(pr);
                         if (!isNaN(prNum)) {
@@ -364,13 +443,12 @@ export class IconSettingSection extends SettingSection {
 
                         if (p && icon) {
                             const prioPart = pr ? ` @${pr}` : '';
-                            const scopePart = sc && sc !== 'all' ? ` ::${sc}` : '';
+                            const scopePart = target && target !== 'all' ? ` ::${target}` : '';
                             rules[index] = `${p} = ${icon}${prioPart}${scopePart}`;
                             void saveRules();
                         }
                     };
 
-                    scopeSelect.onchange = updateRule;
                     patInp.onchange = updateRule;
                     prioInp.onchange = updateRule;
 
@@ -395,7 +473,7 @@ export class IconSettingSection extends SettingSection {
                 }
 
                 addBtn.onclick = () => {
-                    rules.push("New_Rule = 🌟 @100");
+                    rules.push("New_Rule = lucide-sparkles @100");
                     void saveRules().then(() => renderRulesUI());
                 };
             };

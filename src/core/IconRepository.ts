@@ -222,19 +222,16 @@ export class IconRepository {
         const fullHyphenated = sanitized.replace(/[\s_]+/g, '-');
         const cleanHyphenated = cleanSanitized.replace(/[\s_]+/g, '-');
 
-        const parentFolder = path ? path.split('/').slice(-2, -1)[0] : '';
-        const searchContexts = [lName];
-        if (sanitized && sanitized !== lName) searchContexts.push(sanitized);
-        if (cleanSanitized && cleanSanitized !== sanitized && cleanSanitized !== lName) searchContexts.push(cleanSanitized);
-        if (parentFolder && parentFolder.toLowerCase() !== 'root') {
-            searchContexts.push(parentFolder.toLowerCase());
-        }
+        // Item-only contexts: contains variants of THIS item's own name ONLY.
+        // Never includes parent folder name, preventing a folder name rule from hijacking child files.
+        const itemContexts = [lName];
+        if (sanitized && sanitized !== lName) itemContexts.push(sanitized);
+        if (cleanSanitized && cleanSanitized !== sanitized && cleanSanitized !== lName) itemContexts.push(cleanSanitized);
 
-        // Tier 0.8: Custom User Rules — delegated to IconRuleSet (dual-bucket engine)
-        // O(1) exact match first, then O(n_regex) regex scan.
+        // Tier 0.8: Custom User Rules — evaluates ONLY the item's own name variants!
         // isFile scoping ensures folder-only rules don't fire on files and vice-versa.
         if (!this._ruleSet.isEmpty) {
-            const ruleHit = this._ruleSet.lookup(searchContexts, isFile);
+            const ruleHit = this._ruleSet.lookup(itemContexts, isFile);
             if (ruleHit) {
                 return {
                     tier: 0.8,
@@ -280,6 +277,11 @@ export class IconRepository {
         }
 
         // Tier 2 & 3: Categories using CategoryTrie lookup (with Parent Folder Context)
+        const parentFolder = path ? path.split('/').slice(-2, -1)[0] : '';
+        const searchContexts = [...itemContexts];
+        if (parentFolder && parentFolder.toLowerCase() !== 'root') {
+            searchContexts.push(parentFolder.toLowerCase());
+        }
 
         for (const ctx of searchContexts) {
             const candidateCategories = this._categoryTrie.lookup(ctx);
