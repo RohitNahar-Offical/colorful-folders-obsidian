@@ -12,37 +12,36 @@ Colorful Folders automatically applies premium color palettes, smart icons, and 
 ---
 ## What's New in Colorful Folders
 
-## 🚀 5.0.8 — Advanced Custom Icon Rules, Scope Autonomy & Performance Caching
+## 🚀 5.0.8 — Smarter Icon Rules, Folder vs. File Control & Speed Boost
 
-This update introduces a major overhaul of the **Custom Icon Rules** system, giving you complete autonomy to target icon rules to **Folders only**, **Files only**, or **Both**, powered by a dedicated high-performance `IconRuleSet` engine with dual-bucket caching. It also resolves parent folder context leakage so child notes never inherit unwanted folder icons, restores folder palette colors in Hierarchy mode, and modernizes the rule builder with native Lucide icon dropdowns.
+This update makes **Custom Icon Rules** much easier and more flexible to use. You can now choose whether an icon rule applies to **Folders only**, **Files only**, or **Both**, and folder rules will no longer accidentally spill over to files inside that folder. We've also fixed folder colors turning gray in Hierarchy mode, gave the rule builder clean new icon menus, and made rule matching lightning fast.
 
 ---
 
-### 🎯 1. Target-Scoped Icon Rules — Folders, Files, or Both
+### 🎯 1. Choose Where Icons Apply — Folders, Files, or Both
 
-* **Complete Autonomy**: When writing an icon rule, you can now explicitly choose its scope:
-  - **📁 Folders**: Rules apply only to folders matching the pattern.
-  - **📄 Files**: Rules apply only to files/notes matching the pattern.
-  - **📁+📄 All**: Rules apply universally across both folders and files.
-* **Native Lucide Scope Selector**: Replaced generic dropdowns with sleek native Obsidian buttons featuring clean Lucide vector icons (`folder`, `file-text`, `layers`) and active checkmarks.
-* **Inline Syntax Support**: Easily serialize and edit scopes with the `::target` syntax (e.g. `work = lucide-briefcase @150 ::folders` or `draft = lucide-file-clock ::files`).
-* **Visual Scope Help Guide**: An interactive in-settings guide breaks down exactly how scopes work, with real-world examples and matching rules.
+* **Full Control Over Rules**: You can now choose exactly where each custom icon appears:
+  - **📁 Folders**: The icon only shows on folders that match your rule.
+  - **📄 Files**: The icon only shows on notes and files that match your rule.
+  - **📁+📄 All**: The icon shows on both folders and files.
+* **Easy One-Click Picker**: Click the new button next to any rule to open a neat popup menu with folder and file icons to switch between them instantly.
+* **Helpful Built-In Guide**: A friendly guide box right below your rules in Settings explains how each option works with clear examples.
 
-### 🛡️ 2. Parent Folder Context Isolation (No More Folder Bleed)
+### 🛡️ 2. Fixed: Folder Rules No Longer Leak Into Notes
 
-* **Isolated Matching**: Custom rules now evaluate strictly against the item's own name (`itemContexts`), completely omitting parent directory ancestry.
-* **Zero Child Contamination**: Defining a folder rule for `resource = lucide-folder ::folders` will now color only the `resource` folder itself. Child notes like `resource/notes.md` will no longer inherit the folder's icon.
+* **No More Accidental Icon Spills**: Previously, setting an icon rule for a folder name (like `Work` or `Resources`) could cause every single note inside that folder to get the same icon.
+* **Clean Isolation**: Folder rules now strictly change the folder itself. Your notes inside stay independent and keep their own appropriate icons.
 
-### ⚡ 3. High-Performance `IconRuleSet` Engine & 2-Layer Caching
+### ⚡ 3. Buttery-Smooth Performance & Instant Matching
 
-* **Dual-Bucket Fast-Paths**: Rules with exact names (no regex symbols) hit an $O(1)$ dictionary lookup instantly. Complex regular expressions are pre-compiled and sorted by priority descending.
-* **Layer 2 Dedicated LRU Cache**: Evaluated patterns are memoized in an internal 2,048-entry LRU cache (`_lookupCache`), delivering sub-microsecond repeat lookups across identical file names (such as `index.md` or `README.md`) without regex parsing.
-* **Self-Healing Cache Invalidation**: Modifying custom rules in settings automatically clears stale results and repaints the file tree instantly.
+* **Instant Lookups**: Rules with normal names match in a fraction of a millisecond with zero lag.
+* **Smart Memory Caching**: The plugin remembers matching results as you scroll, keeping the file explorer completely smooth and responsive even in vaults with thousands of notes.
+* **Instant Updates**: Any changes you make to your rules in settings appear on your files immediately without having to reload Obsidian.
 
-### 🎨 4. Restored Folder Hierarchy Colors & Polish
+### 🎨 4. Fixed Folder Colors in Hierarchy Mode & Full Translations
 
-* **Hierarchy Mode Folder Color Fix**: Fixed an issue in Hierarchy level mode where folders without manual styling could fall back to neutral text colors (`var(--text-normal)`), appearing black or gray. The icon fallback chain now properly honors `color.hex` across all color generation modes.
-* **All 8 Locales Updated**: Full translations added for rule scope selectors and helper guides across English, German, Spanish, French, Japanese, Slovak, Simplified Chinese, and Traditional Chinese.
+* **Vibrant Folder Colors Restored**: Fixed an issue where folders could turn plain black or gray in "Hierarchy level" coloring mode. Folders now always shine with their proper palette colors.
+* **All Languages Supported**: All new settings, buttons, and help guides are fully translated across English, German, Spanish, French, Japanese, Slovak, and Simplified/Traditional Chinese.
 
 ---
 
