@@ -54,6 +54,13 @@ export class IconRepository {
      */
     getAutoIconData(name: string, path?: string, isFile?: boolean): AutoIconData | null {
         if (!name) return null;
+
+        // Self-healing cache guard: if custom rules changed in settings, clear stale cache immediately
+        const currentRules = this.plugin.settings?.customIconRules || '';
+        if (this._customRulesKey !== currentRules) {
+            this._autoIconResultCache.clear();
+        }
+
         // Cache key includes type prefix to prevent folder/file name collisions
         const typePrefix = isFile === undefined ? 'u:' : (isFile ? 'file:' : 'dir:');
         const cacheKey   = path ? `${typePrefix}${name}::${path}` : `${typePrefix}${name}`;
@@ -196,42 +203,8 @@ export class IconRepository {
             // Delegate all custom rule compilation to IconRuleSet (SRP)
             this._ruleSet.build(currentKey);
 
-            // Build a flat list for CategoryTrie (which still needs AutoIconData[])
-            // We only push the AutoIconData-compatible view of compiled rules here.
-            // The rule engine itself lives in _ruleSet.
-            if (currentKey) {
-                const rules = currentKey.split('\n').filter((r: string) => r.trim());
-                for (const rule of rules) {
-                    try {
-                        const eqIdx = rule.indexOf('=');
-                        if (eqIdx < 0) continue;
-                        const pattern    = rule.slice(0, eqIdx).trim();
-                        let   secondHalf = rule.slice(eqIdx + 1).trim();
-                        // Strip ::target suffix before further parsing (backward compat)
-                        secondHalf = secondHalf.replace(/::(?:folders?|files?|all)\s*$/i, '').trim();
-                        let priority = 1500;
-                        if (secondHalf.includes('@')) {
-                            const prioParts = secondHalf.split('@');
-                            secondHalf = prioParts[0].trim();
-                            priority = parseInt(prioParts[1]) || 1500;
-                        }
-                        const isRegexMeta = /[.*+?^${}()|[\]\\]/.test(pattern);
-                        const rex = isRegexMeta
-                            ? new RegExp(pattern, 'i')
-                            : new RegExp(`^${pattern}$|\\b${pattern}\\b|${pattern}`, 'i');
-                        const ruleData: AutoIconData = {
-                            rex,
-                            emoji:    secondHalf,
-                            lucide:   secondHalf,
-                            priority: priority,
-                            isCustom: true
-                        };
-                        categories.push(ruleData);
-                    } catch (e) {
-                        console.error("Colorful Folders: Failed to parse custom icon rule for Trie", rule, e);
-                    }
-                }
-            }
+            // Re-use already compiled rules for CategoryTrie (eliminates redundant regex re-parsing)
+            categories.push(...this._ruleSet.toAutoIconDataList());
 
             categories.sort((a, b) => (b.priority || 0) - (a.priority || 0));
             this._categoryCache = categories;

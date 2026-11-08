@@ -255,6 +255,7 @@ export class IconSettingSection extends SettingSection {
                 const saveRules = async () => {
                     this.plugin.settings.customIconRules = rules.join('\n');
                     await this.plugin.saveSettings();
+                    this.plugin.iconManager?.invalidateCategoryCache();
                     this.plugin.generateStylesDebounced();
                 };
 
