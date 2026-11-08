@@ -61,8 +61,10 @@ This update makes **Custom Icon Rules** much easier and more flexible to use. Yo
 
 ### 🤖 Smart Iconography & Custom Packs
 
-* **Target-Scoped Custom Rules:** Define custom regex or exact icon rules scoped strictly to Folders (`::folders`), Files (`::files`), or Both (`::all`) with custom priority weights.
-* **Dual-Bucket `IconRuleSet` Engine:** $O(1)$ dictionary lookups for exact matches and priority-sorted regexes with 2,048-entry LRU caching and safe ReDoS limits.
+* **Target-Scoped Custom Rules:** Define custom icon rules scoped strictly to Folders (`::folders`), Files (`::files`), or Both (`::all`) with custom priority weights.
+* **Flexible Matching Operators:** Choose exactly how each rule matches: **Contains** (anywhere in name), **Exact match** (full name only), **Starts with** (prefix, great for `Daily` notes), **Ends with** (suffix, e.g. `backup`), or **Regex** (advanced patterns).
+* **Pixel-Perfect Rule Builder:** Interactive Settings table with one-click dropdown menus for Scope and Matching Mode, Lucide icon picker, priority input, and strict grid alignment across all languages.
+* **Dual-Bucket `IconRuleSet` Engine:** $O(1)$ dictionary lookups for exact matches and native V8 string comparisons (`includes`, `===`, `startsWith`, `endsWith`) with 2,048-entry LRU caching and safe ReDoS limits.
 * **Context-Isolated Item Matching:** Evaluates item names independently (`itemContexts`), ensuring folder rules never bleed into nested child notes.
 * **Live Animated Icons:** Real-time animated SVG icons in your sidebar that play smoothly without freezing while scrolling and inherit custom folder colors.
 * **Smart Auto-Icons:** Automatically matches relevant icons to your folder and file names (e.g., *Journal* -> 📅, *Finance* -> 💰).

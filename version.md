@@ -1,8 +1,8 @@
 # Updates for Colorful Folders
 
-## 🚀 5.0.8 — Smarter Icon Rules, Folder vs. File Control & Speed Boost
+## 🚀 5.0.8 — Smarter Icon Rules, Matching Modes & Speed Boost
 
-This update makes **Custom Icon Rules** much easier and more flexible to use. You can now choose whether an icon rule applies to **Folders only**, **Files only**, or **Both**, and folder rules will no longer accidentally spill over to files inside that folder. We've also fixed folder colors turning gray in Hierarchy mode, gave the rule builder clean new icon menus, and made rule matching lightning fast.
+This update makes **Custom Icon Rules** much easier and more flexible to use. You can now choose whether an icon rule applies to **Folders only**, **Files only**, or **Both**, and pick exact matching modes like **Contains**, **Exact match**, **Starts with**, or **Ends with** without writing complicated regex. Folder rules will no longer accidentally spill over to files inside that folder, the Active Rules table features a clean, pixel-perfect layout, folder colors have been restored in Hierarchy mode, and icon matching is faster than ever.
 
 ---
 
@@ -12,13 +12,31 @@ This update makes **Custom Icon Rules** much easier and more flexible to use. Yo
   - **📁 Folders**: The icon only shows on folders that match your rule.
   - **📄 Files**: The icon only shows on notes and files that match your rule.
   - **📁+📄 All**: The icon shows on both folders and files.
-* **Easy One-Click Picker**: Click the new button next to any rule to open a neat popup menu with folder and file icons to switch between them instantly.
-* **Inline Syntax Support**: Easily type or edit scopes in rule text with the `::target` syntax (e.g. `work = lucide-briefcase @150 ::folders` or `draft = lucide-file-clock ::files`).
+* **Easy One-Click Picker**: Click the scope button next to any rule to open a neat popup menu with folder and file icons to switch between them instantly.
+* **Inline Syntax Support**: Easily type or edit scopes in rule text with the `::target` syntax (e.g. `work = lucide-briefcase @100 ::folders` or `draft = lucide-file-clock ::files`).
 * **Helpful Built-In Guide**: A friendly guide box right below your rules in Settings explains how each option works with clear examples.
 
 ---
 
-### 🛡️ 2. Fixed: Folder Rules No Longer Leak Into Notes
+### 🔍 2. Choose How Rules Match — Contains, Exact, Starts With, Ends With & Regex
+
+You no longer have to write complex regular expressions just to match an exact word or prefix! Every rule now has a dedicated matching mode selector:
+
+* **🔍 Contains (Default)**: Matches if the name contains the word anywhere.
+  - *Example*: `work` matches `my-work-notes`, `work`, and `homework`.
+* **＝ Exact match**: Matches only when the item name equals the word exactly.
+  - *Example*: `work` matches the `work` folder, but will **not** accidentally match `homework`, `network`, or `workout`.
+* **⇤ Starts with**: Matches notes or folders that begin with that word.
+  - *Example*: `Daily` matches `Daily 2026-11-08` and `Daily Review`. Perfect for daily journals and recurring logs!
+* **⇥ Ends with**: Matches notes or folders that end with that word.
+  - *Example*: `backup` matches `vault-backup` and `system-backup`.
+* **.* Regex pattern**: For advanced power users who want full regular expression control (e.g. `^v\d+` for version folders). Slashed patterns like `/^v\d+/` and flags are automatically handled.
+* **One-Click Dropdown**: Switch matching modes with one click in the Settings table.
+* **Inline Syntax**: You can also write rules with `::mode` directly in text, e.g. `work = lucide-briefcase @100 ::folders ::exact` or combined `::folders:exact`.
+
+---
+
+### 🛡️ 3. Fixed: Folder Rules No Longer Leak Into Notes
 
 * **No More Accidental Icon Spills**: Previously, setting an icon rule for a folder name (like `Work` or `Resources`) could cause every single note inside that folder to get the same icon.
 * **Clean Isolation**: Folder rules now strictly change the folder itself. Your notes inside stay independent and keep their own appropriate icons.
@@ -26,16 +44,23 @@ This update makes **Custom Icon Rules** much easier and more flexible to use. Yo
 
 ---
 
-### ⚡ 3. Buttery-Smooth Performance & Instant Matching
+### 📐 4. Pixel-Perfect Active Rules Table
 
-* **Instant Lookups**: Rules with exact names match in a fraction of a millisecond with zero lag.
+* **Clean Grid Alignment**: The "Active rules" section in Settings now uses a rigid grid layout. Dropdown menus, text inputs, icon preview buttons, priority numbers, and delete buttons now line up in straight vertical columns across all rows, no matter what language or screen size you use.
+
+---
+
+### ⚡ 5. Buttery-Smooth Performance & Instant Matching
+
+* **Native String Speed**: Matching modes (`contains`, `exact`, `starts_with`, `ends_with`) run on native V8 string comparisons (`includes`, `===`, `startsWith`, `endsWith`), bypassing regex engines for $< 0.001\text{ ms}$ evaluation time.
+* **Instant Lookups**: Rules with exact names match in a fraction of a millisecond via $O(1)$ lookup maps.
 * **Smart Memory Caching**: The plugin remembers matching results as you scroll, keeping the file explorer completely smooth and responsive even in vaults with thousands of notes.
 * **Instant Updates**: Any changes you make to your rules in settings appear on your files immediately without having to reload Obsidian.
 * **Under the Hood**: Core icon rule logic has been extracted into a modular `IconRuleSet` engine with pre-compiled priority regexes, 2,048-entry LRU caching, and ReDoS length guards.
 
 ---
 
-### 🎨 4. Restored Folder Hierarchy Colors & Polish
+### 🎨 6. Restored Folder Hierarchy Colors & Polish
 
 * **Vibrant Folder Colors Restored**: Fixed an issue where folders could turn plain black or gray in "Hierarchy level" coloring mode. Folders now always shine with their proper palette colors.
 * **All Languages Supported**: All new settings, buttons, and help guides are fully translated across English, German, Spanish, French, Japanese, Slovak, and Simplified/Traditional Chinese.
