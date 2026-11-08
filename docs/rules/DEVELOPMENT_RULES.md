@@ -176,6 +176,12 @@ Custom user rules must support explicit operator matching modes (`contains`, `ex
 **RULE 5.16: Settings Rule Builder Rows Must Use Rigid CSS Grid Layout.**
 Rule builder UI rows in `IconSettingSection.ts` must use rigid CSS Grid tracks (`gridTemplateColumns: '110px 135px 1fr 36px 55px 24px'`) with `minWidth: '0'` on pattern inputs instead of variable-width flexbox. This guarantees strict vertical column alignment across rows regardless of localized label lengths ("Folders" vs "Files", "Exact match" vs "Contains") or selection states.
 
+**RULE 5.17: Folder Collapse Indicators Must Bind to Icon Color, Not Text Color.**
+Folder collapse indicators, chevrons, and folder icon SVGs (`collapseSels`) must always be styled with `color: ${effFolderIconColor} !important;` instead of `folderStyles.t`. When `colorText` is set to `"none"` or `"files"`, `folderStyles.t` resolves to `var(--text-normal)` (neutral black/white), which must only affect text labels. Binding collapse icons to `effFolderIconColor` guarantees that users who configure icon-only setups retain vibrant palette colors across both folder icons and collapse chevrons. *(Incident #43)*
+
+**RULE 5.18: CssGrouper Signature Keys Must Include Distinct Sub-Properties.**
+When adding CSS rules to `CssGrouper`, signature keys (`signatureKey`) must encompass all varying dynamic sub-properties (e.g. `--cf-icon-color`, `--cf-file-color`, `--cf-file-bg`). Never key row rules solely by background hex or opacity; doing so allows items that share background colors to collide in the grouper map and bleed hand-picked custom icon colors or custom text colors onto uncustomized siblings.
+
 ---
 
 ## 6. CI/CD & Release Pipeline
@@ -240,5 +246,6 @@ While `read` is sufficient for building and attesting, `write` is mandatory for 
 | 5.12 | #40 *(Strict Pack Prefix)* |
 | 5.13 | #41 *(Folder Icon Fallback Chain)* |
 | 5.14 | #42 *(Parent Folder Context Leak)* |
+| 5.17 | #43 *(Collapse Indicator Color Decoupling)* |
 | 6.1 | #11 |
 | 6.2 | #11 |

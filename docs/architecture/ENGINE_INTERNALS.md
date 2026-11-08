@@ -118,6 +118,11 @@ graph TD
 - **$O(1)$ Targeted Auto-Icon Eviction (`invalidateAutoIconCache(path)`)**: Directly deletes `path` and `${fileName}::${path}` from `_autoIconResultCache` in $O(1)$ time (< 0.0001ms), eliminating keystroke main-thread stalls, array allocations, and Smooth Cursor animation lag.
 - **Pre-Normalized Mask Data-URI Caching (`getMaskDataUri(iconId, rawSvg)`)**: Caches `-webkit-mask-image: url("data:image/svg+xml,...")` Data-URIs directly in `_dataUriCache`, bypassing `DOMParser` instantiation, regex sanitization loops, and `encodeURIComponent()` overhead during vault CSS traversals.
 
+### 3.7 Visual Styling Decoupling & CSS Compaction (`src/core/StyleGenerator.ts`, `src/core/CssGrouper.ts`)
+- **Strict Text/Icon Decoupling (Incident #43)**: Text and Icon color logic evaluate independently. When the user selects `colorText: "none"` or `colorText: "files"`, text is reverted to `var(--text-normal)`, but icons and collapse chevrons (`collapseSels`) remain bound to the resolved icon color (`effFolderIconColor`), retaining assigned palette colors.
+- **CSS Custom Property Exposure**: Exposes `--cf-icon-color: ${effFolderIconColor}` on `.nav-folder-title` and `--cf-icon-color: ${effFileIconColor}` on `.nav-file-title` so that DOM-injected icon wrappers (`.cf-icon-wrapper`, `.cf-live-animated-icon`) inherit icon colors cleanly with fallback `var(--cf-icon-color, inherit)`.
+- **`CssGrouper` Precision Keys**: Signature keys for batched CSS rules include all differentiating sub-properties (`folderRow_${color.hex}_${effFolderIconColor}_...` and `fileRow_${color.hex}_${effFileIconColor}_...`) to prevent style bleed between items that share the same background tint but have distinct icon colors.
+
 ---
 
 ## 4. Performance & Caching Engine

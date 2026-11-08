@@ -48,6 +48,8 @@ To ensure pixel-perfect vertical alignment and zero "jitter" during vault intera
 | `--cf-active-color` | Dynamic path hook for active item text & border | Active text highlight color |
 | `--cf-tag-bg` | Dynamic path hook for tags/flairs background | Parent 15% opacity tint |
 | `--cf-tag-color` | Dynamic path hook for tags/flairs text color | Calculated contrast text color |
+| `--cf-icon-color` | Dynamic path hook for folder & file icons | Resolved icon color (`effFolderIconColor` / `effFileIconColor`) |
+| `--cf-animated-icon-color` | Overriding color for live SMIL animated SVGs | Explicit custom icon color with fallback to `--cf-icon-color` |
 
 ---
 
