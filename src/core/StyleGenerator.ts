@@ -710,6 +710,7 @@ export class StyleGenerator {
             // Palette pairing: icon picker wins if set; otherwise falls back to the resolved folder color (color.hex)
             // so hierarchy/cycle/monochromatic icon colors remain active, with folderStyles.t as final fallback.
             const pairedIconColor = customStyle?.iconColor || inheritedStyle?.iconColor || palettePair?.icon || color.hex || folderStyles.t;
+            const effFolderIconColor = pairedIconColor;
 
             const isBold = customStyle?.isBold !== undefined ? customStyle.isBold : (inheritedStyle?.isBold !== undefined ? inheritedStyle.isBold : true);
             const isItalic = customStyle?.isItalic !== undefined ? customStyle.isItalic : (inheritedStyle?.isItalic !== undefined ? inheritedStyle.isItalic : false);
@@ -787,8 +788,6 @@ export class StyleGenerator {
 
             /* Notebook Navigator Folder Integration (Native-Bridge Architecture) */
             /* Only generated when notebookNavigatorSupport is explicitly enabled */
-            const effFolderIconColor = pairedIconColor;
-
             if (NotebookNavigatorIntegration.isSupported(this.settings)) {
                 const isEmoji = this.plugin.iconManager.isEmojiIcon(folderIconId);
                 const iconSvg = !isEmoji && folderIconId ? this.plugin.iconManager.getIconSvg(folderIconId, true) : "";
