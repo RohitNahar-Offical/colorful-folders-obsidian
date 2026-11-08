@@ -12,6 +12,40 @@ Colorful Folders automatically applies premium color palettes, smart icons, and 
 ---
 ## What's New in Colorful Folders
 
+## 🚀 5.0.8 — Advanced Custom Icon Rules, Scope Autonomy & Performance Caching
+
+This update introduces a major overhaul of the **Custom Icon Rules** system, giving you complete autonomy to target icon rules to **Folders only**, **Files only**, or **Both**, powered by a dedicated high-performance `IconRuleSet` engine with dual-bucket caching. It also resolves parent folder context leakage so child notes never inherit unwanted folder icons, restores folder palette colors in Hierarchy mode, and modernizes the rule builder with native Lucide icon dropdowns.
+
+---
+
+### 🎯 1. Target-Scoped Icon Rules — Folders, Files, or Both
+
+* **Complete Autonomy**: When writing an icon rule, you can now explicitly choose its scope:
+  - **📁 Folders**: Rules apply only to folders matching the pattern.
+  - **📄 Files**: Rules apply only to files/notes matching the pattern.
+  - **📁+📄 All**: Rules apply universally across both folders and files.
+* **Native Lucide Scope Selector**: Replaced generic dropdowns with sleek native Obsidian buttons featuring clean Lucide vector icons (`folder`, `file-text`, `layers`) and active checkmarks.
+* **Inline Syntax Support**: Easily serialize and edit scopes with the `::target` syntax (e.g. `work = lucide-briefcase @150 ::folders` or `draft = lucide-file-clock ::files`).
+* **Visual Scope Help Guide**: An interactive in-settings guide breaks down exactly how scopes work, with real-world examples and matching rules.
+
+### 🛡️ 2. Parent Folder Context Isolation (No More Folder Bleed)
+
+* **Isolated Matching**: Custom rules now evaluate strictly against the item's own name (`itemContexts`), completely omitting parent directory ancestry.
+* **Zero Child Contamination**: Defining a folder rule for `resource = lucide-folder ::folders` will now color only the `resource` folder itself. Child notes like `resource/notes.md` will no longer inherit the folder's icon.
+
+### ⚡ 3. High-Performance `IconRuleSet` Engine & 2-Layer Caching
+
+* **Dual-Bucket Fast-Paths**: Rules with exact names (no regex symbols) hit an $O(1)$ dictionary lookup instantly. Complex regular expressions are pre-compiled and sorted by priority descending.
+* **Layer 2 Dedicated LRU Cache**: Evaluated patterns are memoized in an internal 2,048-entry LRU cache (`_lookupCache`), delivering sub-microsecond repeat lookups across identical file names (such as `index.md` or `README.md`) without regex parsing.
+* **Self-Healing Cache Invalidation**: Modifying custom rules in settings automatically clears stale results and repaints the file tree instantly.
+
+### 🎨 4. Restored Folder Hierarchy Colors & Polish
+
+* **Hierarchy Mode Folder Color Fix**: Fixed an issue in Hierarchy level mode where folders without manual styling could fall back to neutral text colors (`var(--text-normal)`), appearing black or gray. The icon fallback chain now properly honors `color.hex` across all color generation modes.
+* **All 8 Locales Updated**: Full translations added for rule scope selectors and helper guides across English, German, Spanish, French, Japanese, Slovak, Simplified Chinese, and Traditional Chinese.
+
+---
+
 ## 🚀 5.0.7 — Smart Contrast, Palette Precision & Customizable Heatmaps
 
 This update introduces a new **Auto contrast** section that lets your themes automatically pick readable text and icon colors, a redesigned **Custom colors** palette table with live previews and drag-to-reorder, and **editable heatmap age limits** so you control exactly how long a note stays a certain color. It also adds new row layout controls for Notebook Navigator and publishes extra information for theme makers.
@@ -72,6 +106,9 @@ This update introduces a new **Auto contrast** section that lets your themes aut
 
 ### 🤖 Smart Iconography & Custom Packs
 
+* **Target-Scoped Custom Rules:** Define custom regex or exact icon rules scoped strictly to Folders (`::folders`), Files (`::files`), or Both (`::all`) with custom priority weights.
+* **Dual-Bucket `IconRuleSet` Engine:** $O(1)$ dictionary lookups for exact matches and priority-sorted regexes with 2,048-entry LRU caching and safe ReDoS limits.
+* **Context-Isolated Item Matching:** Evaluates item names independently (`itemContexts`), ensuring folder rules never bleed into nested child notes.
 * **Live Animated Icons:** Real-time animated SVG icons in your sidebar that play smoothly without freezing while scrolling and inherit custom folder colors.
 * **Smart Auto-Icons:** Automatically matches relevant icons to your folder and file names (e.g., *Journal* -> 📅, *Finance* -> 💰).
 * **Manual Override Priority:** Pin your preferred icons on any item to permanently override automatic suggestions.
