@@ -702,8 +702,9 @@ export class StyleGenerator {
             if (palettePair?.text && !customStyle?.textColor && !inheritedStyle?.textColor) {
                 folderStyles.t = palettePair.text;
             }
-            // Icons default to the same automatic color as the text, so they match.
-            const pairedIconColor = customStyle?.iconColor || inheritedStyle?.iconColor || palettePair?.icon || folderStyles.t;
+            // Palette pairing: icon picker wins if set; otherwise falls back to the resolved folder color (color.hex)
+            // so hierarchy/cycle/monochromatic icon colors remain active, with folderStyles.t as final fallback.
+            const pairedIconColor = customStyle?.iconColor || inheritedStyle?.iconColor || palettePair?.icon || color.hex || folderStyles.t;
 
             const isBold = customStyle?.isBold !== undefined ? customStyle.isBold : (inheritedStyle?.isBold !== undefined ? inheritedStyle.isBold : true);
             const isItalic = customStyle?.isItalic !== undefined ? customStyle.isItalic : (inheritedStyle?.isItalic !== undefined ? inheritedStyle.isItalic : false);
