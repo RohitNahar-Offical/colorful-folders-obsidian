@@ -33,6 +33,7 @@ You no longer need to write complex regular expressions to match simple words. E
 ### 🎨 3. Restored Folder Hierarchy Colors & Polish
 
 * **Vibrant Folder Colors Restored**: Fixed an issue where folders could turn plain black or gray in "Hierarchy level" coloring mode. Folders now always shine with their proper palette colors.
+* **Icon-Only Mode Fix**: Setting "Color Text" to "None (Icons only)" or "Files only" now correctly keeps folder icons and collapse chevrons fully colored with their assigned palette colors instead of resetting to neutral text color.
 
 
 ---

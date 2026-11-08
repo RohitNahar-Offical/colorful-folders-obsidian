@@ -121,7 +121,7 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             margin-right: 4px !important;
             vertical-align: middle !important;
             overflow: visible !important;
-            color: var(--cf-animated-icon-color, inherit) !important;
+            color: var(--cf-animated-icon-color, var(--cf-icon-color, inherit)) !important;
         }
 
         .cf-live-animated-icon svg {
@@ -137,6 +137,7 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             align-self: center !important;
             flex-shrink: 0 !important;
             overflow: visible !important;
+            color: var(--cf-icon-color, inherit) !important;
         }
 
         /* ── METADATA WRAPPING RULES (FILES WITH WORD COUNT ONLY) ─────────── */

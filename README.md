@@ -12,36 +12,41 @@ Colorful Folders automatically applies premium color palettes, smart icons, and 
 ---
 ## What's New in Colorful Folders
 
-## 🚀 5.0.8 — Smarter Icon Rules, Folder vs. File Control & Speed Boost
+## 🚀 5.0.8 — Simple Icon Rules & Flexible Matching Modes
 
-This update makes **Custom Icon Rules** much easier and more flexible to use. You can now choose whether an icon rule applies to **Folders only**, **Files only**, or **Both**, and folder rules will no longer accidentally spill over to files inside that folder. We've also fixed folder colors turning gray in Hierarchy mode, gave the rule builder clean new icon menus, and made rule matching lightning fast.
+Setting up custom icons for your vault is now simpler and much more intuitive! You can now choose whether an icon applies to **Folders**, **Files**, or **Both**, and pick plain-English matching modes like **Contains**, **Exact match**, **Starts with**, or **Ends with**—no regex needed.
 
 ---
 
-### 🎯 1. Choose Where Icons Apply — Folders, Files, or Both
+### 🎯 1. Target Folders, Notes, or Both
 
-* **Full Control Over Rules**: You can now choose exactly where each custom icon appears:
-  - **📁 Folders**: The icon only shows on folders that match your rule.
-  - **📄 Files**: The icon only shows on notes and files that match your rule.
-  - **📁+📄 All**: The icon shows on both folders and files.
-* **Easy One-Click Picker**: Click the new button next to any rule to open a neat popup menu with folder and file icons to switch between them instantly.
-* **Helpful Built-In Guide**: A friendly guide box right below your rules in Settings explains how each option works with clear examples.
+You can now decide exactly where each icon appears with a single click:
 
-### 🛡️ 2. Fixed: Folder Rules No Longer Leak Into Notes
+* **📁 Folders**: Shows the icon only on matching folder names.
+* **📄 Files**: Shows the icon only on matching note names.
+* **📁+📄 All**: Applies the icon to both folders and notes.
 
-* **No More Accidental Icon Spills**: Previously, setting an icon rule for a folder name (like `Work` or `Resources`) could cause every single note inside that folder to get the same icon.
-* **Clean Isolation**: Folder rules now strictly change the folder itself. Your notes inside stay independent and keep their own appropriate icons.
+> **Clean separation**: Setting an icon for a folder will never accidentally change the icons of notes inside it!
 
-### ⚡ 3. Buttery-Smooth Performance & Instant Matching
+---
 
-* **Instant Lookups**: Rules with normal names match in a fraction of a millisecond with zero lag.
-* **Smart Memory Caching**: The plugin remembers matching results as you scroll, keeping the file explorer completely smooth and responsive even in vaults with thousands of notes.
-* **Instant Updates**: Any changes you make to your rules in settings appear on your files immediately without having to reload Obsidian.
+### 🔍 2. Choose How Names Match (No Regex Required!)
 
-### 🎨 4. Fixed Folder Colors in Hierarchy Mode & Full Translations
+You no longer need to write complex regular expressions to match simple words. Each rule now has a simple dropdown menu:
+
+* **Contains**: Matches if the word appears anywhere in the name (e.g. `meeting` matches `Team Meeting Notes`).
+* **Exact match**: Matches only when the name equals the word exactly (e.g. `Inbox` matches only `Inbox`, not `Archive Inbox`).
+* **Starts with**: Matches names starting with your word (e.g. `Daily` matches `Daily 2026-11-08`—great for daily journals!).
+* **Ends with**: Matches names ending with your word (e.g. `Template` matches `Meeting Template`).
+* **Regex**: For advanced power users who want pattern matching (like dates `^\d{4}-\d{2}-\d{2}` or numbered folders `01 Projects`). A friendly cheat sheet is built right into Settings.
+
+---
+
+### 🎨 3. Restored Folder Hierarchy Colors & Polish
 
 * **Vibrant Folder Colors Restored**: Fixed an issue where folders could turn plain black or gray in "Hierarchy level" coloring mode. Folders now always shine with their proper palette colors.
-* **All Languages Supported**: All new settings, buttons, and help guides are fully translated across English, German, Spanish, French, Japanese, Slovak, and Simplified/Traditional Chinese.
+* **Icon-Only Mode Fix**: Setting "Color Text" to "None (Icons only)" or "Files only" now correctly keeps folder icons and collapse chevrons fully colored with their assigned palette colors instead of resetting to neutral text color.
+
 
 ---
 

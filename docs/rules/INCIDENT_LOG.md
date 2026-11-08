@@ -487,6 +487,29 @@ When a user defined a rule matching a folder name, every note, file, and subfold
 3. Added target scoping (`folders`, `files`, `all`) with dual-bucket routing ($O(1)$ exact lookup maps and priority-sorted regex arrays) and dedicated 2048-entry LRU caching inside `IconRuleSet.ts`.
 **Lesson**: User-defined custom rules (both exact matches and regular expressions) must evaluate strictly against the node's own name. Never inject directory ancestry or parent folder names into custom pattern evaluation chains. Directory ancestry should only ever serve as a low-priority classification hint in semantic category fallbacks.
 
+---
+
+## Incident #43 — Folder Icons / Collapse Indicators Losing Color When `colorText` is Set to "Files Only" or "None (Icons Only)" (2026-11-08)
+**What was reported**:
+"The options Files Only and None both don't color folder icons. But the option is only for the text color. My use case is to only color the icons for both files and folders."
+**What broke**:
+When a user set the "Color Text" setting to `files` ("Files only") or `none` ("None (Icons only)"), folder icons and collapse indicators lost all palette color and reverted to the neutral text color (`var(--text-normal)`), even though file icons correctly preserved their colors and the user intended to color icons only for both files and folders.
+**Root cause**:
+1. **Coupling Collapse Indicator to Text Color**: In `src/core/StyleGenerator.ts:953`, the collapse indicator rule (`collapseSels`, which styles `.nav-folder-collapse-indicator`, `.collapse-icon`, and their child `svg` elements) emitted:
+   ```typescript
+   color: ${folderStyles.t} !important;
+   stroke: currentColor !important;
+   ```
+2. When `colorText` is set to `"files"` or `"none"`, `ColorResolver.resolveTextColor()` evaluates `shouldColor` to `false`, causing `folderStyles.t` to return `"var(--text-normal)"`.
+3. Because line 953 bound the collapse indicators directly to `folderStyles.t` with `!important`, every folder chevron and collapse indicator was forcefully overridden with the neutral text color instead of its resolved icon color (`effFolderIconColor`).
+4. Furthermore, CSS custom property `--cf-icon-color` was not exposed on `.nav-folder-title` or `.nav-file-title` rows, leaving `.cf-icon-wrapper` and `.cf-live-animated-icon` without an explicit inherited icon color variable.
+**Resolution**:
+1. In `src/core/StyleGenerator.ts:953`, updated `collapseSels` to apply `color: ${effFolderIconColor} !important;` and grouped it cleanly by `collapseIcon_${effFolderIconColor.replace(/\s+/g, '')}`.
+2. In `src/core/StyleGenerator.ts:753` and `360`, stamped `--cf-icon-color: ${effFolderIconColor}` on `.nav-folder-title` and `--cf-icon-color: ${effFileIconColor}` on `.nav-file-title`.
+3. In `src/core/BaseCssGenerator.ts:124` and `133`, updated `.cf-live-animated-icon` and `.cf-icon-wrapper` to support `var(--cf-icon-color, inherit)`.
+**Lesson**: Adhere strictly to the Visual Styling Decoupling rule. Text color and icon color must never share an evaluation gate or style variable. Collapse indicators, folder chevrons, and custom icons are visual iconography and must unconditionally resolve through the icon color chain (`effFolderIconColor`), retaining palette color regardless of whether text coloring is set to `'all'`, `'folders'`, `'files'`, or `'none'`.
+
+
 
 
 

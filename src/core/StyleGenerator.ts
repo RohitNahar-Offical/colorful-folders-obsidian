@@ -357,7 +357,12 @@ export class StyleGenerator {
                 const activeBg = (this.settings.useCustomActiveColor && this.settings.customActiveBg) ? this.settings.customActiveBg : `rgba(${color.rgb}, ${useGlass ? 0.22 : 0.18})`;
                 const activeText = (this.settings.useCustomActiveColor && this.settings.customActiveText) ? this.settings.customActiveText : textNative;
 
+                const effFileIconColor = iconColor || color.hex || textNative;
+
                 let fileRowCss = `
+                    --cf-color: ${color.hex};
+                    --cf-color-rgb: ${color.rgb};
+                    --cf-icon-color: ${effFileIconColor};
                     ${shouldColorNative ? `
                         background-color: var(--cf-file-bg, rgba(${color.rgb}, ${fileBgAlpha})) !important;
                         --nav-item-background: var(--cf-file-bg, rgba(${color.rgb}, ${fileBgAlpha}));
@@ -753,6 +758,7 @@ export class StyleGenerator {
             grouper.add(`
                 --cf-color: ${color.hex};
                 --cf-color-rgb: ${color.rgb};
+                --cf-icon-color: ${effFolderIconColor};
                 --cf-colored: 1;
                 --cf-bg-alpha: ${folderStyles.b === 'transparent' ? 0 : (folderStyles.b === color.hex ? 1 : adjustedOp)};
                 background-color: var(--cf-folder-bg, ${folderStyles.b}) !important;
@@ -950,10 +956,10 @@ export class StyleGenerator {
                 `body .nav-files-container .tree-item-self[data-path="${safePath}"] .collapse-icon svg`
             ];
             grouper.add(`
-                color: ${folderStyles.t} !important;
+                color: ${effFolderIconColor} !important;
                 stroke: currentColor !important;
                 opacity: 0.85 !important;
-            `, collapseSels, `collapseIcon_${color.hex}`);
+            `, collapseSels, `collapseIcon_${effFolderIconColor.replace(/\s+/g, '')}`);
 
             if (this.settings.showItemCounters) {
                 const counts = countItems(child, this.plugin);
