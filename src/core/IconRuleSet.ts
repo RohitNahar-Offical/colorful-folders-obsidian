@@ -83,11 +83,16 @@ export class IconRuleSet {
         let mode: RuleMode = 'contains';
         let hasExplicitMode = false;
 
-        const eqIdx = line.indexOf('=');
+        let eqIdx = line.indexOf(' = ');
+        let delimLen = 3;
+        if (eqIdx === -1) {
+            eqIdx = line.indexOf('=');
+            delimLen = 1;
+        }
 
         if (eqIdx >= 0) {
             pattern = line.slice(0, eqIdx).trim();
-            let secondHalf = line.slice(eqIdx + 1).trim();
+            let secondHalf = line.slice(eqIdx + delimLen).trim();
 
             // Extract all trailing ::token suffixes (e.g. ::folders, ::contains, ::exact)
             while (true) {
@@ -157,7 +162,7 @@ export class IconRuleSet {
         }
 
         const parsedNum = parseInt(priority);
-        const priorityNum = !isNaN(parsedNum) ? parsedNum : 1500;
+        const priorityNum = !isNaN(parsedNum) ? parsedNum : 100;
 
         return { pattern, icon, priority, priorityNum, target, mode };
     }
@@ -379,7 +384,15 @@ export class IconRuleSet {
 
         try {
             if (parsed.mode === 'regex') {
-                rex = new RegExp(parsed.pattern, 'i');
+                let regStr = parsed.pattern;
+                let flags = 'i';
+                const slashMatch = regStr.match(/^\/(.+)\/([gimsuy]*)$/);
+                if (slashMatch) {
+                    regStr = slashMatch[1];
+                    const rawFlags = slashMatch[2].replace(/g/g, '');
+                    flags = rawFlags.includes('i') ? rawFlags : rawFlags + 'i';
+                }
+                rex = new RegExp(regStr, flags);
             } else if (parsed.mode === 'exact') {
                 rex = new RegExp(`^${escapeRegex(parsed.pattern)}$`, 'i');
             } else if (parsed.mode === 'starts_with') {

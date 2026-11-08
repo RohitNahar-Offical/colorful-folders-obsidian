@@ -194,9 +194,12 @@ export class IconRepository {
         }
 
         let sanitized = lName.trim();
-        const dotIdx = sanitized.lastIndexOf('.');
-        if (dotIdx > 0 && sanitized.length - dotIdx <= 5) {
-            sanitized = sanitized.substring(0, dotIdx);
+        // Only strip dot-extensions for files, preserving folder names with dots (e.g. "Release 5.0" or "node.js")
+        if (isFile !== false) {
+            const dotIdx = sanitized.lastIndexOf('.');
+            if (dotIdx > 0 && sanitized.length - dotIdx <= 5) {
+                sanitized = sanitized.substring(0, dotIdx);
+            }
         }
         const cleanSanitized = sanitized.replace(/[^\p{L}\p{N}\s_-]/gu, '').trim();
 
@@ -226,10 +229,12 @@ export class IconRepository {
         }
 
         // Tier 0.9: File Extension Awareness for Non-Markdown Files (Zero-allocation static lookup)
-        if (path) {
-            const lastDot = path.lastIndexOf('.');
-            if (lastDot > 0 && lastDot > path.lastIndexOf('/')) {
-                const ext = path.slice(lastDot + 1).toLowerCase();
+        // Strictly restricted to files: folders with dots (e.g. "node.js") are never treated as file extensions.
+        if (isFile !== false && path) {
+            const cleanPath = path.endsWith('/') ? path.slice(0, -1) : path;
+            const lastDot = cleanPath.lastIndexOf('.');
+            if (lastDot > 0 && lastDot > cleanPath.lastIndexOf('/')) {
+                const ext = cleanPath.slice(lastDot + 1).toLowerCase();
                 if (ext !== 'md' && EXTENSION_AUTO_ICONS[ext]) {
                     return EXTENSION_AUTO_ICONS[ext];
                 }
@@ -273,10 +278,11 @@ export class IconRepository {
         // Zero-allocation parent folder extraction using native lastIndexOf
         let parentFolder = '';
         if (path) {
-            const lastSlash = path.lastIndexOf('/');
+            const cleanPath = path.endsWith('/') ? path.slice(0, -1) : path;
+            const lastSlash = cleanPath.lastIndexOf('/');
             if (lastSlash > 0) {
-                const prevSlash = path.lastIndexOf('/', lastSlash - 1);
-                parentFolder = prevSlash >= 0 ? path.substring(prevSlash + 1, lastSlash) : path.substring(0, lastSlash);
+                const prevSlash = cleanPath.lastIndexOf('/', lastSlash - 1);
+                parentFolder = prevSlash >= 0 ? cleanPath.substring(prevSlash + 1, lastSlash) : cleanPath.substring(0, lastSlash);
             }
         }
 

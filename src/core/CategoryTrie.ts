@@ -73,10 +73,11 @@ export class CategoryTrie {
     public lookup(name: string): AutoIconData[] {
         if (!name) return this.fallbackCategories;
 
-        const cached = this._lookupCache.get(name);
+        const key = name.toLowerCase();
+        const cached = this._lookupCache.get(key);
         if (cached !== undefined) return cached;
 
-        const words = name.toLowerCase().split(WORD_SPLIT_REGEX);
+        const words = key.split(WORD_SPLIT_REGEX);
 
         const matchedSet = new Set<AutoIconData>();
 
@@ -101,7 +102,7 @@ export class CategoryTrie {
             }
         }
 
-        this._lookupCache.set(name, results);
+        this._lookupCache.set(key, results);
         return results;
     }
 }
