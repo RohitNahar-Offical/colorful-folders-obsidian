@@ -492,29 +492,52 @@ body .cm-editor .HyperMD-header-1 {
 
 ---
 
-## Advanced Auto-Icon Regex Builder
+## Advanced Icon Rule Builder
 
-The **Regex Builder** UI lets you create custom icon matching rules in the **Icon Packs** settings tab. Rules follow the syntax:
+The **Icon Rule Builder** UI in the **Icons** settings tab lets you configure precise custom icon matching rules with dedicated target scopes and native operator modes.
 
+### Rule Syntax
 ```
-<regex-pattern> = <icon-id> @<priority>
+<pattern> = <icon-id> [@<priority>] [::target] [::mode]
 ```
 
-### Priority Range
-- Valid range: **1 to 2000** (integers only).
-- **1** = lowest priority.
-- **1500** = default custom rule priority (wins over built-in categories at 80–110 and Tier 4 fuzzy matches at 50).
-- **1800** = exact pack match priority.
-- **2000** = absolute maximum custom priority.
+### Components
+
+| Token | Description | Options / Range |
+| :--- | :--- | :--- |
+| `<pattern>` | The search pattern or regex to test against file/folder names. | Any text or valid regex (max 256 chars). |
+| `<icon-id>` | The icon ID or emoji to assign. | Lucide (`lucide-briefcase`), icon pack ID (`fa-star`), or native emoji (`📁`). |
+| `@<priority>` | Numeric priority determining which rule wins when multiple match. | `1` to `100` (default: `100`, higher wins). |
+| `::target` | Scope filter restricting which explorer nodes are evaluated. | `::folders` (folders only), `::files` (files only), or `::all` (both, default). |
+| `::mode` | Matching operator mode used for name comparison. | `::contains` (default), `::exact`, `::starts_with`, `::ends_with`, or `::regex`. |
+
+> [!TIP]
+> Target and mode can also be specified as a combined suffix, e.g. `::folders:exact`.
+
+### Matching Modes & Performance
+
+- **🔍 Contains (`::contains`)**: Matches if the item name contains the text anywhere (e.g. `work` matches `my-work-notes`). Evaluated via native V8 C++ `includes()` in $< 0.001\text{ ms}$.
+- **＝ Exact match (`::exact`)**: Matches only when the item name equals the text exactly (e.g. `work` matches `work`, but not `homework`). Resolves in $O(1)$ via specialized exact-match Maps.
+- **⇤ Starts with (`::starts_with`)**: Matches if the item name begins with the text (e.g. `Daily` matches `Daily 2026-11-08`). Evaluated via native `startsWith()`.
+- **⇥ Ends with (`::ends_with`)**: Matches if the item name ends with the text (e.g. `backup` matches `vault-backup`). Evaluated via native `endsWith()`.
+- **.* Regex pattern (`::regex`)**: Advanced regular expression matching (e.g. `^v\d+` matches version folders). Slashed patterns like `/^v\d+/` and flags are automatically sanitized.
+
+### Scope Isolation
+Custom user rules evaluate strictly against the item's own name (`itemContexts`), completely isolated from parent folder names. A folder rule like `projects = lucide-folder ::folders` will style the `projects` folder with the folder icon, but will **never** leak or hijack files located inside that directory.
 
 ### Examples
 
-| Goal | Rule |
+| Goal | Rule Syntax |
 | :--- | :--- |
-| Match folders ending in `_Archive` | `_archive$ = lucide-archive @1500` |
-| Match files starting with a year | `^202[0-9]- = 📅 @1600` |
-| Match anything containing "work" | `work = lucide-briefcase @1200` |
-| Low-priority fallback for untitled | `^untitled = 📄 @10` |
+| Match folder named `work` exactly | `work = lucide-briefcase @100 ::folders ::exact` |
+| Match daily note files starting with `Daily` | `Daily = lucide-calendar @90 ::files ::starts_with` |
+| Match any backup ending in `backup` | `backup = lucide-archive @80 ::all ::ends_with` |
+| Match files containing `finance` (including `finance.pdf`) | `finance = lucide-dollar-sign @75 ::files ::contains` |
+| Match versioned folders with regex `^v\d+` | `^v\d+ = lucide-tag @60 ::folders ::regex` |
 
-### Live Testing
-Type a folder or file name in the **Test name** input field in the Regex Builder UI. The icon that would be assigned is displayed immediately without requiring a reload.
+### Live Testing & Editing
+The **Active rules** table in settings provides:
+- One-click dropdown selectors for **Scope** (`All`, `Folders`, `Files`) and **Mode** (`Contains`, `Exact match`, `Starts with`, `Ends with`, `Regex`).
+- Integrated Lucide icon picker modal.
+- Pixel-perfect CSS Grid alignment across all rows and languages.
+- Instant, debounced style regeneration upon edit without requiring a vault reload.

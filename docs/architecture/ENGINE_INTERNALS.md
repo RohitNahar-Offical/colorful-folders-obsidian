@@ -51,11 +51,11 @@ graph TD
     T0 -- Match --> Z0[Return Tier 0 Data]
     T0 -- Miss --> T05{Tier 0.5: Tag Sync Match}
     T05 -- Match --> Z05[Return Tier 0.5 Data]
-    T05 -- Miss --> T07{Tier 0.7: Non-Markdown Ext}
-    T07 -- Match --> Z07[Return Tier 0.7 Data]
-    T07 -- Miss --> T08{Tier 0.8: IconRuleSet itemContexts}
+    T05 -- Miss --> T08{Tier 0.8: IconRuleSet itemContexts}
     T08 -- Match --> Z08[Return Tier 0.8 Custom Rule Data]
-    T08 -- Miss --> T1{Tier 1: IconPackIndex.findIcon}
+    T08 -- Miss --> T09{Tier 0.9: Non-Markdown Ext & isFile}
+    T09 -- Match --> Z09[Return Tier 0.9 Static Descriptor Data]
+    T09 -- Miss --> T1{Tier 1: IconPackIndex.findIcon}
     T1 -- Match --> Z1[Return Tier 1 Data + packSource]
     T1 -- Miss --> T2{Tier 2 & 3: CategoryTrie.lookup}
     T2 -- Match --> Z2[Return Tier 2/3 Data + packSource]
@@ -68,16 +68,24 @@ graph TD
 
 ### 3.1 `IconRuleSet` (`src/core/IconRuleSet.ts`)
 - **Single Responsibility Principle (SRP)**: Dedicated, decoupled engine for parsing, compiling, and evaluating user-configured custom icon rules (`settings.customIconRules`).
-- **Dual-Bucket Partitioning**:
-  - Exact match maps (`_folderExact`, `_fileExact`, `_universalExact`): Instant $O(1)$ hash map lookups when patterns contain no regular expression metacharacters.
-  - Regex arrays (`_folderRegex`, `_fileRegex`, `_universalRegex`): Pre-compiled, pre-sorted by descending priority for deterministic pattern evaluation.
+- **Matching Operator Modes**:
+  - `contains`: Substring evaluation via native V8 C++ `String.prototype.includes`.
+  - `exact`: Exact equality via native `===` and $O(1)$ exact lookup maps.
+  - `starts_with`: Prefix evaluation via native `String.prototype.startsWith`.
+  - `ends_with`: Suffix evaluation via native `String.prototype.endsWith`.
+  - `regex`: Evaluated via compiled `RegExp` with automatic slash/flags cleanup and ReDoS protections.
+- **Dual-Bucket Partitioning & Performance Guards**:
+  - Exact match maps (`_folderExact`, `_fileExact`, `_universalExact`): Instant $O(1)$ hash map lookups.
+  - Fast-Path Bypass (`_exactRuleCount`): If no exact rules exist, Fast Path A is skipped in $O(1)$ with zero array allocations or lambda closures.
 - **Scope Targeting**: Directs rules to `folders`, `files`, or `all` via the `::target` token syntax (`::folders`, `::files`, `::all`).
 - **Context Isolation & Leak Prevention (Incident #42)**: Evaluates exclusively against `itemContexts` (`[lName, sanitized, cleanSanitized]`), strictly omitting `parentFolder` so parent folder rules never hijack nested child files.
 - **Two-Layer Caching Architecture**:
   - Layer 1: `IconRepository._autoIconResultCache` (4096 entries, keyed by path/name).
-  - Layer 2: `IconRuleSet._lookupCache` (2048 entries, keyed by `scope:ctx1\0ctx2\0ctx3`). If multiple directories contain identically named files (`index.md`, `README.md`), Layer 2 hits in $O(1)$ without re-evaluating regex arrays.
-- **Security & ReDoS Guard**: Limits pattern lengths to 256 characters and wraps regex creation in defensive try-catch guards to prevent syntax errors or catastrophic backtracking.
-- **Shared Static Helpers (DRY)**: Exposes `IconRuleSet.parseRule(line)` and `IconRuleSet.formatRule(pattern, icon, priority, target)` consumed by both runtime compilation and the Settings Rule Builder UI.
+  - Layer 2: `IconRuleSet._lookupCache` (2048 entries, keyed by `scope:ctx1\0ctx2\0ctx3` with zero-allocation single-string optimization `scope:ctx`).
+- **Robust Regex & Delimiter Parser**:
+  - Distinguishes rule assignment delimiters (`' = '`) from regex lookaheads containing `=` (e.g., `(?=project).+ = lucide-folder ::regex`).
+  - Automatically strips enclosing `/.../` and unsets global `/g` flags to eliminate stateful `lastIndex` alternation bugs.
+- **Shared Static Helpers (DRY)**: Exposes `IconRuleSet.parseRule(line)` and `IconRuleSet.formatRule(pattern, icon, priority, target, mode)` consumed by both runtime compilation and the Settings Rule Builder UI.
 
 ### 3.2 `IconPackIndex` (`src/core/IconPackIndex.ts`)
 - Maintains `exactMap`, `coreMap`, and `suffixMap` to enable $O(1)$ icon lookups.
@@ -91,7 +99,9 @@ graph TD
 
 ### 3.3 `CategoryTrie` (`src/core/CategoryTrie.ts`)
 - Indexes `AUTO_ICON_CATEGORIES` using a true Node-based Prefix Trie (`TrieNode`).
-- `lookup(name)` tokenizes input title words, walking character prefix branches to return matching category rules without dumping full fallback sets.
+- **Decoupled from Custom Rules**: Built once for built-in categories; custom rules evaluate separately in Tier 0.8 with strict scoping.
+- **512-Entry LRU Cache**: Memoizes resolved category candidate arrays for recurring vault terms (`daily`, `notes`, `archive`, `work`) with normalized lowercase keys.
+- **Zero-Allocation Parent Resolution**: Extracts parent directory tokens via native `lastIndexOf('/')` and `substring()` without creating intermediate arrays.
 
 ### 3.4 Path Key Normalization (`normalizePathKey` / `normalizeIconName`)
 - `normalizePathKey(path)` lowercases paths and strips `.md` extensions while preserving `/` path slashes. Prevents key collisions between subfolder files (`"Dev/Notes.md"` $\rightarrow$ `"dev/notes"`) and top-level files (`"DevNotes.md"` $\rightarrow$ `"devnotes"`).

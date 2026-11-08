@@ -170,6 +170,12 @@ Never drop `color.hex` from the folder icon resolution chain or couple folder ic
 **RULE 5.14: Custom Icon Rules Must Match Item Names Only, Never Parent Folders.**
 Custom user rules (`IconRuleSet`, Tier 0.8) must evaluate strictly against the item's own name contexts (`itemContexts: [lName, sanitized, cleanSanitized]`). Never inject directory ancestry or parent folder names (`parentFolder`) into custom rule evaluation. Directory ancestry is reserved strictly as a secondary heuristic fallback hint for Tier 2/3 Category Trie classification. Injecting parent folder context into custom rules causes child files to inherit rules intended for their parent folders, hijacking their visual icons. *(Incident #42)*
 
+**RULE 5.15: Custom Icon Rules Operator Modes & Native String Optimization.**
+Custom user rules must support explicit operator matching modes (`contains`, `exact`, `starts_with`, `ends_with`, `regex`). Non-regex modes must evaluate via native V8 string operators (`includes`, `===`, `startsWith`, `endsWith`) to guarantee sub-millisecond execution with zero RegExp engine overhead or backtracking risks in large vaults. Unadorned rules must default to priority `100` to align with the `1-100` UI scale.
+
+**RULE 5.16: Settings Rule Builder Rows Must Use Rigid CSS Grid Layout.**
+Rule builder UI rows in `IconSettingSection.ts` must use rigid CSS Grid tracks (`gridTemplateColumns: '110px 135px 1fr 36px 55px 24px'`) with `minWidth: '0'` on pattern inputs instead of variable-width flexbox. This guarantees strict vertical column alignment across rows regardless of localized label lengths ("Folders" vs "Files", "Exact match" vs "Contains") or selection states.
+
 ---
 
 ## 6. CI/CD & Release Pipeline

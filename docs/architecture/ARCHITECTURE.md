@@ -223,15 +223,15 @@ flowchart TD
 graph TD
     A[getAutoIconData name, path, isFile] --> B{Path is Markdown .md?}
     B -- Yes --> T0{Tier 0: Frontmatter Icon}
-    T0 -- Found --> Z0[Return Tier 0: Priority 2000]
+    T0 -- Found --> Z0[Return Tier 0: Priority 2500]
     T0 -- None --> T05{Tier 0.5: Tag Sync Match}
-    T05 -- Found --> Z05[Return Tier 0.5: Priority 1900]
-    T05 -- None --> T07
-    B -- No --> T07{Tier 0.7: Non-Markdown Extension}
-    T07 -- Found --> Z07[Return Tier 0.7: Priority 1850]
-    T07 -- None --> T08{Tier 0.8: Custom User Rules IconRuleSet}
-    T08 -- Match on itemContexts --> Z08[Return Tier 0.8: Rule Priority]
-    T08 -- Miss --> T1{Tier 1: Exact Pack Match}
+    T05 -- Found --> Z05[Return Tier 0.5: Priority 2200]
+    T05 -- None --> T08
+    B -- No --> T08{Tier 0.8: Custom User Rules IconRuleSet}
+    T08 -- Match on itemContexts --> Z08[Return Tier 0.8: User Priority 1-100]
+    T08 -- Miss --> T09{Tier 0.9: Non-Markdown Extension}
+    T09 -- Found & isFile --> Z09[Return Tier 0.9: Priority 2000]
+    T09 -- Miss --> T1{Tier 1: Exact Pack Match}
     T1 -- Match --> Z1[Return Tier 1: Priority 1800 + packSource]
     T1 -- Miss --> T2{Tier 2 & 3: Priority CategoryTrie Lookup}
     T2 --> T2A[Collect Candidates on itemContexts + parentFolder]
@@ -246,34 +246,40 @@ graph TD
     T5 --> Z4[Return Hash-Picked Concept / Sentence Icon]
 ```
 
-1. **Tier 0: Explicit Note Frontmatter (`icon`, `iconId`, `emoji`, `icon-id`) (Priority 2000)**
+1. **Tier 0: Explicit Note Frontmatter (`icon`, `iconId`, `emoji`, `icon-id`) (Priority 2500)**
    - Scans note frontmatter metadata via Obsidian's `metadataCache.getFileCache(file)`.
    - Highest automatic precedence: if an author defines `icon: lucide-book` in frontmatter, that icon is displayed instantly with zero regex or fuzzy queries.
 
-2. **Tier 0.5: Tag-Driven Auto-Icon (Priority 1900)**
+2. **Tier 0.5: Tag-Driven Auto-Icon (Priority 2200)**
    - Strictly gated by user setting `tagSyncEnabled`.
    - Inspects cached tags in note frontmatter and body.
    - Matches resolved tags against custom tag rules (`tagSyncRules`) or auto-icon categories, returning the first tag with an assigned icon.
 
-3. **Tier 0.7: File Extension Awareness for Non-Markdown Files (Priority 1850)**
-   - Automatically maps non-markdown extensions (`.pdf`, `.canvas`, `.png`, `.jpg`, `.mp4`, `.zip`, `.ts`, `.js`, `.py`, `.json`, etc.) to clean, appropriate icons.
-   - For example, `.pdf` $\rightarrow$ `lucide-file-text` / `file-type-pdf`, `.canvas` $\rightarrow$ `lucide-layout-dashboard`.
-
-4. **Tier 0.8: Custom User Rules Engine (`IconRuleSet.ts`) (User Priority, Default 100)**
+3. **Tier 0.8: Custom User Rules Engine (`IconRuleSet.ts`) (User Priority 1–100, Default 100)**
    - Evaluates user-defined rules (`customIconRules`) configured in the Rule Builder settings.
-   - **Syntax**: `pattern = icon [@priority] [::target]` where target is `folders`, `files`, or `all`.
-   - **Dual-Bucket Routing**: Exact patterns hit $O(1)$ maps (`_folderExact`, `_fileExact`, `_universalExact`); regex patterns evaluate via pre-sorted arrays (`_folderRegex`, `_fileRegex`, `_universalRegex`).
+   - Evaluated **before** generic file extension icons so user-specified file rules take precedence over default extension icons (e.g. `finance = lucide-dollar-sign ::files` correctly matches `finance.pdf`).
+   - **Syntax**: `pattern = icon [@priority] [::target] [::mode]`
+     - `target`: `folders`, `files`, or `all` (default: `all`).
+     - `mode`: `contains`, `exact`, `starts_with`, `ends_with`, or `regex` (default: `contains`).
+   - **Native String Optimization**: Uses native V8 C++ comparisons (`===`, `includes`, `startsWith`, `endsWith`) for string modes, bypassing regular expression engines and eliminating regex backtracking.
+   - **Dual-Bucket Routing**: Exact patterns route to $O(1)$ maps (`_folderExact`, `_fileExact`, `_universalExact`); bypassed in $O(1)$ if no exact rules exist (`_exactRuleCount === 0`).
    - **Scope Isolation (Incident #42)**: Custom rules evaluate strictly against `itemContexts` (`[lName, sanitized, cleanSanitized]`), excluding `parentFolder` so parent folder rules never leak into child files.
    - **Two-Layer Caching**: Hits are memoized in `IconRuleSet._lookupCache` (2048 entries) and `IconRepository._autoIconResultCache` (4096 entries).
 
+4. **Tier 0.9: File Extension Awareness for Non-Markdown Files (Priority 2000)**
+   - Pre-compiled static descriptor map (`EXTENSION_AUTO_ICONS`) providing zero-allocation $O(1)$ resolution for non-markdown extensions (`.pdf`, `.png`, `.jpg`, `.mp4`, `.zip`, `.ts`, `.js`, `.py`, `.json`, etc.).
+   - Strictly gated by `isFile !== false`, ensuring folders containing dots (e.g. `Release 5.0`, `node.js`, `v1.2`) are never misclassified as file extensions.
+
 5. **Tier 1: Exact Pack Match (Priority 1800)**
-   - Hyphenates the sanitized name (`"my_project.md"` $\rightarrow$ `"my-project"`).
+   - Deferred string transformations (`sanitized.replace(/[\s_]+/g, '-')`): only executed if custom rules and extensions miss.
    - Performs $O(1)$ query via `IconPackIndex.findIcon()`. Returns exact matching custom SVG or installed pack icon.
 
 6. **Tier 2 & 3: Priority-Sorted Category Trie (Priority 1500 & 80–140)**
-   - Queries `CategoryTrie.lookup(lName)` traversing a Node-based Prefix Trie (`TrieNode`) matching tokenized word prefixes.
+   - Built **once** for built-in categories (`AUTO_ICON_CATEGORIES`) and decoupled from user rules, preventing expensive Trie teardowns and rebuilds on settings changes.
+   - Protected by a dedicated 512-entry LRU cache (`_lookupCache`) inside `CategoryTrie` for instant $O(1)$ resolution of recurring terms (`daily`, `notes`, `archive`, `work`).
+   - Zero-allocation parent folder extraction using native `lastIndexOf('/')` and `substring()`.
    - Supports `parentFolder` as a secondary fallback hint when item name yields no category.
-   - All candidate category results are explicitly sorted by descending priority: `results.sort((a, b) => (b.priority || 0) - (a.priority || 0))`.
+   - All candidate category results are explicitly sorted by descending priority.
    - **Whole-Title & Mental Model Categories (Priority 110–140)**: Evaluates high-priority whole-title concept regexes before single-word categories:
      - **Ideation & Brainstorming** (Priority 140): `generate ideas`, `ideation`, `brainstorm` $\rightarrow$ `lightbulb`, `brain`, `sparkles`
      - **Mental Models & Growth** (Priority 130): `higher-order` (`layers`), `underestimate` (`hourglass`), `remember/mnemonic` (`brain`), `wu wei` (`sparkles`), `yin and yang` (`scale`), `vulnerability` (`heart`), `trust the process` (`compass`, `trending-up`), `use it or lose it` (`repeat`, `flame`)
