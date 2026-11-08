@@ -987,10 +987,10 @@ body.cf-show-hidden .nav-files-container .tree-item.cf-hidden:hover {
 
 .cf-rules-recipe-row {
     display: grid;
-    grid-template-columns: 140px 130px 1fr;
-    gap: 10px;
+    grid-template-columns: minmax(180px, auto) minmax(150px, 200px) 1fr;
+    gap: 12px;
     align-items: center;
-    padding: 5px 0;
+    padding: 6px 0;
     border-top: 1px solid var(--background-modifier-border);
 }
 
@@ -1001,15 +1001,14 @@ body.cf-show-hidden .nav-files-container .tree-item.cf-hidden:hover {
 .cf-rules-code-badge {
     font-family: var(--font-monospace);
     font-size: 0.9em;
-    padding: 2px 7px;
+    padding: 2px 8px;
     background: var(--code-background, rgba(0, 0, 0, 0.25));
     border: 1px solid var(--background-modifier-border);
     border-radius: 4px;
     color: var(--text-accent);
     display: inline-block;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    width: fit-content;
 }
 
 .cf-rules-recipe-name {
@@ -1018,6 +1017,36 @@ body.cf-show-hidden .nav-files-container .tree-item.cf-hidden:hover {
 }
 
 .cf-rules-recipe-matches {
+    color: var(--text-muted);
+    font-size: 0.9em;
+}
+
+.cf-rules-cheat-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    font-size: 0.85em;
+}
+
+.cf-rules-cheat-title {
+    font-weight: 600;
+    color: var(--text-normal);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.cf-rules-cheat-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-muted);
+}
     color: var(--text-muted);
     font-size: 0.9em;
 }

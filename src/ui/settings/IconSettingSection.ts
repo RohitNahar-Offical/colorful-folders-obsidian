@@ -231,7 +231,7 @@ export class IconSettingSection extends SettingSection {
             });
             rulesDesc.setText(t('settings.regex_rules_hint'));
 
-            // Modern, collapsible guide with practical options and advanced regex recipes
+            // Modern, collapsible guide dedicated strictly to regex patterns for Obsidian notes
             const guideDetails = rulesCard.createEl('details', { cls: 'cf-rules-guide' });
             guideDetails.open = true;
 
@@ -258,34 +258,29 @@ export class IconSettingSection extends SettingSection {
 
             const guideBody = guideDetails.createDiv('cf-rules-guide-body');
 
-            // 1. Options breakdown mini-cards
-            const optionsGrid = guideBody.createDiv('cf-rules-options-grid');
+            // 1. Regex Operations Cheatsheet Bar (Lists all regex operations)
+            const cheatBar = guideBody.createDiv('cf-rules-cheat-bar');
+            const cheatTitle = cheatBar.createSpan('cf-rules-cheat-title');
+            const infoIcon = cheatTitle.createSpan();
+            obsidian.setIcon(infoIcon, 'sliders');
+            cheatTitle.createSpan({ text: t('settings.icon_rule.cheat_title') });
 
-            // Card 1: Target Scope
-            const scopeCard = optionsGrid.createDiv('cf-rules-option-card');
-            const scopeHeader = scopeCard.createDiv('cf-rules-option-header');
-            const scopeIcon = scopeHeader.createSpan();
-            obsidian.setIcon(scopeIcon, 'folder');
-            scopeHeader.createSpan({ text: t('settings.icon_rule.opt_scope_title') });
-            scopeCard.createDiv({ cls: 'cf-rules-option-desc', text: t('settings.icon_rule.opt_scope_desc') });
+            const cheats: Array<{ op: string; descKey: TranslationKey }> = [
+                { op: '^', descKey: 'settings.icon_rule.cheat_start' },
+                { op: '$', descKey: 'settings.icon_rule.cheat_end' },
+                { op: '\\d', descKey: 'settings.icon_rule.cheat_digit' },
+                { op: 'a|b', descKey: 'settings.icon_rule.cheat_or' },
+                { op: '.*', descKey: 'settings.icon_rule.cheat_wildcard' },
+                { op: '\\[ \\]', descKey: 'settings.icon_rule.cheat_brackets' },
+            ];
 
-            // Card 2: Matching Modes
-            const modeCard = optionsGrid.createDiv('cf-rules-option-card');
-            const modeHeader = modeCard.createDiv('cf-rules-option-header');
-            const modeIcon = modeHeader.createSpan();
-            obsidian.setIcon(modeIcon, 'sliders');
-            modeHeader.createSpan({ text: t('settings.icon_rule.opt_mode_title') });
-            modeCard.createDiv({ cls: 'cf-rules-option-desc', text: t('settings.icon_rule.opt_mode_desc') });
+            cheats.forEach(c => {
+                const chip = cheatBar.createSpan('cf-rules-cheat-chip');
+                chip.createEl('code', { cls: 'cf-rules-code-badge', text: c.op });
+                chip.createSpan({ text: t(c.descKey) });
+            });
 
-            // Card 3: Priority Order
-            const prioCard = optionsGrid.createDiv('cf-rules-option-card');
-            const prioHeader = prioCard.createDiv('cf-rules-option-header');
-            const prioIcon = prioHeader.createSpan();
-            obsidian.setIcon(prioIcon, 'list-ordered');
-            prioHeader.createSpan({ text: t('settings.icon_rule.opt_prio_title') });
-            prioCard.createDiv({ cls: 'cf-rules-option-desc', text: t('settings.icon_rule.opt_prio_desc') });
-
-            // 2. Practical Advanced Regex Recipes
+            // 2. Obsidian Note & Folder Regex Patterns Table
             const recipesTable = guideBody.createDiv('cf-rules-recipes-table');
             const recipesHeader = recipesTable.createDiv('cf-rules-recipes-header');
             const recIcon = recipesHeader.createSpan();
@@ -293,11 +288,14 @@ export class IconSettingSection extends SettingSection {
             recipesHeader.createSpan({ text: t('settings.icon_rule.recipes_title') });
 
             const recipes: Array<{ code: string; nameKey: TranslationKey; matchKey: TranslationKey }> = [
-                { code: '^v\\d+', nameKey: 'settings.icon_rule.recipe_version', matchKey: 'settings.icon_rule.recipe_version_match' },
-                { code: '^\\d{4}-\\d{2}', nameKey: 'settings.icon_rule.recipe_daily', matchKey: 'settings.icon_rule.recipe_daily_match' },
-                { code: '^(todo|task|inbox)', nameKey: 'settings.icon_rule.recipe_choice', matchKey: 'settings.icon_rule.recipe_choice_match' },
-                { code: '\\.(draft|temp)$', nameKey: 'settings.icon_rule.recipe_suffix', matchKey: 'settings.icon_rule.recipe_suffix_match' },
-                { code: '^\\[.+\\]', nameKey: 'settings.icon_rule.recipe_bracket', matchKey: 'settings.icon_rule.recipe_bracket_match' },
+                { code: '^\\d{4}-\\d{2}-\\d{2}', nameKey: 'settings.icon_rule.recipe_daily', matchKey: 'settings.icon_rule.recipe_daily_match' },
+                { code: '^\\d{4}-W\\d{1,2}', nameKey: 'settings.icon_rule.recipe_weekly', matchKey: 'settings.icon_rule.recipe_weekly_match' },
+                { code: '^\\d{2}\\s', nameKey: 'settings.icon_rule.recipe_para', matchKey: 'settings.icon_rule.recipe_para_match' },
+                { code: '^(meeting|call|sync)', nameKey: 'settings.icon_rule.recipe_meetings', matchKey: 'settings.icon_rule.recipe_meetings_match' },
+                { code: '^(book|paper|read)', nameKey: 'settings.icon_rule.recipe_reading', matchKey: 'settings.icon_rule.recipe_reading_match' },
+                { code: '^\\[(todo|done|wip)\\]', nameKey: 'settings.icon_rule.recipe_status', matchKey: 'settings.icon_rule.recipe_status_match' },
+                { code: '\\((draft|template)\\)$', nameKey: 'settings.icon_rule.recipe_suffix', matchKey: 'settings.icon_rule.recipe_suffix_match' },
+                { code: '^(archive|old|backup)', nameKey: 'settings.icon_rule.recipe_archive', matchKey: 'settings.icon_rule.recipe_archive_match' },
             ];
 
             recipes.forEach(r => {
