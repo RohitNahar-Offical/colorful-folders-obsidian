@@ -43,23 +43,43 @@ The Zero-DOM engine uses flat attribute selectors to target file explorer items 
 
 ## 3. Tiered Icon Selection Engine Internals
 
-`IconRepository` processes icon resolution across 4 strict tiers using optimized internal data structures:
+`IconRepository` processes icon resolution across a multi-tier hierarchy using optimized internal data structures:
 
 ```mermaid
 graph TD
-    A[Query: IconRepository.getAutoIconData name] --> B[Sanitize & Hyphenate Name]
-    B --> C{Tier 1: IconPackIndex.findIcon}
-    C -- Match --> Z1[Return Tier 1 Data + packSource]
-    C -- Miss --> D[Tier 2 & 3: CategoryTrie.lookup]
-    D --> E[Filter Candidates via Category Rules]
-    E -- Match --> Z2[Return Tier 2/3 Data + packSource]
-    E -- Miss --> F[Tier 4: STOP_WORDS Filter + stemWord Scan]
-    F --> G[Query IconPackIndex for Stemmed Pairs / Single Words]
-    G -- Match --> Z3[Return Tier 4 Data + packSource]
-    G -- Miss --> Z4[Return Null]
+    A[Query: IconRepository.getAutoIconData name, path, isFile] --> T0{Tier 0: Frontmatter Icon}
+    T0 -- Match --> Z0[Return Tier 0 Data]
+    T0 -- Miss --> T05{Tier 0.5: Tag Sync Match}
+    T05 -- Match --> Z05[Return Tier 0.5 Data]
+    T05 -- Miss --> T07{Tier 0.7: Non-Markdown Ext}
+    T07 -- Match --> Z07[Return Tier 0.7 Data]
+    T07 -- Miss --> T08{Tier 0.8: IconRuleSet itemContexts}
+    T08 -- Match --> Z08[Return Tier 0.8 Custom Rule Data]
+    T08 -- Miss --> T1{Tier 1: IconPackIndex.findIcon}
+    T1 -- Match --> Z1[Return Tier 1 Data + packSource]
+    T1 -- Miss --> T2{Tier 2 & 3: CategoryTrie.lookup}
+    T2 -- Match --> Z2[Return Tier 2/3 Data + packSource]
+    T2 -- Miss --> T4{Tier 4: STOP_WORDS + stemWord}
+    T4 --> T4A[Query IconPackIndex for Stemmed Pairs / Single Words]
+    T4A -- Match --> Z3[Return Tier 4 Data + packSource]
+    T4A -- Miss --> T5[Tier 5: Concept / Sentence Palette Hash Fallback]
+    T5 --> Z4[Return Concept or Sentence Icon]
 ```
 
-### 3.1 `IconPackIndex` (`src/core/IconPackIndex.ts`)
+### 3.1 `IconRuleSet` (`src/core/IconRuleSet.ts`)
+- **Single Responsibility Principle (SRP)**: Dedicated, decoupled engine for parsing, compiling, and evaluating user-configured custom icon rules (`settings.customIconRules`).
+- **Dual-Bucket Partitioning**:
+  - Exact match maps (`_folderExact`, `_fileExact`, `_universalExact`): Instant $O(1)$ hash map lookups when patterns contain no regular expression metacharacters.
+  - Regex arrays (`_folderRegex`, `_fileRegex`, `_universalRegex`): Pre-compiled, pre-sorted by descending priority for deterministic pattern evaluation.
+- **Scope Targeting**: Directs rules to `folders`, `files`, or `all` via the `::target` token syntax (`::folders`, `::files`, `::all`).
+- **Context Isolation & Leak Prevention (Incident #42)**: Evaluates exclusively against `itemContexts` (`[lName, sanitized, cleanSanitized]`), strictly omitting `parentFolder` so parent folder rules never hijack nested child files.
+- **Two-Layer Caching Architecture**:
+  - Layer 1: `IconRepository._autoIconResultCache` (4096 entries, keyed by path/name).
+  - Layer 2: `IconRuleSet._lookupCache` (2048 entries, keyed by `scope:ctx1\0ctx2\0ctx3`). If multiple directories contain identically named files (`index.md`, `README.md`), Layer 2 hits in $O(1)$ without re-evaluating regex arrays.
+- **Security & ReDoS Guard**: Limits pattern lengths to 256 characters and wraps regex creation in defensive try-catch guards to prevent syntax errors or catastrophic backtracking.
+- **Shared Static Helpers (DRY)**: Exposes `IconRuleSet.parseRule(line)` and `IconRuleSet.formatRule(pattern, icon, priority, target)` consumed by both runtime compilation and the Settings Rule Builder UI.
+
+### 3.2 `IconPackIndex` (`src/core/IconPackIndex.ts`)
 - Maintains `exactMap`, `coreMap`, and `suffixMap` to enable $O(1)$ icon lookups.
 - Builds once per session with version-snapshot checking (`_localVersion`, `_customVersion`).
 - Resolves suffix collisions at build time using `PACK_PRIORITY` weights:
@@ -69,20 +89,20 @@ graph TD
   - **Hierarchy Level Color Mode (`colorMode: "hierarchy"`)**: Directly maps folder color indices to tree depth (`(depth + cycleOffset) % palette.length`) with zero array allocations.
   - **Stemming Engine & Fuzzy Optimizations**: `STOP_WORDS` filtering, `searchFuzzy` length-difference pruning, word-boundary alignment, and single-row Levenshtein memory buffer.
 
-### 3.2 `CategoryTrie` (`src/core/CategoryTrie.ts`)
+### 3.3 `CategoryTrie` (`src/core/CategoryTrie.ts`)
 - Indexes `AUTO_ICON_CATEGORIES` using a true Node-based Prefix Trie (`TrieNode`).
 - `lookup(name)` tokenizes input title words, walking character prefix branches to return matching category rules without dumping full fallback sets.
 
-### 3.3 Path Key Normalization (`normalizePathKey` / `normalizeIconName`)
+### 3.4 Path Key Normalization (`normalizePathKey` / `normalizeIconName`)
 - `normalizePathKey(path)` lowercases paths and strips `.md` extensions while preserving `/` path slashes. Prevents key collisions between subfolder files (`"Dev/Notes.md"` $\rightarrow$ `"dev/notes"`) and top-level files (`"DevNotes.md"` $\rightarrow$ `"devnotes"`).
 - `normalizeIconName(iconId)` unifies icon key formatting across AI classification, auto-icon matching, and pack index searches.
 
-### 3.4 Stemming & Stop-Word Engine (`STOP_WORDS` / `stemWord`)
+### 3.5 Stemming & Stop-Word Engine (`STOP_WORDS` / `stemWord`)
 - `STOP_WORDS` filters out question words (`how`, `why`, `where`), auxiliary verbs (`is`, `are`, `works`), and structural nouns (`folder`, `file`).
 - `stemWord()` strips common English suffixes (`-ing`, `-ed`, `-es`, `-s`) before pack queries.
 - Single-word scanning iterates from right to left (last to first) to prioritize primary subject nouns over leading filler words.
 
-### 3.5 $O(1)$ LRU Cache & Targeted Eviction Engine (`src/common/LRUCache.ts`)
+### 3.6 $O(1)$ LRU Cache & Targeted Eviction Engine (`src/common/LRUCache.ts`)
 - All string, mask Data-URIs, and icon validity lookups are bounded by `LRUCache(2048)` instances (`_normCache`, `_dataUriCache`, `_findPackIconCache`, `_autoIconResultCache`).
 - Uses `Map` delete-and-set key reordering for $O(1)$ amortized get/set/eviction operations.
 - **$O(1)$ Targeted Auto-Icon Eviction (`invalidateAutoIconCache(path)`)**: Directly deletes `path` and `${fileName}::${path}` from `_autoIconResultCache` in $O(1)$ time (< 0.0001ms), eliminating keystroke main-thread stalls, array allocations, and Smooth Cursor animation lag.

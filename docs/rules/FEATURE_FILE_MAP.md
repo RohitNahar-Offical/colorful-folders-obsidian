@@ -15,7 +15,7 @@ Use this to instantly know WHICH file to edit for any task.
 → Edit `src/common/types.ts` (add to `ColorfulFoldersSettings`) + `src/common/constants.ts` (add default) + appropriate section in `src/ui/settings/` (`GeneralSettingSection.ts`, `AISettingSection.ts`, `AdvancedSettingSection.ts`, etc.) and `src/ui/SettingTab.ts`.
 
 ## "I want to change icon resolution rules, auto-download, or SVG Data URIs"
-→ Edit `src/core/IconRepository.ts` (Tiers resolution logic), `src/core/IconPackIndex.ts` (O(1) pack index), `src/core/CategoryTrie.ts` (Trie candidate matching), `src/common/LRUCache.ts` (LRU caches), or `src/core/IconManager.ts` (facade wrapper). Raw & encoded Data-URIs are generated in `IconRepository.ts` and rendered via CSS in `StyleGenerator.ts`.
+→ Edit `src/core/IconRepository.ts` (Tiers resolution logic), `src/core/IconRuleSet.ts` (custom user rule parser, target scoping `folders`/`files`/`all`, priority regex, O(1) exact map, and LRU cache), `src/core/IconPackIndex.ts` (O(1) pack index), `src/core/CategoryTrie.ts` (Trie candidate matching), `src/common/LRUCache.ts` (LRU caches), or `src/core/IconManager.ts` (facade wrapper). Raw & encoded Data-URIs are generated in `IconRepository.ts` and rendered via CSS in `StyleGenerator.ts`.
 
 ## "I want to change Zero-DOM dataset attribute tagging or observers"
 → Edit `src/services/DOMObserverService.ts` (`data-cf-path` attribute tagging). Dataset attribute updates do NOT fire `childList` mutations.

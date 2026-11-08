@@ -457,6 +457,37 @@ const pairedIconColor = customStyle?.iconColor || inheritedStyle?.iconColor || p
 This guarantees that explicit icon selections (custom, inherited, or palette-paired) take top precedence, but uncustomized folders cleanly inherit their assigned palette color (`color.hex`) for all color modes (Hierarchy, Cycle, Monochromatic, Heatmap), with `folderStyles.t` acting solely as the final failsafe.
 **Lesson**: NEVER remove `color.hex` from the icon resolution fallback chain or assume icon color should unilaterally tether to `folderStyles.t`. Keep icon and text color resolution independent so users configuring icon-only visual hierarchies (`colorText: "none"`) retain full palette color generation on folder icons.
 
+---
+
+## Incident #42 — Parent Folder Context Leaking into Custom User Rules (2026-11-08)
+**What was attempted**: Extending custom icon rules with explicit target scoping (`::folders`, `::files`, `::all`) to allow users to assign icons to specific folder or file names via exact strings or regex patterns (e.g. `resource = lucide-folder ::folders`).
+**What broke**:
+When a user defined a rule matching a folder name, every note, file, and subfolder *inside* that folder unexpectedly inherited the rule's icon as well (e.g. `resource/note.md` was rendered with `lucide-folder`), completely hijacking child file icon resolution.
+**Root cause**:
+1. **Contaminated Context Array**: In `IconRepository.ts:getAutoIconData()`, the candidate contexts array (`searchContexts`) originally accumulated:
+   ```typescript
+   const searchContexts = [lName, sanitized, cleanSanitized];
+   if (parentFolder) {
+       searchContexts.push(parentFolder.toLowerCase());
+   }
+   ```
+2. **Context Bleed During Tier 0.8 Evaluation**: When evaluating Tier 0.8 Custom User Rules via `ruleSet.evaluate(searchContexts, isFolder)`, every child file received its parent directory's name as its 4th search context.
+3. If a user rule matched `"resource"` (with `::folders` or without), and a folder was named `"resource"`, child note `resource/meeting.md` passed `searchContexts = ["meeting.md", "meeting", "meeting", "resource"]`. The rule engine matched the 4th context (`"resource"`), erroneously overriding the child note's own icon resolution.
+**Resolution**:
+1. Strictly segregated candidate contexts into two isolated layers:
+   - `itemContexts`: exclusively the item's own name variants `[lName, sanitized, cleanSanitized]`, strictly omitting `parentFolder`.
+   - `searchContexts`: includes `itemContexts` plus `parentFolder.toLowerCase()` (reserved exclusively as a secondary heuristic hint for Tier 2/3 Category Trie classification).
+2. Tier 0.8 Custom Rules now evaluate exclusively against `itemContexts`:
+   ```typescript
+   const customRuleResult = this._ruleSet.evaluate(itemContexts, isFolder);
+   if (customRuleResult) {
+       return { ...customRuleResult, packSource: customRuleResult.packSource || 'custom-rule' };
+   }
+   ```
+3. Added target scoping (`folders`, `files`, `all`) with dual-bucket routing ($O(1)$ exact lookup maps and priority-sorted regex arrays) and dedicated 2048-entry LRU caching inside `IconRuleSet.ts`.
+**Lesson**: User-defined custom rules (both exact matches and regular expressions) must evaluate strictly against the node's own name. Never inject directory ancestry or parent folder names into custom pattern evaluation chains. Directory ancestry should only ever serve as a low-priority classification hint in semantic category fallbacks.
+
+
 
 
 

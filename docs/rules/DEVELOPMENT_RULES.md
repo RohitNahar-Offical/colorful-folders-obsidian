@@ -167,6 +167,9 @@ Never use loose substring inclusion (`includes()`) for pack membership, counting
 **RULE 5.13: Folder Icon Resolution Must Retain `color.hex` Fallback.**
 Never drop `color.hex` from the folder icon resolution chain or couple folder icon colors directly to text colors (`folderStyles.t`). When `colorText` is disabled (`"none"` or `"files"`), `resolveTextColor()` returns `var(--text-normal)` (neutral black/gray). The icon fallback chain must always be `customStyle?.iconColor || inheritedStyle?.iconColor || palettePair?.icon || color.hex || folderStyles.t` so folder icons correctly reflect the active color mode (Hierarchy, Cycle, Monochromatic, Heatmap). *(Incident #41)*
 
+**RULE 5.14: Custom Icon Rules Must Match Item Names Only, Never Parent Folders.**
+Custom user rules (`IconRuleSet`, Tier 0.8) must evaluate strictly against the item's own name contexts (`itemContexts: [lName, sanitized, cleanSanitized]`). Never inject directory ancestry or parent folder names (`parentFolder`) into custom rule evaluation. Directory ancestry is reserved strictly as a secondary heuristic fallback hint for Tier 2/3 Category Trie classification. Injecting parent folder context into custom rules causes child files to inherit rules intended for their parent folders, hijacking their visual icons. *(Incident #42)*
+
 ---
 
 ## 6. CI/CD & Release Pipeline
@@ -230,5 +233,6 @@ While `read` is sufficient for building and attesting, `write` is mandatory for 
 | 5.11 | #39 *(Iconify ViewBox)* |
 | 5.12 | #40 *(Strict Pack Prefix)* |
 | 5.13 | #41 *(Folder Icon Fallback Chain)* |
+| 5.14 | #42 *(Parent Folder Context Leak)* |
 | 6.1 | #11 |
 | 6.2 | #11 |

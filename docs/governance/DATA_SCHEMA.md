@@ -39,7 +39,7 @@ Representing the `data.json` structure. Defined in `src/common/types.ts`.
 | `autoIcons` | `boolean` | Automatically assigns icons based on folder/file names. |
 | `autoIconVariety` | `boolean` | Assigns different icons to items within the same category. |
 | `wideAutoIcons` | `boolean` | Prefers Lucide icons over emojis for automatic assignment. |
-| `customIconRules` | `string` | Simple pattern match string (e.g., `Work = briefcase @200`). |
+| `customIconRules` | `string` | Custom user rule string (`pattern = icon [@priority] [::target]`), where target is `folders`, `files`, or `all` (e.g. `Work = lucide-briefcase @200 ::folders`). Parsed and evaluated via `IconRuleSet`. |
 | `iconScale` | `number` | Multiplier for all folder/file icons. |
 | `customIcons` | `Record<string, string>` | Legacy setting map — kept `{}` in `data.json` (migrated to `.obsidian/plugins/colorful-folders/icons/`). |
 | `iconDebugMode` | `boolean` | Enables debug logging for icon selection logic. |

@@ -190,7 +190,7 @@ flowchart TD
     E -- Folder --> F[Use defaultClosedFolderIcon / defaultOpenFolderIcon]
     E -- File --> G[Use default CF_FILE_TEXT_ICON SVG]
     D -- Yes --> H[Call IconRepository.getAutoIconData name, path]
-    H --> I[Execute 4-Tier Resolution Chain]
+    H --> I[Execute Multi-Tier Resolution Chain]
     I --> J{Icon Match Found?}
     J -- Yes --> K[Use Matched Auto-Icon ID]
     J -- No --> E
@@ -217,32 +217,62 @@ flowchart TD
 
 ---
 
-### 3.2 The 4-Tier Resolution Chain (`IconRepository.ts`)
+### 3.2 The Multi-Tier Resolution Chain (`IconRepository.ts`)
 
 ```mermaid
 graph TD
-    A[getAutoIconData name] --> B[Sanitize: Lowercase & Strip File Extensions]
-    B --> C{Tier 1: Exact Pack Match}
-    C -- Match --> Z1[Return Tier 1: Priority 1800 + packSource]
-    C -- Miss --> D{Tier 2 & 3: Priority CategoryTrie Lookup}
-    D --> E[Collect Candidates for ALL Word Prefixes]
-    E --> F[Evaluate Regex Patterns & Sort by Priority]
-    F -- Match --> Z2[Return Highest Priority Category Match]
-    F -- Miss --> G{Tier 4: Stem-Aware Fuzzy Search}
-    G --> H[Filter Words via STOP_WORDS]
-    H --> I[Strip Suffixes via stemWord]
-    I --> J[Query IconPackIndex Right-to-Left]
-    J -- Match --> Z3[Return Tier 4: Priority 50 + packSource]
-    J -- Miss --> K{Tier 5: Sentence & Concept Palette Hash}
-    K --> Z4[Return Hash-Picked Concept / Sentence Icon]
+    A[getAutoIconData name, path, isFile] --> B{Path is Markdown .md?}
+    B -- Yes --> T0{Tier 0: Frontmatter Icon}
+    T0 -- Found --> Z0[Return Tier 0: Priority 2000]
+    T0 -- None --> T05{Tier 0.5: Tag Sync Match}
+    T05 -- Found --> Z05[Return Tier 0.5: Priority 1900]
+    T05 -- None --> T07
+    B -- No --> T07{Tier 0.7: Non-Markdown Extension}
+    T07 -- Found --> Z07[Return Tier 0.7: Priority 1850]
+    T07 -- None --> T08{Tier 0.8: Custom User Rules IconRuleSet}
+    T08 -- Match on itemContexts --> Z08[Return Tier 0.8: Rule Priority]
+    T08 -- Miss --> T1{Tier 1: Exact Pack Match}
+    T1 -- Match --> Z1[Return Tier 1: Priority 1800 + packSource]
+    T1 -- Miss --> T2{Tier 2 & 3: Priority CategoryTrie Lookup}
+    T2 --> T2A[Collect Candidates on itemContexts + parentFolder]
+    T2A --> T2B[Evaluate Regex Patterns & Sort by Priority]
+    T2B -- Match --> Z2[Return Highest Priority Category Match]
+    T2B -- Miss --> T4{Tier 4: Stem-Aware Fuzzy Search}
+    T4 --> T4A[Filter Words via STOP_WORDS]
+    T4A --> T4B[Strip Suffixes via stemWord]
+    T4B --> T4C[Query IconPackIndex Right-to-Left]
+    T4C -- Match --> Z3[Return Tier 4: Priority 50 + packSource]
+    T4C -- Miss --> T5{Tier 5: Sentence & Concept Palette Hash}
+    T5 --> Z4[Return Hash-Picked Concept / Sentence Icon]
 ```
 
-1. **Tier 1: Exact Pack Match (Priority 1800)**
+1. **Tier 0: Explicit Note Frontmatter (`icon`, `iconId`, `emoji`, `icon-id`) (Priority 2000)**
+   - Scans note frontmatter metadata via Obsidian's `metadataCache.getFileCache(file)`.
+   - Highest automatic precedence: if an author defines `icon: lucide-book` in frontmatter, that icon is displayed instantly with zero regex or fuzzy queries.
+
+2. **Tier 0.5: Tag-Driven Auto-Icon (Priority 1900)**
+   - Strictly gated by user setting `tagSyncEnabled`.
+   - Inspects cached tags in note frontmatter and body.
+   - Matches resolved tags against custom tag rules (`tagSyncRules`) or auto-icon categories, returning the first tag with an assigned icon.
+
+3. **Tier 0.7: File Extension Awareness for Non-Markdown Files (Priority 1850)**
+   - Automatically maps non-markdown extensions (`.pdf`, `.canvas`, `.png`, `.jpg`, `.mp4`, `.zip`, `.ts`, `.js`, `.py`, `.json`, etc.) to clean, appropriate icons.
+   - For example, `.pdf` $\rightarrow$ `lucide-file-text` / `file-type-pdf`, `.canvas` $\rightarrow$ `lucide-layout-dashboard`.
+
+4. **Tier 0.8: Custom User Rules Engine (`IconRuleSet.ts`) (User Priority, Default 100)**
+   - Evaluates user-defined rules (`customIconRules`) configured in the Rule Builder settings.
+   - **Syntax**: `pattern = icon [@priority] [::target]` where target is `folders`, `files`, or `all`.
+   - **Dual-Bucket Routing**: Exact patterns hit $O(1)$ maps (`_folderExact`, `_fileExact`, `_universalExact`); regex patterns evaluate via pre-sorted arrays (`_folderRegex`, `_fileRegex`, `_universalRegex`).
+   - **Scope Isolation (Incident #42)**: Custom rules evaluate strictly against `itemContexts` (`[lName, sanitized, cleanSanitized]`), excluding `parentFolder` so parent folder rules never leak into child files.
+   - **Two-Layer Caching**: Hits are memoized in `IconRuleSet._lookupCache` (2048 entries) and `IconRepository._autoIconResultCache` (4096 entries).
+
+5. **Tier 1: Exact Pack Match (Priority 1800)**
    - Hyphenates the sanitized name (`"my_project.md"` $\rightarrow$ `"my-project"`).
    - Performs $O(1)$ query via `IconPackIndex.findIcon()`. Returns exact matching custom SVG or installed pack icon.
 
-2. **Tier 2 & 3: Custom Regex Rules & Priority-Sorted Category Trie (Priority 1500 & 80–140)**
+6. **Tier 2 & 3: Priority-Sorted Category Trie (Priority 1500 & 80–140)**
    - Queries `CategoryTrie.lookup(lName)` traversing a Node-based Prefix Trie (`TrieNode`) matching tokenized word prefixes.
+   - Supports `parentFolder` as a secondary fallback hint when item name yields no category.
    - All candidate category results are explicitly sorted by descending priority: `results.sort((a, b) => (b.priority || 0) - (a.priority || 0))`.
    - **Whole-Title & Mental Model Categories (Priority 110–140)**: Evaluates high-priority whole-title concept regexes before single-word categories:
      - **Ideation & Brainstorming** (Priority 140): `generate ideas`, `ideation`, `brainstorm` $\rightarrow$ `lightbulb`, `brain`, `sparkles`
@@ -251,13 +281,13 @@ graph TD
      - **Narratives & Philosophy** (Priority 110–115): `quote`, `saying`, `journey`, `wander`, `story`, `agony` $\rightarrow$ `quote`, `compass`, `pen-tool`, `heart`
    - If `autoIconVariety` is enabled, hashes `hashString(name)` against the top matching category's `emojis` / `lucides` array to pick diverse icons.
 
-3. **Tier 4: Stem-Aware Optimized Fuzzy Search (Priority 50)**
+7. **Tier 4: Stem-Aware Optimized Fuzzy Search (Priority 50)**
    - Executes fast-path O(1) query via `IconPackIndex.findIcon()`.
    - Performs length-difference pruning (`Math.abs(lenA - lenB) / maxLen > (1 - threshold)`).
    - Enforces word-boundary / prefix alignment checks to prevent false substring matches (e.g. "cat" inside "communication-category").
    - Calculates Levenshtein distance using a 1D single-row buffer to eliminate 2D array allocations.
 
-4. **Tier 5: Multi-Word Sentence & Concept Palette Fallbacks (Priority 30)**
+8. **Tier 5: Multi-Word Sentence & Concept Palette Fallbacks (Priority 30)**
    - For multi-word file titles (`!isFolder && title.includes(' ') && length > 12`), hashes `hashString(filename)` across a curated **Sentence Palette** (`['compass', 'sparkles', 'lightbulb', 'quote', 'brain', 'pen-tool', 'book-open', 'repeat', 'heart', 'star']`).
    - For single-word file titles without category matches, hashes across a **Concept Palette** (`['sparkles', 'compass', 'pen-tool', 'lightbulb', 'brain', 'star', 'book-open', 'layers']`).
 

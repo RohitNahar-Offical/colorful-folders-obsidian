@@ -43,7 +43,8 @@ This directory contains the primary rendering engine, styling resolution math, i
 | [RainbowManager.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/RainbowManager.ts) | Multi-stop neon rainbow and text gradient generator. Creates theme-aware linear-gradient rules for title text with contrast boosting and bounded `LRUCache(1024)` memoization. | `buildGradientCss()`, `resolveRootSpectrum()`, `resolveCustomStops()` |
 | [DividerManager.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/DividerManager.ts) | Section divider manager. Syncs section divider chips and Markdown hover popovers without modifying physical child tree nodes. | `syncDividers()`, `hasAnyDividers()`, `clean()` |
 | [IconManager.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/IconManager.ts) | Public facade API for the icon engine. Delegates SVG fetching, Data-URI generation, and icon validation to `IconRepository`. | `getAutoIconData()`, `getIconSvg()`, `getDataUri()`, `isValidIcon()`, `preNormalizeIcon()` |
-| [IconRepository.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/IconRepository.ts) | Coordinates the 5-Tier icon resolution engine. Manages 5 bounded LRU caches (`_normCache`, `_dataUriCache`, `_findPackIconCache`, `_autoIconResultCache`, `_iconValidityCache`) for zero-allocation SVG operations. | `getAutoIconData()`, `getIconSvg()`, `isValidIcon()`, `findIconInPacks()` |
+| [IconRepository.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/IconRepository.ts) | Coordinates the multi-tier icon resolution engine. Manages bounded LRU caches (`_normCache`, `_dataUriCache`, `_findPackIconCache`, `_autoIconResultCache`, `_iconValidityCache`) for zero-allocation SVG operations. | `getAutoIconData()`, `getIconSvg()`, `isValidIcon()`, `findIconInPacks()` |
+| [IconRuleSet.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/IconRuleSet.ts) | Dedicated custom user rule engine (SRP). Partitions rules into $O(1)$ exact lookup maps and priority-sorted regex arrays with target scoping (`folders`, `files`, `all`), context isolation (Incident #42), and a dedicated 2048-entry LRU cache. | `parse()`, `evaluate()`, `toAutoIconDataList()`, `parseRule()`, `formatRule()` |
 | [CategoryTrie.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/CategoryTrie.ts) | Node-based Prefix Trie (`TrieNode`) matching tokenized words against character prefix branches. Pre-sorts categories by priority at build time for instant $O(N)$ priority returns. Uses static regular expression tokenization to prevent memory allocation during lookups. | `build()`, `lookup()`, `insertWord()` |
 | [IconPackIndex.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/core/IconPackIndex.ts) | Icon pack registry and search engine. Manages custom & installed packs (Lucide, Simple Icons, Tabler, FontAwesome), breaks ties using `PACK_PRIORITY`, and performs stem-aware 1D Levenshtein fuzzy search. | `registerPack()`, `findIcon()`, `searchFuzzy()` |
 
@@ -136,27 +137,39 @@ Main plugin entrypoint, settings tab, modular setting sections, modals, and cont
 
 ---
 
-## ⚡ 3. The 5-Tier Icon Engine Breakdown
+## ⚡ 3. The Multi-Tier Icon Engine Breakdown
 
-When a note or folder enters the viewport, `IconRepository` resolves its visual icon using a 5-tier resolution chain:
+When a note or folder enters the viewport, `IconRepository` resolves its visual icon using a multi-tier resolution chain:
 
 ```mermaid
 flowchart TD
-    A[Node Render Call] --> T1{Tier 1: Explicit Override or Exact Pack Match}
-    T1 -- Priority 1800 --> B[Return Custom iconId or Exact Pack Icon]
+    A[Node Render Call] --> T0{Tier 0: Note Frontmatter}
+    T0 -- Priority 2000 --> B0[Return Explicit Frontmatter Icon]
+    T0 -- Miss --> T05{Tier 0.5: Tag Sync Match}
+    T05 -- Priority 1900 --> B05[Return Tag-Synced Icon]
+    T05 -- Miss --> T07{Tier 0.7: Non-MD Extension}
+    T07 -- Priority 1850 --> B07[Return File Extension Icon]
+    T07 -- Miss --> T08{Tier 0.8: Custom User Rules IconRuleSet}
+    T08 -- User Priority --> B08[Return Rule Match itemContexts only]
+    T08 -- Miss --> T1{Tier 1: Exact Pack Match}
+    T1 -- Priority 1800 --> B1[Return Exact Pack Icon]
     T1 -- Miss --> T2{Tier 2 & 3: Priority Category Trie}
-    T2 -- Priority 80-140 --> C[Return High-Priority Whole-Title Concept Match]
-    T2 -- Miss --> T3{Tier 4: Stem Fuzzy Search}
-    T3 -- Priority 50 --> D[Return 1D Levenshtein Match]
-    T3 -- Miss --> T4{Tier 5: Concept & Sentence Palette Hash}
-    T4 -- Multi-Word --> E[Return Hash Pick from Sentence Palette]
-    T4 -- Single Word --> F[Return Hash Pick from Concept Palette]
+    T2 -- Priority 80-140 --> C[Return Category Match]
+    T2 -- Miss --> T4{Tier 4: Stem Fuzzy Search}
+    T4 -- Priority 50 --> D[Return 1D Levenshtein Match]
+    T4 -- Miss --> T5{Tier 5: Concept & Sentence Palette Hash}
+    T5 -- Multi-Word --> E[Return Hash Pick from Sentence Palette]
+    T5 -- Single Word --> F[Return Hash Pick from Concept Palette]
 ```
 
-1. **Tier 1: Explicit Custom Override & Exact Pack Match (Priority 1800)**: Lookups against `customFolderColorsMap` or hyphenated pack keys (`"github.md"` $\rightarrow$ `simple-icons-github`).
-2. **Tier 2 & 3: Priority Category Trie (Priority 80–140)**: `CategoryTrie` prefix matching pre-sorted by descending priority score. Evaluates whole-title concepts (*"Trust the process"*, *"Wu wei"*, *"Use it or Lose it"*) before single words.
-3. **Tier 4: Stem-Aware Fuzzy Search (Priority 50)**: 1D single-row Levenshtein distance matching with word-boundary alignment pruning.
-4. **Tier 5: Sentence & Concept Palette Fallbacks (Priority 30)**: Deterministic string hashing picking from curated **Sentence** or **Concept** palettes.
+1. **Tier 0: Note Frontmatter (Priority 2000)**: Checks note frontmatter metadata (`icon:`, `iconId:`, `emoji:`, `icon-id:`) via Obsidian's `metadataCache`.
+2. **Tier 0.5: Tag-Driven Auto-Icon (Priority 1900)**: Gated by `tagSyncEnabled`. Matches note tags against tag sync rules or category definitions.
+3. **Tier 0.7: File Extension Awareness (Priority 1850)**: Maps non-markdown files (`.pdf`, `.canvas`, `.png`, `.ts`, etc.) to dedicated file-type icons.
+4. **Tier 0.8: Custom User Rules (`IconRuleSet.ts`) (User Priority, Default 100)**: Evaluates user-defined rules (`customIconRules`) against `itemContexts` only (omitting `parentFolder` per Incident #42). Routes exact strings to $O(1)$ maps and regexes to priority arrays with scope targeting (`folders`, `files`, `all`).
+5. **Tier 1: Exact Pack Match (Priority 1800)**: Hyphenated pack key lookups (`"github.md"` $\rightarrow$ `simple-icons-github`) via `IconPackIndex`.
+6. **Tier 2 & 3: Priority Category Trie (Priority 80–140)**: Prefix matching in `CategoryTrie` pre-sorted by descending priority. Uses `parentFolder` strictly as a secondary fallback hint.
+7. **Tier 4: Stem-Aware Fuzzy Search (Priority 50)**: 1D single-row Levenshtein distance matching with word-boundary alignment pruning.
+8. **Tier 5: Sentence & Concept Palette Fallbacks (Priority 30)**: Deterministic string hashing picking from curated **Sentence** or **Concept** palettes.
 
 ---
 
