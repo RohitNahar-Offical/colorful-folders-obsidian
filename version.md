@@ -1,38 +1,32 @@
 # Updates for Colorful Folders
 
-## 🚀 5.0.8 — Smarter Icon Rules, Matching Modes & Speed Boost
+## 🚀 5.0.8 — Simple Icon Rules & Flexible Matching Modes
 
-This update makes **Custom Icon Rules** much easier and more flexible to use. You can now choose whether an icon rule applies to **Folders only**, **Files only**, or **Both**, and pick exact matching modes like **Contains**, **Exact match**, **Starts with**, or **Ends with** without writing complicated regex. Folder rules will no longer accidentally spill over to files inside that folder, the Active Rules table features a clean, pixel-perfect layout, folder colors have been restored in Hierarchy mode, and icon matching is faster than ever.
-
----
-
-### 🎯 1. Choose Where Icons Apply — Folders, Files, or Both
-
-* **Full Control Over Rules**: You can now choose exactly where each custom icon appears:
-  - **📁 Folders**: The icon only shows on folders that match your rule.
-  - **📄 Files**: The icon only shows on notes and files that match your rule.
-  - **📁+📄 All**: The icon shows on both folders and files.
-* **Easy One-Click Picker**: Click the scope button next to any rule to open a neat popup menu with folder and file icons to switch between them instantly.
-* **Inline Syntax Support**: Easily type or edit scopes in rule text with the `::target` syntax (e.g. `work = lucide-briefcase @100 ::folders` or `draft = lucide-file-clock ::files`).
-* **Helpful Built-In Guide**: A friendly guide box right below your rules in Settings explains how each option works with clear examples.
+Setting up custom icons for your vault is now simpler and much more intuitive! You can now choose whether an icon applies to **Folders**, **Files**, or **Both**, and pick plain-English matching modes like **Contains**, **Exact match**, **Starts with**, or **Ends with**—no regex needed.
 
 ---
 
-### 🔍 2. Choose How Rules Match — Contains, Exact, Starts With, Ends With & Regex
+### 🎯 1. Target Folders, Notes, or Both
 
-You no longer have to write complex regular expressions just to match an exact word or prefix! Every rule now has a dedicated matching mode selector:
+You can now decide exactly where each icon appears with a single click:
 
-* **🔍 Contains (Default)**: Matches if the name contains the word anywhere.
-  - *Example*: `work` matches `my-work-notes`, `work`, and `homework`.
-* **＝ Exact match**: Matches only when the item name equals the word exactly.
-  - *Example*: `work` matches the `work` folder, but will **not** accidentally match `homework`, `network`, or `workout`.
-* **⇤ Starts with**: Matches notes or folders that begin with that word.
-  - *Example*: `Daily` matches `Daily 2026-11-08` and `Daily Review`. Perfect for daily journals and recurring logs!
-* **⇥ Ends with**: Matches notes or folders that end with that word.
-  - *Example*: `backup` matches `vault-backup` and `system-backup`.
-* **.* Regex pattern**: For advanced power users who want full regular expression control (e.g. `^v\d+` for version folders). Slashed patterns like `/^v\d+/` and flags are automatically handled.
-* **One-Click Dropdown**: Switch matching modes with one click in the Settings table.
-* **Inline Syntax**: You can also write rules with `::mode` directly in text, e.g. `work = lucide-briefcase @100 ::folders ::exact` or combined `::folders:exact`.
+* **📁 Folders**: Shows the icon only on matching folder names.
+* **📄 Files**: Shows the icon only on matching note names.
+* **📁+📄 All**: Applies the icon to both folders and notes.
+
+> **Clean separation**: Setting an icon for a folder will never accidentally change the icons of notes inside it!
+
+---
+
+### 🔍 2. Choose How Names Match (No Regex Required!)
+
+You no longer need to write complex regular expressions to match simple words. Each rule now has a simple dropdown menu:
+
+* **Contains**: Matches if the word appears anywhere in the name (e.g. `meeting` matches `Team Meeting Notes`).
+* **Exact match**: Matches only when the name equals the word exactly (e.g. `Inbox` matches only `Inbox`, not `Archive Inbox`).
+* **Starts with**: Matches names starting with your word (e.g. `Daily` matches `Daily 2026-11-08`—great for daily journals!).
+* **Ends with**: Matches names ending with your word (e.g. `Template` matches `Meeting Template`).
+* **Regex**: For advanced power users who want pattern matching (like dates `^\d{4}-\d{2}-\d{2}` or numbered folders `01 Projects`). A friendly cheat sheet is built right into Settings.
 
 ---
 
