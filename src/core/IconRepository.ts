@@ -12,6 +12,7 @@ export class IconRepository {
 
     /** Compiled custom rule engine (SRP: rule concern isolated to IconRuleSet). */
     private _ruleSet = new IconRuleSet();
+    private _categoryCache: AutoIconData[] | null = null;
     private _categoryTrie = new CategoryTrie();
     private _customRulesKey: string = '';
     private _normCache = new LRUCache<string, string>(1024);
