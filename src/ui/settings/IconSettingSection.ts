@@ -241,6 +241,11 @@ export class IconSettingSection extends SettingSection {
             ul.createEl('li', { text: t('settings.icon_rule.scope_help_folders') });
             ul.createEl('li', { text: t('settings.icon_rule.scope_help_files') });
             ul.createEl('li', { text: t('settings.icon_rule.scope_help_all') });
+            ul.createEl('li', { text: t('settings.icon_rule.mode_help_contains') });
+            ul.createEl('li', { text: t('settings.icon_rule.mode_help_exact') });
+            ul.createEl('li', { text: t('settings.icon_rule.mode_help_starts') });
+            ul.createEl('li', { text: t('settings.icon_rule.mode_help_ends') });
+            ul.createEl('li', { text: t('settings.icon_rule.mode_help_regex') });
 
             const note = scopeHelp.createDiv({ text: t('settings.icon_rule.scope_help_note') });
             note.setCssStyles({ marginTop: '6px', fontStyle: 'italic', fontSize: '0.9em', color: 'var(--text-accent)' });
@@ -281,6 +286,7 @@ export class IconSettingSection extends SettingSection {
                     const pattern = parsed.pattern;
                     let icon = parsed.icon;
                     let target = parsed.target;
+                    let mode = parsed.mode;
 
                     // Scope selector button using native Lucide icons
                     const scopeBtn = row.createEl('button', { cls: 'cf-scope-btn' });
@@ -361,6 +367,118 @@ export class IconSettingSection extends SettingSection {
                         menu.showAtMouseEvent(e);
                     };
 
+                    // Matching Mode selector button using native Lucide icons
+                    const modeBtn = row.createEl('button', { cls: 'cf-mode-btn' });
+                    modeBtn.title = t("settings.icon_rule.mode_tooltip");
+                    modeBtn.setCssStyles({
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '4px 8px',
+                        fontSize: '0.85em',
+                        borderRadius: '6px',
+                        background: 'var(--background-secondary-alt)',
+                        color: 'var(--text-normal)',
+                        border: '1px solid var(--background-modifier-border)',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap'
+                    });
+
+                    const updateModeVisuals = () => {
+                        modeBtn.empty();
+                        const iconSpan = modeBtn.createSpan();
+                        iconSpan.setCssStyles({ display: 'inline-flex', alignItems: 'center' });
+                        let lucideName = 'search';
+                        let labelText = t("settings.icon_rule.mode.contains");
+
+                        if (mode === 'exact') {
+                            lucideName = 'equal';
+                            labelText = t("settings.icon_rule.mode.exact");
+                        } else if (mode === 'starts_with') {
+                            lucideName = 'align-left';
+                            labelText = t("settings.icon_rule.mode.starts_with");
+                        } else if (mode === 'ends_with') {
+                            lucideName = 'align-right';
+                            labelText = t("settings.icon_rule.mode.ends_with");
+                        } else if (mode === 'regex') {
+                            lucideName = 'code';
+                            labelText = t("settings.icon_rule.mode.regex");
+                        }
+
+                        obsidian.setIcon(iconSpan, lucideName);
+                        const svgEl = iconSpan.querySelector('svg');
+                        if (svgEl) {
+                            (svgEl as unknown as HTMLElement).setCssStyles({ width: '14px', height: '14px', color: 'var(--text-accent)' });
+                        }
+
+                        modeBtn.createSpan({ text: labelText });
+
+                        const chev = modeBtn.createSpan();
+                        chev.setCssStyles({ display: 'inline-flex', alignItems: 'center', opacity: '0.6' });
+                        obsidian.setIcon(chev, 'chevron-down');
+                        const chevSvg = chev.querySelector('svg');
+                        if (chevSvg) {
+                            (chevSvg as unknown as HTMLElement).setCssStyles({ width: '12px', height: '12px' });
+                        }
+                    };
+                    updateModeVisuals();
+
+                    modeBtn.onclick = (e: MouseEvent) => {
+                        e.preventDefault();
+                        const menu = new obsidian.Menu();
+                        menu.addItem(item => {
+                            item.setTitle(t("settings.icon_rule.mode.contains"))
+                                .setIcon("search")
+                                .setChecked(mode === 'contains')
+                                .onClick(() => {
+                                    mode = 'contains';
+                                    updateModeVisuals();
+                                    updateRule();
+                                });
+                        });
+                        menu.addItem(item => {
+                            item.setTitle(t("settings.icon_rule.mode.exact"))
+                                .setIcon("equal")
+                                .setChecked(mode === 'exact')
+                                .onClick(() => {
+                                    mode = 'exact';
+                                    updateModeVisuals();
+                                    updateRule();
+                                });
+                        });
+                        menu.addItem(item => {
+                            item.setTitle(t("settings.icon_rule.mode.starts_with"))
+                                .setIcon("align-left")
+                                .setChecked(mode === 'starts_with')
+                                .onClick(() => {
+                                    mode = 'starts_with';
+                                    updateModeVisuals();
+                                    updateRule();
+                                });
+                        });
+                        menu.addItem(item => {
+                            item.setTitle(t("settings.icon_rule.mode.ends_with"))
+                                .setIcon("align-right")
+                                .setChecked(mode === 'ends_with')
+                                .onClick(() => {
+                                    mode = 'ends_with';
+                                    updateModeVisuals();
+                                    updateRule();
+                                });
+                        });
+                        menu.addItem(item => {
+                            item.setTitle(t("settings.icon_rule.mode.regex"))
+                                .setIcon("code")
+                                .setChecked(mode === 'regex')
+                                .onClick(() => {
+                                    mode = 'regex';
+                                    updateModeVisuals();
+                                    updateRule();
+                                });
+                        });
+                        menu.showAtMouseEvent(e);
+                    };
+
                     const patInp = row.createEl('input', { type: 'text', placeholder: t("common.regex_name_placeholder") });
                     patInp.value = pattern;
                     patInp.setCssStyles({ flex: '2', fontFamily: 'var(--font-monospace)' });
@@ -411,7 +529,7 @@ export class IconSettingSection extends SettingSection {
                     prioInp.setCssStyles({ width: '70px' });
 
                     const updateRule = () => {
-                        const formatted = IconRuleSet.formatRule(patInp.value, icon, prioInp.value, target);
+                        const formatted = IconRuleSet.formatRule(patInp.value, icon, prioInp.value, target, mode);
                         if (formatted) {
                             rules[index] = formatted;
                             void saveRules();
@@ -442,7 +560,7 @@ export class IconSettingSection extends SettingSection {
                 }
 
                 addBtn.onclick = () => {
-                    rules.push("New_Rule = lucide-sparkles @100");
+                    rules.push("New_Rule = lucide-sparkles @100 ::all ::contains");
                     void saveRules().then(() => renderRulesUI());
                 };
             };

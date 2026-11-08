@@ -3,21 +3,25 @@ import { LRUCache } from '../common/LRUCache';
 
 /**
  * IconRuleSet — SRP module that owns ALL custom icon rule compilation,
- * storage, LRU caching, and scoped lookup.
+ * storage, LRU caching, and scoped lookup with operator matching modes.
  *
  * Extracted from IconRepository so that rule-management concerns are
  * fully separate from icon-resolution concerns.
  *
  * Rule serialization (backward-compatible):
- *   pattern = icon [@priority] [::target]
+ *   pattern = icon [@priority] [::target] [::mode]
  *
  *   target  = "folders" | "files" | "all"  (default: "all")
+ *   mode    = "contains" | "exact" | "starts_with" | "ends_with" | "regex"
  *
  * @module IconRuleSet
  */
 
 /** Which node types a rule applies to. */
 export type RuleTarget = 'all' | 'folders' | 'files';
+
+/** How the pattern is matched against candidate item names. */
+export type RuleMode = 'contains' | 'exact' | 'starts_with' | 'ends_with' | 'regex';
 
 /** Structured components of a parsed raw rule line. */
 export interface ParsedRuleParts {
@@ -26,11 +30,12 @@ export interface ParsedRuleParts {
     priority: string;
     priorityNum: number;
     target: RuleTarget;
+    mode: RuleMode;
 }
 
 /** A compiled, bucket-ready icon rule. */
 export interface CompiledRule {
-    /** The compiled regex used for matching. */
+    /** The compiled regex used for matching (or external consumer fallback). */
     rex: RegExp;
     /** Emoji / icon string (fallback). */
     emoji: string;
@@ -42,10 +47,18 @@ export interface CompiledRule {
     isCustom: boolean;
     /** Scope: folders-only, files-only, or both. */
     target: RuleTarget;
-    /** true = plain-word (stored in O(1) Map); false = regex (stored in array). */
-    isExact: boolean;
-    /** Lower-case normalized key used as the Map key (only when isExact = true). */
-    exactKey?: string;
+    /** Operator mode: contains, exact, starts_with, ends_with, regex. */
+    mode: RuleMode;
+    /** Original pattern string. */
+    pattern: string;
+    /** Lowercase normalized pattern string for native fast-path comparisons. */
+    patternLower: string;
+    /** Backward compatibility helper for CategoryTrie target scoping. */
+    targetScope?: RuleTarget;
+}
+
+function escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**
@@ -53,7 +66,8 @@ export interface CompiledRule {
  *
  * - O(1) LRU lookup cache for instant repeated context matches (10x-50x speedup in deep vaults).
  * - O(1) exact-match Maps partitioned by target scope (folders, files, all).
- * - Priority-sorted regex arrays scanned only when exact lookup misses.
+ * - Native string operators (startsWith, endsWith, includes, ===) avoiding expensive regex backtracking.
+ * - Priority-sorted candidate evaluation guaranteeing the highest priority winner.
  * - Strict type-scoping ensures folder rules never evaluate against files and vice-versa.
  */
 export class IconRuleSet {
@@ -64,20 +78,61 @@ export class IconRuleSet {
      * Shared by both the engine compiler and the settings UI.
      */
     static parseRule(line: string): ParsedRuleParts {
-        let pattern = '', icon = '', priority = '', target: RuleTarget = 'all';
+        let pattern = '', icon = '', priority = '';
+        let target: RuleTarget = 'all';
+        let mode: RuleMode = 'contains';
+        let hasExplicitMode = false;
+
         const eqIdx = line.indexOf('=');
 
         if (eqIdx >= 0) {
             pattern = line.slice(0, eqIdx).trim();
             let secondHalf = line.slice(eqIdx + 1).trim();
 
-            // Extract optional ::target suffix
-            const scopeMatch = secondHalf.match(/::(\w+)\s*$/);
-            if (scopeMatch) {
-                const raw = scopeMatch[1].toLowerCase();
-                if (raw === 'folders' || raw === 'folder') target = 'folders';
-                else if (raw === 'files' || raw === 'file') target = 'files';
-                else target = 'all';
+            // Extract all trailing ::token suffixes (e.g. ::folders, ::contains, ::exact)
+            while (true) {
+                // Check for combined ::target:mode token (e.g. ::folders:exact)
+                const combinedMatch = secondHalf.match(/::([\w-]+):([\w-]+)\s*$/);
+                if (combinedMatch) {
+                    [combinedMatch[1].toLowerCase(), combinedMatch[2].toLowerCase()].forEach(token => {
+                        if (token === 'folders' || token === 'folder') target = 'folders';
+                        else if (token === 'files' || token === 'file') target = 'files';
+                        else if (token === 'all') target = 'all';
+                        else if (token === 'exact') { mode = 'exact'; hasExplicitMode = true; }
+                        else if (token === 'contains' || token === 'contain') { mode = 'contains'; hasExplicitMode = true; }
+                        else if (token === 'starts_with' || token === 'startswith' || token === 'starts' || token === 'begins_with' || token === 'begins' || token === 'start') { mode = 'starts_with'; hasExplicitMode = true; }
+                        else if (token === 'ends_with' || token === 'endswith' || token === 'ends' || token === 'end') { mode = 'ends_with'; hasExplicitMode = true; }
+                        else if (token === 'regex' || token === 'regexp') { mode = 'regex'; hasExplicitMode = true; }
+                    });
+                    secondHalf = secondHalf.slice(0, secondHalf.length - combinedMatch[0].length).trim();
+                    continue;
+                }
+
+                const scopeMatch = secondHalf.match(/::([\w-]+)\s*$/);
+                if (!scopeMatch) break;
+                const token = scopeMatch[1].toLowerCase();
+                if (token === 'folders' || token === 'folder') {
+                    target = 'folders';
+                } else if (token === 'files' || token === 'file') {
+                    target = 'files';
+                } else if (token === 'all') {
+                    target = 'all';
+                } else if (token === 'exact') {
+                    mode = 'exact';
+                    hasExplicitMode = true;
+                } else if (token === 'contains' || token === 'contain') {
+                    mode = 'contains';
+                    hasExplicitMode = true;
+                } else if (token === 'starts_with' || token === 'startswith' || token === 'starts' || token === 'begins_with' || token === 'begins' || token === 'start') {
+                    mode = 'starts_with';
+                    hasExplicitMode = true;
+                } else if (token === 'ends_with' || token === 'endswith' || token === 'ends' || token === 'end') {
+                    mode = 'ends_with';
+                    hasExplicitMode = true;
+                } else if (token === 'regex' || token === 'regexp') {
+                    mode = 'regex';
+                    hasExplicitMode = true;
+                }
                 secondHalf = secondHalf.slice(0, secondHalf.length - scopeMatch[0].length).trim();
             }
 
@@ -92,17 +147,26 @@ export class IconRuleSet {
             pattern = line.trim();
         }
 
+        // Automatic fallback for legacy rules without explicit mode:
+        if (!hasExplicitMode) {
+            if (/[.*+?^${}()|[\]\\]/.test(pattern)) {
+                mode = 'regex';
+            } else {
+                mode = 'contains';
+            }
+        }
+
         const parsedNum = parseInt(priority);
         const priorityNum = !isNaN(parsedNum) ? parsedNum : 1500;
 
-        return { pattern, icon, priority, priorityNum, target };
+        return { pattern, icon, priority, priorityNum, target, mode };
     }
 
     /**
      * Format components back into a serialized rule line.
      * Shared by both the engine and settings UI.
      */
-    static formatRule(pattern: string, icon: string, priority?: string | number, target?: RuleTarget): string {
+    static formatRule(pattern: string, icon: string, priority?: string | number, target?: RuleTarget, mode?: RuleMode): string {
         const p = pattern.trim();
         const ic = icon.trim();
         if (!p || !ic) return '';
@@ -116,7 +180,9 @@ export class IconRuleSet {
             }
         }
 
-        const scopePart = target && target !== 'all' ? ` ::${target}` : '';
+        const tgt = target || 'all';
+        const md = mode || 'contains';
+        const scopePart = ` ::${tgt} ::${md}`;
         return `${p} = ${ic}${prPart}${scopePart}`;
     }
 
@@ -125,16 +191,13 @@ export class IconRuleSet {
     private _fileExact      = new Map<string, CompiledRule>();
     private _universalExact = new Map<string, CompiledRule>();
 
-    // ── Regex arrays (sorted by priority desc) ─────────────────────────────
-    private _folderRegex:    CompiledRule[] = [];
-    private _fileRegex:      CompiledRule[] = [];
-    private _universalRegex: CompiledRule[] = [];
+    // ── Priority-sorted rule candidate lists ──────────────────────────────
+    private _folderRules:    CompiledRule[] = [];
+    private _fileRules:      CompiledRule[] = [];
+    private _allRules:       CompiledRule[] = [];
 
     // ── High-speed LRU lookup cache ────────────────────────────────────────
     private _lookupCache = new LRUCache<string, CompiledRule | null>(2048);
-
-    /** All successfully compiled rules in priority descending order. */
-    private _allRules: CompiledRule[] = [];
 
     /** Total number of rules successfully compiled. */
     private _size = 0;
@@ -151,15 +214,14 @@ export class IconRuleSet {
      * @param rawRules  Newline-delimited string of rules.
      */
     build(rawRules: string): void {
+        this._folderRules    = [];
+        this._fileRules      = [];
+        this._allRules       = [];
         this._folderExact.clear();
         this._fileExact.clear();
         this._universalExact.clear();
-        this._folderRegex    = [];
-        this._fileRegex      = [];
-        this._universalRegex = [];
-        this._allRules       = [];
         this._lookupCache.clear();
-        this._size           = 0;
+        this._size = 0;
 
         if (!rawRules) return;
 
@@ -175,12 +237,29 @@ export class IconRuleSet {
             }
         }
 
-        // Sort rules by priority descending so higher priority routes first
+        // Sort rules by priority descending so higher priority evaluates first
         parsed.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
         for (const rule of parsed) {
-            this._route(rule);
             this._allRules.push(rule);
+            if (rule.target === 'folders' || rule.target === 'all') {
+                this._folderRules.push(rule);
+            }
+            if (rule.target === 'files' || rule.target === 'all') {
+                this._fileRules.push(rule);
+            }
+
+            if (rule.mode === 'exact') {
+                const key = rule.patternLower;
+                const targetMap = rule.target === 'folders'
+                    ? this._folderExact
+                    : (rule.target === 'files' ? this._fileExact : this._universalExact);
+                const existing = targetMap.get(key);
+                if (!existing || rule.priority > existing.priority) {
+                    targetMap.set(key, rule);
+                }
+            }
+
             this._size++;
         }
     }
@@ -190,7 +269,7 @@ export class IconRuleSet {
      *
      * Cached via high-speed LRU cache for O(1) repeated queries.
      *
-     * @param contexts  Array of name variants to test (e.g. [lName, sanitized]).
+     * @param contexts  Array of name variants to test (e.g. [lName, sanitized, cleanSanitized]).
      * @param isFile    true = file node; false = folder node; undefined = unknown (try all).
      * @returns  The winning CompiledRule or null.
      */
@@ -205,17 +284,52 @@ export class IconRuleSet {
             return cached;
         }
 
-        // ── Fast Path A: O(1) exact + token matches with priority comparison
-        const hit = this._exactLookup(contexts, isFile);
-        if (hit) {
-            this._lookupCache.set(cacheKey, hit);
-            return hit;
+        const candidateRules = isFile === true
+            ? this._fileRules
+            : (isFile === false ? this._folderRules : this._allRules);
+
+        if (candidateRules.length === 0) {
+            this._lookupCache.set(cacheKey, null);
+            return null;
         }
 
-        // ── Fast Path B: Regex scan (only the relevant buckets) ───────────
-        const regexHit = this._regexLookup(contexts, isFile);
-        this._lookupCache.set(cacheKey, regexHit);
-        return regexHit;
+        // ── Fast Path A: O(1) exact map check if exact rule is top priority ──
+        const exactHit = this._exactLookup(contexts, isFile);
+        if (exactHit && exactHit.priority >= candidateRules[0].priority) {
+            this._lookupCache.set(cacheKey, exactHit);
+            return exactHit;
+        }
+
+        // ── Fast Path B: Linear prioritized scan with native string operators ──
+        for (let i = 0; i < candidateRules.length; i++) {
+            const rule = candidateRules[i];
+            const mode = rule.mode;
+            const key = rule.patternLower;
+            let matched = false;
+
+            for (let j = 0; j < contexts.length; j++) {
+                const ctx = contexts[j];
+                if (mode === 'exact') {
+                    if (ctx === key) { matched = true; break; }
+                } else if (mode === 'contains') {
+                    if (ctx.includes(key)) { matched = true; break; }
+                } else if (mode === 'starts_with') {
+                    if (ctx.startsWith(key)) { matched = true; break; }
+                } else if (mode === 'ends_with') {
+                    if (ctx.endsWith(key)) { matched = true; break; }
+                } else if (mode === 'regex') {
+                    if (rule.rex.test(ctx)) { matched = true; break; }
+                }
+            }
+
+            if (matched) {
+                this._lookupCache.set(cacheKey, rule);
+                return rule;
+            }
+        }
+
+        this._lookupCache.set(cacheKey, null);
+        return null;
     }
 
     /**
@@ -240,118 +354,65 @@ export class IconRuleSet {
         const parsed = IconRuleSet.parseRule(line);
         if (!parsed.pattern || !parsed.icon) return null;
 
-        // Prevent ReDoS from excessively long or pathological regex patterns
+        // Prevent ReDoS from excessively long patterns
         if (parsed.pattern.length > 256) {
             console.warn('Colorful Folders: Pattern exceeds safe length limit of 256 characters:', parsed.pattern);
             return null;
         }
 
-        const hasRegexMeta = /[.*+?^${}()|[\]\\]/.test(parsed.pattern);
+        const patternLower = parsed.pattern.toLowerCase().trim();
         let rex: RegExp;
-        let isExact = false;
-        let exactKey: string | undefined;
 
         try {
-            if (!hasRegexMeta) {
-                isExact  = true;
-                exactKey = parsed.pattern.toLowerCase().trim();
-                rex      = new RegExp(`^${parsed.pattern}$|\\b${parsed.pattern}\\b|${parsed.pattern}`, 'i');
-            } else {
+            if (parsed.mode === 'regex') {
                 rex = new RegExp(parsed.pattern, 'i');
+            } else if (parsed.mode === 'exact') {
+                rex = new RegExp(`^${escapeRegex(parsed.pattern)}$`, 'i');
+            } else if (parsed.mode === 'starts_with') {
+                rex = new RegExp(`^${escapeRegex(parsed.pattern)}`, 'i');
+            } else if (parsed.mode === 'ends_with') {
+                rex = new RegExp(`${escapeRegex(parsed.pattern)}$`, 'i');
+            } else {
+                // contains
+                rex = new RegExp(escapeRegex(parsed.pattern), 'i');
             }
         } catch (regErr) {
-            console.warn('Colorful Folders: Invalid regex syntax in custom rule:', parsed.pattern, regErr);
+            console.warn('Colorful Folders: Invalid regex or pattern in custom rule:', parsed.pattern, regErr);
             return null;
         }
 
         return {
             rex,
-            emoji:    parsed.icon,
-            lucide:   parsed.icon,
-            priority: parsed.priorityNum,
-            isCustom: true,
-            target:   parsed.target,
-            isExact,
-            exactKey
+            emoji:        parsed.icon,
+            lucide:       parsed.icon,
+            priority:     parsed.priorityNum,
+            isCustom:     true,
+            target:       parsed.target,
+            mode:         parsed.mode,
+            pattern:      parsed.pattern,
+            patternLower,
+            targetScope:  parsed.target
         };
     }
 
-    /** Route a compiled rule into the correct bucket(s). */
-    private _route(rule: CompiledRule): void {
-        if (rule.isExact && rule.exactKey) {
-            const key = rule.exactKey;
-            const targetMap = rule.target === 'folders'
-                ? this._folderExact
-                : (rule.target === 'files' ? this._fileExact : this._universalExact);
-
-            const existing = targetMap.get(key);
-            if (!existing || rule.priority > existing.priority) {
-                targetMap.set(key, rule);
-            }
-        } else {
-            if (rule.target === 'folders') {
-                this._folderRegex.push(rule);
-            } else if (rule.target === 'files') {
-                this._fileRegex.push(rule);
-            } else {
-                this._universalRegex.push(rule);
-            }
-        }
-    }
-
     /**
-     * O(1) exact + token-level lookup across the relevant Maps.
-     * Evaluates all matching maps and guarantees the highest-priority rule wins.
+     * O(1) exact map lookup across the relevant Maps.
      */
     private _exactLookup(contexts: string[], isFile?: boolean): CompiledRule | null {
         const maps = this._mapsForType(isFile);
         if (maps.every(m => m.size === 0)) return null;
 
-        // 1. Direct context hit — pick the highest priority among all matching maps
-        for (const ctx of contexts) {
-            let bestHit: CompiledRule | null = null;
-            for (const map of maps) {
-                const hit = map.get(ctx);
+        let bestHit: CompiledRule | null = null;
+        for (let i = 0; i < contexts.length; i++) {
+            const ctx = contexts[i];
+            for (let j = 0; j < maps.length; j++) {
+                const hit = maps[j].get(ctx);
                 if (hit && (!bestHit || hit.priority > bestHit.priority)) {
                     bestHit = hit;
                 }
             }
-            if (bestHit) return bestHit;
         }
-
-        // 2. Word-token hit without Set allocation overhead
-        let bestTokenHit: CompiledRule | null = null;
-        for (const ctx of contexts) {
-            const words = ctx.split(/[^\p{L}\p{N}]+/gu);
-            for (const w of words) {
-                if (w.length >= 1) {
-                    for (const map of maps) {
-                        const hit = map.get(w);
-                        if (hit && (!bestTokenHit || hit.priority > bestTokenHit.priority)) {
-                            bestTokenHit = hit;
-                        }
-                    }
-                }
-            }
-        }
-        if (bestTokenHit) return bestTokenHit;
-
-        return null;
-    }
-
-    /** Regex scan across the relevant arrays (already sorted by priority desc). */
-    private _regexLookup(contexts: string[], isFile?: boolean): CompiledRule | null {
-        const arrays = this._arraysForType(isFile);
-        if (arrays.every(a => a.length === 0)) return null;
-
-        for (const ctx of contexts) {
-            for (const arr of arrays) {
-                for (const rule of arr) {
-                    if (rule.rex.test(ctx)) return rule;
-                }
-            }
-        }
-        return null;
+        return bestHit;
     }
 
     /**
@@ -364,12 +425,5 @@ export class IconRuleSet {
         if (isFile === true)  return [this._fileExact,   this._universalExact];
         if (isFile === false) return [this._folderExact, this._universalExact];
         return [this._folderExact, this._fileExact, this._universalExact];
-    }
-
-    /** Same logic for regex arrays. */
-    private _arraysForType(isFile?: boolean): CompiledRule[][] {
-        if (isFile === true)  return [this._fileRegex,   this._universalRegex];
-        if (isFile === false) return [this._folderRegex, this._universalRegex];
-        return [this._folderRegex, this._fileRegex, this._universalRegex];
     }
 }
