@@ -46,59 +46,15 @@ This update introduces a major overhaul of the **Custom Icon Rules** system, giv
 
 ---
 
-## 🚀 5.0.7 — Smart Contrast, Palette Precision & Customizable Heatmaps
-
-This update introduces a new **Auto contrast** section that lets your themes automatically pick readable text and icon colors, a redesigned **Custom colors** palette table with live previews and drag-to-reorder, and **editable heatmap age limits** so you control exactly how long a note stays a certain color. It also adds new row layout controls for Notebook Navigator and publishes extra information for theme makers.
-
----
-
-### 🎨 1. Auto Contrast — Readable Text & Icons, Automatically
-
-* **Automatic Readability**: When turned on, the plugin shifts folder colors so the text and icons always stand out against the background — no more squinting at low-contrast combinations.
-* **Four Easy Controls**: A master switch lets you turn auto contrast on or off. Three sliders fine-tune it: how far colors shift, whether colors that run out of room snap to pure white or black, and how close to white or black a color has to be before snapping.
-* **Per-Color Auto Toggle**: Each color in your palette has its own Auto checkbox. Turn it off for a specific color to pin its text and icon exactly where you want them.
-* **Theme-Friendly**: The plugin now tells your active theme what contrast state it is in, so your theme can apply its own styling rules instead of the plugin guessing.
-
-### 🖌️ 2. Custom Colors — A Smarter, More Flexible Palette Table
-
-* **Live Color Previews**: See the exact text and icon color the plugin will use for each palette color, updated in real time as you adjust things.
-* **Drag to Reorder**: Reorder your custom palette colors by dragging them up or down.
-* **Delete Any Color**: Remove a color from your custom palette with a single click.
-* **Per-Color Auto Checkbox**: Each row has its own Auto toggle, so you can mix automatic and hand-picked colors in the same palette.
-* **Cleaner Layout**: The palette table and its description now live together in one neatly framed group, spaced nicely from the rest of your settings.
-
-### 🌡️ 3. Heatmap Age Limits — You Control the Clock
-
-* **Editable Age Bands**: In Heatmap mode, folders change color based on how recently their contents were edited. You can now type in your own five age limits (in days) instead of using the defaults.s
-* **Applies to Every Palette**: Your custom age limits work across all palettes, not just the built-in ones.
-* **Palette Age Column**: The palette table now shows an Age column that reflects the color generation mode you have selected, so everything stays in sync.
-
-### 🧩 4. Notebook Navigator Row Layout Controls
-
-* **Accent Border Width**: Adjust the colored left border on Notebook Navigator rows, or turn it off entirely.
-* **Row Spacing**: Change the gap between rows in the Notebook Navigator list for a more compact or more spacious look.
-* **Text Weight**: Make folder names in Notebook Navigator appear bolder or lighter to match your taste.
-* **Border Radius**: Notebook Navigator rows now follow your chosen corner radius setting.
-
-### 🔧 5. Behind the Scenes Improvements
-
-* **Subfolder Opacity Published**: Themes can now read the subfolder opacity setting, so they can judge text contrast against what is actually painted on nested folder rows.
-* **Per-Row Background Alpha**: Each colored row now reports how transparent its background is, giving themes an even better picture of what is on screen.
-* **Hand-Picked Color Detection**: When you manually choose a text or icon color for a folder, the plugin now tells themes to stand back and let your choice win, instead of fighting it.
-* **All Languages Updated**: Every setting label and description has been translated into all supported languages.
- 
-> *Note: This update includes contributions by **Retron** ([@retronified](https://github.com/retronified) on GitHub), with additional modifications and refinements by Rohit Nahar. Thank you, Retron, for your valuable contributions!*
-
----
-
 # ✨ Core Features
 
 ### 🎨 Vivid Color & Visual Hierarchy
 
 * **Color-Coding Hierarchy:** Automatically assigns beautiful, distinct colors to top-level and nested folders.
-* **Auto Contrast Engine:** Dynamically calculates WCAG-compliant text and icon colors with custom shift steps and snap tolerance thresholds.
-* **Palette Text & Icon Pairing:** Customize text and icon pairings for each palette hex color with live preview and drag-to-reorder table UI.
-* **Editable Heatmap Age Bands:** Fine-tune 5 custom day thresholds for heatmap mode with $O(\log K)$ zero-allocation binary search.
+* **Auto Contrast Engine:** Dynamically calculates WCAG-compliant text and icon colors with custom shift steps and snap tolerance thresholds, ensuring optimal readability against any theme background while notifying active themes of contrast state.
+* **Per-Color Auto Toggle:** Master auto contrast switch with individual Auto checkboxes per palette color, allowing you to mix automatic contrast with hand-pinned custom text and icon pairs.
+* **Interactive Palette Table:** Modern palette configuration table featuring live previews of text and icon colors, drag-and-drop reordering, and one-click color deletion.
+* **Customizable Heatmap Age Limits:** In Heatmap mode, configure custom age limit bands (in days) instead of relying on defaults. Applies across all palettes with synchronized table age columns and zero-heap $O(\log K)$ binary search.
 * **Visual Wayfinding:** Glowing connector lines create a clear "breadcrumb trail" to your currently active file.
 * **Smart Rainbow Logic & Text:** Cycle files through your palette, enable custom rainbow text gradients on individual items, or use the **Adaptive Heatmap** to sync colors.
 * **Curated Palettes:** Premium built-in palettes (including Tailwind UI, Tailwind UI Dark, Cyberpunk, Nord, and Pastel).
@@ -138,6 +94,7 @@ This update introduces a new **Auto contrast** section that lets your themes aut
 * **Outline & Heading Sync:** Match the Outline Pane table of contents and in-note headings (H1–H6) to your active color palette with glow highlights.
 * **Graph View Sync:** Folder colors sync directly into Obsidian's built-in Graph View as color groups.
 * **Notebook Navigator Integration:** Cleanly isolated selector styles and virtual container exclusions ensure zero cold-start loading clashes with Notebook Navigator.
+* **Notebook Navigator Row Layout Controls:** Customize colored accent border widths, row spacing gaps, text font weight, and corner border-radius directly for Notebook Navigator rows.
 
 ### 🕵️ Stealth & Privacy Engine
 
@@ -148,6 +105,8 @@ This update introduces a new **Auto contrast** section that lets your themes aut
 ### 🛡️ Stability & Performance Engine
 
 * **Zero-DOM Engine:** High-performance `adoptedStyleSheets` engine with zero GPU lag, even in 10,000+ note vaults.
+* **Theme-Friendly CSS Variables:** Publishes `--cf-color`, `--cf-subfolder-opacity`, `--cf-bg-alpha`, and manual override states (`--cf-has-custom-text`, `--cf-has-custom-icon`) so community themes can inspect runtime styling and contrast without guesswork.
+* **Multilingual Localization:** All settings, tooltips, and helper guides are fully translated across 8 languages (English, German, Spanish, French, Japanese, Slovak, Simplified Chinese, Traditional Chinese).
 * **Security Hardened:** Fully sanitized SVG DOM parsing and escaped CSS attribute selectors for maximum vault safety.
 * **Cross-Platform:** Flawless performance across Windows, macOS, Linux, Android, and iOS.
 * **Strict Network Privacy:** 100% private offline styling engine with zero user data transmission.
