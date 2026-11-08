@@ -19,6 +19,15 @@ import { LRUCache } from '../common/LRUCache';
 /** Which node types a rule applies to. */
 export type RuleTarget = 'all' | 'folders' | 'files';
 
+/** Structured components of a parsed raw rule line. */
+export interface ParsedRuleParts {
+    pattern: string;
+    icon: string;
+    priority: string;
+    priorityNum: number;
+    target: RuleTarget;
+}
+
 /** A compiled, bucket-ready icon rule. */
 export interface CompiledRule {
     /** The compiled regex used for matching. */
@@ -48,6 +57,69 @@ export interface CompiledRule {
  * - Strict type-scoping ensures folder rules never evaluate against files and vice-versa.
  */
 export class IconRuleSet {
+    // ── Static Shared Parsers & Formatters (DRY Single Source of Truth) ─────
+
+    /**
+     * Parse a single rule line into its structured components.
+     * Shared by both the engine compiler and the settings UI.
+     */
+    static parseRule(line: string): ParsedRuleParts {
+        let pattern = '', icon = '', priority = '', target: RuleTarget = 'all';
+        const eqIdx = line.indexOf('=');
+
+        if (eqIdx >= 0) {
+            pattern = line.slice(0, eqIdx).trim();
+            let secondHalf = line.slice(eqIdx + 1).trim();
+
+            // Extract optional ::target suffix
+            const scopeMatch = secondHalf.match(/::(\w+)\s*$/);
+            if (scopeMatch) {
+                const raw = scopeMatch[1].toLowerCase();
+                if (raw === 'folders' || raw === 'folder') target = 'folders';
+                else if (raw === 'files' || raw === 'file') target = 'files';
+                else target = 'all';
+                secondHalf = secondHalf.slice(0, secondHalf.length - scopeMatch[0].length).trim();
+            }
+
+            // Extract optional @priority suffix
+            if (secondHalf.includes('@')) {
+                const prioParts = secondHalf.split('@');
+                secondHalf = prioParts[0].trim();
+                priority = prioParts[1].trim();
+            }
+            icon = secondHalf.trim();
+        } else {
+            pattern = line.trim();
+        }
+
+        const parsedNum = parseInt(priority);
+        const priorityNum = !isNaN(parsedNum) ? parsedNum : 1500;
+
+        return { pattern, icon, priority, priorityNum, target };
+    }
+
+    /**
+     * Format components back into a serialized rule line.
+     * Shared by both the engine and settings UI.
+     */
+    static formatRule(pattern: string, icon: string, priority?: string | number, target?: RuleTarget): string {
+        const p = pattern.trim();
+        const ic = icon.trim();
+        if (!p || !ic) return '';
+
+        let prPart = '';
+        if (priority !== undefined && priority !== '') {
+            const num = typeof priority === 'number' ? priority : parseInt(priority);
+            if (!isNaN(num)) {
+                const clamped = Math.max(1, Math.min(100, num));
+                prPart = ` @${clamped}`;
+            }
+        }
+
+        const scopePart = target && target !== 'all' ? ` ::${target}` : '';
+        return `${p} = ${ic}${prPart}${scopePart}`;
+    }
+
     // ── Exact-match Maps (O(1)) ────────────────────────────────────────────
     private _folderExact    = new Map<string, CompiledRule>();
     private _fileExact      = new Map<string, CompiledRule>();
@@ -103,7 +175,7 @@ export class IconRuleSet {
             }
         }
 
-        // Sort ALL rules by priority descending first, so higher priority rules route first
+        // Sort rules by priority descending so higher priority routes first
         parsed.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
         for (const rule of parsed) {
@@ -111,11 +183,6 @@ export class IconRuleSet {
             this._allRules.push(rule);
             this._size++;
         }
-
-        // Regex arrays are already in priority descending order
-        this._folderRegex.sort(   (a, b) => (b.priority || 0) - (a.priority || 0));
-        this._fileRegex.sort(     (a, b) => (b.priority || 0) - (a.priority || 0));
-        this._universalRegex.sort((a, b) => (b.priority || 0) - (a.priority || 0));
     }
 
     /**
@@ -123,7 +190,7 @@ export class IconRuleSet {
      *
      * Cached via high-speed LRU cache for O(1) repeated queries.
      *
-     * @param contexts  Array of name variants to test (e.g. [lName, sanitized, parentFolder]).
+     * @param contexts  Array of name variants to test (e.g. [lName, sanitized]).
      * @param isFile    true = file node; false = folder node; undefined = unknown (try all).
      * @returns  The winning CompiledRule or null.
      */
@@ -168,53 +235,18 @@ export class IconRuleSet {
 
     /**
      * Parse one rule line into a CompiledRule (or null if invalid).
-     *
-     * Grammar:
-     *   pattern = icon [@priority] [::target]
      */
     private _parseLine(line: string): CompiledRule | null {
-        const eqIdx = line.indexOf('=');
-        if (eqIdx < 0) return null;
-
-        const pattern    = line.slice(0, eqIdx).trim();
-        let   secondHalf = line.slice(eqIdx + 1).trim();
-
-        if (!pattern || !secondHalf) return null;
+        const parsed = IconRuleSet.parseRule(line);
+        if (!parsed.pattern || !parsed.icon) return null;
 
         // Prevent ReDoS from excessively long or pathological regex patterns
-        if (pattern.length > 256) {
-            console.warn('Colorful Folders: Pattern exceeds safe length limit of 256 characters:', pattern);
+        if (parsed.pattern.length > 256) {
+            console.warn('Colorful Folders: Pattern exceeds safe length limit of 256 characters:', parsed.pattern);
             return null;
         }
 
-        // Extract optional ::target suffix FIRST
-        let target: RuleTarget = 'all';
-        const scopeMatch = secondHalf.match(/::(\w+)\s*$/);
-        if (scopeMatch) {
-            const raw = scopeMatch[1].toLowerCase();
-            if (raw === 'folders' || raw === 'folder') {
-                target = 'folders';
-            } else if (raw === 'files' || raw === 'file') {
-                target = 'files';
-            } else {
-                target = 'all';
-            }
-            secondHalf = secondHalf.slice(0, secondHalf.length - scopeMatch[0].length).trim();
-        }
-
-        // Extract optional @priority suffix
-        let priority = 1500;
-        if (secondHalf.includes('@')) {
-            const prioParts = secondHalf.split('@');
-            secondHalf = prioParts[0].trim();
-            const parsed = parseInt(prioParts[1]);
-            if (!isNaN(parsed)) priority = parsed;
-        }
-
-        const iconStr = secondHalf.trim();
-        if (!iconStr) return null;
-
-        const hasRegexMeta = /[.*+?^${}()|[\]\\]/.test(pattern);
+        const hasRegexMeta = /[.*+?^${}()|[\]\\]/.test(parsed.pattern);
         let rex: RegExp;
         let isExact = false;
         let exactKey: string | undefined;
@@ -222,23 +254,23 @@ export class IconRuleSet {
         try {
             if (!hasRegexMeta) {
                 isExact  = true;
-                exactKey = pattern.toLowerCase().trim();
-                rex      = new RegExp(`^${pattern}$|\\b${pattern}\\b|${pattern}`, 'i');
+                exactKey = parsed.pattern.toLowerCase().trim();
+                rex      = new RegExp(`^${parsed.pattern}$|\\b${parsed.pattern}\\b|${parsed.pattern}`, 'i');
             } else {
-                rex = new RegExp(pattern, 'i');
+                rex = new RegExp(parsed.pattern, 'i');
             }
         } catch (regErr) {
-            console.warn('Colorful Folders: Invalid regex syntax in custom rule:', pattern, regErr);
+            console.warn('Colorful Folders: Invalid regex syntax in custom rule:', parsed.pattern, regErr);
             return null;
         }
 
         return {
             rex,
-            emoji:    iconStr,
-            lucide:   iconStr,
-            priority,
+            emoji:    parsed.icon,
+            lucide:   parsed.icon,
+            priority: parsed.priorityNum,
             isCustom: true,
-            target,
+            target:   parsed.target,
             isExact,
             exactKey
         };
@@ -248,21 +280,13 @@ export class IconRuleSet {
     private _route(rule: CompiledRule): void {
         if (rule.isExact && rule.exactKey) {
             const key = rule.exactKey;
-            if (rule.target === 'folders') {
-                const existing = this._folderExact.get(key);
-                if (!existing || rule.priority > existing.priority) {
-                    this._folderExact.set(key, rule);
-                }
-            } else if (rule.target === 'files') {
-                const existing = this._fileExact.get(key);
-                if (!existing || rule.priority > existing.priority) {
-                    this._fileExact.set(key, rule);
-                }
-            } else {
-                const existing = this._universalExact.get(key);
-                if (!existing || rule.priority > existing.priority) {
-                    this._universalExact.set(key, rule);
-                }
+            const targetMap = rule.target === 'folders'
+                ? this._folderExact
+                : (rule.target === 'files' ? this._fileExact : this._universalExact);
+
+            const existing = targetMap.get(key);
+            if (!existing || rule.priority > existing.priority) {
+                targetMap.set(key, rule);
             }
         } else {
             if (rule.target === 'folders') {

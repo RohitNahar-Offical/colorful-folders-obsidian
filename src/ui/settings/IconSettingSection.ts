@@ -3,6 +3,7 @@ import { SettingSection } from './SettingSection';
 import { t } from '../../lang/helpers';
 import { IconPickerModal } from '../modals/IconPickerModal';
 import { DEFAULT_ICON_PACK_ORDER } from '../../common/constants';
+import { IconRuleSet } from '../../core/IconRuleSet';
 
 export class IconSettingSection extends SettingSection {
     render(containerEl: HTMLElement): void {
@@ -276,30 +277,10 @@ export class IconSettingSection extends SettingSection {
                     const row = list.createDiv();
                     row.setCssStyles({ display: 'flex', gap: '8px', alignItems: 'center' });
 
-                    let pattern = "", icon = "", priority = "", target = "all";
-                    const eqIdx = rule.indexOf('=');
-                    if (eqIdx >= 0) {
-                        pattern = rule.slice(0, eqIdx).trim();
-                        let secondHalf = rule.slice(eqIdx + 1).trim();
-
-                        const scopeMatch = secondHalf.match(/::(\w+)\s*$/);
-                        if (scopeMatch) {
-                            const raw = scopeMatch[1].toLowerCase();
-                            if (raw === 'folders' || raw === 'folder') target = 'folders';
-                            else if (raw === 'files' || raw === 'file') target = 'files';
-                            else target = 'all';
-                            secondHalf = secondHalf.slice(0, secondHalf.length - scopeMatch[0].length).trim();
-                        }
-
-                        if (secondHalf.includes('@')) {
-                            const prioParts = secondHalf.split('@');
-                            secondHalf = prioParts[0].trim();
-                            priority = prioParts[1].trim();
-                        }
-                        icon = secondHalf.trim();
-                    } else {
-                        pattern = rule;
-                    }
+                    const parsed = IconRuleSet.parseRule(rule);
+                    const pattern = parsed.pattern;
+                    let icon = parsed.icon;
+                    let target = parsed.target;
 
                     // Scope selector button using native Lucide icons
                     const scopeBtn = row.createEl('button', { cls: 'cf-scope-btn' });
@@ -426,25 +407,13 @@ export class IconSettingSection extends SettingSection {
                     prioInp.min = "1";
                     prioInp.max = "100";
                     prioInp.title = t("common.priority_placeholder");
-                    prioInp.value = priority;
+                    prioInp.value = parsed.priority;
                     prioInp.setCssStyles({ width: '70px' });
 
                     const updateRule = () => {
-                        const p = patInp.value.trim();
-                        let pr = prioInp.value.trim();
-
-                        let prNum = parseInt(pr);
-                        if (!isNaN(prNum)) {
-                            if (prNum < 1) prNum = 1;
-                            if (prNum > 100) prNum = 100;
-                            pr = prNum.toString();
-                            prioInp.value = pr;
-                        }
-
-                        if (p && icon) {
-                            const prioPart = pr ? ` @${pr}` : '';
-                            const scopePart = target && target !== 'all' ? ` ::${target}` : '';
-                            rules[index] = `${p} = ${icon}${prioPart}${scopePart}`;
+                        const formatted = IconRuleSet.formatRule(patInp.value, icon, prioInp.value, target);
+                        if (formatted) {
+                            rules[index] = formatted;
                             void saveRules();
                         }
                     };
