@@ -164,6 +164,9 @@ Never assume all SVG icon packs use `24x24` viewBoxes. Check `data.info?.height`
 **RULE 5.12: Strict Prefix Matching for Icon Packs.**
 Never use loose substring inclusion (`includes()`) for pack membership, counting, or categorization. Always match on strict prefix boundaries (`startsWith("<prefix>-")` or `startsWith("<prefix>:")`) to prevent cross-pack brand collisions (e.g. `simple-icons-bootstrap` falsely claiming to belong to Bootstrap Icons). *(Incident #40)*
 
+**RULE 5.13: Folder Icon Resolution Must Retain `color.hex` Fallback.**
+Never drop `color.hex` from the folder icon resolution chain or couple folder icon colors directly to text colors (`folderStyles.t`). When `colorText` is disabled (`"none"` or `"files"`), `resolveTextColor()` returns `var(--text-normal)` (neutral black/gray). The icon fallback chain must always be `customStyle?.iconColor || inheritedStyle?.iconColor || palettePair?.icon || color.hex || folderStyles.t` so folder icons correctly reflect the active color mode (Hierarchy, Cycle, Monochromatic, Heatmap). *(Incident #41)*
+
 ---
 
 ## 6. CI/CD & Release Pipeline
@@ -226,5 +229,6 @@ While `read` is sufficient for building and attesting, `write` is mandatory for 
 | 5.10 | #34 *(Atomic Clean)* |
 | 5.11 | #39 *(Iconify ViewBox)* |
 | 5.12 | #40 *(Strict Pack Prefix)* |
+| 5.13 | #41 *(Folder Icon Fallback Chain)* |
 | 6.1 | #11 |
 | 6.2 | #11 |

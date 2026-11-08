@@ -429,6 +429,34 @@ After clicking "Remove", the pack badge changed to `✓ Installed (2 icons)` (or
 Replaced `lower.includes('bootstrap')` with strict prefix matching: `lower.startsWith('bi-') || lower.startsWith('bootstrap-') || lower.startsWith('bi:')` across `IconSettingSection.ts`, `StyleGenerator.ts`, and `IconPackIndex.ts`.
 **Lesson**: Never use loose substring inclusion (`includes()`) for pack membership, counting, or categorization. Always match on strict pack prefix boundaries (`startsWith("<prefix>-")`).
 
+---
+
+## Incident #41 — All Folder Icons Turn Black/Gray in Hierarchy Mode Following Palette Pairing Refactor (2026-11-08)
+**GitHub Issue**: [#33](https://github.com/RohitNahar-Offical/colorful-folders-obsidian/issues/33)
+**What was attempted**: Adding text and icon color pairings for custom palette colors (`palettePairs`), publishing `--cf-color` CSS properties, and adding theme contrast state to `<body>` (PR #32).
+**What broke**:
+In v5.0.7, ALL folders on all levels became black (in light mode) or gray (in dark mode) when using "Hierarchy level" color generation mode. Only files retained the correct hierarchy colors, completely breaking the CherryTree-style hierarchy visualization (Issue #16).
+**Root cause**:
+1. **Accidental Omission of `color.hex` in Fallback Chain**:
+   - In v5.0.6, folder icon color evaluated via:
+     `const effFolderIconColor = customStyle?.iconColor || inheritedStyle?.iconColor || color.hex || folderStyles.t;`
+   - In v5.0.7, PR #32 refactored folder icon resolution to support paired palette icons:
+     `const pairedIconColor = customStyle?.iconColor || inheritedStyle?.iconColor || palettePair?.icon || folderStyles.t;`
+     `const effFolderIconColor = pairedIconColor;`
+   - Notice that `color.hex` was completely dropped from the fallback chain under the false assumption that folder icons should always match the text color (`folderStyles.t`).
+2. **Coupling Icon Color to Text Color**:
+   - When a user does not color folder text (`colorText: "none"` or `colorText: "files"`, typical for icon-only CherryTree setups), `ColorResolver.resolveTextColor()` returns `var(--text-normal)`.
+   - In Obsidian, `var(--text-normal)` renders as black (`#222222` / `#111111`) in Light Mode and gray (`#dcddde`) in Dark Mode.
+   - Because `palettePair?.icon` was undefined by default, `pairedIconColor` fell back directly to `folderStyles.t` (`var(--text-normal)`), rendering every folder icon in neutral text color instead of its resolved hierarchy palette color.
+   - Meanwhile, file icon generation (`StyleGenerator.ts:479 & 497`) was untouched in PR #32 and still retained `iconColor || color.hex || textNative`, allowing files to show correct level colors while folders lost all color.
+**Resolution**:
+Restored `color.hex` in `src/core/StyleGenerator.ts:706` within `pairedIconColor`:
+```typescript
+const pairedIconColor = customStyle?.iconColor || inheritedStyle?.iconColor || palettePair?.icon || color.hex || folderStyles.t;
+```
+This guarantees that explicit icon selections (custom, inherited, or palette-paired) take top precedence, but uncustomized folders cleanly inherit their assigned palette color (`color.hex`) for all color modes (Hierarchy, Cycle, Monochromatic, Heatmap), with `folderStyles.t` acting solely as the final failsafe.
+**Lesson**: NEVER remove `color.hex` from the icon resolution fallback chain or assume icon color should unilaterally tether to `folderStyles.t`. Keep icon and text color resolution independent so users configuring icon-only visual hierarchies (`colorText: "none"`) retain full palette color generation on folder icons.
+
 
 
 
