@@ -1,4 +1,5 @@
 import { AutoIconData } from '../common/types';
+import { LRUCache } from '../common/LRUCache';
 
 interface TrieNode {
     children: Map<string, TrieNode>;
@@ -14,10 +15,12 @@ const WORD_SPLIT_REGEX = /[^\p{L}\p{N}]+/gu;
 export class CategoryTrie {
     private root: TrieNode = createTrieNode();
     private fallbackCategories: AutoIconData[] = [];
+    private _lookupCache = new LRUCache<string, AutoIconData[]>(512);
 
     public build(categories: AutoIconData[]) {
         this.root = createTrieNode();
         this.fallbackCategories = [];
+        this._lookupCache.clear();
 
         // Pre-sort categories by descending priority so Trie nodes inherit priority order
         const sortedCategories = [...categories].sort((a, b) => (b.priority || 0) - (a.priority || 0));
@@ -69,6 +72,10 @@ export class CategoryTrie {
 
     public lookup(name: string): AutoIconData[] {
         if (!name) return this.fallbackCategories;
+
+        const cached = this._lookupCache.get(name);
+        if (cached !== undefined) return cached;
+
         const words = name.toLowerCase().split(WORD_SPLIT_REGEX);
 
         const matchedSet = new Set<AutoIconData>();
@@ -93,6 +100,8 @@ export class CategoryTrie {
                 results.push(fb);
             }
         }
+
+        this._lookupCache.set(name, results);
         return results;
     }
 }

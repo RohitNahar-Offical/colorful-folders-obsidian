@@ -7,13 +7,53 @@ import { LRUCache } from '../common/LRUCache';
 import { CategoryTrie } from './CategoryTrie';
 import { IconRuleSet } from './IconRuleSet';
 
+/** Pre-compiled static descriptor map for non-markdown file extensions (zero-allocation). */
+const EXTENSION_AUTO_ICONS: Record<string, AutoIconData> = {
+    'pdf':  { tier: 0.9, rex: /\.pdf$/i,  emoji: 'file-text',   lucide: 'file-text',   priority: 2000, packSource: 'file-extension' },
+    'png':  { tier: 0.9, rex: /\.png$/i,  emoji: 'image',       lucide: 'image',       priority: 2000, packSource: 'file-extension' },
+    'jpg':  { tier: 0.9, rex: /\.jpg$/i,  emoji: 'image',       lucide: 'image',       priority: 2000, packSource: 'file-extension' },
+    'jpeg': { tier: 0.9, rex: /\.jpeg$/i, emoji: 'image',       lucide: 'image',       priority: 2000, packSource: 'file-extension' },
+    'gif':  { tier: 0.9, rex: /\.gif$/i,  emoji: 'image',       lucide: 'image',       priority: 2000, packSource: 'file-extension' },
+    'svg':  { tier: 0.9, rex: /\.svg$/i,  emoji: 'image',       lucide: 'image',       priority: 2000, packSource: 'file-extension' },
+    'webp': { tier: 0.9, rex: /\.webp$/i, emoji: 'image',       lucide: 'image',       priority: 2000, packSource: 'file-extension' },
+    'bmp':  { tier: 0.9, rex: /\.bmp$/i,  emoji: 'image',       lucide: 'image',       priority: 2000, packSource: 'file-extension' },
+    'mp4':  { tier: 0.9, rex: /\.mp4$/i,  emoji: 'video',       lucide: 'video',       priority: 2000, packSource: 'file-extension' },
+    'mkv':  { tier: 0.9, rex: /\.mkv$/i,  emoji: 'video',       lucide: 'video',       priority: 2000, packSource: 'file-extension' },
+    'mov':  { tier: 0.9, rex: /\.mov$/i,  emoji: 'video',       lucide: 'video',       priority: 2000, packSource: 'file-extension' },
+    'avi':  { tier: 0.9, rex: /\.avi$/i,  emoji: 'video',       lucide: 'video',       priority: 2000, packSource: 'file-extension' },
+    'webm': { tier: 0.9, rex: /\.webm$/i, emoji: 'video',       lucide: 'video',       priority: 2000, packSource: 'file-extension' },
+    'mp3':  { tier: 0.9, rex: /\.mp3$/i,  emoji: 'music',       lucide: 'music',       priority: 2000, packSource: 'file-extension' },
+    'wav':  { tier: 0.9, rex: /\.wav$/i,  emoji: 'music',       lucide: 'music',       priority: 2000, packSource: 'file-extension' },
+    'flac': { tier: 0.9, rex: /\.flac$/i, emoji: 'music',       lucide: 'music',       priority: 2000, packSource: 'file-extension' },
+    'ogg':  { tier: 0.9, rex: /\.ogg$/i,  emoji: 'music',       lucide: 'music',       priority: 2000, packSource: 'file-extension' },
+    'm4a':  { tier: 0.9, rex: /\.m4a$/i,  emoji: 'music',       lucide: 'music',       priority: 2000, packSource: 'file-extension' },
+    'js':   { tier: 0.9, rex: /\.js$/i,   emoji: 'code',        lucide: 'code',        priority: 2000, packSource: 'file-extension' },
+    'ts':   { tier: 0.9, rex: /\.ts$/i,   emoji: 'code',        lucide: 'code',        priority: 2000, packSource: 'file-extension' },
+    'py':   { tier: 0.9, rex: /\.py$/i,   emoji: 'code',        lucide: 'code',        priority: 2000, packSource: 'file-extension' },
+    'html': { tier: 0.9, rex: /\.html$/i, emoji: 'code',        lucide: 'code',        priority: 2000, packSource: 'file-extension' },
+    'css':  { tier: 0.9, rex: /\.css$/i,  emoji: 'code',        lucide: 'code',        priority: 2000, packSource: 'file-extension' },
+    'json': { tier: 0.9, rex: /\.json$/i, emoji: 'code',        lucide: 'code',        priority: 2000, packSource: 'file-extension' },
+    'cpp':  { tier: 0.9, rex: /\.cpp$/i,  emoji: 'code',        lucide: 'code',        priority: 2000, packSource: 'file-extension' },
+    'rs':   { tier: 0.9, rex: /\.rs$/i,   emoji: 'code',        lucide: 'code',        priority: 2000, packSource: 'file-extension' },
+    'go':   { tier: 0.9, rex: /\.go$/i,   emoji: 'code',        lucide: 'code',        priority: 2000, packSource: 'file-extension' },
+    'zip':  { tier: 0.9, rex: /\.zip$/i,  emoji: 'package',     lucide: 'package',     priority: 2000, packSource: 'file-extension' },
+    'tar':  { tier: 0.9, rex: /\.tar$/i,  emoji: 'package',     lucide: 'package',     priority: 2000, packSource: 'file-extension' },
+    'gz':   { tier: 0.9, rex: /\.gz$/i,   emoji: 'package',     lucide: 'package',     priority: 2000, packSource: 'file-extension' },
+    '7z':   { tier: 0.9, rex: /\.7z$/i,   emoji: 'package',     lucide: 'package',     priority: 2000, packSource: 'file-extension' },
+    'rar':  { tier: 0.9, rex: /\.rar$/i,  emoji: 'package',     lucide: 'package',     priority: 2000, packSource: 'file-extension' },
+    'csv':  { tier: 0.9, rex: /\.csv$/i,  emoji: 'bar-chart-2', lucide: 'bar-chart-2', priority: 2000, packSource: 'file-extension' },
+    'xlsx': { tier: 0.9, rex: /\.xlsx$/i, emoji: 'bar-chart-2', lucide: 'bar-chart-2', priority: 2000, packSource: 'file-extension' },
+    'xls':  { tier: 0.9, rex: /\.xls$/i,  emoji: 'bar-chart-2', lucide: 'bar-chart-2', priority: 2000, packSource: 'file-extension' },
+    'tsv':  { tier: 0.9, rex: /\.tsv$/i,  emoji: 'bar-chart-2', lucide: 'bar-chart-2', priority: 2000, packSource: 'file-extension' }
+};
+
 export class IconRepository {
     plugin: IColorfulFoldersPlugin;
 
     /** Compiled custom rule engine (SRP: rule concern isolated to IconRuleSet). */
     private _ruleSet = new IconRuleSet();
-    private _categoryCache: AutoIconData[] | null = null;
     private _categoryTrie = new CategoryTrie();
+    private _categoryTrieBuilt = false;
     private _customRulesKey: string = '';
     private _normCache = new LRUCache<string, string>(1024);
     private _dataUriCache = new LRUCache<string, string>(1024);
@@ -137,80 +177,20 @@ export class IconRepository {
             }
         }
 
-        // Tier 0.7: File Extension Awareness for Non-Markdown Files
-        if (path) {
-            const extMatch = path.match(/\.([a-z0-9]+)$/i);
-            if (extMatch) {
-                const ext = extMatch[1].toLowerCase();
-                const EXTENSION_ICON_MAP: Record<string, string> = {
-                    'pdf': 'file-text',
-                    'png': 'image',
-                    'jpg': 'image',
-                    'jpeg': 'image',
-                    'gif': 'image',
-                    'svg': 'image',
-                    'webp': 'image',
-                    'bmp': 'image',
-                    'mp4': 'video',
-                    'mkv': 'video',
-                    'mov': 'video',
-                    'avi': 'video',
-                    'webm': 'video',
-                    'mp3': 'music',
-                    'wav': 'music',
-                    'flac': 'music',
-                    'ogg': 'music',
-                    'm4a': 'music',
-                    'js': 'code',
-                    'ts': 'code',
-                    'py': 'code',
-                    'html': 'code',
-                    'css': 'code',
-                    'json': 'code',
-                    'cpp': 'code',
-                    'rs': 'code',
-                    'go': 'code',
-                    'zip': 'package',
-                    'tar': 'package',
-                    'gz': 'package',
-                    '7z': 'package',
-                    'rar': 'package',
-                    'csv': 'bar-chart-2',
-                    'xlsx': 'bar-chart-2',
-                    'xls': 'bar-chart-2',
-                    'tsv': 'bar-chart-2'
-                };
-                if (ext !== 'md' && EXTENSION_ICON_MAP[ext]) {
-                    const iconId = EXTENSION_ICON_MAP[ext];
-                    return {
-                        tier: 0.7,
-                        rex: new RegExp(`\\.${ext}$`, 'i'),
-                        emoji: iconId,
-                        lucide: iconId,
-                        priority: 2000,
-                        packSource: 'file-extension'
-                    };
-                }
-            }
-        }
-
         const lName = name.toLowerCase();
         const settings = this.plugin.settings;
         const currentKey = settings.customIconRules || '';
 
-        if (!this._categoryCache || this._customRulesKey !== currentKey) {
-            const categories: AutoIconData[] = [...AUTO_ICON_CATEGORIES];
-
-            // Delegate all custom rule compilation to IconRuleSet (SRP)
+        // Recompile custom rules only if settings string actually changed
+        if (this._customRulesKey !== currentKey) {
             this._ruleSet.build(currentKey);
-
-            // Re-use already compiled rules for CategoryTrie (eliminates redundant regex re-parsing)
-            categories.push(...this._ruleSet.toAutoIconDataList());
-
-            categories.sort((a, b) => (b.priority || 0) - (a.priority || 0));
-            this._categoryCache = categories;
-            this._categoryTrie.build(categories);
             this._customRulesKey = currentKey;
+        }
+
+        // Initialize built-in CategoryTrie once
+        if (!this._categoryTrieBuilt) {
+            this._categoryTrie.build(AUTO_ICON_CATEGORIES);
+            this._categoryTrieBuilt = true;
         }
 
         let sanitized = lName.trim();
@@ -219,8 +199,6 @@ export class IconRepository {
             sanitized = sanitized.substring(0, dotIdx);
         }
         const cleanSanitized = sanitized.replace(/[^\p{L}\p{N}\s_-]/gu, '').trim();
-        const fullHyphenated = sanitized.replace(/[\s_]+/g, '-');
-        const cleanHyphenated = cleanSanitized.replace(/[\s_]+/g, '-');
 
         // Item-only contexts: contains variants of THIS item's own name ONLY.
         // Never includes parent folder name, preventing a folder name rule from hijacking child files.
@@ -229,6 +207,7 @@ export class IconRepository {
         if (cleanSanitized && cleanSanitized !== sanitized && cleanSanitized !== lName) itemContexts.push(cleanSanitized);
 
         // Tier 0.8: Custom User Rules — evaluates ONLY the item's own name variants!
+        // Evaluated before generic extension icons so custom file rules take precedence.
         // isFile scoping ensures folder-only rules don't fire on files and vice-versa.
         if (!this._ruleSet.isEmpty) {
             const ruleHit = this._ruleSet.lookup(itemContexts, isFile);
@@ -246,7 +225,21 @@ export class IconRepository {
             }
         }
 
+        // Tier 0.9: File Extension Awareness for Non-Markdown Files (Zero-allocation static lookup)
+        if (path) {
+            const lastDot = path.lastIndexOf('.');
+            if (lastDot > 0 && lastDot > path.lastIndexOf('/')) {
+                const ext = path.slice(lastDot + 1).toLowerCase();
+                if (ext !== 'md' && EXTENSION_AUTO_ICONS[ext]) {
+                    return EXTENSION_AUTO_ICONS[ext];
+                }
+            }
+        }
+
         // Tier 1: Exact local pack / custom icon match (Priority 1800)
+        // Deferred string operations: only performed if custom rules and extensions missed.
+        const fullHyphenated = sanitized.replace(/[\s_]+/g, '-');
+        const cleanHyphenated = cleanSanitized.replace(/[\s_]+/g, '-');
         const wordsNoStop = cleanSanitized
             .split(/[^\p{L}\p{N}]+/gu)
             .map(w => w.toLowerCase())
@@ -277,7 +270,16 @@ export class IconRepository {
         }
 
         // Tier 2 & 3: Categories using CategoryTrie lookup (with Parent Folder Context)
-        const parentFolder = path ? path.split('/').slice(-2, -1)[0] : '';
+        // Zero-allocation parent folder extraction using native lastIndexOf
+        let parentFolder = '';
+        if (path) {
+            const lastSlash = path.lastIndexOf('/');
+            if (lastSlash > 0) {
+                const prevSlash = path.lastIndexOf('/', lastSlash - 1);
+                parentFolder = prevSlash >= 0 ? path.substring(prevSlash + 1, lastSlash) : path.substring(0, lastSlash);
+            }
+        }
+
         const searchContexts = [...itemContexts];
         if (parentFolder && parentFolder.toLowerCase() !== 'root') {
             searchContexts.push(parentFolder.toLowerCase());
@@ -567,6 +569,7 @@ export class IconRepository {
             }
         } else {
             this._autoIconResultCache.clear();
+            this._ruleSet.clearCache();
         }
     }
 
@@ -658,7 +661,7 @@ export class IconRepository {
     }
 
     invalidateCache(): void {
-        this._categoryCache = null;
+        this._categoryTrieBuilt = false;
         this._customRulesKey = '';
         this._cachedObsidianIconIds = null;
         this._normCache.clear();

@@ -202,6 +202,9 @@ export class IconRuleSet {
     /** Total number of rules successfully compiled. */
     private _size = 0;
 
+    /** Count of active exact-mode rules (allows instant bypass of exact lookup if 0). */
+    private _exactRuleCount = 0;
+
     // ── Public API ─────────────────────────────────────────────────────────
 
     get size(): number  { return this._size; }
@@ -222,6 +225,7 @@ export class IconRuleSet {
         this._universalExact.clear();
         this._lookupCache.clear();
         this._size = 0;
+        this._exactRuleCount = 0;
 
         if (!rawRules) return;
 
@@ -250,6 +254,7 @@ export class IconRuleSet {
             }
 
             if (rule.mode === 'exact') {
+                this._exactRuleCount++;
                 const key = rule.patternLower;
                 const targetMap = rule.target === 'folders'
                     ? this._folderExact
@@ -276,9 +281,12 @@ export class IconRuleSet {
     lookup(contexts: string[], isFile?: boolean): CompiledRule | null {
         if (this._size === 0 || contexts.length === 0) return null;
 
-        // ── Fast Path 0: High-speed LRU cache ──────────────────────────────
+        // ── Fast Path 0: High-speed LRU cache (zero-alloc key generation for 1-item contexts) ──
         const scopeTag = isFile === undefined ? 'u' : (isFile ? 'f' : 'd');
-        const cacheKey = `${scopeTag}:${contexts.join('\0')}`;
+        const cacheKey = contexts.length === 1
+            ? scopeTag + ':' + contexts[0]
+            : scopeTag + ':' + contexts.join('\0');
+
         const cached = this._lookupCache.get(cacheKey);
         if (cached !== undefined) {
             return cached;
@@ -293,26 +301,32 @@ export class IconRuleSet {
             return null;
         }
 
-        // ── Fast Path A: O(1) exact map check if exact rule is top priority ──
-        const exactHit = this._exactLookup(contexts, isFile);
-        if (exactHit && exactHit.priority >= candidateRules[0].priority) {
-            this._lookupCache.set(cacheKey, exactHit);
-            return exactHit;
+        // ── Fast Path A: O(1) exact map check if exact rules exist and can beat/match candidate top priority ──
+        if (this._exactRuleCount > 0) {
+            const exactHit = this._exactLookup(contexts, isFile);
+            if (exactHit && exactHit.priority >= candidateRules[0].priority) {
+                this._lookupCache.set(cacheKey, exactHit);
+                return exactHit;
+            }
         }
 
         // ── Fast Path B: Linear prioritized scan with native string operators ──
-        for (let i = 0; i < candidateRules.length; i++) {
+        const numRules = candidateRules.length;
+        const numCtx = contexts.length;
+
+        for (let i = 0; i < numRules; i++) {
             const rule = candidateRules[i];
             const mode = rule.mode;
             const key = rule.patternLower;
             let matched = false;
 
-            for (let j = 0; j < contexts.length; j++) {
+            for (let j = 0; j < numCtx; j++) {
                 const ctx = contexts[j];
-                if (mode === 'exact') {
-                    if (ctx === key) { matched = true; break; }
-                } else if (mode === 'contains') {
+                // 'contains' evaluated first as it is the most frequent user rule mode
+                if (mode === 'contains') {
                     if (ctx.includes(key)) { matched = true; break; }
+                } else if (mode === 'exact') {
+                    if (ctx === key) { matched = true; break; }
                 } else if (mode === 'starts_with') {
                     if (ctx.startsWith(key)) { matched = true; break; }
                 } else if (mode === 'ends_with') {
@@ -360,7 +374,7 @@ export class IconRuleSet {
             return null;
         }
 
-        const patternLower = parsed.pattern.toLowerCase().trim();
+        const patternLower = parsed.pattern.toLowerCase();
         let rex: RegExp;
 
         try {
@@ -397,33 +411,44 @@ export class IconRuleSet {
 
     /**
      * O(1) exact map lookup across the relevant Maps.
+     * Zero array allocations and zero lambda closures.
      */
     private _exactLookup(contexts: string[], isFile?: boolean): CompiledRule | null {
-        const maps = this._mapsForType(isFile);
-        if (maps.every(m => m.size === 0)) return null;
+        if (this._exactRuleCount === 0) return null;
 
         let bestHit: CompiledRule | null = null;
+        const targetMap = isFile === true ? this._fileExact : (isFile === false ? this._folderExact : null);
+        const uMap = this._universalExact;
+
         for (let i = 0; i < contexts.length; i++) {
             const ctx = contexts[i];
-            for (let j = 0; j < maps.length; j++) {
-                const hit = maps[j].get(ctx);
+            if (targetMap && targetMap.size > 0) {
+                const hit = targetMap.get(ctx);
                 if (hit && (!bestHit || hit.priority > bestHit.priority)) {
                     bestHit = hit;
                 }
             }
+            if (uMap.size > 0) {
+                const hit = uMap.get(ctx);
+                if (hit && (!bestHit || hit.priority > bestHit.priority)) {
+                    bestHit = hit;
+                }
+            }
+            if (isFile === undefined) {
+                if (this._folderExact.size > 0) {
+                    const hit = this._folderExact.get(ctx);
+                    if (hit && (!bestHit || hit.priority > bestHit.priority)) {
+                        bestHit = hit;
+                    }
+                }
+                if (this._fileExact.size > 0) {
+                    const hit = this._fileExact.get(ctx);
+                    if (hit && (!bestHit || hit.priority > bestHit.priority)) {
+                        bestHit = hit;
+                    }
+                }
+            }
         }
         return bestHit;
-    }
-
-    /**
-     * Return the Maps relevant for the node type.
-     * isFile = true  → file + universal
-     * isFile = false → folder + universal
-     * isFile = undef → all three
-     */
-    private _mapsForType(isFile?: boolean): Map<string, CompiledRule>[] {
-        if (isFile === true)  return [this._fileExact,   this._universalExact];
-        if (isFile === false) return [this._folderExact, this._universalExact];
-        return [this._folderExact, this._fileExact, this._universalExact];
     }
 }
