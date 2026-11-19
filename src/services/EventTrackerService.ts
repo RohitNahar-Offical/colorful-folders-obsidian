@@ -21,6 +21,7 @@ export class EventTrackerService {
 
         this.plugin.getOpenDocuments().forEach(doc => {
             this.registerDragEventsForDoc(doc);
+            this.registerClickEventsForDoc(doc);
         });
 
         this.registerEvent(
@@ -33,6 +34,7 @@ export class EventTrackerService {
                 this.plugin.applyThemeState(doc);
                 
                 this.registerDragEventsForDoc(doc);
+                this.registerClickEventsForDoc(doc);
                 this.plugin.generateStylesDebounced();
                 this.updateActiveFolderClasses();
             })
@@ -194,8 +196,11 @@ export class EventTrackerService {
         );
         
         this.registerEvent(
-            this.plugin.app.workspace.on("file-open", () => {
+            this.plugin.app.workspace.on("file-open", (file) => {
                 this.updateActiveFolderClasses();
+                if (file && file.path) {
+                    this.plugin.animatedIconService?.replayTargetByPath(file.path);
+                }
                 window.setTimeout(() => {
                     this.plugin.initStaircaseStyleStripper();
                 }, 50);
@@ -244,8 +249,11 @@ export class EventTrackerService {
         );
 
         this.registerEvent(
-            this.plugin.app.workspace.on("file-open", () => {
+            this.plugin.app.workspace.on("file-open", (file) => {
                 this.updateActiveFolderClasses();
+                if (file && file.path) {
+                    this.plugin.animatedIconService?.replayTargetByPath(file.path);
+                }
                 window.setTimeout(() => {
                     this.plugin.initStaircaseStyleStripper();
                 }, 50);
@@ -361,6 +369,21 @@ export class EventTrackerService {
         
         this.registerDomEvent(doc, "dragend", handleDragEnd);
         this.registerDomEvent(doc, "drop", handleDragEnd);
+    }
+
+    public registerClickEventsForDoc(doc: Document) {
+        this.registerDomEvent(doc, "click", (evt: Event) => {
+            const target = evt.target as HTMLElement | null;
+            if (!target) return;
+            const row = target.closest<HTMLElement>(
+                '.nav-folder-title, .nav-file-title, .tree-item-self, .nn-navitem, .nn-file'
+            );
+            if (!row) return;
+            const liveIcon = row.querySelector<HTMLElement>('.cf-live-animated-icon');
+            if (liveIcon) {
+                this.plugin.animatedIconService?.replayAnimatedElement(liveIcon);
+            }
+        });
     }
 
     private touchHeatmapParents(file: obsidian.TAbstractFile): void {

@@ -42,14 +42,14 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
      * Dedicated internal refresh entrypoint for modular SettingSections.
      */
     public refresh(): void {
-        this.display();
+        this.renderContent();
     }
 
     /**
      * Imperatively renders the rich multi-tab settings UI.
      * Required for custom tabbed navigation, card layouts, RGB color pickers, and modal pickers.
      */
-    override display(): void {
+    public renderContent(): void {
         const rootEl = this.containerEl;
         const savedScrollTop = rootEl.scrollTop;
         rootEl.empty();
@@ -122,6 +122,10 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         }
     }
 
+    override display(): void {
+        this.renderContent();
+    }
+
     async processIconData(data: Record<string, unknown>): Promise<number> {
         let count = 0;
         const icons = data.icons as Record<string, { width?: number; height?: number; left?: number; top?: number; body?: string }> | undefined;
@@ -184,7 +188,7 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
             const count = await this.processIconData(data);
             if (count > 0) {
                 new obsidian.Notice(t("notice.import_success", { count }));
-                (this as unknown as { display: () => void }).display();
+                this.refresh();
             } else {
                 new obsidian.Notice(t("notice.no_valid_svg_icons"));
             }

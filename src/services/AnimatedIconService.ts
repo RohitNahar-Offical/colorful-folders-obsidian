@@ -68,6 +68,7 @@ export class AnimatedIconService {
     }
 
     private _isAnimatedIconCache: Map<string, boolean> = new Map<string, boolean>();
+    private _isLoopingIconCache: Map<string, boolean> = new Map<string, boolean>();
     private _registeredAnimatedTargets: Map<string, string> = new Map<string, string>();
 
     public clearRegisteredAnimatedTargets(): void {
@@ -78,6 +79,80 @@ export class AnimatedIconService {
         if (path && iconId) {
             this._registeredAnimatedTargets.set(path, iconId);
             this._hasAnimatedCache = true;
+        }
+    }
+
+    /**
+     * Checks whether an animated icon loops continuously (repeatCount="indefinite", repeatDur="indefinite", or CSS infinite).
+     * Non-looping icons are single-shot animations that freeze upon completion.
+     */
+    public isLoopingAnimatedIcon(iconId: string): boolean {
+        if (!iconId) return false;
+        const lower = iconId.toLowerCase();
+        if (lower.includes('-loop') || lower.endsWith('_loop')) {
+            return true;
+        }
+        const cached = this._isLoopingIconCache.get(iconId);
+        if (cached !== undefined) return cached;
+
+        const raw = this.plugin.iconManager?.getRawIconSvg(iconId);
+        if (!raw) {
+            this._isLoopingIconCache.set(iconId, false);
+            return false;
+        }
+
+        const isLoop = /repeatCount=["']indefinite["']|repeatDur=["']indefinite["']|\binfinite\b/i.test(raw);
+        this._isLoopingIconCache.set(iconId, isLoop);
+        return isLoop;
+    }
+
+    /**
+     * Replays single-shot (non-looping) animated icons upon click or activation.
+     * Continuous loop icons are left to run uninterrupted.
+     */
+    public replayAnimatedElement(el: HTMLElement): void {
+        const iconId = el.getAttribute('data-icon-id');
+        if (!iconId || !this.isSmilAnimated(iconId)) return;
+        if (this.isLoopingAnimatedIcon(iconId)) return; // Continuous loops keep playing as normal!
+
+        const now = Date.now();
+        const targetEl = el as HTMLElement & { _cfLastReplay?: number };
+        if (targetEl._cfLastReplay && (now - targetEl._cfLastReplay) < 300) {
+            return; // Throttle rapid-fire double clicks
+        }
+        targetEl._cfLastReplay = now;
+
+        const template = this.getAnimatedIconElement(iconId);
+        if (!template) return;
+
+        const freshSvg = template.querySelector('svg')?.cloneNode(true);
+        if (!freshSvg) return;
+
+        const oldSvg = el.querySelector('svg');
+        if (oldSvg) {
+            el.replaceChild(freshSvg, oldSvg);
+        } else {
+            el.appendChild(freshSvg);
+        }
+    }
+
+    /**
+     * Finds and replays any non-looping animated icon associated with a specific file or folder path.
+     */
+    public replayTargetByPath(targetPath: string): void {
+        if (!targetPath || !this.hasAnyAnimatedIcons()) return;
+        const allContainers = this.getAllNavContainers();
+        const safePath = safeEscape(targetPath);
+        for (let i = 0; i < allContainers.length; i++) {
+            const container = allContainers[i];
+            const titleEl = container.querySelector<HTMLElement>(
+                `.nav-folder-title[data-path="${safePath}"], .nav-file-title[data-path="${safePath}"], .tree-item-self[data-path="${safePath}"], .nn-navitem[data-path="${safePath}"], .nn-file[data-path="${safePath}"]`
+            );
+            if (!titleEl) continue;
+            const liveIcon = titleEl.querySelector<HTMLElement>('.cf-live-animated-icon');
+            if (liveIcon) {
+                this.replayAnimatedElement(liveIcon);
+            }
         }
     }
 
@@ -231,9 +306,11 @@ export class AnimatedIconService {
         if (iconId) {
             this._animatedTemplateCache.delete(iconId);
             this._isAnimatedIconCache.delete(iconId);
+            this._isLoopingIconCache.delete(iconId);
         } else {
             this._animatedTemplateCache.clear();
             this._isAnimatedIconCache.clear();
+            this._isLoopingIconCache.clear();
         }
     }
 
