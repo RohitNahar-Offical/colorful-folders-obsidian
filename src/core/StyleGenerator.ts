@@ -326,20 +326,20 @@ export class StyleGenerator {
                 const rawFileIcon = (fileStyle?.iconId && this.isValidIconStr(fileStyle.iconId)) ? fileStyle.iconId : null;
                 const rawInheritedFileIcon = (inheritedStyle?.applyToFiles && inheritedStyle?.iconId && this.isValidIconStr(inheritedStyle.iconId)) ? inheritedStyle.iconId : null;
 
-                let userRuleFileIcon = "";
-                if (this.settings.autoIcons) {
+                let iconId = rawFileIcon || rawInheritedFileIcon || "";
+                if (isAiFileIcon && this.settings.autoIcons) {
+                    const autoData = this.plugin.iconManager.getAutoIconData(child.name, child.path, true);
+                    if (autoData && (autoData.packSource === 'custom-rule' || autoData.packSource === 'frontmatter' || autoData.packSource === 'tag-sync' || (autoData.tier !== undefined && autoData.tier <= 0.8))) {
+                        const candidate = this.resolveAutoIconCandidate(autoData);
+                        if (candidate) {
+                            iconId = candidate;
+                        }
+                    }
+                } else if (!iconId && this.settings.autoIcons) {
                     const customUserRuleFile = this.plugin.iconManager.getAutoIconData(child.name, child.path, true);
                     if (customUserRuleFile) {
-                        userRuleFileIcon = this.resolveAutoIconCandidate(customUserRuleFile);
+                        iconId = this.resolveAutoIconCandidate(customUserRuleFile);
                     }
-                }
-
-                let iconId = "";
-                if (isAiFileIcon) {
-                    // Explicit user custom rules override automated AI/embedding predictions
-                    iconId = userRuleFileIcon || rawFileIcon || rawInheritedFileIcon || "";
-                } else {
-                    iconId = rawFileIcon || rawInheritedFileIcon || userRuleFileIcon || "";
                 }
 
                 const textNative = ColorResolver.resolveTextColor(
@@ -519,43 +519,46 @@ export class StyleGenerator {
 
                 const activeFileIcon = (fileStyle?.activeIconId && this.isValidIconStr(fileStyle.activeIconId)) ? fileStyle.activeIconId : null;
                 if (activeFileIcon) {
-                    const isActiveCustomEmoji = this.plugin.iconManager.isEmojiIcon(activeFileIcon);
-                    const activeFileSels = [
-                        `body .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file) .nav-file-title-content::before`,
-                        `body .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nav-folder-title):not(.nn-file) .tree-item-inner::before`
-                    ];
-                    if (isActiveCustomEmoji) {
-                        grouper.add(`
-                            content: "${activeFileIcon} " !important;
-                            display: inline-flex !important;
-                            align-items: center !important;
-                            justify-content: center !important;
-                            align-self: center !important;
-                            flex-shrink: 0 !important;
-                            height: ${effFileIconW} !important;
-                            width: ${effFileIconW} !important;
-                            margin-right: 4px !important;
-                            background-color: transparent !important;
-                            -webkit-mask-image: none !important;
-                        `, activeFileSels, `activeFileIcon_${activeFileIcon}_emoji_${effFileIconW}`);
-                    } else {
-                        const activeMaskUrl = this.plugin.iconManager.getMaskDataUri(activeFileIcon);
-                        if (activeMaskUrl) {
+                    const isActiveAnimated = !!this.plugin.animatedIconService?.isAnimatedIcon(activeFileIcon);
+                    if (!isActiveAnimated) {
+                        const isActiveCustomEmoji = this.plugin.iconManager.isEmojiIcon(activeFileIcon);
+                        const activeFileSels = [
+                            `body .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file) .nav-file-title-content::before`,
+                            `body .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nav-folder-title):not(.nn-file) .tree-item-inner::before`
+                        ];
+                        if (isActiveCustomEmoji) {
                             grouper.add(`
-                                content: '' !important;
+                                content: "${activeFileIcon} " !important;
                                 display: inline-flex !important;
+                                align-items: center !important;
+                                justify-content: center !important;
                                 align-self: center !important;
                                 flex-shrink: 0 !important;
-                                width: ${effFileIconW} !important;
                                 height: ${effFileIconW} !important;
+                                width: ${effFileIconW} !important;
                                 margin-right: 4px !important;
-                                background-color: var(--cf-active-color, ${iconColor || color.hex || textNative}) !important;
-                                -webkit-mask-image: ${activeMaskUrl} !important;
-                                -webkit-mask-repeat: no-repeat !important;
-                                -webkit-mask-position: center !important;
-                                -webkit-mask-size: contain !important;
-                                opacity: 1.0 !important;
-                            `, activeFileSels, `activeFileIcon_${activeFileIcon}_svg_${effFileIconW}`);
+                                background-color: transparent !important;
+                                -webkit-mask-image: none !important;
+                            `, activeFileSels, `activeFileIcon_${activeFileIcon}_emoji_${effFileIconW}`);
+                        } else {
+                            const activeMaskUrl = this.plugin.iconManager.getMaskDataUri(activeFileIcon);
+                            if (activeMaskUrl) {
+                                grouper.add(`
+                                    content: '' !important;
+                                    display: inline-flex !important;
+                                    align-self: center !important;
+                                    flex-shrink: 0 !important;
+                                    width: ${effFileIconW} !important;
+                                    height: ${effFileIconW} !important;
+                                    margin-right: 4px !important;
+                                    background-color: var(--cf-active-color, ${iconColor || color.hex || textNative}) !important;
+                                    -webkit-mask-image: ${activeMaskUrl} !important;
+                                    -webkit-mask-repeat: no-repeat !important;
+                                    -webkit-mask-position: center !important;
+                                    -webkit-mask-size: contain !important;
+                                    opacity: 1.0 !important;
+                                `, activeFileSels, `activeFileIcon_${activeFileIcon}_svg_${effFileIconW}`);
+                            }
                         }
                     }
                 }
@@ -725,20 +728,20 @@ export class StyleGenerator {
             const rawFolderIcon = (customStyle?.iconId && this.isValidIconStr(customStyle.iconId)) ? customStyle.iconId : null;
             const rawInheritedFolderIcon = (inheritedStyle?.iconId && this.isValidIconStr(inheritedStyle.iconId)) ? inheritedStyle.iconId : null;
 
-            let userRuleFolderIcon = "";
-            if (this.settings.autoIcons) {
+            let folderIconId = rawFolderIcon || rawInheritedFolderIcon || "";
+            if (isAiFolderIcon && this.settings.autoIcons) {
+                const autoData = this.plugin.iconManager.getAutoIconData(child.name, child.path, false);
+                if (autoData && (autoData.packSource === 'custom-rule' || autoData.packSource === 'frontmatter' || autoData.packSource === 'tag-sync' || (autoData.tier !== undefined && autoData.tier <= 0.8))) {
+                    const candidate = this.resolveAutoIconCandidate(autoData);
+                    if (candidate) {
+                        folderIconId = candidate;
+                    }
+                }
+            } else if (!folderIconId && this.settings.autoIcons) {
                 const customUserRuleFolder = this.plugin.iconManager.getAutoIconData(child.name, child.path, false);
                 if (customUserRuleFolder) {
-                    userRuleFolderIcon = this.resolveAutoIconCandidate(customUserRuleFolder);
+                    folderIconId = this.resolveAutoIconCandidate(customUserRuleFolder);
                 }
-            }
-
-            let folderIconId = "";
-            if (isAiFolderIcon) {
-                // Explicit user custom rules override automated AI/embedding predictions
-                folderIconId = userRuleFolderIcon || rawFolderIcon || rawInheritedFolderIcon || "";
-            } else {
-                folderIconId = rawFolderIcon || rawInheritedFolderIcon || userRuleFolderIcon || "";
             }
             const folderExpandedIconId = (customStyle?.expandedIconId && this.isValidIconStr(customStyle.expandedIconId)) ? customStyle.expandedIconId : ((inheritedStyle?.expandedIconId && this.isValidIconStr(inheritedStyle.expandedIconId)) ? inheritedStyle.expandedIconId : "");
 

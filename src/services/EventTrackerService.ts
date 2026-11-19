@@ -62,8 +62,16 @@ export class EventTrackerService {
                             const dataPath = `${this.plugin.app.vault.configDir}/plugins/colorful-folders/data.json`;
                             if (await this.plugin.app.vault.adapter.exists(dataPath)) {
                                 const raw = await this.plugin.app.vault.adapter.read(dataPath);
-                                if (raw && this.plugin.lastSavedSettingsJson && raw.trim() === this.plugin.lastSavedSettingsJson.trim()) {
-                                    return;
+                                if (raw && this.plugin.lastSavedSettingsJson) {
+                                    let incomingCanonical = "";
+                                    try {
+                                        incomingCanonical = JSON.stringify(JSON.parse(raw));
+                                    } catch {
+                                        incomingCanonical = raw.trim();
+                                    }
+                                    if (incomingCanonical === this.plugin.lastSavedSettingsJson) {
+                                        return;
+                                    }
                                 }
                             }
                         } catch {

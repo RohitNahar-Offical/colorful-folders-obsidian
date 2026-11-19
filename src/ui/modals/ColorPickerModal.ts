@@ -971,9 +971,13 @@ modifiedFields: Set<string>;
                 if (this.folderStyle[targetIconField] !== id) cell.setCssStyles({ backgroundColor: "transparent" });
             };
             cell.onclick = () => {
-                this.folderStyle[targetIconField] = id;
+                if (this.folderStyle[targetIconField] === id) {
+                    this.folderStyle[targetIconField] = "";
+                } else {
+                    this.folderStyle[targetIconField] = id;
+                    void this._addToRecentlyUsed(id);
+                }
                 this.modifiedFields.add(targetIconField);
-                void this._addToRecentlyUsed(id);
                 if (this._updatePreview) this._updatePreview();
                 renderIcons(searchInput.value, filterSelect.value);
             };
