@@ -331,7 +331,7 @@ export class AnimatedIconService {
                 const customIconColor = (typeof styleObj === 'object' && styleObj !== null) ? styleObj.iconColor : undefined;
 
                 // Support Notebook Navigator dedicated icon container
-                const nnIconSlot = titleEl.querySelector<HTMLElement>('.nn-navitem-icon, .nn-file-icon');
+                const nnIconSlot = titleEl.querySelector<HTMLElement>('.nn-navitem-icon, .nn-file-icon-slot, .nn-file-icon');
 
                 const existingIcon = titleEl.querySelector<HTMLElement>('.cf-live-animated-icon');
                 if (!existingIcon) {

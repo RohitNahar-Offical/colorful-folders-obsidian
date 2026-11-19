@@ -19,6 +19,8 @@
 | `toggleStealthMode` | Privacy switching | `PasswordModal` trigger |
 | `loadLocalIcons` | Scans `.obsidian/icons` at startup | Parallel `Promise.all` reads into `localFileSystemIcons` |
 | `saveSettings` | Persists data and triggers re-render | Selectively clears icon cache only when icon settings change |
+| `queryExplorerContainers` | Explorer container discovery | Queries native and third-party explorer elements across active documents |
+| `syncRuntimeSettings` | Submodule settings synchronization | Propagates active settings and palette text/icon pairs before style generation |
 | `lifecycleService` | Instance of `PluginLifecycleService` | Encapsulates document tracking, vault event listeners, and cleanup |
 
 ### `localCustomIcons: Record<string, string>`
@@ -90,6 +92,9 @@ Builds the base CSS declarations injected into adoption sheets:
 Reconciles the DOM with the desired divider state.
 - **Constraint**: Debounced to 50ms.
 
+### `findTargetElement(container: Element, path: string, isGlobal: boolean, domPathMap?: Map<string, HTMLElement>): HTMLElement | null`
+Unified element resolver supporting desktop, mobile (`.mobile-tree-item`), and third-party containers with optional fast-path DOM path mapping.
+
 ### `buildDividerNode(path, config, doc): HTMLElement`
 HTML factory for the divider component.
 - **Features**: Context menus & hover listeners.
@@ -124,6 +129,8 @@ In-memory index maintaining `exactMap`, `coreMap`, and `suffixMap` to enable $O(
 - **`findIcon(searchKey: string): string | null`**: Performs $O(1)$ exact, prefix-stripped, and suffix-matched lookups.
 - **`searchFuzzy(searchKey: string, options?: { threshold?: number }): string | null`**: Optimized fuzzy search with $O(1)$ fast-path pre-check, length-difference pruning ratio `1 - threshold`, word-boundary similarity alignment, and single-row Levenshtein buffer.
 - **`getIsBuilt(): boolean`**: Returns index build status.
+- **`matchesPackId(iconKey: string, packId: string): boolean` (static)**: Centralized predicate checking if an icon key matches a pack identifier or prefix.
+- **`getPackPrefix(id: string): string` (static)**: Returns canonical pack prefix string with trailing hyphen.
 
 ### `CategoryTrie` (`src/core/CategoryTrie.ts`)
 Node-based prefix trie (`TrieNode`) for `AUTO_ICON_CATEGORIES`.
@@ -151,6 +158,10 @@ Manages CSS injection directly into browser window `document.adoptedStyleSheets`
   - **Dynamic Tooltips**: All numerical sliders implement `.setDynamicTooltip()` to show precise values during interaction.
   - **Reset Buttons**: Settings include an `.addExtraButton` configured as a reset action, reverting the value to `DEFAULT_SETTINGS` and re-rendering instantly.
 
+### `SettingSection` (`src/ui/settings/SettingSection.ts`)
+Abstract base class for all setting tab sections.
+- **`protected refreshTab(): void`**: Type-safe tab refresh template method, encapsulating settings tab re-render without unsafe `any` casts.
+
 ### `DividerModal`
 - **Purpose**: Per-divider configuration (text, icon, padding).
 - **UX**: Live-sync preview.
@@ -173,7 +184,11 @@ Manages CSS injection directly into browser window `document.adoptedStyleSheets`
 ## 6. Integrations
 
 ### `NotebookNavigatorIntegration`
-- `getExtraContainers(app)`: Finds elements matching `.nn-navitem`.
+- **`isSupported(settings: ColorfulFoldersSettings): boolean`**: Validates whether Notebook Navigator integration is enabled.
+- **`showFileBg(settings: ColorfulFoldersSettings): boolean`**: Determines if file item colored background blocks are active.
+- **`generateIntegratedStyles(...)`**: Emits complete CSS blocks for folders and files in Notebook Navigator using dual-target selectors (`.nn-file-icon-slot` and `.nn-file-icon`) and dimension-locking properties.
+- **`getScopedNavSelectors(path: string): string[]`**: Returns scoped selectors matching real vault folders in Notebook Navigator while filtering system views.
+- **`getScopedFileSelector(path: string): string`**: Returns scoped selector matching vault files in Notebook Navigator.
 
 ### `GraphColorSync`
 - `syncGraphColors(plugin)`: Builds color groups from the vault state and merges them into `graph.json`, preserving user-created groups.

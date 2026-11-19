@@ -47,6 +47,9 @@ Global layout resets and tree item selectors (`.tree-item-self`, `.tree-item-inn
 **RULE 1.13: Never Use Global `:has()` Relational Selectors for Icon Suppression.**
 Do not write relational selectors like `:not(:has(> .tree-item-icon))` or global pseudo-element suppression rules against generic tree items. Third-party plugins (such as `iconic` or Novel Word Count) and Obsidian native tree items frequently contain element wrappers or badge icons. Using relational selectors to suppress double icons on Canvas/Excalidraw files causes normal Markdown files to match as having child elements and destroys all file icons vault-wide. Always scope format-specific double-icon suppression strictly to file extensions (`[data-path$=".canvas"]`, `[data-path*=".excalidraw"]`). *(Incident #46)*
 
+**RULE 1.14: Dual-Target Selection for Third-Party Container Slots (Notebook Navigator).**
+When injecting icons into third-party container items (such as Notebook Navigator `.nn-file`), never target child icon elements (like `.nn-file-icon`) alone. Third-party virtualized containers frequently omit child icon spans when no external icon is preset, rendering an empty slot (`.nn-file-icon-slot`). Always use dual-target selectors: `body .notebook-navigator .nn-file[data-path="..."] .nn-file-icon-slot, body .notebook-navigator .nn-file[data-path="..."] .nn-file-icon:not(.nn-file-icon-slot *)` with `flex: 0 0 auto !important; flex-shrink: 0 !important;` to ensure icons render reliably whether the container slot is empty or populated. *(Incident #48)*
+
 ---
 
 ## 2. Main Thread Performance (Scroll, Drag, & Startup Lag)
@@ -220,6 +223,7 @@ While `read` is sufficient for building and attesting, `write` is mandatory for 
 | 1.11 | #36 *(SMIL Animation)* |
 | 1.12 | #37 *(Container Scoping)* |
 | 1.13 | #46 *(Canvas/Excalidraw Double Icon Isolation)* |
+| 1.14 | #48 *(Notebook Navigator Container Slots)* |
 | 2.1 | #15 |
 | 2.2 | #14 *(superseded)* |
 | 2.3 | #24 |

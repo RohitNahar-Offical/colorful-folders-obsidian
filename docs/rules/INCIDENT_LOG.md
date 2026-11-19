@@ -595,6 +595,28 @@ Severe stuttering, frame drops, and lag when scrolling through the File Explorer
 
 **Lesson**: Never execute `querySelectorAll` sweeps or auto-icon classification inside scroll listeners or mutation observer callbacks. Pre-register dynamic targets during stylesheet generation so runtime DOM synchronization is strictly $O(K)$ where $K$ is the number of active animated elements.
 
+---
+
+## Incident #48 — Disappearing File Icons in Notebook Navigator via Container Slot Omission (2026-11-19)
+**What was reported**:
+Standard notes in Notebook Navigator (e.g. `Atlas > Dots > People > Arnold Schwarzenegger.md`, `Bill Russell.md`) lost their file icons completely, displaying an empty blank gap in front of the filename even though folder icons (`Atlas`, `Dots`, `People`) were displaying properly.
+
+**Root cause**:
+1. **Empty Container Slot in Notebook Navigator**: In Notebook Navigator's DOM architecture, file rows render `<div class="nn-file-inner-content">`. If a file has no custom icon or preset assigned inside Notebook Navigator, it renders `<div class="nn-file-icon-slot"></div>` with **no** child `<span class="nn-file-icon">` element (the span child is `null`).
+2. **Selector Target Mismatch**: In an earlier optimization, `NotebookNavigatorIntegration.ts` refactored `iconTarget` from `:is(.nn-file-icon, .nn-file-icon-slot)` to strictly `body .notebook-navigator .nn-file[data-path="${safePath}"] .nn-file-icon`. Because `.nn-file-icon` did not exist in the DOM for uncustomized files, the CSS selector matched 0 elements, leaving `.nn-file-icon-slot` completely empty.
+3. **File Background Gating Overlap**: In `src/core/StyleGenerator.ts`, `generateIntegratedStyles()` for files was gated behind `if (nnFileBgActive)`, which checked `notebookNavigatorFileBackground`. If a user desired uncolored or default-background files in Notebook Navigator, file icon and typography generation was suppressed entirely.
+4. **Data-URI Mask Stroke Opacity**: `CF_FILE_DEFAULT`, `CF_FOLDER_CLOSED`, and `CF_FOLDER_OPEN` in `constants.ts` used `stroke="currentColor"`. When loaded inside isolated CSS data-URI image contexts (`url("data:image/svg+xml,...")`), `currentColor` could fail to provide 100% opaque alpha strokes in certain Blink/WebKit rendering pipelines.
+
+**Resolution**:
+1. **Dual-Target Selector Bridge**: Updated `NotebookNavigator.ts` to target both `.nn-file-icon-slot` and `.nn-file-icon:not(.nn-file-icon-slot *)` via an array of selectors (`iconTargets`), adding `flex: 0 0 auto !important; flex-shrink: 0 !important;` to ensure slot dimensions are rock-solid.
+2. **Flattened Child Suppression**: Replaced string-concatenated selector lists with `.flatMap()` targeting `${target} > svg` and `${target} > span` to prevent trailing comma selector syntax bugs.
+3. **Decoupled File Styling from Background Toggle**: In `src/core/StyleGenerator.ts`, file integration styles are now generated whenever `NotebookNavigatorIntegration.isSupported(this.settings)` is true, allowing `shouldColorNN` to independently gate colored background blocks while preserving file icons and text colors.
+4. **Opaque Alpha Mask Hardening**: Hardened `constants.ts` default SVG constants with explicit `#000000` stroke to ensure 100% opaque mask alpha across all browser engines.
+5. **Animated Slot Integration**: Added `.nn-file-icon-slot` to `AnimatedIconService.ts` query selectors to ensure live animated SVGs mount properly in Notebook Navigator file rows.
+
+**Lesson**: When styling third-party plugin containers, always inspect whether the container renders wrapper slot elements (`.slot`) or child target elements (`.icon`). Use dual-targeting with `:not(.slot *)` exclusions to guarantee matching whether the child element exists or the slot is empty, without creating duplicate icons.
+
+
 
 
 

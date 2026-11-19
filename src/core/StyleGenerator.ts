@@ -228,7 +228,6 @@ export class StyleGenerator {
         const useGlass = this.settings.glassmorphism;
         const cycleOff = this.settings.cycleOffset || 0;
         const outlineOnly = this.settings.outlineOnly;
-        const nnFileBgActive = NotebookNavigatorIntegration.showFileBg(this.settings);
         const tintOp = this.settings.tintOpacity;
         const autoColorFiles = outlineOnly ? false : this.settings.autoColorFiles;
         const autoIcons = this.settings.autoIcons;
@@ -414,7 +413,7 @@ export class StyleGenerator {
                     font-size: 10px !important;
                 `, fileTagSels, `fileTag_${color.hex}_${textNative.replace(/\s+/g, '')}`);
 
-                if (nnFileBgActive) {
+                if (NotebookNavigatorIntegration.isSupported(this.settings)) {
                     const isEmoji = this.plugin.iconManager.isEmojiIcon(iconId);
                     const iconSvg = !isEmoji && iconId ? this.plugin.iconManager.getIconSvg(iconId, true) : "";
 

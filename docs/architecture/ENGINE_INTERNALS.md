@@ -137,6 +137,19 @@ graph TD
   - `rawFileIcon`: User's custom icon is injected via `::before`, and the native `.tree-item-icon` is hidden via a targeted path-specific rule (`hideNativeTreeIcon_${safePath}`).
   - Standard files (`.md`): Unconditionally render custom, auto-assigned, or fallback document icons (`lucide-file-text`) via `fileTextSels.map(s => s + '::before')`.
 
+### 3.10 Notebook Navigator Container Slot & Dual-Target Icon Bridge (`src/integrations/NotebookNavigator.ts`)
+- **Container Slot Mechanics**: Notebook Navigator conditionally mounts `<div class="nn-file-icon-slot">`. When an item has no third-party icon preset assigned, the slot is rendered empty (with `null` child span).
+- **Dual-Target Selector Strategy**: Colorful Folders targets both the container slot and standalone icon spans:
+  ```css
+  body .notebook-navigator .nn-file[data-path="..."] .nn-file-icon-slot,
+  body .notebook-navigator .nn-file[data-path="..."] .nn-file-icon:not(.nn-file-icon-slot *)
+  ```
+- **Dimension Lock & Child Suppression**:
+  - Sets `flex: 0 0 auto !important; flex-shrink: 0 !important;` to lock icon slot dimensions across list and compact modes.
+  - Safely suppresses nested elements via `.flatMap()` child selectors (`> svg`, `> span`) without trailing comma syntax anomalies.
+- **Decoupled Background & Icon Integration**: Style generation runs whenever `notebookNavigatorSupport` is active. Background coloring is independently gated by `shouldColorNN`, ensuring file icons and typography remain fully active regardless of whether file background blocks are enabled.
+
+
 ---
 
 ## 4. Performance & Caching Engine
