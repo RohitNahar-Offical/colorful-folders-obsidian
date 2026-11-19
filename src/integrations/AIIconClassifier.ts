@@ -130,8 +130,10 @@ export class AIIconClassifier {
                 // 1. Exclude items with manually assigned custom icons
                 const existing = settings.customFolderColors[t.path];
                 if (existing) {
-                    if (typeof existing === 'string') return false;
-                    if (typeof existing === 'object' && (existing.iconId || existing.icon)) return false;
+                    if (typeof existing === 'object' && (existing.iconId || existing.icon)) {
+                        const isManual = !existing.iconSource?.startsWith('ai') && existing.iconSource !== 'embedding';
+                        if (isManual) return false;
+                    }
                 }
 
                 // 2. Exclude items matching Custom User Rules (e.g. pattern = icon @ priority)
@@ -520,6 +522,7 @@ export class AIIconClassifier {
                     const modelLabel = settings.aiProvider === 'ollama'
                         ? `ai-ollama:${settings.aiModelName || 'qwen2.5:1.5b'}`
                         : `ai-custom:${settings.aiModelName || 'local-model'}`;
+                    if (!settings.customFolderColors) settings.customFolderColors = {};
                     const existing = settings.customFolderColors[item.path];
                     if (typeof existing === 'object' && existing) {
                         existing.iconId = iconId;
@@ -539,6 +542,7 @@ export class AIIconClassifier {
                 console.debug(`✨ [Colorful Folders AI] Successfully Assigned ${assignedCount} Icons directly from AI:`, assignedSummary);
             }
 
+            this.plugin.syncCustomFolderColorsMap();
             await this.plugin.saveSettings();
             await this.plugin.generateStyles();
 

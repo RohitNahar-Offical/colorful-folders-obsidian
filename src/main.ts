@@ -60,6 +60,7 @@ export default class ColorfulFoldersPlugin
   _abortStartupRender: boolean = false;
   _isUnloading: boolean = false;
   isSelfSavingSettings: boolean = false;
+  private _selfSavingTimeout: number | null = null;
   lastSavedSettingsJson: string = '';
   lastGeneratedCss: string = '';
 
@@ -625,7 +626,7 @@ export default class ColorfulFoldersPlugin
       Object.assign(this.localCustomIcons, data.customIcons);
       await this.saveLocalCustomIcons();
       data.customIcons = {};
-      delete (data as Record<string, unknown>).customIcons;
+      delete data.customIcons;
       void this.persistSettings(Object.assign({}, DEFAULT_SETTINGS, data, { customIcons: {} }));
     }
 
@@ -655,7 +656,7 @@ export default class ColorfulFoldersPlugin
       if (!this.settings.vaultPasswordHash) {
         this.settings.vaultPasswordHash = await hashPassword(this.settings.vaultPassword);
       }
-      delete (this.settings as Record<string, unknown>).vaultPassword;
+      delete this.settings.vaultPassword;
       void this.persistSettings();
     }
     this.syncCustomFolderColorsMap();
@@ -766,13 +767,18 @@ export default class ColorfulFoldersPlugin
 
   async persistSettings(dataToSave?: ColorfulFoldersSettings | Record<string, unknown>): Promise<void> {
     this.isSelfSavingSettings = true;
+    if (this._selfSavingTimeout !== null) {
+      window.clearTimeout(this._selfSavingTimeout);
+      this._selfSavingTimeout = null;
+    }
     try {
       const payload = dataToSave || this.settings;
       this.lastSavedSettingsJson = JSON.stringify(payload);
       await this.saveData(payload);
     } finally {
-      window.setTimeout(() => {
+      this._selfSavingTimeout = window.setTimeout(() => {
         this.isSelfSavingSettings = false;
+        this._selfSavingTimeout = null;
       }, 500);
     }
   }

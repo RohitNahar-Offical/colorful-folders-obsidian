@@ -23,8 +23,10 @@ export class AdoptedStyleSheetService {
     attachToDocument(doc: Document): void {
         if (!doc) return;
         try {
-            if (this.sheet && Array.isArray(doc.adoptedStyleSheets) && !doc.adoptedStyleSheets.includes(this.sheet)) {
-                doc.adoptedStyleSheets = [...doc.adoptedStyleSheets, this.sheet];
+            if (this.sheet && Array.isArray(doc.adoptedStyleSheets)) {
+                if (!doc.adoptedStyleSheets.includes(this.sheet)) {
+                    doc.adoptedStyleSheets = [...doc.adoptedStyleSheets, this.sheet];
+                }
                 return;
             }
         } catch {
@@ -43,6 +45,29 @@ export class AdoptedStyleSheetService {
             }
         } catch (e) {
             console.error('Colorful Folders: Failed to attach fallback style', e as Error);
+        }
+    }
+
+    /**
+     * Detaches the stylesheet instance from a specific document.
+     */
+    detachFromDocument(doc: Document): void {
+        if (!doc) return;
+        try {
+            if (this.sheet && Array.isArray(doc.adoptedStyleSheets)) {
+                doc.adoptedStyleSheets = doc.adoptedStyleSheets.filter(s => s !== this.sheet);
+            }
+        } catch {
+            void 0;
+        }
+        const fallback = this.fallbackStyles.get(doc);
+        if (fallback) {
+            try {
+                fallback.remove();
+            } catch {
+                void 0;
+            }
+            this.fallbackStyles.delete(doc);
         }
     }
 

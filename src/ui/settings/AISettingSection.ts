@@ -375,6 +375,7 @@ export class AISettingSection extends SettingSection {
             }
 
             if (clearedCount > 0) {
+                this.plugin.syncCustomFolderColorsMap();
                 await this.plugin.saveSettings();
                 await this.plugin.generateStyles();
                 new obsidian.Notice(t("notice.clear_ai_icons_success", { count: clearedCount }));

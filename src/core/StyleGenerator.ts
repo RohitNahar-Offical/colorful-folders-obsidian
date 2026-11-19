@@ -104,7 +104,6 @@ export class StyleGenerator {
         }
 
         if (data.lucide && this.isValidIconStr(data.lucide)) return data.lucide;
-        if (data.lucide) return data.lucide;
         if (data.emoji) return data.emoji;
         return "";
     }
@@ -524,7 +523,7 @@ export class StyleGenerator {
                         const isActiveCustomEmoji = this.plugin.iconManager.isEmojiIcon(activeFileIcon);
                         const activeFileSels = [
                             `body .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file) .nav-file-title-content::before`,
-                            `body .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nav-folder-title):not(.nn-file) .tree-item-inner::before`
+                            `body .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nav-folder-title):not(.nn-file):not(.nn-navitem) .tree-item-inner::before`
                         ];
                         if (isActiveCustomEmoji) {
                             grouper.add(`

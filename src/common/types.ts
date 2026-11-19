@@ -233,6 +233,7 @@ export interface IColorfulFoldersPlugin {
     styleGenerator: { generateCss(): Promise<string> };
     domObserverService: DOMObserverService;
     animatedIconService: import('../services/AnimatedIconService').AnimatedIconService;
+    adoptedStyleSheetService?: import('../services/AdoptedStyleSheetService').AdoptedStyleSheetService;
     getAllExplorerContainers(): HTMLElement[];
     invalidateExplorerContainersCache(): void;
     getOpenDocuments(): Document[];

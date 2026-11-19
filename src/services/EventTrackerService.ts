@@ -41,6 +41,7 @@ export class EventTrackerService {
 
         this.registerEvent(
             (this.plugin.app.workspace as obsidian.Events).on("window-close", (win: unknown, doc: Document) => {
+                this.plugin.adoptedStyleSheetService?.detachFromDocument(doc);
                 this.plugin.cachedDocuments.delete(doc);
             })
         );
@@ -55,7 +56,9 @@ export class EventTrackerService {
 
         this.registerEvent(
             this.plugin.app.vault.on("modify", (file) => {
-                if (file && file.path.endsWith("colorful-folders/data.json")) {
+                if (!file) return;
+                const normPath = file.path.replace(/\\/g, '/');
+                if (normPath.endsWith("colorful-folders/data.json")) {
                     if (this.plugin.isSelfSavingSettings) return;
                     void (async () => {
                         try {
@@ -86,7 +89,8 @@ export class EventTrackerService {
                     return;
                 }
                 const configDir = this.plugin.app.vault.configDir;
-                if (file && (file.path.includes("colorful-folders/icons/") || (configDir && file.path.includes(`${configDir}/icons`)))) {
+                const normConfigDir = configDir ? configDir.replace(/\\/g, '/') : "";
+                if (normPath.includes("colorful-folders/icons/") || (normConfigDir && normPath.includes(`${normConfigDir}/icons`))) {
                     void (async () => {
                         await this.plugin.loadLocalCustomIcons();
                         await this.plugin.loadLocalIcons();
@@ -96,7 +100,7 @@ export class EventTrackerService {
                     })();
                     return;
                 }
-                if (file && !(file.path.startsWith('.') || file.path.includes('/.'))) {
+                if (!(normPath.startsWith('.') || normPath.includes('/.'))) {
                     if (this.plugin.settings.colorMode === "heatmap" && this.plugin.heatmapCache) {
                         let p = file.parent;
                         const mtime = Date.now();
