@@ -123,6 +123,20 @@ graph TD
 - **CSS Custom Property Exposure**: Exposes `--cf-icon-color: ${effFolderIconColor}` on `.nav-folder-title` and `--cf-icon-color: ${effFileIconColor}` on `.nav-file-title` so that DOM-injected icon wrappers (`.cf-icon-wrapper`, `.cf-live-animated-icon`) inherit icon colors cleanly with fallback `var(--cf-icon-color, inherit)`.
 - **`CssGrouper` Precision Keys**: Signature keys for batched CSS rules include all differentiating sub-properties (`folderRow_${color.hex}_${effFolderIconColor}_...` and `fileRow_${color.hex}_${effFileIconColor}_...`) to prevent style bleed between items that share the same background tint but have distinct icon colors.
 
+### 3.8 Animated Icon Pre-Registration & Zero-DOM Scroll Pipeline (`src/services/AnimatedIconService.ts`)
+- **Pre-Registration during CSS Generation**: `StyleGenerator.generateCss()` registers active animated paths into `AnimatedIconService._registeredAnimatedTargets` in $O(1)$ memory during the single traverse pass, eliminating any need to query or parse DOM rows during scroll.
+- **Memoized Regex Evaluation**: `_isAnimatedIconCache` caches SVG keyframe and SMIL animation tag detection to avoid repeated regex runs.
+- **$O(K)$ Targeted Querying**: `syncAnimatedIcons()` evaluates only the specific registered paths ($K$, where $K \le 5$), bypassing full-vault `querySelectorAll` scans and preserving 60/120 FPS scrolling.
+- **Off-Screen SMIL Syncbase Recovery**: Uses `IntersectionObserver` with an offscreen boolean flag (`_cfWasOffscreen`) to safely wake stalled SMIL chained syncbases without DOM teardown when elements re-enter the viewport.
+
+### 3.9 Double-Icon Isolation & Format-Specific Suppression (`src/core/BaseCssGenerator.ts`, `src/core/StyleGenerator.ts`)
+- **Special Format Native Guard**: Canvas (`.canvas`) and Excalidraw (`.excalidraw`) files natively render Obsidian `.tree-item-icon` elements.
+- **Strictly Scoped Suppression**: Broad relational pseudo-selectors like `:not(:has(> .tree-item-icon...))` are forbidden as they inadvertently match third-party icon wrappers (e.g., `iconic`) on standard Markdown files.
+- **Dual State Path Handling**:
+  - `!rawFileIcon`: Native `.canvas` and `.excalidraw` icons are retained; Colorful Folders skips `::before` pseudo-element injection.
+  - `rawFileIcon`: User's custom icon is injected via `::before`, and the native `.tree-item-icon` is hidden via a targeted path-specific rule (`hideNativeTreeIcon_${safePath}`).
+  - Standard files (`.md`): Unconditionally render custom, auto-assigned, or fallback document icons (`lucide-file-text`) via `fileTextSels.map(s => s + '::before')`.
+
 ---
 
 ## 4. Performance & Caching Engine

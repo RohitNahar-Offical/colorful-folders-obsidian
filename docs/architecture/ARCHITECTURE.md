@@ -307,6 +307,8 @@ Static CSS mask Data URIs (`-webkit-mask-image`) cannot execute SMIL animation l
 2. **Dedicated DOM Container (`.cf-live-animated-icon`)**: For animated icons only, mounts a single pre-compiled SVG DOM node inside a `.cf-live-animated-icon` container directly in the target row.
 3. **Template Memoization with LRU Caching**: Pre-compiles and sanitizes animated SVG templates inside `_animatedTemplateCache: LRUCache<string, HTMLElement>(256)`, ensuring $O(1)$ cloning overhead (`wrap.cloneNode(true)`).
 4. **Leak-Free Unmounting & Cache Flushing**: When styles change, icons are removed, or hard resets occur, all active animated DOM nodes are synchronously detached and memory caches purged.
+5. **Pre-Registration during Style Generation**: Active animated icon targets are discovered during the single-pass traversal in `StyleGenerator.generateCss()` and registered into `_registeredAnimatedTargets` in $O(1)$ memory. This completely decouples animation discovery from the scroll loop, eliminating full-DOM `querySelectorAll` scans during scroll.
+6. **$O(K)$ Viewport Synchronization**: `syncAnimatedIcons()` executes in $O(K)$ time where $K$ is the number of active animated elements (typically $\le 2$), querying only registered paths via targeted `querySelector([data-path="..."])` and preserving butter-smooth 60/120 FPS scrolling.
 
 ---
 

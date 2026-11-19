@@ -516,6 +516,85 @@ When a user defined a rule matching a folder name, every note, file, and subfold
 
 **Lesson**: Always protect synchronized configuration files against self-write echo loops with both in-flight locks and content fingerprints. Never re-parse constructable stylesheets when CSS string output is byte-identical. User-authored rules must unconditionally outrank automated machine-learning suggestions. Always provide CJK regexes without ASCII `\b` boundaries for international users.
 
+---
+
+## Incident #45 — Dynamic Animated SVG Parsing & Malformed URI Crash on Keyframes/Percentage Encoding (2026-11-19)
+**What was reported**:
+1. Console errors: `URIError: URI malformed at decodeURIComponent` inside `NotebookNavigator.generateIntegratedStyles`, `traverse`, and `IconRepository.normalizeSvg`.
+2. Vector attribute errors: `<svg> attribute x: Expected length, "\\\"0\\\""`, `<path> attribute d: Expected moveto path command, "\\\"M89.284"`.
+3. Animated icon packs (such as `line-md`) failed to render or rendered as blank invisible squares.
+4. Color picker / icon picker preview grid crashed or showed empty tiles when recent history contained invalid/stale icon identifiers (e.g. `qw`).
+5. Icon picker lacked an explicit filter for animated icon collections.
+
+**Root cause**:
+1. **Unshielded decodeURIComponent on CSS Keyframes**: Many animated SVGs (`line-md`, CSS keyframe loaders) contain raw CSS `@keyframes` blocks with percentage milestones (e.g. `0%`, `50%`, `100%`). Passing SVGs containing `%` directly into native `decodeURIComponent()` threw unhandled `URIError: URI malformed` whenever `%` was followed by non-hex sequences.
+2. **Backslash-Escaped JSON Quotes**: When saving or reloading custom animated SVG bodies, unescaped literal backslash quotes (`\"`) leaked into SVG attributes, causing XML parser errors (`Expected length, "\\\"0\\\""`).
+3. **Stroke Erasure in normalizeSvg**: `IconRepository.normalizeSvg()` only assigned `stroke="currentColor"` when `hasStroke && !hasFill`. Many stroke-based animated icons contain paths with both properties or no fill attribute, causing the stroke to be omitted and rendering icons invisible.
+4. **Stale Recent History**: `recentlyUsedIcons` accumulated invalid icon keys (`qw`) that were not validated against `isValidIcon()`, producing broken DOM preview nodes in the modal grid.
+
+**Resolution**:
+1. Wrapped all `decodeURIComponent` calls in `try...catch` blocks across `NotebookNavigator.ts` and `IconRepository.ts`, with safe raw-string fallback if URI decoding fails.
+2. Sanitized SVG strings with `.replace(/\\"/g, '"')` before XML/HTML DOM parsing in `IconRepository.ts` and `IconPickerModal.ts`.
+3. Updated `IconRepository.normalizeSvg()` to unconditionally ensure `svg.setAttribute('stroke', 'currentColor')` whenever `hasStroke` is true.
+4. Filtered `recentlyUsedIcons` using `isValidIconId()` and unified custom icons with `localFileSystemIcons` in `IconPickerModal.ts`. Added a dedicated `'animated': '✨ ANIMATED ICONS'` category filter in the icon picker modal.
+
+**Lesson**: Never call `decodeURIComponent()` on arbitrary SVG source strings without defensive `try...catch` guards. Animated SVGs frequently contain CSS keyframe percentage signs that are not percent-encoded URI entities. Always sanitize stringified quote escaping and preserve stroke definitions for line-based icon sets.
+
+---
+
+## Incident #46 — Disappearing File Icons Caused by Overly Broad Double-Icon Suppression (2026-11-19)
+**What was reported**:
+File icons disappeared completely across the entire file explorer (e.g., standard notes under `Atlas > Dots > People` lost their document/auto icons).
+
+**Root cause**:
+1. **Relational Pseudo-Class Inadvertent Global Match**: To fix duplicate icons on Canvas (`.canvas`) and Excalidraw (`.excalidraw`) files (which render native `.tree-item-icon` elements alongside Colorful Folders' `::before` pseudo-element), an over-broad `:not(:has(> .tree-item-icon:not(.collapse-indicator):not(.collapse-icon)))` relational selector was added to `fileIconSels` in `StyleGenerator.ts`, along with a matching global suppression rule in `BaseCssGenerator.ts`.
+2. When third-party plugins (such as `iconic` or *Novel Word Count*) or native Obsidian tree elements place icon containers or tags in file tree items, the `:has(> .tree-item-icon)` selector matched true. As a result, `:not(:has(...))` evaluated to false, completely suppressing the `::before` pseudo-element icon across all standard `.md` files in the vault.
+
+**Resolution**:
+1. Restored universal file icon selectors in `StyleGenerator.ts`:
+   ```typescript
+   const fileIconSels = fileTextSels.map(s => s + '::before');
+   ```
+2. Confined double-icon suppression strictly and explicitly to `.canvas` and `.excalidraw` file extensions in `BaseCssGenerator.ts`:
+   ```css
+   body .nav-files-container [data-path$=".canvas"]:not(.cf-has-custom-icon) .nav-file-title-content::before,
+   body .nav-files-container [data-path$=".canvas"]:not(.cf-has-custom-icon) .tree-item-inner::before,
+   body .nav-files-container [data-path*=".excalidraw"]:not(.cf-has-custom-icon) .nav-file-title-content::before,
+   body .nav-files-container [data-path*=".excalidraw"]:not(.cf-has-custom-icon) .tree-item-inner::before {
+       display: none !important;
+       content: none !important;
+   }
+   ```
+3. Guarded `StyleGenerator.ts` so Canvas and Excalidraw files without explicit custom icons (`!rawFileIcon`) do not receive auto-assigned or default file icons, while files with explicit custom icons hide the native icon via `hideNativeTreeIcon_${safePath}`.
+4. Hardened default file icon mask `CF_FILE_TEXT_ICON_MASK_URL` with explicit `#000000` stroke to ensure 100% opaque mask alpha across all Chromium contexts, and restored `margin-right: 4px` and `align-self: center`.
+
+**Lesson**: Never use global `:has()` relational selectors to suppress pseudo-elements when third-party plugins may inject child elements into tree nodes. Always scope format-specific conflicts (such as Canvas `#` or Excalidraw pencil icons) strictly to their file extensions (`[data-path$=".canvas"]`, `[data-path*=".excalidraw"]`).
+
+---
+
+## Incident #47 — File Explorer Scroll Lag and Stutter via Full-DOM Scanning (2026-11-19)
+**What was reported**:
+Severe stuttering, frame drops, and lag when scrolling through the File Explorer tree.
+
+**Root cause**:
+1. **Full-DOM Query on Every Scroll Frame**: `DOMObserverService.ts` bound a scroll listener to every file explorer container. Every 80ms during scrolling, and on every `MutationObserver` frame, it triggered `AnimatedIconService.syncAnimatedIcons()`.
+2. Inside `syncAnimatedIcons()`, the code ran:
+   ```typescript
+   const visibleRows = container.querySelectorAll<HTMLElement>(
+       '.nav-folder-title, .nav-file-title, .tree-item-self, .nn-navitem, .nn-file'
+   );
+   ```
+   For every row in the entire vault DOM (often 1,000+ nodes), it called `.matches()`, string slicing, `getAutoIconData()`, category trie matching, `resolveAutoIconCandidate()`, and `isAnimatedIcon()` regular expression evaluations on the main thread, producing 100-200ms frame stalls.
+
+**Resolution**:
+1. **Pre-Registration during Style Generation**: Transferred animated target discovery into `StyleGenerator.generateCss()`. Because `StyleGenerator` already traverses every folder and file in the vault, any path that resolves to an animated icon is pre-registered in `AnimatedIconService._registeredAnimatedTargets` in $O(1)$ memory.
+2. **Eliminated Full-DOM Scanning**: Completely removed `container.querySelectorAll` from `syncAnimatedIcons()`. `hasAnyAnimatedIcons()` and `syncAnimatedIcons()` now check only configured settings and `_registeredAnimatedTargets`.
+3. If no animated icons are in use, `syncAnimatedIcons()` exits in < 0.001ms. If animated icons exist, it queries only those specific paths via targeted `querySelector([data-path="..."])`.
+4. Added `_isAnimatedIconCache` memoization map to eliminate redundant SVG regular expression checks.
+5. In `DOMObserverService.ts`, set `isScrollingPublic = true` during active scrolling to suppress mutation observer sync callbacks, and increased scroll debounce to 120ms.
+
+**Lesson**: Never execute `querySelectorAll` sweeps or auto-icon classification inside scroll listeners or mutation observer callbacks. Pre-register dynamic targets during stylesheet generation so runtime DOM synchronization is strictly $O(K)$ where $K$ is the number of active animated elements.
+
 
 
 

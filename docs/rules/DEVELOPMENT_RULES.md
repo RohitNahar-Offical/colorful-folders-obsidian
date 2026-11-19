@@ -44,6 +44,9 @@ When rendering live SMIL animated SVGs, never rely on `unpauseAnimations()` or `
 **RULE 1.12: Strict Viewport & Container Selector Scoping for Fast Scrolling.**
 Global layout resets and tree item selectors (`.tree-item-self`, `.tree-item-inner`, `> *`, collapse indicators) must ALWAYS be strictly anchored to their specific workspace leaf container (e.g., `body .nav-files-container`, `.workspace-leaf-content[data-type="outline"]`, `.workspace-leaf-content[data-type="tag"]`). Never write un-scoped selectors like `body .tree-item-self` or `:is([data-type="outline"], ...)` without an explicit leaf container anchor. Broad selectors defeat Chromium's ancestor Bloom filter, causing the browser to evaluate style rules across all sidebar panes (Outline, Tag pane, Search, Bookmarks) on every scroll frame and producing severe scrolling jitter. *(Incident #37)*
 
+**RULE 1.13: Never Use Global `:has()` Relational Selectors for Icon Suppression.**
+Do not write relational selectors like `:not(:has(> .tree-item-icon))` or global pseudo-element suppression rules against generic tree items. Third-party plugins (such as `iconic` or Novel Word Count) and Obsidian native tree items frequently contain element wrappers or badge icons. Using relational selectors to suppress double icons on Canvas/Excalidraw files causes normal Markdown files to match as having child elements and destroys all file icons vault-wide. Always scope format-specific double-icon suppression strictly to file extensions (`[data-path$=".canvas"]`, `[data-path*=".excalidraw"]`). *(Incident #46)*
+
 ---
 
 ## 2. Main Thread Performance (Scroll, Drag, & Startup Lag)
@@ -80,6 +83,9 @@ Cache color palette lookups (`_cachedPalette`, `_cachedPaletteKey`), hex-to-RGB 
 
 **RULE 2.11: Filter workspace event handlers by view type.**
 In `EventTrackerService`, high-frequency workspace events like `active-leaf-change` must strictly check the view type (`leaf?.view?.getViewType() === "tag"`) before triggering subtree sweeps or dataset synchronizations. Never perform full document queries or DOM class updates unconditionally during note navigation. *(Incident #37)*
+
+**RULE 2.12: Zero-DOM Scanning on Scroll & Mutation Observers.**
+Never perform `container.querySelectorAll(...)` sweeps or auto-icon classification across visible rows inside scroll listeners or mutation observer callbacks. Pre-register dynamic targets (e.g., animated icons) during stylesheet generation (`StyleGenerator.generateCss()`) in an $O(1)$ memory map. Runtime synchronization on scroll must be strictly bounded to $O(K)$ where $K$ is the number of active animated elements, executing direct `querySelector([data-path="..."])` lookups only for registered targets. *(Incident #47)*
 
 ---
 
@@ -182,6 +188,9 @@ Folder collapse indicators, chevrons, and folder icon SVGs (`collapseSels`) must
 **RULE 5.18: CssGrouper Signature Keys Must Include Distinct Sub-Properties.**
 When adding CSS rules to `CssGrouper`, signature keys (`signatureKey`) must encompass all varying dynamic sub-properties (e.g. `--cf-icon-color`, `--cf-file-color`, `--cf-file-bg`). Never key row rules solely by background hex or opacity; doing so allows items that share background colors to collide in the grouper map and bleed hand-picked custom icon colors or custom text colors onto uncustomized siblings.
 
+**RULE 5.19: Safe SVG Decoding & Data-URI Stroke Integrity.**
+Never pass arbitrary SVG source code directly to `decodeURIComponent()` without defensive `try...catch` guards, as CSS `@keyframes` percentages (`0%`, `100%`) trigger `URIError: URI malformed`. Always sanitize backslash-escaped quotes (`\"`) prior to DOM parsing. When normalizing SVG vectors for CSS mask Data-URIs, ensure `stroke="currentColor"` is set whenever `hasStroke` is true (even when `hasFill` is present) and use explicit `#000000` stroke definitions in fallback data URIs to guarantee 100% opaque alpha masks across all browser engines. *(Incident #45, #46)*
+
 ---
 
 ## 6. CI/CD & Release Pipeline
@@ -210,6 +219,7 @@ While `read` is sufficient for building and attesting, `write` is mandatory for 
 | 1.10 | #30 *(Folder Notes)* |
 | 1.11 | #36 *(SMIL Animation)* |
 | 1.12 | #37 *(Container Scoping)* |
+| 1.13 | #46 *(Canvas/Excalidraw Double Icon Isolation)* |
 | 2.1 | #15 |
 | 2.2 | #14 *(superseded)* |
 | 2.3 | #24 |
@@ -221,6 +231,7 @@ While `read` is sufficient for building and attesting, `write` is mandatory for 
 | 2.9 | #13 |
 | 2.10 | #18, #35 *(Bounded LRU)* |
 | 2.11 | #37 *(Filtered Events)* |
+| 2.12 | #47 *(Zero-DOM Scanning on Scroll)* |
 | 3.1 | #16 |
 | 3.2 | #10 |
 | 3.3 | #6, #16 |
@@ -247,5 +258,6 @@ While `read` is sufficient for building and attesting, `write` is mandatory for 
 | 5.13 | #41 *(Folder Icon Fallback Chain)* |
 | 5.14 | #42 *(Parent Folder Context Leak)* |
 | 5.17 | #43 *(Collapse Indicator Color Decoupling)* |
+| 5.19 | #45 *(Safe SVG Decoding & Stroke Integrity)*, #46 |
 | 6.1 | #11 |
 | 6.2 | #11 |
