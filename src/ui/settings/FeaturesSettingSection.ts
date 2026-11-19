@@ -326,7 +326,7 @@ export class FeaturesSettingSection extends SettingSection {
                     this.plugin.settings.tagSyncEnabled = value;
                     await this.plugin.saveSettings();
                     this.plugin.generateStylesDebounced();
-                    (this.settingTab as unknown as { display: () => void }).display();
+                    this.refreshTab();
                 }));
 
         new obsidian.Setting(tagCard)

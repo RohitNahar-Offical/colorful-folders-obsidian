@@ -5,6 +5,7 @@ import { createVisualColorPicker } from '../components/ColorPicker';
 import { hexToRgbObj, adjustBrightnessRgb, normalizeVaultPath } from '../../common/utils';
 import { ColorResolver, isDarkMode } from '../../core/ColorResolver';
 import { RainbowManager } from '../../core/RainbowManager';
+import { IconPackIndex } from '../../core/IconPackIndex';
 import { t } from '../../lang/helpers';
 
 
@@ -881,11 +882,17 @@ modifiedFields: Set<string>;
 
         const customMap = this.plugin.getCustomIconsMap();
         const customIds = Object.keys(customMap);
+        const localIds = this.plugin.localFileSystemIcons ? Object.keys(this.plugin.localFileSystemIcons) : [];
+        const combinedCustomIds = Array.from(new Set([...customIds, ...localIds]));
         const prefixes = new Set(['all', 'lucide']);
-        customIds.forEach(id => {
-            const parts = id.split('-');
-            if (parts.length > 1) prefixes.add(parts[0]);
-            else prefixes.add('custom');
+
+        const hasAnimated = combinedCustomIds.some(id => this.plugin.animatedIconService?.isAnimatedIcon(id));
+        if (hasAnimated) {
+            prefixes.add('animated');
+        }
+
+        combinedCustomIds.forEach(id => {
+            prefixes.add(IconPackIndex.getPackPrefix(id));
         });
 
         const filterSelect = searchRow.createEl("select");
@@ -893,8 +900,27 @@ modifiedFields: Set<string>;
             padding: "6px 10px", borderRadius: "6px", border: "1px solid var(--background-modifier-border)",
             backgroundColor: "var(--background-secondary)", color: "var(--text-normal)", fontSize: "0.85em"
         });
+
+        const packDisplayNames: Record<string, string> = {
+            'all': t("settings.option.all_packs"),
+            'animated': '✨ ANIMATED ICONS',
+            'lucide': 'LUCIDE',
+            'line-md': 'LINE-MD (ANIMATED)',
+            'simple-icons': 'SIMPLE ICONS',
+            'tabler': 'TABLER',
+            'bi': 'BOOTSTRAP',
+            'feather': 'FEATHER',
+            'remix': 'REMIX',
+            'bx': 'BOXICONS',
+            'octicon': 'OCTICONS',
+            'ra': 'RPG AWESOME',
+            'fa-solid': 'FONT AWESOME SOLID',
+            'fa-regular': 'FONT AWESOME REGULAR',
+            'custom': 'CUSTOM'
+        };
+
         Array.from(prefixes).sort().forEach(p => {
-            const opt = filterSelect.createEl("option", { text: p === 'all' ? t("settings.option.all_packs") : p.toUpperCase(), value: p });
+            const opt = filterSelect.createEl("option", { text: packDisplayNames[p] || p.toUpperCase(), value: p });
             if (p === 'all') opt.selected = true;
         });
 
@@ -915,10 +941,25 @@ modifiedFields: Set<string>;
         )).filter(id => id.length > 0 && !id.includes(':'));
         
         // Prioritize custom icons at the top
-        const allIconsSet = new Set([...customIds, ...lucideIcons]);
+        const allIconsSet = new Set([...combinedCustomIds, ...lucideIcons]);
         const allIcons = Array.from(allIconsSet);
 
+        const isValidIconId = (iconId: string): boolean => {
+            if (!iconId) return false;
+            if (this.plugin.iconManager.isEmojiIcon(iconId)) return true;
+            if (this.plugin.iconManager.getRawIconSvg(iconId)) return true;
+            if (obsidian.getIcon && (obsidian.getIcon(iconId) || obsidian.getIcon(`lucide-${iconId}`))) return true;
+            return false;
+        };
+
+        // Purge invalid/stale icons from recentlyUsedIcons
+        if (this.plugin.settings.recentlyUsedIcons && this.plugin.settings.recentlyUsedIcons.length > 0) {
+            this.plugin.settings.recentlyUsedIcons = this.plugin.settings.recentlyUsedIcons.filter(id => isValidIconId(id));
+        }
+
         const createIconCell = (id: string, targetEl: HTMLElement) => {
+            if (!isValidIconId(id)) return;
+
             const iconScale = this.plugin.settings.iconScale || 1.0;
             const gridIconW = Math.round(24 * iconScale);
             const cellSize = Math.round(44 * (iconScale > 1.0 ? iconScale : 1.0));
@@ -938,8 +979,9 @@ modifiedFields: Set<string>;
             } else {
                 const rawSvg = this.plugin.iconManager.getRawIconSvg(id);
                 if (rawSvg) {
+                    const cleanSvg = rawSvg.includes('\\"') ? rawSvg.replace(/\\"/g, '"') : rawSvg;
                     // eslint-disable-next-line no-unsanitized/method -- Contextual fragment is safe here as svg content comes from curated internal asset maps or local files
-                    const frag = activeDocument.createRange().createContextualFragment(rawSvg);
+                    const frag = activeDocument.createRange().createContextualFragment(cleanSvg);
                     const svgEl = frag.querySelector("svg");
                     if (svgEl) {
                         svgEl.removeAttribute("width");
@@ -988,31 +1030,34 @@ modifiedFields: Set<string>;
 
             // 0. Render Recently Used if no search/filter
             if (!search && packFilter === "all" && this.plugin.settings.recentlyUsedIcons && this.plugin.settings.recentlyUsedIcons.length > 0) {
-                const recentHeader = iconGrid.createDiv();
-                recentHeader.setCssStyles({
-                    gridColumn: "1/-1", fontSize: "0.7em", fontWeight: "700",
-                    textTransform: "uppercase", color: "var(--text-accent)",
-                    padding: "4px 2px", borderBottom: "1px solid var(--background-modifier-border)",
-                    marginBottom: "4px", display: "flex", alignItems: "center", gap: "6px"
-                });
-                const recentIcon = recentHeader.createSpan();
-                obsidian.setIcon(recentIcon, "history");
-                const rsvg = recentIcon.querySelector("svg") as unknown as HTMLElement | null;
-                if (rsvg) rsvg.setCssStyles({ width: "12px", height: "12px" });
-                recentHeader.createSpan({ text: t("modal.color_picker.recently_used") });
+                const validRecent = this.plugin.settings.recentlyUsedIcons.filter(id => isValidIconId(id));
+                if (validRecent.length > 0) {
+                    const recentHeader = iconGrid.createDiv();
+                    recentHeader.setCssStyles({
+                        gridColumn: "1/-1", fontSize: "0.7em", fontWeight: "700",
+                        textTransform: "uppercase", color: "var(--text-accent)",
+                        padding: "4px 2px", borderBottom: "1px solid var(--background-modifier-border)",
+                        marginBottom: "4px", display: "flex", alignItems: "center", gap: "6px"
+                    });
+                    const recentIcon = recentHeader.createSpan();
+                    obsidian.setIcon(recentIcon, "history");
+                    const rsvg = recentIcon.querySelector("svg") as unknown as HTMLElement | null;
+                    if (rsvg) rsvg.setCssStyles({ width: "12px", height: "12px" });
+                    recentHeader.createSpan({ text: t("modal.color_picker.recently_used") });
 
-                this.plugin.settings.recentlyUsedIcons.forEach(id => {
-                    createIconCell(id, iconGrid);
-                });
+                    validRecent.forEach(id => {
+                        createIconCell(id, iconGrid);
+                    });
 
-                const allHeader = iconGrid.createDiv();
-                allHeader.setCssStyles({
-                    gridColumn: "1/-1", fontSize: "0.7em", fontWeight: "700",
-                    textTransform: "uppercase", color: "var(--text-muted)",
-                    padding: "12px 2px 4px", borderBottom: "1px solid var(--background-modifier-border)",
-                    marginBottom: "4px"
-                });
-                allHeader.createDiv({ text: t("modal.color_picker.all_icons_header") });
+                    const allHeader = iconGrid.createDiv();
+                    allHeader.setCssStyles({
+                        gridColumn: "1/-1", fontSize: "0.7em", fontWeight: "700",
+                        textTransform: "uppercase", color: "var(--text-muted)",
+                        padding: "12px 2px 4px", borderBottom: "1px solid var(--background-modifier-border)",
+                        marginBottom: "4px"
+                    });
+                    allHeader.createDiv({ text: t("modal.color_picker.all_icons_header") });
+                }
             }
 
             let filtered = allIcons;
@@ -1021,10 +1066,13 @@ modifiedFields: Set<string>;
             if (packFilter !== "all") {
                 if (packFilter === "lucide") {
                     filtered = lucideIcons;
+                } else if (packFilter === "animated") {
+                    filtered = combinedCustomIds.filter(id => this.plugin.animatedIconService?.isAnimatedIcon(id));
                 } else {
-                    filtered = customIds.filter(id => {
-                        if (packFilter === "custom") return !id.includes("-");
-                        return id.startsWith(packFilter + "-");
+                    filtered = combinedCustomIds.filter(id => {
+                        const pfx = IconPackIndex.getPackPrefix(id);
+                        if (packFilter === "custom") return pfx === "custom" || !id.includes("-");
+                        return pfx === packFilter;
                     });
                 }
             }
@@ -1049,7 +1097,7 @@ modifiedFields: Set<string>;
         renderIcons("", "all");
 
         this._addToRecentlyUsed = async (iconId: string) => {
-            if (!iconId) return;
+            if (!iconId || !isValidIconId(iconId)) return;
             if (!this.plugin.settings.recentlyUsedIcons) this.plugin.settings.recentlyUsedIcons = [];
             let list = this.plugin.settings.recentlyUsedIcons;
             // Remove if exists

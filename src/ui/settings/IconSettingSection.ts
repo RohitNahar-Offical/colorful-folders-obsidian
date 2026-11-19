@@ -18,7 +18,7 @@ export class IconSettingSection extends SettingSection {
                     await this.plugin.saveSettings();
                     this.plugin.generateStylesDebounced();
 
-                    (this.settingTab as unknown as { display: () => void }).display();
+                    this.refreshTab();
                 }));
 
         // 🏆 Icon Pack Priority Ranking Card
@@ -158,7 +158,7 @@ export class IconSettingSection extends SettingSection {
                     .onChange(async (value) => {
                         this.plugin.settings.autoIconVariety = value;
                         await this.plugin.saveSettings();
-                        (this.settingTab as unknown as { display: () => void }).display();
+                        this.refreshTab();
                         this.plugin.generateStylesDebounced();
                     }));
 
@@ -720,7 +720,7 @@ export class IconSettingSection extends SettingSection {
             this.plugin.registerCustomIcons();
             await this.plugin.saveSettings();
 
-            (this.settingTab as unknown as { display: () => void }).display();
+            this.refreshTab();
             new obsidian.Notice(t("notice.icon_registered", { id }));
         };
 
@@ -765,7 +765,7 @@ export class IconSettingSection extends SettingSection {
                     } finally {
                         btn.disabled = false;
                         btn.setButtonText("Self-check & detect packs");
-                        (this.settingTab as unknown as { display: () => void }).display();
+                        this.refreshTab();
                     }
                 }));
 
@@ -774,6 +774,7 @@ export class IconSettingSection extends SettingSection {
         featCard.createDiv("cf-grid");
 
         const packs = [
+            { name: "✨ Line icons (Animated)", desc: "1,200+ smooth animated SVG icons from Iconify.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/line-md.json", prefix: "line-md" },
             { name: "✨ Remix icons", desc: "Clean and neutral design system.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/ri.json", prefix: "ri" },
             { name: "🪶 Feather icons", desc: "Simply beautiful open source icons.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/feather.json", prefix: "feather" },
             { name: "📐 Tabler icons", desc: "Over 4000+ well-crafted icons.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/tabler.json", prefix: "tabler" },
@@ -788,6 +789,7 @@ export class IconSettingSection extends SettingSection {
 
         const matchPack = (id: string, pPrefix: string): boolean => {
             const lower = id.toLowerCase();
+            if (pPrefix === 'line-md') return lower.startsWith('line-md-') || lower.startsWith('line-md:');
             if (pPrefix === 'ri' || pPrefix === 'remix') return lower.startsWith('ri-') || lower.startsWith('remix-');
             if (pPrefix === 'feather') return lower.startsWith('feather-');
             if (pPrefix === 'tabler' || pPrefix === 'tb') return lower.startsWith('tb-') || lower.startsWith('tabler-');
@@ -871,7 +873,7 @@ export class IconSettingSection extends SettingSection {
                     new obsidian.Notice(t("settings.download_failed", { name: p.name, msg }), 6000);
                 } finally {
                     downloadBtn.disabled = false;
-                    (this.settingTab as unknown as { display: () => void }).display();
+                    this.refreshTab();
                 }
             };
 
@@ -882,7 +884,7 @@ export class IconSettingSection extends SettingSection {
                     const count = await this.plugin.removePackIcons(p.prefix);
                     new obsidian.Notice(`Removed ${count} icons from ${p.name}.`);
 
-                    (this.settingTab as unknown as { display: () => void }).display();
+                    this.refreshTab();
                 };
             }
         });
@@ -929,9 +931,12 @@ export class IconSettingSection extends SettingSection {
 
             const packLabels: Record<string, string> = {
                 "all": "All Icon Packs",
+                "line-md": "Line Icons (Animated)",
                 "simple-icons": "Simple Icons",
                 "feather": "Feather Icons",
                 "tabler": "Tabler Icons",
+                "bi": "Bootstrap Icons",
+                "ri": "Remix Icons",
                 "fa-solid": "Font Awesome Solid",
                 "fa-regular": "Font Awesome Regular",
                 "bx": "Boxicons",
@@ -1008,7 +1013,7 @@ export class IconSettingSection extends SettingSection {
                         if (this.plugin.localCustomIcons) delete this.plugin.localCustomIcons[id];
                         await this.plugin.saveLocalCustomIcons();
                         await this.plugin.saveSettings();
-                        (this.settingTab as unknown as { display: () => void }).display();
+                        this.refreshTab();
                     };
                 });
 
@@ -1075,7 +1080,7 @@ export class IconSettingSection extends SettingSection {
                         await this.settingTab.processIconData(data);
                         new obsidian.Notice(t("notice.manual_import_success"));
 
-                        (this.settingTab as unknown as { display: () => void }).display();
+                        this.refreshTab();
                     } catch (e) {
                         new obsidian.Notice(t("notice.invalid_json_format"));
                         console.error("Colorful Folders: Manual Import failed", (e as Error)?.message || String(e));

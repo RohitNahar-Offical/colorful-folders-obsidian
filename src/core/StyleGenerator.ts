@@ -12,6 +12,7 @@ import { generateGlobalBaseCss, generateDividerCss, generateStealthCss } from '.
 import { CssGrouper } from './CssGrouper';
 import { StyleResolver } from './StyleResolver';
 import { RainbowManager } from './RainbowManager';
+import { IconPackIndex } from './IconPackIndex';
 
 import { LRUCache } from '../common/LRUCache';
 
@@ -21,7 +22,7 @@ export class StyleGenerator {
     app: obsidian.App;
 
     private static readonly CF_FILE_TEXT_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px; opacity: 0.85;"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`;
-    private static readonly CF_FILE_TEXT_ICON_MASK_URL = `url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22currentColor%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20style%3D%22width%3A%2018px%3B%20height%3A%2018px%3B%20opacity%3A%200.85%3B%22%3E%3Cpath%20d%3D%22M14.5%202H6a2%202%200%200%200-2%202v16a2%202%200%200%202%202h12a2%202%200%200%202-2V7.5L14.5%202z%22%2F%3E%3Cpolyline%20points%3D%2214%202%2014%208%2020%208%22%2F%3E%3C%2Fsvg%3E")`;
+    private static readonly CF_FILE_TEXT_ICON_MASK_URL = `url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000000%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M14.5%202H6a2%202%200%200%200-2%202v16a2%202%200%200%202%202h12a2%202%200%200%202-2V7.5L14.5%202z%22%2F%3E%3Cpolyline%20points%3D%2214%202%2014%208%2020%208%22%2F%3E%3C%2Fsvg%3E")`;
     private static readonly SPACED_TEXT_CSS = `
         letter-spacing: 1px !important;
         word-spacing: 2px !important;
@@ -82,7 +83,7 @@ export class StyleGenerator {
         return effective;
     }
 
-    private resolveAutoIconCandidate(data: AutoIconData | null): string {
+    public resolveAutoIconCandidate(data: AutoIconData | null): string {
         if (!data) return "";
 
         const userOrder = this.getEffectivePackOrder();
@@ -91,13 +92,13 @@ export class StyleGenerator {
             if (packId === 'emoji') {
                 if (data.emoji) return data.emoji;
             } else {
-                if (data.lucide && this.matchesPackPrefix(data.lucide, packId) && this.isValidIconStr(data.lucide)) {
+                if (data.lucide && IconPackIndex.matchesPackId(data.lucide, packId) && this.isValidIconStr(data.lucide)) {
                     return data.lucide;
                 }
                 if (data.lucides && data.lucides.length > 0) {
                     for (let j = 0; j < data.lucides.length; j++) {
                         const ic = data.lucides[j];
-                        if (this.matchesPackPrefix(ic, packId) && this.isValidIconStr(ic)) return ic;
+                        if (IconPackIndex.matchesPackId(ic, packId) && this.isValidIconStr(ic)) return ic;
                     }
                 }
             }
@@ -107,34 +108,6 @@ export class StyleGenerator {
         if (data.lucide) return data.lucide;
         if (data.emoji) return data.emoji;
         return "";
-    }
-
-    private matchesPackPrefix(iconId: string, pack: string): boolean {
-        if (!iconId) return false;
-        const lower = iconId.toLowerCase();
-        if (pack === 'custom') return lower.startsWith('custom-');
-        if (pack === 'emoji') return !/[a-zA-Z]/.test(iconId);
-        if (pack === 'bootstrap' || pack === 'bi') return lower.startsWith('bi-') || lower.startsWith('bootstrap-') || lower.startsWith('bi:');
-        if (pack === 'font-awesome' || pack === 'fa') return lower.startsWith('fa-') || lower.startsWith('fas-') || lower.startsWith('fab-') || lower.startsWith('far-') || lower.includes('font-awesome');
-        if (pack === 'tabler' || pack === 'tb') return lower.startsWith('tb-') || lower.startsWith('tabler-');
-        if (pack === 'remix' || pack === 'ri') return lower.startsWith('ri-') || lower.startsWith('remix-');
-        if (pack === 'simple-icons') return lower.startsWith('simple-') || lower.startsWith('si-');
-        if (pack === 'material' || pack === 'mdi') return lower.startsWith('mdi-') || lower.includes('material');
-        if (pack === 'feather') return lower.startsWith('feather-');
-        if (pack === 'rpg-awesome' || pack === 'ra') return lower.startsWith('ra-') || lower.includes('rpg-awesome');
-        if (pack === 'boxicons' || pack === 'bx') return lower.startsWith('bx-') || lower.includes('boxicons');
-        if (pack === 'octicons' || pack === 'octicon') return lower.startsWith('octicon-');
-        if (pack === 'lucide') {
-            if (lower.startsWith('lucide-')) return true;
-            const isOtherPack = lower.startsWith('bi-') || lower.startsWith('fa-') || lower.startsWith('fas-') ||
-                lower.startsWith('far-') || lower.startsWith('fab-') || lower.startsWith('tb-') ||
-                lower.startsWith('tabler-') || lower.startsWith('ri-') || lower.startsWith('remix-') ||
-                lower.startsWith('simple-') || lower.startsWith('si-') || lower.startsWith('mdi-') ||
-                lower.startsWith('feather-') || lower.startsWith('custom-') || lower.startsWith('ra-') ||
-                lower.startsWith('bx-') || lower.startsWith('octicon-');
-            return !isOtherPack && /[a-zA-Z]/.test(iconId);
-        }
-        return false;
     }
 
     private prepareContext(): StyleContext | null {
@@ -326,24 +299,29 @@ export class StyleGenerator {
                 const rawFileIcon = (fileStyle?.iconId && this.isValidIconStr(fileStyle.iconId)) ? fileStyle.iconId : null;
                 const rawInheritedFileIcon = (inheritedStyle?.applyToFiles && inheritedStyle?.iconId && this.isValidIconStr(inheritedStyle.iconId)) ? inheritedStyle.iconId : null;
 
+                const ext = child.path.split('.').pop()?.toLowerCase();
+                const isSpecialFormat = ext === 'canvas' || ext === 'excalidraw' || child.path.endsWith('.excalidraw.md') || child.path.includes('.excalidraw.');
+
                 let iconId = "";
-                if (isAiFileIcon) {
-                    if (this.settings.autoIcons) {
-                        const autoData = this.plugin.iconManager.getAutoIconData(child.name, child.path, true);
-                        const candidate = autoData ? this.resolveAutoIconCandidate(autoData) : "";
-                        iconId = candidate || rawFileIcon || rawInheritedFileIcon || "";
-                    } else {
-                        iconId = rawInheritedFileIcon || "";
-                    }
-                } else {
-                    let autoIcon = "";
-                    if (this.settings.autoIcons) {
-                        const customUserRuleFile = this.plugin.iconManager.getAutoIconData(child.name, child.path, true);
-                        if (customUserRuleFile) {
-                            autoIcon = this.resolveAutoIconCandidate(customUserRuleFile);
+                if (!isSpecialFormat || rawFileIcon) {
+                    if (isAiFileIcon) {
+                        if (this.settings.autoIcons) {
+                            const autoData = this.plugin.iconManager.getAutoIconData(child.name, child.path, true);
+                            const candidate = autoData ? this.resolveAutoIconCandidate(autoData) : "";
+                            iconId = candidate || rawFileIcon || rawInheritedFileIcon || "";
+                        } else {
+                            iconId = rawFileIcon || rawInheritedFileIcon || "";
                         }
+                    } else {
+                        let autoIcon = "";
+                        if (this.settings.autoIcons) {
+                            const customUserRuleFile = this.plugin.iconManager.getAutoIconData(child.name, child.path, true);
+                            if (customUserRuleFile) {
+                                autoIcon = this.resolveAutoIconCandidate(customUserRuleFile);
+                            }
+                        }
+                        iconId = rawFileIcon || rawInheritedFileIcon || autoIcon || "";
                     }
-                    iconId = rawFileIcon || rawInheritedFileIcon || autoIcon || "";
                 }
 
                 const textNative = ColorResolver.resolveTextColor(
@@ -466,9 +444,22 @@ export class StyleGenerator {
                     );
                 }
 
+                if (rawFileIcon) {
+                    grouper.add(`
+                        display: none !important;
+                    `, [
+                        `body .nav-files-container .nav-file-title[data-path="${safePath}"] > .tree-item-icon:not(.collapse-indicator):not(.collapse-icon)`,
+                        `body .nav-files-container .tree-item-self[data-path="${safePath}"] > .tree-item-icon:not(.collapse-indicator):not(.collapse-icon)`
+                    ], `hideNativeTreeIcon_${safePath}`);
+                }
+
+                const fileIconSels = fileTextSels.map(s => s + '::before');
+
                 if (iconId) {
                     const isAnimated = !!this.plugin.animatedIconService?.isAnimatedIcon(iconId);
-                    if (!isAnimated) {
+                    if (isAnimated) {
+                        this.plugin.animatedIconService?.registerActiveAnimatedTarget(child.path, iconId);
+                    } else {
                         const isCustomEmoji = this.plugin.iconManager.isEmojiIcon(iconId);
 
                         if (isCustomEmoji) {
@@ -482,7 +473,7 @@ export class StyleGenerator {
                                 height: ${effFileIconW} !important;
                                 width: ${effFileIconW} !important;
                                 margin-right: 4px !important;
-                            `, fileTextSels.map(s => s + '::before'));
+                            `, fileIconSels);
                         } else {
                             const maskUrl = this.plugin.iconManager.getMaskDataUri(iconId);
                             if (maskUrl) {
@@ -500,31 +491,39 @@ export class StyleGenerator {
                                     -webkit-mask-position: center !important;
                                     -webkit-mask-size: contain !important;
                                     opacity: 0.85 !important;
-                                `, fileTextSels.map(s => s + '::before'));
+                                `, fileIconSels);
                             }
                         }
                     }
                 } else if (autoIcons) {
-                    const fileTextMask = this.plugin.iconManager.getMaskDataUri("lucide-file-text") || this.plugin.iconManager.getMaskDataUri("file-text") || StyleGenerator.CF_FILE_TEXT_ICON_MASK_URL;
-                    grouper.add(`
-                        content: '' !important;
-                        display: inline-flex !important;
-                        flex-shrink: 0 !important;
-                        width: ${effFileIconW} !important;
-                        height: ${effFileIconW} !important;
-                        background-color: ${iconColor || color.hex || textNative} !important;
-                        -webkit-mask-image: ${fileTextMask} !important;
-                        -webkit-mask-repeat: no-repeat !important;
-                        -webkit-mask-position: center !important;
-                        -webkit-mask-size: contain !important;
-                        opacity: 0.85 !important;
-                    `, fileTextSels.map(s => s + '::before'));
+                    const ext = child.path.split('.').pop()?.toLowerCase();
+                    const isSpecialFormat = ext === 'canvas' || ext === 'excalidraw' || child.path.endsWith('.excalidraw.md') || child.path.includes('.excalidraw.');
+                    if (!isSpecialFormat) {
+                        const fileTextMask = this.plugin.iconManager.getMaskDataUri("lucide-file-text") || this.plugin.iconManager.getMaskDataUri("file-text") || StyleGenerator.CF_FILE_TEXT_ICON_MASK_URL;
+                        grouper.add(`
+                            content: '' !important;
+                            display: inline-flex !important;
+                            align-self: center !important;
+                            flex-shrink: 0 !important;
+                            width: ${effFileIconW} !important;
+                            height: ${effFileIconW} !important;
+                            margin-right: 4px !important;
+                            background-color: ${iconColor || color.hex || textNative} !important;
+                            -webkit-mask-image: ${fileTextMask} !important;
+                            -webkit-mask-repeat: no-repeat !important;
+                            -webkit-mask-position: center !important;
+                            -webkit-mask-size: contain !important;
+                            opacity: 0.85 !important;
+                        `, fileIconSels);
+                    }
                 }
 
                 const activeFileIcon = (fileStyle?.activeIconId && this.isValidIconStr(fileStyle.activeIconId)) ? fileStyle.activeIconId : null;
                 if (activeFileIcon) {
                     const isActiveAnimated = !!this.plugin.animatedIconService?.isAnimatedIcon(activeFileIcon);
-                    if (!isActiveAnimated) {
+                    if (isActiveAnimated) {
+                        this.plugin.animatedIconService?.registerActiveAnimatedTarget(child.path, activeFileIcon);
+                    } else {
                         const isActiveCustomEmoji = this.plugin.iconManager.isEmojiIcon(activeFileIcon);
                         const activeFileSels = [
                             `body .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file) .nav-file-title-content::before`,
@@ -944,7 +943,9 @@ export class StyleGenerator {
                 const sels = getSels(isExpandedState);
 
                 const isAnimated = !!this.plugin.animatedIconService?.isAnimatedIcon(iconIdToUse);
-                if (!isAnimated) {
+                if (isAnimated) {
+                    this.plugin.animatedIconService?.registerActiveAnimatedTarget(child.path, iconIdToUse);
+                } else {
                     if (isCustomEmoji) {
                         grouper.add(`
                             content: "${iconIdToUse} " !important;
@@ -1077,6 +1078,7 @@ export class StyleGenerator {
     async generateCss(): Promise<string> {
         ColorResolver.clearCache();
         this._folderColorsForTags.clear();
+        this.plugin.animatedIconService?.clearRegisteredAnimatedTargets();
         const context = this.prepareContext();
         if (!context) return "";
 

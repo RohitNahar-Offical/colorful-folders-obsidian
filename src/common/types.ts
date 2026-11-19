@@ -230,7 +230,7 @@ export interface IColorfulFoldersPlugin {
         clean(): void;
         hasAnyDividers(): boolean;
     };
-    styleGenerator: { generateCss(): Promise<string> };
+    styleGenerator: { generateCss(): Promise<string>; resolveAutoIconCandidate?(data: AutoIconData | null): string };
     domObserverService: DOMObserverService;
     animatedIconService: import('../services/AnimatedIconService').AnimatedIconService;
     adoptedStyleSheetService?: import('../services/AdoptedStyleSheetService').AdoptedStyleSheetService;

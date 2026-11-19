@@ -2,9 +2,9 @@ import { PACK_PRIORITY, DEFAULT_ICON_PACK_ORDER } from '../common/constants';
 import { extractCoreIconKeyword } from '../common/utils';
 
 export class IconPackIndex {
-    private static readonly ALPHA_REGEX = /[a-zA-Z]/;
+    public static readonly ALPHA_REGEX = /[a-zA-Z]/;
     private exactMap = new Map<string, string>();
-    private coreMap = new Map<string, string>();
+     private coreMap = new Map<string, string>();
     private suffixMap = new Map<string, string>();
     private allKeys: string[] = [];
     private isBuilt = false;
@@ -17,11 +17,31 @@ export class IconPackIndex {
     private _priorityOrderKey: string = '';
     private _wideAutoIcons: boolean = false;
 
-    public matchesPackId(iconKey: string, packId: string): boolean {
+    public static getPackPrefix(id: string): string {
+        if (!id) return 'custom';
+        const lower = id.toLowerCase();
+        if (lower.startsWith('line-md-') || lower.startsWith('line-md:') || lower.startsWith('line-md_') || lower.startsWith('linemd-')) return 'line-md';
+        if (lower.startsWith('fa-solid-')) return 'fa-solid';
+        if (lower.startsWith('fa-regular-')) return 'fa-regular';
+        if (lower.startsWith('simple-icons-') || lower.startsWith('simple-') || lower.startsWith('si-')) return 'simple-icons';
+        if (lower.startsWith('bootstrap-') || lower.startsWith('bi-') || lower.startsWith('bi:')) return 'bi';
+        if (lower.startsWith('tabler-') || lower.startsWith('tb-')) return 'tabler';
+        if (lower.startsWith('remix-') || lower.startsWith('ri-')) return 'remix';
+        if (lower.startsWith('octicon-') || lower.startsWith('octicons-')) return 'octicon';
+        if (lower.startsWith('feather-')) return 'feather';
+        if (lower.startsWith('boxicons-') || lower.startsWith('bx-')) return 'bx';
+        if (lower.startsWith('rpg-awesome-') || lower.startsWith('ra-')) return 'ra';
+        if (lower.startsWith('lucide-')) return 'lucide';
+        const parts = id.split(/[-_:]/);
+        return parts.length > 1 ? parts[0].toLowerCase() : 'custom';
+    }
+
+    public static matchesPackId(iconKey: string, packId: string): boolean {
         if (!iconKey) return false;
         const lower = iconKey.toLowerCase();
         if (packId === 'custom') return lower.startsWith('custom-');
         if (packId === 'emoji') return !IconPackIndex.ALPHA_REGEX.test(iconKey);
+        if (packId === 'line-md') return lower.startsWith('line-md-') || lower.startsWith('line-md:') || lower.startsWith('line-md_') || lower.startsWith('linemd-');
         if (packId === 'bootstrap' || packId === 'bi') return lower.startsWith('bi-') || lower.startsWith('bootstrap-') || lower.startsWith('bi:');
         if (packId === 'simple-icons') return lower.startsWith('simple-') || lower.startsWith('si-');
         if (packId === 'tabler' || packId === 'tb') return lower.startsWith('tb-') || lower.startsWith('tabler-');
@@ -29,16 +49,24 @@ export class IconPackIndex {
         if (packId === 'font-awesome' || packId === 'fa') return lower.startsWith('fa-') || lower.startsWith('fas-') || lower.startsWith('fab-') || lower.startsWith('far-') || lower.includes('font-awesome');
         if (packId === 'material' || packId === 'mdi') return lower.startsWith('mdi-') || lower.includes('material');
         if (packId === 'feather') return lower.startsWith('feather-');
+        if (packId === 'rpg-awesome' || packId === 'ra') return lower.startsWith('ra-') || lower.includes('rpg-awesome');
+        if (packId === 'boxicons' || packId === 'bx') return lower.startsWith('bx-') || lower.includes('boxicons');
+        if (packId === 'octicons' || packId === 'octicon') return lower.startsWith('octicon-');
         if (packId === 'lucide') {
             if (lower.startsWith('lucide-')) return true;
             const isOtherPack = lower.startsWith('bi-') || lower.startsWith('fa-') || lower.startsWith('fas-') ||
                 lower.startsWith('far-') || lower.startsWith('fab-') || lower.startsWith('tb-') ||
                 lower.startsWith('tabler-') || lower.startsWith('ri-') || lower.startsWith('remix-') ||
                 lower.startsWith('simple-') || lower.startsWith('si-') || lower.startsWith('mdi-') ||
-                lower.startsWith('feather-') || lower.startsWith('custom-');
+                lower.startsWith('feather-') || lower.startsWith('custom-') || lower.startsWith('line-md-') ||
+                lower.startsWith('ra-') || lower.startsWith('bx-') || lower.startsWith('octicon-');
             return !isOtherPack && IconPackIndex.ALPHA_REGEX.test(iconKey);
         }
         return false;
+    }
+
+    public matchesPackId(iconKey: string, packId: string): boolean {
+        return IconPackIndex.matchesPackId(iconKey, packId);
     }
 
     private getPackPriority(iconKey: string): number {
@@ -192,7 +220,7 @@ export class IconPackIndex {
 
     public searchFuzzy(searchKey: string, options?: { threshold?: number }): string | null {
         if (!this.isBuilt || !searchKey) return null;
-        
+
         // Fast-path: O(1) exact or core keyword match
         const exact = this.findIcon(searchKey);
         if (exact) return exact;
@@ -211,7 +239,7 @@ export class IconPackIndex {
             const lenA = normKey.length;
             const lenB = candidateLower.length;
             const maxLen = Math.max(lenA, lenB);
-            
+
             // Length-difference pruning
             if (Math.abs(lenA - lenB) / maxLen > maxLenDiffRatio) {
                 continue;

@@ -48,7 +48,7 @@ export class AISettingSection extends SettingSection {
                         this.plugin.settings.aiModelName = 'qwen2.5:1.5b';
                     }
                     await this.plugin.saveSettings();
-                    (this.settingTab as unknown as { display: () => void }).display();
+                    this.refreshTab();
                 })
             );
 
@@ -129,7 +129,7 @@ export class AISettingSection extends SettingSection {
                     void (async () => {
                         this.plugin.settings.aiModelName = m.name;
                         await this.plugin.saveSettings();
-                        (this.settingTab as unknown as { display: () => void }).display();
+                        this.refreshTab();
                         new obsidian.Notice(t("notice.set_ai_model", { name: m.name }));
                     })();
                 });
@@ -258,7 +258,7 @@ export class AISettingSection extends SettingSection {
                 .onChange(async (val) => {
                     this.plugin.settings.embeddingEngine = val as 'builtin' | 'custom';
                     await this.plugin.saveSettings();
-                    (this.settingTab as unknown as { display: () => void }).display();
+                    this.refreshTab();
                 }));
 
         if (this.plugin.settings.embeddingEngine === "custom") {

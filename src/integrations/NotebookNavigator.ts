@@ -39,35 +39,7 @@ export class NotebookNavigatorIntegration {
     }
 
     /**
-     * Returns the extra containers (NN navigation pane, etc.) that should be observed.
-     */
-    static getExtraContainers(doc: Document, settings?: ColorfulFoldersSettings): Element[] {
-        if (settings && !settings.notebookNavigatorSupport) return [];
-        return Array.from(doc.querySelectorAll(NN_SELECTORS.CONTAINERS));
-    }
-
-    /**
-     * Finds a specific item (folder or file) in the NN DOM by its path.
-     */
-    static findItemInDOM(container: Element, path: string): HTMLElement | null {
-        const safePath = safeEscape(path);
-        return container.querySelector(
-            `${NN_SELECTORS.NAV_ITEM}[data-path="${safePath}"], ${NN_SELECTORS.FILE_ITEM}[data-path="${safePath}"]`
-        );
-    }
-
-    /**
-     * Returns the base selector for NN items (folders/nav items).
-     */
-    static getNavBase(settings: ColorfulFoldersSettings): string {
-        return this.isSupported(settings) ? NN_SELECTORS.NAV_ITEM : '.cf-disabled-nn';
-    }
-
-    /**
-     * Returns a scoped selector that ONLY matches if inside an NN container.
-     */
-    /**
-     * Returns a scoped selector that ONLY matches real vault items.
+     * Returns a scoped selector that ONLY matches real vault items in Notebook Navigator.
      * Hardened to exclude system views (Tags/Properties) via attribute filtering.
      */
     static getScopedNavSelectors(path: string): string[] {
@@ -78,30 +50,9 @@ export class NotebookNavigatorIntegration {
         ];
     }
 
-    static getScopedNavSelector(path: string): string {
-        return this.getScopedNavSelectors(path).join(', ');
-    }
-
     static getScopedFileSelector(path: string): string {
         const safePath = safeEscape(path);
         return `.notebook-navigator .nn-file[data-path="${safePath}"]:not(.nn-header)`;
-    }
-
-    /**
-     * Returns a selector for an active NN item.
-     */
-    static getActiveGlowSelector(path: string): string {
-        const safePath = safeEscape(path);
-        return `.notebook-navigator .is-active[data-path="${safePath}"]`;
-    }
-
-    /**
-     * Returns a selector for NN container vertical lines (if they exist).
-     * Used to explicitly style or disable radiant paths in NN.
-     */
-    static getRadiantPathSelector(path: string): string {
-        const safePath = safeEscape(path);
-        return `.notebook-navigator .nn-navitem[data-path="${safePath}"] > .nn-virtual-container`;
     }
 
     static getNavNameSelector(): string {
@@ -118,40 +69,6 @@ export class NotebookNavigatorIntegration {
 
     static getFileIconSelector(): string {
         return NN_SELECTORS.FILE_ICON;
-    }
-
-    /**
-     * Checks if a container is a Notebook Navigator container.
-     */
-    static isNNContainer(container: Element): boolean {
-        return container.classList.contains('notebook-navigator') ||
-               container.classList.contains('nn-navigation-pane-content') || 
-               container.classList.contains('nn-list-view') ||
-               container.classList.contains('nn-explorer-content');
-    }
-
-    /**
-     * Returns true if dividers should be rendered for the given container.
-     */
-    static shouldRenderDividers(container: Element, settings: ColorfulFoldersSettings): boolean {
-        if (this.isSupported(settings) && this.isNNContainer(container)) {
-            return false;
-        }
-        return true; // Native explorer always supported
-    }
-
-    /**
-     * Identifies if a DOM node is a folder/nav-item.
-     */
-    static isFolder(el: Element): boolean {
-        return el.classList.contains('nav-folder') || el.classList.contains('nn-navitem');
-    }
-
-    /**
-     * Identifies if a DOM node is a file-item.
-     */
-    static isFile(el: Element): boolean {
-        return el.classList.contains('nav-file') || el.classList.contains('nn-file');
     }
 
     /**
@@ -212,22 +129,41 @@ export class NotebookNavigatorIntegration {
                 `, [iconTarget], `nnEmoji_${iconId}_${effIconW}`);
                 grouper.add(`display: none !important;`, [`${iconTarget} > svg`, `${iconTarget} > span`], `nnDisplayNone`);
             } else if (iconSvg) {
-                grouper.add(`
-                    display: inline-flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    width: ${effIconW} !important;
-                    height: ${effIconW} !important;
-                    background-color: ${iconColor || color.hex || textCol} !important;
-                    -webkit-mask-image: url("data:image/svg+xml,${iconSvg}") !important;
-                    -webkit-mask-repeat: no-repeat !important;
-                    -webkit-mask-position: center !important;
-                    -webkit-mask-size: contain !important;
-                    content: "" !important;
-                    opacity: 0.85 !important;
-                    visibility: visible !important;
-                `, [iconTarget], `nnSvg_${iconColor || color.hex || textCol}_${iconSvg}_${effIconW}`);
-                grouper.add(`display: none !important;`, [`${iconTarget} > svg`, `${iconTarget} > span`], `nnDisplayNone`);
+                let isAnimated = false;
+                try {
+                    const raw = iconSvg.includes('%') ? decodeURIComponent(iconSvg) : iconSvg;
+                    isAnimated = /<animate|<animateTransform|<animateMotion|<set|@keyframes|animation:\s*/i.test(raw);
+                } catch {
+                    isAnimated = /animate|animation/i.test(iconSvg);
+                }
+                if (isAnimated) {
+                    grouper.add(`
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        width: ${effIconW} !important;
+                        height: ${effIconW} !important;
+                        visibility: visible !important;
+                    `, [iconTarget], `nnAnimated_${effIconW}`);
+                    grouper.add(`display: none !important;`, [`${iconTarget} > svg:not(.cf-live-animated-icon svg)`, `${iconTarget} > span:not(.cf-live-animated-icon)`], `nnDisplayNone`);
+                } else {
+                    grouper.add(`
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        width: ${effIconW} !important;
+                        height: ${effIconW} !important;
+                        background-color: ${iconColor || color.hex || textCol} !important;
+                        -webkit-mask-image: url("data:image/svg+xml,${iconSvg}") !important;
+                        -webkit-mask-repeat: no-repeat !important;
+                        -webkit-mask-position: center !important;
+                        -webkit-mask-size: contain !important;
+                        content: "" !important;
+                        opacity: 0.85 !important;
+                        visibility: visible !important;
+                    `, [iconTarget], `nnSvg_${iconColor || color.hex || textCol}_${iconSvg}_${effIconW}`);
+                    grouper.add(`display: none !important;`, [`${iconTarget} > svg:not(.cf-live-animated-icon svg)`, `${iconTarget} > span:not(.cf-live-animated-icon)`], `nnDisplayNone`);
+                }
             }
         } else {
             const fallbackSvg = isFolder ? CF_FOLDER_CLOSED : CF_FILE_DEFAULT;

@@ -33,7 +33,6 @@ export class EventTrackerService {
                 this.plugin.applyThemeState(doc);
                 
                 this.registerDragEventsForDoc(doc);
-                this.plugin.domObserverService.initStyleObservers();
                 this.plugin.generateStylesDebounced();
                 this.updateActiveFolderClasses();
             })
@@ -101,16 +100,7 @@ export class EventTrackerService {
                     return;
                 }
                 if (!(normPath.startsWith('.') || normPath.includes('/.'))) {
-                    if (this.plugin.settings.colorMode === "heatmap" && this.plugin.heatmapCache) {
-                        let p = file.parent;
-                        const mtime = Date.now();
-                        while (p) {
-                            if ((this.plugin.heatmapCache.get(p.path) || 0) < mtime) {
-                                this.plugin.heatmapCache.set(p.path, mtime);
-                            }
-                            p = p.parent;
-                        }
-                    }
+                    this.touchHeatmapParents(file);
                 }
             })
         );
@@ -118,16 +108,7 @@ export class EventTrackerService {
         this.registerEvent(
             this.plugin.app.vault.on("create", (file) => {
                 if (file && (file.path.startsWith('.') || file.path.includes('/.'))) return;
-                if (this.plugin.settings.colorMode === "heatmap" && this.plugin.heatmapCache) {
-                    let p = file.parent;
-                    const mtime = Date.now();
-                    while (p) {
-                        if ((this.plugin.heatmapCache.get(p.path) || 0) < mtime) {
-                            this.plugin.heatmapCache.set(p.path, mtime);
-                        }
-                        p = p.parent;
-                    }
-                }
+                this.touchHeatmapParents(file);
                 this.invalidateCaches();
                 this.plugin.generateStylesDebounced();
             }),
@@ -380,6 +361,18 @@ export class EventTrackerService {
         
         this.registerDomEvent(doc, "dragend", handleDragEnd);
         this.registerDomEvent(doc, "drop", handleDragEnd);
+    }
+
+    private touchHeatmapParents(file: obsidian.TAbstractFile): void {
+        if (this.plugin.settings.colorMode !== "heatmap" || !this.plugin.heatmapCache) return;
+        let p = file.parent;
+        const mtime = Date.now();
+        while (p) {
+            if ((this.plugin.heatmapCache.get(p.path) || 0) < mtime) {
+                this.plugin.heatmapCache.set(p.path, mtime);
+            }
+            p = p.parent;
+        }
     }
 
     public destroy() {

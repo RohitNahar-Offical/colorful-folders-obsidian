@@ -1,6 +1,6 @@
 import { ColorfulFoldersSettings, FolderStyle } from '../common/types';
 import { PALETTES } from '../common/constants';
-import { hexToRgbObj, adjustBrightnessRgb, adjustBrightnessValues, parseCustomPalette, hashString } from '../common/utils';
+import { hexToRgbObj, adjustBrightnessRgb, adjustBrightnessValues, parseCustomPalette, hashString, rgbToHex } from '../common/utils';
 import { LRUCache } from '../common/LRUCache';
 
 export function isDarkMode(): boolean {
@@ -33,7 +33,7 @@ export function getCurrentPalette(
             const parsed = hexToRgbObj(c.hex);
             if (!parsed) return c;
             const adj = adjustBrightnessValues(parsed.r, parsed.g, parsed.b, -0.15);
-            const hex = "#" + ((1 << 24) + (adj.r << 16) + (adj.g << 8) + adj.b).toString(16).slice(1);
+            const hex = rgbToHex(adj.r, adj.g, adj.b);
             return { rgb: `${adj.r}, ${adj.g}, ${adj.b}`, hex };
         });
     }

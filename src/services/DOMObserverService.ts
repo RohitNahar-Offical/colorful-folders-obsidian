@@ -2,7 +2,6 @@ import { IColorfulFoldersPlugin } from '../common/types';
 
 export class DOMObserverService {
     plugin: IColorfulFoldersPlugin;
-    private styleObservers: MutationObserver[] = [];
     public dividerObserver: MutationObserver | null = null;
     private isScrolling = false;
     public isScrollingPublic = false;
@@ -10,19 +9,6 @@ export class DOMObserverService {
 
     constructor(plugin: IColorfulFoldersPlugin) {
         this.plugin = plugin;
-    }
-
-    initStyleObservers() {
-        this.disposeStyleObservers();
-        this.styleObservers = [];
-    }
-
-    /**
-     * Stamp lightweight dataset attributes (`data-cf-path`) on file explorer nodes.
-     * Attribute updates do NOT trigger childList mutations, eliminating race conditions.
-     */
-    public tagExplorerItems(container: HTMLElement) {
-        // NO-OP: Obsidian native data-path attributes are used directly by CSS selectors.
     }
 
     /**
@@ -74,12 +60,12 @@ export class DOMObserverService {
             this.dividerObserver.disconnect();
         }
 
-        const allContainers = this.plugin.getAllExplorerContainers();
+        const allContainers = hasAnimated
+            ? (this.plugin.animatedIconService?.getAllNavContainers() || this.plugin.getAllExplorerContainers())
+            : this.plugin.getAllExplorerContainers();
         if (allContainers.length === 0) return;
 
         allContainers.forEach((container) => {
-            this.tagExplorerItems(container);
-
             if (
                 (container as HTMLElement & { cfHasScrollListener?: boolean })
                   .cfHasScrollListener
@@ -148,7 +134,6 @@ export class DOMObserverService {
                 this.pendingSyncFrame = window.requestAnimationFrame(() => {
                     this.pendingSyncFrame = null;
                     if (this.plugin.isSyncingDividers || this.isScrolling || this.plugin.isDragging) return;
-                    allContainers.forEach(c => this.tagExplorerItems(c));
                     if (this.plugin.dividerManager?.hasAnyDividers()) {
                         this.plugin.dividerManager.syncDividers();
                     }
@@ -185,13 +170,8 @@ export class DOMObserverService {
             if (this.hasAnyAnimatedIcons()) {
                 this.syncAnimatedIcons();
             }
-        }, 80);
+        }, 120);
     };
-
-    disposeStyleObservers() {
-        this.styleObservers.forEach(obs => obs.disconnect());
-        this.styleObservers = [];
-    }
 
     disposeDividerObserver() {
         if (this.pendingSyncFrame !== null) {
@@ -205,7 +185,6 @@ export class DOMObserverService {
     }
 
     destroy() {
-        this.disposeStyleObservers();
         this.disposeDividerObserver();
 
         const allContainers = this.plugin.getAllExplorerContainers();

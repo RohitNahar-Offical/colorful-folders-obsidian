@@ -18,21 +18,14 @@ export class PluginLifecycleService {
     }
 
     public registerVaultCacheEvents(): void {
-        this.plugin.app.vault.on('modify', () => {
+        const clearCaches = () => {
             if (this.plugin.folderCountCache) this.plugin.folderCountCache.clear();
             if (this.plugin.heatmapCache) this.plugin.heatmapCache.clear();
             this.plugin.invalidateExplorerContainersCache();
-        });
-        this.plugin.app.vault.on('create', () => {
-            if (this.plugin.folderCountCache) this.plugin.folderCountCache.clear();
-            if (this.plugin.heatmapCache) this.plugin.heatmapCache.clear();
-            this.plugin.invalidateExplorerContainersCache();
-        });
-        this.plugin.app.vault.on('delete', () => {
-            if (this.plugin.folderCountCache) this.plugin.folderCountCache.clear();
-            if (this.plugin.heatmapCache) this.plugin.heatmapCache.clear();
-            this.plugin.invalidateExplorerContainersCache();
-        });
+        };
+        this.plugin.registerEvent(this.plugin.app.vault.on('modify', clearCaches));
+        this.plugin.registerEvent(this.plugin.app.vault.on('create', clearCaches));
+        this.plugin.registerEvent(this.plugin.app.vault.on('delete', clearCaches));
     }
 
     public onLayoutReady(): void {
@@ -46,7 +39,6 @@ export class PluginLifecycleService {
 
             if (this.plugin._abortStartupRender) return;
             void this.plugin.generateStyles();
-            this.plugin.getAllExplorerContainers().forEach((c) => this.plugin.domObserverService.tagExplorerItems(c));
             this.plugin.domObserverService.initDividerObserver();
             this.plugin.domObserverService.syncTagPaneDataset();
             this.plugin.dividerManager.syncDividers();

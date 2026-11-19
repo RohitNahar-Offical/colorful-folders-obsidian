@@ -588,7 +588,13 @@ export class IconRepository {
         try {
             if (!svgStr) { result = ""; }
             else {
-                const rawSvg = svgStr.includes('%') ? decodeURIComponent(svgStr) : svgStr;
+                let cleanStr = svgStr.replace(/\\"/g, '"');
+                let rawSvg: string;
+                try {
+                    rawSvg = cleanStr.includes('%') ? decodeURIComponent(cleanStr) : cleanStr;
+                } catch {
+                    rawSvg = cleanStr;
+                }
                 if (!rawSvg.includes('<svg')) { result = svgStr; }
                 else {
                     const parser = this._domParser;
@@ -648,9 +654,11 @@ export class IconRepository {
 
                         const hasStroke = rawSvg.includes('stroke=') && !rawSvg.includes('stroke="none"');
                         const hasFill = rawSvg.includes('fill=') && !rawSvg.includes('fill="none"');
+                        if (hasStroke) {
+                            svg.setAttribute('stroke', 'currentColor');
+                        }
                         if (hasStroke && !hasFill) {
                             svg.setAttribute('fill', 'none');
-                            svg.setAttribute('stroke', 'currentColor');
                         } else {
                             svg.setAttribute('fill', 'currentColor');
                         }

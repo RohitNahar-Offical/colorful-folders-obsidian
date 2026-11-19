@@ -626,57 +626,6 @@ export class DividerManager {
         isGlobal: boolean,
         domPathMap?: Map<string, HTMLElement>
     ): HTMLElement | null {
-        if (obsidian.Platform.isMobile) {
-            return this.findTargetElementMobile(container, path, isGlobal, domPathMap);
-        }
-        return this.findTargetElementDesktop(container, path, isGlobal, domPathMap);
-    }
-
-    /**
-     * Optimized target resolver for Desktop/PC. Zero overhead, O(1) map lookup.
-     */
-    private findTargetElementDesktop(
-        container: Element,
-        path: string,
-        isGlobal: boolean,
-        domPathMap?: Map<string, HTMLElement>
-    ): HTMLElement | null {
-        if (isGlobal) {
-            let seenFolder = false;
-            for (const node of Array.from(container.children)) {
-                if (node.classList.contains('cf-interactive-divider')) continue;
-                if (node.classList.contains('nav-file-ghost') || node.classList.contains('nav-folder-ghost')) continue;
-
-                if (node.classList.contains('nav-folder') || node.classList.contains('nav-folder-title')) {
-                    seenFolder = true;
-                } else if (seenFolder && (node.classList.contains('nav-file') || node.classList.contains('nav-file-title'))) {
-                    return node as HTMLElement;
-                }
-            }
-            return null;
-        }
-
-        const safePath = safeEscape(path);
-        const titleEl = (domPathMap ? domPathMap.get(path) : null) ||
-            container.querySelector(`.nav-folder-title[data-path="${safePath}"], .nav-file-title[data-path="${safePath}"]`);
-        if (!titleEl) return null;
-
-        const wrapper = titleEl.closest(`.nav-folder, .nav-file`);
-        if (!wrapper) return null;
-        if (wrapper.classList.contains('nav-file-ghost') || wrapper.classList.contains('nav-folder-ghost')) return null;
-
-        return wrapper as HTMLElement;
-    }
-
-    /**
-     * Target resolver for Mobile Obsidian layout trees. Optimized with O(1) map lookup.
-     */
-    private findTargetElementMobile(
-        container: Element,
-        path: string,
-        isGlobal: boolean,
-        domPathMap?: Map<string, HTMLElement>
-    ): HTMLElement | null {
         if (isGlobal) {
             let seenFolder = false;
             for (const node of Array.from(container.children)) {

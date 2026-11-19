@@ -1,6 +1,7 @@
 import * as obsidian from 'obsidian';
 import { t } from '../../lang/helpers';
 import { IColorfulFoldersPlugin } from '../../common/types';
+import { IconPackIndex } from '../../core/IconPackIndex';
 
 export class IconPickerModal extends obsidian.Modal {
     plugin: IColorfulFoldersPlugin;
@@ -68,11 +69,16 @@ export class IconPickerModal extends obsidian.Modal {
         const customMap = this.plugin.getCustomIconsMap();
         const customIds = Object.keys(customMap);
         const localIds = this.plugin.localFileSystemIcons ? Object.keys(this.plugin.localFileSystemIcons) : [];
+        const combinedCustomIds = Array.from(new Set([...customIds, ...localIds]));
         const prefixes = new Set(['all', 'lucide']);
-        [...customIds, ...localIds].forEach(id => {
-            const parts = id.split('-');
-            if (parts.length > 1) prefixes.add(parts[0]);
-            else prefixes.add('custom');
+
+        const hasAnimated = combinedCustomIds.some(id => this.plugin.animatedIconService?.isAnimatedIcon(id));
+        if (hasAnimated) {
+            prefixes.add('animated');
+        }
+
+        combinedCustomIds.forEach(id => {
+            prefixes.add(IconPackIndex.getPackPrefix(id));
         });
 
         const filterSelect = searchRow.createEl("select");
@@ -80,10 +86,27 @@ export class IconPickerModal extends obsidian.Modal {
             padding: "7px 12px", borderRadius: "8px", border: "1px solid var(--background-modifier-border)",
             backgroundColor: "var(--background-secondary)", color: "var(--text-normal)", fontSize: "0.9em"
         });
+
+        const packDisplayNames: Record<string, string> = {
+            'all': t("settings.option.all_packs"),
+            'animated': '✨ ANIMATED ICONS',
+            'lucide': "✨ Obsidian Official (Lucide)",
+            'line-md': 'LINE-MD (ANIMATED)',
+            'simple-icons': 'SIMPLE ICONS',
+            'tabler': 'TABLER',
+            'bi': 'BOOTSTRAP',
+            'feather': 'FEATHER',
+            'remix': 'REMIX',
+            'bx': 'BOXICONS',
+            'octicon': 'OCTICONS',
+            'ra': 'RPG AWESOME',
+            'fa-solid': 'FONT AWESOME SOLID',
+            'fa-regular': 'FONT AWESOME REGULAR',
+            'custom': 'CUSTOM'
+        };
+
         Array.from(prefixes).sort().forEach(p => {
-            let label = p.toUpperCase();
-            if (p === 'all') label = t("settings.option.all_packs");
-            else if (p === 'lucide') label = "✨ Obsidian Official (Lucide)";
+            const label = packDisplayNames[p] || p.toUpperCase();
             const opt = filterSelect.createEl("option", { text: label, value: p });
             if (p === 'all') opt.selected = true;
         });
@@ -103,7 +126,7 @@ export class IconPickerModal extends obsidian.Modal {
             lucideRaw.map(id => id.replace(/^lucide-/, ''))
         )).filter(id => id.length > 0 && !id.includes(':'));
         
-        const allIcons = Array.from(new Set([...customIds, ...localIds, ...lucideIcons]));
+        const allIcons = Array.from(new Set([...combinedCustomIds, ...lucideIcons]));
 
         const BATCH_SIZE = 60;
         const svgTemplateCache = new Map<string, Element>();
@@ -112,8 +135,9 @@ export class IconPickerModal extends obsidian.Modal {
             let cached = svgTemplateCache.get(id);
             if (cached) return cached;
             try {
+                const cleanSvg = rawSvg.includes('\\"') ? rawSvg.replace(/\\"/g, '"') : rawSvg;
                 // eslint-disable-next-line no-unsanitized/method -- Contextual fragment is safe here as svg content comes from curated internal asset maps or local files
-                const frag = activeDocument.createRange().createContextualFragment(rawSvg);
+                const frag = activeDocument.createRange().createContextualFragment(cleanSvg);
                 const svgEl = frag.querySelector("svg");
                 if (svgEl) {
                     svgEl.removeAttribute("width");
@@ -194,10 +218,11 @@ export class IconPickerModal extends obsidian.Modal {
             if (packFilter !== "all") {
                 if (packFilter === "lucide") {
                     filtered = lucideIcons;
+                } else if (packFilter === "animated") {
+                    filtered = combinedCustomIds.filter(id => this.plugin.animatedIconService?.isAnimatedIcon(id));
                 } else {
-                    filtered = [...customIds, ...localIds].filter(id => {
-                        if (packFilter === "custom") return !id.includes("-");
-                        return id.startsWith(packFilter + "-") || id.startsWith(packFilter + "/");
+                    filtered = combinedCustomIds.filter(id => {
+                        return IconPackIndex.getPackPrefix(id) === packFilter;
                     });
                 }
             }

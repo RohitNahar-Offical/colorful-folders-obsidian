@@ -120,7 +120,6 @@ export default class ColorfulFoldersPlugin
 
       this.refreshRibbon();
       this.eventTrackerService.registerEvents();
-      this.domObserverService.initStyleObservers();
 
       // Invalidate caches on vault changes
       this.lifecycleService.registerVaultCacheEvents();
@@ -219,7 +218,7 @@ export default class ColorfulFoldersPlugin
     const adapter = this.app.vault.adapter;
     const results: string[] = [];
     if (!(await adapter.exists(dir))) return results;
-    
+
     const list = await adapter.list(dir);
     for (const file of list.files) {
       if (file.toLowerCase().endsWith('.svg')) {
@@ -251,68 +250,68 @@ export default class ColorfulFoldersPlugin
         return;
       }
 
-        this.localFileSystemIcons = {};
-        const normIconsPath = normalizeVaultPath(iconsPath);
-        const iconReads = svgFiles.map(async (file) => {
-          const normFile = normalizeVaultPath(file);
-          const relPath = normFile.startsWith(normIconsPath) ? normFile.substring(normIconsPath.length + 1) : normFile;
-          const content = await adapter.read(file);
-          return { relPath, content };
-        });
-        const readResults = await Promise.all(iconReads);
-        readResults.sort((a, b) => a.relPath.localeCompare(b.relPath));
+      this.localFileSystemIcons = {};
+      const normIconsPath = normalizeVaultPath(iconsPath);
+      const iconReads = svgFiles.map(async (file) => {
+        const normFile = normalizeVaultPath(file);
+        const relPath = normFile.startsWith(normIconsPath) ? normFile.substring(normIconsPath.length + 1) : normFile;
+        const content = await adapter.read(file);
+        return { relPath, content };
+      });
+      const readResults = await Promise.all(iconReads);
+      readResults.sort((a, b) => a.relPath.localeCompare(b.relPath));
 
-        for (const { relPath, content } of readResults) {
-          const parts = relPath.split(/[/\\]/);
-          const filename = parts[parts.length - 1].slice(0, -4);
-          const lowerFilename = filename.toLowerCase();
-          
-          const relNoExt = relPath.slice(0, -4);
-          const hyphenated = relNoExt.toLowerCase().replace(/[\s_]+/g, '-').replace(/[/\\]/g, '-');
-          this.localFileSystemIcons[hyphenated] = content;
+      for (const { relPath, content } of readResults) {
+        const parts = relPath.split(/[/\\]/);
+        const filename = parts[parts.length - 1].slice(0, -4);
+        const lowerFilename = filename.toLowerCase();
 
-          if (parts.length > 1) {
-            const packName = parts[0].toLowerCase().replace(/[\s_]+/g, '-');
-            const packFilename = `${packName}-${lowerFilename}`;
-            this.localFileSystemIcons[packFilename] = content;
+        const relNoExt = relPath.slice(0, -4);
+        const hyphenated = relNoExt.toLowerCase().replace(/[\s_]+/g, '-').replace(/[/\\]/g, '-');
+        this.localFileSystemIcons[hyphenated] = content;
 
-            if (packName.includes('simple') || packName === 'si') {
-              this.localFileSystemIcons[`si-${lowerFilename}`] = content;
-              this.localFileSystemIcons[`simple-${lowerFilename}`] = content;
-            }
-            if (packName.includes('font') || packName.includes('awesome') || packName.startsWith('fa')) {
-              this.localFileSystemIcons[`fa-${lowerFilename}`] = content;
-              this.localFileSystemIcons[`fas-${lowerFilename}`] = content;
-              this.localFileSystemIcons[`far-${lowerFilename}`] = content;
-              this.localFileSystemIcons[`fab-${lowerFilename}`] = content;
-            }
-            if (packName.includes('remix') || packName.startsWith('ri')) {
-              this.localFileSystemIcons[`ri-${lowerFilename}`] = content;
-              this.localFileSystemIcons[`remix-${lowerFilename}`] = content;
-            }
-            if (packName.includes('tabler') || packName.startsWith('tb')) {
-              this.localFileSystemIcons[`tb-${lowerFilename}`] = content;
-            }
-            if (packName.includes('material') || packName.startsWith('mdi')) {
-              this.localFileSystemIcons[`mdi-${lowerFilename}`] = content;
-            }
-            if (!this.localFileSystemIcons[lowerFilename]) {
-              this.localFileSystemIcons[lowerFilename] = content;
-            }
-          } else {
+        if (parts.length > 1) {
+          const packName = parts[0].toLowerCase().replace(/[\s_]+/g, '-');
+          const packFilename = `${packName}-${lowerFilename}`;
+          this.localFileSystemIcons[packFilename] = content;
+
+          if (packName.includes('simple') || packName === 'si') {
+            this.localFileSystemIcons[`si-${lowerFilename}`] = content;
+            this.localFileSystemIcons[`simple-${lowerFilename}`] = content;
+          }
+          if (packName.includes('font') || packName.includes('awesome') || packName.startsWith('fa')) {
+            this.localFileSystemIcons[`fa-${lowerFilename}`] = content;
+            this.localFileSystemIcons[`fas-${lowerFilename}`] = content;
+            this.localFileSystemIcons[`far-${lowerFilename}`] = content;
+            this.localFileSystemIcons[`fab-${lowerFilename}`] = content;
+          }
+          if (packName.includes('remix') || packName.startsWith('ri')) {
+            this.localFileSystemIcons[`ri-${lowerFilename}`] = content;
+            this.localFileSystemIcons[`remix-${lowerFilename}`] = content;
+          }
+          if (packName.includes('tabler') || packName.startsWith('tb')) {
+            this.localFileSystemIcons[`tb-${lowerFilename}`] = content;
+          }
+          if (packName.includes('material') || packName.startsWith('mdi')) {
+            this.localFileSystemIcons[`mdi-${lowerFilename}`] = content;
+          }
+          if (!this.localFileSystemIcons[lowerFilename]) {
             this.localFileSystemIcons[lowerFilename] = content;
           }
-
-          if (this.iconManager) {
-            this.iconManager.preNormalizeIcon(hyphenated, content);
-            this.iconManager.preNormalizeIcon(lowerFilename, content);
-          }
+        } else {
+          this.localFileSystemIcons[lowerFilename] = content;
         }
 
         if (this.iconManager) {
-          this.iconManager.invalidateCategoryCache();
+          this.iconManager.preNormalizeIcon(hyphenated, content);
+          this.iconManager.preNormalizeIcon(lowerFilename, content);
         }
-        this.generateStylesDebounced();
+      }
+
+      if (this.iconManager) {
+        this.iconManager.invalidateCategoryCache();
+      }
+      this.generateStylesDebounced();
     } catch (e) {
       console.error("Colorful Folders: Failed to load local icons", e as Error);
     }
@@ -457,7 +456,13 @@ export default class ColorfulFoldersPlugin
             const raw = await adapter.read(filePath);
             const parsed = JSON.parse(raw) as Record<string, string>;
             if (parsed && typeof parsed === 'object') {
-              Object.assign(this.localCustomIcons, parsed);
+              for (const id in parsed) {
+                let svg = parsed[id];
+                if (typeof svg === 'string' && svg.includes('\\"')) {
+                  svg = svg.replace(/\\"/g, '"');
+                }
+                this.localCustomIcons[id] = svg;
+              }
             }
           } catch (e) {
             console.error(`Colorful Folders: Failed to parse local icon file ${filePath}`, e);
@@ -659,6 +664,14 @@ export default class ColorfulFoldersPlugin
       delete this.settings.vaultPassword;
       void this.persistSettings();
     }
+    this.syncRuntimeSettings();
+    this.lastSavedSettingsJson = JSON.stringify(this.settings);
+  }
+
+  public syncRuntimeSettings(): void {
+    ColorResolver.heatmapDays = this.settings.heatmapDays?.length ? this.settings.heatmapDays : [1, 3, 7, 15, 30];
+    NotebookNavigatorIntegration.layout = { border: this.settings.nnRowBorder ?? -1, radius: this.settings.folderBorderRadius ?? 6, spacing: this.settings.rowSpacing ?? 2, weight: this.settings.folderTextWeight ?? 800 };
+    this.syncNotebookNavigatorPairs();
     this.syncCustomFolderColorsMap();
     this.activePaletteCache = null;
     this.parsedExclusionList = new Set(
@@ -668,10 +681,6 @@ export default class ColorfulFoldersPlugin
         .map((s) => s.trim())
         .filter((s) => s.length > 0)
     );
-    ColorResolver.heatmapDays = this.settings.heatmapDays?.length ? this.settings.heatmapDays : [1, 3, 7, 15, 30];
-    NotebookNavigatorIntegration.layout = { border: this.settings.nnRowBorder ?? -1, radius: this.settings.folderBorderRadius ?? 6, spacing: this.settings.rowSpacing ?? 2, weight: this.settings.folderTextWeight ?? 800 };
-    this.syncNotebookNavigatorPairs();
-    this.lastSavedSettingsJson = JSON.stringify(this.settings);
   }
 
   public syncNotebookNavigatorPairs(): void {
@@ -724,10 +733,7 @@ export default class ColorfulFoldersPlugin
   private _lastCustomIconsRef: Record<string, string> | null = null;
 
   async saveSettings() {
-    ColorResolver.heatmapDays = this.settings.heatmapDays?.length ? this.settings.heatmapDays : [1, 3, 7, 15, 30];
-    NotebookNavigatorIntegration.layout = { border: this.settings.nnRowBorder ?? -1, radius: this.settings.folderBorderRadius ?? 6, spacing: this.settings.rowSpacing ?? 2, weight: this.settings.folderTextWeight ?? 800 };
-    this.syncNotebookNavigatorPairs();
-    this.syncCustomFolderColorsMap();
+    this.syncRuntimeSettings();
     const iconRulesChanged = (this.settings.customIconRules || '') !== this._lastIconRulesKey;
     const currentCustomIcons = this.getCustomIconsMap();
     const currentCustomCount = Object.keys(currentCustomIcons).length;
@@ -753,14 +759,6 @@ export default class ColorfulFoldersPlugin
     }
     this.animatedIconService?.invalidateCache();
     this.domObserverService?.initDividerObserver();
-    this.activePaletteCache = null;
-    this.parsedExclusionList = new Set(
-      (this.settings.exclusionList || "")
-        .toLowerCase()
-        .split(",")
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0)
-    );
 
     this.generateStylesDebounced();
   }
@@ -921,7 +919,7 @@ export default class ColorfulFoldersPlugin
       new PasswordModal(this.app, t("modal.password.title"), async (pass) => {
         const passHash = await hashPassword(pass);
         const matches = (this.settings.vaultPasswordHash && passHash === this.settings.vaultPasswordHash) ||
-                        (this.settings.vaultPassword && pass === this.settings.vaultPassword);
+          (this.settings.vaultPassword && pass === this.settings.vaultPassword);
         if (matches) {
           this.settings.isVaultLocked = false;
           await applyToggle();
@@ -1050,7 +1048,6 @@ export default class ColorfulFoldersPlugin
       if (cssChanged) {
         this.adoptedStyleSheetService.updateStyles(css);
       }
-      this.getAllExplorerContainers().forEach((c) => this.domObserverService.tagExplorerItems(c));
       this.animatedIconService?.syncAnimatedIcons();
       this.domObserverService.syncTagPaneDataset();
       // Sync folder colors to Graph View groups if the feature is enabled
@@ -1078,16 +1075,19 @@ export default class ColorfulFoldersPlugin
     if (this._explorerContainersValid && this._explorerContainersCache) {
       return this._explorerContainersCache;
     }
-    const containers = obsidian.Platform.isMobile
-      ? this.getMobileExplorerContainers()
-      : this.getDesktopExplorerContainers();
+    const containers = this.queryExplorerContainers();
     this._explorerContainersCache = containers;
     this._explorerContainersValid = true;
     return containers;
   }
 
-  private getDesktopExplorerContainers(): HTMLElement[] {
+  private queryExplorerContainers(): HTMLElement[] {
     const explorers: HTMLElement[] = [];
+    const isMobile = obsidian.Platform.isMobile;
+    const selector = isMobile
+      ? ".nav-files-container, .tree-item-children, .view-content"
+      : ".nav-files-container";
+
     this.app.workspace.iterateAllLeaves((leaf) => {
       if (!leaf || !leaf.view) return;
       const view = leaf.view as obsidian.View & {
@@ -1100,32 +1100,7 @@ export default class ColorfulFoldersPlugin
           view.getViewType() === "nav-files")
       ) {
         if (!view.containerEl) return;
-        const container = view.containerEl.querySelector(".nav-files-container");
-        if (container) explorers.push(container as HTMLElement);
-      }
-    });
-
-    // Dividers are exclusively a native File Explorer feature.
-    // Notebook Navigator containers are deliberately excluded here so the
-    // divider pipeline (syncDividers, observer, clean) never sees NN DOM.
-    return explorers;
-  }
-
-  private getMobileExplorerContainers(): HTMLElement[] {
-    const explorers: HTMLElement[] = [];
-    this.app.workspace.iterateAllLeaves((leaf) => {
-      if (!leaf || !leaf.view) return;
-      const view = leaf.view as obsidian.View & {
-        getViewType(): string;
-        containerEl: HTMLElement;
-      };
-      if (
-        typeof view.getViewType === 'function' &&
-        (view.getViewType() === "file-explorer" ||
-          view.getViewType() === "nav-files")
-      ) {
-        if (!view.containerEl) return;
-        const container = view.containerEl.querySelector(".nav-files-container, .tree-item-children, .view-content") || view.containerEl;
+        const container = view.containerEl.querySelector(selector) || (isMobile ? view.containerEl : null);
         if (container) explorers.push(container as HTMLElement);
       }
     });
@@ -1197,7 +1172,7 @@ export default class ColorfulFoldersPlugin
           const l = typeof iconData.left === 'number' ? iconData.left : 0;
           const t = typeof iconData.top === 'number' ? iconData.top : 0;
           const body = iconData.body;
-          
+
           if (!body || typeof body !== 'string') return false;
 
           const rawSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${l} ${t} ${w} ${h}">${body}</svg>`;

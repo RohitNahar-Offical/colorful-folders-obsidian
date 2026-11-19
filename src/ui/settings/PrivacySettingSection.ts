@@ -32,7 +32,7 @@ export class PrivacySettingSection extends SettingSection {
                                         await this.plugin.saveSettings();
                                         new obsidian.Notice(t("notice.vault_unlocked"));
 
-                                        (this.settingTab as unknown as { display: () => void }).display();
+                                        this.refreshTab();
                                         return true;
                                     } else {
                                         new obsidian.Notice(t("notice.incorrect_password"));
@@ -47,7 +47,7 @@ export class PrivacySettingSection extends SettingSection {
                                 await this.plugin.saveSettings();
                                 new obsidian.Notice(t("notice.vault_locked"));
 
-                                (this.settingTab as unknown as { display: () => void }).display();
+                                this.refreshTab();
                             });
                     }
                 });
@@ -95,7 +95,7 @@ export class PrivacySettingSection extends SettingSection {
                         });
 
                     text.inputEl.onblur = () => {
-                        (this.settingTab as unknown as { display: () => void }).display();
+                        this.refreshTab();
                     };
                     text.inputEl.type = "password";
                 });
@@ -151,7 +151,7 @@ export class PrivacySettingSection extends SettingSection {
                             await this.plugin.saveSettings();
                             this.plugin.generateStylesDebounced();
 
-                            (this.settingTab as unknown as { display: () => void }).display();
+                            this.refreshTab();
                         }
                     };
                 });
@@ -168,7 +168,7 @@ export class PrivacySettingSection extends SettingSection {
                 .onClick(async () => {
                     await this.plugin.cleanUnusedStyles();
 
-                    (this.settingTab as unknown as { display: () => void }).display();
+                    this.refreshTab();
                 }));
 
         const triggerDownload = (data: Record<string, unknown>, filename: string) => {
@@ -378,7 +378,7 @@ export class PrivacySettingSection extends SettingSection {
                                 this.plugin.generateStylesDebounced();
                                 this.plugin.dividerManager.syncDividers();
 
-                                (this.settingTab as unknown as { display: () => void }).display();
+                                this.refreshTab();
                             } catch (err) {
                                 console.error(err);
                                 new obsidian.Notice(t("notice.backup_parse_failed"));
@@ -414,7 +414,7 @@ export class PrivacySettingSection extends SettingSection {
                         this.plugin.animatedIconService?.syncAnimatedIcons();
                         new obsidian.Notice(t("notice.styles_reset"));
 
-                        (this.settingTab as unknown as { display: () => void }).display();
+                        this.refreshTab();
                     }).open();
                 });
             });
@@ -440,7 +440,7 @@ export class PrivacySettingSection extends SettingSection {
                         this.plugin.animatedIconService?.syncAnimatedIcons();
                         new obsidian.Notice(t("notice.factory_reset"));
 
-                        (this.settingTab as unknown as { display: () => void }).display();
+                        this.refreshTab();
                     }).open();
                 });
             });
@@ -469,7 +469,7 @@ export class PrivacySettingSection extends SettingSection {
                         await this.plugin.clearAllIconPacksAndCustomIcons();
                         new obsidian.Notice(t("notice.icon_library_cleared"));
 
-                        (this.settingTab as unknown as { display: () => void }).display();
+                        this.refreshTab();
                     }).open();
                 });
             });

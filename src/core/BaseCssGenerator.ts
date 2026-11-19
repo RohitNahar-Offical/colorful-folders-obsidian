@@ -81,6 +81,16 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             display: none !important;
         }
 
+        /* ── SPECIAL FORMAT (CANVAS & EXCALIDRAW) NATIVE ICON HANDLING ─── */
+        /* Suppress fallback ::before on native canvas and excalidraw files when no explicit custom icon is set */
+        body .nav-files-container [data-path$=".canvas"]:not(.cf-has-custom-icon) .nav-file-title-content::before,
+        body .nav-files-container [data-path$=".canvas"]:not(.cf-has-custom-icon) .tree-item-inner::before,
+        body .nav-files-container [data-path*=".excalidraw"]:not(.cf-has-custom-icon) .nav-file-title-content::before,
+        body .nav-files-container [data-path*=".excalidraw"]:not(.cf-has-custom-icon) .tree-item-inner::before {
+            display: none !important;
+            content: none !important;
+        }
+
         body .nav-folder-title-content.cf-icon-active::before,
         body .nav-file-title-content.cf-icon-active::before,
         body .tree-item-inner.cf-icon-active::before,
@@ -99,6 +109,13 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
         }
 
         /* ── LIVE ANIMATED CUSTOM SVG ICONS ─────────── */
+        body .nav-files-container .cf-animated-icon-active::before,
+        body .nav-files-container .cf-animated-icon-active .nav-folder-title-content::before,
+        body .nav-files-container .cf-animated-icon-active .nav-file-title-content::before,
+        body .nav-files-container .cf-animated-icon-active .tree-item-inner::before,
+        body .nav-files-container [data-path].cf-animated-icon-active .nav-folder-title-content::before,
+        body .nav-files-container [data-path].cf-animated-icon-active .nav-file-title-content::before,
+        body .nav-files-container [data-path].cf-animated-icon-active .tree-item-inner::before,
         .cf-animated-icon-active::before,
         .cf-animated-icon-active .nav-folder-title-content::before,
         .cf-animated-icon-active .nav-file-title-content::before,
@@ -122,6 +139,12 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             vertical-align: middle !important;
             overflow: visible !important;
             color: var(--cf-animated-icon-color, var(--cf-icon-color, inherit)) !important;
+        }
+
+        .notebook-navigator .cf-live-animated-icon {
+            width: 100% !important;
+            height: 100% !important;
+            margin-right: 0 !important;
         }
 
         .cf-live-animated-icon svg {

@@ -1,14 +1,12 @@
 import { StyleResolver } from '../core/StyleResolver';
 import { TFolder } from 'obsidian';
 import { IColorfulFoldersPlugin } from '../common/types';
+import { hexToRgbObj } from '../common/utils';
 
 /** Converts a hex color string to the integer RGB format Obsidian's graph.json expects. */
 function hexToGraphRgb(hex: string): number {
-    const clean = hex.replace('#', '');
-    const r = parseInt(clean.substring(0, 2), 16);
-    const g = parseInt(clean.substring(2, 4), 16);
-    const b = parseInt(clean.substring(4, 6), 16);
-    return (r << 16) | (g << 8) | b;
+    const rgb = hexToRgbObj(hex);
+    return rgb ? (rgb.r << 16) | (rgb.g << 8) | rgb.b : 0;
 }
 
 /**

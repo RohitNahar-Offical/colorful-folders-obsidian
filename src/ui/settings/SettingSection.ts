@@ -10,4 +10,8 @@ export abstract class SettingSection {
     ) {}
 
     abstract render(containerEl: HTMLElement): void;
+
+    protected refreshTab(): void {
+        this.settingTab.display();
+    }
 }

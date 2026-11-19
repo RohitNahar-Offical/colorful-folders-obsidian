@@ -14,8 +14,16 @@ export class AnimatedIconService {
             this._intersectionObserver = new IntersectionObserver((entries) => {
                 for (let i = 0; i < entries.length; i++) {
                     const entry = entries[i];
-                    if (entry.isIntersecting && entry.target.instanceOf(HTMLElement)) {
-                        this.wakeAnimatedElement(entry.target);
+                    if (entry.target && entry.target.instanceOf(HTMLElement)) {
+                        const targetEl = entry.target as HTMLElement & { _cfWasOffscreen?: boolean };
+                        if (entry.isIntersecting) {
+                            if (targetEl._cfWasOffscreen) {
+                                targetEl._cfWasOffscreen = false;
+                                this.wakeAnimatedElement(targetEl);
+                            }
+                        } else {
+                            targetEl._cfWasOffscreen = true;
+                        }
                     }
                 }
             }, { rootMargin: '100px' });
@@ -23,11 +31,21 @@ export class AnimatedIconService {
     }
 
     /**
+     * Checks whether an icon SVG relies on SMIL animations (<animate>, <animateTransform>, etc.)
+     */
+    public isSmilAnimated(iconId: string): boolean {
+        if (!iconId) return false;
+        const raw = this.plugin.iconManager?.getRawIconSvg(iconId);
+        if (!raw) return false;
+        return /<animate|<animateTransform|<animateMotion|<set/i.test(raw);
+    }
+
+    /**
      * Wakes or restarts SMIL animations if Chromium paused or broke syncbases while scrolled offscreen
      */
     public wakeAnimatedElement(el: HTMLElement): void {
         const iconId = el.getAttribute('data-icon-id');
-        if (!iconId) return;
+        if (!iconId || !this.isSmilAnimated(iconId)) return;
 
         const template = this.getAnimatedIconElement(iconId);
         if (!template) return;
@@ -49,14 +67,37 @@ export class AnimatedIconService {
         this.invalidateCache();
     }
 
+    private _isAnimatedIconCache: Map<string, boolean> = new Map<string, boolean>();
+    private _registeredAnimatedTargets: Map<string, string> = new Map<string, string>();
+
+    public clearRegisteredAnimatedTargets(): void {
+        this._registeredAnimatedTargets.clear();
+    }
+
+    public registerActiveAnimatedTarget(path: string, iconId: string): void {
+        if (path && iconId) {
+            this._registeredAnimatedTargets.set(path, iconId);
+            this._hasAnimatedCache = true;
+        }
+    }
+
     /**
      * Checks whether an icon SVG contains SMIL animation elements or CSS keyframes
      */
     public isAnimatedIcon(iconId: string): boolean {
         if (!iconId) return false;
+        const cached = this._isAnimatedIconCache.get(iconId);
+        if (cached !== undefined) {
+            return cached;
+        }
         const raw = this.plugin.iconManager?.getRawIconSvg(iconId);
-        if (!raw) return false;
-        return /<animate|<animateTransform|<animateMotion|<set|@keyframes|animation:\s*/i.test(raw);
+        if (!raw) {
+            this._isAnimatedIconCache.set(iconId, false);
+            return false;
+        }
+        const isAnim = /<animate|<animateTransform|<animateMotion|<set|@keyframes|animation:\s*/i.test(raw);
+        this._isAnimatedIconCache.set(iconId, isAnim);
+        return isAnim;
     }
 
     /**
@@ -111,21 +152,61 @@ export class AnimatedIconService {
     }
 
     private _hasAnimatedCache: boolean | null = null;
+    private _libraryHasAnimatedCache: boolean | null = null;
 
     /**
-     * Fast O(1) check if any animated icons are currently configured
+     * Checks whether any animated icons exist in the custom icon repository or settings
+     */
+    public hasAnyAnimatedIconsInLibrary(): boolean {
+        if (this._libraryHasAnimatedCache !== null) return this._libraryHasAnimatedCache;
+        const local = this.plugin.localCustomIcons || {};
+        for (const k in local) {
+            if (this.isAnimatedIcon(k)) {
+                this._libraryHasAnimatedCache = true;
+                return true;
+            }
+        }
+        const custom = this.plugin.settings?.customIcons || {};
+        for (const k in custom) {
+            if (this.isAnimatedIcon(k)) {
+                this._libraryHasAnimatedCache = true;
+                return true;
+            }
+        }
+        this._libraryHasAnimatedCache = false;
+        return false;
+    }
+
+    /**
+     * Fast O(1) check if any animated icons are currently configured or in active use
      */
     public hasAnyAnimatedIcons(): boolean {
+        if (this._registeredAnimatedTargets.size > 0) return true;
         if (this._hasAnimatedCache !== null) return this._hasAnimatedCache;
 
-        const customFolderColors = this.plugin.settings.customFolderColors || {};
-        const customIcons = this.plugin.settings.customIcons || {};
+        // If the library itself has no animated icons, return false instantly
+        if (!this.hasAnyAnimatedIconsInLibrary()) {
+            this._hasAnimatedCache = false;
+            return false;
+        }
+
+        const customFolderColors = this.plugin.settings?.customFolderColors || {};
+        const customIcons = this.plugin.settings?.customIcons || {};
         for (const p in customFolderColors) {
             const style = customFolderColors[p];
-            const iconId = (typeof style === 'object' && style !== null) ? style.iconId : undefined;
-            if (iconId && this.isAnimatedIcon(iconId)) {
-                this._hasAnimatedCache = true;
-                return true;
+            if (typeof style === 'object' && style !== null) {
+                if (style.iconId && this.isAnimatedIcon(style.iconId)) {
+                    this._hasAnimatedCache = true;
+                    return true;
+                }
+                if (style.expandedIconId && this.isAnimatedIcon(style.expandedIconId)) {
+                    this._hasAnimatedCache = true;
+                    return true;
+                }
+                if (style.activeIconId && this.isAnimatedIcon(style.activeIconId)) {
+                    this._hasAnimatedCache = true;
+                    return true;
+                }
             }
         }
         for (const p in customIcons) {
@@ -136,6 +217,7 @@ export class AnimatedIconService {
                 return true;
             }
         }
+
         this._hasAnimatedCache = false;
         return false;
     }
@@ -145,31 +227,54 @@ export class AnimatedIconService {
      */
     public invalidateCache(iconId?: string): void {
         this._hasAnimatedCache = null;
+        this._libraryHasAnimatedCache = null;
         if (iconId) {
             this._animatedTemplateCache.delete(iconId);
+            this._isAnimatedIconCache.delete(iconId);
         } else {
             this._animatedTemplateCache.clear();
+            this._isAnimatedIconCache.clear();
         }
     }
 
     /**
+     * Retrieves all native file explorer containers, plus Notebook Navigator containers if enabled
+     */
+    public getAllNavContainers(): HTMLElement[] {
+        const containers = [...this.plugin.getAllExplorerContainers()];
+        if (this.plugin.settings?.notebookNavigatorSupport && this.plugin.app?.workspace) {
+            this.plugin.app.workspace.iterateAllLeaves((leaf) => {
+                if (!leaf || !leaf.view) return;
+                const view = leaf.view as unknown as { getViewType?: () => string; containerEl?: HTMLElement };
+                if (typeof view.getViewType === 'function' && view.getViewType() === 'notebook-navigator') {
+                    if (view.containerEl && !containers.includes(view.containerEl)) {
+                        containers.push(view.containerEl);
+                    }
+                }
+            });
+        }
+        return containers;
+    }
+
+    /**
      * Synchronizes all animated icons across all open file explorer views.
-     * Pure O(1) NO-OP if no animated icons exist in user settings.
+     * Pure O(1) NO-OP if no animated icons exist in user settings or library.
      */
     public syncAnimatedIcons(): void {
         if (!this.hasAnyAnimatedIcons()) {
             return;
         }
 
-        const customFolderColors = this.plugin.settings.customFolderColors || {};
-        const customIcons = this.plugin.settings.customIcons || {};
+        const customFolderColors = this.plugin.settings?.customFolderColors || {};
+        const customIcons = this.plugin.settings?.customIcons || {};
 
         const animatedTargetsMap = new Map<string, string>();
         for (const p in customFolderColors) {
             const style = customFolderColors[p];
-            const iconId = (typeof style === 'object' && style !== null) ? style.iconId : undefined;
-            if (iconId && this.isAnimatedIcon(iconId)) {
-                animatedTargetsMap.set(p, iconId);
+            if (typeof style === 'object' && style !== null) {
+                if (style.iconId && this.isAnimatedIcon(style.iconId)) {
+                    animatedTargetsMap.set(p, style.iconId);
+                }
             }
         }
         for (const p in customIcons) {
@@ -179,10 +284,15 @@ export class AnimatedIconService {
                 animatedTargetsMap.set(p, iconId);
             }
         }
+        for (const [p, iconId] of this._registeredAnimatedTargets.entries()) {
+            if (!animatedTargetsMap.has(p)) {
+                animatedTargetsMap.set(p, iconId);
+            }
+        }
 
         if (animatedTargetsMap.size === 0) return;
 
-        const allContainers = this.plugin.getAllExplorerContainers();
+        const allContainers = this.getAllNavContainers();
         if (allContainers.length === 0) return;
 
         for (let i = 0; i < allContainers.length; i++) {
@@ -192,7 +302,7 @@ export class AnimatedIconService {
             const existingLiveIcons = container.querySelectorAll<HTMLElement>('.cf-live-animated-icon');
             for (let j = 0; j < existingLiveIcons.length; j++) {
                 const liveIcon = existingLiveIcons[j];
-                const rowEl = liveIcon.closest<HTMLElement>('.nav-folder-title, .nav-file-title, .tree-item-self');
+                const rowEl = liveIcon.closest<HTMLElement>('.nav-folder-title, .nav-file-title, .tree-item-self, .nn-navitem, .nn-file');
                 const rowPath = rowEl?.getAttribute('data-path');
                 const currentAnimatedIconId = rowPath ? animatedTargetsMap.get(rowPath) : undefined;
 
@@ -220,34 +330,45 @@ export class AnimatedIconService {
                 const styleObj = customFolderColors[targetPath] || customIcons[targetPath];
                 const customIconColor = (typeof styleObj === 'object' && styleObj !== null) ? styleObj.iconColor : undefined;
 
+                // Support Notebook Navigator dedicated icon container
+                const nnIconSlot = titleEl.querySelector<HTMLElement>('.nn-navitem-icon, .nn-file-icon');
+
                 const existingIcon = titleEl.querySelector<HTMLElement>('.cf-live-animated-icon');
                 if (!existingIcon) {
-                    const cloned = template.cloneNode(true) as HTMLElement;
+                    const cloned = template.cloneNode(true) as HTMLElement & { _cfWasOffscreen?: boolean };
                     cloned.setAttribute('data-icon-id', iconId);
+                    cloned._cfWasOffscreen = false;
                     if (customIconColor) {
                         cloned.setCssProps({ '--cf-animated-icon-color': customIconColor });
                     }
                     titleEl.classList.add('cf-animated-icon-active');
-                    textEl.parentElement?.insertBefore(cloned, textEl);
+                    if (nnIconSlot) {
+                        nnIconSlot.appendChild(cloned);
+                    } else {
+                        textEl.parentElement?.insertBefore(cloned, textEl);
+                    }
                     this._intersectionObserver?.observe(cloned);
-                    this.wakeAnimatedElement(cloned);
                 } else if (existingIcon.getAttribute('data-icon-id') !== iconId) {
                     this._intersectionObserver?.unobserve(existingIcon);
                     existingIcon.remove();
-                    const cloned = template.cloneNode(true) as HTMLElement;
+                    const cloned = template.cloneNode(true) as HTMLElement & { _cfWasOffscreen?: boolean };
                     cloned.setAttribute('data-icon-id', iconId);
+                    cloned._cfWasOffscreen = false;
                     if (customIconColor) {
                         cloned.setCssProps({ '--cf-animated-icon-color': customIconColor });
                     }
                     titleEl.classList.add('cf-animated-icon-active');
-                    textEl.parentElement?.insertBefore(cloned, textEl);
+                    if (nnIconSlot) {
+                        nnIconSlot.appendChild(cloned);
+                    } else {
+                        textEl.parentElement?.insertBefore(cloned, textEl);
+                    }
                     this._intersectionObserver?.observe(cloned);
-                    this.wakeAnimatedElement(cloned);
                 } else {
+                    // Update color without tearing down active animation
                     if (customIconColor) {
                         existingIcon.setCssProps({ '--cf-animated-icon-color': customIconColor });
                     }
-                    this.wakeAnimatedElement(existingIcon);
                 }
             }
         }

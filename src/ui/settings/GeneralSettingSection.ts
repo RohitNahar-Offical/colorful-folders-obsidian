@@ -636,7 +636,7 @@ export class GeneralSettingSection extends SettingSection {
                     this.plugin.settings.useCustomActiveColor = value;
                     await this.plugin.saveSettings();
                     this.plugin.generateStylesDebounced();
-                    (this.settingTab as unknown as { display: () => void }).display();
+                    this.refreshTab();
                 }));
 
         if (this.plugin.settings.useCustomActiveColor) {
@@ -968,7 +968,7 @@ export class GeneralSettingSection extends SettingSection {
                     this.plugin.settings.rainbowRootText = value;
                     await this.plugin.saveSettings();
                     this.plugin.generateStylesDebounced();
-                    (this.settingTab as unknown as { display: () => void }).display();
+                    this.refreshTab();
                 }));
 
         if (this.plugin.settings.rainbowRootText) {

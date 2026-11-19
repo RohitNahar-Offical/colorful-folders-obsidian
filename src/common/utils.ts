@@ -71,7 +71,7 @@ export function anyToHex(color: string): string {
     if (color.startsWith('rgb')) {
         const rgb = color.match(/\d+/g);
         if (rgb && rgb.length >= 3) {
-            return "#" + ((1 << 24) + (parseInt(rgb[0]) << 16) + (parseInt(rgb[1]) << 8) + parseInt(rgb[2])).toString(16).slice(1);
+            return rgbToHex(parseInt(rgb[0]), parseInt(rgb[1]), parseInt(rgb[2]));
         }
     }
     return "#000000";
@@ -158,7 +158,7 @@ export function parseCustomPalette(hexString: string): { rgb: string, hex: strin
     for (let hex of hexes) {
         const rgb = hexToRgbObj(hex);
         if (rgb) {
-            const canonicalHex = "#" + ((1 << 24) + (rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).slice(1);
+            const canonicalHex = rgbToHex(rgb.r, rgb.g, rgb.b);
             result.push({ rgb: `${rgb.r}, ${rgb.g}, ${rgb.b}`, hex: canonicalHex });
         }
     }
@@ -222,7 +222,7 @@ export function parseColorToHexAlpha(color: string): { hex: string, alpha: numbe
             const b = parseInt(parts[2]);
             let a = parts.length >= 4 ? parseFloat(parts[3]) : 1;
             if (isNaN(a)) a = 1;
-            const hex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+            const hex = rgbToHex(r, g, b);
             return { hex, alpha: a };
         }
     }
