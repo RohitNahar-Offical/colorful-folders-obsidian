@@ -138,6 +138,7 @@ export class NotebookNavigatorIntegration {
                     font-style: normal !important;
                     background: none !important;
                     -webkit-mask-image: none !important;
+                    mask-image: none !important;
                     visibility: visible !important;
                 `, iconTargets, `nnEmoji_${iconId}_${effIconW}`);
                 grouper.add(`display: none !important;`, hideAllChildSels, `nnDisplayNone`);
@@ -172,9 +173,13 @@ export class NotebookNavigatorIntegration {
                         flex-shrink: 0 !important;
                         background-color: ${iconColor || color.hex || textCol} !important;
                         -webkit-mask-image: url("data:image/svg+xml,${iconSvg}") !important;
+                        mask-image: url("data:image/svg+xml,${iconSvg}") !important;
                         -webkit-mask-repeat: no-repeat !important;
+                        mask-repeat: no-repeat !important;
                         -webkit-mask-position: center !important;
+                        mask-position: center !important;
                         -webkit-mask-size: contain !important;
+                        mask-size: contain !important;
                         content: "" !important;
                         opacity: 0.85 !important;
                         visibility: visible !important;
@@ -194,9 +199,13 @@ export class NotebookNavigatorIntegration {
                 flex-shrink: 0 !important;
                 background-color: ${iconColor || color.hex || textCol} !important;
                 -webkit-mask-image: url("data:image/svg+xml,${fallbackSvg}") !important;
+                mask-image: url("data:image/svg+xml,${fallbackSvg}") !important;
                 -webkit-mask-repeat: no-repeat !important;
+                mask-repeat: no-repeat !important;
                 -webkit-mask-position: center !important;
+                mask-position: center !important;
                 -webkit-mask-size: contain !important;
+                mask-size: contain !important;
                 content: "" !important;
                 opacity: 0.65 !important;
                 visibility: visible !important;

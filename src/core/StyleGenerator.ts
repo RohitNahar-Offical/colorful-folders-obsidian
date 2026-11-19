@@ -486,9 +486,13 @@ export class StyleGenerator {
                                     margin-right: 4px !important;
                                     background-color: ${iconColor || color.hex || textNative} !important;
                                     -webkit-mask-image: ${maskUrl} !important;
+                                    mask-image: ${maskUrl} !important;
                                     -webkit-mask-repeat: no-repeat !important;
+                                    mask-repeat: no-repeat !important;
                                     -webkit-mask-position: center !important;
+                                    mask-position: center !important;
                                     -webkit-mask-size: contain !important;
+                                    mask-size: contain !important;
                                     opacity: 0.85 !important;
                                 `, fileIconSels);
                             }
@@ -509,9 +513,13 @@ export class StyleGenerator {
                             margin-right: 4px !important;
                             background-color: ${iconColor || color.hex || textNative} !important;
                             -webkit-mask-image: ${fileTextMask} !important;
+                            mask-image: ${fileTextMask} !important;
                             -webkit-mask-repeat: no-repeat !important;
+                            mask-repeat: no-repeat !important;
                             -webkit-mask-position: center !important;
+                            mask-position: center !important;
                             -webkit-mask-size: contain !important;
+                            mask-size: contain !important;
                             opacity: 0.85 !important;
                         `, fileIconSels);
                     }
@@ -541,6 +549,7 @@ export class StyleGenerator {
                                 margin-right: 4px !important;
                                 background-color: transparent !important;
                                 -webkit-mask-image: none !important;
+                                mask-image: none !important;
                             `, activeFileSels, `activeFileIcon_${activeFileIcon}_emoji_${effFileIconW}`);
                         } else {
                             const activeMaskUrl = this.plugin.iconManager.getMaskDataUri(activeFileIcon);
@@ -555,9 +564,13 @@ export class StyleGenerator {
                                     margin-right: 4px !important;
                                     background-color: var(--cf-active-color, ${iconColor || color.hex || textNative}) !important;
                                     -webkit-mask-image: ${activeMaskUrl} !important;
+                                    mask-image: ${activeMaskUrl} !important;
                                     -webkit-mask-repeat: no-repeat !important;
+                                    mask-repeat: no-repeat !important;
                                     -webkit-mask-position: center !important;
+                                    mask-position: center !important;
                                     -webkit-mask-size: contain !important;
+                                    mask-size: contain !important;
                                     opacity: 1.0 !important;
                                 `, activeFileSels, `activeFileIcon_${activeFileIcon}_svg_${effFileIconW}`);
                             }
@@ -956,6 +969,7 @@ export class StyleGenerator {
                             margin-right: 4px !important;
                             background-color: transparent !important;
                             -webkit-mask-image: none !important;
+                            mask-image: none !important;
                         `, sels, `icon_${iconIdToUse}_emoji_${folderIconW}`);
                     } else {
                         const maskUrl = this.plugin.iconManager.getMaskDataUri(iconIdToUse);
@@ -970,9 +984,13 @@ export class StyleGenerator {
                                 margin-right: 4px !important;
                                 background-color: ${effFolderIconColor} !important;
                                 -webkit-mask-image: ${maskUrl} !important;
+                                mask-image: ${maskUrl} !important;
                                 -webkit-mask-repeat: no-repeat !important;
+                                mask-repeat: no-repeat !important;
                                 -webkit-mask-position: center !important;
+                                mask-position: center !important;
                                 -webkit-mask-size: contain !important;
+                                mask-size: contain !important;
                             `, sels, `icon_${iconIdToUse}_svg_${folderIconW}_${effFolderIconColor.replace(/\s+/g, '')}_${isExpandedState ? 'expanded' : 'collapsed'}`);
                         }
                     }

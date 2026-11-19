@@ -37,7 +37,19 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
         return card;
     }
 
-    display() {
+    /**
+     * Re-renders the settings tab while preserving user scroll position.
+     * Dedicated internal refresh entrypoint for modular SettingSections.
+     */
+    public refresh(): void {
+        this.display();
+    }
+
+    /**
+     * Imperatively renders the rich multi-tab settings UI.
+     * Required for custom tabbed navigation, card layouts, RGB color pickers, and modal pickers.
+     */
+    override display(): void {
         const rootEl = this.containerEl;
         const savedScrollTop = rootEl.scrollTop;
         rootEl.empty();
