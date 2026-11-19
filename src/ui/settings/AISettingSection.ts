@@ -337,6 +337,7 @@ export class AISettingSection extends SettingSection {
                     }
                 }
 
+                this.plugin.syncCustomFolderColorsMap();
                 await this.plugin.saveSettings();
                 await this.plugin.generateStyles();
 

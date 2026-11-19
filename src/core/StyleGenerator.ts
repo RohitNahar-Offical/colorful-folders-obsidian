@@ -104,6 +104,7 @@ export class StyleGenerator {
         }
 
         if (data.lucide && this.isValidIconStr(data.lucide)) return data.lucide;
+        if (data.lucide) return data.lucide;
         if (data.emoji) return data.emoji;
         return "";
     }
@@ -325,20 +326,24 @@ export class StyleGenerator {
                 const rawFileIcon = (fileStyle?.iconId && this.isValidIconStr(fileStyle.iconId)) ? fileStyle.iconId : null;
                 const rawInheritedFileIcon = (inheritedStyle?.applyToFiles && inheritedStyle?.iconId && this.isValidIconStr(inheritedStyle.iconId)) ? inheritedStyle.iconId : null;
 
-                let iconId = rawFileIcon || rawInheritedFileIcon || "";
-                if (isAiFileIcon && this.settings.autoIcons) {
-                    const autoData = this.plugin.iconManager.getAutoIconData(child.name, child.path, true);
-                    if (autoData && (autoData.packSource === 'custom-rule' || autoData.packSource === 'frontmatter' || autoData.packSource === 'tag-sync' || (autoData.tier !== undefined && autoData.tier <= 0.8))) {
-                        const candidate = this.resolveAutoIconCandidate(autoData);
-                        if (candidate) {
-                            iconId = candidate;
+                let iconId = "";
+                if (isAiFileIcon) {
+                    if (this.settings.autoIcons) {
+                        const autoData = this.plugin.iconManager.getAutoIconData(child.name, child.path, true);
+                        const candidate = autoData ? this.resolveAutoIconCandidate(autoData) : "";
+                        iconId = candidate || rawFileIcon || rawInheritedFileIcon || "";
+                    } else {
+                        iconId = rawInheritedFileIcon || "";
+                    }
+                } else {
+                    let autoIcon = "";
+                    if (this.settings.autoIcons) {
+                        const customUserRuleFile = this.plugin.iconManager.getAutoIconData(child.name, child.path, true);
+                        if (customUserRuleFile) {
+                            autoIcon = this.resolveAutoIconCandidate(customUserRuleFile);
                         }
                     }
-                } else if (!iconId && this.settings.autoIcons) {
-                    const customUserRuleFile = this.plugin.iconManager.getAutoIconData(child.name, child.path, true);
-                    if (customUserRuleFile) {
-                        iconId = this.resolveAutoIconCandidate(customUserRuleFile);
-                    }
+                    iconId = rawFileIcon || rawInheritedFileIcon || autoIcon || "";
                 }
 
                 const textNative = ColorResolver.resolveTextColor(
@@ -727,20 +732,24 @@ export class StyleGenerator {
             const rawFolderIcon = (customStyle?.iconId && this.isValidIconStr(customStyle.iconId)) ? customStyle.iconId : null;
             const rawInheritedFolderIcon = (inheritedStyle?.iconId && this.isValidIconStr(inheritedStyle.iconId)) ? inheritedStyle.iconId : null;
 
-            let folderIconId = rawFolderIcon || rawInheritedFolderIcon || "";
-            if (isAiFolderIcon && this.settings.autoIcons) {
-                const autoData = this.plugin.iconManager.getAutoIconData(child.name, child.path, false);
-                if (autoData && (autoData.packSource === 'custom-rule' || autoData.packSource === 'frontmatter' || autoData.packSource === 'tag-sync' || (autoData.tier !== undefined && autoData.tier <= 0.8))) {
-                    const candidate = this.resolveAutoIconCandidate(autoData);
-                    if (candidate) {
-                        folderIconId = candidate;
+            let folderIconId = "";
+            if (isAiFolderIcon) {
+                if (this.settings.autoIcons) {
+                    const autoData = this.plugin.iconManager.getAutoIconData(child.name, child.path, false);
+                    const candidate = autoData ? this.resolveAutoIconCandidate(autoData) : "";
+                    folderIconId = candidate || rawFolderIcon || rawInheritedFolderIcon || "";
+                } else {
+                    folderIconId = rawInheritedFolderIcon || "";
+                }
+            } else {
+                let autoIcon = "";
+                if (this.settings.autoIcons) {
+                    const customUserRuleFolder = this.plugin.iconManager.getAutoIconData(child.name, child.path, false);
+                    if (customUserRuleFolder) {
+                        autoIcon = this.resolveAutoIconCandidate(customUserRuleFolder);
                     }
                 }
-            } else if (!folderIconId && this.settings.autoIcons) {
-                const customUserRuleFolder = this.plugin.iconManager.getAutoIconData(child.name, child.path, false);
-                if (customUserRuleFolder) {
-                    folderIconId = this.resolveAutoIconCandidate(customUserRuleFolder);
-                }
+                folderIconId = rawFolderIcon || rawInheritedFolderIcon || autoIcon || "";
             }
             const folderExpandedIconId = (customStyle?.expandedIconId && this.isValidIconStr(customStyle.expandedIconId)) ? customStyle.expandedIconId : ((inheritedStyle?.expandedIconId && this.isValidIconStr(inheritedStyle.expandedIconId)) ? inheritedStyle.expandedIconId : "");
 

@@ -37,8 +37,8 @@ export class CategoryTrie {
                 isLiteralInserted = true;
             }
 
-            // Extract literal word tokens (e.g., from "journal|daily|notes")
-            const wordTokens = source.match(/[a-z0-9]+/g);
+            // Extract literal word tokens (e.g., from "journal|daily|notes" or CJK categories)
+            const wordTokens = source.match(/[\p{L}\p{N}]+/gu);
             if (wordTokens && wordTokens.length > 0 && !source.startsWith('.') && !source.startsWith('\\')) {
                 for (const word of wordTokens) {
                     if (word.length >= 2 && !['or', 'and', 'in', 'of', 'to', 'for'].includes(word)) {

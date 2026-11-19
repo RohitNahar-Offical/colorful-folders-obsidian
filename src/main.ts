@@ -617,11 +617,12 @@ export default class ColorfulFoldersPlugin
       }
     }
 
+    await this.loadLocalCustomIcons();
+
     const data = loadedData || {};
 
     // Migration: Extract bloated customIcons from data.json to local JSON asset files (only on legacy upgrades)
     if (data.customIcons && Object.keys(data.customIcons).length > 0) {
-      await this.loadLocalCustomIcons();
       Object.assign(this.localCustomIcons, data.customIcons);
       await this.saveLocalCustomIcons();
       data.customIcons = {};

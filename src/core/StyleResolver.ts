@@ -207,8 +207,9 @@ export class StyleResolver {
                 color.hex;
 
             const autoIcon = plugin.iconManager.getAutoIconData(target.name, target.path, isFile);
+            const isAiIcon = !!(customStyle?.iconSource === 'embedding' || (typeof customStyle?.iconSource === 'string' && customStyle.iconSource.startsWith('ai')));
             let iconId = "";
-            if (customStyle?.iconId) {
+            if (customStyle?.iconId && (!isAiIcon || plugin.settings.autoIcons)) {
                 iconId = customStyle.iconId;
             } else if (plugin.settings.autoIcons && autoIcon) {
                 const lucideId = autoIcon.lucide;
