@@ -31,14 +31,15 @@ export class IconSettingSection extends SettingSection {
         const packLabels: Record<string, string> = {
             'custom': 'Custom User Icons & Brand Overrides',
             'lucide': 'Lucide Icons (Default Modern UI)',
-            'emoji': 'Native Emojis (System Unicode)',
+            'line-md': 'Line icons (Animated) (line-md-)',
             'bootstrap': 'Bootstrap Icons (bi-)',
             'simple-icons': 'Simple Icons (Brand & Tech Logos)',
             'tabler': 'Tabler Icons (tb-)',
             'remix': 'Remix Icons (ri-)',
             'font-awesome': 'FontAwesome Icons (fa-)',
             'material': 'Material Icons (mdi-)',
-            'feather': 'Feather Icons'
+            'feather': 'Feather Icons',
+            'emoji': 'Native Emojis (System Unicode)'
         };
 
         const listContainer = priorityCard.createDiv();
@@ -57,7 +58,17 @@ export class IconSettingSection extends SettingSection {
             listContainer.empty();
             let order = [...(this.plugin.settings.iconPackPriorityOrder || DEFAULT_ICON_PACK_ORDER)];
             for (const defaultPack of DEFAULT_ICON_PACK_ORDER) {
-                if (!order.includes(defaultPack)) order.push(defaultPack);
+                if (!order.includes(defaultPack)) {
+                    const emojiIdx = order.indexOf('emoji');
+                    if (emojiIdx !== -1) {
+                        order.splice(emojiIdx, 0, defaultPack);
+                    } else {
+                        order.push(defaultPack);
+                    }
+                }
+            }
+            if (order.includes('emoji') && order[order.length - 1] !== 'emoji') {
+                order = order.filter(p => p !== 'emoji').concat(['emoji']);
             }
 
             order.forEach((packKey, index) => {

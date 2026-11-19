@@ -636,6 +636,30 @@ Standard notes in Notebook Navigator (e.g. `Atlas > Dots > People > Arnold Schwa
 
 **Lesson**: Avoid hardcoded CSS format suppressions based on unmanaged utility classes. Map unique file formats (`.canvas`, `.excalidraw`) directly in extension auto-icon dictionaries, and replace native icons via targeted path-level rules.
 
+---
+
+## Incident #50 — Missing "Line icons (Animated)" in Pack Priority Order & Alphabetical ExactMap Override (2026-11-19)
+**What was reported**:
+1. In the Icon Settings tab, the "Line icons (Animated)" pack was installed, but missing from the "Icon pack priority hierarchy" list card.
+2. Changes to pack priority order in the settings hierarchy failed to alter icon resolution for common keyword stems because alphabetical pack sorting took precedence over priority rankings.
+
+**Root cause**:
+1. **Missing Constant Declarations**: `'line-md'` was not present in `DEFAULT_ICON_PACK_ORDER`, `DEFAULT_SETTINGS.iconPackPriorityOrder`, `PACK_PRIORITY`, `PACK_PREFIXES`, `ICON_PREFIX_REGEX`, or `packLabels` in `IconSettingSection.ts`.
+2. **Alphabetical Overwrite in ExactMap**: In `IconPackIndex.ts`, `addIconKey()` stripped prefixes and inserted entries into `exactMap` and `suffixMap` using a naive `if (!this.exactMap.has(noPrefix))` check without comparing priority. Because local icons were iterated in alphabetical order (`Object.keys().sort()`), alphabetically earlier packs (such as `bi-` for Bootstrap) permanently locked the map entry, ignoring higher-ranked packs (such as `line-md-` or `lucide-`).
+3. **Candidate Keyword Bypass in Auto-Icons**: When category rules returned a generic candidate keyword like `"search"` or `"folder"`, `resolveAutoIconCandidate()` only checked if the string began with `packId-`. If the keyword was unprefixed, it defaulted to Lucide and never probed whether a higher-ranked custom or animated pack possessed that icon.
+
+**Resolution**:
+1. **Added `line-md` to Priority Constants**:
+   - Registered `'line-md'` in `DEFAULT_ICON_PACK_ORDER` (rank #3, between `lucide` and `bootstrap`).
+   - Added `'line-md': 85` and `'bootstrap': 55` in `PACK_PRIORITY`.
+   - Added `'line-md'` and `'linemd'` to `PACK_PREFIXES` and `ICON_PREFIX_REGEX`.
+   - Added `'line-md': 'Line icons (Animated) (line-md-)'` to `packLabels` in `IconSettingSection.ts`.
+2. **Priority-Aware `exactMap` and `suffixMap` Ingestion**: Updated `IconPackIndex.ts` so `exactMap` (for `noPrefix`) and `suffixMap` (for `suffix`) compare `newPrio > existingPrio` before replacing keys, guaranteeing that user-configured priorities strictly govern prefix-stripped matches.
+3. **Priority Probing in `resolveAutoIconCandidate`**: Added `this.plugin.iconManager.findIconInPacks(candidateKey)` probing against the active `packId`, enabling high-priority installed packs (like animated Line Icons) to fulfill standard category rules seamlessly.
+4. **Auto-Migration on Startup**: In `src/main.ts` `loadSettings()`, automatically merge any missing default packs into existing `iconPackPriorityOrder` settings while pinning `emoji` to the tail.
+
+**Lesson**: Never populate priority-sensitive lookup maps using a first-write-wins (`!map.has(key)`) strategy when the input keys are alphabetically sorted. Always evaluate `newPrio > existingPrio` so user configuration strictly governs resolution.
+
 
 
 

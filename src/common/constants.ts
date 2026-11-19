@@ -100,7 +100,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     glassmorphism: true,
 
     autoIcons: true,
-    iconPackPriorityOrder: ['custom', 'lucide', 'bootstrap', 'simple-icons', 'tabler', 'remix', 'font-awesome', 'material', 'feather', 'emoji'],
+    iconPackPriorityOrder: ['custom', 'lucide', 'line-md', 'bootstrap', 'simple-icons', 'tabler', 'remix', 'font-awesome', 'material', 'feather', 'emoji'],
     autoIconVariety: true,
     varietySeed: 0,
     wideAutoIcons: true,
@@ -337,6 +337,7 @@ export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
 export const DEFAULT_ICON_PACK_ORDER: string[] = [
     'custom',
     'lucide',
+    'line-md',
     'bootstrap',
     'simple-icons',
     'tabler',
@@ -350,17 +351,19 @@ export const DEFAULT_ICON_PACK_ORDER: string[] = [
 export const PACK_PRIORITY: Record<string, number> = {
     'custom': 100,       // 1. Unique brand assets
     'lucide': 90,        // 2. Main UI baseline (Modern, sharp, highly consistent)
-    'tabler': 80,        // 3. Main UI fallback (Massive library, same aesthetic)
-    'simple-icons': 70,  // 4. Brands only (Logos for Google, GitHub, etc.)
-    'remix': 60,         // 5. Secondary fallback
-    'bi': 55,            // 6. Bootstrap Icons (large general-purpose library)
-    'feather': 50,       // 7. Deprecated (Lucide is the upgraded version)
-    'font-awesome': 40,  // 8. Utility fallback (Heavy, traditional style)
-    'material': 30       // 9. Geometric fallback (Different design language)
+    'line-md': 85,       // 3. Line icons (Animated smooth SVG icons from Iconify)
+    'tabler': 80,        // 4. Main UI fallback (Massive library, same aesthetic)
+    'simple-icons': 70,  // 5. Brands only (Logos for Google, GitHub, etc.)
+    'remix': 60,         // 6. Secondary fallback
+    'bi': 55,            // 7. Bootstrap Icons (large general-purpose library)
+    'bootstrap': 55,     // 7b. Bootstrap alias
+    'feather': 50,       // 8. Deprecated (Lucide is the upgraded version)
+    'font-awesome': 40,  // 9. Utility fallback (Heavy, traditional style)
+    'material': 30       // 10. Geometric fallback (Different design language)
 };
 
 export const PACK_PREFIXES: string[] = [
-    'custom', 'simple-icons', 'simple', 'lucide', 'feather',
+    'custom', 'line-md', 'linemd', 'simple-icons', 'simple', 'lucide', 'feather',
     'fa', 'fas', 'far', 'fab', 'fontawesome', 'ri', 'remix',
     'tb', 'tabler', 'mdi', 'material', 'oct', 'octicons', 'bi', 'bootstrap'
 ];

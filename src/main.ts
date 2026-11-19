@@ -6,7 +6,7 @@ import {
   FolderStyle,
   IColorfulFoldersPlugin,
 } from "./common/types";
-import { DEFAULT_SETTINGS } from "./common/constants";
+import { DEFAULT_SETTINGS, DEFAULT_ICON_PACK_ORDER } from "./common/constants";
 import { NotebookNavigatorIntegration } from './integrations/NotebookNavigator';
 import { GraphColorSync } from './integrations/GraphColorSync';
 import { ColorPickerModal } from "./ui/modals/ColorPickerModal";
@@ -648,9 +648,24 @@ export default class ColorfulFoldersPlugin
     if (this.settings.tagSyncEnabled === undefined) {
       this.settings.tagSyncEnabled = true;
     }
-    if (Array.isArray(this.settings.iconPackPriorityOrder) && this.settings.iconPackPriorityOrder.includes('emoji')) {
-      if (this.settings.iconPackPriorityOrder[this.settings.iconPackPriorityOrder.length - 1] !== 'emoji') {
+    if (Array.isArray(this.settings.iconPackPriorityOrder)) {
+      let changed = false;
+      for (const defaultPack of DEFAULT_ICON_PACK_ORDER) {
+        if (!this.settings.iconPackPriorityOrder.includes(defaultPack)) {
+          const emojiIdx = this.settings.iconPackPriorityOrder.indexOf('emoji');
+          if (emojiIdx !== -1) {
+            this.settings.iconPackPriorityOrder.splice(emojiIdx, 0, defaultPack);
+          } else {
+            this.settings.iconPackPriorityOrder.push(defaultPack);
+          }
+          changed = true;
+        }
+      }
+      if (this.settings.iconPackPriorityOrder.includes('emoji') && this.settings.iconPackPriorityOrder[this.settings.iconPackPriorityOrder.length - 1] !== 'emoji') {
         this.settings.iconPackPriorityOrder = this.settings.iconPackPriorityOrder.filter(p => p !== 'emoji').concat(['emoji']);
+        changed = true;
+      }
+      if (changed) {
         void this.persistSettings();
       }
     }

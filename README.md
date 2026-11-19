@@ -12,6 +12,14 @@ Colorful Folders automatically applies premium color palettes, smart icons, and 
 ---
 ## What's New in Colorful Folders
 
+## 🚀 5.0.9 — New Animated Icon Pack & Smoother Performance
+
+* **✨ New "Line icons (Animated)" Pack**: Install 1,200+ smooth animated icons directly from **Settings > Icon Settings**, and easily prioritize them to bring your vault to life!
+* **⚡ Stutter-Free Scrolling**: Enjoy buttery-smooth 60+ FPS scrolling in your file explorer with zero lag or stutter, even in large vaults.
+* **🎯 Smarter Icon Pack Priorities**: Fixed pack priority ranking so your preferred icon sets always take precedence.
+
+---
+
 ## 🚀 5.0.8 — Simple Icon Rules & Flexible Matching Modes
 
 Setting up custom icons for your vault is now simpler and much more intuitive! You can now choose whether an icon applies to **Folders**, **Files**, or **Both**, and pick plain-English matching modes like **Contains**, **Exact match**, **Starts with**, or **Ends with**—no regex needed.
@@ -72,9 +80,10 @@ You no longer need to write complex regular expressions to match simple words. E
 * **Dual-Bucket `IconRuleSet` Engine:** $O(1)$ dictionary lookups for exact matches and native V8 string comparisons (`includes`, `===`, `startsWith`, `endsWith`) with 2,048-entry LRU caching and safe ReDoS limits.
 * **Context-Isolated Item Matching:** Evaluates item names independently (`itemContexts`), ensuring folder rules never bleed into nested child notes.
 * **Live Animated Icons:** Real-time animated SVG icons in your sidebar that play smoothly without freezing while scrolling and inherit custom folder colors.
-* **Smart Auto-Icons:** Automatically matches relevant icons to your folder and file names (e.g., *Journal* -> 📅, *Finance* -> 💰).
+* **Icon Pack Priority Hierarchy:** Reorder your icon packs (Custom, Lucide, Line icons Animated, Bootstrap, Simple Icons, Tabler, Remix, FontAwesome, Material, Feather, Emoji) to control which pack takes precedence for auto-matching and category rules.
+* **Smart Auto-Icons:** Automatically matches relevant icons to your folder and file names (e.g., *Journal* -> 📅, *Finance* -> 💰), with first-class out-of-the-box icon support for `.canvas` and `.excalidraw` files.
 * **Manual Override Priority:** Pin your preferred icons on any item to permanently override automatic suggestions.
-* **Custom & Offline Icon Packs:** Built-in offline libraries (Lucide, FontAwesome, Tabler, Material, Simple Icons) plus custom pack support via `.obsidian/icons`.
+* **Custom & Offline Icon Packs:** Built-in offline libraries (Lucide, FontAwesome, Tabler, Material, Simple Icons, Line icons) plus custom pack support via `.obsidian/icons`.
 * **Open & Closed States:** Set distinct icons for expanded versus collapsed folders globally or per folder.
 * **Pixel-Perfect Alignment:** All icons are automatically standardized and vertically centered with clean 18px baseline sizing.
 
@@ -111,6 +120,8 @@ You no longer need to write complex regular expressions to match simple words. E
 ### 🛡️ Stability & Performance Engine
 
 * **Zero-DOM Engine:** High-performance `adoptedStyleSheets` engine with zero GPU lag, even in 10,000+ note vaults.
+* **Stutter-Free Scrolling:** Optimized $O(1)$ scroll listeners with pre-registered animated targets, keeping tree scrolling butter-smooth at 60+ FPS.
+* **W3C Standards Compliant:** Full dual-support for standard CSS mask properties (`mask-image`, `mask-size`, `mask-repeat`, `mask-position`) and `-webkit-mask-*` for perfect cross-platform rendering.
 * **Theme-Friendly CSS Variables:** Publishes `--cf-color`, `--cf-subfolder-opacity`, `--cf-bg-alpha`, and manual override states (`--cf-has-custom-text`, `--cf-has-custom-icon`) so community themes can inspect runtime styling and contrast without guesswork.
 * **Multilingual Localization:** All settings, tooltips, and helper guides are fully translated across 8 languages (English, German, Spanish, French, Japanese, Slovak, Simplified Chinese, Traditional Chinese).
 * **Security Hardened:** Fully sanitized SVG DOM parsing and escaped CSS attribute selectors for maximum vault safety.

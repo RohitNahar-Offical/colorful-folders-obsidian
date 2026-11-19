@@ -41,7 +41,7 @@ export class IconPackIndex {
         const lower = iconKey.toLowerCase();
         if (packId === 'custom') return lower.startsWith('custom-');
         if (packId === 'emoji') return !IconPackIndex.ALPHA_REGEX.test(iconKey);
-        if (packId === 'line-md') return lower.startsWith('line-md-') || lower.startsWith('line-md:') || lower.startsWith('line-md_') || lower.startsWith('linemd-');
+        if (packId === 'line-md' || packId === 'linemd' || packId === 'line-icons' || packId === 'animated') return lower.startsWith('line-md-') || lower.startsWith('line-md:') || lower.startsWith('line-md_') || lower.startsWith('linemd-');
         if (packId === 'bootstrap' || packId === 'bi') return lower.startsWith('bi-') || lower.startsWith('bootstrap-') || lower.startsWith('bi:');
         if (packId === 'simple-icons') return lower.startsWith('simple-') || lower.startsWith('si-');
         if (packId === 'tabler' || packId === 'tb') return lower.startsWith('tb-') || lower.startsWith('tabler-');
@@ -136,8 +136,17 @@ export class IconPackIndex {
 
             const { noPrefix, core } = extractCoreIconKeyword(lKey);
 
-            if (noPrefix && !this.exactMap.has(noPrefix)) {
-                this.exactMap.set(noPrefix, value);
+            if (noPrefix) {
+                const existing = this.exactMap.get(noPrefix);
+                if (!existing) {
+                    this.exactMap.set(noPrefix, value);
+                } else {
+                    const existingPrio = this.getPackPriority(existing);
+                    const newPrio = this.getPackPriority(value);
+                    if (newPrio > existingPrio) {
+                        this.exactMap.set(noPrefix, value);
+                    }
+                }
             }
 
             if (core) {
@@ -158,8 +167,15 @@ export class IconPackIndex {
             const splitIdx = Math.max(lastDash, lastSlash);
             if (splitIdx > 0 && splitIdx < lKey.length - 1) {
                 const suffix = lKey.substring(splitIdx + 1);
-                if (!this.suffixMap.has(suffix)) {
+                const existing = this.suffixMap.get(suffix);
+                if (!existing) {
                     this.suffixMap.set(suffix, value);
+                } else {
+                    const existingPrio = this.getPackPriority(existing);
+                    const newPrio = this.getPackPriority(value);
+                    if (newPrio > existingPrio) {
+                        this.suffixMap.set(suffix, value);
+                    }
                 }
             }
         };

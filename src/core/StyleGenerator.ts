@@ -1,6 +1,6 @@
 import { AutoIconData, ColorfulFoldersSettings, FolderStyle, IColorfulFoldersPlugin, StyleContext } from '../common/types';
 import { PALETTES, DEFAULT_ICON_PACK_ORDER } from '../common/constants';
-import { hexToRgbObj, safeEscape } from '../common/utils';
+import { hexToRgbObj, safeEscape, stripIconPrefix } from '../common/utils';
 import * as obsidian from 'obsidian';
 import { NotebookNavigatorIntegration } from '../integrations/NotebookNavigator';
 import { TagColorSync } from '../integrations/TagColorSync';
@@ -99,6 +99,13 @@ export class StyleGenerator {
                     for (let j = 0; j < data.lucides.length; j++) {
                         const ic = data.lucides[j];
                         if (IconPackIndex.matchesPackId(ic, packId) && this.isValidIconStr(ic)) return ic;
+                    }
+                }
+                if (data.lucide && this.plugin.iconManager) {
+                    const candidateKey = stripIconPrefix(data.lucide);
+                    const packHit = this.plugin.iconManager.findIconInPacks(candidateKey);
+                    if (packHit && IconPackIndex.matchesPackId(packHit, packId) && this.isValidIconStr(packHit)) {
+                        return packHit;
                     }
                 }
             }

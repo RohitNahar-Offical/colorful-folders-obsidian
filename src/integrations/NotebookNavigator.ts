@@ -109,10 +109,15 @@ export class NotebookNavigatorIntegration {
         const countSel = '.nn-navitem-count';
 
         const iconTargets = isFolder
-            ? [`body .notebook-navigator .nn-navitem[data-path="${safePath}"] .nn-navitem-icon`]
+            ? [
+                `body .notebook-navigator .nn-navitem[data-path="${safePath}"] .nn-navitem-icon`,
+                `body .notebook-navigator .nn-navitem[data-path="${safePath}"] .nn-navitem-icon-slot`,
+                `body .notebook-navigator .nn-navitem[data-path="${safePath}"] .nn-icon-container:not(.nn-file *)`
+            ]
             : [
                 `body .notebook-navigator .nn-file[data-path="${safePath}"] .nn-file-icon-slot`,
-                `body .notebook-navigator .nn-file[data-path="${safePath}"] .nn-file-icon:not(.nn-file-icon-slot *)`
+                `body .notebook-navigator .nn-file[data-path="${safePath}"] .nn-file-icon:not(.nn-file-icon-slot *)`,
+                `body .notebook-navigator .nn-file[data-path="${safePath}"] .nn-icon-container`
             ];
         const hideSvgSpanSels = iconTargets.flatMap(target => [
             `${target} > svg:not(.cf-live-animated-icon svg)`,
