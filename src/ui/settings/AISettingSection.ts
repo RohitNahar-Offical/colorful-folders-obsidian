@@ -351,5 +351,36 @@ export class AISettingSection extends SettingSection {
                 vectorRunBtn.setText(t("settings.ai.btn_vector_auto_assign"));
             }
         };
+
+        const clearAiBtn = vectorBtnWrap.createEl("button", { text: t("settings.ai.btn_clear_ai_icons"), cls: "mod-warning" });
+        clearAiBtn.onclick = async () => {
+            let clearedCount = 0;
+            const custom = this.plugin.settings.customFolderColors || {};
+            for (const path of Object.keys(custom)) {
+                const item = custom[path];
+                if (!item) continue;
+                if (typeof item === 'object') {
+                    const isAi = item.iconSource === 'embedding' || (typeof item.iconSource === 'string' && item.iconSource.startsWith('ai'));
+                    if (isAi) {
+                        delete item.iconId;
+                        delete item.iconSource;
+                        delete item.aiHash;
+                        clearedCount++;
+                        const hasOtherProps = Object.keys(item).some(k => k !== 'iconId' && k !== 'iconSource' && k !== 'aiHash');
+                        if (!hasOtherProps) {
+                            delete custom[path];
+                        }
+                    }
+                }
+            }
+
+            if (clearedCount > 0) {
+                await this.plugin.saveSettings();
+                await this.plugin.generateStyles();
+                new obsidian.Notice(t("notice.clear_ai_icons_success", { count: clearedCount }));
+            } else {
+                new obsidian.Notice(t("notice.clear_ai_icons_none"));
+            }
+        };
     }
 }

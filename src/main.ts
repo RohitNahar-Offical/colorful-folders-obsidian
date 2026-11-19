@@ -25,7 +25,7 @@ import { IconManager } from "./core/IconManager";
 import { AIIconClassifier } from './integrations/AIIconClassifier';
 import { EmbeddingModel } from './integrations/embedingmodel';
 import { t } from './lang/helpers';
-import { normalizeVaultPath } from './common/utils';
+import { normalizeVaultPath, hashPassword } from './common/utils';
 import { LRUCache } from './common/LRUCache';
 
 declare module "obsidian" {
@@ -59,6 +59,9 @@ export default class ColorfulFoldersPlugin
   cachedDocuments: Set<Document> = new Set();
   _abortStartupRender: boolean = false;
   _isUnloading: boolean = false;
+  isSelfSavingSettings: boolean = false;
+  lastSavedSettingsJson: string = '';
+  lastGeneratedCss: string = '';
 
   embeddingModel: EmbeddingModel;
   domObserverService: DOMObserverService;
@@ -108,7 +111,7 @@ export default class ColorfulFoldersPlugin
 
       this.saveDataDebounced = obsidian.debounce(
         () => {
-          void this.saveData(this.settings);
+          void this.persistSettings();
         },
         1000, // 1-second trailing edge debounce for disk I/O
         false
@@ -623,7 +626,7 @@ export default class ColorfulFoldersPlugin
       await this.saveLocalCustomIcons();
       data.customIcons = {};
       delete (data as Record<string, unknown>).customIcons;
-      void this.saveData(Object.assign({}, DEFAULT_SETTINGS, data, { customIcons: {} }));
+      void this.persistSettings(Object.assign({}, DEFAULT_SETTINGS, data, { customIcons: {} }));
     }
 
     // Migration for independent divider padding
@@ -642,11 +645,18 @@ export default class ColorfulFoldersPlugin
     if (Array.isArray(this.settings.iconPackPriorityOrder) && this.settings.iconPackPriorityOrder.includes('emoji')) {
       if (this.settings.iconPackPriorityOrder[this.settings.iconPackPriorityOrder.length - 1] !== 'emoji') {
         this.settings.iconPackPriorityOrder = this.settings.iconPackPriorityOrder.filter(p => p !== 'emoji').concat(['emoji']);
-        void this.saveData(this.settings);
+        void this.persistSettings();
       }
     }
     if (this.settings.heatmapData) {
       this.heatmapCache = new Map(Object.entries(this.settings.heatmapData));
+    }
+    if (this.settings.vaultPassword) {
+      if (!this.settings.vaultPasswordHash) {
+        this.settings.vaultPasswordHash = await hashPassword(this.settings.vaultPassword);
+      }
+      delete (this.settings as Record<string, unknown>).vaultPassword;
+      void this.persistSettings();
     }
     this.syncCustomFolderColorsMap();
     this.activePaletteCache = null;
@@ -660,6 +670,7 @@ export default class ColorfulFoldersPlugin
     ColorResolver.heatmapDays = this.settings.heatmapDays?.length ? this.settings.heatmapDays : [1, 3, 7, 15, 30];
     NotebookNavigatorIntegration.layout = { border: this.settings.nnRowBorder ?? -1, radius: this.settings.folderBorderRadius ?? 6, spacing: this.settings.rowSpacing ?? 2, weight: this.settings.folderTextWeight ?? 800 };
     this.syncNotebookNavigatorPairs();
+    this.lastSavedSettingsJson = JSON.stringify(this.settings);
   }
 
   public syncNotebookNavigatorPairs(): void {
@@ -751,6 +762,19 @@ export default class ColorfulFoldersPlugin
     );
 
     this.generateStylesDebounced();
+  }
+
+  async persistSettings(dataToSave?: ColorfulFoldersSettings | Record<string, unknown>): Promise<void> {
+    this.isSelfSavingSettings = true;
+    try {
+      const payload = dataToSave || this.settings;
+      this.lastSavedSettingsJson = JSON.stringify(payload);
+      await this.saveData(payload);
+    } finally {
+      window.setTimeout(() => {
+        this.isSelfSavingSettings = false;
+      }, 500);
+    }
   }
 
   registerCustomIcons() {
@@ -886,9 +910,13 @@ export default class ColorfulFoldersPlugin
       );
     };
 
-    if (this.settings.vaultPassword && this.settings.isVaultLocked) {
+    const hasPassword = !!(this.settings.vaultPasswordHash || this.settings.vaultPassword);
+    if (hasPassword && this.settings.isVaultLocked) {
       new PasswordModal(this.app, t("modal.password.title"), async (pass) => {
-        if (pass === this.settings.vaultPassword) {
+        const passHash = await hashPassword(pass);
+        const matches = (this.settings.vaultPasswordHash && passHash === this.settings.vaultPasswordHash) ||
+                        (this.settings.vaultPassword && pass === this.settings.vaultPassword);
+        if (matches) {
           this.settings.isVaultLocked = false;
           await applyToggle();
           return true;
@@ -1011,7 +1039,11 @@ export default class ColorfulFoldersPlugin
         doc.body.classList.toggle("cf-wrap-metadata", Boolean(this.settings.wrapMetadata));
       });
       const css = await this.styleGenerator.generateCss();
-      this.adoptedStyleSheetService.updateStyles(css);
+      const cssChanged = this.lastGeneratedCss !== css;
+      this.lastGeneratedCss = css;
+      if (cssChanged) {
+        this.adoptedStyleSheetService.updateStyles(css);
+      }
       this.getAllExplorerContainers().forEach((c) => this.domObserverService.tagExplorerItems(c));
       this.animatedIconService?.syncAnimatedIcons();
       this.domObserverService.syncTagPaneDataset();

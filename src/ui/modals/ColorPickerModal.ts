@@ -41,7 +41,7 @@ modifiedFields: Set<string>;
         // Initialize style - pre-fill from current appearance if no custom style exists
         const effective = StyleResolver.getEffectiveStyle(this.item, this.plugin) || {
             hex: "#eb6f92", textColor: "", iconColor: "", isBold: this.isFolder, isItalic: false,
-            opacity: 1.0, applyToSubfolders: false, applyToFiles: false, iconId: "", expandedIconId: ""
+            opacity: 1.0, applyToSubfolders: false, applyToFiles: false, iconId: "", expandedIconId: "", activeIconId: ""
         };
         const existing = (StyleResolver.getStyle(this.plugin, this.item.path) || {});
         
@@ -735,6 +735,10 @@ modifiedFields: Set<string>;
                 if (this.folderStyle.expandedIconId) finalStyle.expandedIconId = this.folderStyle.expandedIconId;
                 else delete finalStyle.expandedIconId;
             }
+            if (this.modifiedFields.has('activeIconId')) {
+                if (this.folderStyle.activeIconId) finalStyle.activeIconId = this.folderStyle.activeIconId;
+                else delete finalStyle.activeIconId;
+            }
             if (this.modifiedFields.has('iconColor')) {
                 if (this.folderStyle.iconColor) finalStyle.iconColor = this.folderStyle.iconColor;
                 else delete finalStyle.iconColor;
@@ -771,25 +775,25 @@ modifiedFields: Set<string>;
 
 
         // Search & Filter Row
-        let targetIconField: 'iconId' | 'expandedIconId' = 'iconId';
+        let targetIconField: 'iconId' | 'expandedIconId' | 'activeIconId' = 'iconId';
         
-        if (this.isFolder) {
-            const stateSelector = ic.createDiv();
-            stateSelector.setCssStyles({
-                display: "flex", gap: "10px", marginBottom: "12px", background: "var(--background-secondary)",
-                padding: "4px", borderRadius: "8px", border: "1px solid var(--background-modifier-border)"
+        const stateSelector = ic.createDiv();
+        stateSelector.setCssStyles({
+            display: "flex", gap: "10px", marginBottom: "12px", background: "var(--background-secondary)",
+            padding: "4px", borderRadius: "8px", border: "1px solid var(--background-modifier-border)"
+        });
+
+        const makeBtn = (label: string) => {
+            const btn = stateSelector.createEl("button", { text: label });
+            btn.setCssStyles({
+                flex: "1", padding: "6px 0", background: "transparent", border: "none",
+                borderRadius: "6px", cursor: "pointer", fontSize: "0.85em",
+                color: "var(--text-muted)", transition: "all 0.15s ease"
             });
+            return btn;
+        };
 
-            const makeBtn = (label: string) => {
-                const btn = stateSelector.createEl("button", { text: label });
-                btn.setCssStyles({
-                    flex: "1", padding: "6px 0", background: "transparent", border: "none",
-                    borderRadius: "6px", cursor: "pointer", fontSize: "0.85em",
-                    color: "var(--text-muted)", transition: "all 0.15s ease"
-                });
-                return btn;
-            };
-
+        if (this.isFolder) {
             const collapsedBtn = makeBtn("Collapsed Icon");
             const expandedBtn = makeBtn("Expanded Icon");
             
@@ -819,6 +823,36 @@ modifiedFields: Set<string>;
             };
             
             updateStateBtns();
+        } else {
+            const defaultBtn = makeBtn("Default Icon");
+            const activeBtn = makeBtn("Active / Open Icon");
+
+            const updateFileStateBtns = () => {
+                defaultBtn.setCssStyles({
+                    background: targetIconField === 'iconId' ? "var(--background-modifier-active)" : "transparent",
+                    color: targetIconField === 'iconId' ? "var(--text-normal)" : "var(--text-muted)",
+                    fontWeight: targetIconField === 'iconId' ? "600" : "normal"
+                });
+                activeBtn.setCssStyles({
+                    background: targetIconField === 'activeIconId' ? "var(--background-modifier-active)" : "transparent",
+                    color: targetIconField === 'activeIconId' ? "var(--text-normal)" : "var(--text-muted)",
+                    fontWeight: targetIconField === 'activeIconId' ? "600" : "normal"
+                });
+            };
+
+            defaultBtn.onclick = () => {
+                targetIconField = 'iconId';
+                updateFileStateBtns();
+                renderIcons(searchInput.value, filterSelect.value);
+            };
+
+            activeBtn.onclick = () => {
+                targetIconField = 'activeIconId';
+                updateFileStateBtns();
+                renderIcons(searchInput.value, filterSelect.value);
+            };
+
+            updateFileStateBtns();
         }
 
         const searchRow = ic.createDiv();

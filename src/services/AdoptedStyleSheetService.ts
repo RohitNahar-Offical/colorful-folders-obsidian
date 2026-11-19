@@ -4,6 +4,7 @@ export class AdoptedStyleSheetService {
     plugin: IColorfulFoldersPlugin;
     public sheet: CSSStyleSheet | null = null;
     private fallbackStyles: Map<Document, HTMLStyleElement> = new Map();
+    public lastAppliedCss: string = '';
 
     constructor(plugin: IColorfulFoldersPlugin) {
         this.plugin = plugin;
@@ -35,6 +36,9 @@ export class AdoptedStyleSheetService {
                 const styleTag = 'style';
                 const parent = doc.head || doc.documentElement;
                 const styleEl = parent.createEl(styleTag, { attr: { id: 'cf-adopted-fallback-styles' } });
+                if (this.lastAppliedCss) {
+                    styleEl.textContent = this.lastAppliedCss;
+                }
                 this.fallbackStyles.set(doc, styleEl);
             }
         } catch (e) {
@@ -57,6 +61,11 @@ export class AdoptedStyleSheetService {
      * Synchronously replaces the contents of the programmatic stylesheet.
      */
     updateStyles(cssString: string): void {
+        if (this.lastAppliedCss === cssString) {
+            return;
+        }
+        this.lastAppliedCss = cssString;
+
         try {
             if (this.sheet && typeof this.sheet.replaceSync === 'function') {
                 this.sheet.replaceSync(cssString);
@@ -78,6 +87,7 @@ export class AdoptedStyleSheetService {
      * Clears all CSS rules from the stylesheet.
      */
     clearStyles(): void {
+        this.lastAppliedCss = '';
         this.updateStyles('');
     }
 

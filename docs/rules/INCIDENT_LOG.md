@@ -489,25 +489,32 @@ When a user defined a rule matching a folder name, every note, file, and subfold
 
 ---
 
-## Incident #43 — Folder Icons / Collapse Indicators Losing Color When `colorText` is Set to "Files Only" or "None (Icons Only)" (2026-11-08)
+## Incident #44 — Sync Amplification, Full Stylesheet Rebuild Lag, CJK Icon Gaps & AI Override Lockout (GitHub Issue #34) (2026-11-19)
 **What was reported**:
-"The options Files Only and None both don't color folder icons. But the option is only for the text color. My use case is to only color the icons for both files and folders."
-**What broke**:
-When a user set the "Color Text" setting to `files` ("Files only") or `none` ("None (Icons only)"), folder icons and collapse indicators lost all palette color and reverted to the neutral text color (`var(--text-normal)`), even though file icons correctly preserved their colors and the user intended to color icons only for both files and folders.
+1. `data.json` self-write listener caused a cross-device sync amplification loop in vaults synced via Obsidian Sync, iCloud, or WebDAV.
+2. `generateStyles()` was always a full rebuild with no incremental short-circuit, continuously tearing down and replacing the entire CSSOM via `sheet.replaceSync(css)` even on byte-identical output.
+3. `iconSource: "embedding"` entries permanently shadowed user rules in `customIconRules`, with no UI button to clear only AI-assigned icons.
+4. Built-in icon rule table contained zero CJK (Chinese, Japanese, Korean) patterns, forcing standard folders like `笔记`, `项目`, `归档` to render default closed-folder icons.
+5. Files lacked a per-state icon (`activeIconId`), whereas folders supported `expandedIconId`.
+6. `vaultPassword` was serialized in plaintext in `data.json`.
+
 **Root cause**:
-1. **Coupling Collapse Indicator to Text Color**: In `src/core/StyleGenerator.ts:953`, the collapse indicator rule (`collapseSels`, which styles `.nav-folder-collapse-indicator`, `.collapse-icon`, and their child `svg` elements) emitted:
-   ```typescript
-   color: ${folderStyles.t} !important;
-   stroke: currentColor !important;
-   ```
-2. When `colorText` is set to `"files"` or `"none"`, `ColorResolver.resolveTextColor()` evaluates `shouldColor` to `false`, causing `folderStyles.t` to return `"var(--text-normal)"`.
-3. Because line 953 bound the collapse indicators directly to `folderStyles.t` with `!important`, every folder chevron and collapse indicator was forcefully overridden with the neutral text color instead of its resolved icon color (`effFolderIconColor`).
-4. Furthermore, CSS custom property `--cf-icon-color` was not exposed on `.nav-folder-title` or `.nav-file-title` rows, leaving `.cf-icon-wrapper` and `.cf-live-animated-icon` without an explicit inherited icon color variable.
+1. `EventTrackerService.ts` registered `app.vault.on("modify")` for `data.json` without distinguishing self-writes from external sync events. Every local `saveSettings()` fired `modify`, triggering `loadSettings()` $\to$ `generateStyles()` $\to$ sync writeback on other devices.
+2. `AdoptedStyleSheetService.updateStyles()` called `sheet.replaceSync(css)` unconditionally without caching `lastAppliedCss`.
+3. In `StyleGenerator.ts`, `customStyle.iconId` was evaluated before `customIconRules` regardless of `iconSource`, allowing embedding suggestions to permanently lock out user rule updates.
+4. `AUTO_ICON_CATEGORIES` relied on `\b` word boundaries and English-only terminology. CJK ideograms have no word boundaries and were omitted.
+5. `FolderStyle` interface lacked `activeIconId` support for files.
+6. `vaultPassword` lacked a hashing layer.
+
 **Resolution**:
-1. In `src/core/StyleGenerator.ts:953`, updated `collapseSels` to apply `color: ${effFolderIconColor} !important;` and grouped it cleanly by `collapseIcon_${effFolderIconColor.replace(/\s+/g, '')}`.
-2. In `src/core/StyleGenerator.ts:753` and `360`, stamped `--cf-icon-color: ${effFolderIconColor}` on `.nav-folder-title` and `--cf-icon-color: ${effFileIconColor}` on `.nav-file-title`.
-3. In `src/core/BaseCssGenerator.ts:124` and `133`, updated `.cf-live-animated-icon` and `.cf-icon-wrapper` to support `var(--cf-icon-color, inherit)`.
-**Lesson**: Adhere strictly to the Visual Styling Decoupling rule. Text color and icon color must never share an evaluation gate or style variable. Collapse indicators, folder chevrons, and custom icons are visual iconography and must unconditionally resolve through the icon color chain (`effFolderIconColor`), retaining palette color regardless of whether text coloring is set to `'all'`, `'folders'`, `'files'`, or `'none'`.
+1. Implemented dual-guard write suppression in `main.ts` (`isSelfSavingSettings` and `lastSavedSettingsJson` fingerprint comparison in `EventTrackerService.ts`).
+2. Added `lastAppliedCss` short-circuit in `AdoptedStyleSheetService.ts` and `lastGeneratedCss` in `main.ts`, bypassing `sheet.replaceSync` when CSS is unchanged.
+3. Allowed `customIconRules` to override `embedding`/`ai-*` suggestions, and added a dedicated "Clear AI & Embedding Icons" button in `AISettingSection.ts`.
+4. Added 20 comprehensive CJK category patterns to `AUTO_ICON_CATEGORIES` in `constants.ts` covering notes, projects, archives, images, media, math, code, algorithms, OS, and journals.
+5. Added `activeIconId` support in `types.ts`, `ColorPickerModal.ts`, and `StyleGenerator.ts` targeting `.nav-file-title.is-active[data-path="..."] .nav-file-title-content::before`.
+6. Migrated `vaultPassword` to `vaultPasswordHash` (SHA-256).
+
+**Lesson**: Always protect synchronized configuration files against self-write echo loops with both in-flight locks and content fingerprints. Never re-parse constructable stylesheets when CSS string output is byte-identical. User-authored rules must unconditionally outrank automated machine-learning suggestions. Always provide CJK regexes without ASCII `\b` boundaries for international users.
 
 
 

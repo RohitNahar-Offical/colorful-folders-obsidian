@@ -322,15 +322,24 @@ export class StyleGenerator {
                     isDark
                 );
 
+                const isAiFileIcon = !!(fileStyle?.iconSource === 'embedding' || (typeof fileStyle?.iconSource === 'string' && fileStyle.iconSource.startsWith('ai')));
                 const rawFileIcon = (fileStyle?.iconId && this.isValidIconStr(fileStyle.iconId)) ? fileStyle.iconId : null;
                 const rawInheritedFileIcon = (inheritedStyle?.applyToFiles && inheritedStyle?.iconId && this.isValidIconStr(inheritedStyle.iconId)) ? inheritedStyle.iconId : null;
 
-                let iconId = rawFileIcon || rawInheritedFileIcon || "";
-                if (!iconId && this.settings.autoIcons) {
+                let userRuleFileIcon = "";
+                if (this.settings.autoIcons) {
                     const customUserRuleFile = this.plugin.iconManager.getAutoIconData(child.name, child.path, true);
                     if (customUserRuleFile) {
-                        iconId = this.resolveAutoIconCandidate(customUserRuleFile);
+                        userRuleFileIcon = this.resolveAutoIconCandidate(customUserRuleFile);
                     }
+                }
+
+                let iconId = "";
+                if (isAiFileIcon) {
+                    // Explicit user custom rules override automated AI/embedding predictions
+                    iconId = userRuleFileIcon || rawFileIcon || rawInheritedFileIcon || "";
+                } else {
+                    iconId = rawFileIcon || rawInheritedFileIcon || userRuleFileIcon || "";
                 }
 
                 const textNative = ColorResolver.resolveTextColor(
@@ -508,6 +517,49 @@ export class StyleGenerator {
                     `, fileTextSels.map(s => s + '::before'));
                 }
 
+                const activeFileIcon = (fileStyle?.activeIconId && this.isValidIconStr(fileStyle.activeIconId)) ? fileStyle.activeIconId : null;
+                if (activeFileIcon) {
+                    const isActiveCustomEmoji = this.plugin.iconManager.isEmojiIcon(activeFileIcon);
+                    const activeFileSels = [
+                        `body .nav-files-container .nav-file-title.is-active[data-path="${safePath}"]:not(.nn-file) .nav-file-title-content::before`,
+                        `body .nav-files-container .tree-item-self.is-active[data-path="${safePath}"]:not(.nav-folder-title):not(.nn-file) .tree-item-inner::before`
+                    ];
+                    if (isActiveCustomEmoji) {
+                        grouper.add(`
+                            content: "${activeFileIcon} " !important;
+                            display: inline-flex !important;
+                            align-items: center !important;
+                            justify-content: center !important;
+                            align-self: center !important;
+                            flex-shrink: 0 !important;
+                            height: ${effFileIconW} !important;
+                            width: ${effFileIconW} !important;
+                            margin-right: 4px !important;
+                            background-color: transparent !important;
+                            -webkit-mask-image: none !important;
+                        `, activeFileSels, `activeFileIcon_${activeFileIcon}_emoji_${effFileIconW}`);
+                    } else {
+                        const activeMaskUrl = this.plugin.iconManager.getMaskDataUri(activeFileIcon);
+                        if (activeMaskUrl) {
+                            grouper.add(`
+                                content: '' !important;
+                                display: inline-flex !important;
+                                align-self: center !important;
+                                flex-shrink: 0 !important;
+                                width: ${effFileIconW} !important;
+                                height: ${effFileIconW} !important;
+                                margin-right: 4px !important;
+                                background-color: var(--cf-active-color, ${iconColor || color.hex || textNative}) !important;
+                                -webkit-mask-image: ${activeMaskUrl} !important;
+                                -webkit-mask-repeat: no-repeat !important;
+                                -webkit-mask-position: center !important;
+                                -webkit-mask-size: contain !important;
+                                opacity: 1.0 !important;
+                            `, activeFileSels, `activeFileIcon_${activeFileIcon}_svg_${effFileIconW}`);
+                        }
+                    }
+                }
+
                 const activeGlowEnabled = this.settings.activeGlow !== false;
                 if (isFolderNote) {
                     const safeFolderPath = this.getSafeEscape(folder.path);
@@ -669,15 +721,24 @@ export class StyleGenerator {
                 `body .nav-files-container .tree-item-self[data-path="${safePath}"] + .tree-item-children`
             ], `folderBgTint_${color.hex}_${finalTintOp}_${outlineOnly}_${folderThick}`);
 
+            const isAiFolderIcon = !!(customStyle?.iconSource === 'embedding' || (typeof customStyle?.iconSource === 'string' && customStyle.iconSource.startsWith('ai')));
             const rawFolderIcon = (customStyle?.iconId && this.isValidIconStr(customStyle.iconId)) ? customStyle.iconId : null;
             const rawInheritedFolderIcon = (inheritedStyle?.iconId && this.isValidIconStr(inheritedStyle.iconId)) ? inheritedStyle.iconId : null;
 
-            let folderIconId = rawFolderIcon || rawInheritedFolderIcon || "";
-            if (!folderIconId && this.settings.autoIcons) {
+            let userRuleFolderIcon = "";
+            if (this.settings.autoIcons) {
                 const customUserRuleFolder = this.plugin.iconManager.getAutoIconData(child.name, child.path, false);
                 if (customUserRuleFolder) {
-                    folderIconId = this.resolveAutoIconCandidate(customUserRuleFolder);
+                    userRuleFolderIcon = this.resolveAutoIconCandidate(customUserRuleFolder);
                 }
+            }
+
+            let folderIconId = "";
+            if (isAiFolderIcon) {
+                // Explicit user custom rules override automated AI/embedding predictions
+                folderIconId = userRuleFolderIcon || rawFolderIcon || rawInheritedFolderIcon || "";
+            } else {
+                folderIconId = rawFolderIcon || rawInheritedFolderIcon || userRuleFolderIcon || "";
             }
             const folderExpandedIconId = (customStyle?.expandedIconId && this.isValidIconStr(customStyle.expandedIconId)) ? customStyle.expandedIconId : ((inheritedStyle?.expandedIconId && this.isValidIconStr(inheritedStyle.expandedIconId)) ? inheritedStyle.expandedIconId : "");
 

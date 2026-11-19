@@ -5,14 +5,16 @@ import { DEFAULT_SETTINGS } from '../../common/constants';
 import { FolderStyle, ColorfulFoldersSettings } from '../../common/types';
 import { PasswordModal } from '../modals/PasswordModal';
 import { ConfirmModal } from '../modals/ConfirmModal';
+import { hashPassword } from '../../common/utils';
 
 export class PrivacySettingSection extends SettingSection {
     render(containerEl: HTMLElement): void {
         // 🔏 Privacy & Stealth Card
         const stealthCard = this.settingTab.makeCard(containerEl, "🔏", "Privacy & stealth");
-        const isLocked = !!(this.plugin.settings.vaultPassword && this.plugin.settings.isVaultLocked);
+        const hasPassword = !!(this.plugin.settings.vaultPasswordHash || this.plugin.settings.vaultPassword);
+        const isLocked = !!(hasPassword && this.plugin.settings.isVaultLocked);
 
-        if (this.plugin.settings.vaultPassword) {
+        if (hasPassword) {
             new obsidian.Setting(stealthCard)
                 .setName(isLocked ? "Vault is locked" : "Vault is unlocked")
                 .setDesc(isLocked ? "Unlock to manage hidden items and privacy settings." : "Privacy settings are currently accessible.")
@@ -22,7 +24,10 @@ export class PrivacySettingSection extends SettingSection {
                             .setCta()
                             .onClick(() => {
                                 new PasswordModal(this.app, "Unlock privacy", async (pass) => {
-                                    if (pass === this.plugin.settings.vaultPassword) {
+                                    const passHash = await hashPassword(pass);
+                                    const matches = (this.plugin.settings.vaultPasswordHash && passHash === this.plugin.settings.vaultPasswordHash) ||
+                                                    (this.plugin.settings.vaultPassword && pass === this.plugin.settings.vaultPassword);
+                                    if (matches) {
                                         this.plugin.settings.isVaultLocked = false;
                                         await this.plugin.saveSettings();
                                         new obsidian.Notice(t("notice.vault_unlocked"));
@@ -74,11 +79,18 @@ export class PrivacySettingSection extends SettingSection {
                 .setName(t("settings.vault_password.name"))
                 .setDesc('Set a password to lock the hidden items list and ghost mode. Leave empty to disable.')
                 .addText(text => {
+                    const hasPass = !!(this.plugin.settings.vaultPasswordHash || this.plugin.settings.vaultPassword);
                     text.setPlaceholder(t("common.enter_password"))
-                        .setValue(this.plugin.settings.vaultPassword || "")
+                        .setValue(hasPass ? "••••••••" : "")
                         .onChange(async (value) => {
-                            this.plugin.settings.vaultPassword = value;
-                            if (!value) this.plugin.settings.isVaultLocked = false;
+                            if (value && value !== "••••••••") {
+                                this.plugin.settings.vaultPasswordHash = await hashPassword(value);
+                                delete this.plugin.settings.vaultPassword;
+                            } else if (!value) {
+                                this.plugin.settings.vaultPasswordHash = "";
+                                delete this.plugin.settings.vaultPassword;
+                                this.plugin.settings.isVaultLocked = false;
+                            }
                             await this.plugin.saveSettings();
                         });
 
@@ -244,6 +256,7 @@ export class PrivacySettingSection extends SettingSection {
                     } else {
                         const settingsExport = { ...this.plugin.settings };
                         delete (settingsExport as Partial<ColorfulFoldersSettings>).vaultPassword;
+                        delete (settingsExport as Partial<ColorfulFoldersSettings>).vaultPasswordHash;
                         delete (settingsExport as Partial<ColorfulFoldersSettings>).isVaultLocked;
                         delete (settingsExport as Partial<ColorfulFoldersSettings>).lastVersion;
 
@@ -323,7 +336,7 @@ export class PrivacySettingSection extends SettingSection {
                                     new obsidian.Notice(t("notice.dividers_backup_restored"));
                                 } else if (isFolderOrComplete) {
                                     if (parsed.settings && typeof parsed.settings === 'object') {
-                                        const { vaultPassword, isVaultLocked, lastVersion, ...restoredSettings } = parsed.settings;
+                                        const { vaultPassword, vaultPasswordHash, isVaultLocked, lastVersion, ...restoredSettings } = parsed.settings;
                                         this.plugin.settings = Object.assign({}, DEFAULT_SETTINGS, this.plugin.settings, restoredSettings);
                                     }
                                     const dataPayload = parsed.data || (parsed.type ? undefined : (parsed as unknown as Record<string, FolderStyle | string>));

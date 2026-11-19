@@ -11,6 +11,7 @@ export interface FolderStyle {
     iconId?: string;
     icon?: string;
     expandedIconId?: string;
+    activeIconId?: string;
     opacity?: number;
     isBold?: boolean;
     isItalic?: boolean;
@@ -112,6 +113,7 @@ export interface ColorfulFoldersSettings {
     fileBackgroundOpacity: number;
     notebookNavigatorOutlineOnly: boolean;
     vaultPassword?: string;
+    vaultPasswordHash?: string;
     isVaultLocked?: boolean;
     showHiddenItems: boolean;
     showRibbonIcon: boolean;
@@ -247,6 +249,9 @@ export interface IColorfulFoldersPlugin {
     cachedDocuments: Set<Document>;
     _abortStartupRender: boolean;
     _isUnloading?: boolean;
+    isSelfSavingSettings?: boolean;
+    lastSavedSettingsJson?: string;
+    lastGeneratedCss?: string;
 }
 
 declare global {

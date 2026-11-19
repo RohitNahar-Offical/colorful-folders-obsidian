@@ -607,6 +607,9 @@ const sk: Partial<LocaleDictionary> = {
     "settings.ai.btn_vector_progress": "⏳ Klasifikuje sa {{pct}}% ({{completed}}/{{total}})...",
     "notice.vector_success": "⚡ {{engineName}}: Automaticky priradených {{count}} ikon!",
     "notice.vector_error": "❌ Chyba vektorového vorenia: {{msg}}",
+    "settings.ai.btn_clear_ai_icons": "🗑️ Vymazať ikony umelej inteligencie a vektorov",
+    "notice.clear_ai_icons_success": "Vymazaných {{count}} ikon priradených AI/vektorom.",
+    "notice.clear_ai_icons_none": "Nenašli sa žiadne ikony priradené AI alebo vektorom.",
 
     // --- Hover Message Modal ---
     "modal.hover_message.desc": "Pridajte kontext, odkazy alebo značky, ktoré sa zobrazia pri prejdení myšou nad týmto oddeľovačom.",

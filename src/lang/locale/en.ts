@@ -701,6 +701,9 @@ export default {
     "settings.ai.btn_vector_progress": "⏳ Classifying {{pct}}% ({{completed}}/{{total}})...",
     "notice.vector_success": "⚡ {{engineName}}: Auto-assigned {{count}} icons!",
     "notice.vector_error": "❌ Vector Embedding error: {{msg}}",
+    "settings.ai.btn_clear_ai_icons": "🗑️ Clear AI & embedding icons",
+    "notice.clear_ai_icons_success": "Cleared {{count}} AI & embedding-assigned icons.",
+    "notice.clear_ai_icons_none": "No AI or embedding-assigned icons found to clear.",
 
     // --- AI System Prompt ---
     "settings.ai.system_prompt.evaluate_with_content": "Evaluate each item's title, path hierarchy, parent folder, tags, frontmatter, and content snippet to select the single most accurate icon ID.",

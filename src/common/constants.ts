@@ -135,6 +135,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     notebookNavigatorOutlineOnly: true,
     graphColorSync: false,
     vaultPassword: "",
+    vaultPasswordHash: "",
     isVaultLocked: false,
     showHiddenItems: false,
     showRibbonIcon: true,
@@ -222,6 +223,30 @@ export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
     { rex: /\b(?:canvas|whiteboard|draw|excalidraw)\b/i, emoji: "🎨", lucide: "frame", priority: 120, lucides: ["frame", "shapes", "pencil-ruler"] },
     { rex: /\b(?:graph|graph-view|link|relation|node|network)\b/i, emoji: "🕸️", lucide: "share-2", priority: 120, lucides: ["share-2", "git-branch", "workflow"] },
     { rex: /\b(?:plugin|plugins|extension|extensions|addon|addons|widget|widgets)\b/i, emoji: "🧩", lucide: "puzzle", priority: 120, emojis: ["🧩", "🔌"], lucides: ["puzzle", "plugin", "simple-icons-wxt"] },
+
+    // =========================================================================
+    // 2.5 CJK CORE VAULT STRUCTURES, CONCEPTS & LEARNING (Priority 140 - 120)
+    // =========================================================================
+    { rex: /(?:笔记|备忘|记录|笔记库)/, emoji: "📝", lucide: "notebook", priority: 140, emojis: ["📝", "📓", "✍️"], lucides: ["notebook", "file-text", "edit-3"] },
+    { rex: /(?:项目|工程|企划)/, emoji: "💼", lucide: "folder-kanban", priority: 140, emojis: ["💼", "📋", "🏗️"], lucides: ["folder-kanban", "briefcase", "layout-list"] },
+    { rex: /(?:归档|存档|备份|旧档|历史)/, emoji: "📦", lucide: "archive", priority: 140, emojis: ["📦", "🗄️", "📁"], lucides: ["archive", "box", "package"] },
+    { rex: /(?:图片|图像|截图|素材|相册|壁纸)/, emoji: "🖼️", lucide: "image", priority: 140, emojis: ["🖼️", "📸", "🎨"], lucides: ["image", "images", "camera"] },
+    { rex: /(?:附件|资源|资产|素材库)/, emoji: "📎", lucide: "paperclip", priority: 135, emojis: ["📎", "📁", "📦"], lucides: ["paperclip", "folder-archive", "file-box"] },
+    { rex: /(?:模板|模板库|样板)/, emoji: "📋", lucide: "layout-template", priority: 135, emojis: ["📋", "📝", "📐"], lucides: ["layout-template", "copy", "ruler"] },
+    { rex: /(?:下载|临时|缓存)/, emoji: "📥", lucide: "download", priority: 130, emojis: ["📥", "💾", "⏳"], lucides: ["download", "inbox", "clock"] },
+    { rex: /(?:算法|数据结构|刷题)/, emoji: "⚡", lucide: "binary", priority: 135, emojis: ["⚡", "🧠", "💻"], lucides: ["binary", "code-2", "cpu"] },
+    { rex: /(?:网络|计算机网络|路由)/, emoji: "🌐", lucide: "network", priority: 130, emojis: ["🌐", "📡", "🔀"], lucides: ["network", "wifi", "globe"] },
+    { rex: /(?:操作系统|系统|运维)/, emoji: "🖥️", lucide: "monitor-cog", priority: 130, emojis: ["🖥️", "⚙️", "🛠️"], lucides: ["monitor-cog", "cpu", "settings"] },
+    { rex: /(?:数学|高数|线代|概率)/, emoji: "🔢", lucide: "sigma", priority: 130, emojis: ["🔢", "📐", "📊"], lucides: ["sigma", "calculator", "percent"] },
+    { rex: /(?:日志|开发日志|更新日志|周报)/, emoji: "📜", lucide: "scroll-text", priority: 125, emojis: ["📜", "📝", "📅"], lucides: ["scroll-text", "file-text", "calendar"] },
+    { rex: /(?:读书|阅读|书籍|书单|文学)/, emoji: "📚", lucide: "book-open", priority: 125, emojis: ["📚", "📖", "🔖"], lucides: ["book-open", "book", "library"] },
+    { rex: /(?:任务|待办|清单|计划)/, emoji: "✅", lucide: "check-square", priority: 125, emojis: ["✅", "📋", "🎯"], lucides: ["check-square", "list-todo", "target"] },
+    { rex: /(?:日记|周记|月记|复盘)/, emoji: "📅", lucide: "calendar", priority: 125, emojis: ["📅", "📆", "📝"], lucides: ["calendar", "calendar-days", "calendar-check"] },
+    { rex: /(?:财务|账单|资产|投资|理财)/, emoji: "💰", lucide: "dollar-sign", priority: 120, emojis: ["💰", "💳", "📈"], lucides: ["dollar-sign", "wallet", "trending-up"] },
+    { rex: /(?:代码|编程|开发|源码)/, emoji: "💻", lucide: "code", priority: 120, emojis: ["💻", "⌨️", "🛠️"], lucides: ["code", "terminal", "git-branch"] },
+    { rex: /(?:知识库|维基|智库)/, emoji: "🏛️", lucide: "library", priority: 120, emojis: ["🏛️", "📚", "🧠"], lucides: ["library", "book", "globe"] },
+    { rex: /(?:想法|灵感|脑洞)/, emoji: "💡", lucide: "lightbulb", priority: 135, emojis: ["💡", "✨", "🧠"], lucides: ["lightbulb", "sparkles", "brain"] },
+    { rex: /(?:论文|文献|研报)/, emoji: "📄", lucide: "file-search", priority: 125, emojis: ["📄", "📑", "🔍"], lucides: ["file-search", "file-text", "search"] },
 
     // =========================================================================
     // 3. CORE CONTENT TYPES, READING, WRITING & WISDOM (Priority 115 - 105)
