@@ -2,24 +2,10 @@
 
 ## 🚀 5.0.9 — New Animated Icon Pack & Smoother Performance
 
-This update introduces a brand new animated icon pack and makes scrolling through your vault smoother and faster!
+* **✨ New "Line icons (Animated)" Pack:** Install 1,200+ smooth animated icons directly from **Settings > Icon Settings**, and set their priority so they take precedence when auto-matching.
 
----
-
-### ✨ 1. Brand New Icon Pack: "Line icons (Animated)"
-
-Bring your vault to life with smooth, animated icons!
-
-* **1,200+ Animated Icons**: You can now install the **Line icons (Animated)** pack directly from **Settings > Icon Settings**.
-* **Prioritize Animated Icons**: Move Line icons up or down in the **Icon pack priority hierarchy** to choose when animated icons should be used over static ones.
-* **Works Automatically**: When prioritized, your matching folders and notes will automatically light up with smooth animations.
-
----
-
-### ⚡ 2. Faster & Smoother Scrolling
-
-* **Zero-Lag File Explorer**: Scrolling through your folders and notes is now completely stutter-free and buttery smooth, even in huge vaults with thousands of files.
-* **Instant Responsiveness**: Internal optimizations make icon loading and folder navigation faster while using less memory.
+* **⚡ Stutter-Free Scrolling:** Enjoy 60+ FPS scrolling in your file explorer with zero lag, even in massive vaults.
+* **🎯 Smarter Icon Pack Priorities:** Fixed pack priority ranking so your preferred icon sets strictly take precedence for auto-matching and category rules.
 
 ---
 
