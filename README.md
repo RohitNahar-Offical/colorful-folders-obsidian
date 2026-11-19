@@ -1,3 +1,4 @@
+![Downloads](https://img.shields.io/github/downloads/RohitNahar-Offical/colorful-folders-obsidian/total?style=for-the-badge&logo=github&logoColor=white&color=0A66C2&label=Downloads) <a href="https://github.com/sponsors/RohitNahar-Offical"><img src="https://img.shields.io/badge/Sponsor-RohitNahar--Offical-ea4aaa?style=for-the-badge&logo=github-sponsors" alt="Sponsor RohitNahar-Offical" /></a>
 # 🌈 Colorful Folders for Obsidian
 
 **Transform your Obsidian file explorer from a plain text list into a vibrant, organized, and fast visual dashboard.**
@@ -86,36 +87,41 @@ Colorful Folders automatically applies curated color palettes, smart icons, and 
 
 ## 🛠️ Installation
 
-### Via Obsidian Community Plugins (Recommended)
+### Via Obsidian Community Plugins (Official & Recommended)
 
-1. Open Obsidian and go to **Settings > [Community plugins**](https://community.obsidian.md/plugins/colorful-folders).
-2. Click **Browse**, then search for **[Colorful Folders](https://community.obsidian.md/plugins/colorful-folders)**.
-3. Click **Install**, then **Enable**.
+1. Open Obsidian and navigate to **Settings** > **[Community plugins](https://community.obsidian.md/plugins/colorful-folders)**.
+2. Click **Browse** next to Community plugins.
+3. Search for **[Colorful Folders](https://community.obsidian.md/plugins/colorful-folders)**.
+4. Click **Install**, then click **Enable**.
 
-### Via BRAT (Beta Releases)
+### Via BRAT (For Beta Releases)
+
+*Want to test the absolute latest features before they hit the store?*
 
 1. Install the **BRAT** plugin from the Obsidian Community gallery.
-2. Go to **Settings > BRAT > Beta Plugin List** and click **Add Beta plugin**.
-3. Paste `[https://github.com/RohitNahar-Offical/colorful-folders-obsidian](https://github.com/RohitNahar-Offical/colorful-folders-obsidian)` and click **Add Plugin**.
-4. Enable **Colorful Folders** under **Settings > Community plugins**.
+2. Go to **Settings** > **BRAT** > **Beta Plugin List**.
+3. Click **Add Beta plugin**.
+4. Paste the repository URL: `https://github.com/RohitNahar-Offical/colorful-folders-obsidian`
+5. Click **Add Plugin**.
+6. Enable **Colorful Folders** in your **Community plugins** tab.
 
 ---
 
 ## 💡 Pro Tip
 
-Open **Settings > Colorful Folders** and check the **"💡 Pro Tip"** banner at the top of the settings page for hidden shortcuts, including how to set up custom color overrides.
+Access all styling configurations by navigating to **Settings > Colorful Folders**. Look for the large **"💡 Pro Tip"** banner at the top of the settings page to discover hidden tricks, including how to set up custom color overrides!
 
 ---
 
 ## 👨‍💻 Developer Documentation
 
-Want to explore the architecture, contribute, or write custom CSS snippets? Check out the technical guides:
+Looking to understand the internal architecture, contribute features, or debug the styling engine? Check out our comprehensive technical guides:
 
-* **[Master Documentation Index](https://www.google.com/search?q=docs/DOCUMENTATION_INDEX.md):** Entry point for all technical documentation and subsystem guides.
-* **[Internal Engine Architecture](https://www.google.com/search?q=docs/architecture/ARCHITECTURE.md):** Deep dive into the Zero-DOM rendering pipeline and logic flow.
-* **[Codebase Subsystems Guide](https://www.google.com/search?q=docs/architecture/CODEBASE_GUIDE.md):** Guide to all source files and services.
-* **[Customization Guide](https://www.google.com/search?q=docs/styling/CUSTOMIZATION.md):** Advanced CSS snippets and styling overrides.
+* **[Master Documentation Index](docs/DOCUMENTATION_INDEX.md):** The entry point for all technical documentation and subsystem guides.
+* **[Internal Engine Architecture](docs/architecture/ARCHITECTURE.md):** Deep dive into the Zero-DOM rendering pipeline and logic flow.
+* **[Codebase Subsystems Guide](docs/architecture/CODEBASE_GUIDE.md):** Comprehensive guide to all source files and services.
+* **[Customization Guide](docs/styling/CUSTOMIZATION.md):** Advanced CSS snippets and styling overrides.
 
 ---
 
-**Developed with ❤️ by [ROHIT-NAHAR**](https://github.com/RohitNahar-Offical)
+**Developed with ❤️ by [ROHIT-NAHAR](https://github.com/RohitNahar-Offical)**
