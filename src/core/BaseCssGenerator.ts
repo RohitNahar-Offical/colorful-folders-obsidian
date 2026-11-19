@@ -81,16 +81,6 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             display: none !important;
         }
 
-        /* ── SPECIAL FORMAT (CANVAS & EXCALIDRAW) NATIVE ICON HANDLING ─── */
-        /* Suppress fallback ::before on native canvas and excalidraw files when no explicit custom icon is set */
-        body .nav-files-container [data-path$=".canvas"]:not(.cf-has-custom-icon) .nav-file-title-content::before,
-        body .nav-files-container [data-path$=".canvas"]:not(.cf-has-custom-icon) .tree-item-inner::before,
-        body .nav-files-container [data-path*=".excalidraw"]:not(.cf-has-custom-icon) .nav-file-title-content::before,
-        body .nav-files-container [data-path*=".excalidraw"]:not(.cf-has-custom-icon) .tree-item-inner::before {
-            display: none !important;
-            content: none !important;
-        }
-
         body .nav-folder-title-content.cf-icon-active::before,
         body .nav-file-title-content.cf-icon-active::before,
         body .tree-item-inner.cf-icon-active::before,

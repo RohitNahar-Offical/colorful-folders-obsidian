@@ -129,13 +129,10 @@ graph TD
 - **$O(K)$ Targeted Querying**: `syncAnimatedIcons()` evaluates only the specific registered paths ($K$, where $K \le 5$), bypassing full-vault `querySelectorAll` scans and preserving 60/120 FPS scrolling.
 - **Off-Screen SMIL Syncbase Recovery**: Uses `IntersectionObserver` with an offscreen boolean flag (`_cfWasOffscreen`) to safely wake stalled SMIL chained syncbases without DOM teardown when elements re-enter the viewport.
 
-### 3.9 Double-Icon Isolation & Format-Specific Suppression (`src/core/BaseCssGenerator.ts`, `src/core/StyleGenerator.ts`)
-- **Special Format Native Guard**: Canvas (`.canvas`) and Excalidraw (`.excalidraw`) files natively render Obsidian `.tree-item-icon` elements.
-- **Strictly Scoped Suppression**: Broad relational pseudo-selectors like `:not(:has(> .tree-item-icon...))` are forbidden as they inadvertently match third-party icon wrappers (e.g., `iconic`) on standard Markdown files.
-- **Dual State Path Handling**:
-  - `!rawFileIcon`: Native `.canvas` and `.excalidraw` icons are retained; Colorful Folders skips `::before` pseudo-element injection.
-  - `rawFileIcon`: User's custom icon is injected via `::before`, and the native `.tree-item-icon` is hidden via a targeted path-specific rule (`hideNativeTreeIcon_${safePath}`).
-  - Standard files (`.md`): Unconditionally render custom, auto-assigned, or fallback document icons (`lucide-file-text`) via `fileTextSels.map(s => s + '::before')`.
+### 3.9 Canvas & Excalidraw First-Class Extension Architecture (`src/core/IconRepository.ts`, `src/core/StyleGenerator.ts`)
+- **First-Class Extension Mapping**: `.canvas` and `.excalidraw` (including `.excalidraw.md`) are integrated directly into Tier 0.9 (`EXTENSION_AUTO_ICONS` mapping `canvas` to `frame` and `excalidraw` to `pencil-ruler`).
+- **Dynamic Native Icon Replacement**: Rather than suppressing pseudo-elements, Colorful Folders targets the native `.tree-item-icon` via `hideNativeTreeIcon_${safePath}` (`display: none !important;`) whenever an icon is resolved, cleanly replacing unstyled native icons with Colorful Folders' theme-colored visual icons across all explorer panes.
+- **Universal Compatibility**: Works out of the box in standard Obsidian File Explorer and Notebook Navigator without requiring custom rules or manual icon assignments.
 
 ### 3.10 Notebook Navigator Container Slot & Dual-Target Icon Bridge (`src/integrations/NotebookNavigator.ts`)
 - **Container Slot Mechanics**: Notebook Navigator conditionally mounts `<div class="nn-file-icon-slot">`. When an item has no third-party icon preset assigned, the slot is rendered empty (with `null` child span).

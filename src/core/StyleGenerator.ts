@@ -298,29 +298,24 @@ export class StyleGenerator {
                 const rawFileIcon = (fileStyle?.iconId && this.isValidIconStr(fileStyle.iconId)) ? fileStyle.iconId : null;
                 const rawInheritedFileIcon = (inheritedStyle?.applyToFiles && inheritedStyle?.iconId && this.isValidIconStr(inheritedStyle.iconId)) ? inheritedStyle.iconId : null;
 
-                const ext = child.path.split('.').pop()?.toLowerCase();
-                const isSpecialFormat = ext === 'canvas' || ext === 'excalidraw' || child.path.endsWith('.excalidraw.md') || child.path.includes('.excalidraw.');
-
                 let iconId = "";
-                if (!isSpecialFormat || rawFileIcon) {
-                    if (isAiFileIcon) {
-                        if (this.settings.autoIcons) {
-                            const autoData = this.plugin.iconManager.getAutoIconData(child.name, child.path, true);
-                            const candidate = autoData ? this.resolveAutoIconCandidate(autoData) : "";
-                            iconId = candidate || rawFileIcon || rawInheritedFileIcon || "";
-                        } else {
-                            iconId = rawFileIcon || rawInheritedFileIcon || "";
-                        }
+                if (isAiFileIcon) {
+                    if (this.settings.autoIcons) {
+                        const autoData = this.plugin.iconManager.getAutoIconData(child.name, child.path, true);
+                        const candidate = autoData ? this.resolveAutoIconCandidate(autoData) : "";
+                        iconId = candidate || rawFileIcon || rawInheritedFileIcon || "";
                     } else {
-                        let autoIcon = "";
-                        if (this.settings.autoIcons) {
-                            const customUserRuleFile = this.plugin.iconManager.getAutoIconData(child.name, child.path, true);
-                            if (customUserRuleFile) {
-                                autoIcon = this.resolveAutoIconCandidate(customUserRuleFile);
-                            }
-                        }
-                        iconId = rawFileIcon || rawInheritedFileIcon || autoIcon || "";
+                        iconId = rawFileIcon || rawInheritedFileIcon || "";
                     }
+                } else {
+                    let autoIcon = "";
+                    if (this.settings.autoIcons) {
+                        const customUserRuleFile = this.plugin.iconManager.getAutoIconData(child.name, child.path, true);
+                        if (customUserRuleFile) {
+                            autoIcon = this.resolveAutoIconCandidate(customUserRuleFile);
+                        }
+                    }
+                    iconId = rawFileIcon || rawInheritedFileIcon || autoIcon || "";
                 }
 
                 const textNative = ColorResolver.resolveTextColor(
@@ -443,7 +438,7 @@ export class StyleGenerator {
                     );
                 }
 
-                if (rawFileIcon) {
+                if (iconId || autoIcons) {
                     grouper.add(`
                         display: none !important;
                     `, [
@@ -499,30 +494,26 @@ export class StyleGenerator {
                         }
                     }
                 } else if (autoIcons) {
-                    const ext = child.path.split('.').pop()?.toLowerCase();
-                    const isSpecialFormat = ext === 'canvas' || ext === 'excalidraw' || child.path.endsWith('.excalidraw.md') || child.path.includes('.excalidraw.');
-                    if (!isSpecialFormat) {
-                        const fileTextMask = this.plugin.iconManager.getMaskDataUri("lucide-file-text") || this.plugin.iconManager.getMaskDataUri("file-text") || StyleGenerator.CF_FILE_TEXT_ICON_MASK_URL;
-                        grouper.add(`
-                            content: '' !important;
-                            display: inline-flex !important;
-                            align-self: center !important;
-                            flex-shrink: 0 !important;
-                            width: ${effFileIconW} !important;
-                            height: ${effFileIconW} !important;
-                            margin-right: 4px !important;
-                            background-color: ${iconColor || color.hex || textNative} !important;
-                            -webkit-mask-image: ${fileTextMask} !important;
-                            mask-image: ${fileTextMask} !important;
-                            -webkit-mask-repeat: no-repeat !important;
-                            mask-repeat: no-repeat !important;
-                            -webkit-mask-position: center !important;
-                            mask-position: center !important;
-                            -webkit-mask-size: contain !important;
-                            mask-size: contain !important;
-                            opacity: 0.85 !important;
-                        `, fileIconSels);
-                    }
+                    const fileTextMask = this.plugin.iconManager.getMaskDataUri("lucide-file-text") || this.plugin.iconManager.getMaskDataUri("file-text") || StyleGenerator.CF_FILE_TEXT_ICON_MASK_URL;
+                    grouper.add(`
+                        content: '' !important;
+                        display: inline-flex !important;
+                        align-self: center !important;
+                        flex-shrink: 0 !important;
+                        width: ${effFileIconW} !important;
+                        height: ${effFileIconW} !important;
+                        margin-right: 4px !important;
+                        background-color: ${iconColor || color.hex || textNative} !important;
+                        -webkit-mask-image: ${fileTextMask} !important;
+                        mask-image: ${fileTextMask} !important;
+                        -webkit-mask-repeat: no-repeat !important;
+                        mask-repeat: no-repeat !important;
+                        -webkit-mask-position: center !important;
+                        mask-position: center !important;
+                        -webkit-mask-size: contain !important;
+                        mask-size: contain !important;
+                        opacity: 0.85 !important;
+                    `, fileIconSels);
                 }
 
                 const activeFileIcon = (fileStyle?.activeIconId && this.isValidIconStr(fileStyle.activeIconId)) ? fileStyle.activeIconId : null;

@@ -42,9 +42,11 @@ const EXTENSION_AUTO_ICONS: Record<string, AutoIconData> = {
     '7z':   { tier: 0.9, rex: /\.7z$/i,   emoji: 'package',     lucide: 'package',     priority: 2000, packSource: 'file-extension' },
     'rar':  { tier: 0.9, rex: /\.rar$/i,  emoji: 'package',     lucide: 'package',     priority: 2000, packSource: 'file-extension' },
     'csv':  { tier: 0.9, rex: /\.csv$/i,  emoji: 'bar-chart-2', lucide: 'bar-chart-2', priority: 2000, packSource: 'file-extension' },
-    'xlsx': { tier: 0.9, rex: /\.xlsx$/i, emoji: 'bar-chart-2', lucide: 'bar-chart-2', priority: 2000, packSource: 'file-extension' },
-    'xls':  { tier: 0.9, rex: /\.xls$/i,  emoji: 'bar-chart-2', lucide: 'bar-chart-2', priority: 2000, packSource: 'file-extension' },
-    'tsv':  { tier: 0.9, rex: /\.tsv$/i,  emoji: 'bar-chart-2', lucide: 'bar-chart-2', priority: 2000, packSource: 'file-extension' }
+    'xlsx':       { tier: 0.9, rex: /\.xlsx$/i,                  emoji: 'bar-chart-2',  lucide: 'bar-chart-2',  priority: 2000, packSource: 'file-extension' },
+    'xls':        { tier: 0.9, rex: /\.xls$/i,                   emoji: 'bar-chart-2',  lucide: 'bar-chart-2',  priority: 2000, packSource: 'file-extension' },
+    'tsv':        { tier: 0.9, rex: /\.tsv$/i,                   emoji: 'bar-chart-2',  lucide: 'bar-chart-2',  priority: 2000, packSource: 'file-extension' },
+    'canvas':     { tier: 0.9, rex: /\.canvas$/i,                emoji: 'frame',        lucide: 'frame',        priority: 2000, packSource: 'file-extension' },
+    'excalidraw': { tier: 0.9, rex: /\.excalidraw(?:\.md)?$/i,   emoji: 'pencil-ruler', lucide: 'pencil-ruler', priority: 2000, packSource: 'file-extension' }
 };
 
 export class IconRepository {
@@ -232,6 +234,9 @@ export class IconRepository {
         // Strictly restricted to files: folders with dots (e.g. "node.js") are never treated as file extensions.
         if (isFile !== false && path) {
             const cleanPath = path.endsWith('/') ? path.slice(0, -1) : path;
+            if (cleanPath.endsWith('.excalidraw') || cleanPath.endsWith('.excalidraw.md') || cleanPath.includes('.excalidraw.')) {
+                return EXTENSION_AUTO_ICONS['excalidraw'];
+            }
             const lastDot = cleanPath.lastIndexOf('.');
             if (lastDot > 0 && lastDot > cleanPath.lastIndexOf('/')) {
                 const ext = cleanPath.slice(lastDot + 1).toLowerCase();

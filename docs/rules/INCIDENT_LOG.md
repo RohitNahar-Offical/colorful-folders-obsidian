@@ -616,6 +616,27 @@ Standard notes in Notebook Navigator (e.g. `Atlas > Dots > People > Arnold Schwa
 
 **Lesson**: When styling third-party plugin containers, always inspect whether the container renders wrapper slot elements (`.slot`) or child target elements (`.icon`). Use dual-targeting with `:not(.slot *)` exclusions to guarantee matching whether the child element exists or the slot is empty, without creating duplicate icons.
 
+---
+
+## Incident #49 — Missing Icons on Canvas and Excalidraw Files via Special Format Suppression (2026-11-19)
+**What was reported**:
+`.canvas` and `.excalidraw` (and `.excalidraw.md`) files had no visual icons displayed in normal vaults unless explicitly assigned a manual custom icon.
+
+**Root cause**:
+1. An earlier workaround intended to avoid duplicate icons on native canvas/excalidraw files introduced an `isSpecialFormat` gate in `StyleGenerator.ts` (`if (!isSpecialFormat || rawFileIcon)`), blocking auto-icon resolution and fallback icon generation for these extensions.
+2. In addition, `BaseCssGenerator.ts` contained a hardcoded rule suppressing `::before` pseudo-elements on `[data-path$=".canvas"]:not(.cf-has-custom-icon)` and `[data-path*=".excalidraw"]:not(.cf-has-custom-icon)`. Because `.cf-has-custom-icon` was never applied as a class to DOM elements, this rule unconditionally stripped all icons from canvas and excalidraw files.
+3. Neither `canvas` nor `excalidraw` was mapped in `EXTENSION_AUTO_ICONS` (Tier 0.9).
+
+**Resolution**:
+1. Added first-class mappings for `canvas` (`lucide: 'frame'`) and `excalidraw` (`lucide: 'pencil-ruler'`) in `EXTENSION_AUTO_ICONS` in `IconRepository.ts`.
+2. Supported both `.excalidraw` and `.excalidraw.md` in Tier 0.9 extension lookups.
+3. Removed `isSpecialFormat` suppression gates from `StyleGenerator.ts`, allowing auto-icons, rules, and AI icons to resolve cleanly.
+4. Removed the hardcoded CSS suppression rule from `BaseCssGenerator.ts`.
+5. Retained path-specific `hideNativeTreeIcon_${safePath}` to hide Obsidian's native unstyled `.tree-item-icon`, cleanly replacing it with the colorful theme icon without duplicate icon artifacts.
+
+**Lesson**: Avoid hardcoded CSS format suppressions based on unmanaged utility classes. Map unique file formats (`.canvas`, `.excalidraw`) directly in extension auto-icon dictionaries, and replace native icons via targeted path-level rules.
+
+
 
 
 
