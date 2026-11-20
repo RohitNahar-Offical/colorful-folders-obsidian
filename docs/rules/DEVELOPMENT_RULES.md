@@ -50,6 +50,15 @@ Never inject global pseudo-element suppression rules against `.canvas` or `.exca
 **RULE 1.14: Dual-Target Selection for Third-Party Container Slots (Notebook Navigator).**
 When injecting icons into third-party container items (such as Notebook Navigator `.nn-file`), never target child icon elements (like `.nn-file-icon`) alone. Third-party virtualized containers frequently omit child icon spans when no external icon is preset, rendering an empty slot (`.nn-file-icon-slot`). Always use dual-target selectors: `body .notebook-navigator .nn-file[data-path="..."] .nn-file-icon-slot, body .notebook-navigator .nn-file[data-path="..."] .nn-file-icon:not(.nn-file-icon-slot *)` with `flex: 0 0 auto !important; flex-shrink: 0 !important;` to ensure icons render reliably whether the container slot is empty or populated. *(Incident #48)*
 
+**RULE 1.15: Dual-Action Coexistence & Scoped Pseudo-Element Suppression.**
+When supporting dual-action visual states on interactive containers (e.g., a static Lucide icon for closed folder action vs a dynamic SMIL animated icon for open folder action, or vice versa):
+- NEVER use a single scalar `iconId` to track target elements in dynamic services. Use structured state tracking (`RegisteredAnimatedTarget: { closedIconId?: string; openIconId?: string; iconId?: string }`).
+- NEVER apply coarse, blanket CSS suppression rules (`.cf-animated-icon-active::before { display: none !important; }`) across both states.
+- ALWAYS use scoped state-specific suppression rules in CSS (`.nav-folder:not(.is-collapsed) > .cf-has-animated-open .nav-folder-title-content::before` and `.nav-folder.is-collapsed > .cf-has-animated-closed .nav-folder-title-content::before`) so that static CSS masks and live dynamic SVGs never render concurrently or overlap. *(Incident #51)*
+
+**RULE 1.16: Optical Scale Factor for Embedded SVG ViewBoxes.**
+Static icons rendered via CSS `-webkit-mask-image` occupy 100% edge-to-edge bounding geometry within `1em`. By contrast, standalone animated icon packs (such as `line-md`) embed internal padding and margins within their native `24x24` viewBoxes. Always apply an optical scaling multiplier (`calc(1.3em * iconScale * wideScale * 1.15)`) to live animated icon elements across both static CSS declarations (`BaseCssGenerator.ts`) and dynamic component dimensions (`StyleGenerator.ts`) to ensure optical visual parity with static mask icons. *(Incident #51)*
+
 ---
 
 ## 2. Main Thread Performance (Scroll, Drag, & Startup Lag)
@@ -89,6 +98,12 @@ In `EventTrackerService`, high-frequency workspace events like `active-leaf-chan
 
 **RULE 2.12: Zero-DOM Scanning on Scroll & Mutation Observers.**
 Never perform `container.querySelectorAll(...)` sweeps or auto-icon classification across visible rows inside scroll listeners or mutation observer callbacks. Pre-register dynamic targets (e.g., animated icons) during stylesheet generation (`StyleGenerator.generateCss()`) in an $O(1)$ memory map. Runtime synchronization on scroll must be strictly bounded to $O(K)$ where $K$ is the number of active animated elements, executing direct `querySelector([data-path="..."])` lookups only for registered targets. *(Incident #47)*
+
+**RULE 2.13: Zero-Cost High-Frequency Listener Early Exits.**
+Document-wide or high-frequency event listeners (such as window clicks, `file-open`, or scroll events) must feature an instant $O(1)$ early exit (`if (!this.plugin.animatedIconService?.hasAnyAnimatedIcons()) return;`). Never execute `target.closest(...)`, create closure functions, or schedule `setTimeout()` timers inside click/navigation listeners when the underlying feature is inactive in user settings or vault state. *(Incident #53)*
+
+**RULE 2.14: $O(1)$ Prefix Checks for Pack Classification.**
+When classifying icons during vault traversals or cold starts, never perform heavy I/O or regex parsing unconditionally. Always use fast $O(1)$ prefix string checks (e.g. `iconId.startsWith('line-md-') || iconId.startsWith('linemd-')`) to identify known animated or specialized packs instantly, completely bypassing raw SVG fetching and regular expression parsing. *(Incident #53)*
 
 ---
 
@@ -194,6 +209,17 @@ When adding CSS rules to `CssGrouper`, signature keys (`signatureKey`) must enco
 **RULE 5.19: Safe SVG Decoding & Data-URI Stroke Integrity.**
 Never pass arbitrary SVG source code directly to `decodeURIComponent()` without defensive `try...catch` guards, as CSS `@keyframes` percentages (`0%`, `100%`) trigger `URIError: URI malformed`. Always sanitize backslash-escaped quotes (`\"`) prior to DOM parsing. When normalizing SVG vectors for CSS mask Data-URIs, ensure `stroke="currentColor"` is set whenever `hasStroke` is true (even when `hasFill` is present) and use explicit `#000000` stroke definitions in fallback data URIs to guarantee 100% opaque alpha masks across all browser engines. *(Incident #45, #46)*
 
+**RULE 5.20: Deterministic Variety Seeding & Self-Healing Cache Invalidation.**
+When implementing variety, randomization, or pseudo-random distribution algorithms:
+- NEVER hash only the item name (`hashString(name)`) if a customizable seed setting exists. ALWAYS factor the seed into the composite hash key: `hashString(seed !== 0 ? `${baseStr}#${seed}` : baseStr)` where `baseStr = path || name`.
+- ALWAYS rotate variety candidate pools (`[selected, ...remaining]`) so that downstream pack resolvers and fallback chains respect the variety pick.
+- ALWAYS back randomized settings with self-healing cache guards (e.g. tracking `_lastVarietySeed` and `_lastVarietyEnabled` in `getAutoIconData()`) and trigger explicit cache flushes (`iconManager.invalidateAutoIconCache()`, `animatedIconService.invalidateCache()`) and immediate style updates (`await generateStyles()`) upon user click, coupled with instant UI feedback (`Notice`). *(Incident #52)*
+
+**RULE 5.21: Leak-Free Teardown & DOM Restoration on Plugin Unload.**
+When destroying or unloading a plugin instance:
+- NEVER leave dynamically mounted DOM elements (`.cf-live-animated-icon`) or custom state classes (`cf-animated-icon-active`, `cf-has-animated-closed`, `cf-has-animated-open`) attached to Obsidian's file explorer rows.
+- ALWAYS implement an active DOM teardown routine (e.g. `clearAllLiveAnimatedIconsFromDom()`) that removes all injected elements, strips state classes, clears container scroll listeners (including third-party panes like Notebook Navigator), and frees in-memory LRU caches (`invalidateCategoryCache()`). *(Incident #53)*
+
 ---
 
 ## 6. CI/CD & Release Pipeline
@@ -224,6 +250,8 @@ While `read` is sufficient for building and attesting, `write` is mandatory for 
 | 1.12 | #37 *(Container Scoping)* |
 | 1.13 | #46 *(Canvas/Excalidraw Double Icon Isolation)* |
 | 1.14 | #48 *(Notebook Navigator Container Slots)* |
+| 1.15 | #51 *(Dual-Action Coexistence & Scoped Pseudo-Element Suppression)* |
+| 1.16 | #51 *(Optical Scale Factor for Embedded SVG ViewBoxes)* |
 | 2.1 | #15 |
 | 2.2 | #14 *(superseded)* |
 | 2.3 | #24 |
@@ -236,6 +264,8 @@ While `read` is sufficient for building and attesting, `write` is mandatory for 
 | 2.10 | #18, #35 *(Bounded LRU)* |
 | 2.11 | #37 *(Filtered Events)* |
 | 2.12 | #47 *(Zero-DOM Scanning on Scroll)* |
+| 2.13 | #53 *(Zero-Cost High-Frequency Listener Early Exits)* |
+| 2.14 | #53 *($O(1)$ Prefix Checks for Pack Classification)* |
 | 3.1 | #16 |
 | 3.2 | #10 |
 | 3.3 | #6, #16 |
@@ -263,5 +293,7 @@ While `read` is sufficient for building and attesting, `write` is mandatory for 
 | 5.14 | #42 *(Parent Folder Context Leak)* |
 | 5.17 | #43 *(Collapse Indicator Color Decoupling)* |
 | 5.19 | #45 *(Safe SVG Decoding & Stroke Integrity)*, #46 |
+| 5.20 | #52 *(Deterministic Variety Seeding & Self-Healing Cache Invalidation)* |
+| 5.21 | #53 *(Leak-Free Teardown & DOM Restoration)* |
 | 6.1 | #11 |
 | 6.2 | #11 |
