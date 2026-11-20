@@ -736,6 +736,28 @@ Auditing cold start, plugin reload, and file explorer scrolling revealed potenti
 
 **Lesson**: High-frequency listeners (scroll, click, file-open) must always have an $O(1)$ feature-flag early exit. Plugin teardown must actively remove all injected DOM nodes and classes to prevent memory leaks and duplicate elements across reloads.
 
+---
+
+## Incident #54 — Codebase Dead Code Accumulation, Redundant Desktop/Mobile Workspace Registrations, and Click Capture Listener Options Error (2026-11-20)
+**What was reported**:
+1. Duplicate implementations between `registerDesktopEvents()` and `registerMobileEvents()` (~50 lines duplicate copy-paste), leaving mobile without `css-change` listener and desktop without explorer container cache invalidation.
+2. Unused dead methods `triggerIconAnimation` and `hasAnyAnimatedIconsInLibrary` in `AnimatedIconService`, and `isObserved` in `AnimationViewportManager`.
+3. TypeScript TS2554 error in `EventTrackerService.registerClickEventsForDoc`: `Expected 3 arguments, but got 4` because `registerDomEvent` lacked `options` parameter support for capture/passive listeners.
+4. Duplicate compound `:is(...)` selector hardcoded across `AnimatedIconService.ts` and `AnimationDomMounter.ts`.
+
+**Root cause**:
+1. Copy-paste divergence between desktop and mobile event registration methods during multi-platform testing.
+2. Legacy helper methods remained after the OOP refactoring of the animated icon subsystem.
+3. `registerDomEvent` helper in `EventTrackerService` was originally implemented with only `(element, event, callback)` without forwarding the browser's `AddEventListenerOptions | boolean` argument.
+
+**Resolution**:
+1. Unified `registerDesktopEvents` and `registerMobileEvents` into a single, clean `registerWorkspaceEvents()` method.
+2. Removed dead methods and properties (`triggerIconAnimation`, `hasAnyAnimatedIconsInLibrary`, `_libraryHasAnimatedCache`, `isObserved`).
+3. Centralized repeated compound selector in `ANIMATION_SELECTORS.TARGET_ROW_IS`.
+4. Extended `registerDomEvent` and `domEvents` tracking state to support `options?: AddEventListenerOptions | boolean`, and updated `destroy()` to pass options to `removeEventListener` for clean teardown of capture-phase handlers.
+
+**Lesson**: Always unify cross-platform event registration routines into single-sourced methods unless explicitly platform-divergent. When wrapping DOM event registration, always support `AddEventListenerOptions | boolean` and mirror options during teardown.
+
 
 
 

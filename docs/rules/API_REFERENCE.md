@@ -41,6 +41,19 @@ Encapsulates plugin lifecycle management, window tracking, and vault event liste
 
 ---
 
+## 1c. `EventTrackerService` (`src/services/EventTrackerService.ts`)
+
+Centralizes reactive Obsidian workspace and DOM event tracking, active folder markers, and drag observation:
+- `registerEvents()`: Hooks into vault metadata, file modifications, and workspace events.
+- `registerWorkspaceEvents()`: Unified cross-platform workspace lifecycle event listener consolidating mobile and desktop handlers (`file-menu`, `layout-change`, `active-leaf-change`, `file-open`, `css-change`).
+- `registerDomEvent(element, event, callback, options?)`: DOM event listener supporting `AddEventListenerOptions | boolean` (capture phase, passive flag) with lifecycle tracking and clean removal in `destroy()`.
+- `registerDragEventsForDoc(doc: Document)`: Suspends divider observers during drag operations.
+- `registerClickEventsForDoc(doc: Document)`: Capturing delegated click listener dispatching to `AnimatedIconService.handleDelegatedClick` with zero overhead when no animated icons are in use.
+- `updateActiveFolderClasses()`: Updates active file and parent folder highlights (`.cf-active-parent`, `.cf-is-active`).
+- `destroy()`: Unregisters all workspace event references and cleans up DOM listeners with options.
+
+---
+
 ## 2. `StyleGenerator` (CSS Traverser Engine)
 
 ### `generateCss(): string`
@@ -157,6 +170,10 @@ Facade orchestrator coordinating live animated SVG icon mounting, lifecycle hook
   - `syncActiveTargets(targets: Map<string, RegisteredAnimatedTarget>): void`: Synchronizes registered targets with DOM nodes.
   - `mountOrUpdateLiveIcon(titleEl: HTMLElement, targetRow: HTMLElement, iconId: string, isFolder: boolean, isClosedFolder: boolean): void`: Unified DRY mounting function reconciling live DOM nodes.
   - `clearAllLiveIcons(): void`: Detaches all `.cf-live-animated-icon` elements and strips state classes.
+- **`AnimationTypes` (`AnimationTypes.ts`)**:
+  - `ANIMATED_PACK_PREFIXES`: Canonical tuple of supported animated icon prefixes (`line-md-`, `meteocons-`, `generative-`, `useanimations-`).
+  - `ANIMATION_SELECTORS`: Consolidated CSS selectors (`NAV_ROW`, `TARGET_ROW_IS`, `NAV_TEXT`, `NN_ICON_SLOT`, `LIVE_ICON`, `CLOSED_LIVE_ICON`, `OPEN_LIVE_ICON`).
+  - `RegisteredAnimatedTarget`: Interface defining mapped animation targets (`iconId`, `closedIconId`, `openIconId`).
 
 ### `DOMObserverService` (`src/services/DOMObserverService.ts`)
 Zero-DOM observer coordination service managing dataset tagging and container scroll listeners:
