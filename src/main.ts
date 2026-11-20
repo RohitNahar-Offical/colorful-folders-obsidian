@@ -916,18 +916,33 @@ export default class ColorfulFoldersPlugin
 
   async openChangelogModal(): Promise<void> {
     try {
+      const currentVersion = this.manifest.version;
       let content = "";
-      const localPath = this.manifest.dir ? `${this.manifest.dir}/version.md` : "";
-      if (localPath && (await this.app.vault.adapter.exists(localPath))) {
-        content = await this.app.vault.adapter.read(localPath);
-      }
-      if (!content || content.trim().length === 0) {
-        const githubUrl = `https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/main/version.md`;
-        const response = await obsidian.requestUrl({ url: githubUrl });
-        if (response.status === 200) {
+
+      // 1. Fetch from GitHub main branch
+      try {
+        const mainUrl = `https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/main/version.md`;
+        const response = await obsidian.requestUrl({ url: mainUrl });
+        if (response.status === 200 && response.text) {
           content = response.text;
         }
+      } catch {
+        // network or branch unreachable
       }
+
+      // 2. If main does not yet include notes for this version (e.g. during Development testing), fallback to Development branch
+      if (!content || !content.includes(currentVersion)) {
+        try {
+          const devUrl = `https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/Development/version.md`;
+          const devResponse = await obsidian.requestUrl({ url: devUrl });
+          if (devResponse.status === 200 && devResponse.text) {
+            content = devResponse.text;
+          }
+        } catch {
+          // fallback failed
+        }
+      }
+
       if (content && content.trim().length > 0) {
         new ChangelogModal(this.app, content).open();
       }
