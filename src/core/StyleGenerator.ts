@@ -355,6 +355,7 @@ export class StyleGenerator {
                     --cf-color: ${color.hex};
                     --cf-color-rgb: ${color.rgb};
                     --cf-icon-color: ${effFileIconColor};
+                    --cf-animated-icon-size: calc(${effFileIconW} * 1.15);
                     ${shouldColorNative ? `
                         background-color: var(--cf-file-bg, rgba(${color.rgb}, ${fileBgAlpha})) !important;
                         --nav-item-background: var(--cf-file-bg, rgba(${color.rgb}, ${fileBgAlpha}));
@@ -459,7 +460,7 @@ export class StyleGenerator {
                 if (iconId) {
                     const isAnimated = !!this.plugin.animatedIconService?.isAnimatedIcon(iconId);
                     if (isAnimated) {
-                        this.plugin.animatedIconService?.registerActiveAnimatedTarget(child.path, iconId);
+                        this.plugin.animatedIconService?.registerActiveAnimatedTarget(child.path, iconId, 'both');
                     } else {
                         const isCustomEmoji = this.plugin.iconManager.isEmojiIcon(iconId);
 
@@ -527,7 +528,7 @@ export class StyleGenerator {
                 if (activeFileIcon) {
                     const isActiveAnimated = !!this.plugin.animatedIconService?.isAnimatedIcon(activeFileIcon);
                     if (isActiveAnimated) {
-                        this.plugin.animatedIconService?.registerActiveAnimatedTarget(child.path, activeFileIcon);
+                        this.plugin.animatedIconService?.registerActiveAnimatedTarget(child.path, activeFileIcon, 'both');
                     } else {
                         const isActiveCustomEmoji = this.plugin.iconManager.isEmojiIcon(activeFileIcon);
                         const activeFileSels = [
@@ -841,6 +842,7 @@ export class StyleGenerator {
                 --cf-color: ${color.hex};
                 --cf-color-rgb: ${color.rgb};
                 --cf-icon-color: ${effFolderIconColor};
+                --cf-animated-icon-size: calc(${folderIconW} * 1.15);
                 --cf-colored: 1;
                 --cf-bg-alpha: ${folderStyles.b === 'transparent' ? 0 : (folderStyles.b === color.hex ? 1 : adjustedOp)};
                 background-color: var(--cf-folder-bg, ${folderStyles.b}) !important;
@@ -954,7 +956,8 @@ export class StyleGenerator {
 
                 const isAnimated = !!this.plugin.animatedIconService?.isAnimatedIcon(iconIdToUse);
                 if (isAnimated) {
-                    this.plugin.animatedIconService?.registerActiveAnimatedTarget(child.path, iconIdToUse);
+                    const animState = isExpandedState === true ? 'open' : (isExpandedState === false ? 'closed' : 'both');
+                    this.plugin.animatedIconService?.registerActiveAnimatedTarget(child.path, iconIdToUse, animState);
                 } else {
                     if (isCustomEmoji) {
                         grouper.add(`

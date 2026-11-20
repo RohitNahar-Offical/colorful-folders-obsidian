@@ -2,6 +2,12 @@ import { IColorfulFoldersPlugin } from '../common/types';
 import { LRUCache } from '../common/LRUCache';
 import { safeEscape } from '../common/utils';
 
+export interface RegisteredAnimatedTarget {
+    iconId?: string;
+    closedIconId?: string;
+    openIconId?: string;
+}
+
 export class AnimatedIconService {
     private plugin: IColorfulFoldersPlugin;
     private _animatedTemplateCache: LRUCache<string, HTMLElement> = new LRUCache<string, HTMLElement>(256);
@@ -69,17 +75,27 @@ export class AnimatedIconService {
 
     private _isAnimatedIconCache: Map<string, boolean> = new Map<string, boolean>();
     private _isLoopingIconCache: Map<string, boolean> = new Map<string, boolean>();
-    private _registeredAnimatedTargets: Map<string, string> = new Map<string, string>();
+    private _registeredAnimatedTargets: Map<string, RegisteredAnimatedTarget> = new Map<string, RegisteredAnimatedTarget>();
 
     public clearRegisteredAnimatedTargets(): void {
         this._registeredAnimatedTargets.clear();
     }
 
-    public registerActiveAnimatedTarget(path: string, iconId: string): void {
-        if (path && iconId) {
-            this._registeredAnimatedTargets.set(path, iconId);
-            this._hasAnimatedCache = true;
+    public registerActiveAnimatedTarget(path: string, iconId: string, state: 'closed' | 'open' | 'both' = 'both'): void {
+        if (!path || !iconId) return;
+        let target = this._registeredAnimatedTargets.get(path);
+        if (!target) {
+            target = {};
+            this._registeredAnimatedTargets.set(path, target);
         }
+        if (state === 'closed') {
+            target.closedIconId = iconId;
+        } else if (state === 'open') {
+            target.openIconId = iconId;
+        } else {
+            target.iconId = iconId;
+        }
+        this._hasAnimatedCache = true;
     }
 
     /**
@@ -149,9 +165,12 @@ export class AnimatedIconService {
                 `.nav-folder-title[data-path="${safePath}"], .nav-file-title[data-path="${safePath}"], .tree-item-self[data-path="${safePath}"], .nn-navitem[data-path="${safePath}"], .nn-file[data-path="${safePath}"]`
             );
             if (!titleEl) continue;
-            const liveIcon = titleEl.querySelector<HTMLElement>('.cf-live-animated-icon');
-            if (liveIcon) {
-                this.replayAnimatedElement(liveIcon);
+            const liveIcons = titleEl.querySelectorAll<HTMLElement>('.cf-live-animated-icon');
+            for (let j = 0; j < liveIcons.length; j++) {
+                const liveIcon = liveIcons[j];
+                if (liveIcon.offsetParent !== null || liveIcon.offsetWidth > 0 || liveIcon.offsetHeight > 0) {
+                    this.replayAnimatedElement(liveIcon);
+                }
             }
         }
     }
@@ -293,6 +312,15 @@ export class AnimatedIconService {
             }
         }
 
+        if (this.plugin.settings?.defaultClosedFolderIcon && this.isAnimatedIcon(this.plugin.settings.defaultClosedFolderIcon)) {
+            this._hasAnimatedCache = true;
+            return true;
+        }
+        if (this.plugin.settings?.defaultOpenFolderIcon && this.isAnimatedIcon(this.plugin.settings.defaultOpenFolderIcon)) {
+            this._hasAnimatedCache = true;
+            return true;
+        }
+
         this._hasAnimatedCache = false;
         return false;
     }
@@ -345,12 +373,23 @@ export class AnimatedIconService {
         const customFolderColors = this.plugin.settings?.customFolderColors || {};
         const customIcons = this.plugin.settings?.customIcons || {};
 
-        const animatedTargetsMap = new Map<string, string>();
+        const animatedTargetsMap = new Map<string, RegisteredAnimatedTarget>();
+
         for (const p in customFolderColors) {
             const style = customFolderColors[p];
             if (typeof style === 'object' && style !== null) {
+                const target: RegisteredAnimatedTarget = {};
+                let hasAny = false;
                 if (style.iconId && this.isAnimatedIcon(style.iconId)) {
-                    animatedTargetsMap.set(p, style.iconId);
+                    target.closedIconId = style.iconId;
+                    hasAny = true;
+                }
+                if (style.expandedIconId && this.isAnimatedIcon(style.expandedIconId)) {
+                    target.openIconId = style.expandedIconId;
+                    hasAny = true;
+                }
+                if (hasAny) {
+                    animatedTargetsMap.set(p, target);
                 }
             }
         }
@@ -358,12 +397,24 @@ export class AnimatedIconService {
             const style = customIcons[p];
             const iconId = typeof style === 'string' ? style : (typeof style === 'object' && style !== null ? (style as { iconId?: string }).iconId : undefined);
             if (iconId && this.isAnimatedIcon(iconId)) {
-                animatedTargetsMap.set(p, iconId);
+                let target = animatedTargetsMap.get(p);
+                if (!target) {
+                    target = { iconId };
+                    animatedTargetsMap.set(p, target);
+                } else {
+                    target.iconId = iconId;
+                }
             }
         }
-        for (const [p, iconId] of this._registeredAnimatedTargets.entries()) {
-            if (!animatedTargetsMap.has(p)) {
-                animatedTargetsMap.set(p, iconId);
+        for (const [p, registered] of this._registeredAnimatedTargets.entries()) {
+            let target = animatedTargetsMap.get(p);
+            if (!target) {
+                target = { ...registered };
+                animatedTargetsMap.set(p, target);
+            } else {
+                if (registered.iconId) target.iconId = registered.iconId;
+                if (registered.closedIconId) target.closedIconId = registered.closedIconId;
+                if (registered.openIconId) target.openIconId = registered.openIconId;
             }
         }
 
@@ -381,20 +432,27 @@ export class AnimatedIconService {
                 const liveIcon = existingLiveIcons[j];
                 const rowEl = liveIcon.closest<HTMLElement>('.nav-folder-title, .nav-file-title, .tree-item-self, .nn-navitem, .nn-file');
                 const rowPath = rowEl?.getAttribute('data-path');
-                const currentAnimatedIconId = rowPath ? animatedTargetsMap.get(rowPath) : undefined;
+                const targetConfig = rowPath ? animatedTargetsMap.get(rowPath) : undefined;
 
-                if (!rowPath || !currentAnimatedIconId || liveIcon.getAttribute('data-icon-id') !== currentAnimatedIconId) {
-                    rowEl?.classList.remove('cf-animated-icon-active');
+                if (!rowPath || !targetConfig) {
+                    rowEl?.classList.remove('cf-animated-icon-active', 'cf-has-animated-closed', 'cf-has-animated-open');
+                    this._intersectionObserver?.unobserve(liveIcon);
+                    liveIcon.remove();
+                    continue;
+                }
+
+                const state = liveIcon.getAttribute('data-state');
+                const iconId = liveIcon.getAttribute('data-icon-id');
+                const expectedIconId = state === 'open' ? targetConfig.openIconId : (state === 'closed' ? targetConfig.closedIconId : targetConfig.iconId);
+
+                if (!expectedIconId || iconId !== expectedIconId) {
                     this._intersectionObserver?.unobserve(liveIcon);
                     liveIcon.remove();
                 }
             }
 
             // 2. Mount or update active animated icons
-            for (const [targetPath, iconId] of animatedTargetsMap.entries()) {
-                const template = this.getAnimatedIconElement(iconId);
-                if (!template) continue;
-
+            for (const [targetPath, targetConfig] of animatedTargetsMap.entries()) {
                 const safePath = safeEscape(targetPath);
                 const titleEl = container.querySelector<HTMLElement>(
                     `.nav-folder-title[data-path="${safePath}"], .nav-file-title[data-path="${safePath}"], .tree-item-self[data-path="${safePath}"], .nn-navitem[data-path="${safePath}"], .nn-file[data-path="${safePath}"]`
@@ -410,41 +468,79 @@ export class AnimatedIconService {
                 // Support Notebook Navigator dedicated icon container
                 const nnIconSlot = titleEl.querySelector<HTMLElement>('.nn-navitem-icon, .nn-file-icon-slot, .nn-file-icon');
 
-                const existingIcon = titleEl.querySelector<HTMLElement>('.cf-live-animated-icon');
-                if (!existingIcon) {
-                    const cloned = template.cloneNode(true) as HTMLElement & { _cfWasOffscreen?: boolean };
-                    cloned.setAttribute('data-icon-id', iconId);
-                    cloned._cfWasOffscreen = false;
-                    if (customIconColor) {
-                        cloned.setCssProps({ '--cf-animated-icon-color': customIconColor });
-                    }
+                // Update row classes for CSS ::before suppression
+                if (targetConfig.iconId) {
                     titleEl.classList.add('cf-animated-icon-active');
-                    if (nnIconSlot) {
-                        nnIconSlot.appendChild(cloned);
-                    } else {
-                        textEl.parentElement?.insertBefore(cloned, textEl);
-                    }
-                    this._intersectionObserver?.observe(cloned);
-                } else if (existingIcon.getAttribute('data-icon-id') !== iconId) {
-                    this._intersectionObserver?.unobserve(existingIcon);
-                    existingIcon.remove();
-                    const cloned = template.cloneNode(true) as HTMLElement & { _cfWasOffscreen?: boolean };
-                    cloned.setAttribute('data-icon-id', iconId);
-                    cloned._cfWasOffscreen = false;
-                    if (customIconColor) {
-                        cloned.setCssProps({ '--cf-animated-icon-color': customIconColor });
-                    }
-                    titleEl.classList.add('cf-animated-icon-active');
-                    if (nnIconSlot) {
-                        nnIconSlot.appendChild(cloned);
-                    } else {
-                        textEl.parentElement?.insertBefore(cloned, textEl);
-                    }
-                    this._intersectionObserver?.observe(cloned);
+                    titleEl.classList.remove('cf-has-animated-closed', 'cf-has-animated-open');
                 } else {
-                    // Update color without tearing down active animation
-                    if (customIconColor) {
-                        existingIcon.setCssProps({ '--cf-animated-icon-color': customIconColor });
+                    titleEl.classList.remove('cf-animated-icon-active');
+                    if (targetConfig.closedIconId) {
+                        titleEl.classList.add('cf-has-animated-closed');
+                    } else {
+                        titleEl.classList.remove('cf-has-animated-closed');
+                    }
+                    if (targetConfig.openIconId) {
+                        titleEl.classList.add('cf-has-animated-open');
+                    } else {
+                        titleEl.classList.remove('cf-has-animated-open');
+                    }
+                }
+
+                const mountOrUpdate = (iconId: string, stateCls: 'cf-animated-closed' | 'cf-animated-open' | null, stateAttr: 'closed' | 'open' | 'both') => {
+                    const template = this.getAnimatedIconElement(iconId);
+                    if (!template) return;
+
+                    const selector = stateCls ? `.cf-live-animated-icon.${stateCls}` : `.cf-live-animated-icon:not(.cf-animated-closed):not(.cf-animated-open)`;
+                    const existingIcon = titleEl.querySelector<HTMLElement>(selector);
+
+                    if (!existingIcon) {
+                        const cloned = template.cloneNode(true) as HTMLElement & { _cfWasOffscreen?: boolean };
+                        cloned.setAttribute('data-icon-id', iconId);
+                        cloned.setAttribute('data-state', stateAttr);
+                        if (stateCls) cloned.classList.add(stateCls);
+                        cloned._cfWasOffscreen = false;
+                        if (customIconColor) {
+                            cloned.setCssProps({ '--cf-animated-icon-color': customIconColor });
+                        }
+                        if (nnIconSlot) {
+                            nnIconSlot.appendChild(cloned);
+                        } else {
+                            textEl.parentElement?.insertBefore(cloned, textEl);
+                        }
+                        this._intersectionObserver?.observe(cloned);
+                    } else if (existingIcon.getAttribute('data-icon-id') !== iconId) {
+                        this._intersectionObserver?.unobserve(existingIcon);
+                        existingIcon.remove();
+                        const cloned = template.cloneNode(true) as HTMLElement & { _cfWasOffscreen?: boolean };
+                        cloned.setAttribute('data-icon-id', iconId);
+                        cloned.setAttribute('data-state', stateAttr);
+                        if (stateCls) cloned.classList.add(stateCls);
+                        cloned._cfWasOffscreen = false;
+                        if (customIconColor) {
+                            cloned.setCssProps({ '--cf-animated-icon-color': customIconColor });
+                        }
+                        if (nnIconSlot) {
+                            nnIconSlot.appendChild(cloned);
+                        } else {
+                            textEl.parentElement?.insertBefore(cloned, textEl);
+                        }
+                        this._intersectionObserver?.observe(cloned);
+                    } else {
+                        // Update color without tearing down active animation
+                        if (customIconColor) {
+                            existingIcon.setCssProps({ '--cf-animated-icon-color': customIconColor });
+                        }
+                    }
+                };
+
+                if (targetConfig.iconId) {
+                    mountOrUpdate(targetConfig.iconId, null, 'both');
+                } else {
+                    if (targetConfig.closedIconId) {
+                        mountOrUpdate(targetConfig.closedIconId, 'cf-animated-closed', 'closed');
+                    }
+                    if (targetConfig.openIconId) {
+                        mountOrUpdate(targetConfig.openIconId, 'cf-animated-open', 'open');
                     }
                 }
             }

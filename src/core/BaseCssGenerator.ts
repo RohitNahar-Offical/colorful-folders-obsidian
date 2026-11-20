@@ -3,6 +3,10 @@ import { NotebookNavigatorIntegration } from '../integrations/NotebookNavigator'
 import { safeEscape } from '../common/utils';
 
 export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string {
+    const iconScale = settings.iconScale || 1.0;
+    const wideScale = settings.wideAutoIcons ? 1.05 : 1.0;
+    const defaultAnimIconSize = `calc(1.3em * ${iconScale * wideScale} * 1.15)`;
+
     return `
         /* ── NUCLEAR SPECIFICITY NAV ITEM LAYOUT ───────────────────────────────
            We use high-specificity selectors to defeat theme overrides (like Prism).
@@ -99,6 +103,25 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
         }
 
         /* ── LIVE ANIMATED CUSTOM SVG ICONS ─────────── */
+        body .nav-files-container, :root {
+            --cf-animated-icon-size: ${defaultAnimIconSize};
+        }
+
+        /* ── FOLDER OPEN / CLOSED ANIMATED ICON SWITCHING ── */
+        .nav-folder.is-collapsed .cf-live-animated-icon.cf-animated-open,
+        .tree-item.is-collapsed .cf-live-animated-icon.cf-animated-open,
+        .nn-navitem.is-collapsed .cf-live-animated-icon.cf-animated-open {
+            display: none !important;
+        }
+
+        .nav-folder:not(.is-collapsed) .cf-live-animated-icon.cf-animated-closed,
+        .tree-item:not(.is-collapsed) .cf-live-animated-icon.cf-animated-closed,
+        .nn-navitem:not(.is-collapsed) .cf-live-animated-icon.cf-animated-closed {
+            display: none !important;
+        }
+
+        /* ── HIDE CSS ::before WHEN AN ANIMATED ICON TAKES OVER ── */
+        /* Blanket hide when entire target (or file) has an animated icon */
         body .nav-files-container .cf-animated-icon-active::before,
         body .nav-files-container .cf-animated-icon-active .nav-folder-title-content::before,
         body .nav-files-container .cf-animated-icon-active .nav-file-title-content::before,
@@ -118,13 +141,41 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             height: 0 !important;
         }
 
+        /* Scoped hide when only OPEN state is animated: ONLY hide ::before when folder is OPEN */
+        .nav-folder:not(.is-collapsed) > .cf-has-animated-open .nav-folder-title-content::before,
+        .tree-item:not(.is-collapsed) > .cf-has-animated-open .tree-item-inner::before,
+        .nn-navitem:not(.is-collapsed).cf-has-animated-open .nn-navitem-name::before,
+        .cf-has-animated-open:not(.is-collapsed) .nav-folder-title-content::before,
+        .cf-has-animated-open:not(.is-collapsed) .tree-item-inner::before {
+            display: none !important;
+            content: none !important;
+            -webkit-mask-image: none !important;
+            mask-image: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+
+        /* Scoped hide when only CLOSED state is animated: ONLY hide ::before when folder is COLLAPSED */
+        .nav-folder.is-collapsed > .cf-has-animated-closed .nav-folder-title-content::before,
+        .tree-item.is-collapsed > .cf-has-animated-closed .tree-item-inner::before,
+        .nn-navitem.is-collapsed.cf-has-animated-closed .nn-navitem-name::before,
+        .cf-has-animated-closed.is-collapsed .nav-folder-title-content::before,
+        .cf-has-animated-closed.is-collapsed .tree-item-inner::before {
+            display: none !important;
+            content: none !important;
+            -webkit-mask-image: none !important;
+            mask-image: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+
         .cf-live-animated-icon {
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
             flex-shrink: 0 !important;
-            width: var(--cf-animated-icon-size, 1.3em) !important;
-            height: var(--cf-animated-icon-size, 1.3em) !important;
+            width: var(--cf-animated-icon-size, ${defaultAnimIconSize}) !important;
+            height: var(--cf-animated-icon-size, ${defaultAnimIconSize}) !important;
             margin-right: 4px !important;
             vertical-align: middle !important;
             overflow: visible !important;

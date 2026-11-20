@@ -379,10 +379,23 @@ export class EventTrackerService {
                 '.nav-folder-title, .nav-file-title, .tree-item-self, .nn-navitem, .nn-file'
             );
             if (!row) return;
-            const liveIcon = row.querySelector<HTMLElement>('.cf-live-animated-icon');
-            if (liveIcon) {
-                this.plugin.animatedIconService?.replayAnimatedElement(liveIcon);
-            }
+
+            const replayVisibleIcons = () => {
+                const liveIcons = row.querySelectorAll<HTMLElement>('.cf-live-animated-icon');
+                for (let i = 0; i < liveIcons.length; i++) {
+                    const icon = liveIcons[i];
+                    if (icon.offsetParent !== null || icon.offsetWidth > 0 || icon.offsetHeight > 0) {
+                        this.plugin.animatedIconService?.replayAnimatedElement(icon);
+                    }
+                }
+            };
+
+            // Immediate replay for currently visible icon
+            replayVisibleIcons();
+
+            // Also check shortly after folder expansion/collapse toggles display state
+            const win = doc.defaultView || window;
+            win.setTimeout(replayVisibleIcons, 30);
         });
     }
 
