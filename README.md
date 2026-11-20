@@ -9,7 +9,6 @@ Colorful Folders automatically applies curated color palettes, smart icons, and 
 
 ## 🚀 Latest Update: v5.1.0 — New Icon Packs & Baseline Expansion
 
-* **⚡ Baseline Icon Packs (Simple Icons & Tabler):** Fresh installations and updates now automatically include **Simple Icons** (3,700+ brand & tech logos) and **Tabler Icons** (6,700+ modern UI icons) pre-configured in top priority order (`Custom > Simple Icons > Lucide > Tabler`).
 * **✨ New Animated & Featured Icon Packs:** Explore and download new icon packs directly from **Settings > Icon Settings**:
   * **Line icons (Animated):** 1,200+ smooth animated line SVGs (`line-md`).
   * **Meteocons (Animated):** 440+ dynamic animated weather and atmosphere SVG icons.
