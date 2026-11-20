@@ -6,7 +6,12 @@ import { TagColorSync } from "../integrations/TagColorSync";
 export class EventTrackerService {
     private plugin: ColorfulFoldersPlugin;
     private eventRefs: obsidian.EventRef[] = [];
-    private domEvents: { element: HTMLElement | Document | Window, event: string, callback: EventListenerOrEventListenerObject }[] = [];
+    private domEvents: {
+        element: HTMLElement | Document | Window;
+        event: string;
+        callback: EventListenerOrEventListenerObject;
+        options?: AddEventListenerOptions | boolean;
+    }[] = [];
 
     constructor(plugin: ColorfulFoldersPlugin) {
         this.plugin = plugin;
@@ -302,9 +307,14 @@ export class EventTrackerService {
         this.eventRefs.push(ref);
     }
 
-    private registerDomEvent(element: HTMLElement | Document | Window, event: string, callback: EventListenerOrEventListenerObject) {
-        element.addEventListener(event, callback);
-        this.domEvents.push({ element, event, callback });
+    private registerDomEvent(
+        element: HTMLElement | Document | Window,
+        event: string,
+        callback: EventListenerOrEventListenerObject,
+        options?: AddEventListenerOptions | boolean
+    ) {
+        element.addEventListener(event, callback, options);
+        this.domEvents.push({ element, event, callback, options });
     }
 
     public registerDragEventsForDoc(doc: Document) {
@@ -354,7 +364,7 @@ export class EventTrackerService {
         // but tracking them explicitly here ensures safety for sub-services.
         this.eventRefs = [];
         this.domEvents.forEach(e => {
-            e.element.removeEventListener(e.event, e.callback);
+            e.element.removeEventListener(e.event, e.callback, e.options);
         });
         this.domEvents = [];
     }
