@@ -100,7 +100,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     glassmorphism: true,
 
     autoIcons: true,
-    iconPackPriorityOrder: ['custom', 'lucide', 'line-md', 'meteocons', 'bootstrap', 'simple-icons', 'tabler', 'remix', 'font-awesome', 'material', 'feather', 'emoji'],
+    iconPackPriorityOrder: ['custom', 'lucide', 'bootstrap', 'simple-icons', 'tabler', 'remix', 'font-awesome', 'material', 'feather', 'emoji'],
     autoIconVariety: true,
     varietySeed: 0,
     wideAutoIcons: true,
@@ -364,10 +364,6 @@ export const FEATURED_ICON_PACKS: FeaturedIconPack[] = [
 export const DEFAULT_ICON_PACK_ORDER: string[] = [
     'custom',
     'lucide',
-    'line-md',
-    'meteocons',
-    'generative',
-    'useanimations',
     'bootstrap',
     'simple-icons',
     'tabler',
@@ -375,27 +371,20 @@ export const DEFAULT_ICON_PACK_ORDER: string[] = [
     'font-awesome',
     'material',
     'feather',
-    'boxicons',
-    'octicon',
-    'rpg-awesome',
     'emoji'
 ];
 
 export const PACK_PRIORITY: Record<string, number> = {
     'custom': 100,       // 1. Unique brand assets
     'lucide': 90,        // 2. Main UI baseline (Modern, sharp, highly consistent)
-    'line-md': 85,       // 3. Line icons (Animated smooth SVG icons from Iconify)
-    'meteocons': 84,     // 3b. Meteocons (Animated weather SVG icons from Iconify)
-    'generative': 83,    // 3c. Generative UI (Animated SMIL UI icons)
-    'useanimations': 82, // 3d. useAnimations (Animated micro-interactions)
-    'tabler': 80,        // 4. Main UI fallback (Massive library, same aesthetic)
-    'simple-icons': 70,  // 5. Brands only (Logos for Google, GitHub, etc.)
-    'remix': 60,         // 6. Secondary fallback
-    'bi': 55,            // 7. Bootstrap Icons (large general-purpose library)
-    'bootstrap': 55,     // 7b. Bootstrap alias
-    'feather': 50,       // 8. Deprecated (Lucide is the upgraded version)
-    'font-awesome': 40,  // 9. Utility fallback (Heavy, traditional style)
-    'material': 30       // 10. Geometric fallback (Different design language)
+    'tabler': 80,        // 3. Main UI fallback (Massive library, same aesthetic)
+    'simple-icons': 70,  // 4. Brands only (Logos for Google, GitHub, etc.)
+    'remix': 60,         // 5. Secondary fallback
+    'bi': 55,            // 6. Bootstrap Icons (large general-purpose library)
+    'bootstrap': 55,     // 6b. Bootstrap alias
+    'feather': 50,       // 7. Deprecated (Lucide is the upgraded version)
+    'font-awesome': 40,  // 8. Utility fallback (Heavy, traditional style)
+    'material': 30       // 9. Geometric fallback (Different design language)
 };
 
 export const PACK_PREFIXES: string[] = [
