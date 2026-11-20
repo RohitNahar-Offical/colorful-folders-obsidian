@@ -375,29 +375,8 @@ export class EventTrackerService {
         this.registerDomEvent(doc, "click", (evt: Event) => {
             if (!this.plugin.animatedIconService?.hasAnyAnimatedIcons()) return;
 
-            // Holistic animation delegated playback controller
+            // Holistic animation delegated playback controller (zero reflow, throttled)
             this.plugin.animatedIconService.handleDelegatedClick(evt as MouseEvent);
-
-            const target = evt.target as HTMLElement | null;
-            if (!target) return;
-            const row = target.closest<HTMLElement>(
-                '.nav-folder-title, .nav-file-title, .tree-item-self, .nn-navitem, .nn-file'
-            );
-            if (!row) return;
-
-            const replayVisibleIcons = () => {
-                const liveIcons = row.querySelectorAll<HTMLElement>('.cf-live-animated-icon, .cf-animated-icon');
-                for (let i = 0; i < liveIcons.length; i++) {
-                    const icon = liveIcons[i];
-                    if (icon.offsetParent !== null || icon.offsetWidth > 0 || icon.offsetHeight > 0) {
-                        this.plugin.animatedIconService?.triggerIconAnimation(icon);
-                    }
-                }
-            };
-
-            // Also check shortly after folder expansion/collapse toggles display state
-            const win = doc.defaultView || window;
-            win.setTimeout(replayVisibleIcons, 30);
         });
     }
 

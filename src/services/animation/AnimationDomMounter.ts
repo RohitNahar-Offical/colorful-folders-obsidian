@@ -1,4 +1,5 @@
 import { safeEscape } from '../../common/utils';
+import { AnimationClassifier } from './AnimationClassifier';
 import { AnimationTemplateFactory } from './AnimationTemplateFactory';
 import { AnimationViewportManager } from './AnimationViewportManager';
 import { ANIMATION_SELECTORS, RegisteredAnimatedTarget } from './AnimationTypes';
@@ -11,10 +12,16 @@ import { ANIMATION_SELECTORS, RegisteredAnimatedTarget } from './AnimationTypes'
 export class AnimationDomMounter {
     private _templateFactory: AnimationTemplateFactory;
     private _viewportManager: AnimationViewportManager;
+    private _classifier: AnimationClassifier;
 
-    constructor(templateFactory: AnimationTemplateFactory, viewportManager: AnimationViewportManager) {
+    constructor(
+        templateFactory: AnimationTemplateFactory,
+        viewportManager: AnimationViewportManager,
+        classifier: AnimationClassifier
+    ) {
         this._templateFactory = templateFactory;
         this._viewportManager = viewportManager;
+        this._classifier = classifier;
     }
 
     /**
@@ -92,7 +99,7 @@ export class AnimationDomMounter {
         for (const [targetPath, targetConfig] of targetsMap.entries()) {
             const safePath = safeEscape(targetPath);
             const titleEl = container.querySelector<HTMLElement>(
-                `.nav-folder-title[data-path="${safePath}"], .nav-file-title[data-path="${safePath}"], .tree-item-self[data-path="${safePath}"], .nn-navitem[data-path="${safePath}"], .nn-file[data-path="${safePath}"]`
+                `:is(.nav-folder-title, .nav-file-title, .tree-item-self, .nn-navitem, .nn-file)[data-path="${safePath}"]`
             );
             if (!titleEl) continue;
 
@@ -147,7 +154,8 @@ export class AnimationDomMounter {
         getRawSvg: (iconId: string) => string
     ): void {
         const rawSvg = getRawSvg(iconId);
-        const template = this._templateFactory.getTemplate(iconId, rawSvg, false);
+        const isLooping = this._classifier.isLoopingAnimatedIcon(iconId, rawSvg);
+        const template = this._templateFactory.getTemplate(iconId, rawSvg, isLooping);
         if (!template) return;
 
         const selector = stateCls ? `.cf-live-animated-icon.${stateCls}` : `.cf-live-animated-icon:not(.cf-animated-closed):not(.cf-animated-open)`;

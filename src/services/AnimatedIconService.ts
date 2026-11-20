@@ -41,10 +41,11 @@ export class AnimatedIconService {
             this.classifier,
             this.templateFactory,
             () => this.plugin.getOpenDocuments(),
-            () => this.getAllNavContainers()
+            () => this.getAllNavContainers(),
+            (id: string) => this.plugin.iconManager?.getRawIconSvg(id) || ''
         );
         this.playbackEngine = new AnimationPlaybackEngine(this.classifier, this.templateFactory);
-        this.domMounter = new AnimationDomMounter(this.templateFactory, this.viewportManager);
+        this.domMounter = new AnimationDomMounter(this.templateFactory, this.viewportManager, this.classifier);
     }
 
     /**
@@ -119,14 +120,15 @@ export class AnimatedIconService {
         for (let i = 0; i < allContainers.length; i++) {
             const container = allContainers[i];
             const titleEl = container.querySelector<HTMLElement>(
-                `.nav-folder-title[data-path="${safePath}"], .nav-file-title[data-path="${safePath}"], .tree-item-self[data-path="${safePath}"], .nn-navitem[data-path="${safePath}"], .nn-file[data-path="${safePath}"]`
+                `:is(.nav-folder-title, .nav-file-title, .tree-item-self, .nn-navitem, .nn-file)[data-path="${safePath}"]`
             );
             if (!titleEl) continue;
 
             const liveIcons = titleEl.querySelectorAll<HTMLElement>('.cf-live-animated-icon');
             for (let j = 0; j < liveIcons.length; j++) {
                 const liveIcon = liveIcons[j];
-                if (liveIcon.offsetParent !== null || liveIcon.offsetWidth > 0 || liveIcon.offsetHeight > 0) {
+                // Zero-reflow check using data-cf-visible set by IntersectionObserver
+                if (liveIcon.getAttribute('data-cf-visible') !== 'false') {
                     this.replayAnimatedElement(liveIcon);
                 }
             }
@@ -241,15 +243,13 @@ export class AnimatedIconService {
 
         const customFolderColors = this.plugin.settings?.customFolderColors || {};
         const customIcons = this.plugin.settings?.customIcons || {};
-        const animatedTargetsMap = new Map<string, RegisteredAnimatedTarget>();
 
-        // Fast path: use already registered targets from StyleGenerator
-        if (this._registeredAnimatedTargets.size > 0) {
-            for (const [p, registered] of this._registeredAnimatedTargets.entries()) {
-                animatedTargetsMap.set(p, { ...registered });
-            }
-        } else {
+        // Zero-allocation fast path: pass registered targets map directly without cloning
+        let targetsMap = this._registeredAnimatedTargets;
+
+        if (targetsMap.size === 0) {
             // Fallback path: pre-render scan if no targets registered yet
+            const fallbackMap = new Map<string, RegisteredAnimatedTarget>();
             for (const p in customFolderColors) {
                 const style = customFolderColors[p];
                 if (typeof style === 'object' && style !== null) {
@@ -264,7 +264,7 @@ export class AnimatedIconService {
                         hasAny = true;
                     }
                     if (hasAny) {
-                        animatedTargetsMap.set(p, target);
+                        fallbackMap.set(p, target);
                     }
                 }
             }
@@ -272,21 +272,24 @@ export class AnimatedIconService {
                 const style = customIcons[p];
                 const iconId = typeof style === 'string' ? style : (typeof style === 'object' && style !== null ? (style as { iconId?: string }).iconId : undefined);
                 if (iconId && this.isAnimatedIcon(iconId)) {
-                    let target = animatedTargetsMap.get(p);
+                    let target = fallbackMap.get(p);
                     if (!target) {
                         target = { iconId };
-                        animatedTargetsMap.set(p, target);
+                        fallbackMap.set(p, target);
                     } else {
                         target.iconId = iconId;
                     }
                 }
             }
+            targetsMap = fallbackMap;
         }
+
+        if (targetsMap.size === 0) return;
 
         const containers = this.getAllNavContainers();
         this.domMounter.reconcile(
             containers,
-            animatedTargetsMap,
+            targetsMap,
             customFolderColors,
             customIcons,
             (id: string) => this.plugin.iconManager?.getRawIconSvg(id) || ''

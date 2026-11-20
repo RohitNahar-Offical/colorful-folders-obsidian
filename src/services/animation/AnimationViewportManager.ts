@@ -16,17 +16,20 @@ export class AnimationViewportManager {
     };
     private _getOpenDocuments: () => Document[];
     private _getAllContainers: () => HTMLElement[];
+    private _getRawSvg: (iconId: string) => string;
 
     constructor(
         classifier: AnimationClassifier,
         templateFactory: AnimationTemplateFactory,
         getOpenDocuments: () => Document[],
-        getAllContainers: () => HTMLElement[]
+        getAllContainers: () => HTMLElement[],
+        getRawSvg?: (iconId: string) => string
     ) {
         this._classifier = classifier;
         this._templateFactory = templateFactory;
         this._getOpenDocuments = getOpenDocuments;
         this._getAllContainers = getAllContainers;
+        this._getRawSvg = getRawSvg || (() => '');
 
         if (typeof IntersectionObserver !== 'undefined') {
             this._intersectionObserver = new IntersectionObserver((entries) => {
@@ -39,7 +42,7 @@ export class AnimationViewportManager {
                             const iconId = targetEl.getAttribute('data-icon-id');
                             if (targetEl._cfWasOffscreen) {
                                 targetEl._cfWasOffscreen = false;
-                                if (iconId && this._classifier.isLoopingAnimatedIcon(iconId)) {
+                                if (iconId && this._classifier.isLoopingAnimatedIcon(iconId, this._getRawSvg(iconId))) {
                                     this.wakeElement(targetEl);
                                 }
                             }
@@ -76,29 +79,26 @@ export class AnimationViewportManager {
 
     public handleVisibilityChange(): void {
         const docs = this._getOpenDocuments();
-        let anyHidden = false;
         for (let i = 0; i < docs.length; i++) {
-            if (docs[i].hidden) {
-                anyHidden = true;
-                break;
-            }
-        }
-
-        const playState = anyHidden ? 'paused' : 'running';
-        for (let i = 0; i < docs.length; i++) {
-            docs[i].documentElement?.setCssProps({ '--cf-icon-play-state': playState });
+            const doc = docs[i];
+            const isDocHidden = doc.hidden;
+            doc.documentElement?.setCssProps({ '--cf-icon-play-state': isDocHidden ? 'paused' : 'running' });
         }
 
         const allContainers = this._getAllContainers();
         for (let i = 0; i < allContainers.length; i++) {
-            const icons = allContainers[i].querySelectorAll<HTMLElement>(ANIMATION_SELECTORS.ANY_ANIMATED_ICON);
+            const container = allContainers[i];
+            const doc = container.ownerDocument;
+            const isDocHidden = doc ? doc.hidden : false;
+            const icons = container.querySelectorAll<HTMLElement>(ANIMATION_SELECTORS.ANY_ANIMATED_ICON);
             for (let j = 0; j < icons.length; j++) {
-                const svg = icons[j].querySelector('svg') as unknown as { pauseAnimations?: () => void; unpauseAnimations?: () => void };
+                const icon = icons[j];
+                const svg = icon.querySelector('svg') as unknown as { pauseAnimations?: () => void; unpauseAnimations?: () => void };
                 if (svg) {
-                    if (anyHidden && typeof svg.pauseAnimations === 'function') {
+                    if (isDocHidden && typeof svg.pauseAnimations === 'function') {
                         try { svg.pauseAnimations(); } catch { void 0; }
-                    } else if (!anyHidden && typeof svg.unpauseAnimations === 'function') {
-                        if (icons[j].getAttribute('data-cf-visible') === 'true') {
+                    } else if (!isDocHidden && typeof svg.unpauseAnimations === 'function') {
+                        if (icon.getAttribute('data-cf-visible') === 'true') {
                             try { svg.unpauseAnimations(); } catch { void 0; }
                         }
                     }
@@ -136,9 +136,10 @@ export class AnimationViewportManager {
      */
     public wakeElement(el: HTMLElement): void {
         const iconId = el.getAttribute('data-icon-id');
-        if (!iconId || !this._classifier.isSmilAnimated(iconId)) return;
+        const rawSvg = iconId ? this._getRawSvg(iconId) : '';
+        if (!iconId || !this._classifier.isSmilAnimated(iconId, rawSvg)) return;
 
-        const template = this._templateFactory.getTemplate(iconId, '', true);
+        const template = this._templateFactory.getTemplate(iconId, rawSvg, true);
         if (!template) return;
 
         const freshSvg = template.querySelector('svg')?.cloneNode(true);
