@@ -746,14 +746,29 @@ export default class ColorfulFoldersPlugin
     this.iconManager?.invalidateCategoryCache();
     this.animatedIconService?.invalidateCache();
 
-    // 4. Save clean settings
-    await this.saveSettings();
-
-    // 5. Clean dividers and animated icon listeners
+    // 4. Clean dividers and animated icon listeners
     this.cleanDividers();
     this.animatedIconService?.syncAnimatedIcons();
 
-    // 6. Regenerate styles with factory defaults
+    // 5. Restore factory baseline icon packs (Simple Icons & Tabler)
+    try {
+      await this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/simple-icons.json", "simple-icons");
+      await this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/tabler.json", "tabler");
+      const basePacks = ['custom', 'simple-icons', 'lucide', 'tabler'];
+      const currentOrder = this.settings.iconPackPriorityOrder || DEFAULT_ICON_PACK_ORDER;
+      const remaining = currentOrder.filter(p => !basePacks.includes(p) && p !== 'emoji');
+      this.settings.iconPackPriorityOrder = [...basePacks, ...remaining, 'emoji'];
+      this.iconCache?.clear();
+      this.iconManager?.invalidateCategoryCache();
+      this.animatedIconService?.invalidateCache();
+    } catch (err) {
+      console.warn("Colorful Folders: Baseline icon pack restore deferred:", err);
+    }
+
+    // 6. Save clean settings
+    await this.saveSettings();
+
+    // 7. Regenerate styles with factory defaults
     await this.generateStyles();
   }
 
