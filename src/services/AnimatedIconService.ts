@@ -201,7 +201,8 @@ export class AnimatedIconService {
         if (
             iconId.startsWith('line-md-') || iconId.startsWith('linemd-') || iconId.startsWith('line-md:') || iconId.startsWith('line-md_') ||
             iconId.startsWith('meteocons-') || iconId.startsWith('meteocons:') || iconId.startsWith('meteocons_') ||
-            iconId.startsWith('generative-') || iconId.startsWith('generative:') || iconId.startsWith('generative_')
+            iconId.startsWith('generative-') || iconId.startsWith('generative:') || iconId.startsWith('generative_') ||
+            iconId.startsWith('useanimations-') || iconId.startsWith('useanimations:') || iconId.startsWith('useanimations_') || iconId.startsWith('ua-')
         ) {
             return true;
         }

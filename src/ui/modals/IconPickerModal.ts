@@ -94,6 +94,7 @@ export class IconPickerModal extends obsidian.Modal {
             'line-md': 'LINE-MD (ANIMATED)',
             'meteocons': 'METEOCONS (ANIMATED)',
             'generative': 'GENERATIVE UI (ANIMATED)',
+            'useanimations': 'USEANIMATIONS (ANIMATED)',
             'simple-icons': 'SIMPLE ICONS',
             'tabler': 'TABLER',
             'bi': 'BOOTSTRAP',
@@ -176,10 +177,11 @@ export class IconPickerModal extends obsidian.Modal {
                             const svgEl = templateSvg.cloneNode(true) as HTMLElement;
                             const isMeteo = id.startsWith('meteocons-') || id.startsWith('meteocons:') || id.startsWith('meteocons_');
                             const isGenerative = id.startsWith('generative-') || id.startsWith('generative:') || id.startsWith('generative_');
+                            const isUseAnimations = id.startsWith('useanimations-') || id.startsWith('useanimations:') || id.startsWith('useanimations_') || id.startsWith('ua-');
                             svgEl.setCssStyles({
                                 width: "24px", height: "24px",
                                 color: isSelected ? "white" : "var(--text-normal)",
-                                ...(isMeteo ? { transform: "scale(1.45)", transformOrigin: "center center" } : (isGenerative ? { transform: "scale(1.2)", transformOrigin: "center center" } : {}))
+                                ...(isMeteo ? { transform: "scale(1.45)", transformOrigin: "center center" } : (isGenerative ? { transform: "scale(1.2)", transformOrigin: "center center" } : (isUseAnimations ? { transform: "scale(1.15)", transformOrigin: "center center" } : {})))
                             });
                             cell.appendChild(svgEl);
                         } else {

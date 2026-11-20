@@ -209,6 +209,14 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             transform-origin: center center !important;
         }
 
+        .cf-live-animated-icon[data-icon-id^="useanimations"] svg,
+        .cf-live-animated-icon[data-icon-id^="ua-"] svg,
+        .notebook-navigator .cf-live-animated-icon[data-icon-id^="useanimations"] svg,
+        .notebook-navigator .cf-live-animated-icon[data-icon-id^="ua-"] svg {
+            transform: scale(1.15) !important;
+            transform-origin: center center !important;
+        }
+
         .cf-icon-wrapper {
             display: inline-flex !important;
             align-items: center !important;

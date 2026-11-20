@@ -234,10 +234,11 @@ modifiedFields: Set<string>;
                                     svgEl.removeAttribute("height");
                                     const isMeteo = currentIconId.startsWith('meteocons-') || currentIconId.startsWith('meteocons:') || currentIconId.startsWith('meteocons_');
                                     const isGenerative = currentIconId.startsWith('generative-') || currentIconId.startsWith('generative:') || currentIconId.startsWith('generative_');
+                                    const isUseAnimations = currentIconId.startsWith('useanimations-') || currentIconId.startsWith('useanimations:') || currentIconId.startsWith('useanimations_') || currentIconId.startsWith('ua-');
                                     (svgEl as unknown as HTMLElement).setCssStyles({
                                         width: `${sizePx}px`, height: `${sizePx}px`,
                                         color: effectiveIconColor,
-                                        ...(isMeteo ? { transform: "scale(1.45)", transformOrigin: "center center" } : (isGenerative ? { transform: "scale(1.2)", transformOrigin: "center center" } : {}))
+                                        ...(isMeteo ? { transform: "scale(1.45)", transformOrigin: "center center" } : (isGenerative ? { transform: "scale(1.2)", transformOrigin: "center center" } : (isUseAnimations ? { transform: "scale(1.15)", transformOrigin: "center center" } : {})))
                                     });
                                     target.appendChild(svgEl);
                                 }
@@ -258,11 +259,12 @@ modifiedFields: Set<string>;
                 if (prevSvg) {
                     const isMeteo = currentIconId.startsWith('meteocons-') || currentIconId.startsWith('meteocons:') || currentIconId.startsWith('meteocons_');
                     const isGenerative = currentIconId.startsWith('generative-') || currentIconId.startsWith('generative:') || currentIconId.startsWith('generative_');
+                    const isUseAnimations = currentIconId.startsWith('useanimations-') || currentIconId.startsWith('useanimations:') || currentIconId.startsWith('useanimations_') || currentIconId.startsWith('ua-');
                     prevSvg.setCssStyles({
                         color: effectiveIconColor,
                         width: `${previewIconW}px`,
                         height: `${previewIconW}px`,
-                        ...(isMeteo ? { transform: "scale(1.45)", transformOrigin: "center center" } : (isGenerative ? { transform: "scale(1.2)", transformOrigin: "center center" } : {}))
+                        ...(isMeteo ? { transform: "scale(1.45)", transformOrigin: "center center" } : (isGenerative ? { transform: "scale(1.2)", transformOrigin: "center center" } : (isUseAnimations ? { transform: "scale(1.15)", transformOrigin: "center center" } : {})))
                     });
                 }
                 
@@ -1005,10 +1007,11 @@ modifiedFields: Set<string>;
                         svgEl.removeAttribute("height");
                         const isMeteo = id.startsWith('meteocons-') || id.startsWith('meteocons:') || id.startsWith('meteocons_');
                         const isGenerative = id.startsWith('generative-') || id.startsWith('generative:') || id.startsWith('generative_');
+                        const isUseAnimations = id.startsWith('useanimations-') || id.startsWith('useanimations:') || id.startsWith('useanimations_') || id.startsWith('ua-');
                         (svgEl as unknown as HTMLElement).setCssStyles({
                             width: `${gridIconW}px`, height: `${gridIconW}px`,
                             color: isSelectedCell ? "#fff" : "var(--text-normal)",
-                            ...(isMeteo ? { transform: "scale(1.45)", transformOrigin: "center center" } : (isGenerative ? { transform: "scale(1.2)", transformOrigin: "center center" } : {}))
+                            ...(isMeteo ? { transform: "scale(1.45)", transformOrigin: "center center" } : (isGenerative ? { transform: "scale(1.2)", transformOrigin: "center center" } : (isUseAnimations ? { transform: "scale(1.15)", transformOrigin: "center center" } : {})))
                         });
                         cell.appendChild(svgEl);
                     }
@@ -1345,10 +1348,11 @@ modifiedFields: Set<string>;
                 const effectiveIconColor = this.folderStyle.iconColor || this.folderStyle.hex || "#fff";
                 const isMeteo = id.startsWith('meteocons-') || id.startsWith('meteocons:') || id.startsWith('meteocons_');
                 const isGenerative = id.startsWith('generative-') || id.startsWith('generative:') || id.startsWith('generative_');
+                const isUseAnimations = id.startsWith('useanimations-') || id.startsWith('useanimations:') || id.startsWith('useanimations_') || id.startsWith('ua-');
                 (svgEl as unknown as HTMLElement).setCssStyles({
                     width: "22px", height: "22px",
                     color: effectiveIconColor,
-                    ...(isMeteo ? { transform: "scale(1.45)", transformOrigin: "center center" } : (isGenerative ? { transform: "scale(1.2)", transformOrigin: "center center" } : {}))
+                    ...(isMeteo ? { transform: "scale(1.45)", transformOrigin: "center center" } : (isGenerative ? { transform: "scale(1.2)", transformOrigin: "center center" } : (isUseAnimations ? { transform: "scale(1.15)", transformOrigin: "center center" } : {})))
                 });
                 curIconBox.appendChild(svgEl);
             }

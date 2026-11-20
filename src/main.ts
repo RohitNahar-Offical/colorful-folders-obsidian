@@ -1312,6 +1312,45 @@ export default class ColorfulFoldersPlugin
           }
         }
         return true;
+      } else if (data && typeof data === 'object' && Array.isArray(data.icons)) {
+        const rawPrefix = typeof data.prefix === 'string' ? data.prefix : prefix;
+        const packPrefix = rawPrefix.replace(/[^a-z0-9-_]/gi, '') || 'useanimations';
+        const items = data.icons as Array<{ id?: string; name?: string; svg?: string[] }>;
+        for (const item of items) {
+          const name = (item.id || item.name || '').replace(/[^a-z0-9-_]/gi, '');
+          if (!name) continue;
+          const id = `${packPrefix}-${name}`;
+          if (item.svg && Array.isArray(item.svg) && item.svg[0]) {
+            try {
+              const svgRes = await obsidian.requestUrl({ url: item.svg[0] });
+              let rawSvg = svgRes.text?.trim() || '';
+              if (rawSvg.startsWith('<svg')) {
+                rawSvg = rawSvg.replace(/stroke="rgb\(0,\s*0,\s*0\)"/gi, 'stroke="currentColor"');
+                rawSvg = rawSvg.replace(/stroke="#000(000)?"/gi, 'stroke="currentColor"');
+                const cleanSvg = this.iconManager ? this.iconManager.normalizeSvg(rawSvg, false) : rawSvg;
+                packIcons[id] = cleanSvg;
+                this.localCustomIcons[id] = cleanSvg;
+                count++;
+              }
+            } catch {
+              // continue
+            }
+          }
+        }
+        if (Object.keys(packIcons).length > 0) {
+          try {
+            const adapter = this.app.vault.adapter;
+            const iconsDir = this.getIconsDirPath();
+            if (!(await adapter.exists(iconsDir))) {
+              await adapter.mkdir(iconsDir);
+            }
+            const packPath = `${iconsDir}/${prefix}.json`;
+            await adapter.write(packPath, JSON.stringify(packIcons));
+          } catch (e) {
+            console.error(`Colorful Folders: Failed to write pack file for ${prefix}`, e);
+          }
+        }
+        return true;
       } else if (data && typeof data === 'object' && !Array.isArray(data)) {
         for (const [id, rawSvg] of Object.entries(data as Record<string, string>)) {
           if (typeof rawSvg === 'string' && rawSvg.trim().startsWith('<svg')) {
