@@ -12,10 +12,12 @@ export class AnimationTemplateFactory {
      * Compiles a sanitized, pre-structured template element for an animated icon.
      */
     public getTemplate(iconId: string, rawSvg: string, isLooping: boolean): HTMLElement | null {
-        if (!iconId || !rawSvg) return null;
+        if (!iconId) return null;
 
         const cached = this._animatedTemplateCache.get(iconId);
         if (cached) return cached;
+
+        if (!rawSvg) return null;
 
         const parser = this._domParser;
         if (!parser) return null;

@@ -375,9 +375,9 @@ export class EventTrackerService {
         this.registerDomEvent(doc, "click", (evt: Event) => {
             if (!this.plugin.animatedIconService?.hasAnyAnimatedIcons()) return;
 
-            // Holistic animation delegated playback controller (zero reflow, throttled)
+            // Holistic animation delegated playback controller (zero reflow, capture phase)
             this.plugin.animatedIconService.handleDelegatedClick(evt as MouseEvent);
-        });
+        }, { capture: true, passive: true });
     }
 
     private touchHeatmapParents(file: obsidian.TAbstractFile): void {

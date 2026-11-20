@@ -44,7 +44,11 @@ export class AnimatedIconService {
             () => this.getAllNavContainers(),
             (id: string) => this.plugin.iconManager?.getRawIconSvg(id) || ''
         );
-        this.playbackEngine = new AnimationPlaybackEngine(this.classifier, this.templateFactory);
+        this.playbackEngine = new AnimationPlaybackEngine(
+            this.classifier,
+            this.templateFactory,
+            (id: string) => this.plugin.iconManager?.getRawIconSvg(id) || ''
+        );
         this.domMounter = new AnimationDomMounter(this.templateFactory, this.viewportManager, this.classifier);
     }
 
