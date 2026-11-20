@@ -123,7 +123,8 @@ graph TD
 - **CSS Custom Property Exposure**: Exposes `--cf-icon-color: ${effFolderIconColor}` on `.nav-folder-title` and `--cf-icon-color: ${effFileIconColor}` on `.nav-file-title` so that DOM-injected icon wrappers (`.cf-icon-wrapper`, `.cf-live-animated-icon`) inherit icon colors cleanly with fallback `var(--cf-icon-color, inherit)`.
 - **`CssGrouper` Precision Keys**: Signature keys for batched CSS rules include all differentiating sub-properties (`folderRow_${color.hex}_${effFolderIconColor}_...` and `fileRow_${color.hex}_${effFileIconColor}_...`) to prevent style bleed between items that share the same background tint but have distinct icon colors.
 
-### 3.8 Animated Icon Pre-Registration & Zero-DOM Scroll Pipeline (`src/services/AnimatedIconService.ts`)
+### 3.8 Animated Icon Pre-Registration & Zero-DOM Scroll Pipeline (`src/services/AnimatedIconService.ts` & `src/services/animation/`)
+- **Decoupled OOP Domain Architecture**: Monolithic rendering logic is split into 5 single-responsibility domain classes under `src/services/animation/`: `AnimationClassifier` (markup detection & loop caching), `AnimationTemplateFactory` (DOMParser fallback, XSS sanitization, box removal, and LRU template cache), `AnimationViewportManager` (single `IntersectionObserver` off-screen pausing & SMIL syncbase wake), `AnimationPlaybackEngine` (delegated click handling, morph triggers, 300ms throttling), and `AnimationDomMounter` (DRY element injection & row state synchronization).
 - **Pre-Registration during CSS Generation**: `StyleGenerator.generateCss()` registers active animated paths into `AnimatedIconService._registeredAnimatedTargets` in $O(1)$ memory during the single traverse pass, eliminating any need to query or parse DOM rows during scroll.
 - **Granular Folder State Registration (`RegisteredAnimatedTarget`)**: Supports independent static vs animated icon assignments for closed and open folder actions. Active targets are registered as `closed`, `open`, or `both`.
 - **Scoped CSS Pseudo-Element Suppression**: Instead of blanket row suppression, `BaseCssGenerator.ts` generates state-scoped rules hiding the static CSS mask `::before` strictly when that state is animated:
@@ -132,10 +133,15 @@ graph TD
   .nav-folder.is-collapsed > .cf-has-animated-closed .nav-folder-title-content::before { display: none !important; }
   ```
 - **Optical Sizing Alignment**: Standardized sizing to `calc(1.3em * iconScale * wideScale * 1.15)` across `BaseCssGenerator.ts` and `StyleGenerator.ts`, optically balancing embedded SVG viewBox margins with edge-to-edge static CSS masks.
-- **Continuous Loops vs. Play-on-Click Single-Shot Replay**: Distinguishes continuous loops (e.g. `*-loop`) from single-shot animations (`isLoopingAnimatedIcon`). Single-shot animations replay upon user click or file activation (`replayAnimatedElement`), backed by a 300ms double-click throttle.
+- **Boxless & Frameless Vector Rendering**: All outer bounding boxes, border chrome, and 32x32 hit-target rects (`<rect width="32" height="32" pointer-events="all">`) are permanently purged from JSON icon packs and dynamically stripped by `AnimationTemplateFactory.stripOuterBoxes()`. `<svg>` viewports enforce `overflow: visible` to prevent keyframe clipping.
+- **Native Ping-Pong Looping SMIL Chains (Option 1 Batch Transformation)**: Interactive dual-state icons in `icons/generative.json` load natively as continuous ping-pong loops via W3C SMIL syncbases:
+  - `Master A`: `id="cf_la_<key>" begin="0s;cf_lb_<key>.end+0.8s"` (starts immediately, loops after B settles).
+  - `Master B`: `id="cf_lb_<key>" begin="cf_la_<key>.end+0.8s"` (smooth morph return cycle).
+  - Follower animations chain to `cf_la_<key>.begin` and `cf_lb_<key>.begin`.
+- **Continuous Loops vs. Play-on-Click Single-Shot Replay**: Distinguishes continuous loops (e.g. `*-loop`, `cf_l[ab]_*`) from single-shot animations (`isLoopingAnimatedIcon`). Single-shot animations replay upon user click or file activation (`replayAnimatedElement`), backed by a 300ms double-click throttle.
 - **Instant $O(1)$ Prefix Check**: Pre-checks `line-md-` / `linemd-` prefixes in `isAnimatedIcon()` to bypass raw SVG string reads and regex matches during startup.
 - **$O(K)$ Targeted Querying**: `syncAnimatedIcons()` reads directly from `_registeredAnimatedTargets` ($K$, where $K \le 5$), bypassing full-vault sweeps and preserving 60/120 FPS scrolling.
-- **Off-Screen SMIL Syncbase Recovery**: Uses `IntersectionObserver` with an offscreen boolean flag (`_cfWasOffscreen`) to safely wake stalled SMIL chained syncbases without DOM teardown when elements re-enter the viewport.
+- **Off-Screen SMIL Syncbase Recovery**: Uses `IntersectionObserver` with an offscreen boolean flag (`_cfWasOffscreen`). When stalled elements re-enter the viewport, `AnimationViewportManager.wakeElement()` replaces the stalled `<svg>` with a freshly cloned template `<svg>` node (`el.replaceChild(freshSvg, oldSvg)`), recovering broken Chromium timebases from $t=0$.
 - **Complete DOM Teardown**: `clearAllLiveAnimatedIconsFromDom()` detaches all mounted `.cf-live-animated-icon` elements and clears row state classes on plugin unload, restoring Obsidian's DOM to a clean native state.
 
 ### 3.9 Canvas & Excalidraw First-Class Extension Architecture (`src/core/IconRepository.ts`, `src/core/StyleGenerator.ts`)

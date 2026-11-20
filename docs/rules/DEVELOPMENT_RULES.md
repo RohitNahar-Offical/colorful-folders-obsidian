@@ -220,6 +220,18 @@ When destroying or unloading a plugin instance:
 - NEVER leave dynamically mounted DOM elements (`.cf-live-animated-icon`) or custom state classes (`cf-animated-icon-active`, `cf-has-animated-closed`, `cf-has-animated-open`) attached to Obsidian's file explorer rows.
 - ALWAYS implement an active DOM teardown routine (e.g. `clearAllLiveAnimatedIconsFromDom()`) that removes all injected elements, strips state classes, clears container scroll listeners (including third-party panes like Notebook Navigator), and frees in-memory LRU caches (`invalidateCategoryCache()`). *(Incident #53)*
 
+**RULE 5.22: Boxless & Frameless Animated SVG Sanitization.**
+When processing, importing, or mounting animated SVG vector elements (such as generative icons):
+- NEVER leave transparent or colored outer bounding boxes, framing rectangles, outlines, border-radii, or rigid 32x32 hit-target rects (`<rect width="32" height="32" pointer-events="all">`) in SVG assets.
+- ALWAYS purge bounding rects from icon packs and enforce runtime sanitization via `AnimationTemplateFactory.stripOuterBoxes()`.
+- ALWAYS enforce `overflow: visible` on `<svg>` viewports so rotation or scale keyframes never clip at bounding boundaries.
+
+**RULE 5.23: Continuous Ping-Pong Loops for Dual-State Interactive Icons.**
+When supporting interactive dual-state morph animations without requiring manual click triggers:
+- NEVER rely on forced synchronous reflows (`void el.offsetWidth`) or fragile click events (`begin="...click"`).
+- ALWAYS transform dual-state animations into continuous W3C SMIL syncbase chains (`Master A: begin="0s;cf_lb.end+0.8s"`, `Master B: begin="cf_la.end+0.8s"`).
+- ALWAYS use an `IntersectionObserver` with fresh template node cloning (`wakeElement`) to recover broken Chromium syncbases when elements re-enter the visible viewport.
+
 ---
 
 ## 6. CI/CD & Release Pipeline

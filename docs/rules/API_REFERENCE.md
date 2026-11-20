@@ -118,18 +118,45 @@ Core resolution engine supporting a 4-tier priority system (`Tier 1`: Pack Exact
 - **`invalidateCache(): void`**: Flushes all internal LRU caches (`_normCache`, `_dataUriCache`, `_findPackIconCache`, `_autoIconResultCache`, `_iconValidityCache`) and resets category and pack index snapshots.
 
 ### `AnimatedIconService` (`src/services/AnimatedIconService.ts`)
-Manages the mounting, optical scaling, SMIL syncbase lifecycle, and Zero-DOM coordination of live animated SVG icons:
+Facade orchestrator coordinating live animated SVG icon mounting, lifecycle hooks, and Zero-DOM pre-registration. Delegates core domain concerns to specialized services under `src/services/animation/`:
 - **`registerActiveAnimatedTarget(path: string, iconId: string, state?: 'closed' | 'open' | 'both'): void`**: Registers an active animated icon target during `StyleGenerator.generateCss()`, supporting independent closed, open, or bilateral folder states in $O(1)$ memory.
 - **`clearRegisteredAnimatedTargets(): void`**: Clears the active targets map prior to each stylesheet recompilation.
 - **`syncAnimatedIcons(): void`**: Viewport synchronization routine executing in $O(K)$ time (where $K$ is the number of active animated elements). Queries only registered paths via targeted DOM selectors and mounts `.cf-live-animated-icon` containers.
 - **`hasAnyAnimatedIcons(): boolean`**: Fast $O(1)$ memoized check verifying if animated icons are configured in settings or active in the vault.
-- **`isAnimatedIcon(iconId: string): boolean`**: Evaluates whether an icon ID contains animation markup, featuring an instant $O(1)$ prefix check for `line-md-` / `linemd-` packs and memoized regex evaluation for custom SVGs.
-- **`isLoopingAnimatedIcon(iconId: string): boolean`**: Distinguishes continuous infinite loop animations from single-shot animations.
-- **`replayAnimatedElement(el: HTMLElement): void`**: Clones and restarts single-shot animated icons upon user click or activation with a 300ms double-click throttle.
+- **`isAnimatedIcon(iconId: string): boolean`**: Evaluates whether an icon ID contains animation markup, delegating to `AnimationClassifier`.
+- **`isLoopingAnimatedIcon(iconId: string): boolean`**: Distinguishes continuous infinite loop animations (including ping-pong chains) from single-shot animations.
+- **`replayAnimatedElement(el: HTMLElement): void`**: Delegates to `AnimationPlaybackEngine` to restart animated icons upon user click or activation with a 300ms double-click throttle.
 - **`replayTargetByPath(targetPath: string): void`**: Finds and replays visible single-shot animated icons for a specific file or folder path.
-- **`getAnimatedIconElement(iconId: string): HTMLElement | null`**: Returns a pre-compiled, script-sanitized SVG DOM template element from `_animatedTemplateCache`.
+- **`getAnimatedIconElement(iconId: string): HTMLElement | null`**: Returns a pre-compiled, script-sanitized SVG DOM template element from `AnimationTemplateFactory`.
 - **`clearAllLiveAnimatedIconsFromDom(): void`**: Synchronously removes all `.cf-live-animated-icon` elements and strips animation row classes (`cf-animated-icon-active`, `cf-has-animated-closed`, `cf-has-animated-open`) across all explorer containers on plugin unload or reload.
-- **`destroy(): void`**: Disconnects the `IntersectionObserver`, clears live DOM elements, empties active target registries, and purges all template caches.
+- **`syncSettings(): void`**: Propagates global animation speed (`syncSpeed`) to active document stylesheets.
+- **`destroy(): void`**: Disconnects the `IntersectionObserver`, clears live DOM elements, empties active target registries, and purges all template caches across all domain sub-services.
+
+#### Subsystem Domain Services (`src/services/animation/`)
+
+- **`AnimationClassifier` (`AnimationClassifier.ts`)**:
+  - `isAnimatedIcon(iconId: string): boolean`: Evaluates animation markup with $O(1)$ prefix pre-checks.
+  - `isSmilAnimated(iconId: string): boolean`: Detects `<animate*>` / `<set>` SMIL elements.
+  - `isLoopingAnimatedIcon(iconId: string): boolean`: Checks for continuous loops or ping-pong chains (`cf_l[ab]_`, `.end+`).
+  - `clearCache(): void`: Flushes classification memoization maps.
+- **`AnimationTemplateFactory` (`AnimationTemplateFactory.ts`)**:
+  - `getTemplate(iconId: string, rawSvg?: string, forceRaw?: boolean): HTMLElement | null`: Synthesizes, sanitizes, and returns cached DOM template wrapper.
+  - `stripOuterBoxes(doc: Document): void`: Recursively locates and purges framing rectangles and 32x32 hit targets (`pointer-events="all"`).
+  - `clearCache(): void`: Flushes template `LRUCache`.
+- **`AnimationViewportManager` (`AnimationViewportManager.ts`)**:
+  - `observe(el: HTMLElement): void`: Adds element to single shared `IntersectionObserver`.
+  - `unobserve(el: HTMLElement): void`: Removes element from observer and weak set.
+  - `wakeElement(el: HTMLElement): void`: Re-clones fresh SVG template when an element scrolls into view to recover stalled Chromium SMIL timebases.
+  - `handleVisibilityChange(): void`: Toggles playback state when app or pop-out window loses focus.
+  - `syncSpeed(speed: number): void`: Updates `--cf-icon-speed-scale` CSS variable on document roots.
+- **`AnimationPlaybackEngine` (`AnimationPlaybackEngine.ts`)**:
+  - `handleDelegatedClick(target: HTMLElement): boolean`: Resolves clicked icon wrappers, throttling multi-clicks to 300ms.
+  - `replayElement(el: HTMLElement): void`: Triggers SMIL `beginElement()` restarts or WAAPI animation resets.
+  - `replayTargetByPath(targetPath: string): void`: Replays visible single-shot animations for specific vault path.
+- **`AnimationDomMounter` (`AnimationDomMounter.ts`)**:
+  - `syncActiveTargets(targets: Map<string, RegisteredAnimatedTarget>): void`: Synchronizes registered targets with DOM nodes.
+  - `mountOrUpdateLiveIcon(titleEl: HTMLElement, targetRow: HTMLElement, iconId: string, isFolder: boolean, isClosedFolder: boolean): void`: Unified DRY mounting function reconciling live DOM nodes.
+  - `clearAllLiveIcons(): void`: Detaches all `.cf-live-animated-icon` elements and strips state classes.
 
 ### `DOMObserverService` (`src/services/DOMObserverService.ts`)
 Zero-DOM observer coordination service managing dataset tagging and container scroll listeners:

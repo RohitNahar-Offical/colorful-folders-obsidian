@@ -1,6 +1,6 @@
 # 📖 The Ultimate Colorful Folders Codebase & Architecture Guide
 
-Welcome to the comprehensive technical documentation for **Colorful Folders**. This document explains **how the plugin works under the hood**, how data flows from storage to rendering, and provides a detailed breakdown of all **51 TypeScript source files** across the 6 core architectural subsystems.
+Welcome to the comprehensive technical documentation for **Colorful Folders**. This document explains **how the plugin works under the hood**, how data flows from storage to rendering, and provides a detailed breakdown of all **60 TypeScript source files** across the 6 core architectural subsystems.
 
 ---
 
@@ -60,7 +60,20 @@ Services manage workspace window integration, background DOM observation, event 
 | [DOMObserverService.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/services/DOMObserverService.ts) | Manages high-performance divider mutation observers strictly scoped to file explorer containers. Eliminates body class observers and features an active scroll-suppression guard (`isScrollingPublic`) with 120ms debouncing. | `initDividerObserver()`, `handleScroll()`, `disconnect()` |
 | [EventTrackerService.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/services/EventTrackerService.ts) | Listens to vault events (`create`, `modify`, `delete`, `rename`, `css-change`). Automatically updates `customFolderColorsMap` keys on path renames and tracks active files across all workspace documents. Scopes file modification events to prevent unnecessary note editing reflows. | `registerVaultEvents()`, `registerActiveFileTracker()`, `updateActiveDocumentState()` |
 | [AdoptedStyleSheetService.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/services/AdoptedStyleSheetService.ts) | Manages programmatic `CSSStyleSheet` instances attached directly to `document.adoptedStyleSheets` across all workspace windows for zero-DOM layout reflowing. | `updateStyles()`, `attachToDocument()`, `detachFromDocument()`, `unload()` |
-| [AnimatedIconService.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/services/AnimatedIconService.ts) | Coordinates live SMIL animated icon injection. Leverages $O(1)$ pre-registration during CSS compilation (`_registeredAnimatedTargets`), eliminating full-DOM sweeps during scrolling with zero performance overhead and clean lifecycle garbage collection. | `isAnimatedIcon()`, `getAnimatedIconElement()`, `syncAnimatedIcons()`, `registerActiveAnimatedTarget()`, `clearRegisteredAnimatedTargets()` |
+| [AnimatedIconService.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/services/AnimatedIconService.ts) | Facade orchestrator for live animated SVG icons. Coordinates lifecycle events, settings synchronization, cache invalidations, and pre-registration (`_registeredAnimatedTargets`), delegating specific domain responsibilities to cohesive modular services in `src/services/animation/`. | `isAnimatedIcon()`, `getAnimatedIconElement()`, `syncAnimatedIcons()`, `registerActiveAnimatedTarget()`, `clearRegisteredAnimatedTargets()`, `destroy()` |
+
+#### 2.2.1 Animation Subsystem Domain Services (`src/services/animation/`)
+
+Modular, single-responsibility OOP domain services adhering to SOLID and DRY principles:
+
+| File | Purpose & Responsibilities | Key Functions / Methods |
+| :--- | :--- | :--- |
+| [AnimationTypes.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/services/animation/AnimationTypes.ts) | Core types, interfaces, state representations (`RegisteredAnimatedTarget`, `AnimationPlaybackState`), pack prefix sets, and centralized `ANIMATION_SELECTORS` constants. | `ANIMATION_SELECTORS`, `ANIMATED_PACK_PREFIXES`, `RegisteredAnimatedTarget` |
+| [AnimationClassifier.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/services/animation/AnimationClassifier.ts) | Fast classification of SVG animation markup with $O(1)$ prefix pre-checks (`line-md-`, `linemd-`), regex inspection, and internal `Map` caches for infinite vs single-shot and ping-pong looping icons. | `isAnimatedIcon()`, `isSmilAnimated()`, `isLoopingAnimatedIcon()`, `clearCache()` |
+| [AnimationTemplateFactory.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/services/animation/AnimationTemplateFactory.ts) | SVG parsing, XSS sanitization (stripping scripts and on* event handlers), automatic elimination of bounding boxes and 32x32 hit targets, and template caching in `LRUCache<string, HTMLElement>(256)`. | `getTemplate()`, `stripOuterBoxes()`, `clearCache()` |
+| [AnimationViewportManager.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/services/animation/AnimationViewportManager.ts) | Single `IntersectionObserver` viewport culling, off-screen CPU suspension (`pauseAnimations()`), document `visibilitychange` synchronization, and Chromium off-screen SMIL syncbase recovery via fresh SVG cloning. | `observe()`, `unobserve()`, `wakeElement()`, `syncSpeed()`, `destroy()` |
+| [AnimationPlaybackEngine.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/services/animation/AnimationPlaybackEngine.ts) | Delegated click handling, 300ms double-click throttling, dual-state morph triggers (A/B state machines), SMIL timebase restarts, and Web Animations API cancellation/reset. | `handleDelegatedClick()`, `replayElement()`, `replayTargetByPath()` |
+| [AnimationDomMounter.ts](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/src/services/animation/AnimationDomMounter.ts) | DRY DOM element reconciliation, row state synchronization (`cf-animated-icon-active`, `cf-has-animated-closed`, `cf-has-animated-open`), stale icon removal, and unified DOM mounting. | `syncActiveTargets()`, `mountOrUpdateLiveIcon()`, `clearAllLiveIcons()` |
 
 ---
 

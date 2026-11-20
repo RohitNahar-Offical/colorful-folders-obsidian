@@ -45,7 +45,7 @@ docs/
 ## 🏗️ 2. Architecture & Engineering Deep-Dives (`docs/architecture/`)
 
 * **[ARCHITECTURE.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/architecture/ARCHITECTURE.md)** — Architectural spec of the Zero-DOM / `document.adoptedStyleSheets` rendering engine.
-* **[CODEBASE_GUIDE.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/architecture/CODEBASE_GUIDE.md)** — Exhaustive subsystem breakdown of all 51 TypeScript files in `src/`.
+* **[CODEBASE_GUIDE.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/architecture/CODEBASE_GUIDE.md)** — Exhaustive subsystem breakdown of all 60 TypeScript files in `src/`.
 * **[ENGINE_INTERNALS.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/architecture/ENGINE_INTERNALS.md)** — Reactive event bus mapping, path key normalization, and CSS selector specs.
 * **[STAIRCASE_EFFECT.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/architecture/STAIRCASE_EFFECT.md)** — Layout alignment overrides and dynamic CSS custom property mechanics.
 
