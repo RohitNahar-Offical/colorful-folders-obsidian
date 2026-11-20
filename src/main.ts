@@ -179,20 +179,8 @@ export default class ColorfulFoldersPlugin
           this.settings.lastVersion = currentVersion;
           await this.saveSettings();
 
-          // Show the collective changelog (Fetched from GitHub)
-          try {
-            const githubUrl = `https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/main/version.md`;
-            const response = await obsidian.requestUrl({ url: githubUrl });
-            if (response.status === 200) {
-              const content = response.text;
-              new ChangelogModal(this.app, content).open();
-            }
-          } catch (err) {
-            console.error(
-              "Colorful folders: failed to fetch collective changelog from GitHub",
-              err as Error
-            );
-          }
+          // Show the collective changelog (reads local version.md first, falls back to GitHub)
+          await this.openChangelogModal();
         }
       })();
     }, 1000);
@@ -917,6 +905,38 @@ export default class ColorfulFoldersPlugin
         void this.aiIconClassifier.classifyVault();
       },
     });
+    this.addCommand({
+      id: "show-changelog",
+      name: "Show what's new (Changelog)",
+      callback: () => {
+        void this.openChangelogModal();
+      },
+    });
+  }
+
+  async openChangelogModal(): Promise<void> {
+    try {
+      let content = "";
+      const localPath = this.manifest.dir ? `${this.manifest.dir}/version.md` : "";
+      if (localPath && (await this.app.vault.adapter.exists(localPath))) {
+        content = await this.app.vault.adapter.read(localPath);
+      }
+      if (!content || content.trim().length === 0) {
+        const githubUrl = `https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/main/version.md`;
+        const response = await obsidian.requestUrl({ url: githubUrl });
+        if (response.status === 200) {
+          content = response.text;
+        }
+      }
+      if (content && content.trim().length > 0) {
+        new ChangelogModal(this.app, content).open();
+      }
+    } catch (err) {
+      console.error(
+        "Colorful folders: failed to display changelog",
+        err as Error
+      );
+    }
   }
 
   async toggleStealthMode() {
