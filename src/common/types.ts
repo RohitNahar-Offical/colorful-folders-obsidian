@@ -144,7 +144,6 @@ export interface ColorfulFoldersSettings {
     enableStaircaseHack: boolean;
     heatmapData?: Record<string, number>;
 
-    animationMode: IconAnimationMode;
     animationSpeed: number;
 
     aiProvider: 'ollama' | 'custom';
@@ -162,15 +161,11 @@ export interface ColorfulFoldersSettings {
 }
 
 
-export type IconAnimationMode = 'infinite' | 'click' | 'once';
-
 export interface IconAnimationSettings {
-    animationMode: IconAnimationMode;
     animationSpeed: number; // 0.5 (Slow), 1 (Normal), 1.5 (Fast), 2 (Snappy)
 }
 
 export const DEFAULT_ANIMATION_SETTINGS: IconAnimationSettings = {
-    animationMode: 'click',
     animationSpeed: 1,
 };
 

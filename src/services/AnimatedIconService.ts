@@ -25,26 +25,16 @@ export class AnimatedIconService {
                         const targetEl = entry.target as HTMLElement & { _cfWasOffscreen?: boolean };
                         if (entry.isIntersecting) {
                             targetEl.setAttribute('data-cf-visible', 'true');
-                            const mode = targetEl.getAttribute('data-cf-anim-mode') || this.plugin.settings?.animationMode || 'click';
-
-                            if (mode === 'infinite') {
-                                if (targetEl._cfWasOffscreen) {
-                                    targetEl._cfWasOffscreen = false;
-                                    this.wakeAnimatedElement(targetEl);
-                                }
-                                const svg = targetEl.querySelector('svg') as unknown as { unpauseAnimations?: () => void };
-                                if (svg && typeof svg.unpauseAnimations === 'function') {
-                                    try { svg.unpauseAnimations(); } catch { void 0; }
-                                }
-                            } else if (mode === 'once') {
-                                if (!targetEl.getAttribute('data-cf-played')) {
-                                    targetEl.setAttribute('data-cf-played', 'true');
-                                    this.wakeAnimatedElement(targetEl);
-                                    this._intersectionObserver?.unobserve(targetEl);
-                                    this._observed.delete(targetEl);
-                                }
-                            } else {
+                            const iconId = targetEl.getAttribute('data-icon-id');
+                            if (targetEl._cfWasOffscreen) {
                                 targetEl._cfWasOffscreen = false;
+                                if (iconId && this.isLoopingAnimatedIcon(iconId)) {
+                                    this.wakeAnimatedElement(targetEl);
+                                }
+                            }
+                            const svg = targetEl.querySelector('svg') as unknown as { unpauseAnimations?: () => void };
+                            if (svg && typeof svg.unpauseAnimations === 'function') {
+                                try { svg.unpauseAnimations(); } catch { void 0; }
                             }
                         } else {
                             targetEl.setAttribute('data-cf-visible', 'false');
@@ -101,39 +91,17 @@ export class AnimatedIconService {
     };
 
     public syncSettings(): void {
-        const mode = this.plugin.settings?.animationMode || 'click';
         const speed = this.plugin.settings?.animationSpeed ?? 1;
 
         this.plugin.getOpenDocuments().forEach(doc => {
             if (doc.documentElement) {
-                doc.documentElement.dataset.cfAnimMode = mode;
                 doc.documentElement.style.setProperty('--cf-icon-speed-scale', String(speed));
             }
         });
-
-        if (mode === 'once') {
-            const allContainers = this.getAllNavContainers();
-            for (let i = 0; i < allContainers.length; i++) {
-                const icons = allContainers[i].querySelectorAll<HTMLElement>('.cf-live-animated-icon, .cf-animated-icon');
-                for (let j = 0; j < icons.length; j++) {
-                    const el = icons[j];
-                    el.removeAttribute('data-cf-played');
-                    if (this._intersectionObserver) {
-                        this._intersectionObserver.unobserve(el);
-                        this._observed.delete(el);
-                        this._observed.add(el);
-                        this._intersectionObserver.observe(el);
-                    }
-                }
-            }
-        }
     }
 
     public triggerIconAnimation(iconEl: HTMLElement): void {
-        const mode = iconEl.getAttribute('data-cf-anim-mode') || this.plugin.settings?.animationMode || 'click';
-        if (mode !== 'click') return;
-
-        // Directly replay the actual vector/SMIL animation of the icon (no shake or pop)
+        // Directly replay the actual vector/SMIL animation of the icon on every click
         this.replayAnimatedElement(iconEl);
     }
 
@@ -445,17 +413,23 @@ export class AnimatedIconService {
                 }
             });
 
-            // Strip dummy hit-target / bounding-box rects from Lottie interactive exports
+            // Strip dummy hit-target / bounding-box rects and outer framing rects from Lottie interactive exports
             doc.querySelectorAll('rect').forEach(rect => {
-                const w = rect.getAttribute('width');
-                const h = rect.getAttribute('height');
+                const wStr = rect.getAttribute('width');
+                const hStr = rect.getAttribute('height');
+                const xStr = rect.getAttribute('x');
+                const yStr = rect.getAttribute('y');
                 const pe = rect.getAttribute('pointer-events');
                 const id = rect.getAttribute('id') || '';
-                if (
-                    (w === '32' && h === '32' && (!rect.hasAttribute('rx') && !rect.hasAttribute('stroke') && (rect.getAttribute('fill') === 'none' || !rect.hasAttribute('fill')))) ||
-                    pe === 'all' ||
-                    id.endsWith('_a') || id.endsWith('_b')
-                ) {
+                const w = wStr ? parseFloat(wStr) : 0;
+                const h = hStr ? parseFloat(hStr) : 0;
+                const x = xStr ? parseFloat(xStr) : 0;
+                const y = yStr ? parseFloat(yStr) : 0;
+
+                const isHitTarget = (w === 32 && h === 32) || pe === 'all' || id.endsWith('_a') || id.endsWith('_b');
+                const isOuterFrame = (w >= 16 && h >= 16 && x <= 8 && y <= 8 && (rect.hasAttribute('stroke') || rect.getAttribute('fill') === 'none'));
+
+                if (isHitTarget || isOuterFrame) {
                     rect.remove();
                 }
             });

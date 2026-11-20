@@ -264,13 +264,15 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             --cf-optical-scale: 1.15;
         }
 
-        /* ── HOLISTIC PLAYBACK ENGINE MODES ── */
-        /* Mode 1: Infinite (while visible in viewport, paused when hidden or offscreen) */
-        :root[data-cf-anim-mode="infinite"] .cf-live-animated-icon[data-cf-visible="true"] svg,
-        :root[data-cf-anim-mode="infinite"] .cf-animated-icon[data-cf-visible="true"] svg,
-        .cf-live-animated-icon[data-cf-anim-mode="infinite"][data-cf-visible="true"] svg,
-        .cf-animated-icon[data-cf-anim-mode="infinite"][data-cf-visible="true"] svg {
+        /* ── ANIMATED ICON PLAYBACK ── */
+        .cf-live-animated-icon svg,
+        .cf-animated-icon svg {
             animation-play-state: var(--cf-icon-play-state, running);
+        }
+
+        .cf-live-animated-icon[data-cf-visible="false"] svg,
+        .cf-animated-icon[data-cf-visible="false"] svg {
+            animation-play-state: paused !important;
         }
 
         @media (prefers-reduced-motion: reduce) {
