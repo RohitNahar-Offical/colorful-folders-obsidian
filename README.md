@@ -7,12 +7,16 @@ Colorful Folders automatically applies curated color palettes, smart icons, and 
 
 ---
 
-## 🚀 Latest Update: v5.1.0 — New Animated Icon Pack & Smoother Performance
+## 🚀 Latest Update: v5.1.0 — New Icon Packs & Baseline Expansion
 
-* **✨ New "Line icons (Animated)" Pack:** Install 1,200+ smooth animated icons directly from **Settings > Icon Settings**, and set their priority so they take precedence when auto-matching.
-
-* **⚡ Stutter-Free Scrolling:** Enjoy 60+ FPS scrolling in your file explorer with zero lag, even in massive vaults.
-* **🎯 Smarter Icon Pack Priorities:** Fixed pack priority ranking so your preferred icon sets strictly take precedence for auto-matching and category rules.
+* **⚡ Baseline Icon Packs (Simple Icons & Tabler):** Fresh installations and updates now automatically include **Simple Icons** (3,700+ brand & tech logos) and **Tabler Icons** (6,700+ modern UI icons) pre-configured in top priority order (`Custom > Simple Icons > Lucide > Tabler`).
+* **✨ New Animated & Featured Icon Packs:** Explore and download new icon packs directly from **Settings > Icon Settings**:
+  * **Line icons (Animated):** 1,200+ smooth animated line SVGs (`line-md`).
+  * **Meteocons (Animated):** 440+ dynamic animated weather and atmosphere SVG icons.
+  * **Generative UI (Animated):** 1,160+ smooth animated UI icons.
+  * **useAnimations (Animated):** 300+ animated micro-interaction icons.
+  * **Tabler, Simple Icons, Remix, Feather, Boxicons, FontAwesome, Octicons & RPG Awesome:** Thousands of high-quality vector icons for every note.
+* **🏆 Dynamic Pack Priority:** Re-order installed icon packs with drag-and-drop hierarchy so your favorite packs always take precedence.
 
 
 ---
@@ -48,7 +52,7 @@ Colorful Folders automatically applies curated color palettes, smart icons, and 
 
 * **Smart Auto-Icons & Overrides:** Automatically assigns relevant icons based on names (e.g., *Journal* → 📅, *Finance* → 💰, plus `.canvas` and `.excalidraw` support), while letting you pin manual icons to permanently override suggestions.
 * **Open & Closed Folder States:** Set different icons for expanded versus collapsed folders globally or per folder.
-* **Built-In, Animated & Custom Icon Packs:** Includes offline libraries (Lucide, FontAwesome, Tabler, Material, Simple Icons, Line icons, Line icons Animated, Bootstrap, Remix, Feather, Emoji), supports custom packs via `.obsidian/icons`, and lets you drag-and-drop pack priority order.
+* **Built-In, Animated & Custom Icon Packs:** Includes offline and downloadable libraries (Lucide, Simple Icons, Tabler, Line icons Animated, Meteocons Animated, Generative UI Animated, useAnimations, FontAwesome, Material, Bootstrap, Remix, Feather, Boxicons, Octicons, RPG Awesome, Emoji), supports custom packs via `.obsidian/icons`, and lets you drag-and-drop pack priority order.
 * **Standardized Alignment:** Every icon is automatically sized to an 18px baseline and vertically centered.
 
 ---

@@ -1,10 +1,15 @@
 # Updates for Colorful Folders
 
-## 🚀 5.1.0 — Icon Size & Coexistence Fixes
+## 🚀 5.1.0 — New Icon Packs & Baseline Expansion
 
-* **🎯 Fixed Static & Animated Icon Coexistence:** Fixed an issue where setting a static icon for the closed folder action and an animated icon for the open folder action (or vice versa) caused both icons to overlap. Scoped state-specific CSS suppression and structured target tracking ensure only the active icon renders cleanly with zero collision.
-* **📐 Optical Sizing for Animated Icons:** Animated icons (such as Line-md) are now scaled optically by 1.15x to balance the embedded viewBox margins with standard static icons, ensuring all icons appear uniform and identical in visual size across your file tree.
-* **⚡ Cold Start & Memory Optimizations:** Cold start and reload performance enhanced with O(1) high-frequency listener guards, prefix-based icon classification, and leak-free teardown routines.
+* **⚡ Baseline Icon Packs Out of the Box:** Automatically provisions **Simple Icons** (3,700+ brand & technology logos) and **Tabler Icons** (6,700+ modern UI icons) on fresh installations and updates, pre-configured with the prioritized hierarchy: `Custom > Simple Icons > Lucide > Tabler`.
+* **✨ New Animated & Featured Icon Packs:** Install exciting new icon packs directly from **Settings > Icon Settings > Featured icon packs**:
+  * **Line icons (Animated):** 1,200+ smooth animated line SVGs (`line-md`).
+  * **Meteocons (Animated):** 440+ dynamic weather & atmospheric animated icons.
+  * **Generative UI (Animated):** 1,160+ fluid UI animation icons.
+  * **useAnimations (Animated):** 300+ animated micro-interaction icons.
+  * **Simple Icons & Tabler Icons:** Thousands of high-res brand logos and comprehensive UI vectors.
+* **🏆 Dynamic Icon Pack Priority Hierarchy:** Easily drag-and-drop your installed icon packs to set their priority so your preferred icon sets take precedence during auto-matching and category rules.
 
 ---
 
