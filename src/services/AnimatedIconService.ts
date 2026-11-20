@@ -1,201 +1,149 @@
 import { IColorfulFoldersPlugin } from '../common/types';
-import { LRUCache } from '../common/LRUCache';
 import { safeEscape } from '../common/utils';
+import { AnimationClassifier } from './animation/AnimationClassifier';
+import { AnimationTemplateFactory } from './animation/AnimationTemplateFactory';
+import { AnimationViewportManager } from './animation/AnimationViewportManager';
+import { AnimationPlaybackEngine } from './animation/AnimationPlaybackEngine';
+import { AnimationDomMounter } from './animation/AnimationDomMounter';
+import { RegisteredAnimatedTarget, AnimationPlaybackState } from './animation/AnimationTypes';
 
-export interface RegisteredAnimatedTarget {
-    iconId?: string;
-    closedIconId?: string;
-    openIconId?: string;
-}
+export type { RegisteredAnimatedTarget } from './animation/AnimationTypes';
 
+/**
+ * AnimatedIconService (Facade & Orchestrator)
+ *
+ * Coordinates the animated icon subsystem across file explorer views and Notebook Navigator.
+ * Adheres to Object-Oriented Design (OOP) principles by delegating distinct responsibilities
+ * to specialized, highly-cohesive components:
+ * - AnimationClassifier: Classification and looping heuristics
+ * - AnimationTemplateFactory: Template sanitization, XSS security, and LRU caching
+ * - AnimationViewportManager: IntersectionObserver off-screen culling and tab visibility
+ * - AnimationPlaybackEngine: Click replay, SMIL syncbase triggers, and Web Animations API
+ * - AnimationDomMounter: DOM reconciliation, row state synchronization, and clean injection
+ */
 export class AnimatedIconService {
-    private plugin: IColorfulFoldersPlugin;
-    private _animatedTemplateCache: LRUCache<string, HTMLElement> = new LRUCache<string, HTMLElement>(256);
-    private _domParser: DOMParser | null = typeof DOMParser !== 'undefined' ? new DOMParser() : null;
-    private _intersectionObserver: IntersectionObserver | null = null;
-    private _observed: WeakSet<HTMLElement> = new WeakSet<HTMLElement>();
+    private readonly plugin: IColorfulFoldersPlugin;
+    private readonly classifier: AnimationClassifier;
+    private readonly templateFactory: AnimationTemplateFactory;
+    private readonly viewportManager: AnimationViewportManager;
+    private readonly playbackEngine: AnimationPlaybackEngine;
+    private readonly domMounter: AnimationDomMounter;
+
+    private _registeredAnimatedTargets = new Map<string, RegisteredAnimatedTarget>();
+    private _hasAnimatedCache: boolean | null = null;
+    private _libraryHasAnimatedCache: boolean | null = null;
 
     constructor(plugin: IColorfulFoldersPlugin) {
         this.plugin = plugin;
-        if (typeof IntersectionObserver !== 'undefined') {
-            this._intersectionObserver = new IntersectionObserver((entries) => {
-                for (let i = 0; i < entries.length; i++) {
-                    const entry = entries[i];
-                    if (entry.target && entry.target.instanceOf(HTMLElement)) {
-                        const targetEl = entry.target as HTMLElement & { _cfWasOffscreen?: boolean };
-                        if (entry.isIntersecting) {
-                            targetEl.setAttribute('data-cf-visible', 'true');
-                            const iconId = targetEl.getAttribute('data-icon-id');
-                            if (targetEl._cfWasOffscreen) {
-                                targetEl._cfWasOffscreen = false;
-                                if (iconId && this.isLoopingAnimatedIcon(iconId)) {
-                                    this.wakeAnimatedElement(targetEl);
-                                }
-                            }
-                            const svg = targetEl.querySelector('svg') as unknown as { unpauseAnimations?: () => void };
-                            if (svg && typeof svg.unpauseAnimations === 'function') {
-                                try { svg.unpauseAnimations(); } catch { void 0; }
-                            }
-                        } else {
-                            targetEl.setAttribute('data-cf-visible', 'false');
-                            targetEl._cfWasOffscreen = true;
-                            const svg = targetEl.querySelector('svg') as unknown as { pauseAnimations?: () => void };
-                            if (svg && typeof svg.pauseAnimations === 'function') {
-                                try { svg.pauseAnimations(); } catch { void 0; }
-                            }
-                        }
-                    }
-                }
-            }, { root: null, rootMargin: '48px', threshold: 0.05 });
-        }
-
-        try {
-            this.plugin.getOpenDocuments().forEach(doc => {
-                doc.addEventListener('visibilitychange', this.onVisibilityChange);
-            });
-        } catch {
-            void 0;
-        }
+        this.classifier = new AnimationClassifier();
+        this.templateFactory = new AnimationTemplateFactory();
+        this.viewportManager = new AnimationViewportManager(
+            this.classifier,
+            this.templateFactory,
+            () => this.plugin.getOpenDocuments(),
+            () => this.getAllNavContainers()
+        );
+        this.playbackEngine = new AnimationPlaybackEngine(this.classifier, this.templateFactory);
+        this.domMounter = new AnimationDomMounter(this.templateFactory, this.viewportManager);
     }
-
-    private onVisibilityChange = (): void => {
-        const docs = this.plugin.getOpenDocuments();
-        let anyHidden = false;
-        for (let i = 0; i < docs.length; i++) {
-            if (docs[i].hidden) {
-                anyHidden = true;
-                break;
-            }
-        }
-        const playState = anyHidden ? 'paused' : 'running';
-        docs.forEach(doc => {
-            doc.documentElement?.style.setProperty('--cf-icon-play-state', playState);
-        });
-
-        const allContainers = this.getAllNavContainers();
-        for (let i = 0; i < allContainers.length; i++) {
-            const icons = allContainers[i].querySelectorAll<HTMLElement>('.cf-live-animated-icon, .cf-animated-icon');
-            for (let j = 0; j < icons.length; j++) {
-                const svg = icons[j].querySelector('svg') as unknown as { pauseAnimations?: () => void; unpauseAnimations?: () => void };
-                if (svg) {
-                    if (anyHidden && typeof svg.pauseAnimations === 'function') {
-                        try { svg.pauseAnimations(); } catch { void 0; }
-                    } else if (!anyHidden && typeof svg.unpauseAnimations === 'function') {
-                        if (icons[j].getAttribute('data-cf-visible') === 'true') {
-                            try { svg.unpauseAnimations(); } catch { void 0; }
-                        }
-                    }
-                }
-            }
-        }
-    };
-
-    public syncSettings(): void {
-        const speed = this.plugin.settings?.animationSpeed ?? 1;
-
-        this.plugin.getOpenDocuments().forEach(doc => {
-            if (doc.documentElement) {
-                doc.documentElement.style.setProperty('--cf-icon-speed-scale', String(speed));
-            }
-        });
-    }
-
-    public triggerIconAnimation(iconEl: HTMLElement): void {
-        // Directly replay the actual vector/SMIL animation of the icon on every click
-        this.replayAnimatedElement(iconEl);
-    }
-
-    public handleDelegatedClick = (evt: MouseEvent): void => {
-        if (!this.hasAnyAnimatedIcons()) return;
-        const target = (evt.target as Element | null)?.closest<HTMLElement>('.cf-live-animated-icon, .cf-animated-icon');
-        let iconEl: HTMLElement | null = target;
-        if (!iconEl) {
-            const row = (evt.target as Element | null)?.closest<HTMLElement>(
-                '.nav-folder-title, .nav-file-title, .tree-item-self, .nn-navitem, .nn-file'
-            );
-            if (row) {
-                const isCollapsed = row.closest('.is-collapsed') !== null;
-                if (isCollapsed) {
-                    iconEl = row.querySelector<HTMLElement>('.cf-live-animated-icon.cf-animated-closed, .cf-live-animated-icon:not(.cf-animated-open), .cf-animated-icon.cf-animated-closed, .cf-animated-icon:not(.cf-animated-open)');
-                } else {
-                    iconEl = row.querySelector<HTMLElement>('.cf-live-animated-icon.cf-animated-open, .cf-live-animated-icon:not(.cf-animated-closed), .cf-animated-icon.cf-animated-open, .cf-animated-icon:not(.cf-animated-closed)');
-                }
-            }
-        }
-        if (!iconEl) return;
-        this.triggerIconAnimation(iconEl);
-    };
 
     /**
-     * Checks whether an icon SVG relies on SMIL animations (<animate>, <animateTransform>, etc.)
+     * Checks whether an icon SVG contains SMIL animation elements or CSS keyframes.
+     */
+    public isAnimatedIcon(iconId: string): boolean {
+        if (!iconId) return false;
+        const raw = this.plugin.iconManager?.getRawIconSvg(iconId);
+        return this.classifier.isAnimatedIcon(iconId, raw);
+    }
+
+    /**
+     * Checks whether an icon SVG relies on SMIL animations (<animate>, <animateTransform>, etc.).
      */
     public isSmilAnimated(iconId: string): boolean {
         if (!iconId) return false;
         const raw = this.plugin.iconManager?.getRawIconSvg(iconId);
-        if (!raw) return false;
-        return /<animate|<animateTransform|<animateMotion|<set/i.test(raw);
+        return this.classifier.isSmilAnimated(iconId, raw);
     }
 
     /**
-     * Wakes or restarts SMIL animations if Chromium paused or broke syncbases while scrolled offscreen
+     * Checks whether an animated icon loops continuously.
      */
-    public wakeAnimatedElement(el: HTMLElement): void {
-        const iconId = el.getAttribute('data-icon-id');
-        if (!iconId || !this.isSmilAnimated(iconId)) return;
-
-        const template = this.getAnimatedIconElement(iconId);
-        if (!template) return;
-
-        const freshSvg = template.querySelector('svg')?.cloneNode(true);
-        if (!freshSvg) return;
-
-        const oldSvg = el.querySelector('svg');
-        if (oldSvg) {
-            el.replaceChild(freshSvg, oldSvg);
-        } else {
-            el.appendChild(freshSvg);
-        }
+    public isLoopingAnimatedIcon(iconId: string): boolean {
+        if (!iconId) return false;
+        const raw = this.plugin.iconManager?.getRawIconSvg(iconId);
+        return this.classifier.isLoopingAnimatedIcon(iconId, raw);
     }
 
-    public clearAllLiveAnimatedIconsFromDom(): void {
+    /**
+     * Returns a sanitized, pre-compiled template element for an animated icon.
+     */
+    public getAnimatedIconElement(iconId: string): HTMLElement | null {
+        if (!iconId || !this.isAnimatedIcon(iconId)) return null;
+        const raw = this.plugin.iconManager?.getRawIconSvg(iconId);
+        if (!raw) return null;
+        const isLooping = this.isLoopingAnimatedIcon(iconId);
+        return this.templateFactory.getTemplate(iconId, raw, isLooping);
+    }
+
+    /**
+     * Wakes or restarts SMIL animations when scrolled back into the visible viewport.
+     */
+    public wakeAnimatedElement(el: HTMLElement): void {
+        this.viewportManager.wakeElement(el);
+    }
+
+    /**
+     * Triggers playback on an icon element.
+     */
+    public triggerIconAnimation(iconEl: HTMLElement): void {
+        this.replayAnimatedElement(iconEl);
+    }
+
+    /**
+     * Replays single-shot animated icons upon user interaction.
+     */
+    public replayAnimatedElement(el: HTMLElement): void {
+        const iconId = el.getAttribute('data-icon-id');
+        const raw = iconId ? this.plugin.iconManager?.getRawIconSvg(iconId) : undefined;
+        this.playbackEngine.replayElement(el, raw);
+    }
+
+    /**
+     * Finds and replays any non-looping animated icon associated with a specific file or folder path.
+     */
+    public replayTargetByPath(targetPath: string): void {
+        if (!targetPath || !this.hasAnyAnimatedIcons()) return;
         const allContainers = this.getAllNavContainers();
+        const safePath = safeEscape(targetPath);
+
         for (let i = 0; i < allContainers.length; i++) {
             const container = allContainers[i];
-            const liveIcons = container.querySelectorAll<HTMLElement>('.cf-live-animated-icon');
+            const titleEl = container.querySelector<HTMLElement>(
+                `.nav-folder-title[data-path="${safePath}"], .nav-file-title[data-path="${safePath}"], .tree-item-self[data-path="${safePath}"], .nn-navitem[data-path="${safePath}"], .nn-file[data-path="${safePath}"]`
+            );
+            if (!titleEl) continue;
+
+            const liveIcons = titleEl.querySelectorAll<HTMLElement>('.cf-live-animated-icon');
             for (let j = 0; j < liveIcons.length; j++) {
                 const liveIcon = liveIcons[j];
-                const rowEl = liveIcon.closest<HTMLElement>('.nav-folder-title, .nav-file-title, .tree-item-self, .nn-navitem, .nn-file');
-                rowEl?.classList.remove('cf-animated-icon-active', 'cf-has-animated-closed', 'cf-has-animated-open');
-                this._intersectionObserver?.unobserve(liveIcon);
-                liveIcon.remove();
+                if (liveIcon.offsetParent !== null || liveIcon.offsetWidth > 0 || liveIcon.offsetHeight > 0) {
+                    this.replayAnimatedElement(liveIcon);
+                }
             }
         }
     }
 
-    public destroy(): void {
-        try {
-            this.plugin.getOpenDocuments().forEach(doc => {
-                doc.removeEventListener('visibilitychange', this.onVisibilityChange);
-            });
-        } catch {
-            void 0;
-        }
-        this._intersectionObserver?.disconnect();
-        this._intersectionObserver = null;
-        this.clearAllLiveAnimatedIconsFromDom();
-        this._registeredAnimatedTargets.clear();
-        this.invalidateCache();
-    }
+    /**
+     * Delegated click event listener attached to the global document.
+     */
+    public handleDelegatedClick = (evt: MouseEvent): void => {
+        this.playbackEngine.handleDelegatedClick(evt, this.hasAnyAnimatedIcons());
+    };
 
-    private _isAnimatedIconCache: Map<string, boolean> = new Map<string, boolean>();
-    private _isLoopingIconCache: Map<string, boolean> = new Map<string, boolean>();
-    private _registeredAnimatedTargets: Map<string, RegisteredAnimatedTarget> = new Map<string, RegisteredAnimatedTarget>();
-
-    public clearRegisteredAnimatedTargets(): void {
-        this._registeredAnimatedTargets.clear();
-    }
-
-    public registerActiveAnimatedTarget(path: string, iconId: string, state: 'closed' | 'open' | 'both' = 'both'): void {
+    /**
+     * Registers an animated target from StyleGenerator.
+     */
+    public registerActiveAnimatedTarget(path: string, iconId: string, state: AnimationPlaybackState = 'both'): void {
         if (!path || !iconId) return;
         let target = this._registeredAnimatedTargets.get(path);
         if (!target) {
@@ -213,257 +161,57 @@ export class AnimatedIconService {
     }
 
     /**
-     * Checks whether an animated icon loops continuously (repeatCount="indefinite", repeatDur="indefinite", or CSS infinite).
-     * Non-looping icons are single-shot animations that freeze upon completion.
+     * Clears all registered target configurations.
      */
-    public isLoopingAnimatedIcon(iconId: string): boolean {
-        if (!iconId) return false;
-        const lower = iconId.toLowerCase();
-        if (lower.includes('-loop') || lower.endsWith('_loop')) {
+    public clearRegisteredAnimatedTargets(): void {
+        this._registeredAnimatedTargets.clear();
+    }
+
+    /**
+     * Fast O(1) check if any animated icons are currently configured or in active use.
+     */
+    public hasAnyAnimatedIcons(): boolean {
+        if (this._registeredAnimatedTargets.size > 0) return true;
+        if (this._hasAnimatedCache !== null) return this._hasAnimatedCache;
+
+        if (this.plugin.settings?.defaultClosedFolderIcon && this.isAnimatedIcon(this.plugin.settings.defaultClosedFolderIcon)) {
+            this._hasAnimatedCache = true;
             return true;
         }
-        const cached = this._isLoopingIconCache.get(iconId);
-        if (cached !== undefined) return cached;
-
-        const raw = this.plugin.iconManager?.getRawIconSvg(iconId);
-        if (!raw) {
-            this._isLoopingIconCache.set(iconId, false);
-            return false;
-        }
-
-        const isLoop = /repeatCount=["']indefinite["']|repeatDur=["']indefinite["']|\binfinite\b|\.end\+|cf_l[ab]_/i.test(raw);
-        this._isLoopingIconCache.set(iconId, isLoop);
-        return isLoop;
-    }
-
-    /**
-     * Replays single-shot (non-looping) animated icons upon click or activation.
-     * Plays the actual SVG vector SMIL/CSS animation with no artificial shake or pop.
-     * Continuous loop icons are left to run uninterrupted.
-     */
-    public replayAnimatedElement(el: HTMLElement): void {
-        const iconId = el.getAttribute('data-icon-id');
-        if (!iconId) return;
-        if (this.isLoopingAnimatedIcon(iconId)) return; // Continuous loops keep playing as normal!
-
-        const now = Date.now();
-        const targetEl = el as HTMLElement & { _cfLastReplay?: number; _cfToggleState?: boolean };
-        if (targetEl._cfLastReplay && (now - targetEl._cfLastReplay) < 250) {
-            return; // Throttle rapid-fire double clicks
-        }
-        targetEl._cfLastReplay = now;
-
-        // 1. Check for interactive toggle SMIL animations (e.g. generative icons with _a.click and _b.click)
-        const animElements = el.querySelectorAll<SVGAnimationElement>('animate, animateTransform, animateMotion, set');
-        if (animElements.length > 0) {
-            let hasClickTrigger = false;
-            for (let i = 0; i < animElements.length; i++) {
-                const b = animElements[i].getAttribute('begin') || '';
-                if (b.includes('.click')) {
-                    hasClickTrigger = true;
-                    break;
-                }
-            }
-
-            if (hasClickTrigger) {
-                const isStateA = !targetEl._cfToggleState;
-                targetEl._cfToggleState = isStateA;
-                const targetSuffix = isStateA ? '_a.click' : '_b.click';
-
-                let triggered = 0;
-                for (let i = 0; i < animElements.length; i++) {
-                    const anim = animElements[i];
-                    const b = anim.getAttribute('begin') || '';
-                    if (b.includes(targetSuffix) || (!b.includes('_a.click') && !b.includes('_b.click') && b.includes('.click'))) {
-                        try {
-                            anim.beginElement();
-                            triggered++;
-                        } catch {
-                            void 0;
-                        }
-                    }
-                }
-                if (triggered > 0) return;
-            }
-        }
-
-        // 2. Standard SMIL animations (e.g. line-md, meteocons)
-        if (this.isSmilAnimated(iconId)) {
-            const template = this.getAnimatedIconElement(iconId);
-            if (!template) return;
-
-            const freshSvg = (template.querySelector('svg')?.cloneNode(true) || null) as SVGElement | null;
-            if (!freshSvg) return;
-
-            const oldSvg = el.querySelector('svg');
-            if (oldSvg) {
-                el.replaceChild(freshSvg, oldSvg);
-            } else {
-                el.appendChild(freshSvg);
-            }
-
-            // Immediately trigger animations on the fresh SVG
-            const freshAnims = freshSvg.querySelectorAll<SVGAnimationElement>('animate, animateTransform, animateMotion, set');
-            for (let i = 0; i < freshAnims.length; i++) {
-                try {
-                    freshAnims[i].beginElement();
-                } catch {
-                    void 0;
-                }
-            }
-            return;
-        }
-
-        // 3. Web Animations API / CSS keyframe animations (e.g. useanimations)
-        const svg = el.querySelector('svg');
-        if (svg && typeof svg.getAnimations === 'function') {
-            const animations = svg.getAnimations({ subtree: true });
-            for (let i = 0; i < animations.length; i++) {
-                try {
-                    animations[i].currentTime = 0;
-                    animations[i].play();
-                } catch {
-                    void 0;
-                }
-            }
-        }
-    }
-
-    /**
-     * Finds and replays any non-looping animated icon associated with a specific file or folder path.
-     */
-    public replayTargetByPath(targetPath: string): void {
-        if (!targetPath || !this.hasAnyAnimatedIcons()) return;
-        const allContainers = this.getAllNavContainers();
-        const safePath = safeEscape(targetPath);
-        for (let i = 0; i < allContainers.length; i++) {
-            const container = allContainers[i];
-            const titleEl = container.querySelector<HTMLElement>(
-                `.nav-folder-title[data-path="${safePath}"], .nav-file-title[data-path="${safePath}"], .tree-item-self[data-path="${safePath}"], .nn-navitem[data-path="${safePath}"], .nn-file[data-path="${safePath}"]`
-            );
-            if (!titleEl) continue;
-            const liveIcons = titleEl.querySelectorAll<HTMLElement>('.cf-live-animated-icon');
-            for (let j = 0; j < liveIcons.length; j++) {
-                const liveIcon = liveIcons[j];
-                if (liveIcon.offsetParent !== null || liveIcon.offsetWidth > 0 || liveIcon.offsetHeight > 0) {
-                    this.replayAnimatedElement(liveIcon);
-                }
-            }
-        }
-    }
-
-    /**
-     * Checks whether an icon SVG contains SMIL animation elements or CSS keyframes
-     */
-    public isAnimatedIcon(iconId: string): boolean {
-        if (!iconId) return false;
-        // Fast O(1) prefix check for animated icon packs (line-md, meteocons, generative)
-        if (
-            iconId.startsWith('line-md-') || iconId.startsWith('linemd-') || iconId.startsWith('line-md:') || iconId.startsWith('line-md_') ||
-            iconId.startsWith('meteocons-') || iconId.startsWith('meteocons:') || iconId.startsWith('meteocons_') ||
-            iconId.startsWith('generative-') || iconId.startsWith('generative:') || iconId.startsWith('generative_') ||
-            iconId.startsWith('useanimations-') || iconId.startsWith('useanimations:') || iconId.startsWith('useanimations_') || iconId.startsWith('ua-')
-        ) {
+        if (this.plugin.settings?.defaultOpenFolderIcon && this.isAnimatedIcon(this.plugin.settings.defaultOpenFolderIcon)) {
+            this._hasAnimatedCache = true;
             return true;
         }
-        const cached = this._isAnimatedIconCache.get(iconId);
-        if (cached !== undefined) {
-            return cached;
+
+        const customFolderColors = this.plugin.settings?.customFolderColors || {};
+        for (const p in customFolderColors) {
+            const style = customFolderColors[p];
+            if (typeof style === 'object' && style !== null) {
+                if ((style.iconId && this.isAnimatedIcon(style.iconId)) ||
+                    (style.expandedIconId && this.isAnimatedIcon(style.expandedIconId)) ||
+                    (style.activeIconId && this.isAnimatedIcon(style.activeIconId))) {
+                    this._hasAnimatedCache = true;
+                    return true;
+                }
+            }
         }
-        const raw = this.plugin.iconManager?.getRawIconSvg(iconId);
-        if (!raw) {
-            this._isAnimatedIconCache.set(iconId, false);
-            return false;
+
+        const customIcons = this.plugin.settings?.customIcons || {};
+        for (const p in customIcons) {
+            const style = customIcons[p];
+            const iconId = typeof style === 'string' ? style : (typeof style === 'object' && style !== null ? (style as { iconId?: string }).iconId : undefined);
+            if (iconId && this.isAnimatedIcon(iconId)) {
+                this._hasAnimatedCache = true;
+                return true;
+            }
         }
-        const isAnim = /<animate|<animateTransform|<animateMotion|<set|@keyframes|animation:\s*/i.test(raw);
-        this._isAnimatedIconCache.set(iconId, isAnim);
-        return isAnim;
+
+        this._hasAnimatedCache = false;
+        return false;
     }
 
     /**
-     * Returns a sanitized, pre-compiled template element for an animated icon
-     */
-    public getAnimatedIconElement(iconId: string): HTMLElement | null {
-        if (!iconId) return null;
-        if (this._animatedTemplateCache.has(iconId)) {
-            return this._animatedTemplateCache.get(iconId) || null;
-        }
-
-        const raw = this.plugin.iconManager?.getRawIconSvg(iconId);
-        if (!raw || !this.isAnimatedIcon(iconId)) return null;
-
-        try {
-            const parser = this._domParser;
-            if (!parser) return null;
-
-            let doc = parser.parseFromString(raw, 'image/svg+xml');
-            if (doc.getElementsByTagName("parsererror").length > 0) {
-                doc = parser.parseFromString(raw, 'text/html');
-            }
-
-            // Security: strip active scripts, iframes, and on* handlers
-            const dangerousTags = ['script', 'iframe', 'object', 'embed', 'foreignobject'];
-            for (const tag of dangerousTags) {
-                doc.querySelectorAll(tag).forEach(el => el.remove());
-            }
-            doc.querySelectorAll('*').forEach(el => {
-                const attrs = Array.from(el.attributes);
-                for (const attr of attrs) {
-                    if (attr.name.toLowerCase().startsWith('on')) el.removeAttribute(attr.name);
-                }
-            });
-
-            // Strip dummy hit-target / bounding-box rects and outer framing rects from Lottie interactive exports
-            doc.querySelectorAll('rect').forEach(rect => {
-                const wStr = rect.getAttribute('width');
-                const hStr = rect.getAttribute('height');
-                const xStr = rect.getAttribute('x');
-                const yStr = rect.getAttribute('y');
-                const pe = rect.getAttribute('pointer-events');
-                const id = rect.getAttribute('id') || '';
-                const w = wStr ? parseFloat(wStr) : 0;
-                const h = hStr ? parseFloat(hStr) : 0;
-                const x = xStr ? parseFloat(xStr) : 0;
-                const y = yStr ? parseFloat(yStr) : 0;
-
-                const isHitTarget = (w === 32 && h === 32) || pe === 'all' || id.endsWith('_a') || id.endsWith('_b');
-                const isOuterFrame = (w >= 16 && h >= 16 && x <= 8 && y <= 8 && (rect.hasAttribute('stroke') || rect.getAttribute('fill') === 'none'));
-
-                if (isHitTarget || isOuterFrame) {
-                    rect.remove();
-                }
-            });
-
-            const svg = doc.querySelector('svg');
-            if (!svg) return null;
-
-            if (!svg.hasAttribute('xmlns')) svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-            svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-            svg.removeAttribute('width');
-            svg.removeAttribute('height');
-
-            const wrap = createSpan({ cls: 'cf-live-animated-icon cf-animated-icon' });
-            wrap.setAttribute('data-icon-id', iconId);
-            if (iconId.startsWith('meteocons-') || iconId.startsWith('meteocons:') || iconId.startsWith('meteocons_')) {
-                wrap.classList.add('cf-meteocons');
-            }
-            if (this.isLoopingAnimatedIcon(iconId)) {
-                wrap.classList.add('cf-has-native-loop');
-            }
-            wrap.appendChild(svg);
-
-            this._animatedTemplateCache.set(iconId, wrap);
-            return wrap;
-        } catch {
-            return null;
-        }
-    }
-
-    private _hasAnimatedCache: boolean | null = null;
-    private _libraryHasAnimatedCache: boolean | null = null;
-
-    /**
-     * Checks whether any animated icons exist in the custom icon repository or settings
+     * Checks whether any animated icons exist in the custom icon repository or settings.
      */
     public hasAnyAnimatedIconsInLibrary(): boolean {
         if (this._libraryHasAnimatedCache !== null) return this._libraryHasAnimatedCache;
@@ -486,110 +234,22 @@ export class AnimatedIconService {
     }
 
     /**
-     * Fast O(1) check if any animated icons are currently configured or in active use
-     */
-    public hasAnyAnimatedIcons(): boolean {
-        if (this._registeredAnimatedTargets.size > 0) return true;
-        if (this._hasAnimatedCache !== null) return this._hasAnimatedCache;
-
-        if (this.plugin.settings?.defaultClosedFolderIcon && this.isAnimatedIcon(this.plugin.settings.defaultClosedFolderIcon)) {
-            this._hasAnimatedCache = true;
-            return true;
-        }
-        if (this.plugin.settings?.defaultOpenFolderIcon && this.isAnimatedIcon(this.plugin.settings.defaultOpenFolderIcon)) {
-            this._hasAnimatedCache = true;
-            return true;
-        }
-
-        const customFolderColors = this.plugin.settings?.customFolderColors || {};
-        for (const p in customFolderColors) {
-            const style = customFolderColors[p];
-            if (typeof style === 'object' && style !== null) {
-                if (style.iconId && this.isAnimatedIcon(style.iconId)) {
-                    this._hasAnimatedCache = true;
-                    return true;
-                }
-                if (style.expandedIconId && this.isAnimatedIcon(style.expandedIconId)) {
-                    this._hasAnimatedCache = true;
-                    return true;
-                }
-                if (style.activeIconId && this.isAnimatedIcon(style.activeIconId)) {
-                    this._hasAnimatedCache = true;
-                    return true;
-                }
-            }
-        }
-
-        const customIcons = this.plugin.settings?.customIcons || {};
-        for (const p in customIcons) {
-            const style = customIcons[p];
-            const iconId = typeof style === 'string' ? style : (typeof style === 'object' && style !== null ? (style as { iconId?: string }).iconId : undefined);
-            if (iconId && this.isAnimatedIcon(iconId)) {
-                this._hasAnimatedCache = true;
-                return true;
-            }
-        }
-
-        this._hasAnimatedCache = false;
-        return false;
-    }
-
-    /**
-     * Invalidate cached templates and animation flags when custom icons or styles change
-     */
-    public invalidateCache(iconId?: string): void {
-        this._hasAnimatedCache = null;
-        this._libraryHasAnimatedCache = null;
-        if (iconId) {
-            this._animatedTemplateCache.delete(iconId);
-            this._isAnimatedIconCache.delete(iconId);
-            this._isLoopingIconCache.delete(iconId);
-        } else {
-            this._animatedTemplateCache.clear();
-            this._isAnimatedIconCache.clear();
-            this._isLoopingIconCache.clear();
-        }
-    }
-
-    /**
-     * Retrieves all native file explorer containers, plus Notebook Navigator containers if enabled
-     */
-    public getAllNavContainers(): HTMLElement[] {
-        const containers = [...this.plugin.getAllExplorerContainers()];
-        if (this.plugin.settings?.notebookNavigatorSupport && this.plugin.app?.workspace) {
-            this.plugin.app.workspace.iterateAllLeaves((leaf) => {
-                if (!leaf || !leaf.view) return;
-                const view = leaf.view as unknown as { getViewType?: () => string; containerEl?: HTMLElement };
-                if (typeof view.getViewType === 'function' && view.getViewType() === 'notebook-navigator') {
-                    if (view.containerEl && !containers.includes(view.containerEl)) {
-                        containers.push(view.containerEl);
-                    }
-                }
-            });
-        }
-        return containers;
-    }
-
-    /**
-     * Synchronizes all animated icons across all open file explorer views.
-     * Pure O(1) NO-OP if no animated icons exist in user settings or library.
+     * Reconciles animated icon elements across all visible file explorer views.
      */
     public syncAnimatedIcons(): void {
-        if (!this.hasAnyAnimatedIcons()) {
-            return;
-        }
+        if (!this.hasAnyAnimatedIcons()) return;
 
         const customFolderColors = this.plugin.settings?.customFolderColors || {};
         const customIcons = this.plugin.settings?.customIcons || {};
         const animatedTargetsMap = new Map<string, RegisteredAnimatedTarget>();
 
-        // Fast path: use already registered targets from StyleGenerator (O(K) where K is active animated count)
+        // Fast path: use already registered targets from StyleGenerator
         if (this._registeredAnimatedTargets.size > 0) {
             for (const [p, registered] of this._registeredAnimatedTargets.entries()) {
                 animatedTargetsMap.set(p, { ...registered });
             }
         } else {
-            // Fallback path: only if no targets registered yet (e.g. pre-render check)
+            // Fallback path: pre-render scan if no targets registered yet
             for (const p in customFolderColors) {
                 const style = customFolderColors[p];
                 if (typeof style === 'object' && style !== null) {
@@ -623,149 +283,68 @@ export class AnimatedIconService {
             }
         }
 
-        if (animatedTargetsMap.size === 0) return;
+        const containers = this.getAllNavContainers();
+        this.domMounter.reconcile(
+            containers,
+            animatedTargetsMap,
+            customFolderColors,
+            customIcons,
+            (id: string) => this.plugin.iconManager?.getRawIconSvg(id) || ''
+        );
+    }
 
-        const allContainers = this.getAllNavContainers();
-        if (allContainers.length === 0) return;
+    /**
+     * Synchronizes animation settings (e.g. speed factor) to CSS custom properties.
+     */
+    public syncSettings(): void {
+        const speed = this.plugin.settings?.animationSpeed ?? 1;
+        this.viewportManager.syncSpeed(speed);
+    }
 
-        for (let i = 0; i < allContainers.length; i++) {
-            const container = allContainers[i];
+    /**
+     * Removes all live animated icon DOM elements.
+     */
+    public clearAllLiveAnimatedIconsFromDom(): void {
+        const containers = this.getAllNavContainers();
+        this.domMounter.cleanAllLiveIcons(containers);
+    }
 
-            // 1. Clean up any stale animated icons that are no longer in animatedTargetsMap
-            const existingLiveIcons = container.querySelectorAll<HTMLElement>('.cf-live-animated-icon');
-            for (let j = 0; j < existingLiveIcons.length; j++) {
-                const liveIcon = existingLiveIcons[j];
-                const rowEl = liveIcon.closest<HTMLElement>('.nav-folder-title, .nav-file-title, .tree-item-self, .nn-navitem, .nn-file');
-                const rowPath = rowEl?.getAttribute('data-path');
-                const targetConfig = rowPath ? animatedTargetsMap.get(rowPath) : undefined;
-
-                if (!rowPath || !targetConfig) {
-                    rowEl?.classList.remove('cf-animated-icon-active', 'cf-has-animated-closed', 'cf-has-animated-open');
-                    this._intersectionObserver?.unobserve(liveIcon);
-                    this._observed.delete(liveIcon);
-                    liveIcon.remove();
-                    continue;
-                }
-
-                const state = liveIcon.getAttribute('data-state');
-                const iconId = liveIcon.getAttribute('data-icon-id');
-                const expectedIconId = state === 'open' ? targetConfig.openIconId : (state === 'closed' ? targetConfig.closedIconId : targetConfig.iconId);
-
-                if (!expectedIconId || iconId !== expectedIconId) {
-                    this._intersectionObserver?.unobserve(liveIcon);
-                    this._observed.delete(liveIcon);
-                    liveIcon.remove();
-                }
-            }
-
-            // 2. Mount or update active animated icons
-            for (const [targetPath, targetConfig] of animatedTargetsMap.entries()) {
-                const safePath = safeEscape(targetPath);
-                const titleEl = container.querySelector<HTMLElement>(
-                    `.nav-folder-title[data-path="${safePath}"], .nav-file-title[data-path="${safePath}"], .tree-item-self[data-path="${safePath}"], .nn-navitem[data-path="${safePath}"], .nn-file[data-path="${safePath}"]`
-                );
-                if (!titleEl) continue;
-
-                const textEl = titleEl.querySelector<HTMLElement>('.nav-folder-title-content, .nav-file-title-content, .tree-item-inner, .nn-navitem-name, .nn-file-name');
-                if (!textEl) continue;
-
-                const styleObj = customFolderColors[targetPath] || customIcons[targetPath];
-                const customIconColor = (typeof styleObj === 'object' && styleObj !== null) ? styleObj.iconColor : undefined;
-
-                // Support Notebook Navigator dedicated icon container
-                const nnIconSlot = titleEl.querySelector<HTMLElement>('.nn-navitem-icon, .nn-file-icon-slot, .nn-file-icon');
-
-                // Update row classes for CSS ::before suppression
-                if (targetConfig.iconId) {
-                    titleEl.classList.add('cf-animated-icon-active');
-                    titleEl.classList.remove('cf-has-animated-closed', 'cf-has-animated-open');
-                } else {
-                    titleEl.classList.remove('cf-animated-icon-active');
-                    if (targetConfig.closedIconId) {
-                        titleEl.classList.add('cf-has-animated-closed');
-                    } else {
-                        titleEl.classList.remove('cf-has-animated-closed');
-                    }
-                    if (targetConfig.openIconId) {
-                        titleEl.classList.add('cf-has-animated-open');
-                    } else {
-                        titleEl.classList.remove('cf-has-animated-open');
+    /**
+     * Retrieves all native file explorer containers, plus Notebook Navigator containers if enabled.
+     */
+    public getAllNavContainers(): HTMLElement[] {
+        const containers = [...this.plugin.getAllExplorerContainers()];
+        if (this.plugin.settings?.notebookNavigatorSupport && this.plugin.app?.workspace) {
+            this.plugin.app.workspace.iterateAllLeaves((leaf) => {
+                if (!leaf || !leaf.view) return;
+                const view = leaf.view as unknown as { getViewType?: () => string; containerEl?: HTMLElement };
+                if (typeof view.getViewType === 'function' && view.getViewType() === 'notebook-navigator') {
+                    if (view.containerEl && !containers.includes(view.containerEl)) {
+                        containers.push(view.containerEl);
                     }
                 }
-
-                const mountOrUpdate = (iconId: string, stateCls: 'cf-animated-closed' | 'cf-animated-open' | null, stateAttr: 'closed' | 'open' | 'both') => {
-                    const template = this.getAnimatedIconElement(iconId);
-                    if (!template) return;
-
-                    const selector = stateCls ? `.cf-live-animated-icon.${stateCls}` : `.cf-live-animated-icon:not(.cf-animated-closed):not(.cf-animated-open)`;
-                    const existingIcon = titleEl.querySelector<HTMLElement>(selector);
-
-                    if (!existingIcon) {
-                        const cloned = template.cloneNode(true) as HTMLElement & { _cfWasOffscreen?: boolean };
-                        cloned.setAttribute('data-icon-id', iconId);
-                        cloned.setAttribute('data-state', stateAttr);
-                        cloned.setAttribute('data-cf-visible', 'true');
-                        if (stateCls) cloned.classList.add(stateCls);
-                        if (iconId.startsWith('meteocons-') || iconId.startsWith('meteocons:') || iconId.startsWith('meteocons_')) {
-                            cloned.classList.add('cf-meteocons');
-                        }
-                        cloned._cfWasOffscreen = false;
-                        if (customIconColor) {
-                            cloned.setCssProps({ '--cf-animated-icon-color': customIconColor });
-                        }
-                        if (nnIconSlot) {
-                            nnIconSlot.appendChild(cloned);
-                        } else {
-                            textEl.parentElement?.insertBefore(cloned, textEl);
-                        }
-                        if (!this._observed.has(cloned)) {
-                            this._observed.add(cloned);
-                            this._intersectionObserver?.observe(cloned);
-                        }
-                    } else if (existingIcon.getAttribute('data-icon-id') !== iconId) {
-                        this._intersectionObserver?.unobserve(existingIcon);
-                        this._observed.delete(existingIcon);
-                        existingIcon.remove();
-                        const cloned = template.cloneNode(true) as HTMLElement & { _cfWasOffscreen?: boolean };
-                        cloned.setAttribute('data-icon-id', iconId);
-                        cloned.setAttribute('data-state', stateAttr);
-                        cloned.setAttribute('data-cf-visible', 'true');
-                        if (stateCls) cloned.classList.add(stateCls);
-                        if (iconId.startsWith('meteocons-') || iconId.startsWith('meteocons:') || iconId.startsWith('meteocons_')) {
-                            cloned.classList.add('cf-meteocons');
-                        }
-                        cloned._cfWasOffscreen = false;
-                        if (customIconColor) {
-                            cloned.setCssProps({ '--cf-animated-icon-color': customIconColor });
-                        }
-                        if (nnIconSlot) {
-                            nnIconSlot.appendChild(cloned);
-                        } else {
-                            textEl.parentElement?.insertBefore(cloned, textEl);
-                        }
-                        if (!this._observed.has(cloned)) {
-                            this._observed.add(cloned);
-                            this._intersectionObserver?.observe(cloned);
-                        }
-                    } else {
-                        // Update color without tearing down active animation
-                        if (customIconColor) {
-                            existingIcon.setCssProps({ '--cf-animated-icon-color': customIconColor });
-                        }
-                    }
-                };
-
-                if (targetConfig.iconId) {
-                    mountOrUpdate(targetConfig.iconId, null, 'both');
-                } else {
-                    if (targetConfig.closedIconId) {
-                        mountOrUpdate(targetConfig.closedIconId, 'cf-animated-closed', 'closed');
-                    }
-                    if (targetConfig.openIconId) {
-                        mountOrUpdate(targetConfig.openIconId, 'cf-animated-open', 'open');
-                    }
-                }
-            }
+            });
         }
+        return containers;
+    }
+
+    /**
+     * Invalidates cached templates and animation flags when custom icons or styles change.
+     */
+    public invalidateCache(iconId?: string): void {
+        this._hasAnimatedCache = null;
+        this._libraryHasAnimatedCache = null;
+        this.classifier.clearCache(iconId);
+        this.templateFactory.clearCache(iconId);
+    }
+
+    /**
+     * Clean teardown when plugin is disabled or unloaded.
+     */
+    public destroy(): void {
+        this.viewportManager.destroy();
+        this.clearAllLiveAnimatedIconsFromDom();
+        this._registeredAnimatedTargets.clear();
+        this.invalidateCache();
     }
 }
