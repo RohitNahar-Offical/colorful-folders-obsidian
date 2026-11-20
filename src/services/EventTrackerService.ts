@@ -210,9 +210,6 @@ export class EventTrackerService {
                 if (file && file.path && this.plugin.animatedIconService?.hasAnyAnimatedIcons()) {
                     this.plugin.animatedIconService.replayTargetByPath(file.path);
                 }
-                window.setTimeout(() => {
-                    this.plugin.initStaircaseStyleStripper();
-                }, 50);
             }),
         );
 

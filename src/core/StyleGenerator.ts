@@ -208,6 +208,10 @@ export class StyleGenerator {
 
 
     private async traverse(folder: obsidian.TFolder, depth: number, validIndex: number, rootIndex: number, passedColor: { rgb: string, hex: string } | null, inheritedStyle: FolderStyle | null, context: StyleContext, grouper: CssGrouper, cumulativeTintOp: number = 0, yieldState: { lastYield: number }) {
+        if (performance.now() - yieldState.lastYield > 12) {
+            await new Promise((resolve) => window.setTimeout(resolve, 0));
+            yieldState.lastYield = performance.now();
+        }
         const copyFolders: obsidian.TFolder[] = [];
         const copyFiles: obsidian.TFile[] = [];
         for (let i = 0; i < folder.children.length; i++) {

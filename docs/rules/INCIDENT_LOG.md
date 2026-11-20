@@ -777,6 +777,73 @@ In **Settings > Icon Settings > Icon pack priority hierarchy**, all 12 default i
 
 **Lesson**: Priority and hierarchy configuration interfaces must always dynamically reflect only installed or active entities, rather than statically displaying all theoretical providers.
 
+---
+
+## Incident #56 — Hard Reset Fails to Uninstall Downloaded Icon Packs From Disk and Memory (2026-11-20)
+**What was reported**:
+When performing a "Hard reset everything" / Factory Reset in **Settings > Advanced / Privacy**, all custom settings were reset to default, but previously downloaded icon packs (such as Bootstrap, Tabler, Line Icons, Simple Icons, Meteocons, Generative UI, useAnimations) remained on disk in `.obsidian/plugins/colorful-folders/icons/` and in memory (`localCustomIcons`). As a result, the "Icon pack priority hierarchy" and "Featured icon packs" continued to show all downloaded packs as active and installed instead of reverting to the clean factory state.
+
+**Root cause**:
+1. In `PrivacySettingSection.ts`, the "Factory reset" button handler only reassigned `this.plugin.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS))` and saved settings. It completely omitted calling `clearAllIconPacksAndCustomIcons()`, leaving all downloaded `.json` pack files on disk and in memory.
+2. In `IconSettingSection.ts`, `getInstalledPackIds()` and the "Featured icon packs" card read from a static `packCountsMap` computed only once upon initial instantiation, which failed to recalculate on demand.
+3. In `main.ts`, `removePackIcons()` looked only for exact `${iconsDir}/${prefix}.json` paths rather than accounting for aliases (e.g. `si` vs `simple-icons.json`, `tb` vs `tabler.json`, `bi` vs `bootstrap.json`), leaving downloaded JSON files behind when removing certain packs.
+
+**Resolution**:
+1. **Dedicated `hardReset()` Method**: Implemented a comprehensive `hardReset(): Promise<void>` on `ColorfulFoldersPlugin` that:
+   - Calls `clearAllIconPacksAndCustomIcons()` to recursively remove all `.json` pack files in `.obsidian/plugins/colorful-folders/icons` and vault icons in `.obsidian/icons`.
+   - Clears all in-memory icon dictionaries (`localCustomIcons`, `userCustomIcons`, `localFileSystemIcons`) and resets `_localCustomIconsLoaded = false`.
+   - Resets `this.settings` to pristine `DEFAULT_SETTINGS` with `lastVersion = manifest.version`.
+   - Clears caches (`iconCache`, `iconManager.invalidateCategoryCache()`, `animatedIconService.invalidateCache()`).
+   - Wipes custom folder color mappings, cleans dividers via `cleanDividers()`, saves settings, and regenerates styles.
+2. **Privacy / Factory Reset Integration**: Hooked `hardReset()` directly into the "Hard reset everything" confirmation modal in `PrivacySettingSection.ts`.
+3. **Dynamic On-Demand Pack Counting**: Updated `getInstalledPackIds()` and the Featured Icon Packs card in `IconSettingSection.ts` to evaluate current icons dynamically on every call.
+4. **Resilient Pack File Uninstaller**: Updated `removePackIcons()` in `main.ts` to evaluate candidate file names for both `prefix` and `packId`, and used `IconPackIndex.matchesPackId` for thorough cleanup.
+
+**Lesson**: Factory / Hard reset routines must encompass all storage layers—both database settings and filesystem assets. Never leave downloaded asset bundles or in-memory caches intact during a full factory reset.
+
+---
+
+## Incident #57 — Baseline Icon Pack Auto-Download Race Condition & DOMParser Vector Overhead (2026-11-20)
+**What was attempted**: Automatically provisioning baseline icon packs (`simple-icons` and `tabler`) upon fresh plugin installations or version updates with `Custom > Simple Icons > Lucide > Tabler` priority ordering.
+**What broke**:
+1. `lastVersion` was committed to settings at $t=1000$ms before the asynchronous pack downloads finished, so if downloads stalled or were deferred, the plugin marked the vault as updated and never retried.
+2. SVG vector normalization executed `DOMParser` synchronously across 10,229 icons, creating a ~5000ms main-thread freeze.
+3. Hard reset cleared settings and icons but stamped `lastVersion = manifest.version`, preventing the collective changelog modal from displaying after reload.
+**Root cause**:
+1. Uncoordinated timeouts in `onload()` committed state before dependent network downloads settled.
+2. Raw Iconify SVG strings were run through full DOM parsing rather than regex-based attribute extraction.
+3. Changelog trigger logic in `onload()` requires `!settings.lastVersion || settings.lastVersion !== currentVersion`; resetting `lastVersion` to the current manifest version prematurely marked the vault as already seen.
+**Resolution**:
+1. Sequenced download promises, committed `lastVersion` only after downloads settled, and parallelized with `Promise.all`.
+2. Fast-pathed valid Iconify SVG paths (`!body.includes('<script') && !body.includes('javascript:')`), reducing parsing overhead from ~5000ms to ~40ms.
+3. Configured `DEFAULT_ICON_PACK_ORDER` and post-download hierarchy to `Custom > Simple Icons > Lucide > Tabler > ...`.
+4. Stamped `lastVersion = ""` in `hardReset()` so reload triggers `isFirstRunOrVersionChange` and opens the Changelog modal.
+**Lesson**: Background provisioning tasks must settle completely before version tokens are committed. Always fast-path trusted vector structures to avoid blocking the main thread with heavy DOMParser operations.
+
+---
+
+## Incident #58 — Cold-Start Performance Bottlenecks & Redundant DOM Invalidation on Note Open (2026-11-20)
+**What was attempted**: Performing a comprehensive plugin performance audit to minimize cold start duration and ensure immediate Obsidian responsiveness.
+**What was identified**:
+1. **Serial Disk Reads in `loadLocalCustomIcons`**: Pack `.json` files in `.obsidian/plugins/colorful-folders/icons/` were read sequentially using `await adapter.read()`, causing unnecessary I/O delays during `onload()`.
+2. **Inner-Loop Allocation**: `Array.from(dedicatedPackPrefixes)` was invoked on every single icon iteration in `custom-icons.json`.
+3. **$O(N)$ Settings Dirty Checks**: `saveSettings()` evaluated `Object.keys(currentCustomIcons).length` across 10,500+ keys on every settings save/debounce.
+4. **Heavy Cloning on Baseline Checks**: `onload()` ran `Object.keys(Object.assign({}, this.settings.customIcons, this.localCustomIcons))` on startup timeout, cloning 10,000+ properties into a temporary object.
+5. **Double Refresh on Parallel Downloads**: `autoDownloadPack()` unconditionally triggered `saveSettings()` and `generateStyles()`, causing redundant duplicate style rebuilds when packs downloaded concurrently via `Promise.all`.
+6. **Unyielding CSS Traversal**: `StyleGenerator.traverse()` contained an unfulfilled `yieldState` parameter, potentially blocking the UI thread during style generation in large vaults.
+7. **Redundant DOM Crawl on Note Open**: `EventTrackerService` invoked `initStaircaseStyleStripper()` on every `file-open` event, querying the entire file tree DOM and disconnecting/re-attaching `MutationObserver` on every note click despite the observer already catching subtree mutations in real time.
+**Resolution**:
+1. **Parallel Pack Reads**: Refactored `loadLocalCustomIcons()` to read pack JSON files concurrently using `Promise.all`.
+2. **Array Hoisting**: Converted `dedicatedPackPrefixes` to a pre-allocated array outside the icon iteration loop.
+3. **Version-Based $O(1)$ Invalidation**: Introduced `_customIconsVersion` on `ColorfulFoldersPlugin` to turn `saveSettings()` icon cache invalidation into an instant integer comparison.
+4. **Zero-Allocation Baseline Scan**: Replaced dictionary cloning with early-exit loops checking `localCustomIcons` and `settings.customIcons`.
+5. **Consolidated Download Refresh**: Added `skipRefresh?: boolean` parameter to `autoDownloadPack()` so parallel downloads execute a single atomic refresh upon completion.
+6. **Cooperative 12ms Yielding**: Implemented cooperative `window.setTimeout(resolve, 0)` yielding when traversal exceeds 12ms in `StyleGenerator.traverse()`.
+7. **Eliminated `file-open` Stripper Thrashing**: Removed the redundant `initStaircaseStyleStripper()` call from the `file-open` event listener.
+8. **Streamlined Settings Counting**: Replaced multi-array spread `computeInstalledPackCounts()` in `IconSettingSection.ts` with direct object iteration using a `seen` Set.
+**Lesson**: Continuous mutation observers render manual polling or event-based DOM re-stripping obsolete. Track cache mutations with monotonic version counters rather than scanning object key lengths on hot paths.
+
+
 
 
 

@@ -100,7 +100,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     glassmorphism: true,
 
     autoIcons: true,
-    iconPackPriorityOrder: ['custom', 'lucide', 'bootstrap', 'simple-icons', 'tabler', 'remix', 'font-awesome', 'material', 'feather', 'emoji'],
+    iconPackPriorityOrder: ['custom', 'simple-icons', 'lucide', 'tabler', 'bootstrap', 'remix', 'font-awesome', 'material', 'feather', 'emoji'],
     autoIconVariety: true,
     varietySeed: 0,
     wideAutoIcons: true,
@@ -363,10 +363,10 @@ export const FEATURED_ICON_PACKS: FeaturedIconPack[] = [
 
 export const DEFAULT_ICON_PACK_ORDER: string[] = [
     'custom',
-    'lucide',
-    'bootstrap',
     'simple-icons',
+    'lucide',
     'tabler',
+    'bootstrap',
     'remix',
     'font-awesome',
     'material',
@@ -376,9 +376,9 @@ export const DEFAULT_ICON_PACK_ORDER: string[] = [
 
 export const PACK_PRIORITY: Record<string, number> = {
     'custom': 100,       // 1. Unique brand assets
-    'lucide': 90,        // 2. Main UI baseline (Modern, sharp, highly consistent)
-    'tabler': 80,        // 3. Main UI fallback (Massive library, same aesthetic)
-    'simple-icons': 70,  // 4. Brands only (Logos for Google, GitHub, etc.)
+    'simple-icons': 90,  // 2. Brand & service logos take precedence over generic UI
+    'lucide': 80,        // 3. Main UI baseline (Modern, sharp, highly consistent)
+    'tabler': 70,        // 4. Main UI fallback (Massive library, same aesthetic)
     'remix': 60,         // 5. Secondary fallback
     'bi': 55,            // 6. Bootstrap Icons (large general-purpose library)
     'bootstrap': 55,     // 6b. Bootstrap alias
