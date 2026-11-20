@@ -172,11 +172,16 @@ export default class ColorfulFoldersPlugin
           void (async () => {
             try {
               let downloadedAny = false;
-              if (!hasSimpleIcons) {
+              if (!hasSimpleIcons && !hasTablerIcons) {
+                await Promise.all([
+                  this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/simple-icons.json", "simple-icons"),
+                  this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/tabler.json", "tabler")
+                ]);
+                downloadedAny = true;
+              } else if (!hasSimpleIcons) {
                 await this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/simple-icons.json", "simple-icons");
                 downloadedAny = true;
-              }
-              if (!hasTablerIcons) {
+              } else if (!hasTablerIcons) {
                 await this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/tabler.json", "tabler");
                 downloadedAny = true;
               }
@@ -197,6 +202,9 @@ export default class ColorfulFoldersPlugin
               console.warn("Colorful Folders: Baseline icon pack auto-download deferred:", err);
             }
           })();
+        } else if (isFirstRun) {
+          this.settings.lastVersion = currentVersion;
+          await this.saveSettings();
         } else if (isVersionChange) {
           this.settings.lastVersion = currentVersion;
           await this.saveSettings();
@@ -750,10 +758,12 @@ export default class ColorfulFoldersPlugin
     this.cleanDividers();
     this.animatedIconService?.syncAnimatedIcons();
 
-    // 5. Restore factory baseline icon packs (Simple Icons & Tabler)
+    // 5. Restore factory baseline icon packs (Simple Icons & Tabler) in parallel
     try {
-      await this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/simple-icons.json", "simple-icons");
-      await this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/tabler.json", "tabler");
+      await Promise.all([
+        this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/simple-icons.json", "simple-icons"),
+        this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/tabler.json", "tabler")
+      ]);
       const basePacks = ['custom', 'simple-icons', 'lucide', 'tabler'];
       const currentOrder = this.settings.iconPackPriorityOrder || DEFAULT_ICON_PACK_ORDER;
       const remaining = currentOrder.filter(p => !basePacks.includes(p) && p !== 'emoji');

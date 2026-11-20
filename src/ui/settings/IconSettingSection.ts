@@ -29,25 +29,27 @@ export class IconSettingSection extends SettingSection {
         });
         priorityDesc.setCssStyles({ fontSize: "0.85em", color: "var(--text-muted)", marginBottom: "12px" });
 
-        const getInstalledPackIds = (): Set<string> => {
-            const currentIcons = new Set([
+        const computeInstalledPackCounts = (): Map<string, number> => {
+            const counts = new Map<string, number>();
+            const allIcons = new Set([
                 ...Object.keys(this.plugin.getCustomIconsMap()),
                 ...Object.keys(this.plugin.localFileSystemIcons || {}),
                 ...Object.keys(this.plugin.localCustomIcons || {})
             ]);
-            const dynamicCounts = new Map<string, number>();
-            currentIcons.forEach(id => {
-                for (let i = 0; i < FEATURED_ICON_PACKS.length; i++) {
-                    const p = FEATURED_ICON_PACKS[i];
-                    if (IconPackIndex.matchesPackId(id, p.prefix) || IconPackIndex.matchesPackId(id, p.packId)) {
-                        dynamicCounts.set(p.prefix, (dynamicCounts.get(p.prefix) || 0) + 1);
-                    }
-                }
+
+            allIcons.forEach(id => {
+                const pfx = IconPackIndex.getPackPrefix(id);
+                counts.set(pfx, (counts.get(pfx) || 0) + 1);
             });
+            return counts;
+        };
+
+        const getInstalledPackIds = (): Set<string> => {
+            const counts = computeInstalledPackCounts();
             const installed = new Set<string>(['custom', 'lucide']);
             for (let i = 0; i < FEATURED_ICON_PACKS.length; i++) {
                 const p = FEATURED_ICON_PACKS[i];
-                if ((dynamicCounts.get(p.prefix) || 0) > 0) {
+                if ((counts.get(p.prefix) || counts.get(p.packId) || 0) > 0) {
                     installed.add(p.packId);
                 }
             }
@@ -879,19 +881,10 @@ export class IconSettingSection extends SettingSection {
         const featCard = this.settingTab.makeCard(containerEl, "⭐", "Featured icon packs");
         featCard.createDiv("cf-grid");
 
-        const currentAvailableIcons = new Set([
-            ...Object.keys(this.plugin.getCustomIconsMap()),
-            ...Object.keys(this.plugin.localFileSystemIcons || {}),
-            ...Object.keys(this.plugin.localCustomIcons || {})
-        ]);
+        const featuredCounts = computeInstalledPackCounts();
 
         FEATURED_ICON_PACKS.forEach(p => {
-            let installedCount = 0;
-            currentAvailableIcons.forEach(id => {
-                if (IconPackIndex.matchesPackId(id, p.prefix) || IconPackIndex.matchesPackId(id, p.packId)) {
-                    installedCount++;
-                }
-            });
+            const installedCount = featuredCounts.get(p.prefix) || featuredCounts.get(p.packId) || 0;
             const isInstalled = installedCount > 0;
 
             const row = featCard.createDiv("setting-item");
