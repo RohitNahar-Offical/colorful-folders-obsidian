@@ -390,7 +390,7 @@ export class EventTrackerService {
                 for (let i = 0; i < liveIcons.length; i++) {
                     const icon = liveIcons[i];
                     if (icon.offsetParent !== null || icon.offsetWidth > 0 || icon.offsetHeight > 0) {
-                        this.plugin.animatedIconService?.replayAnimatedElement(icon);
+                        this.plugin.animatedIconService?.triggerIconAnimation(icon);
                     }
                 }
             };

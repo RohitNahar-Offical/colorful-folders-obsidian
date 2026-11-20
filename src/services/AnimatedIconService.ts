@@ -27,20 +27,24 @@ export class AnimatedIconService {
                             targetEl.setAttribute('data-cf-visible', 'true');
                             const mode = targetEl.getAttribute('data-cf-anim-mode') || this.plugin.settings?.animationMode || 'click';
 
-                            if (mode === 'once' && !targetEl.getAttribute('data-cf-played')) {
-                                targetEl.setAttribute('data-cf-played', 'true');
-                                this._intersectionObserver?.unobserve(targetEl);
-                                this._observed.delete(targetEl);
-                            }
-
-                            if (targetEl._cfWasOffscreen) {
+                            if (mode === 'infinite') {
+                                if (targetEl._cfWasOffscreen) {
+                                    targetEl._cfWasOffscreen = false;
+                                    this.wakeAnimatedElement(targetEl);
+                                }
+                                const svg = targetEl.querySelector('svg') as unknown as { unpauseAnimations?: () => void };
+                                if (svg && typeof svg.unpauseAnimations === 'function') {
+                                    try { svg.unpauseAnimations(); } catch { void 0; }
+                                }
+                            } else if (mode === 'once') {
+                                if (!targetEl.getAttribute('data-cf-played')) {
+                                    targetEl.setAttribute('data-cf-played', 'true');
+                                    this.wakeAnimatedElement(targetEl);
+                                    this._intersectionObserver?.unobserve(targetEl);
+                                    this._observed.delete(targetEl);
+                                }
+                            } else {
                                 targetEl._cfWasOffscreen = false;
-                                this.wakeAnimatedElement(targetEl);
-                            }
-
-                            const svg = targetEl.querySelector('svg') as unknown as { unpauseAnimations?: () => void };
-                            if (svg && typeof svg.unpauseAnimations === 'function') {
-                                try { svg.unpauseAnimations(); } catch { void 0; }
                             }
                         } else {
                             targetEl.setAttribute('data-cf-visible', 'false');
@@ -125,20 +129,7 @@ export class AnimatedIconService {
         }
     }
 
-    public handleDelegatedClick = (evt: MouseEvent): void => {
-        if (!this.hasAnyAnimatedIcons()) return;
-        const target = (evt.target as Element | null)?.closest<HTMLElement>('.cf-live-animated-icon, .cf-animated-icon');
-        let iconEl: HTMLElement | null = target;
-        if (!iconEl) {
-            const row = (evt.target as Element | null)?.closest<HTMLElement>(
-                '.nav-folder-title, .nav-file-title, .tree-item-self, .nn-navitem, .nn-file'
-            );
-            if (row) {
-                iconEl = row.querySelector<HTMLElement>('.cf-live-animated-icon:not([style*="display: none"]), .cf-animated-icon:not([style*="display: none"])');
-            }
-        }
-        if (!iconEl) return;
-
+    public triggerIconAnimation(iconEl: HTMLElement): void {
         const mode = iconEl.getAttribute('data-cf-anim-mode') || this.plugin.settings?.animationMode || 'click';
         if (mode !== 'click') return;
 
@@ -161,11 +152,33 @@ export class AnimatedIconService {
             currentEl.classList.add('is-cf-animating');
         });
 
-        currentEl.addEventListener(
-            'animationend',
-            () => currentEl.classList.remove('is-cf-animating'),
-            { once: true }
-        );
+        const animEndHandler = () => {
+            currentEl.classList.remove('is-cf-animating');
+            currentEl.removeEventListener('animationend', animEndHandler);
+        };
+        currentEl.addEventListener('animationend', animEndHandler, { once: true });
+        win.setTimeout(animEndHandler, 1500);
+    }
+
+    public handleDelegatedClick = (evt: MouseEvent): void => {
+        if (!this.hasAnyAnimatedIcons()) return;
+        const target = (evt.target as Element | null)?.closest<HTMLElement>('.cf-live-animated-icon, .cf-animated-icon');
+        let iconEl: HTMLElement | null = target;
+        if (!iconEl) {
+            const row = (evt.target as Element | null)?.closest<HTMLElement>(
+                '.nav-folder-title, .nav-file-title, .tree-item-self, .nn-navitem, .nn-file'
+            );
+            if (row) {
+                const isCollapsed = row.closest('.is-collapsed') !== null;
+                if (isCollapsed) {
+                    iconEl = row.querySelector<HTMLElement>('.cf-live-animated-icon.cf-animated-closed, .cf-live-animated-icon:not(.cf-animated-open), .cf-animated-icon.cf-animated-closed, .cf-animated-icon:not(.cf-animated-open)');
+                } else {
+                    iconEl = row.querySelector<HTMLElement>('.cf-live-animated-icon.cf-animated-open, .cf-live-animated-icon:not(.cf-animated-closed), .cf-animated-icon.cf-animated-open, .cf-animated-icon:not(.cf-animated-closed)');
+                }
+            }
+        }
+        if (!iconEl) return;
+        this.triggerIconAnimation(iconEl);
     };
 
     /**
@@ -419,6 +432,9 @@ export class AnimatedIconService {
             wrap.setAttribute('data-icon-id', iconId);
             if (iconId.startsWith('meteocons-') || iconId.startsWith('meteocons:') || iconId.startsWith('meteocons_')) {
                 wrap.classList.add('cf-meteocons');
+            }
+            if (this.isLoopingAnimatedIcon(iconId)) {
+                wrap.classList.add('cf-has-native-loop');
             }
             wrap.appendChild(svg);
 

@@ -266,10 +266,11 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
 
         /* ── HOLISTIC PLAYBACK ENGINE MODES ── */
         /* Mode 1: Infinite (while visible in viewport, paused when hidden or offscreen) */
-        :root[data-cf-anim-mode="infinite"] .cf-live-animated-icon[data-cf-visible="true"] svg,
-        :root[data-cf-anim-mode="infinite"] .cf-animated-icon[data-cf-visible="true"] svg,
-        .cf-live-animated-icon[data-cf-anim-mode="infinite"][data-cf-visible="true"] svg,
-        .cf-animated-icon[data-cf-anim-mode="infinite"][data-cf-visible="true"] svg {
+        /* Only apply fallback cf-icon-pop to icons without their own native SMIL/CSS loop */
+        :root[data-cf-anim-mode="infinite"] .cf-live-animated-icon:not(.cf-has-native-loop)[data-cf-visible="true"] svg,
+        :root[data-cf-anim-mode="infinite"] .cf-animated-icon:not(.cf-has-native-loop)[data-cf-visible="true"] svg,
+        .cf-live-animated-icon:not(.cf-has-native-loop)[data-cf-anim-mode="infinite"][data-cf-visible="true"] svg,
+        .cf-animated-icon:not(.cf-has-native-loop)[data-cf-anim-mode="infinite"][data-cf-visible="true"] svg {
             animation: var(--cf-anim-name, cf-icon-pop) var(--_cf-duration) ease-in-out infinite;
             animation-play-state: var(--cf-icon-play-state, running);
         }
