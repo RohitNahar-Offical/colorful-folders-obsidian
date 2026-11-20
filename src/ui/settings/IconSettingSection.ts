@@ -335,7 +335,6 @@ export class IconSettingSection extends SettingSection {
 
             // Modern, collapsible guide dedicated strictly to regex patterns for Obsidian notes
             const guideDetails = rulesCard.createEl('details', { cls: 'cf-rules-guide' });
-            guideDetails.open = true;
 
             const summary = guideDetails.createEl('summary', { cls: 'cf-rules-guide-summary' });
 
