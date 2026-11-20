@@ -2,7 +2,8 @@ import * as obsidian from 'obsidian';
 import { SettingSection } from './SettingSection';
 import { t, TranslationKey } from '../../lang/helpers';
 import { IconPickerModal } from '../modals/IconPickerModal';
-import { DEFAULT_ICON_PACK_ORDER } from '../../common/constants';
+import { DEFAULT_ICON_PACK_ORDER, FEATURED_ICON_PACKS } from '../../common/constants';
+import { IconPackIndex } from '../../core/IconPackIndex';
 import { IconRuleSet } from '../../core/IconRuleSet';
 
 export class IconSettingSection extends SettingSection {
@@ -28,19 +29,43 @@ export class IconSettingSection extends SettingSection {
         });
         priorityDesc.setCssStyles({ fontSize: "0.85em", color: "var(--text-muted)", marginBottom: "12px" });
 
+        const allAvailableIcons = new Set([
+            ...Object.keys(this.plugin.getCustomIconsMap()),
+            ...Object.keys(this.plugin.localFileSystemIcons || {}),
+            ...Object.keys(this.plugin.localCustomIcons || {})
+        ]);
+
+        const packCountsMap = new Map<string, number>();
+        allAvailableIcons.forEach(id => {
+            for (let i = 0; i < FEATURED_ICON_PACKS.length; i++) {
+                const p = FEATURED_ICON_PACKS[i];
+                if (IconPackIndex.matchesPackId(id, p.prefix) || IconPackIndex.matchesPackId(id, p.packId)) {
+                    packCountsMap.set(p.prefix, (packCountsMap.get(p.prefix) || 0) + 1);
+                }
+            }
+        });
+
+        const getInstalledPackIds = (): Set<string> => {
+            const installed = new Set<string>(['custom', 'lucide']);
+            for (let i = 0; i < FEATURED_ICON_PACKS.length; i++) {
+                const p = FEATURED_ICON_PACKS[i];
+                if ((packCountsMap.get(p.prefix) || 0) > 0) {
+                    installed.add(p.packId);
+                }
+            }
+            installed.add('emoji');
+            return installed;
+        };
+
         const packLabels: Record<string, string> = {
             'custom': 'Custom User Icons & Brand Overrides',
             'lucide': 'Lucide Icons (Default Modern UI)',
-            'line-md': 'Line icons (Animated) (line-md-)',
-            'bootstrap': 'Bootstrap Icons (bi-)',
-            'simple-icons': 'Simple Icons (Brand & Tech Logos)',
-            'tabler': 'Tabler Icons (tb-)',
-            'remix': 'Remix Icons (ri-)',
-            'font-awesome': 'FontAwesome Icons (fa-)',
-            'material': 'Material Icons (mdi-)',
-            'feather': 'Feather Icons',
             'emoji': 'Native Emojis (System Unicode)'
         };
+        for (const p of FEATURED_ICON_PACKS) {
+            packLabels[p.packId] = p.label;
+            packLabels[p.prefix] = p.label;
+        }
 
         const listContainer = priorityCard.createDiv();
         listContainer.setCssStyles({
@@ -56,9 +81,15 @@ export class IconSettingSection extends SettingSection {
 
         const renderPackPriorityList = () => {
             listContainer.empty();
-            let order = [...(this.plugin.settings.iconPackPriorityOrder || DEFAULT_ICON_PACK_ORDER)];
+            const installedPackIds = getInstalledPackIds();
+
+            // Filter existing order to strictly retain ONLY installed packs
+            let order = (this.plugin.settings.iconPackPriorityOrder || DEFAULT_ICON_PACK_ORDER)
+                .filter(packKey => installedPackIds.has(packKey));
+
+            // Append any newly installed packs not yet in the user's order (before emoji)
             for (const defaultPack of DEFAULT_ICON_PACK_ORDER) {
-                if (!order.includes(defaultPack)) {
+                if (installedPackIds.has(defaultPack) && !order.includes(defaultPack)) {
                     const emojiIdx = order.indexOf('emoji');
                     if (emojiIdx !== -1) {
                         order.splice(emojiIdx, 0, defaultPack);
@@ -67,9 +98,22 @@ export class IconSettingSection extends SettingSection {
                     }
                 }
             }
+            for (const installedPack of Array.from(installedPackIds)) {
+                if (!order.includes(installedPack)) {
+                    const emojiIdx = order.indexOf('emoji');
+                    if (emojiIdx !== -1) {
+                        order.splice(emojiIdx, 0, installedPack);
+                    } else {
+                        order.push(installedPack);
+                    }
+                }
+            }
+
             if (order.includes('emoji') && order[order.length - 1] !== 'emoji') {
                 order = order.filter(p => p !== 'emoji').concat(['emoji']);
             }
+
+            this.plugin.settings.iconPackPriorityOrder = [...order];
 
             order.forEach((packKey, index) => {
                 const row = listContainer.createDiv();
@@ -142,7 +186,22 @@ export class IconSettingSection extends SettingSection {
             .addButton(btn => btn
                 .setButtonText("Reset priority order")
                 .onClick(async () => {
-                    this.plugin.settings.iconPackPriorityOrder = [...DEFAULT_ICON_PACK_ORDER];
+                    const installedPackIds = getInstalledPackIds();
+                    let resetOrder = DEFAULT_ICON_PACK_ORDER.filter(p => installedPackIds.has(p));
+                    for (const installedPack of Array.from(installedPackIds)) {
+                        if (!resetOrder.includes(installedPack)) {
+                            const emojiIdx = resetOrder.indexOf('emoji');
+                            if (emojiIdx !== -1) {
+                                resetOrder.splice(emojiIdx, 0, installedPack);
+                            } else {
+                                resetOrder.push(installedPack);
+                            }
+                        }
+                    }
+                    if (resetOrder.includes('emoji') && resetOrder[resetOrder.length - 1] !== 'emoji') {
+                        resetOrder = resetOrder.filter(p => p !== 'emoji').concat(['emoji']);
+                    }
+                    this.plugin.settings.iconPackPriorityOrder = [...resetOrder];
                     renderPackPriorityList();
                     this.plugin.iconManager?.invalidateCategoryCache();
                     this.plugin.generateStylesDebounced();
@@ -823,57 +882,7 @@ export class IconSettingSection extends SettingSection {
         const featCard = this.settingTab.makeCard(containerEl, "⭐", "Featured icon packs");
         featCard.createDiv("cf-grid");
 
-        const packs = [
-            { name: "✨ Line icons (Animated)", desc: "1,200+ smooth animated SVG icons from Iconify.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/line-md.json", prefix: "line-md" },
-            { name: "🌦️ Meteocons (Animated)", desc: "440+ smooth animated weather & atmosphere SVG icons.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/meteocons.json", prefix: "meteocons" },
-            { name: "✨ Generative UI (Animated)", desc: "1,160+ smooth SMIL animated UI icons by LottieFiles.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/main/icons/generative.json", prefix: "generative" },
-            { name: "✨ useAnimations (Animated)", desc: "300+ animated micro-interaction icons from useAnimations.", url: "https://useanimations.com/icons.json", prefix: "useanimations" },
-            { name: "✨ Remix icons", desc: "Clean and neutral design system.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/ri.json", prefix: "ri" },
-            { name: "🪶 Feather icons", desc: "Simply beautiful open source icons.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/feather.json", prefix: "feather" },
-            { name: "📐 Tabler icons", desc: "Over 4000+ well-crafted icons.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/tabler.json", prefix: "tabler" },
-            { name: "📦 Boxicons", desc: "High quality web friendly icons.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/bx.json", prefix: "bx" },
-            { name: "🚩 Font Awesome solid", desc: "Official professional solid set.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/fa-solid.json", prefix: "fa-solid" },
-            { name: "🏳️ Font Awesome regular", desc: "Official line icons from FA.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/fa-regular.json", prefix: "fa-regular" },
-            { name: "🐙 Octicons", desc: "GitHub's native icon library.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/octicon.json", prefix: "octicon" },
-            { name: "🎮 RPG awesome", desc: "Fantasy icons for RPG notes.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/ra.json", prefix: "ra" },
-            { name: "⚡ Simple icons", desc: "Brand icons for popular services.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/simple-icons.json", prefix: "simple-icons" },
-            { name: "🅱️ Bootstrap icons", desc: "Official Bootstrap icon library.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/bi.json", prefix: "bi" }
-        ];
-
-        const matchPack = (id: string, pPrefix: string): boolean => {
-            const lower = id.toLowerCase();
-            if (pPrefix === 'line-md') return lower.startsWith('line-md-') || lower.startsWith('line-md:');
-            if (pPrefix === 'meteocons') return lower.startsWith('meteocons-') || lower.startsWith('meteocons:');
-            if (pPrefix === 'generative') return lower.startsWith('generative-') || lower.startsWith('generative:');
-            if (pPrefix === 'useanimations' || pPrefix === 'ua') return lower.startsWith('useanimations-') || lower.startsWith('useanimations:') || lower.startsWith('ua-');
-            if (pPrefix === 'ri' || pPrefix === 'remix') return lower.startsWith('ri-') || lower.startsWith('remix-');
-            if (pPrefix === 'feather') return lower.startsWith('feather-');
-            if (pPrefix === 'tabler' || pPrefix === 'tb') return lower.startsWith('tb-') || lower.startsWith('tabler-');
-            if (pPrefix === 'bx') return lower.startsWith('bx-') || lower.startsWith('bxs-') || lower.startsWith('bxi-');
-            if (pPrefix.startsWith('fa')) return lower.startsWith('fa-') || lower.startsWith('fas-') || lower.startsWith('fab-') || lower.startsWith('far-');
-            if (pPrefix === 'octicon') return lower.startsWith('octicon-');
-            if (pPrefix === 'ra') return lower.startsWith('ra-');
-            if (pPrefix === 'simple-icons' || pPrefix === 'si') return lower.startsWith('simple-') || lower.startsWith('si-');
-            if (pPrefix === 'bi' || pPrefix === 'bootstrap') return lower.startsWith('bi-') || lower.startsWith('bootstrap-') || lower.startsWith('bi:');
-            return lower.startsWith(pPrefix + '-');
-        };
-
-        const allAvailableIcons = new Set([
-            ...Object.keys(this.plugin.getCustomIconsMap()),
-            ...Object.keys(this.plugin.localFileSystemIcons || {}),
-            ...Object.keys(this.plugin.localCustomIcons || {})
-        ]);
-        const packCountsMap = new Map<string, number>();
-        allAvailableIcons.forEach(id => {
-            for (let i = 0; i < packs.length; i++) {
-                const p = packs[i];
-                if (matchPack(id, p.prefix)) {
-                    packCountsMap.set(p.prefix, (packCountsMap.get(p.prefix) || 0) + 1);
-                }
-            }
-        });
-
-        packs.forEach(p => {
+        FEATURED_ICON_PACKS.forEach(p => {
             const installedCount = packCountsMap.get(p.prefix) || 0;
             const isInstalled = installedCount > 0;
 

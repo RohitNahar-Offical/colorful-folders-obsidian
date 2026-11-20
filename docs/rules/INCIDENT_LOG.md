@@ -758,6 +758,25 @@ Auditing cold start, plugin reload, and file explorer scrolling revealed potenti
 
 **Lesson**: Always unify cross-platform event registration routines into single-sourced methods unless explicitly platform-divergent. When wrapping DOM event registration, always support `AddEventListenerOptions | boolean` and mirror options during teardown.
 
+---
+
+## Incident #55 — Icon Pack Priority Hierarchy Listing Uninstalled Packs & Hardcoded Order Disconnect (2026-11-20)
+**What was reported**:
+In **Settings > Icon Settings > Icon pack priority hierarchy**, all 12 default icon packs (such as Remix, FontAwesome, Material, and Feather) were displayed in the priority re-ordering list even when the user had not downloaded or installed them from the "Featured icon packs" section below.
+
+**Root cause**:
+1. In `IconSettingSection.ts`, `renderPackPriorityList()` fell back to and iteratively forced every pack from `DEFAULT_ICON_PACK_ORDER` into the active priority list without checking if the pack was actually installed in local storage.
+2. Downloaded packs (like `generative` and `useanimations`) were missing from `DEFAULT_ICON_PACK_ORDER` and `packLabels`.
+3. `IconSettingSection.ts` maintained a duplicate local `packs` array and custom `matchPack` helper that duplicated `IconPackIndex.matchesPackId`.
+
+**Resolution**:
+1. **Centralized Pack Manifest (`FEATURED_ICON_PACKS`)**: Hoisted all downloadable packs into `FEATURED_ICON_PACKS` in `constants.ts`, including `generative` and `useanimations`.
+2. **Dynamic Installed Pack Filtering**: Updated `renderPackPriorityList()` to scan installed icon packs dynamically via `getInstalledPackIds()`, retaining only `custom`, `lucide`, `emoji`, and currently downloaded packs.
+3. **Automatic Lifecycle Synchronization**: When a pack is downloaded or removed via the "Featured icon packs" card, `this.refreshTab()` automatically updates the priority hierarchy list.
+4. **DRY Consolidation**: Eliminated duplicate `packs` definitions and replaced `matchPack` with `IconPackIndex.matchesPackId`.
+
+**Lesson**: Priority and hierarchy configuration interfaces must always dynamically reflect only installed or active entities, rather than statically displaying all theoretical providers.
+
 
 
 

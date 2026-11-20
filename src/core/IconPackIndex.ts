@@ -49,10 +49,10 @@ export class IconPackIndex {
         if (packId === 'generative' || packId === 'generative-icons') return lower.startsWith('generative-') || lower.startsWith('generative:') || lower.startsWith('generative_');
         if (packId === 'useanimations' || packId === 'ua') return lower.startsWith('useanimations-') || lower.startsWith('useanimations:') || lower.startsWith('useanimations_') || lower.startsWith('ua-');
         if (packId === 'bootstrap' || packId === 'bi') return lower.startsWith('bi-') || lower.startsWith('bootstrap-') || lower.startsWith('bi:');
-        if (packId === 'simple-icons') return lower.startsWith('simple-') || lower.startsWith('si-');
+        if (packId === 'simple-icons' || packId === 'simple' || packId === 'si') return lower.startsWith('simple-') || lower.startsWith('si-') || lower.startsWith('simple-icons-');
         if (packId === 'tabler' || packId === 'tb') return lower.startsWith('tb-') || lower.startsWith('tabler-');
         if (packId === 'remix' || packId === 'ri') return lower.startsWith('ri-') || lower.startsWith('remix-');
-        if (packId === 'font-awesome' || packId === 'fa') return lower.startsWith('fa-') || lower.startsWith('fas-') || lower.startsWith('fab-') || lower.startsWith('far-') || lower.includes('font-awesome');
+        if (packId === 'font-awesome' || packId === 'fa' || packId === 'fa-solid' || packId === 'fa-regular') return lower.startsWith('fa-') || lower.startsWith('fas-') || lower.startsWith('fab-') || lower.startsWith('far-') || lower.includes('font-awesome');
         if (packId === 'material' || packId === 'mdi') return lower.startsWith('mdi-') || lower.includes('material');
         if (packId === 'feather') return lower.startsWith('feather-');
         if (packId === 'rpg-awesome' || packId === 'ra') return lower.startsWith('ra-') || lower.includes('rpg-awesome');
