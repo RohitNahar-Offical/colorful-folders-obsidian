@@ -99,7 +99,7 @@ export class AnimationDomMounter {
         for (const [targetPath, targetConfig] of targetsMap.entries()) {
             const safePath = safeEscape(targetPath);
             const titleEl = container.querySelector<HTMLElement>(
-                `:is(.nav-folder-title, .nav-file-title, .tree-item-self, .nn-navitem, .nn-file)[data-path="${safePath}"]`
+                `${ANIMATION_SELECTORS.TARGET_ROW_IS}[data-path="${safePath}"]`
             );
             if (!titleEl) continue;
 

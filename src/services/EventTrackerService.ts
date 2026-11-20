@@ -13,11 +13,7 @@ export class EventTrackerService {
     }
 
     public registerEvents() {
-        if (obsidian.Platform.isMobile) {
-            this.registerMobileEvents();
-        } else {
-            this.registerDesktopEvents();
-        }
+        this.registerWorkspaceEvents();
 
         this.plugin.getOpenDocuments().forEach(doc => {
             this.registerDragEventsForDoc(doc);
@@ -167,54 +163,7 @@ export class EventTrackerService {
         );
     }
 
-    private registerDesktopEvents() {
-        this.registerEvent(
-            this.plugin.app.workspace.on("file-menu", (menu, file) => {
-                MenuHelper.addContextMenuItems(menu, file, this.plugin);
-            }),
-        );
-
-        this.registerEvent(
-            this.plugin.app.workspace.on("layout-change", () => {
-                this.plugin.domObserverService.initDividerObserver();
-                this.plugin.domObserverService.syncTagPaneDataset();
-                this.plugin.initStaircaseStyleStripper();
-                this.updateActiveFolderClasses();
-            }),
-        );
-
-        this.registerEvent(
-            this.plugin.app.workspace.on("active-leaf-change", (leaf) => {
-                const viewType = leaf?.view?.getViewType();
-                if (viewType === "tag") {
-                    this.plugin.domObserverService.syncTagPaneDataset();
-                }
-                if (viewType === "outline" || viewType === "tag" || viewType === "file-explorer") {
-                    this.plugin.initStaircaseStyleStripper();
-                }
-            }),
-        );
-        
-        this.registerEvent(
-            this.plugin.app.workspace.on("file-open", (file) => {
-                this.updateActiveFolderClasses();
-                if (file && file.path && this.plugin.animatedIconService?.hasAnyAnimatedIcons()) {
-                    this.plugin.animatedIconService.replayTargetByPath(file.path);
-                }
-                window.setTimeout(() => {
-                    this.plugin.initStaircaseStyleStripper();
-                }, 50);
-            }),
-        );
-
-        this.registerEvent(
-            this.plugin.app.workspace.on("css-change", () => {
-                this.plugin.generateStylesDebounced();
-            }),
-        );
-    }
-
-    private registerMobileEvents() {
+    private registerWorkspaceEvents() {
         this.registerEvent(
             this.plugin.app.workspace.on("file-menu", (menu, file) => {
                 MenuHelper.addContextMenuItems(menu, file, this.plugin);
@@ -227,11 +176,13 @@ export class EventTrackerService {
                 this.plugin.domObserverService.initDividerObserver();
                 this.plugin.domObserverService.syncTagPaneDataset();
                 this.plugin.initStaircaseStyleStripper();
-                this.plugin.dividerManager?.syncDividers();
+                if (this.plugin.dividerManager?.hasAnyDividers()) {
+                    this.plugin.dividerManager.syncDividers();
+                }
                 this.updateActiveFolderClasses();
             }),
         );
-        
+
         this.registerEvent(
             this.plugin.app.workspace.on("active-leaf-change", (leaf) => {
                 this.plugin.invalidateExplorerContainersCache();
@@ -257,6 +208,12 @@ export class EventTrackerService {
                 window.setTimeout(() => {
                     this.plugin.initStaircaseStyleStripper();
                 }, 50);
+            }),
+        );
+
+        this.registerEvent(
+            this.plugin.app.workspace.on("css-change", () => {
+                this.plugin.generateStylesDebounced();
             }),
         );
     }

@@ -5,7 +5,7 @@ import { AnimationTemplateFactory } from './animation/AnimationTemplateFactory';
 import { AnimationViewportManager } from './animation/AnimationViewportManager';
 import { AnimationPlaybackEngine } from './animation/AnimationPlaybackEngine';
 import { AnimationDomMounter } from './animation/AnimationDomMounter';
-import { RegisteredAnimatedTarget, AnimationPlaybackState } from './animation/AnimationTypes';
+import { RegisteredAnimatedTarget, AnimationPlaybackState, ANIMATION_SELECTORS } from './animation/AnimationTypes';
 
 export type { RegisteredAnimatedTarget } from './animation/AnimationTypes';
 
@@ -31,7 +31,6 @@ export class AnimatedIconService {
 
     private _registeredAnimatedTargets = new Map<string, RegisteredAnimatedTarget>();
     private _hasAnimatedCache: boolean | null = null;
-    private _libraryHasAnimatedCache: boolean | null = null;
 
     constructor(plugin: IColorfulFoldersPlugin) {
         this.plugin = plugin;
@@ -98,13 +97,6 @@ export class AnimatedIconService {
     }
 
     /**
-     * Triggers playback on an icon element.
-     */
-    public triggerIconAnimation(iconEl: HTMLElement): void {
-        this.replayAnimatedElement(iconEl);
-    }
-
-    /**
      * Replays single-shot animated icons upon user interaction.
      */
     public replayAnimatedElement(el: HTMLElement): void {
@@ -124,7 +116,7 @@ export class AnimatedIconService {
         for (let i = 0; i < allContainers.length; i++) {
             const container = allContainers[i];
             const titleEl = container.querySelector<HTMLElement>(
-                `:is(.nav-folder-title, .nav-file-title, .tree-item-self, .nn-navitem, .nn-file)[data-path="${safePath}"]`
+                `${ANIMATION_SELECTORS.TARGET_ROW_IS}[data-path="${safePath}"]`
             );
             if (!titleEl) continue;
 
@@ -213,29 +205,6 @@ export class AnimatedIconService {
         }
 
         this._hasAnimatedCache = false;
-        return false;
-    }
-
-    /**
-     * Checks whether any animated icons exist in the custom icon repository or settings.
-     */
-    public hasAnyAnimatedIconsInLibrary(): boolean {
-        if (this._libraryHasAnimatedCache !== null) return this._libraryHasAnimatedCache;
-        const local = this.plugin.localCustomIcons || {};
-        for (const k in local) {
-            if (this.isAnimatedIcon(k)) {
-                this._libraryHasAnimatedCache = true;
-                return true;
-            }
-        }
-        const custom = this.plugin.settings?.customIcons || {};
-        for (const k in custom) {
-            if (this.isAnimatedIcon(k)) {
-                this._libraryHasAnimatedCache = true;
-                return true;
-            }
-        }
-        this._libraryHasAnimatedCache = false;
         return false;
     }
 
@@ -340,7 +309,6 @@ export class AnimatedIconService {
      */
     public invalidateCache(iconId?: string): void {
         this._hasAnimatedCache = null;
-        this._libraryHasAnimatedCache = null;
         this.classifier.clearCache(iconId);
         this.templateFactory.clearCache(iconId);
     }

@@ -15,6 +15,7 @@ export const ANIMATED_PACK_PREFIXES = [
 
 export const ANIMATION_SELECTORS = {
     NAV_ROW: '.nav-folder-title, .nav-file-title, .tree-item-self, .nn-navitem, .nn-file',
+    TARGET_ROW_IS: ':is(.nav-folder-title, .nav-file-title, .tree-item-self, .nn-navitem, .nn-file)',
     NAV_TEXT: '.nav-folder-title-content, .nav-file-title-content, .tree-item-inner, .nn-navitem-name, .nn-file-name',
     NN_ICON_SLOT: '.nn-navitem-icon, .nn-file-icon-slot, .nn-file-icon',
     LIVE_ICON: '.cf-live-animated-icon',

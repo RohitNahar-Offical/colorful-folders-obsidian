@@ -126,10 +126,6 @@ export class AnimationViewportManager {
         this._intersectionObserver.unobserve(el);
     }
 
-    public isObserved(el: HTMLElement): boolean {
-        return this._observed.has(el);
-    }
-
     /**
      * Recovers broken SMIL syncbases when an element scrolls into view by replacing
      * the stalled SVG with a freshly cloned template SVG node (AGENTS.md recovery rule).
