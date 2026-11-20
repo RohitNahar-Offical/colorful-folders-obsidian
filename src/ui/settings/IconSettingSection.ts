@@ -168,21 +168,30 @@ export class IconSettingSection extends SettingSection {
                     .setValue(this.plugin.settings.autoIconVariety)
                     .onChange(async (value) => {
                         this.plugin.settings.autoIconVariety = value;
+                        this.plugin.iconManager?.invalidateAutoIconCache();
+                        this.plugin.animatedIconService?.invalidateCache();
                         await this.plugin.saveSettings();
                         this.refreshTab();
-                        this.plugin.generateStylesDebounced();
+                        await this.plugin.generateStyles();
                     }));
 
             if (this.plugin.settings.autoIconVariety) {
                 new obsidian.Setting(autoCard)
                     .setName(t("settings.shuffle_icons.name"))
-                    .setDesc('Randomize the global seed used for assigning variety icons. If you dislike the current distribution, click this to re-roll them all!')
+                    .setDesc(t("settings.shuffle_icons.desc") || 'Randomize the global seed used for assigning variety icons. If you dislike the current distribution, click this to re-roll them all!')
                     .addButton(button => button
                         .setButtonText(t("settings.shuffle_icons.name"))
                         .onClick(async () => {
-                            this.plugin.settings.varietySeed = Math.floor(Math.random() * 1000000);
+                            let newSeed = Math.floor(Math.random() * 1000000) + 1;
+                            if (newSeed === this.plugin.settings.varietySeed) {
+                                newSeed = (newSeed + 1) % 1000000 + 1;
+                            }
+                            this.plugin.settings.varietySeed = newSeed;
+                            this.plugin.iconManager?.invalidateAutoIconCache();
+                            this.plugin.animatedIconService?.invalidateCache();
                             await this.plugin.saveSettings();
-                            this.plugin.generateStylesDebounced();
+                            await this.plugin.generateStyles();
+                            new obsidian.Notice('🎲 Variety icons shuffled successfully!');
                         }));
             }
 
