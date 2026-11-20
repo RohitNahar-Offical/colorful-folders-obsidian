@@ -159,29 +159,39 @@ export default class ColorfulFoldersPlugin
           console.error("Colorful Folders: Failed to optimize Blue Topaz settings", err as Error);
         }
 
-        // Check for first download or version update and ensure icon packs exist
+        // Check for first download or version update and ensure baseline icon packs exist
         const currentVersion = this.manifest.version;
-        const isFirstRunOrVersionChange = !this.settings.lastVersion || this.settings.lastVersion !== currentVersion;
-        if (isFirstRunOrVersionChange) {
-          const customIconKeys = Object.keys(Object.assign({}, this.settings.customIcons, this.localCustomIcons));
-          const hasSimpleIcons = customIconKeys.some(k => k.startsWith('simple-icons-') || k.startsWith('simple-'));
-          if (!hasSimpleIcons) {
-            window.setTimeout(() => {
-              void this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/simple-icons.json", "simple-icons");
-            }, 2000);
-          }
+        const isFirstRun = !this.settings.lastVersion;
+        const isVersionChange = Boolean(this.settings.lastVersion && this.settings.lastVersion !== currentVersion);
 
-          const hasTablerIcons = customIconKeys.some(k => k.startsWith('tabler-') || k.startsWith('tb-'));
-          if (!hasTablerIcons) {
-            window.setTimeout(() => {
-              void this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/tabler.json", "tabler");
-            }, 5000);
-          }
+        const customIconKeys = Object.keys(Object.assign({}, this.settings.customIcons, this.localCustomIcons));
+        const hasSimpleIcons = customIconKeys.some(k => k.startsWith('simple-icons-') || k.startsWith('simple-'));
+        const hasTablerIcons = customIconKeys.some(k => k.startsWith('tabler-') || k.startsWith('tb-'));
 
+        if (isFirstRun && (!hasSimpleIcons || !hasTablerIcons)) {
+          void (async () => {
+            try {
+              let downloadedAny = false;
+              if (!hasSimpleIcons) {
+                await this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/simple-icons.json", "simple-icons");
+                downloadedAny = true;
+              }
+              if (!hasTablerIcons) {
+                await this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/tabler.json", "tabler");
+                downloadedAny = true;
+              }
+              if (downloadedAny) {
+                new obsidian.Notice("Colorful Folders: Downloaded baseline icon packs (Simple Icons & Tabler).", 4000);
+              }
+              this.settings.lastVersion = currentVersion;
+              await this.saveSettings();
+            } catch (err) {
+              console.warn("Colorful Folders: Baseline icon pack auto-download deferred:", err);
+            }
+          })();
+        } else if (isVersionChange) {
           this.settings.lastVersion = currentVersion;
           await this.saveSettings();
-
-          // Show the collective changelog (Fetched from GitHub)
           await this.openChangelogModal();
         }
       })();
@@ -1371,7 +1381,9 @@ export default class ColorfulFoldersPlugin
           if (!body || typeof body !== 'string') return false;
 
           const rawSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${l} ${t} ${w} ${h}">${body}</svg>`;
-          const cleanSvg = this.iconManager ? this.iconManager.normalizeSvg(rawSvg, false) : rawSvg;
+          const cleanSvg = (body.includes('<script') || body.includes('javascript:') || body.includes('onload='))
+            ? (this.iconManager ? this.iconManager.normalizeSvg(rawSvg, false) : rawSvg)
+            : rawSvg;
           packIcons[id] = cleanSvg;
           this.localCustomIcons[id] = cleanSvg;
           count++;
@@ -1499,6 +1511,9 @@ export default class ColorfulFoldersPlugin
       }
 
       if (success) {
+        this.iconCache?.clear();
+        this.iconManager?.invalidateCategoryCache();
+        this.animatedIconService?.invalidateCache();
         this.registerCustomIcons();
         await this.saveSettings();
         void this.generateStyles();
