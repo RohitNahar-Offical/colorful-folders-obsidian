@@ -7,7 +7,7 @@ Colorful Folders automatically applies curated color palettes, smart icons, and 
 
 ---
 
-## 🚀 Latest Update: v5.0.9 — New Animated Icon Pack & Smoother Performance
+## 🚀 Latest Update: v5.1.0 — New Animated Icon Pack & Smoother Performance
 
 * **✨ New "Line icons (Animated)" Pack:** Install 1,200+ smooth animated icons directly from **Settings > Icon Settings**, and set their priority so they take precedence when auto-matching.
 

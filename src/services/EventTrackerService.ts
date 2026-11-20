@@ -6,18 +6,19 @@ import { TagColorSync } from "../integrations/TagColorSync";
 export class EventTrackerService {
     private plugin: ColorfulFoldersPlugin;
     private eventRefs: obsidian.EventRef[] = [];
-    private domEvents: { element: HTMLElement | Document | Window, event: string, callback: EventListenerOrEventListenerObject }[] = [];
+    private domEvents: {
+        element: HTMLElement | Document | Window;
+        event: string;
+        callback: EventListenerOrEventListenerObject;
+        options?: AddEventListenerOptions | boolean;
+    }[] = [];
 
     constructor(plugin: ColorfulFoldersPlugin) {
         this.plugin = plugin;
     }
 
     public registerEvents() {
-        if (obsidian.Platform.isMobile) {
-            this.registerMobileEvents();
-        } else {
-            this.registerDesktopEvents();
-        }
+        this.registerWorkspaceEvents();
 
         this.plugin.getOpenDocuments().forEach(doc => {
             this.registerDragEventsForDoc(doc);
@@ -167,54 +168,7 @@ export class EventTrackerService {
         );
     }
 
-    private registerDesktopEvents() {
-        this.registerEvent(
-            this.plugin.app.workspace.on("file-menu", (menu, file) => {
-                MenuHelper.addContextMenuItems(menu, file, this.plugin);
-            }),
-        );
-
-        this.registerEvent(
-            this.plugin.app.workspace.on("layout-change", () => {
-                this.plugin.domObserverService.initDividerObserver();
-                this.plugin.domObserverService.syncTagPaneDataset();
-                this.plugin.initStaircaseStyleStripper();
-                this.updateActiveFolderClasses();
-            }),
-        );
-
-        this.registerEvent(
-            this.plugin.app.workspace.on("active-leaf-change", (leaf) => {
-                const viewType = leaf?.view?.getViewType();
-                if (viewType === "tag") {
-                    this.plugin.domObserverService.syncTagPaneDataset();
-                }
-                if (viewType === "outline" || viewType === "tag" || viewType === "file-explorer") {
-                    this.plugin.initStaircaseStyleStripper();
-                }
-            }),
-        );
-        
-        this.registerEvent(
-            this.plugin.app.workspace.on("file-open", (file) => {
-                this.updateActiveFolderClasses();
-                if (file && file.path) {
-                    this.plugin.animatedIconService?.replayTargetByPath(file.path);
-                }
-                window.setTimeout(() => {
-                    this.plugin.initStaircaseStyleStripper();
-                }, 50);
-            }),
-        );
-
-        this.registerEvent(
-            this.plugin.app.workspace.on("css-change", () => {
-                this.plugin.generateStylesDebounced();
-            }),
-        );
-    }
-
-    private registerMobileEvents() {
+    private registerWorkspaceEvents() {
         this.registerEvent(
             this.plugin.app.workspace.on("file-menu", (menu, file) => {
                 MenuHelper.addContextMenuItems(menu, file, this.plugin);
@@ -227,11 +181,13 @@ export class EventTrackerService {
                 this.plugin.domObserverService.initDividerObserver();
                 this.plugin.domObserverService.syncTagPaneDataset();
                 this.plugin.initStaircaseStyleStripper();
-                this.plugin.dividerManager?.syncDividers();
+                if (this.plugin.dividerManager?.hasAnyDividers()) {
+                    this.plugin.dividerManager.syncDividers();
+                }
                 this.updateActiveFolderClasses();
             }),
         );
-        
+
         this.registerEvent(
             this.plugin.app.workspace.on("active-leaf-change", (leaf) => {
                 this.plugin.invalidateExplorerContainersCache();
@@ -251,12 +207,18 @@ export class EventTrackerService {
         this.registerEvent(
             this.plugin.app.workspace.on("file-open", (file) => {
                 this.updateActiveFolderClasses();
-                if (file && file.path) {
-                    this.plugin.animatedIconService?.replayTargetByPath(file.path);
+                if (file && file.path && this.plugin.animatedIconService?.hasAnyAnimatedIcons()) {
+                    this.plugin.animatedIconService.replayTargetByPath(file.path);
                 }
                 window.setTimeout(() => {
                     this.plugin.initStaircaseStyleStripper();
                 }, 50);
+            }),
+        );
+
+        this.registerEvent(
+            this.plugin.app.workspace.on("css-change", () => {
+                this.plugin.generateStylesDebounced();
             }),
         );
     }
@@ -345,9 +307,14 @@ export class EventTrackerService {
         this.eventRefs.push(ref);
     }
 
-    private registerDomEvent(element: HTMLElement | Document | Window, event: string, callback: EventListenerOrEventListenerObject) {
-        element.addEventListener(event, callback);
-        this.domEvents.push({ element, event, callback });
+    private registerDomEvent(
+        element: HTMLElement | Document | Window,
+        event: string,
+        callback: EventListenerOrEventListenerObject,
+        options?: AddEventListenerOptions | boolean
+    ) {
+        element.addEventListener(event, callback, options);
+        this.domEvents.push({ element, event, callback, options });
     }
 
     public registerDragEventsForDoc(doc: Document) {
@@ -373,17 +340,11 @@ export class EventTrackerService {
 
     public registerClickEventsForDoc(doc: Document) {
         this.registerDomEvent(doc, "click", (evt: Event) => {
-            const target = evt.target as HTMLElement | null;
-            if (!target) return;
-            const row = target.closest<HTMLElement>(
-                '.nav-folder-title, .nav-file-title, .tree-item-self, .nn-navitem, .nn-file'
-            );
-            if (!row) return;
-            const liveIcon = row.querySelector<HTMLElement>('.cf-live-animated-icon');
-            if (liveIcon) {
-                this.plugin.animatedIconService?.replayAnimatedElement(liveIcon);
-            }
-        });
+            if (!this.plugin.animatedIconService?.hasAnyAnimatedIcons()) return;
+
+            // Holistic animation delegated playback controller (zero reflow, capture phase)
+            this.plugin.animatedIconService.handleDelegatedClick(evt as MouseEvent);
+        }, { capture: true, passive: true });
     }
 
     private touchHeatmapParents(file: obsidian.TAbstractFile): void {
@@ -403,7 +364,7 @@ export class EventTrackerService {
         // but tracking them explicitly here ensures safety for sub-services.
         this.eventRefs = [];
         this.domEvents.forEach(e => {
-            e.element.removeEventListener(e.event, e.callback);
+            e.element.removeEventListener(e.event, e.callback, e.options);
         });
         this.domEvents = [];
     }

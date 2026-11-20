@@ -56,6 +56,7 @@ export default class ColorfulFoldersPlugin
   saveDataDebounced: obsidian.Debouncer<[], void>;
   localFileSystemIcons: Record<string, string> = {};
   localCustomIcons: Record<string, string> = {};
+  userCustomIcons: Record<string, string> = {};
   cachedDocuments: Set<Document> = new Set();
   _abortStartupRender: boolean = false;
   _isUnloading: boolean = false;
@@ -180,19 +181,7 @@ export default class ColorfulFoldersPlugin
           await this.saveSettings();
 
           // Show the collective changelog (Fetched from GitHub)
-          try {
-            const githubUrl = `https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/main/version.md`;
-            const response = await obsidian.requestUrl({ url: githubUrl });
-            if (response.status === 200) {
-              const content = response.text;
-              new ChangelogModal(this.app, content).open();
-            }
-          } catch (err) {
-            console.error(
-              "Colorful folders: failed to fetch collective changelog from GitHub",
-              err as Error
-            );
-          }
+          await this.openChangelogModal();
         }
       })();
     }, 1000);
@@ -445,14 +434,31 @@ export default class ColorfulFoldersPlugin
       const iconsDir = this.getIconsDirPath();
       if (!(await adapter.exists(iconsDir))) {
         this.localCustomIcons = {};
+        this.userCustomIcons = {};
         this._localCustomIconsLoaded = true;
         return;
       }
       this.localCustomIcons = {};
+      this.userCustomIcons = {};
       const listResult = await adapter.list(iconsDir);
+
+      // Collect known dedicated pack file prefixes (excluding custom-icons.json / custom.json)
+      const dedicatedPackPrefixes = new Set<string>();
+      for (const filePath of listResult.files) {
+        const norm = filePath.replace(/\\/g, '/');
+        const fileName = norm.split('/').pop() || '';
+        if (fileName.endsWith('.json') && fileName !== 'custom-icons.json' && fileName !== 'custom.json') {
+          dedicatedPackPrefixes.add(fileName.replace(/\.json$/, '').toLowerCase());
+        }
+      }
+
+      let customIconsPruned = false;
       for (const filePath of listResult.files) {
         if (filePath.endsWith('.json')) {
           try {
+            const norm = filePath.replace(/\\/g, '/');
+            const fileName = norm.split('/').pop() || '';
+            const isCustomFile = fileName === 'custom-icons.json' || fileName === 'custom.json';
             const raw = await adapter.read(filePath);
             const parsed = JSON.parse(raw) as Record<string, string>;
             if (parsed && typeof parsed === 'object') {
@@ -461,6 +467,21 @@ export default class ColorfulFoldersPlugin
                 if (typeof svg === 'string' && svg.includes('\\"')) {
                   svg = svg.replace(/\\"/g, '"');
                 }
+
+                if (isCustomFile) {
+                  // If custom-icons.json contains icons from installed packs (e.g. bi-, simple-, tabler-, line-md-),
+                  // prune them from userCustomIcons so they don't bloat the user's custom file.
+                  const idLower = id.toLowerCase();
+                  const belongsToPack = Array.from(dedicatedPackPrefixes).some(
+                    p => idLower.startsWith(`${p}-`) || idLower.startsWith(`${p}:`) || idLower.startsWith(`${p}_`)
+                  );
+                  if (belongsToPack) {
+                    customIconsPruned = true;
+                    continue;
+                  }
+                  this.userCustomIcons[id] = svg;
+                }
+
                 this.localCustomIcons[id] = svg;
               }
             }
@@ -469,6 +490,14 @@ export default class ColorfulFoldersPlugin
           }
         }
       }
+
+      // Auto-heal: If custom-icons.json was contaminated with duplicate pack icons, re-save it cleanly!
+      if (customIconsPruned) {
+        const customPath = `${iconsDir}/custom-icons.json`;
+        await adapter.write(customPath, JSON.stringify(this.userCustomIcons || {}));
+        console.debug("Colorful Folders: Pruned duplicate pack icons from custom-icons.json");
+      }
+
       this._localCustomIconsLoaded = true;
       this.iconCache?.clear();
       this.iconManager?.invalidateCategoryCache();
@@ -476,6 +505,19 @@ export default class ColorfulFoldersPlugin
     } catch (e) {
       console.error("Colorful Folders: Error loading local custom icons", e);
     }
+  }
+
+  addCustomIcon(id: string, svg: string): void {
+    if (!this.userCustomIcons) this.userCustomIcons = {};
+    if (!this.localCustomIcons) this.localCustomIcons = {};
+    this.userCustomIcons[id] = svg;
+    this.localCustomIcons[id] = svg;
+  }
+
+  removeCustomIcon(id: string): void {
+    if (this.userCustomIcons) delete this.userCustomIcons[id];
+    if (this.localCustomIcons) delete this.localCustomIcons[id];
+    if (this.settings?.customIcons) delete this.settings.customIcons[id];
   }
 
   async saveLocalCustomIcons(): Promise<void> {
@@ -486,7 +528,8 @@ export default class ColorfulFoldersPlugin
         await adapter.mkdir(iconsDir);
       }
       const customPath = `${iconsDir}/custom-icons.json`;
-      await adapter.write(customPath, JSON.stringify(this.localCustomIcons || {}));
+      // CRITICAL FIX: Only save user's personal custom icons, NEVER serialize installed packs!
+      await adapter.write(customPath, JSON.stringify(this.userCustomIcons || {}));
       this.animatedIconService?.invalidateCache();
       this.iconCache?.clear();
     } catch (e) {
@@ -555,6 +598,7 @@ export default class ColorfulFoldersPlugin
   async clearAllIconPacksAndCustomIcons(): Promise<void> {
     this.settings.customIcons = {};
     this.localCustomIcons = {};
+    this.userCustomIcons = {};
     this.localFileSystemIcons = {};
     this.iconCache?.clear();
     this.iconManager?.invalidateCategoryCache();
@@ -688,6 +732,7 @@ export default class ColorfulFoldersPlugin
     NotebookNavigatorIntegration.layout = { border: this.settings.nnRowBorder ?? -1, radius: this.settings.folderBorderRadius ?? 6, spacing: this.settings.rowSpacing ?? 2, weight: this.settings.folderTextWeight ?? 800 };
     this.syncNotebookNavigatorPairs();
     this.syncCustomFolderColorsMap();
+    this.animatedIconService?.syncSettings();
     this.activePaletteCache = null;
     this.parsedExclusionList = new Set(
       (this.settings.exclusionList || "")
@@ -917,6 +962,46 @@ export default class ColorfulFoldersPlugin
         void this.aiIconClassifier.classifyVault();
       },
     });
+  }
+
+  async openChangelogModal(): Promise<void> {
+    try {
+      const currentVersion = this.manifest.version;
+      let content = "";
+
+      // 1. Fetch from GitHub main branch
+      try {
+        const mainUrl = `https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/main/version.md`;
+        const response = await obsidian.requestUrl({ url: mainUrl });
+        if (response.status === 200 && response.text) {
+          content = response.text;
+        }
+      } catch {
+        // network or branch unreachable
+      }
+
+      // 2. If main does not yet include notes for this version (e.g. during Development testing), fallback to Development branch
+      if (!content || !content.includes(currentVersion)) {
+        try {
+          const devUrl = `https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/Development/version.md`;
+          const devResponse = await obsidian.requestUrl({ url: devUrl });
+          if (devResponse.status === 200 && devResponse.text) {
+            content = devResponse.text;
+          }
+        } catch {
+          // fallback failed
+        }
+      }
+
+      if (content && content.trim().length > 0) {
+        new ChangelogModal(this.app, content).open();
+      }
+    } catch (err) {
+      console.error(
+        "Colorful folders: failed to display changelog",
+        err as Error
+      );
+    }
   }
 
   async toggleStealthMode() {
@@ -1214,6 +1299,68 @@ export default class ColorfulFoldersPlugin
           }
         }
 
+        if (Object.keys(packIcons).length > 0) {
+          try {
+            const adapter = this.app.vault.adapter;
+            const iconsDir = this.getIconsDirPath();
+            if (!(await adapter.exists(iconsDir))) {
+              await adapter.mkdir(iconsDir);
+            }
+            const packPath = `${iconsDir}/${prefix}.json`;
+            await adapter.write(packPath, JSON.stringify(packIcons));
+          } catch (e) {
+            console.error(`Colorful Folders: Failed to write pack file for ${prefix}`, e);
+          }
+        }
+        return true;
+      } else if (data && typeof data === 'object' && Array.isArray(data.icons)) {
+        const rawPrefix = typeof data.prefix === 'string' ? data.prefix : prefix;
+        const packPrefix = rawPrefix.replace(/[^a-z0-9-_]/gi, '') || 'useanimations';
+        const items = data.icons as Array<{ id?: string; name?: string; svg?: string[] }>;
+        for (const item of items) {
+          const name = (item.id || item.name || '').replace(/[^a-z0-9-_]/gi, '');
+          if (!name) continue;
+          const id = `${packPrefix}-${name}`;
+          if (item.svg && Array.isArray(item.svg) && item.svg[0]) {
+            try {
+              const svgRes = await obsidian.requestUrl({ url: item.svg[0] });
+              let rawSvg = svgRes.text?.trim() || '';
+              if (rawSvg.startsWith('<svg')) {
+                rawSvg = rawSvg.replace(/stroke="rgb\(0,\s*0,\s*0\)"/gi, 'stroke="currentColor"');
+                rawSvg = rawSvg.replace(/stroke="#000(000)?"/gi, 'stroke="currentColor"');
+                const cleanSvg = this.iconManager ? this.iconManager.normalizeSvg(rawSvg, false) : rawSvg;
+                packIcons[id] = cleanSvg;
+                this.localCustomIcons[id] = cleanSvg;
+                count++;
+              }
+            } catch {
+              // continue
+            }
+          }
+        }
+        if (Object.keys(packIcons).length > 0) {
+          try {
+            const adapter = this.app.vault.adapter;
+            const iconsDir = this.getIconsDirPath();
+            if (!(await adapter.exists(iconsDir))) {
+              await adapter.mkdir(iconsDir);
+            }
+            const packPath = `${iconsDir}/${prefix}.json`;
+            await adapter.write(packPath, JSON.stringify(packIcons));
+          } catch (e) {
+            console.error(`Colorful Folders: Failed to write pack file for ${prefix}`, e);
+          }
+        }
+        return true;
+      } else if (data && typeof data === 'object' && !Array.isArray(data)) {
+        for (const [id, rawSvg] of Object.entries(data as Record<string, string>)) {
+          if (typeof rawSvg === 'string' && rawSvg.trim().startsWith('<svg')) {
+            const cleanSvg = this.iconManager ? this.iconManager.normalizeSvg(rawSvg, false) : rawSvg;
+            packIcons[id] = cleanSvg;
+            this.localCustomIcons[id] = cleanSvg;
+            count++;
+          }
+        }
         if (Object.keys(packIcons).length > 0) {
           try {
             const adapter = this.app.vault.adapter;

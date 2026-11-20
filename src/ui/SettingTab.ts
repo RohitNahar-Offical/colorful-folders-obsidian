@@ -152,23 +152,40 @@ export class ColorfulFoldersSettingTab extends obsidian.PluginSettingTab {
                 }
 
                 const viewBox = `${l} ${tVal} ${w} ${h}`;
-                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" width="24" height="24">${body}</svg>`;
+                const rawSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" width="24" height="24">${body}</svg>`;
+                const cleanSvg = this.plugin.iconManager ? this.plugin.iconManager.normalizeSvg(rawSvg, false) : rawSvg;
 
                 if (!this.plugin.localCustomIcons) this.plugin.localCustomIcons = {};
-                this.plugin.localCustomIcons[id] = svg;
+                this.plugin.localCustomIcons[id] = cleanSvg;
+                packIcons[id] = cleanSvg;
                 count++;
             };
 
+            const packIcons: Record<string, string> = {};
             for (const [name, iconData] of Object.entries(icons)) {
                 processIcon(name, iconData);
+            }
+
+            // Write full icon pack to its own dedicated file: icons/{prefix}.json
+            if (Object.keys(packIcons).length > 0) {
+                try {
+                    const adapter = this.plugin.app.vault.adapter;
+                    const iconsDir = this.plugin.getIconsDirPath();
+                    if (!(await adapter.exists(iconsDir))) await adapter.mkdir(iconsDir);
+                    await adapter.write(`${iconsDir}/${prefix}.json`, JSON.stringify(packIcons));
+                } catch (e) {
+                    console.error(`Colorful Folders: Failed to save pack file for ${prefix}`, e);
+                }
             }
         } else if (typeof data === "object" && data !== null) {
             for (const [key, value] of Object.entries(data)) {
                 if (typeof value === "string" && value.trim().startsWith("<svg")) {
-                    if (!this.plugin.localCustomIcons) this.plugin.localCustomIcons = {};
-                    this.plugin.localCustomIcons[key] = value.trim();
+                    this.plugin.addCustomIcon(key, value.trim());
                     count++;
                 }
+            }
+            if (count > 0) {
+                await this.plugin.saveLocalCustomIcons();
             }
         }
 

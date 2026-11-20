@@ -57,6 +57,8 @@ export class IconRepository {
     private _categoryTrie = new CategoryTrie();
     private _categoryTrieBuilt = false;
     private _customRulesKey: string = '';
+    private _lastVarietySeed: number = 0;
+    private _lastVarietyEnabled: boolean = true;
     private _normCache = new LRUCache<string, string>(1024);
     private _dataUriCache = new LRUCache<string, string>(1024);
     private _findPackIconCache = new LRUCache<string, string | null>(512);
@@ -67,6 +69,8 @@ export class IconRepository {
 
     constructor(plugin: IColorfulFoldersPlugin) {
         this.plugin = plugin;
+        this._lastVarietySeed = plugin.settings?.varietySeed ?? 0;
+        this._lastVarietyEnabled = plugin.settings?.autoIconVariety ?? true;
     }
 
     isValidIcon(id: string | null | undefined): boolean {
@@ -98,10 +102,14 @@ export class IconRepository {
     getAutoIconData(name: string, path?: string, isFile?: boolean): AutoIconData | null {
         if (!name) return null;
 
-        // Self-healing cache guard: if custom rules changed in settings, clear stale cache immediately
+        // Self-healing cache guard: if custom rules or variety settings changed in settings, clear stale cache immediately
         const currentRules = this.plugin.settings?.customIconRules || '';
-        if (this._customRulesKey !== currentRules) {
+        const currentSeed = this.plugin.settings?.varietySeed ?? 0;
+        const currentVariety = this.plugin.settings?.autoIconVariety ?? true;
+        if (this._customRulesKey !== currentRules || this._lastVarietySeed !== currentSeed || this._lastVarietyEnabled !== currentVariety) {
             this._autoIconResultCache.clear();
+            this._lastVarietySeed = currentSeed;
+            this._lastVarietyEnabled = currentVariety;
         }
 
         // Cache key includes type prefix to prevent folder/file name collisions
@@ -304,12 +312,19 @@ export class IconRepository {
                     const tierVal: 2 | 3 = cat.isCustom ? 2 : 3;
                     const match = { ...cat, tier: tierVal, packSource: cat.isCustom ? 'custom-rule' : 'category-default' };
                     if (settings.autoIconVariety) {
-                        const h = hashString(name);
+                        const seed = settings.varietySeed || 0;
+                        const baseStr = path || name;
+                        const hashKey = seed !== 0 ? `${baseStr}#${seed}` : baseStr;
+                        const h = hashString(hashKey);
                         if (match.emojis && match.emojis.length > 0) {
-                            match.emoji = match.emojis[h % match.emojis.length];
+                            const selectedEmoji = match.emojis[h % match.emojis.length];
+                            match.emoji = selectedEmoji;
+                            match.emojis = [selectedEmoji, ...match.emojis.filter(e => e !== selectedEmoji)];
                         }
                         if (match.lucides && match.lucides.length > 0) {
-                            match.lucide = match.lucides[h % match.lucides.length];
+                            const selectedLucide = match.lucides[h % match.lucides.length];
+                            match.lucide = selectedLucide;
+                            match.lucides = [selectedLucide, ...match.lucides.filter(l => l !== selectedLucide)];
                         }
                     }
                     return match;
@@ -682,6 +697,8 @@ export class IconRepository {
     invalidateCache(): void {
         this._categoryTrieBuilt = false;
         this._customRulesKey = '';
+        this._lastVarietySeed = 0;
+        this._lastVarietyEnabled = true;
         this._cachedObsidianIconIds = null;
         this._normCache.clear();
         this._dataUriCache.clear();

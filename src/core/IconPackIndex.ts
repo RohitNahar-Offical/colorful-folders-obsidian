@@ -21,6 +21,9 @@ export class IconPackIndex {
         if (!id) return 'custom';
         const lower = id.toLowerCase();
         if (lower.startsWith('line-md-') || lower.startsWith('line-md:') || lower.startsWith('line-md_') || lower.startsWith('linemd-')) return 'line-md';
+        if (lower.startsWith('meteocons-') || lower.startsWith('meteocons:') || lower.startsWith('meteocons_')) return 'meteocons';
+        if (lower.startsWith('generative-') || lower.startsWith('generative:') || lower.startsWith('generative_')) return 'generative';
+        if (lower.startsWith('useanimations-') || lower.startsWith('useanimations:') || lower.startsWith('useanimations_') || lower.startsWith('ua-')) return 'useanimations';
         if (lower.startsWith('fa-solid-')) return 'fa-solid';
         if (lower.startsWith('fa-regular-')) return 'fa-regular';
         if (lower.startsWith('simple-icons-') || lower.startsWith('simple-') || lower.startsWith('si-')) return 'simple-icons';
@@ -42,11 +45,14 @@ export class IconPackIndex {
         if (packId === 'custom') return lower.startsWith('custom-');
         if (packId === 'emoji') return !IconPackIndex.ALPHA_REGEX.test(iconKey);
         if (packId === 'line-md' || packId === 'linemd' || packId === 'line-icons' || packId === 'animated') return lower.startsWith('line-md-') || lower.startsWith('line-md:') || lower.startsWith('line-md_') || lower.startsWith('linemd-');
+        if (packId === 'meteocons' || packId === 'weather') return lower.startsWith('meteocons-') || lower.startsWith('meteocons:') || lower.startsWith('meteocons_');
+        if (packId === 'generative' || packId === 'generative-icons') return lower.startsWith('generative-') || lower.startsWith('generative:') || lower.startsWith('generative_');
+        if (packId === 'useanimations' || packId === 'ua') return lower.startsWith('useanimations-') || lower.startsWith('useanimations:') || lower.startsWith('useanimations_') || lower.startsWith('ua-');
         if (packId === 'bootstrap' || packId === 'bi') return lower.startsWith('bi-') || lower.startsWith('bootstrap-') || lower.startsWith('bi:');
-        if (packId === 'simple-icons') return lower.startsWith('simple-') || lower.startsWith('si-');
+        if (packId === 'simple-icons' || packId === 'simple' || packId === 'si') return lower.startsWith('simple-') || lower.startsWith('si-') || lower.startsWith('simple-icons-');
         if (packId === 'tabler' || packId === 'tb') return lower.startsWith('tb-') || lower.startsWith('tabler-');
         if (packId === 'remix' || packId === 'ri') return lower.startsWith('ri-') || lower.startsWith('remix-');
-        if (packId === 'font-awesome' || packId === 'fa') return lower.startsWith('fa-') || lower.startsWith('fas-') || lower.startsWith('fab-') || lower.startsWith('far-') || lower.includes('font-awesome');
+        if (packId === 'font-awesome' || packId === 'fa' || packId === 'fa-solid' || packId === 'fa-regular') return lower.startsWith('fa-') || lower.startsWith('fas-') || lower.startsWith('fab-') || lower.startsWith('far-') || lower.includes('font-awesome');
         if (packId === 'material' || packId === 'mdi') return lower.startsWith('mdi-') || lower.includes('material');
         if (packId === 'feather') return lower.startsWith('feather-');
         if (packId === 'rpg-awesome' || packId === 'ra') return lower.startsWith('ra-') || lower.includes('rpg-awesome');
@@ -58,7 +64,7 @@ export class IconPackIndex {
                 lower.startsWith('far-') || lower.startsWith('fab-') || lower.startsWith('tb-') ||
                 lower.startsWith('tabler-') || lower.startsWith('ri-') || lower.startsWith('remix-') ||
                 lower.startsWith('simple-') || lower.startsWith('si-') || lower.startsWith('mdi-') ||
-                lower.startsWith('feather-') || lower.startsWith('custom-') || lower.startsWith('line-md-') ||
+                lower.startsWith('feather-') || lower.startsWith('custom-') || lower.startsWith('line-md-') || lower.startsWith('meteocons-') || lower.startsWith('generative-') || lower.startsWith('useanimations-') || lower.startsWith('ua-') ||
                 lower.startsWith('ra-') || lower.startsWith('bx-') || lower.startsWith('octicon-');
             return !isOtherPack && IconPackIndex.ALPHA_REGEX.test(iconKey);
         }

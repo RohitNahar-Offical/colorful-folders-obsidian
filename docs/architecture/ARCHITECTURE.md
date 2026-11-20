@@ -285,7 +285,7 @@ graph TD
      - **Mental Models & Growth** (Priority 130): `higher-order` (`layers`), `underestimate` (`hourglass`), `remember/mnemonic` (`brain`), `wu wei` (`sparkles`), `yin and yang` (`scale`), `vulnerability` (`heart`), `trust the process` (`compass`, `trending-up`), `use it or lose it` (`repeat`, `flame`)
      - **Habits & Routines** (Priority 125): `words...habits`, `habit` $\rightarrow$ `repeat`, `calendar-check`, `target`
      - **Narratives & Philosophy** (Priority 110–115): `quote`, `saying`, `journey`, `wander`, `story`, `agony` $\rightarrow$ `quote`, `compass`, `pen-tool`, `heart`
-   - If `autoIconVariety` is enabled, hashes `hashString(name)` against the top matching category's `emojis` / `lucides` array to pick diverse icons.
+   - **Seeded Variety Hashing & Global Re-rolls**: If `autoIconVariety` is enabled, hashes a composite key `hashString(seed !== 0 ? `${baseStr}#${seed}` : baseStr)` (where `baseStr = path || name` and `seed = settings.varietySeed || 0`) against the category's `emojis` and `lucides` pools. Rotating the arrays (`[selected, ...remaining]`) ensures that the variety pick is preserved across all fallback pack resolvers. Modifying the seed via the "Shuffle icons" button instantly re-rolls the distribution across all matching vault items, protected by self-healing cache guards.
 
 7. **Tier 4: Stem-Aware Optimized Fuzzy Search (Priority 50)**
    - Executes fast-path O(1) query via `IconPackIndex.findIcon()`.
@@ -299,16 +299,48 @@ graph TD
 
 ---
 
-### 3.3 Live Animated SMIL Icons Subsystem (`AnimatedIconService.ts`)
+### 3.3 Live Animated SMIL Icons Subsystem (`AnimatedIconService.ts` & `src/services/animation/`)
 
-Static CSS mask Data URIs (`-webkit-mask-image`) cannot execute SMIL animation loops or SVG keyframes in Chromium. To provide seamless animated SVG icon support without regressing Zero-DOM performance:
+Static CSS mask Data URIs (`-webkit-mask-image`) cannot execute SMIL animation loops or SVG keyframes in Chromium. To provide seamless animated SVG icon support without regressing Zero-DOM performance, the animation subsystem implements a decoupled, object-oriented domain architecture adhering to **SOLID** and **DRY** design patterns:
 
-1. **Isolated Dynamic Injection**: `AnimatedIconService` detects whether an assigned icon contains animation tags (`<animate>`, `<animateTransform>`, `<animateMotion>`, `<set>`, `@keyframes`).
-2. **Dedicated DOM Container (`.cf-live-animated-icon`)**: For animated icons only, mounts a single pre-compiled SVG DOM node inside a `.cf-live-animated-icon` container directly in the target row.
-3. **Template Memoization with LRU Caching**: Pre-compiles and sanitizes animated SVG templates inside `_animatedTemplateCache: LRUCache<string, HTMLElement>(256)`, ensuring $O(1)$ cloning overhead (`wrap.cloneNode(true)`).
-4. **Leak-Free Unmounting & Cache Flushing**: When styles change, icons are removed, or hard resets occur, all active animated DOM nodes are synchronously detached and memory caches purged.
-5. **Pre-Registration during Style Generation**: Active animated icon targets are discovered during the single-pass traversal in `StyleGenerator.generateCss()` and registered into `_registeredAnimatedTargets` in $O(1)$ memory. This completely decouples animation discovery from the scroll loop, eliminating full-DOM `querySelectorAll` scans during scroll.
-6. **$O(K)$ Viewport Synchronization**: `syncAnimatedIcons()` executes in $O(K)$ time where $K$ is the number of active animated elements (typically $\le 2$), querying only registered paths via targeted `querySelector([data-path="..."])` and preserving butter-smooth 60/120 FPS scrolling.
+```mermaid
+graph TD
+    Facade[AnimatedIconService Facade] --> Classifier[AnimationClassifier]
+    Facade --> TemplateFactory[AnimationTemplateFactory]
+    Facade --> ViewportManager[AnimationViewportManager]
+    Facade --> PlaybackEngine[AnimationPlaybackEngine]
+    Facade --> DomMounter[AnimationDomMounter]
+
+    Classifier -->|O 1 Caching| Cache[Classification Maps]
+    TemplateFactory -->|Sanitization & Box Stripping| LRU[Template LRUCache]
+    ViewportManager -->|Culling & SMIL Recovery| IO[Single IntersectionObserver]
+    PlaybackEngine -->|Morph & Replay| Triggers[SMIL / WAAPI Engines]
+    DomMounter -->|DRY Reconciliation| DOM[Obsidian File Explorer Rows]
+```
+
+1. **Modular OOP Domain Architecture**:
+   - **`AnimatedIconService` (Facade)**: Acts as a thin, backward-compatible orchestrator coordinating lifecycle events, settings synchronization, cache invalidations, and public APIs.
+   - **`AnimationClassifier` (SRP: Identification)**: Detects SMIL and WAAPI animations with instant $O(1)$ prefix pre-checks (`line-md-`, `linemd-`) and memoized classification maps for looping vs single-shot icons.
+   - **`AnimationTemplateFactory` (SRP: Template Synthesis & Security)**: Parses SVGs via DOMParser with regex fallbacks, strips script tags and event attributes for XSS protection, purges outer bounding boxes, and caches pre-compiled template DOM nodes inside `LRUCache<string, HTMLElement>(256)`.
+   - **`AnimationViewportManager` (SRP: Viewport & Lifecycle Culling)**: Backed by a single global `IntersectionObserver` and `WeakSet<HTMLElement>`. Automatically suspends animations (`pauseAnimations()`) when off-screen to guarantee 0% idle CPU, coordinates document `visibilitychange` across pop-out windows, and re-clones fresh SVG templates on viewport scroll-in to recover broken SMIL chained syncbases.
+   - **`AnimationPlaybackEngine` (SRP: Interaction & Playback)**: Encapsulates delegated click handling, dual-state morph triggers, 300ms double-click throttling, and Web Animations API / SMIL timebase restarts.
+   - **`AnimationDomMounter` (SRP: DOM Reconciliation)**: Enforces DRY element injection via `mountOrUpdateLiveIcon()`, synchronizing row state classes (`cf-animated-icon-active`, `cf-has-animated-open`, `cf-has-animated-closed`) and managing stale icon cleanup.
+2. **Dedicated DOM Container (`.cf-live-animated-icon`)**: Mounts a single pre-compiled SVG DOM node inside `.cf-live-animated-icon` directly in the target folder or file row with `contain: layout style` to isolate layout reflows.
+3. **Boxless & Frameless Vector Rendering**:
+   - Strips all outer bounding boxes, framing rectangles, outlines, border-radii, and 32x32 hit-target rects (`<rect width="32" height="32" pointer-events="all">`) from animated icons.
+   - Sets `overflow: visible` on `<svg>` viewports so rotational or scale animations never clip at bounding boundaries.
+   - Replaces rectangular focus boxes with `:focus-visible { filter: drop-shadow(0 0 3px currentColor); }`.
+4. **Native Continuous Ping-Pong Loops (Option 1 Batch Transformation)**:
+   - All 5,891 interactive dual-state generative icons in `icons/generative.json` were batch-transformed into continuous, self-looping W3C SMIL syncbase chains:
+     - **Master A**: `id="cf_la_<key>" begin="0s;cf_lb_<key>.end+0.8s"` (starts immediately on mount, loops after B settles).
+     - **Master B**: `id="cf_lb_<key>" begin="cf_la_<key>.end+0.8s"` (triggers smooth morph return cycle).
+     - **Follower Animations**: Synchronized via `begin="cf_la_<key>.begin"` and `begin="cf_lb_<key>.begin"`.
+   - Completely eliminates click-to-change requirements and timing mismatches, providing natively looping boxless icons out of the box.
+5. **Folder Open/Close Dual State Coexistence (`RegisteredAnimatedTarget`)**: Supports independent static and dynamic icons for folder closed vs open actions. Active targets are registered with granular states (`closed`, `open`, `both`). Fine-grained CSS suppression rules in `BaseCssGenerator.ts` (`.nav-folder:not(.is-collapsed) > .cf-has-animated-open` and `.nav-folder.is-collapsed > .cf-has-animated-closed`) hide the static CSS `::before` mask strictly during the active animated state, preventing icon overlap.
+6. **Optical Sizing Factor**: Scaled via `calc(1.3em * iconScale * wideScale * 1.15)` across `BaseCssGenerator.ts` and `StyleGenerator.ts` to optically balance embedded SVG viewBox margins with edge-to-edge static CSS mask glyphs.
+7. **Pre-Registration during Style Generation**: Active animated icon targets are discovered during the single-pass traversal in `StyleGenerator.generateCss()` and registered into `_registeredAnimatedTargets` in $O(1)$ memory.
+8. **$O(K)$ Viewport Synchronization**: `syncAnimatedIcons()` reads directly from `_registeredAnimatedTargets`, querying only registered paths ($K$, where $K \le 5$) and bypassing full-DOM sweeps during scrolling.
+9. **Leak-Free Unmounting & Clean Teardown**: `clearAllLiveAnimatedIconsFromDom()` synchronously detaches all mounted `.cf-live-animated-icon` elements and removes row animation classes (`cf-animated-icon-active`, `cf-has-animated-closed`, `cf-has-animated-open`) on plugin unload, restoring Obsidian's DOM to a clean native state.
 
 ---
 

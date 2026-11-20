@@ -38,14 +38,14 @@ docs/
 * **[DEVELOPMENT_RULES.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/rules/DEVELOPMENT_RULES.md)** — Consolidated 'source of truth' development rules (v5.0.0 Zero-DOM).
 * **[FEATURE_FILE_MAP.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/rules/FEATURE_FILE_MAP.md)** — Quick reference mapping features directly to source files in `src/`.
 * **[API_REFERENCE.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/rules/API_REFERENCE.md)** — Public API reference for core services, resolvers, and subsystem integrations.
-* **[INCIDENT_LOG.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/rules/INCIDENT_LOG.md)** — Post-mortem log of 50 real incidents, root causes, and resolutions.
+* **[INCIDENT_LOG.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/rules/INCIDENT_LOG.md)** — Post-mortem log of 55 real incidents, root causes, and resolutions.
 
 ---
 
 ## 🏗️ 2. Architecture & Engineering Deep-Dives (`docs/architecture/`)
 
 * **[ARCHITECTURE.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/architecture/ARCHITECTURE.md)** — Architectural spec of the Zero-DOM / `document.adoptedStyleSheets` rendering engine.
-* **[CODEBASE_GUIDE.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/architecture/CODEBASE_GUIDE.md)** — Exhaustive subsystem breakdown of all 51 TypeScript files in `src/`.
+* **[CODEBASE_GUIDE.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/architecture/CODEBASE_GUIDE.md)** — Exhaustive subsystem breakdown of all 60 TypeScript files in `src/`.
 * **[ENGINE_INTERNALS.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/architecture/ENGINE_INTERNALS.md)** — Reactive event bus mapping, path key normalization, and CSS selector specs.
 * **[STAIRCASE_EFFECT.md](file:///r:/Obsidian/Testsub1/.obsidian/plugins/colorful-folders/docs/architecture/STAIRCASE_EFFECT.md)** — Layout alignment overrides and dynamic CSS custom property mechanics.
 

@@ -144,6 +144,8 @@ export interface ColorfulFoldersSettings {
     enableStaircaseHack: boolean;
     heatmapData?: Record<string, number>;
 
+    animationSpeed: number;
+
     aiProvider: 'ollama' | 'custom';
     aiApiKey: string;
     aiCustomEndpoint: string;
@@ -158,6 +160,14 @@ export interface ColorfulFoldersSettings {
     embeddingCustomEndpoint?: string;
 }
 
+
+export interface IconAnimationSettings {
+    animationSpeed: number; // 0.5 (Slow), 1 (Normal), 1.5 (Fast), 2 (Snappy)
+}
+
+export const DEFAULT_ANIMATION_SETTINGS: IconAnimationSettings = {
+    animationSpeed: 1,
+};
 
 export interface AutoIconData {
     tier?: number;
@@ -218,6 +228,9 @@ export interface IColorfulFoldersPlugin {
     getIconsDirPath(): string;
     localFileSystemIcons?: Record<string, string | null>;
     localCustomIcons: Record<string, string>;
+    userCustomIcons: Record<string, string>;
+    addCustomIcon(id: string, svg: string): void;
+    removeCustomIcon(id: string): void;
     getCustomIcon(id: string): string | undefined;
     getCustomIconsMap(): Record<string, string>;
     loadLocalIcons(): Promise<void>;

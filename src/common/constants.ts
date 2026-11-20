@@ -100,7 +100,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     glassmorphism: true,
 
     autoIcons: true,
-    iconPackPriorityOrder: ['custom', 'lucide', 'line-md', 'bootstrap', 'simple-icons', 'tabler', 'remix', 'font-awesome', 'material', 'feather', 'emoji'],
+    iconPackPriorityOrder: ['custom', 'lucide', 'bootstrap', 'simple-icons', 'tabler', 'remix', 'font-awesome', 'material', 'feather', 'emoji'],
     autoIconVariety: true,
     varietySeed: 0,
     wideAutoIcons: true,
@@ -164,6 +164,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     showCollapseIndicator: true,
     folderBorderRadius: 10,
     enableStaircaseHack: false,
+    animationSpeed: 1,
     aiProvider: "ollama",
     aiApiKey: "",
     aiCustomEndpoint: "",
@@ -334,10 +335,35 @@ export const AUTO_ICON_CATEGORIES: AutoIconData[] = [
     { rex: /\b(?:trash|delete|deleted|remove|bin|recycle-bin)\b/i, emoji: "🗑️", lucide: "trash", priority: 70 }
 ];
 
+export interface FeaturedIconPack {
+    name: string;
+    desc: string;
+    url: string;
+    prefix: string;
+    packId: string;
+    label: string;
+}
+
+export const FEATURED_ICON_PACKS: FeaturedIconPack[] = [
+    { name: "✨ Line icons (Animated)", desc: "1,200+ smooth animated SVG icons from Iconify.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/line-md.json", prefix: "line-md", packId: "line-md", label: "Line icons (Animated) (line-md-)" },
+    { name: "🌦️ Meteocons (Animated)", desc: "440+ smooth animated weather & atmosphere SVG icons.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/meteocons.json", prefix: "meteocons", packId: "meteocons", label: "Meteocons (Animated)" },
+    { name: "✨ Generative UI (Animated)", desc: "1,160+ smooth SMIL animated UI icons by LottieFiles.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/main/icons/generative.json", prefix: "generative", packId: "generative", label: "Generative UI (Animated)" },
+    { name: "✨ useAnimations (Animated)", desc: "300+ animated micro-interaction icons from useAnimations.", url: "https://useanimations.com/icons.json", prefix: "useanimations", packId: "useanimations", label: "useAnimations (Animated)" },
+    { name: "✨ Remix icons", desc: "Clean and neutral design system.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/ri.json", prefix: "ri", packId: "remix", label: "Remix Icons (ri-)" },
+    { name: "🪶 Feather icons", desc: "Simply beautiful open source icons.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/feather.json", prefix: "feather", packId: "feather", label: "Feather Icons" },
+    { name: "📐 Tabler icons", desc: "Over 4000+ well-crafted icons.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/tabler.json", prefix: "tabler", packId: "tabler", label: "Tabler Icons (tb-)" },
+    { name: "📦 Boxicons", desc: "High quality web friendly icons.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/bx.json", prefix: "bx", packId: "boxicons", label: "Boxicons (bx-)" },
+    { name: "🚩 Font Awesome solid", desc: "Official professional solid set.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/fa-solid.json", prefix: "fa-solid", packId: "font-awesome", label: "FontAwesome Solid (fas-)" },
+    { name: "🏳️ Font Awesome regular", desc: "Official line icons from FA.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/fa-regular.json", prefix: "fa-regular", packId: "font-awesome", label: "FontAwesome Regular (far-)" },
+    { name: "🐙 Octicons", desc: "GitHub's native icon library.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/octicon.json", prefix: "octicon", packId: "octicon", label: "Octicons (octicon-)" },
+    { name: "🎮 RPG awesome", desc: "Fantasy icons for RPG notes.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/ra.json", prefix: "ra", packId: "rpg-awesome", label: "RPG Awesome (ra-)" },
+    { name: "⚡ Simple icons", desc: "Brand icons for popular services.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/simple-icons.json", prefix: "simple-icons", packId: "simple-icons", label: "Simple Icons (Brand & Tech Logos)" },
+    { name: "🅱️ Bootstrap icons", desc: "Official Bootstrap icon library.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/bi.json", prefix: "bi", packId: "bootstrap", label: "Bootstrap Icons (bi-)" }
+];
+
 export const DEFAULT_ICON_PACK_ORDER: string[] = [
     'custom',
     'lucide',
-    'line-md',
     'bootstrap',
     'simple-icons',
     'tabler',
@@ -351,21 +377,20 @@ export const DEFAULT_ICON_PACK_ORDER: string[] = [
 export const PACK_PRIORITY: Record<string, number> = {
     'custom': 100,       // 1. Unique brand assets
     'lucide': 90,        // 2. Main UI baseline (Modern, sharp, highly consistent)
-    'line-md': 85,       // 3. Line icons (Animated smooth SVG icons from Iconify)
-    'tabler': 80,        // 4. Main UI fallback (Massive library, same aesthetic)
-    'simple-icons': 70,  // 5. Brands only (Logos for Google, GitHub, etc.)
-    'remix': 60,         // 6. Secondary fallback
-    'bi': 55,            // 7. Bootstrap Icons (large general-purpose library)
-    'bootstrap': 55,     // 7b. Bootstrap alias
-    'feather': 50,       // 8. Deprecated (Lucide is the upgraded version)
-    'font-awesome': 40,  // 9. Utility fallback (Heavy, traditional style)
-    'material': 30       // 10. Geometric fallback (Different design language)
+    'tabler': 80,        // 3. Main UI fallback (Massive library, same aesthetic)
+    'simple-icons': 70,  // 4. Brands only (Logos for Google, GitHub, etc.)
+    'remix': 60,         // 5. Secondary fallback
+    'bi': 55,            // 6. Bootstrap Icons (large general-purpose library)
+    'bootstrap': 55,     // 6b. Bootstrap alias
+    'feather': 50,       // 7. Deprecated (Lucide is the upgraded version)
+    'font-awesome': 40,  // 8. Utility fallback (Heavy, traditional style)
+    'material': 30       // 9. Geometric fallback (Different design language)
 };
 
 export const PACK_PREFIXES: string[] = [
-    'custom', 'line-md', 'linemd', 'simple-icons', 'simple', 'lucide', 'feather',
+    'custom', 'line-md', 'linemd', 'meteocons', 'generative', 'useanimations', 'ua', 'simple-icons', 'simple', 'lucide', 'feather',
     'fa', 'fas', 'far', 'fab', 'fontawesome', 'ri', 'remix',
-    'tb', 'tabler', 'mdi', 'material', 'oct', 'octicons', 'bi', 'bootstrap'
+    'tb', 'tabler', 'mdi', 'material', 'oct', 'octicons', 'bi', 'bootstrap', 'bx', 'boxicons', 'ra', 'rpg-awesome'
 ];
 
 export const STOP_WORDS = new Set([

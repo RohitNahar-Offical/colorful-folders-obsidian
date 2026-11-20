@@ -260,7 +260,7 @@ export function stemWord(word: string): string {
     return s;
 }
 
-export const ICON_PREFIX_REGEX = /^(line-md|linemd|si|simple|simple-icons|simpleicons|feather|fa|fas|far|fab|fontawesome|ri|remix|remixicons|tb|tabler|mdi|material|oct|octicons|lucide|bx|bxs|bxm|ph|heroicons|bi|bootstrap|cf)[-_:]/i;
+export const ICON_PREFIX_REGEX = /^(line-md|linemd|meteocons|si|simple|simple-icons|simpleicons|feather|fa|fas|far|fab|fontawesome|ri|remix|remixicons|tb|tabler|mdi|material|oct|octicons|lucide|bx|bxs|bxm|ph|heroicons|bi|bootstrap|cf)[-_:]/i;
 export const ICON_VARIANT_SUFFIX_REGEX = /[-_:](line|fill|filled|outline|outlined|solid|regular|bold|light|duotone|alt|off|2|3|1|plus|sharp|rounded|circle|square)$/i;
 
 export function stripIconPrefix(iconId: string): string {

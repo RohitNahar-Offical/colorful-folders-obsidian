@@ -660,6 +660,123 @@ Standard notes in Notebook Navigator (e.g. `Atlas > Dots > People > Arnold Schwa
 
 **Lesson**: Never populate priority-sensitive lookup maps using a first-write-wins (`!map.has(key)`) strategy when the input keys are alphabetically sorted. Always evaluate `newPrio > existingPrio` so user configuration strictly governs resolution.
 
+---
+
+## Incident #51 — Overlapping Static & Dynamic Icons on Folder Open/Close Actions & Optical Sizing Discrepancies (2026-11-20)
+**What was reported**:
+1. When a user assigned a static Lucide icon for the "Closed Folder" action and an animated SMIL/CSS dynamic icon for the "Open Folder" action (or vice versa), both icons rendered concurrently and overlapped on screen when the folder was opened or closed.
+2. Animated SVGs rendered noticeably smaller than standard static icons, despite identical font size metrics.
+
+**Root cause**:
+1. **Scalar Target Tracking**: `AnimatedIconService` tracked animated rows using a scalar `iconId: string` inside `_registeredAnimatedTargets: Map<string, string>`. It could not distinguish whether the animated icon applied strictly to the closed state, open state, or both states.
+2. **Coarse CSS Suppression**: `BaseCssGenerator.ts` applied a blanket suppression rule (`.cf-animated-icon-active::before { display: none !important; }`). When a folder had an animated icon for ONLY ONE action (e.g. open), this blanket rule either permanently suppressed the static icon in the other action, or if bypassed, caused the static CSS mask `::before` pseudo-element and the live SVG DOM element to display simultaneously.
+3. **Optical ViewBox Metrics**: Static Lucide icons are injected via CSS masks using `var(--cf-icon-size, 1em)` with edge-to-edge geometry. Animated icons in `line-md` utilize embedded margins inside 24x24 viewBoxes, causing them to render ~15% smaller optically when rendered at identical CSS `em` dimensions.
+
+**Resolution**:
+1. **Granular State Architecture (`RegisteredAnimatedTarget`)**: Refactored `_registeredAnimatedTargets` to store `{ closedIconId?: string; openIconId?: string; iconId?: string }`.
+2. **State-Scoped Target Registration**: `registerActiveAnimatedTarget(path, iconId, 'closed' | 'open' | 'both')` tracks folder open/close targets independently.
+3. **Fine-Grained CSS Pseudo-Element Suppression**: Replaced blanket row suppression with scoped state rules in `BaseCssGenerator.ts`:
+   ```css
+   .nav-folder:not(.is-collapsed) > .cf-has-animated-open .nav-folder-title-content::before { display: none !important; }
+   .nav-folder.is-collapsed > .cf-has-animated-closed .nav-folder-title-content::before { display: none !important; }
+   ```
+4. **State-Aware Mounting**: `syncAnimatedIcons()` mounts `.cf-live-animated-icon.cf-animated-closed` and `.cf-live-animated-icon.cf-animated-open` with CSS rules toggling `display: none !important` based on `.is-collapsed`.
+5. **Optical Sizing Factor**: Scaled all animated icons to `calc(1.3em * iconScale * wideScale * 1.15)` across `BaseCssGenerator.ts` and `StyleGenerator.ts`.
+
+**Lesson**: When supporting dual-action visual states (open vs. closed), never represent dynamic targets with scalar identifiers. Use state-specific registration and high-specificity state-scoped CSS suppression rules to allow static CSS masks and live DOM SVGs to coexist without interference.
+
+---
+
+## Incident #52 — Inoperative "Shuffle icons" Button via Omitted Variety Seed & Cache Invalidation Failure (2026-11-20)
+**What was reported**:
+Clicking the "Shuffle icons" button in **Settings > Icon Settings** had no visual effect on the vault; icon assignments remained unchanged.
+
+**Root cause**:
+1. **Omitted Seed in Hash Calculation**: In `IconRepository.ts:306-314`, variety icons were resolved using:
+   ```typescript
+   const h = hashString(name);
+   match.lucide = match.lucides[h % match.lucides.length];
+   ```
+   `settings.varietySeed` was completely omitted from `h`. As a result, `h` was 100% deterministic based solely on item name and never changed regardless of seed values.
+2. **Missing Cache Invalidation**: `IconRepository` memoizes resolved auto-icons in `_autoIconResultCache`. The button click handler in `IconSettingSection.ts` saved `settings.varietySeed` and triggered debounced styling, but failed to invalidate `_autoIconResultCache` or `animatedIconService` caches.
+3. **Array Fallback Order**: Downstream pack resolution in `StyleGenerator.ts` inspected `match.lucides[0]` if custom packs were configured, which did not reflect the variety selection.
+4. **Silent Action**: Clicking the button provided zero visual feedback (no Obsidian `Notice`).
+
+**Resolution**:
+1. **Integrated Seed into Hash Key**: In `IconRepository.ts`, updated variety resolution to factor in the seed:
+   ```typescript
+   const seed = settings.varietySeed || 0;
+   const baseStr = path || name;
+   const hashKey = seed !== 0 ? `${baseStr}#${seed}` : baseStr;
+   const h = hashString(hashKey);
+   ```
+2. **Array Rotation**: Rotated `match.emojis` and `match.lucides` arrays (`[selected, ...remaining]`) so that downstream pack resolvers and fallback chains always prioritize the variety pick.
+3. **Self-Healing Cache Guards**: Added `_lastVarietySeed` and `_lastVarietyEnabled` tracking in `getAutoIconData()` to automatically clear `_autoIconResultCache` on seed or toggle changes.
+4. **Immediate Flush & Notice**: In `IconSettingSection.ts`, clicking "Shuffle icons" clears `iconManager` and `animatedIconService` caches, generates styles immediately (`await this.plugin.generateStyles()`), and displays `new Notice('🎲 Variety icons shuffled successfully!')`.
+
+**Lesson**: Random seed features must always be factored into the mathematical hashing formula, backed by self-healing cache invalidation guards, and verified across all fallback resolution chains.
+
+---
+
+## Incident #53 — Cold Start Regex Overhead, Unbounded Reload Detached Elements, & Observer CPU Inefficiencies (2026-11-20)
+**What was reported**:
+Auditing cold start, plugin reload, and file explorer scrolling revealed potential main-thread lag, redundant setting scans, and memory retention during plugin reload/unload.
+
+**Root cause**:
+1. **Cold Start Regex Evaluation**: `isAnimatedIcon(iconId)` was called for every file and folder in the vault during initial style generation. For uncached icons, it read the raw SVG and ran regular expressions on every node.
+2. **Scroll-Sync Full Map Rescans**: `syncAnimatedIcons()` re-iterated through all entries in `customFolderColors` and `customIcons` on every scroll debounced frame, creating $O(N)$ CPU load instead of relying on the active targets already registered during style generation ($O(K)$).
+3. **Detached DOM SVGs on Reload**: `AnimatedIconService.destroy()` disconnected its `IntersectionObserver`, but failed to remove `.cf-live-animated-icon` elements and animation state classes from the Obsidian DOM. On plugin reload, duplicate elements and stale classes accumulated.
+4. **Unconditional Document Click Listeners**: `EventTrackerService.registerClickEventsForDoc()` attached a document-wide click handler that traversed DOM rows and scheduled timeouts on every click even when no animated icons were in use.
+
+**Resolution**:
+1. **$O(1)$ Prefix Check**: Added instant prefix checks for `line-md-` / `linemd-` in `isAnimatedIcon()`, bypassing raw SVG retrieval and regex evaluation for the animated pack.
+2. **$O(K)$ Fast Path for Viewport Synchronization**: `syncAnimatedIcons()` now reads directly from `_registeredAnimatedTargets`, turning scroll synchronization into an instant $O(K)$ operation ($\le 0.001$ms).
+3. **Complete Teardown (`clearAllLiveAnimatedIconsFromDom()`)**: On plugin destroy, removes all live animated SVG elements from the DOM, strips row state classes, clears container scroll listeners (including Notebook Navigator), and frees LRU caches.
+4. **Zero-Cost Click & File-Open Bypass**: Added `hasAnyAnimatedIcons()` early exits to click and `file-open` event handlers.
+
+**Lesson**: High-frequency listeners (scroll, click, file-open) must always have an $O(1)$ feature-flag early exit. Plugin teardown must actively remove all injected DOM nodes and classes to prevent memory leaks and duplicate elements across reloads.
+
+---
+
+## Incident #54 — Codebase Dead Code Accumulation, Redundant Desktop/Mobile Workspace Registrations, and Click Capture Listener Options Error (2026-11-20)
+**What was reported**:
+1. Duplicate implementations between `registerDesktopEvents()` and `registerMobileEvents()` (~50 lines duplicate copy-paste), leaving mobile without `css-change` listener and desktop without explorer container cache invalidation.
+2. Unused dead methods `triggerIconAnimation` and `hasAnyAnimatedIconsInLibrary` in `AnimatedIconService`, and `isObserved` in `AnimationViewportManager`.
+3. TypeScript TS2554 error in `EventTrackerService.registerClickEventsForDoc`: `Expected 3 arguments, but got 4` because `registerDomEvent` lacked `options` parameter support for capture/passive listeners.
+4. Duplicate compound `:is(...)` selector hardcoded across `AnimatedIconService.ts` and `AnimationDomMounter.ts`.
+
+**Root cause**:
+1. Copy-paste divergence between desktop and mobile event registration methods during multi-platform testing.
+2. Legacy helper methods remained after the OOP refactoring of the animated icon subsystem.
+3. `registerDomEvent` helper in `EventTrackerService` was originally implemented with only `(element, event, callback)` without forwarding the browser's `AddEventListenerOptions | boolean` argument.
+
+**Resolution**:
+1. Unified `registerDesktopEvents` and `registerMobileEvents` into a single, clean `registerWorkspaceEvents()` method.
+2. Removed dead methods and properties (`triggerIconAnimation`, `hasAnyAnimatedIconsInLibrary`, `_libraryHasAnimatedCache`, `isObserved`).
+3. Centralized repeated compound selector in `ANIMATION_SELECTORS.TARGET_ROW_IS`.
+4. Extended `registerDomEvent` and `domEvents` tracking state to support `options?: AddEventListenerOptions | boolean`, and updated `destroy()` to pass options to `removeEventListener` for clean teardown of capture-phase handlers.
+
+**Lesson**: Always unify cross-platform event registration routines into single-sourced methods unless explicitly platform-divergent. When wrapping DOM event registration, always support `AddEventListenerOptions | boolean` and mirror options during teardown.
+
+---
+
+## Incident #55 — Icon Pack Priority Hierarchy Listing Uninstalled Packs & Hardcoded Order Disconnect (2026-11-20)
+**What was reported**:
+In **Settings > Icon Settings > Icon pack priority hierarchy**, all 12 default icon packs (such as Remix, FontAwesome, Material, and Feather) were displayed in the priority re-ordering list even when the user had not downloaded or installed them from the "Featured icon packs" section below.
+
+**Root cause**:
+1. In `IconSettingSection.ts`, `renderPackPriorityList()` fell back to and iteratively forced every pack from `DEFAULT_ICON_PACK_ORDER` into the active priority list without checking if the pack was actually installed in local storage.
+2. Downloaded packs (like `generative` and `useanimations`) were missing from `DEFAULT_ICON_PACK_ORDER` and `packLabels`.
+3. `IconSettingSection.ts` maintained a duplicate local `packs` array and custom `matchPack` helper that duplicated `IconPackIndex.matchesPackId`.
+
+**Resolution**:
+1. **Centralized Pack Manifest (`FEATURED_ICON_PACKS`)**: Hoisted all downloadable packs into `FEATURED_ICON_PACKS` in `constants.ts`, including `generative` and `useanimations`.
+2. **Dynamic Installed Pack Filtering**: Updated `renderPackPriorityList()` to scan installed icon packs dynamically via `getInstalledPackIds()`, retaining only `custom`, `lucide`, `emoji`, and currently downloaded packs.
+3. **Automatic Lifecycle Synchronization**: When a pack is downloaded or removed via the "Featured icon packs" card, `this.refreshTab()` automatically updates the priority hierarchy list.
+4. **DRY Consolidation**: Eliminated duplicate `packs` definitions and replaced `matchPack` with `IconPackIndex.matchesPackId`.
+
+**Lesson**: Priority and hierarchy configuration interfaces must always dynamically reflect only installed or active entities, rather than statically displaying all theoretical providers.
+
 
 
 

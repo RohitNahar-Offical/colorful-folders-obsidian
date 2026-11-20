@@ -187,12 +187,15 @@ export class DOMObserverService {
     destroy() {
         this.disposeDividerObserver();
 
-        const allContainers = this.plugin.getAllExplorerContainers();
+        const allContainers = this.plugin.animatedIconService?.getAllNavContainers() || this.plugin.getAllExplorerContainers();
         allContainers.forEach((container) => {
             container.removeEventListener("scroll", this.handleScroll);
             delete (container as HTMLElement & { cfHasScrollListener?: boolean }).cfHasScrollListener;
         });
 
-        if (this.scrollTimeout) window.clearTimeout(this.scrollTimeout);
+        if (this.scrollTimeout) {
+            window.clearTimeout(this.scrollTimeout);
+            this.scrollTimeout = null;
+        }
     }
 }

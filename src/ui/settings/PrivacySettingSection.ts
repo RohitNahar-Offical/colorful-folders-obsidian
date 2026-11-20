@@ -364,8 +364,9 @@ export class PrivacySettingSection extends SettingSection {
                                         this.plugin.settings.tagSyncRules = parsed.tagSyncRules;
                                     }
                                     if (parsed.customIcons && typeof parsed.customIcons === 'object' && Object.keys(parsed.customIcons).length > 0) {
-                                        if (!this.plugin.localCustomIcons) this.plugin.localCustomIcons = {};
-                                        Object.assign(this.plugin.localCustomIcons, parsed.customIcons);
+                                        for (const [id, svg] of Object.entries(parsed.customIcons)) {
+                                            this.plugin.addCustomIcon(id, svg);
+                                        }
                                         await this.plugin.saveLocalCustomIcons();
                                         this.plugin.registerCustomIcons();
                                     }

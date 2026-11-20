@@ -3,6 +3,10 @@ import { NotebookNavigatorIntegration } from '../integrations/NotebookNavigator'
 import { safeEscape } from '../common/utils';
 
 export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string {
+    const iconScale = settings.iconScale || 1.0;
+    const wideScale = settings.wideAutoIcons ? 1.05 : 1.0;
+    const defaultAnimIconSize = `calc(1.3em * ${iconScale * wideScale} * 1.15)`;
+
     return `
         /* ── NUCLEAR SPECIFICITY NAV ITEM LAYOUT ───────────────────────────────
            We use high-specificity selectors to defeat theme overrides (like Prism).
@@ -99,6 +103,34 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
         }
 
         /* ── LIVE ANIMATED CUSTOM SVG ICONS ─────────── */
+        body .nav-files-container, :root {
+            --cf-animated-icon-size: ${defaultAnimIconSize};
+            --cf-icon-base-duration: 600ms;
+            --cf-icon-speed-scale: 1;
+            --cf-icon-play-state: running;
+        }
+
+        /* ── FOLDER OPEN / CLOSED ANIMATED ICON SWITCHING ── */
+        .nav-folder.is-collapsed .cf-live-animated-icon.cf-animated-open,
+        .nav-folder.is-collapsed .cf-animated-icon.cf-animated-open,
+        .tree-item.is-collapsed .cf-live-animated-icon.cf-animated-open,
+        .tree-item.is-collapsed .cf-animated-icon.cf-animated-open,
+        .nn-navitem.is-collapsed .cf-live-animated-icon.cf-animated-open,
+        .nn-navitem.is-collapsed .cf-animated-icon.cf-animated-open {
+            display: none !important;
+        }
+
+        .nav-folder:not(.is-collapsed) .cf-live-animated-icon.cf-animated-closed,
+        .nav-folder:not(.is-collapsed) .cf-animated-icon.cf-animated-closed,
+        .tree-item:not(.is-collapsed) .cf-live-animated-icon.cf-animated-closed,
+        .tree-item:not(.is-collapsed) .cf-animated-icon.cf-animated-closed,
+        .nn-navitem:not(.is-collapsed) .cf-live-animated-icon.cf-animated-closed,
+        .nn-navitem:not(.is-collapsed) .cf-animated-icon.cf-animated-closed {
+            display: none !important;
+        }
+
+        /* ── HIDE CSS ::before WHEN AN ANIMATED ICON TAKES OVER ── */
+        /* Blanket hide when entire target (or file) has an animated icon */
         body .nav-files-container .cf-animated-icon-active::before,
         body .nav-files-container .cf-animated-icon-active .nav-folder-title-content::before,
         body .nav-files-container .cf-animated-icon-active .nav-file-title-content::before,
@@ -118,29 +150,137 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             height: 0 !important;
         }
 
-        .cf-live-animated-icon {
+        /* Scoped hide when only OPEN state is animated: ONLY hide ::before when folder is OPEN */
+        .nav-folder:not(.is-collapsed) > .cf-has-animated-open .nav-folder-title-content::before,
+        .tree-item:not(.is-collapsed) > .cf-has-animated-open .tree-item-inner::before,
+        .nn-navitem:not(.is-collapsed).cf-has-animated-open .nn-navitem-name::before,
+        .cf-has-animated-open:not(.is-collapsed) .nav-folder-title-content::before,
+        .cf-has-animated-open:not(.is-collapsed) .tree-item-inner::before {
+            display: none !important;
+            content: none !important;
+            -webkit-mask-image: none !important;
+            mask-image: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+
+        /* Scoped hide when only CLOSED state is animated: ONLY hide ::before when folder is COLLAPSED */
+        .nav-folder.is-collapsed > .cf-has-animated-closed .nav-folder-title-content::before,
+        .tree-item.is-collapsed > .cf-has-animated-closed .tree-item-inner::before,
+        .nn-navitem.is-collapsed.cf-has-animated-closed .nn-navitem-name::before,
+        .cf-has-animated-closed.is-collapsed .nav-folder-title-content::before,
+        .cf-has-animated-closed.is-collapsed .tree-item-inner::before {
+            display: none !important;
+            content: none !important;
+            -webkit-mask-image: none !important;
+            mask-image: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+
+        /* ── STRIP BOUNDING BOXES & CHROME COMPLETELY (BOXLESS ANIMATED ICONS) ── */
+        .cf-live-animated-icon,
+        .cf-animated-icon {
+            --cf-icon-ratio: 1;
+            --_cf-duration: calc((var(--cf-icon-base-duration, 600ms) * var(--cf-icon-ratio, 1)) / var(--cf-icon-speed-scale, 1));
+            --cf-optical-scale: 1;
+
+            appearance: none !important;
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            background-color: transparent !important;
+            cursor: pointer !important;
+            contain: layout style;
+
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
             flex-shrink: 0 !important;
-            width: var(--cf-animated-icon-size, 1.3em) !important;
-            height: var(--cf-animated-icon-size, 1.3em) !important;
+            width: var(--cf-animated-icon-size, ${defaultAnimIconSize}) !important;
+            height: var(--cf-animated-icon-size, ${defaultAnimIconSize}) !important;
             margin-right: 4px !important;
             vertical-align: middle !important;
             overflow: visible !important;
             color: var(--cf-animated-icon-color, var(--cf-icon-color, inherit)) !important;
         }
 
-        .notebook-navigator .cf-live-animated-icon {
+        .cf-live-animated-icon:focus-visible,
+        .cf-animated-icon:focus-visible {
+            filter: drop-shadow(0 0 3px currentColor) !important;
+            outline: none !important;
+        }
+
+        .notebook-navigator .cf-live-animated-icon,
+        .notebook-navigator .cf-animated-icon {
             width: 100% !important;
             height: 100% !important;
             margin-right: 0 !important;
         }
 
-        .cf-live-animated-icon svg {
+        .cf-live-animated-icon svg,
+        .cf-animated-icon svg {
             width: 100% !important;
             height: 100% !important;
             display: block !important;
+            overflow: visible !important;
+            transform: scale(var(--cf-optical-scale, 1));
+            transform-origin: center center !important;
+            will-change: transform, opacity;
+        }
+
+        /* Suppress dummy bounding-box hit targets from Lottie/Generative UI exports */
+        .cf-live-animated-icon svg rect[pointer-events="all"],
+        .cf-live-animated-icon svg rect[id$="_a"],
+        .cf-live-animated-icon svg rect[id$="_b"],
+        .cf-live-animated-icon svg rect[width="32"][height="32"][fill="none"],
+        .cf-animated-icon svg rect[pointer-events="all"],
+        .cf-animated-icon svg rect[id$="_a"],
+        .cf-animated-icon svg rect[id$="_b"],
+        .cf-animated-icon svg rect[width="32"][height="32"][fill="none"] {
+            display: none !important;
+            stroke: none !important;
+        }
+
+        /* Scale Meteocons & Generative icons to match Lucide/Line-md */
+        .cf-live-animated-icon.cf-meteocons,
+        .cf-live-animated-icon[data-icon-id^="meteocons"],
+        .cf-animated-icon.cf-meteocons,
+        .cf-animated-icon[data-icon-id^="meteocons"] {
+            --cf-optical-scale: 1.45;
+        }
+
+        .cf-live-animated-icon[data-icon-id^="generative"],
+        .cf-animated-icon[data-icon-id^="generative"] {
+            --cf-optical-scale: 1.2;
+        }
+
+        .cf-live-animated-icon[data-icon-id^="useanimations"],
+        .cf-live-animated-icon[data-icon-id^="ua-"],
+        .cf-animated-icon[data-icon-id^="useanimations"],
+        .cf-animated-icon[data-icon-id^="ua-"] {
+            --cf-optical-scale: 1.15;
+        }
+
+        /* ── ANIMATED ICON PLAYBACK ── */
+        .cf-live-animated-icon svg,
+        .cf-animated-icon svg {
+            animation-play-state: var(--cf-icon-play-state, running);
+        }
+
+        .cf-live-animated-icon[data-cf-visible="false"] svg,
+        .cf-animated-icon[data-cf-visible="false"] svg {
+            animation-play-state: paused !important;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .cf-live-animated-icon svg,
+            .cf-animated-icon svg {
+                animation: none !important;
+                transition: none !important;
+            }
         }
 
         .cf-icon-wrapper {

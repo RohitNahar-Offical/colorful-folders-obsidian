@@ -2,7 +2,8 @@ import * as obsidian from 'obsidian';
 import { SettingSection } from './SettingSection';
 import { t, TranslationKey } from '../../lang/helpers';
 import { IconPickerModal } from '../modals/IconPickerModal';
-import { DEFAULT_ICON_PACK_ORDER } from '../../common/constants';
+import { DEFAULT_ICON_PACK_ORDER, FEATURED_ICON_PACKS } from '../../common/constants';
+import { IconPackIndex } from '../../core/IconPackIndex';
 import { IconRuleSet } from '../../core/IconRuleSet';
 
 export class IconSettingSection extends SettingSection {
@@ -28,19 +29,43 @@ export class IconSettingSection extends SettingSection {
         });
         priorityDesc.setCssStyles({ fontSize: "0.85em", color: "var(--text-muted)", marginBottom: "12px" });
 
+        const allAvailableIcons = new Set([
+            ...Object.keys(this.plugin.getCustomIconsMap()),
+            ...Object.keys(this.plugin.localFileSystemIcons || {}),
+            ...Object.keys(this.plugin.localCustomIcons || {})
+        ]);
+
+        const packCountsMap = new Map<string, number>();
+        allAvailableIcons.forEach(id => {
+            for (let i = 0; i < FEATURED_ICON_PACKS.length; i++) {
+                const p = FEATURED_ICON_PACKS[i];
+                if (IconPackIndex.matchesPackId(id, p.prefix) || IconPackIndex.matchesPackId(id, p.packId)) {
+                    packCountsMap.set(p.prefix, (packCountsMap.get(p.prefix) || 0) + 1);
+                }
+            }
+        });
+
+        const getInstalledPackIds = (): Set<string> => {
+            const installed = new Set<string>(['custom', 'lucide']);
+            for (let i = 0; i < FEATURED_ICON_PACKS.length; i++) {
+                const p = FEATURED_ICON_PACKS[i];
+                if ((packCountsMap.get(p.prefix) || 0) > 0) {
+                    installed.add(p.packId);
+                }
+            }
+            installed.add('emoji');
+            return installed;
+        };
+
         const packLabels: Record<string, string> = {
             'custom': 'Custom User Icons & Brand Overrides',
             'lucide': 'Lucide Icons (Default Modern UI)',
-            'line-md': 'Line icons (Animated) (line-md-)',
-            'bootstrap': 'Bootstrap Icons (bi-)',
-            'simple-icons': 'Simple Icons (Brand & Tech Logos)',
-            'tabler': 'Tabler Icons (tb-)',
-            'remix': 'Remix Icons (ri-)',
-            'font-awesome': 'FontAwesome Icons (fa-)',
-            'material': 'Material Icons (mdi-)',
-            'feather': 'Feather Icons',
             'emoji': 'Native Emojis (System Unicode)'
         };
+        for (const p of FEATURED_ICON_PACKS) {
+            packLabels[p.packId] = p.label;
+            packLabels[p.prefix] = p.label;
+        }
 
         const listContainer = priorityCard.createDiv();
         listContainer.setCssStyles({
@@ -56,9 +81,15 @@ export class IconSettingSection extends SettingSection {
 
         const renderPackPriorityList = () => {
             listContainer.empty();
-            let order = [...(this.plugin.settings.iconPackPriorityOrder || DEFAULT_ICON_PACK_ORDER)];
+            const installedPackIds = getInstalledPackIds();
+
+            // Filter existing order to strictly retain ONLY installed packs
+            let order = (this.plugin.settings.iconPackPriorityOrder || DEFAULT_ICON_PACK_ORDER)
+                .filter(packKey => installedPackIds.has(packKey));
+
+            // Append any newly installed packs not yet in the user's order (before emoji)
             for (const defaultPack of DEFAULT_ICON_PACK_ORDER) {
-                if (!order.includes(defaultPack)) {
+                if (installedPackIds.has(defaultPack) && !order.includes(defaultPack)) {
                     const emojiIdx = order.indexOf('emoji');
                     if (emojiIdx !== -1) {
                         order.splice(emojiIdx, 0, defaultPack);
@@ -67,9 +98,22 @@ export class IconSettingSection extends SettingSection {
                     }
                 }
             }
+            for (const installedPack of Array.from(installedPackIds)) {
+                if (!order.includes(installedPack)) {
+                    const emojiIdx = order.indexOf('emoji');
+                    if (emojiIdx !== -1) {
+                        order.splice(emojiIdx, 0, installedPack);
+                    } else {
+                        order.push(installedPack);
+                    }
+                }
+            }
+
             if (order.includes('emoji') && order[order.length - 1] !== 'emoji') {
                 order = order.filter(p => p !== 'emoji').concat(['emoji']);
             }
+
+            this.plugin.settings.iconPackPriorityOrder = [...order];
 
             order.forEach((packKey, index) => {
                 const row = listContainer.createDiv();
@@ -142,12 +186,52 @@ export class IconSettingSection extends SettingSection {
             .addButton(btn => btn
                 .setButtonText("Reset priority order")
                 .onClick(async () => {
-                    this.plugin.settings.iconPackPriorityOrder = [...DEFAULT_ICON_PACK_ORDER];
+                    const installedPackIds = getInstalledPackIds();
+                    let resetOrder = DEFAULT_ICON_PACK_ORDER.filter(p => installedPackIds.has(p));
+                    for (const installedPack of Array.from(installedPackIds)) {
+                        if (!resetOrder.includes(installedPack)) {
+                            const emojiIdx = resetOrder.indexOf('emoji');
+                            if (emojiIdx !== -1) {
+                                resetOrder.splice(emojiIdx, 0, installedPack);
+                            } else {
+                                resetOrder.push(installedPack);
+                            }
+                        }
+                    }
+                    if (resetOrder.includes('emoji') && resetOrder[resetOrder.length - 1] !== 'emoji') {
+                        resetOrder = resetOrder.filter(p => p !== 'emoji').concat(['emoji']);
+                    }
+                    this.plugin.settings.iconPackPriorityOrder = [...resetOrder];
                     renderPackPriorityList();
                     this.plugin.iconManager?.invalidateCategoryCache();
                     this.plugin.generateStylesDebounced();
                     await this.plugin.saveSettings();
                 }));
+
+        // 🎬 Animated Icon Playback Speed Card
+        const animCard = this.settingTab.makeCard(containerEl, "🎬", "Animated icon playback speed");
+        const animDesc = animCard.createEl('p', {
+            text: "Scale animation timers proportionally across all animated icons in the File Explorer and Notebook Navigator."
+        });
+        animDesc.setCssStyles({ fontSize: "0.85em", color: "var(--text-muted)", marginBottom: "12px" });
+
+        new obsidian.Setting(animCard)
+            .setName("Animation speed")
+            .setDesc("Scale all icon timers proportionally while keeping fast and slow icon nuances.")
+            .addDropdown(dropdown =>
+                dropdown
+                    .addOption("0.5", "0.5x (Slow)")
+                    .addOption("1", "1x (Normal)")
+                    .addOption("1.5", "1.5x (Fast)")
+                    .addOption("2", "2x (Snappy)")
+                    .setValue(String(this.plugin.settings.animationSpeed ?? 1))
+                    .onChange(async (value) => {
+                        this.plugin.settings.animationSpeed = Number(value);
+                        await this.plugin.saveSettings();
+                        this.plugin.animatedIconService?.syncSettings();
+                        this.plugin.generateStylesDebounced();
+                    })
+            );
 
         if (this.plugin.settings.autoIcons) {
             new obsidian.Setting(autoCard)
@@ -168,21 +252,30 @@ export class IconSettingSection extends SettingSection {
                     .setValue(this.plugin.settings.autoIconVariety)
                     .onChange(async (value) => {
                         this.plugin.settings.autoIconVariety = value;
+                        this.plugin.iconManager?.invalidateAutoIconCache();
+                        this.plugin.animatedIconService?.invalidateCache();
                         await this.plugin.saveSettings();
                         this.refreshTab();
-                        this.plugin.generateStylesDebounced();
+                        await this.plugin.generateStyles();
                     }));
 
             if (this.plugin.settings.autoIconVariety) {
                 new obsidian.Setting(autoCard)
                     .setName(t("settings.shuffle_icons.name"))
-                    .setDesc('Randomize the global seed used for assigning variety icons. If you dislike the current distribution, click this to re-roll them all!')
+                    .setDesc(t("settings.shuffle_icons.desc") || 'Randomize the global seed used for assigning variety icons. If you dislike the current distribution, click this to re-roll them all!')
                     .addButton(button => button
                         .setButtonText(t("settings.shuffle_icons.name"))
                         .onClick(async () => {
-                            this.plugin.settings.varietySeed = Math.floor(Math.random() * 1000000);
+                            let newSeed = Math.floor(Math.random() * 1000000) + 1;
+                            if (newSeed === this.plugin.settings.varietySeed) {
+                                newSeed = (newSeed + 1) % 1000000 + 1;
+                            }
+                            this.plugin.settings.varietySeed = newSeed;
+                            this.plugin.iconManager?.invalidateAutoIconCache();
+                            this.plugin.animatedIconService?.invalidateCache();
                             await this.plugin.saveSettings();
-                            this.plugin.generateStylesDebounced();
+                            await this.plugin.generateStyles();
+                            new obsidian.Notice('🎲 Variety icons shuffled successfully!');
                         }));
             }
 
@@ -608,7 +701,13 @@ export class IconSettingSection extends SettingSection {
                                 const frag = activeDocument.createRange().createContextualFragment(svg);
                                 const svgEl = frag.querySelector('svg');
                                 if (svgEl) {
-                                    (svgEl as unknown as HTMLElement).setCssStyles({ width: '16px', height: '16px', color: 'currentColor' });
+                                    const isMeteo = currentIcon.startsWith('meteocons-') || currentIcon.startsWith('meteocons:') || currentIcon.startsWith('meteocons_');
+                                    const isUseAnimations = currentIcon.startsWith('useanimations-') || currentIcon.startsWith('useanimations:') || currentIcon.startsWith('useanimations_') || currentIcon.startsWith('ua-');
+                                    (svgEl as unknown as HTMLElement).setCssStyles({
+                                        width: '16px', height: '16px',
+                                        color: 'currentColor',
+                                        ...(isMeteo ? { transform: "scale(1.45)", transformOrigin: "center center" } : (isUseAnimations ? { transform: "scale(1.15)", transformOrigin: "center center" } : {}))
+                                    });
                                     iconBtn.appendChild(svgEl);
                                     return;
                                 }
@@ -725,8 +824,7 @@ export class IconSettingSection extends SettingSection {
                 new obsidian.Notice(t("notice.valid_id_svg_required"));
                 return;
             }
-            if (!this.plugin.localCustomIcons) this.plugin.localCustomIcons = {};
-            this.plugin.localCustomIcons[id] = svg;
+            this.plugin.addCustomIcon(id, svg);
             await this.plugin.saveLocalCustomIcons();
             this.plugin.registerCustomIcons();
             await this.plugin.saveSettings();
@@ -784,51 +882,7 @@ export class IconSettingSection extends SettingSection {
         const featCard = this.settingTab.makeCard(containerEl, "⭐", "Featured icon packs");
         featCard.createDiv("cf-grid");
 
-        const packs = [
-            { name: "✨ Line icons (Animated)", desc: "1,200+ smooth animated SVG icons from Iconify.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/line-md.json", prefix: "line-md" },
-            { name: "✨ Remix icons", desc: "Clean and neutral design system.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/ri.json", prefix: "ri" },
-            { name: "🪶 Feather icons", desc: "Simply beautiful open source icons.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/feather.json", prefix: "feather" },
-            { name: "📐 Tabler icons", desc: "Over 4000+ well-crafted icons.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/tabler.json", prefix: "tabler" },
-            { name: "📦 Boxicons", desc: "High quality web friendly icons.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/bx.json", prefix: "bx" },
-            { name: "🚩 Font Awesome solid", desc: "Official professional solid set.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/fa-solid.json", prefix: "fa-solid" },
-            { name: "🏳️ Font Awesome regular", desc: "Official line icons from FA.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/fa-regular.json", prefix: "fa-regular" },
-            { name: "🐙 Octicons", desc: "GitHub's native icon library.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/octicon.json", prefix: "octicon" },
-            { name: "🎮 RPG awesome", desc: "Fantasy icons for RPG notes.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/ra.json", prefix: "ra" },
-            { name: "⚡ Simple icons", desc: "Brand icons for popular services.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/simple-icons.json", prefix: "simple-icons" },
-            { name: "🅱️ Bootstrap icons", desc: "Official Bootstrap icon library.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/bi.json", prefix: "bi" }
-        ];
-
-        const matchPack = (id: string, pPrefix: string): boolean => {
-            const lower = id.toLowerCase();
-            if (pPrefix === 'line-md') return lower.startsWith('line-md-') || lower.startsWith('line-md:');
-            if (pPrefix === 'ri' || pPrefix === 'remix') return lower.startsWith('ri-') || lower.startsWith('remix-');
-            if (pPrefix === 'feather') return lower.startsWith('feather-');
-            if (pPrefix === 'tabler' || pPrefix === 'tb') return lower.startsWith('tb-') || lower.startsWith('tabler-');
-            if (pPrefix === 'bx') return lower.startsWith('bx-') || lower.startsWith('bxs-') || lower.startsWith('bxi-');
-            if (pPrefix.startsWith('fa')) return lower.startsWith('fa-') || lower.startsWith('fas-') || lower.startsWith('fab-') || lower.startsWith('far-');
-            if (pPrefix === 'octicon') return lower.startsWith('octicon-');
-            if (pPrefix === 'ra') return lower.startsWith('ra-');
-            if (pPrefix === 'simple-icons' || pPrefix === 'si') return lower.startsWith('simple-') || lower.startsWith('si-');
-            if (pPrefix === 'bi' || pPrefix === 'bootstrap') return lower.startsWith('bi-') || lower.startsWith('bootstrap-') || lower.startsWith('bi:');
-            return lower.startsWith(pPrefix + '-');
-        };
-
-        const allAvailableIcons = new Set([
-            ...Object.keys(this.plugin.getCustomIconsMap()),
-            ...Object.keys(this.plugin.localFileSystemIcons || {}),
-            ...Object.keys(this.plugin.localCustomIcons || {})
-        ]);
-        const packCountsMap = new Map<string, number>();
-        allAvailableIcons.forEach(id => {
-            for (let i = 0; i < packs.length; i++) {
-                const p = packs[i];
-                if (matchPack(id, p.prefix)) {
-                    packCountsMap.set(p.prefix, (packCountsMap.get(p.prefix) || 0) + 1);
-                }
-            }
-        });
-
-        packs.forEach(p => {
+        FEATURED_ICON_PACKS.forEach(p => {
             const installedCount = packCountsMap.get(p.prefix) || 0;
             const isInstalled = installedCount > 0;
 
@@ -1020,8 +1074,7 @@ export class IconSettingSection extends SettingSection {
                     const del = item.createEl("button", { text: "×", cls: "cf-btn-remove" });
                     del.onclick = async (e) => {
                         e.stopPropagation();
-                        if (this.plugin.settings?.customIcons) delete this.plugin.settings.customIcons[id];
-                        if (this.plugin.localCustomIcons) delete this.plugin.localCustomIcons[id];
+                        this.plugin.removeCustomIcon(id);
                         await this.plugin.saveLocalCustomIcons();
                         await this.plugin.saveSettings();
                         this.refreshTab();
