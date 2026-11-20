@@ -231,7 +231,7 @@ export class AnimatedIconService {
             return false;
         }
 
-        const isLoop = /repeatCount=["']indefinite["']|repeatDur=["']indefinite["']|\binfinite\b/i.test(raw);
+        const isLoop = /repeatCount=["']indefinite["']|repeatDur=["']indefinite["']|\binfinite\b|\.end\+|cf_l[ab]_/i.test(raw);
         this._isLoopingIconCache.set(iconId, isLoop);
         return isLoop;
     }
