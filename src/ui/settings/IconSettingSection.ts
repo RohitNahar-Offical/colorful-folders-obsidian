@@ -4,6 +4,7 @@ import { t, TranslationKey } from '../../lang/helpers';
 import { IconPickerModal } from '../modals/IconPickerModal';
 import { DEFAULT_ICON_PACK_ORDER } from '../../common/constants';
 import { IconRuleSet } from '../../core/IconRuleSet';
+import { IconAnimationMode } from '../../common/types';
 
 export class IconSettingSection extends SettingSection {
     render(containerEl: HTMLElement): void {
@@ -148,6 +149,48 @@ export class IconSettingSection extends SettingSection {
                     this.plugin.generateStylesDebounced();
                     await this.plugin.saveSettings();
                 }));
+
+        // 🎬 Animated Icon Playback Engine Card
+        const animCard = this.settingTab.makeCard(containerEl, "🎬", "Animated icon playback engine");
+        const animDesc = animCard.createEl('p', {
+            text: "Control playback behavior and speed for animated icons across the File Explorer and Notebook Navigator."
+        });
+        animDesc.setCssStyles({ fontSize: "0.85em", color: "var(--text-muted)", marginBottom: "12px" });
+
+        new obsidian.Setting(animCard)
+            .setName("Icon animation mode")
+            .setDesc("Control how animated folder icons trigger across the file explorer.")
+            .addDropdown(dropdown =>
+                dropdown
+                    .addOption("click", "Click to animate")
+                    .addOption("infinite", "Infinite loop (while visible)")
+                    .addOption("once", "One-time on view")
+                    .setValue(this.plugin.settings.animationMode || "click")
+                    .onChange(async (value) => {
+                        this.plugin.settings.animationMode = value as IconAnimationMode;
+                        await this.plugin.saveSettings();
+                        this.plugin.animatedIconService?.syncSettings();
+                        this.plugin.generateStylesDebounced();
+                    })
+            );
+
+        new obsidian.Setting(animCard)
+            .setName("Animation speed")
+            .setDesc("Scale all icon timers proportionally while keeping fast and slow icon nuances.")
+            .addDropdown(dropdown =>
+                dropdown
+                    .addOption("0.5", "0.5x (Slow)")
+                    .addOption("1", "1x (Normal)")
+                    .addOption("1.5", "1.5x (Fast)")
+                    .addOption("2", "2x (Snappy)")
+                    .setValue(String(this.plugin.settings.animationSpeed ?? 1))
+                    .onChange(async (value) => {
+                        this.plugin.settings.animationSpeed = Number(value);
+                        await this.plugin.saveSettings();
+                        this.plugin.animatedIconService?.syncSettings();
+                        this.plugin.generateStylesDebounced();
+                    })
+            );
 
         if (this.plugin.settings.autoIcons) {
             new obsidian.Setting(autoCard)

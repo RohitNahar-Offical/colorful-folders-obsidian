@@ -732,6 +732,7 @@ export default class ColorfulFoldersPlugin
     NotebookNavigatorIntegration.layout = { border: this.settings.nnRowBorder ?? -1, radius: this.settings.folderBorderRadius ?? 6, spacing: this.settings.rowSpacing ?? 2, weight: this.settings.folderTextWeight ?? 800 };
     this.syncNotebookNavigatorPairs();
     this.syncCustomFolderColorsMap();
+    this.animatedIconService?.syncSettings();
     this.activePaletteCache = null;
     this.parsedExclusionList = new Set(
       (this.settings.exclusionList || "")

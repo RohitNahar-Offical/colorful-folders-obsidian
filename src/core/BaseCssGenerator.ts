@@ -105,18 +105,27 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
         /* ── LIVE ANIMATED CUSTOM SVG ICONS ─────────── */
         body .nav-files-container, :root {
             --cf-animated-icon-size: ${defaultAnimIconSize};
+            --cf-icon-base-duration: 600ms;
+            --cf-icon-speed-scale: 1;
+            --cf-icon-play-state: running;
         }
 
         /* ── FOLDER OPEN / CLOSED ANIMATED ICON SWITCHING ── */
         .nav-folder.is-collapsed .cf-live-animated-icon.cf-animated-open,
+        .nav-folder.is-collapsed .cf-animated-icon.cf-animated-open,
         .tree-item.is-collapsed .cf-live-animated-icon.cf-animated-open,
-        .nn-navitem.is-collapsed .cf-live-animated-icon.cf-animated-open {
+        .tree-item.is-collapsed .cf-animated-icon.cf-animated-open,
+        .nn-navitem.is-collapsed .cf-live-animated-icon.cf-animated-open,
+        .nn-navitem.is-collapsed .cf-animated-icon.cf-animated-open {
             display: none !important;
         }
 
         .nav-folder:not(.is-collapsed) .cf-live-animated-icon.cf-animated-closed,
+        .nav-folder:not(.is-collapsed) .cf-animated-icon.cf-animated-closed,
         .tree-item:not(.is-collapsed) .cf-live-animated-icon.cf-animated-closed,
-        .nn-navitem:not(.is-collapsed) .cf-live-animated-icon.cf-animated-closed {
+        .tree-item:not(.is-collapsed) .cf-animated-icon.cf-animated-closed,
+        .nn-navitem:not(.is-collapsed) .cf-live-animated-icon.cf-animated-closed,
+        .nn-navitem:not(.is-collapsed) .cf-animated-icon.cf-animated-closed {
             display: none !important;
         }
 
@@ -169,7 +178,23 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             height: 0 !important;
         }
 
-        .cf-live-animated-icon {
+        /* ── STRIP BOUNDING BOXES & CHROME COMPLETELY (BOXLESS ANIMATED ICONS) ── */
+        .cf-live-animated-icon,
+        .cf-animated-icon {
+            --cf-icon-ratio: 1;
+            --_cf-duration: calc((var(--cf-icon-base-duration, 600ms) * var(--cf-icon-ratio, 1)) / var(--cf-icon-speed-scale, 1));
+            --cf-optical-scale: 1;
+
+            appearance: none !important;
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            background-color: transparent !important;
+            cursor: pointer !important;
+            contain: layout style;
+
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -182,39 +207,99 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             color: var(--cf-animated-icon-color, var(--cf-icon-color, inherit)) !important;
         }
 
-        .notebook-navigator .cf-live-animated-icon {
+        .cf-live-animated-icon:focus-visible,
+        .cf-animated-icon:focus-visible {
+            filter: drop-shadow(0 0 3px currentColor) !important;
+            outline: none !important;
+        }
+
+        .notebook-navigator .cf-live-animated-icon,
+        .notebook-navigator .cf-animated-icon {
             width: 100% !important;
             height: 100% !important;
             margin-right: 0 !important;
         }
 
-        .cf-live-animated-icon svg {
+        .cf-live-animated-icon svg,
+        .cf-animated-icon svg {
             width: 100% !important;
             height: 100% !important;
             display: block !important;
+            overflow: visible !important;
+            transform: scale(var(--cf-optical-scale, 1));
+            transform-origin: center center !important;
+            will-change: transform, opacity;
+        }
+
+        /* Suppress dummy bounding-box hit targets from Lottie/Generative UI exports */
+        .cf-live-animated-icon svg rect[pointer-events="all"],
+        .cf-live-animated-icon svg rect[id$="_a"],
+        .cf-live-animated-icon svg rect[id$="_b"],
+        .cf-live-animated-icon svg rect[width="32"][height="32"][fill="none"],
+        .cf-animated-icon svg rect[pointer-events="all"],
+        .cf-animated-icon svg rect[id$="_a"],
+        .cf-animated-icon svg rect[id$="_b"],
+        .cf-animated-icon svg rect[width="32"][height="32"][fill="none"] {
+            display: none !important;
+            stroke: none !important;
         }
 
         /* Scale Meteocons & Generative icons to match Lucide/Line-md */
-        .cf-live-animated-icon.cf-meteocons svg,
-        .cf-live-animated-icon[data-icon-id^="meteocons"] svg,
-        .notebook-navigator .cf-live-animated-icon.cf-meteocons svg,
-        .notebook-navigator .cf-live-animated-icon[data-icon-id^="meteocons"] svg {
-            transform: scale(1.45) !important;
-            transform-origin: center center !important;
+        .cf-live-animated-icon.cf-meteocons,
+        .cf-live-animated-icon[data-icon-id^="meteocons"],
+        .cf-animated-icon.cf-meteocons,
+        .cf-animated-icon[data-icon-id^="meteocons"] {
+            --cf-optical-scale: 1.45;
         }
 
-        .cf-live-animated-icon[data-icon-id^="generative"] svg,
-        .notebook-navigator .cf-live-animated-icon[data-icon-id^="generative"] svg {
-            transform: scale(1.2) !important;
-            transform-origin: center center !important;
+        .cf-live-animated-icon[data-icon-id^="generative"],
+        .cf-animated-icon[data-icon-id^="generative"] {
+            --cf-optical-scale: 1.2;
         }
 
-        .cf-live-animated-icon[data-icon-id^="useanimations"] svg,
-        .cf-live-animated-icon[data-icon-id^="ua-"] svg,
-        .notebook-navigator .cf-live-animated-icon[data-icon-id^="useanimations"] svg,
-        .notebook-navigator .cf-live-animated-icon[data-icon-id^="ua-"] svg {
-            transform: scale(1.15) !important;
-            transform-origin: center center !important;
+        .cf-live-animated-icon[data-icon-id^="useanimations"],
+        .cf-live-animated-icon[data-icon-id^="ua-"],
+        .cf-animated-icon[data-icon-id^="useanimations"],
+        .cf-animated-icon[data-icon-id^="ua-"] {
+            --cf-optical-scale: 1.15;
+        }
+
+        /* ── HOLISTIC PLAYBACK ENGINE MODES ── */
+        /* Mode 1: Infinite (while visible in viewport, paused when hidden or offscreen) */
+        :root[data-cf-anim-mode="infinite"] .cf-live-animated-icon[data-cf-visible="true"] svg,
+        :root[data-cf-anim-mode="infinite"] .cf-animated-icon[data-cf-visible="true"] svg,
+        .cf-live-animated-icon[data-cf-anim-mode="infinite"][data-cf-visible="true"] svg,
+        .cf-animated-icon[data-cf-anim-mode="infinite"][data-cf-visible="true"] svg {
+            animation: var(--cf-anim-name, cf-icon-pop) var(--_cf-duration) ease-in-out infinite;
+            animation-play-state: var(--cf-icon-play-state, running);
+        }
+
+        /* Mode 2: One-Time on viewport entry */
+        :root[data-cf-anim-mode="once"] .cf-live-animated-icon[data-cf-played="true"] svg,
+        :root[data-cf-anim-mode="once"] .cf-animated-icon[data-cf-played="true"] svg,
+        .cf-live-animated-icon[data-cf-anim-mode="once"][data-cf-played="true"] svg,
+        .cf-animated-icon[data-cf-anim-mode="once"][data-cf-played="true"] svg {
+            animation: var(--cf-anim-name, cf-icon-pop) var(--_cf-duration) cubic-bezier(0.22, 1, 0.36, 1) 1 forwards;
+        }
+
+        /* Mode 3: Click-to-Animate */
+        .cf-live-animated-icon.is-cf-animating svg,
+        .cf-animated-icon.is-cf-animating svg {
+            animation: var(--cf-anim-name, cf-icon-pop) var(--_cf-duration) cubic-bezier(0.22, 1, 0.36, 1) 1;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .cf-live-animated-icon svg,
+            .cf-animated-icon svg {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+
+        @keyframes cf-icon-pop {
+            0%, 100% { transform: scale(var(--cf-optical-scale, 1)) rotate(0deg); }
+            45% { transform: scale(calc(var(--cf-optical-scale, 1) * 1.18)) rotate(6deg); }
+            75% { transform: scale(calc(var(--cf-optical-scale, 1) * 0.96)) rotate(-2deg); }
         }
 
         .cf-icon-wrapper {

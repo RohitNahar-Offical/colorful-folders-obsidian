@@ -13,6 +13,7 @@ export class AnimatedIconService {
     private _animatedTemplateCache: LRUCache<string, HTMLElement> = new LRUCache<string, HTMLElement>(256);
     private _domParser: DOMParser | null = typeof DOMParser !== 'undefined' ? new DOMParser() : null;
     private _intersectionObserver: IntersectionObserver | null = null;
+    private _observed: WeakSet<HTMLElement> = new WeakSet<HTMLElement>();
 
     constructor(plugin: IColorfulFoldersPlugin) {
         this.plugin = plugin;
@@ -23,18 +24,149 @@ export class AnimatedIconService {
                     if (entry.target && entry.target.instanceOf(HTMLElement)) {
                         const targetEl = entry.target as HTMLElement & { _cfWasOffscreen?: boolean };
                         if (entry.isIntersecting) {
+                            targetEl.setAttribute('data-cf-visible', 'true');
+                            const mode = targetEl.getAttribute('data-cf-anim-mode') || this.plugin.settings?.animationMode || 'click';
+
+                            if (mode === 'once' && !targetEl.getAttribute('data-cf-played')) {
+                                targetEl.setAttribute('data-cf-played', 'true');
+                                this._intersectionObserver?.unobserve(targetEl);
+                                this._observed.delete(targetEl);
+                            }
+
                             if (targetEl._cfWasOffscreen) {
                                 targetEl._cfWasOffscreen = false;
                                 this.wakeAnimatedElement(targetEl);
                             }
+
+                            const svg = targetEl.querySelector('svg') as unknown as { unpauseAnimations?: () => void };
+                            if (svg && typeof svg.unpauseAnimations === 'function') {
+                                try { svg.unpauseAnimations(); } catch { void 0; }
+                            }
                         } else {
+                            targetEl.setAttribute('data-cf-visible', 'false');
                             targetEl._cfWasOffscreen = true;
+                            const svg = targetEl.querySelector('svg') as unknown as { pauseAnimations?: () => void };
+                            if (svg && typeof svg.pauseAnimations === 'function') {
+                                try { svg.pauseAnimations(); } catch { void 0; }
+                            }
                         }
                     }
                 }
-            }, { rootMargin: '100px' });
+            }, { root: null, rootMargin: '48px', threshold: 0.05 });
+        }
+
+        try {
+            this.plugin.getOpenDocuments().forEach(doc => {
+                doc.addEventListener('visibilitychange', this.onVisibilityChange);
+            });
+        } catch {
+            void 0;
         }
     }
+
+    private onVisibilityChange = (): void => {
+        const docs = this.plugin.getOpenDocuments();
+        let anyHidden = false;
+        for (let i = 0; i < docs.length; i++) {
+            if (docs[i].hidden) {
+                anyHidden = true;
+                break;
+            }
+        }
+        const playState = anyHidden ? 'paused' : 'running';
+        docs.forEach(doc => {
+            doc.documentElement?.style.setProperty('--cf-icon-play-state', playState);
+        });
+
+        const allContainers = this.getAllNavContainers();
+        for (let i = 0; i < allContainers.length; i++) {
+            const icons = allContainers[i].querySelectorAll<HTMLElement>('.cf-live-animated-icon, .cf-animated-icon');
+            for (let j = 0; j < icons.length; j++) {
+                const svg = icons[j].querySelector('svg') as unknown as { pauseAnimations?: () => void; unpauseAnimations?: () => void };
+                if (svg) {
+                    if (anyHidden && typeof svg.pauseAnimations === 'function') {
+                        try { svg.pauseAnimations(); } catch { void 0; }
+                    } else if (!anyHidden && typeof svg.unpauseAnimations === 'function') {
+                        if (icons[j].getAttribute('data-cf-visible') === 'true') {
+                            try { svg.unpauseAnimations(); } catch { void 0; }
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    public syncSettings(): void {
+        const mode = this.plugin.settings?.animationMode || 'click';
+        const speed = this.plugin.settings?.animationSpeed ?? 1;
+
+        this.plugin.getOpenDocuments().forEach(doc => {
+            if (doc.documentElement) {
+                doc.documentElement.dataset.cfAnimMode = mode;
+                doc.documentElement.style.setProperty('--cf-icon-speed-scale', String(speed));
+            }
+        });
+
+        if (mode === 'once') {
+            const allContainers = this.getAllNavContainers();
+            for (let i = 0; i < allContainers.length; i++) {
+                const icons = allContainers[i].querySelectorAll<HTMLElement>('.cf-live-animated-icon, .cf-animated-icon');
+                for (let j = 0; j < icons.length; j++) {
+                    const el = icons[j];
+                    el.removeAttribute('data-cf-played');
+                    if (this._intersectionObserver) {
+                        this._intersectionObserver.unobserve(el);
+                        this._observed.delete(el);
+                        this._observed.add(el);
+                        this._intersectionObserver.observe(el);
+                    }
+                }
+            }
+        }
+    }
+
+    public handleDelegatedClick = (evt: MouseEvent): void => {
+        if (!this.hasAnyAnimatedIcons()) return;
+        const target = (evt.target as Element | null)?.closest<HTMLElement>('.cf-live-animated-icon, .cf-animated-icon');
+        let iconEl: HTMLElement | null = target;
+        if (!iconEl) {
+            const row = (evt.target as Element | null)?.closest<HTMLElement>(
+                '.nav-folder-title, .nav-file-title, .tree-item-self, .nn-navitem, .nn-file'
+            );
+            if (row) {
+                iconEl = row.querySelector<HTMLElement>('.cf-live-animated-icon:not([style*="display: none"]), .cf-animated-icon:not([style*="display: none"])');
+            }
+        }
+        if (!iconEl) return;
+
+        const mode = iconEl.getAttribute('data-cf-anim-mode') || this.plugin.settings?.animationMode || 'click';
+        if (mode !== 'click') return;
+
+        // Cancel active compositor animations directly to avoid forced synchronous reflows
+        iconEl.classList.remove('is-cf-animating');
+        const svg = iconEl.querySelector('svg');
+        if (svg && typeof svg.getAnimations === 'function') {
+            const activeAnims = svg.getAnimations();
+            for (let i = 0; i < activeAnims.length; i++) {
+                try { activeAnims[i].cancel(); } catch { void 0; }
+            }
+        }
+
+        // Restart SMIL animation if applicable
+        this.replayAnimatedElement(iconEl);
+
+        const currentEl = iconEl;
+        const win = iconEl.ownerDocument?.defaultView || window;
+        win.requestAnimationFrame(() => {
+            currentEl.classList.add('is-cf-animating');
+        });
+
+        currentEl.addEventListener(
+            'animationend',
+            () => currentEl.classList.remove('is-cf-animating'),
+            { once: true }
+        );
+    };
 
     /**
      * Checks whether an icon SVG relies on SMIL animations (<animate>, <animateTransform>, etc.)
@@ -83,6 +215,13 @@ export class AnimatedIconService {
     }
 
     public destroy(): void {
+        try {
+            this.plugin.getOpenDocuments().forEach(doc => {
+                doc.removeEventListener('visibilitychange', this.onVisibilityChange);
+            });
+        } catch {
+            void 0;
+        }
         this._intersectionObserver?.disconnect();
         this._intersectionObserver = null;
         this.clearAllLiveAnimatedIconsFromDom();
@@ -253,6 +392,21 @@ export class AnimatedIconService {
                 }
             });
 
+            // Strip dummy hit-target / bounding-box rects from Lottie interactive exports
+            doc.querySelectorAll('rect').forEach(rect => {
+                const w = rect.getAttribute('width');
+                const h = rect.getAttribute('height');
+                const pe = rect.getAttribute('pointer-events');
+                const id = rect.getAttribute('id') || '';
+                if (
+                    (w === '32' && h === '32' && (!rect.hasAttribute('rx') && !rect.hasAttribute('stroke') && (rect.getAttribute('fill') === 'none' || !rect.hasAttribute('fill')))) ||
+                    pe === 'all' ||
+                    id.endsWith('_a') || id.endsWith('_b')
+                ) {
+                    rect.remove();
+                }
+            });
+
             const svg = doc.querySelector('svg');
             if (!svg) return null;
 
@@ -261,7 +415,7 @@ export class AnimatedIconService {
             svg.removeAttribute('width');
             svg.removeAttribute('height');
 
-            const wrap = createSpan({ cls: 'cf-live-animated-icon' });
+            const wrap = createSpan({ cls: 'cf-live-animated-icon cf-animated-icon' });
             wrap.setAttribute('data-icon-id', iconId);
             if (iconId.startsWith('meteocons-') || iconId.startsWith('meteocons:') || iconId.startsWith('meteocons_')) {
                 wrap.classList.add('cf-meteocons');
@@ -458,6 +612,7 @@ export class AnimatedIconService {
                 if (!rowPath || !targetConfig) {
                     rowEl?.classList.remove('cf-animated-icon-active', 'cf-has-animated-closed', 'cf-has-animated-open');
                     this._intersectionObserver?.unobserve(liveIcon);
+                    this._observed.delete(liveIcon);
                     liveIcon.remove();
                     continue;
                 }
@@ -468,6 +623,7 @@ export class AnimatedIconService {
 
                 if (!expectedIconId || iconId !== expectedIconId) {
                     this._intersectionObserver?.unobserve(liveIcon);
+                    this._observed.delete(liveIcon);
                     liveIcon.remove();
                 }
             }
@@ -518,6 +674,7 @@ export class AnimatedIconService {
                         const cloned = template.cloneNode(true) as HTMLElement & { _cfWasOffscreen?: boolean };
                         cloned.setAttribute('data-icon-id', iconId);
                         cloned.setAttribute('data-state', stateAttr);
+                        cloned.setAttribute('data-cf-visible', 'true');
                         if (stateCls) cloned.classList.add(stateCls);
                         if (iconId.startsWith('meteocons-') || iconId.startsWith('meteocons:') || iconId.startsWith('meteocons_')) {
                             cloned.classList.add('cf-meteocons');
@@ -531,13 +688,18 @@ export class AnimatedIconService {
                         } else {
                             textEl.parentElement?.insertBefore(cloned, textEl);
                         }
-                        this._intersectionObserver?.observe(cloned);
+                        if (!this._observed.has(cloned)) {
+                            this._observed.add(cloned);
+                            this._intersectionObserver?.observe(cloned);
+                        }
                     } else if (existingIcon.getAttribute('data-icon-id') !== iconId) {
                         this._intersectionObserver?.unobserve(existingIcon);
+                        this._observed.delete(existingIcon);
                         existingIcon.remove();
                         const cloned = template.cloneNode(true) as HTMLElement & { _cfWasOffscreen?: boolean };
                         cloned.setAttribute('data-icon-id', iconId);
                         cloned.setAttribute('data-state', stateAttr);
+                        cloned.setAttribute('data-cf-visible', 'true');
                         if (stateCls) cloned.classList.add(stateCls);
                         if (iconId.startsWith('meteocons-') || iconId.startsWith('meteocons:') || iconId.startsWith('meteocons_')) {
                             cloned.classList.add('cf-meteocons');
@@ -551,7 +713,10 @@ export class AnimatedIconService {
                         } else {
                             textEl.parentElement?.insertBefore(cloned, textEl);
                         }
-                        this._intersectionObserver?.observe(cloned);
+                        if (!this._observed.has(cloned)) {
+                            this._observed.add(cloned);
+                            this._intersectionObserver?.observe(cloned);
+                        }
                     } else {
                         // Update color without tearing down active animation
                         if (customIconColor) {

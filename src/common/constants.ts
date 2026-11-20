@@ -164,6 +164,8 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     showCollapseIndicator: true,
     folderBorderRadius: 10,
     enableStaircaseHack: false,
+    animationMode: 'click' as const,
+    animationSpeed: 1,
     aiProvider: "ollama",
     aiApiKey: "",
     aiCustomEndpoint: "",
