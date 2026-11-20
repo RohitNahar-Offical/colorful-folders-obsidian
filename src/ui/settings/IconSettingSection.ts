@@ -31,16 +31,22 @@ export class IconSettingSection extends SettingSection {
 
         const computeInstalledPackCounts = (): Map<string, number> => {
             const counts = new Map<string, number>();
-            const allIcons = new Set([
-                ...Object.keys(this.plugin.getCustomIconsMap()),
-                ...Object.keys(this.plugin.localFileSystemIcons || {}),
-                ...Object.keys(this.plugin.localCustomIcons || {})
-            ]);
-
-            allIcons.forEach(id => {
-                const pfx = IconPackIndex.getPackPrefix(id);
-                counts.set(pfx, (counts.get(pfx) || 0) + 1);
-            });
+            const seen = new Set<string>();
+            const tally = (dict?: Record<string, string>) => {
+                if (!dict) return;
+                for (const id in dict) {
+                    if (!seen.has(id)) {
+                        seen.add(id);
+                        const pfx = IconPackIndex.getPackPrefix(id);
+                        counts.set(pfx, (counts.get(pfx) || 0) + 1);
+                    }
+                }
+            };
+            tally(this.plugin.localCustomIcons);
+            tally(this.plugin.localFileSystemIcons);
+            if (this.plugin.settings?.customIcons) {
+                tally(this.plugin.settings.customIcons);
+            }
             return counts;
         };
 

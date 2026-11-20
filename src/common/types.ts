@@ -235,6 +235,7 @@ export interface IColorfulFoldersPlugin {
     getCustomIconsMap(): Record<string, string>;
     loadLocalIcons(): Promise<void>;
     loadLocalCustomIcons(): Promise<void>;
+    isLocalCustomIconsLoaded(): boolean;
     saveLocalCustomIcons(): Promise<void>;
     removePackIcons(prefix: string): Promise<number>;
     clearAllIconPacksAndCustomIcons(): Promise<void>;
@@ -255,7 +256,7 @@ export interface IColorfulFoldersPlugin {
     getActivePalette(isDark?: boolean): { rgb: string; hex: string }[];
     processDividers(): void;
     generateStyles(): Promise<void>;
-    autoDownloadPack(url: string, prefix: string): Promise<number>;
+    autoDownloadPack(url: string, prefix: string, skipRefresh?: boolean): Promise<number>;
     initStaircaseStyleStripper(): void;
     generateStylesDebounced: Debouncer<[], void>;
     refreshIconsDebounced?: Debouncer<[], void>;

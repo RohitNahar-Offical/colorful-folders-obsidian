@@ -801,6 +801,49 @@ When performing a "Hard reset everything" / Factory Reset in **Settings > Advanc
 
 **Lesson**: Factory / Hard reset routines must encompass all storage layers—both database settings and filesystem assets. Never leave downloaded asset bundles or in-memory caches intact during a full factory reset.
 
+---
+
+## Incident #57 — Baseline Icon Pack Auto-Download Race Condition & DOMParser Vector Overhead (2026-11-20)
+**What was attempted**: Automatically provisioning baseline icon packs (`simple-icons` and `tabler`) upon fresh plugin installations or version updates with `Custom > Simple Icons > Lucide > Tabler` priority ordering.
+**What broke**:
+1. `lastVersion` was committed to settings at $t=1000$ms before the asynchronous pack downloads finished, so if downloads stalled or were deferred, the plugin marked the vault as updated and never retried.
+2. SVG vector normalization executed `DOMParser` synchronously across 10,229 icons, creating a ~5000ms main-thread freeze.
+3. Hard reset cleared settings and icons but stamped `lastVersion = manifest.version`, preventing the collective changelog modal from displaying after reload.
+**Root cause**:
+1. Uncoordinated timeouts in `onload()` committed state before dependent network downloads settled.
+2. Raw Iconify SVG strings were run through full DOM parsing rather than regex-based attribute extraction.
+3. Changelog trigger logic in `onload()` requires `!settings.lastVersion || settings.lastVersion !== currentVersion`; resetting `lastVersion` to the current manifest version prematurely marked the vault as already seen.
+**Resolution**:
+1. Sequenced download promises, committed `lastVersion` only after downloads settled, and parallelized with `Promise.all`.
+2. Fast-pathed valid Iconify SVG paths (`!body.includes('<script') && !body.includes('javascript:')`), reducing parsing overhead from ~5000ms to ~40ms.
+3. Configured `DEFAULT_ICON_PACK_ORDER` and post-download hierarchy to `Custom > Simple Icons > Lucide > Tabler > ...`.
+4. Stamped `lastVersion = ""` in `hardReset()` so reload triggers `isFirstRunOrVersionChange` and opens the Changelog modal.
+**Lesson**: Background provisioning tasks must settle completely before version tokens are committed. Always fast-path trusted vector structures to avoid blocking the main thread with heavy DOMParser operations.
+
+---
+
+## Incident #58 — Cold-Start Performance Bottlenecks & Redundant DOM Invalidation on Note Open (2026-11-20)
+**What was attempted**: Performing a comprehensive plugin performance audit to minimize cold start duration and ensure immediate Obsidian responsiveness.
+**What was identified**:
+1. **Serial Disk Reads in `loadLocalCustomIcons`**: Pack `.json` files in `.obsidian/plugins/colorful-folders/icons/` were read sequentially using `await adapter.read()`, causing unnecessary I/O delays during `onload()`.
+2. **Inner-Loop Allocation**: `Array.from(dedicatedPackPrefixes)` was invoked on every single icon iteration in `custom-icons.json`.
+3. **$O(N)$ Settings Dirty Checks**: `saveSettings()` evaluated `Object.keys(currentCustomIcons).length` across 10,500+ keys on every settings save/debounce.
+4. **Heavy Cloning on Baseline Checks**: `onload()` ran `Object.keys(Object.assign({}, this.settings.customIcons, this.localCustomIcons))` on startup timeout, cloning 10,000+ properties into a temporary object.
+5. **Double Refresh on Parallel Downloads**: `autoDownloadPack()` unconditionally triggered `saveSettings()` and `generateStyles()`, causing redundant duplicate style rebuilds when packs downloaded concurrently via `Promise.all`.
+6. **Unyielding CSS Traversal**: `StyleGenerator.traverse()` contained an unfulfilled `yieldState` parameter, potentially blocking the UI thread during style generation in large vaults.
+7. **Redundant DOM Crawl on Note Open**: `EventTrackerService` invoked `initStaircaseStyleStripper()` on every `file-open` event, querying the entire file tree DOM and disconnecting/re-attaching `MutationObserver` on every note click despite the observer already catching subtree mutations in real time.
+**Resolution**:
+1. **Parallel Pack Reads**: Refactored `loadLocalCustomIcons()` to read pack JSON files concurrently using `Promise.all`.
+2. **Array Hoisting**: Converted `dedicatedPackPrefixes` to a pre-allocated array outside the icon iteration loop.
+3. **Version-Based $O(1)$ Invalidation**: Introduced `_customIconsVersion` on `ColorfulFoldersPlugin` to turn `saveSettings()` icon cache invalidation into an instant integer comparison.
+4. **Zero-Allocation Baseline Scan**: Replaced dictionary cloning with early-exit loops checking `localCustomIcons` and `settings.customIcons`.
+5. **Consolidated Download Refresh**: Added `skipRefresh?: boolean` parameter to `autoDownloadPack()` so parallel downloads execute a single atomic refresh upon completion.
+6. **Cooperative 12ms Yielding**: Implemented cooperative `window.setTimeout(resolve, 0)` yielding when traversal exceeds 12ms in `StyleGenerator.traverse()`.
+7. **Eliminated `file-open` Stripper Thrashing**: Removed the redundant `initStaircaseStyleStripper()` call from the `file-open` event listener.
+8. **Streamlined Settings Counting**: Replaced multi-array spread `computeInstalledPackCounts()` in `IconSettingSection.ts` with direct object iteration using a `seen` Set.
+**Lesson**: Continuous mutation observers render manual polling or event-based DOM re-stripping obsolete. Track cache mutations with monotonic version counters rather than scanning object key lengths on hot paths.
+
+
 
 
 

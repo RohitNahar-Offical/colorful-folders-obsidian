@@ -58,6 +58,7 @@ export default class ColorfulFoldersPlugin
   localFileSystemIcons: Record<string, string> = {};
   localCustomIcons: Record<string, string> = {};
   userCustomIcons: Record<string, string> = {};
+  _customIconsVersion: number = 0;
   cachedDocuments: Set<Document> = new Set();
   _abortStartupRender: boolean = false;
   _isUnloading: boolean = false;
@@ -164,24 +165,35 @@ export default class ColorfulFoldersPlugin
         const isFirstRunOrVersionChange = !this.settings.lastVersion || this.settings.lastVersion !== currentVersion;
 
         if (isFirstRunOrVersionChange) {
-          const customIconKeys = Object.keys(Object.assign({}, this.settings.customIcons, this.localCustomIcons));
-          const hasSimpleIcons = customIconKeys.some(k => k.startsWith('simple-icons-') || k.startsWith('simple-'));
-          const hasTablerIcons = customIconKeys.some(k => k.startsWith('tabler-') || k.startsWith('tb-'));
+          let hasSimpleIcons = false;
+          let hasTablerIcons = false;
+          for (const k in this.localCustomIcons) {
+            if (!hasSimpleIcons && (k.startsWith('simple-icons-') || k.startsWith('simple-') || k.startsWith('si-'))) hasSimpleIcons = true;
+            if (!hasTablerIcons && (k.startsWith('tabler-') || k.startsWith('tb-'))) hasTablerIcons = true;
+            if (hasSimpleIcons && hasTablerIcons) break;
+          }
+          if ((!hasSimpleIcons || !hasTablerIcons) && this.settings.customIcons) {
+            for (const k in this.settings.customIcons) {
+              if (!hasSimpleIcons && (k.startsWith('simple-icons-') || k.startsWith('simple-') || k.startsWith('si-'))) hasSimpleIcons = true;
+              if (!hasTablerIcons && (k.startsWith('tabler-') || k.startsWith('tb-'))) hasTablerIcons = true;
+              if (hasSimpleIcons && hasTablerIcons) break;
+            }
+          }
 
           if (!hasSimpleIcons || !hasTablerIcons) {
             try {
               let downloadedAny = false;
               if (!hasSimpleIcons && !hasTablerIcons) {
                 await Promise.all([
-                  this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/simple-icons.json", "simple-icons"),
-                  this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/tabler.json", "tabler")
+                  this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/simple-icons.json", "simple-icons", true),
+                  this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/tabler.json", "tabler", true)
                 ]);
                 downloadedAny = true;
               } else if (!hasSimpleIcons) {
-                await this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/simple-icons.json", "simple-icons");
+                await this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/simple-icons.json", "simple-icons", true);
                 downloadedAny = true;
               } else if (!hasTablerIcons) {
-                await this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/tabler.json", "tabler");
+                await this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/tabler.json", "tabler", true);
                 downloadedAny = true;
               }
               if (downloadedAny) {
@@ -193,6 +205,8 @@ export default class ColorfulFoldersPlugin
                 this.iconCache?.clear();
                 this.iconManager?.invalidateCategoryCache();
                 this.animatedIconService?.invalidateCache();
+                this.registerCustomIcons();
+                void this.generateStyles();
                 new obsidian.Notice("Colorful Folders: Downloaded baseline icon packs (Simple Icons & Tabler).", 4000);
               }
             } catch (err) {
@@ -429,6 +443,14 @@ export default class ColorfulFoldersPlugin
   }
 
   onunload() {
+    if (this._selfSavingTimeout !== null) {
+      window.clearTimeout(this._selfSavingTimeout);
+      this._selfSavingTimeout = null;
+    }
+    if (this._dividerTimeout !== null) {
+      window.clearTimeout(this._dividerTimeout);
+      this._dividerTimeout = null;
+    }
     const win = window as unknown as Window & { _testerObserver?: MutationObserver };
     if (win._testerObserver) {
       win._testerObserver.disconnect();
@@ -450,6 +472,10 @@ export default class ColorfulFoldersPlugin
 
   private _localCustomIconsLoaded: boolean = false;
 
+  isLocalCustomIconsLoaded(): boolean {
+    return this._localCustomIconsLoaded;
+  }
+
   async loadLocalCustomIcons(): Promise<void> {
     if (this._localCustomIconsLoaded) return;
     try {
@@ -459,58 +485,77 @@ export default class ColorfulFoldersPlugin
         this.localCustomIcons = {};
         this.userCustomIcons = {};
         this._localCustomIconsLoaded = true;
+        this._customIconsVersion++;
         return;
       }
       this.localCustomIcons = {};
       this.userCustomIcons = {};
       const listResult = await adapter.list(iconsDir);
 
+      const jsonFiles = listResult.files.filter(f => f.endsWith('.json'));
+      if (jsonFiles.length === 0) {
+        this._localCustomIconsLoaded = true;
+        this._customIconsVersion++;
+        return;
+      }
+
       // Collect known dedicated pack file prefixes (excluding custom-icons.json / custom.json)
-      const dedicatedPackPrefixes = new Set<string>();
-      for (const filePath of listResult.files) {
+      const dedicatedPackPrefixes: string[] = [];
+      for (const filePath of jsonFiles) {
         const norm = filePath.replace(/\\/g, '/');
         const fileName = norm.split('/').pop() || '';
-        if (fileName.endsWith('.json') && fileName !== 'custom-icons.json' && fileName !== 'custom.json') {
-          dedicatedPackPrefixes.add(fileName.replace(/\.json$/, '').toLowerCase());
+        if (fileName !== 'custom-icons.json' && fileName !== 'custom.json') {
+          dedicatedPackPrefixes.push(fileName.replace(/\.json$/, '').toLowerCase());
         }
       }
 
-      let customIconsPruned = false;
-      for (const filePath of listResult.files) {
-        if (filePath.endsWith('.json')) {
+      // Parallelize disk reads across pack JSON files for high-speed startup
+      const readResults = await Promise.all(
+        jsonFiles.map(async (filePath) => {
           try {
-            const norm = filePath.replace(/\\/g, '/');
-            const fileName = norm.split('/').pop() || '';
-            const isCustomFile = fileName === 'custom-icons.json' || fileName === 'custom.json';
             const raw = await adapter.read(filePath);
-            const parsed = JSON.parse(raw) as Record<string, string>;
-            if (parsed && typeof parsed === 'object') {
-              for (const id in parsed) {
-                let svg = parsed[id];
-                if (typeof svg === 'string' && svg.includes('\\"')) {
-                  svg = svg.replace(/\\"/g, '"');
-                }
-
-                if (isCustomFile) {
-                  // If custom-icons.json contains icons from installed packs (e.g. bi-, simple-, tabler-, line-md-),
-                  // prune them from userCustomIcons so they don't bloat the user's custom file.
-                  const idLower = id.toLowerCase();
-                  const belongsToPack = Array.from(dedicatedPackPrefixes).some(
-                    p => idLower.startsWith(`${p}-`) || idLower.startsWith(`${p}:`) || idLower.startsWith(`${p}_`)
-                  );
-                  if (belongsToPack) {
-                    customIconsPruned = true;
-                    continue;
-                  }
-                  this.userCustomIcons[id] = svg;
-                }
-
-                this.localCustomIcons[id] = svg;
-              }
-            }
+            return { filePath, raw };
           } catch (e) {
-            console.error(`Colorful Folders: Failed to parse local icon file ${filePath}`, e);
+            console.error(`Colorful Folders: Failed to read local icon file ${filePath}`, e);
+            return null;
           }
+        })
+      );
+
+      let customIconsPruned = false;
+      for (const item of readResults) {
+        if (!item || !item.raw) continue;
+        const { filePath, raw } = item;
+        try {
+          const norm = filePath.replace(/\\/g, '/');
+          const fileName = norm.split('/').pop() || '';
+          const isCustomFile = fileName === 'custom-icons.json' || fileName === 'custom.json';
+          const parsed = JSON.parse(raw) as Record<string, string>;
+          if (parsed && typeof parsed === 'object') {
+            for (const id in parsed) {
+              let svg = parsed[id];
+              if (typeof svg === 'string' && svg.indexOf('\\"') !== -1) {
+                svg = svg.replace(/\\"/g, '"');
+              }
+
+              if (isCustomFile) {
+                // If custom-icons.json contains icons from installed packs, prune them from userCustomIcons
+                const idLower = id.toLowerCase();
+                const belongsToPack = dedicatedPackPrefixes.some(
+                  p => idLower.startsWith(`${p}-`) || idLower.startsWith(`${p}:`) || idLower.startsWith(`${p}_`)
+                );
+                if (belongsToPack) {
+                  customIconsPruned = true;
+                  continue;
+                }
+                this.userCustomIcons[id] = svg;
+              }
+
+              this.localCustomIcons[id] = svg;
+            }
+          }
+        } catch (e) {
+          console.error(`Colorful Folders: Failed to parse local icon file ${filePath}`, e);
         }
       }
 
@@ -522,6 +567,7 @@ export default class ColorfulFoldersPlugin
       }
 
       this._localCustomIconsLoaded = true;
+      this._customIconsVersion++;
       this.iconCache?.clear();
       this.iconManager?.invalidateCategoryCache();
       this.animatedIconService?.invalidateCache();
@@ -535,12 +581,14 @@ export default class ColorfulFoldersPlugin
     if (!this.localCustomIcons) this.localCustomIcons = {};
     this.userCustomIcons[id] = svg;
     this.localCustomIcons[id] = svg;
+    this._customIconsVersion++;
   }
 
   removeCustomIcon(id: string): void {
     if (this.userCustomIcons) delete this.userCustomIcons[id];
     if (this.localCustomIcons) delete this.localCustomIcons[id];
     if (this.settings?.customIcons) delete this.settings.customIcons[id];
+    this._customIconsVersion++;
   }
 
   async saveLocalCustomIcons(): Promise<void> {
@@ -663,6 +711,7 @@ export default class ColorfulFoldersPlugin
     this.iconManager?.invalidateCategoryCache();
     this.animatedIconService?.invalidateCache();
     this.registerCustomIcons();
+    this._customIconsVersion++;
     await this.saveSettings();
     await this.generateStyles();
     this.animatedIconService?.syncAnimatedIcons();
@@ -675,6 +724,7 @@ export default class ColorfulFoldersPlugin
     this.userCustomIcons = {};
     this.localFileSystemIcons = {};
     this._localCustomIconsLoaded = false;
+    this._customIconsVersion++;
     this.settings.iconPackPriorityOrder = [...DEFAULT_ICON_PACK_ORDER];
     this.iconCache?.clear();
     this.iconManager?.invalidateCategoryCache();
@@ -757,8 +807,8 @@ export default class ColorfulFoldersPlugin
     // 5. Restore factory baseline icon packs (Simple Icons & Tabler) in parallel
     try {
       await Promise.all([
-        this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/simple-icons.json", "simple-icons"),
-        this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/tabler.json", "tabler")
+        this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/simple-icons.json", "simple-icons", true),
+        this.autoDownloadPack("https://raw.githubusercontent.com/iconify/icon-sets/master/json/tabler.json", "tabler", true)
       ]);
       const basePacks = ['custom', 'simple-icons', 'lucide', 'tabler'];
       const currentOrder = this.settings.iconPackPriorityOrder || DEFAULT_ICON_PACK_ORDER;
@@ -767,6 +817,7 @@ export default class ColorfulFoldersPlugin
       this.iconCache?.clear();
       this.iconManager?.invalidateCategoryCache();
       this.animatedIconService?.invalidateCache();
+      this.registerCustomIcons();
     } catch (err) {
       console.warn("Colorful Folders: Baseline icon pack restore deferred:", err);
     }
@@ -921,19 +972,18 @@ export default class ColorfulFoldersPlugin
     return Object.assign({}, this.settings.customIcons, this.localCustomIcons);
   }
 
-  // PERF FIX 3: Selective icon cache invalidation.
+  // PERF FIX 3: Selective icon cache invalidation via version tracking.
   private _lastIconRulesKey = '';
-  private _lastCustomIconsCount = -1;
+  private _lastCustomIconsVersion = -1;
   private _lastCustomIconsRef: Record<string, string> | null = null;
 
   async saveSettings() {
     this.syncRuntimeSettings();
     const iconRulesChanged = (this.settings.customIconRules || '') !== this._lastIconRulesKey;
     const currentCustomIcons = this.getCustomIconsMap();
-    const currentCustomCount = Object.keys(currentCustomIcons).length;
     const customIconsChanged =
       this._lastCustomIconsRef !== currentCustomIcons ||
-      this._lastCustomIconsCount !== currentCustomCount;
+      this._lastCustomIconsVersion !== this._customIconsVersion;
     const shouldClearIconCache = iconRulesChanged || customIconsChanged;
 
     if (this.heatmapCache) {
@@ -949,7 +999,7 @@ export default class ColorfulFoldersPlugin
       this.iconManager.invalidateCategoryCache();
       this._lastIconRulesKey = this.settings.customIconRules || '';
       this._lastCustomIconsRef = currentCustomIcons;
-      this._lastCustomIconsCount = currentCustomCount;
+      this._lastCustomIconsVersion = this._customIconsVersion;
     }
     this.animatedIconService?.invalidateCache();
     this.domObserverService?.initDividerObserver();
@@ -1376,7 +1426,7 @@ export default class ColorfulFoldersPlugin
     return Array.from(this.cachedDocuments);
   }
 
-  async autoDownloadPack(url: string, prefix: string): Promise<number> {
+  async autoDownloadPack(url: string, prefix: string, skipRefresh = false): Promise<number> {
     let count = 0;
     const packIcons: Record<string, string> = {};
     const fetchUrl = async (targetUrl: string) => {
@@ -1540,12 +1590,15 @@ export default class ColorfulFoldersPlugin
       }
 
       if (success) {
-        this.iconCache?.clear();
-        this.iconManager?.invalidateCategoryCache();
-        this.animatedIconService?.invalidateCache();
-        this.registerCustomIcons();
-        await this.saveSettings();
-        void this.generateStyles();
+        this._customIconsVersion++;
+        if (!skipRefresh) {
+          this.iconCache?.clear();
+          this.iconManager?.invalidateCategoryCache();
+          this.animatedIconService?.invalidateCache();
+          this.registerCustomIcons();
+          await this.saveSettings();
+          void this.generateStyles();
+        }
       }
       return count;
     } catch (e) {
