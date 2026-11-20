@@ -125,9 +125,18 @@ graph TD
 
 ### 3.8 Animated Icon Pre-Registration & Zero-DOM Scroll Pipeline (`src/services/AnimatedIconService.ts`)
 - **Pre-Registration during CSS Generation**: `StyleGenerator.generateCss()` registers active animated paths into `AnimatedIconService._registeredAnimatedTargets` in $O(1)$ memory during the single traverse pass, eliminating any need to query or parse DOM rows during scroll.
-- **Memoized Regex Evaluation**: `_isAnimatedIconCache` caches SVG keyframe and SMIL animation tag detection to avoid repeated regex runs.
-- **$O(K)$ Targeted Querying**: `syncAnimatedIcons()` evaluates only the specific registered paths ($K$, where $K \le 5$), bypassing full-vault `querySelectorAll` scans and preserving 60/120 FPS scrolling.
+- **Granular Folder State Registration (`RegisteredAnimatedTarget`)**: Supports independent static vs animated icon assignments for closed and open folder actions. Active targets are registered as `closed`, `open`, or `both`.
+- **Scoped CSS Pseudo-Element Suppression**: Instead of blanket row suppression, `BaseCssGenerator.ts` generates state-scoped rules hiding the static CSS mask `::before` strictly when that state is animated:
+  ```css
+  .nav-folder:not(.is-collapsed) > .cf-has-animated-open .nav-folder-title-content::before { display: none !important; }
+  .nav-folder.is-collapsed > .cf-has-animated-closed .nav-folder-title-content::before { display: none !important; }
+  ```
+- **Optical Sizing Alignment**: Standardized sizing to `calc(1.3em * iconScale * wideScale * 1.15)` across `BaseCssGenerator.ts` and `StyleGenerator.ts`, optically balancing embedded SVG viewBox margins with edge-to-edge static CSS masks.
+- **Continuous Loops vs. Play-on-Click Single-Shot Replay**: Distinguishes continuous loops (e.g. `*-loop`) from single-shot animations (`isLoopingAnimatedIcon`). Single-shot animations replay upon user click or file activation (`replayAnimatedElement`), backed by a 300ms double-click throttle.
+- **Instant $O(1)$ Prefix Check**: Pre-checks `line-md-` / `linemd-` prefixes in `isAnimatedIcon()` to bypass raw SVG string reads and regex matches during startup.
+- **$O(K)$ Targeted Querying**: `syncAnimatedIcons()` reads directly from `_registeredAnimatedTargets` ($K$, where $K \le 5$), bypassing full-vault sweeps and preserving 60/120 FPS scrolling.
 - **Off-Screen SMIL Syncbase Recovery**: Uses `IntersectionObserver` with an offscreen boolean flag (`_cfWasOffscreen`) to safely wake stalled SMIL chained syncbases without DOM teardown when elements re-enter the viewport.
+- **Complete DOM Teardown**: `clearAllLiveAnimatedIconsFromDom()` detaches all mounted `.cf-live-animated-icon` elements and clears row state classes on plugin unload, restoring Obsidian's DOM to a clean native state.
 
 ### 3.9 Canvas & Excalidraw First-Class Extension Architecture (`src/core/IconRepository.ts`, `src/core/StyleGenerator.ts`)
 - **First-Class Extension Mapping**: `.canvas` and `.excalidraw` (including `.excalidraw.md`) are integrated directly into Tier 0.9 (`EXTENSION_AUTO_ICONS` mapping `canvas` to `frame` and `excalidraw` to `pencil-ruler`).
@@ -145,6 +154,17 @@ graph TD
   - Sets `flex: 0 0 auto !important; flex-shrink: 0 !important;` to lock icon slot dimensions across list and compact modes.
   - Safely suppresses nested elements via `.flatMap()` child selectors (`> svg`, `> span`) without trailing comma syntax anomalies.
 - **Decoupled Background & Icon Integration**: Style generation runs whenever `notebookNavigatorSupport` is active. Background coloring is independently gated by `shouldColorNN`, ensuring file icons and typography remain fully active regardless of whether file background blocks are enabled.
+
+### 3.11 Seeded Variety Hashing & Self-Healing Cache Invalidation (`src/core/IconRepository.ts`)
+- **Seeded Variety Hashing**: When `autoIconVariety` is enabled, computes `hashString(seed !== 0 ? `${baseStr}#${seed}` : baseStr)` where `baseStr = path || name` and `seed = settings.varietySeed || 0`.
+- **Array Rotation**: Rotates `match.emojis` and `match.lucides` arrays (`[selected, ...remaining]`), guaranteeing that the variety selection is preserved across all fallback pack resolvers in `StyleGenerator.ts`.
+- **Self-Healing Cache Guards**: Tracks `_lastVarietySeed` and `_lastVarietyEnabled` in `getAutoIconData()`, automatically flushing `_autoIconResultCache` whenever the user modifies the seed or toggles variety.
+- **Immediate Re-Roll**: Clicking "Shuffle icons" generates a new random seed (`Math.floor(Math.random() * 1000000) + 1`), flushes auto-icon and animated icon caches, immediately triggers `await generateStyles()`, and displays an Obsidian `Notice`.
+
+### 3.12 Cold Start Optimization & Observer Throttling Pipeline
+- **Zero-Cost High-Frequency Event Guards**: Document click listeners in `EventTrackerService.registerClickEventsForDoc()` and `file-open` event handlers are guarded by `if (!hasAnyAnimatedIcons()) return;`. When animated icons are not in use, click handling exits in < 0.0001ms with zero DOM traversal, zero closure allocations, and zero `setTimeout` calls.
+- **Deferred Pre-Warming**: Post-startup disk scanning (`loadLocalIcons`, `loadLocalCustomIcons`) and core icon pre-warming are deferred to post-startup idle time (~1-2s delay) via `requestIdleCallback()`.
+- **Exhaustive Container Cleanup**: On plugin unload, `DOMObserverService.destroy()` cleans up scroll listeners from all active containers (native file explorer + Notebook Navigator), and `PluginLifecycleService.destroy()` invalidates all LRU caches in `IconRepository` to prevent heap memory retention across reloads.
 
 
 ---

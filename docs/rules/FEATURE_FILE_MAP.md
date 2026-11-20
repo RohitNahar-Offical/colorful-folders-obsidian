@@ -17,6 +17,15 @@ Use this to instantly know WHICH file to edit for any task.
 ## "I want to change icon resolution rules, pack priority hierarchy, auto-download, or SVG Data URIs"
 → Edit `src/core/IconRepository.ts` (Tiers resolution logic), `src/core/IconRuleSet.ts` (custom user rule parser, operator matching modes `contains`/`exact`/`starts_with`/`ends_with`/`regex`, target scoping `folders`/`files`/`all`, native string matching, O(1) exact map, and LRU cache), `src/ui/settings/IconSettingSection.ts` (CSS Grid rule table, scope & mode dropdowns, and Icon Pack Priority Hierarchy reordering UI), `src/core/IconPackIndex.ts` (O(1) pack index with priority-aware `exactMap`, `coreMap`, and `suffixMap`), `src/core/CategoryTrie.ts` (Trie candidate matching with 512 LRU cache), `src/common/LRUCache.ts` (LRU caches), or `src/core/IconManager.ts` (facade wrapper). Raw & encoded Data-URIs are generated in `IconRepository.ts` and rendered via CSS in `StyleGenerator.ts`.
 
+## "I want to change icon variety, seeded re-rolls, or the Shuffle Icons feature"
+→ Edit `src/core/IconRepository.ts` (`settings.autoIconVariety`, `settings.varietySeed`, seeded hash key generation `${baseStr}#${seed}`, array rotation, and self-healing cache guards) and `src/ui/settings/IconSettingSection.ts` (Shuffle icons button, cache flush, immediate style generation, and Notice feedback).
+
+## "I want to change live animated icons (SMIL, looping, play-on-click, optical sizing, or folder open/close coexistence)"
+→ Edit `src/services/AnimatedIconService.ts` (`RegisteredAnimatedTarget` with `closed`, `open`, `both` states, `syncAnimatedIcons`, `replayAnimatedElement`, `clearAllLiveAnimatedIconsFromDom`), `src/core/BaseCssGenerator.ts` (scoped `.cf-has-animated-open` / `.cf-has-animated-closed` pseudo-element suppression rules and optical scale `calc(1.3em * iconScale * wideScale * 1.15)`), `src/core/StyleGenerator.ts` (state-scoped registration during traverse), and `src/services/EventTrackerService.ts` (play-on-click throttling and file-open replay).
+
+## "I want to change plugin startup, pre-warming, idle initialization, or teardown lifecycle"
+→ Edit `src/services/PluginLifecycleService.ts` (`initializeDocumentTracking`, `onLayoutReady`, deferred idle icon pre-warming via `requestIdleCallback`, and complete teardown in `destroy`), `src/services/DOMObserverService.ts` (`destroy` container scroll listener removal), and `src/main.ts` (`onload` / `onunload`).
+
 ## "I want to change Zero-DOM dataset attribute tagging or observers"
 → Edit `src/services/DOMObserverService.ts` (`data-cf-path` attribute tagging). Dataset attribute updates do NOT fire `childList` mutations.
 

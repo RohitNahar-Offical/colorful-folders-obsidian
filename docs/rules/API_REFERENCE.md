@@ -108,12 +108,35 @@ HTML factory for the divider component.
 ### `IconRepository`
 Core resolution engine supporting a 4-tier priority system (`Tier 1`: Pack Exact > `Tier 2`: Custom Rule > `Tier 3`: Category Rule > `Tier 4`: Stemmed Fuzzy Match).
 
-- **`getAutoIconData(name: string, path?: string): AutoIconData | null`**: Returns `AutoIconData` populated with `tier: 1|2|3|4` and `packSource` (`custom`, `lucide`, `simple-icons`, `custom-rule`, `category-default`, `fuzzy-match`).
+- **`getAutoIconData(name: string, path?: string, isFile?: boolean): AutoIconData | null`**: Returns `AutoIconData` populated with `tier: 0 | 0.5 | 0.8 | 0.9 | 1 | 2 | 3 | 4` and `packSource`. Employs seeded variety hashing `hashString(seed !== 0 ? `${baseStr}#${seed}` : baseStr)` where `baseStr = path || name` when `autoIconVariety` is enabled. Rotates `match.emojis` and `match.lucides` so variety selections propagate to all fallback pack resolvers. Implements self-healing cache guards detecting changes to `customIconRules`, `varietySeed`, or `autoIconVariety`.
 - **`findIconInPacks(searchKey: string): string | null`**: Performs $O(1)$ pack lookup using `IconPackIndex` and `_findPackIconCache`.
 - **`getIconSvg(iconId: string, shouldEncode?: boolean): string`**: Resolves an icon ID to a normalized, optionally URL-encoded SVG string using `_normCache` (LRU).
 - **`getDataUri(iconId: string): string`**: Memoized Data-URI generator backed by `_dataUriCache` (LRU).
+- **`getMaskDataUri(iconId: string, rawSvg?: string): string`**: Generates and memoizes `-webkit-mask-image: url("data:image/svg+xml,...")` CSS mask rules directly in `_dataUriCache`.
 - **`preNormalizeIcon(id: string, rawSvg: string): void`**: Eagerly normalizes and pre-caches raw and encoded Data-URI representations into `iconCache` and `_dataUriCache` at load time.
-- **`invalidateCache(): void`**: Flushes all internal LRU caches and invalidates `_packIndex` snapshot.
+- **`invalidateAutoIconCache(path?: string): void`**: Directly clears targeted path entries in $O(1)$ or flushes the entire auto-icon cache.
+- **`invalidateCache(): void`**: Flushes all internal LRU caches (`_normCache`, `_dataUriCache`, `_findPackIconCache`, `_autoIconResultCache`, `_iconValidityCache`) and resets category and pack index snapshots.
+
+### `AnimatedIconService` (`src/services/AnimatedIconService.ts`)
+Manages the mounting, optical scaling, SMIL syncbase lifecycle, and Zero-DOM coordination of live animated SVG icons:
+- **`registerActiveAnimatedTarget(path: string, iconId: string, state?: 'closed' | 'open' | 'both'): void`**: Registers an active animated icon target during `StyleGenerator.generateCss()`, supporting independent closed, open, or bilateral folder states in $O(1)$ memory.
+- **`clearRegisteredAnimatedTargets(): void`**: Clears the active targets map prior to each stylesheet recompilation.
+- **`syncAnimatedIcons(): void`**: Viewport synchronization routine executing in $O(K)$ time (where $K$ is the number of active animated elements). Queries only registered paths via targeted DOM selectors and mounts `.cf-live-animated-icon` containers.
+- **`hasAnyAnimatedIcons(): boolean`**: Fast $O(1)$ memoized check verifying if animated icons are configured in settings or active in the vault.
+- **`isAnimatedIcon(iconId: string): boolean`**: Evaluates whether an icon ID contains animation markup, featuring an instant $O(1)$ prefix check for `line-md-` / `linemd-` packs and memoized regex evaluation for custom SVGs.
+- **`isLoopingAnimatedIcon(iconId: string): boolean`**: Distinguishes continuous infinite loop animations from single-shot animations.
+- **`replayAnimatedElement(el: HTMLElement): void`**: Clones and restarts single-shot animated icons upon user click or activation with a 300ms double-click throttle.
+- **`replayTargetByPath(targetPath: string): void`**: Finds and replays visible single-shot animated icons for a specific file or folder path.
+- **`getAnimatedIconElement(iconId: string): HTMLElement | null`**: Returns a pre-compiled, script-sanitized SVG DOM template element from `_animatedTemplateCache`.
+- **`clearAllLiveAnimatedIconsFromDom(): void`**: Synchronously removes all `.cf-live-animated-icon` elements and strips animation row classes (`cf-animated-icon-active`, `cf-has-animated-closed`, `cf-has-animated-open`) across all explorer containers on plugin unload or reload.
+- **`destroy(): void`**: Disconnects the `IntersectionObserver`, clears live DOM elements, empties active target registries, and purges all template caches.
+
+### `DOMObserverService` (`src/services/DOMObserverService.ts`)
+Zero-DOM observer coordination service managing dataset tagging and container scroll listeners:
+- **`syncTagPaneDataset(): void`**: Stamps `data-tag-name` on Tag Pane tree items using Obsidian's in-memory `tagDoms` dictionary without layout thrashing.
+- **`initDividerObserver(): void`**: Sets up `childList` mutation observers and passive scroll listeners on native and Notebook Navigator containers, automatically throttled during active scrolling.
+- **`disposeDividerObserver(): void`**: Disconnects mutation observers and cancels pending animation frame synchronizations.
+- **`destroy(): void`**: Detaches scroll event listeners from all explorer containers and cleans up timeout timers.
 
 ### `AIIconClassifier` (`src/integrations/AIIconClassifier.ts`)
 Instance service (`plugin.aiIconClassifier`) for context-aware LLM icon classification across vault folders and Markdown files.
