@@ -173,9 +173,11 @@ export class IconPickerModal extends obsidian.Modal {
                         const templateSvg = getSvgTemplate(id, rawSvg);
                         if (templateSvg) {
                             const svgEl = templateSvg.cloneNode(true) as HTMLElement;
+                            const isMeteo = id.startsWith('meteocons-') || id.startsWith('meteocons:') || id.startsWith('meteocons_');
                             svgEl.setCssStyles({
                                 width: "24px", height: "24px",
-                                color: isSelected ? "white" : "var(--text-normal)"
+                                color: isSelected ? "white" : "var(--text-normal)",
+                                ...(isMeteo ? { transform: "scale(1.45)", transformOrigin: "center center" } : {})
                             });
                             cell.appendChild(svgEl);
                         } else {

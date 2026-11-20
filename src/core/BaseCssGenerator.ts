@@ -194,6 +194,15 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
             display: block !important;
         }
 
+        /* Scale Meteocons icons (viewBox 512x512 with internal padding) to match Lucide/Line-md */
+        .cf-live-animated-icon.cf-meteocons svg,
+        .cf-live-animated-icon[data-icon-id^="meteocons"] svg,
+        .notebook-navigator .cf-live-animated-icon.cf-meteocons svg,
+        .notebook-navigator .cf-live-animated-icon[data-icon-id^="meteocons"] svg {
+            transform: scale(1.45) !important;
+            transform-origin: center center !important;
+        }
+
         .cf-icon-wrapper {
             display: inline-flex !important;
             align-items: center !important;

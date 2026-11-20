@@ -260,6 +260,10 @@ export class AnimatedIconService {
             svg.removeAttribute('height');
 
             const wrap = createSpan({ cls: 'cf-live-animated-icon' });
+            wrap.setAttribute('data-icon-id', iconId);
+            if (iconId.startsWith('meteocons-') || iconId.startsWith('meteocons:') || iconId.startsWith('meteocons_')) {
+                wrap.classList.add('cf-meteocons');
+            }
             wrap.appendChild(svg);
 
             this._animatedTemplateCache.set(iconId, wrap);
@@ -513,6 +517,9 @@ export class AnimatedIconService {
                         cloned.setAttribute('data-icon-id', iconId);
                         cloned.setAttribute('data-state', stateAttr);
                         if (stateCls) cloned.classList.add(stateCls);
+                        if (iconId.startsWith('meteocons-') || iconId.startsWith('meteocons:') || iconId.startsWith('meteocons_')) {
+                            cloned.classList.add('cf-meteocons');
+                        }
                         cloned._cfWasOffscreen = false;
                         if (customIconColor) {
                             cloned.setCssProps({ '--cf-animated-icon-color': customIconColor });
@@ -530,6 +537,9 @@ export class AnimatedIconService {
                         cloned.setAttribute('data-icon-id', iconId);
                         cloned.setAttribute('data-state', stateAttr);
                         if (stateCls) cloned.classList.add(stateCls);
+                        if (iconId.startsWith('meteocons-') || iconId.startsWith('meteocons:') || iconId.startsWith('meteocons_')) {
+                            cloned.classList.add('cf-meteocons');
+                        }
                         cloned._cfWasOffscreen = false;
                         if (customIconColor) {
                             cloned.setCssProps({ '--cf-animated-icon-color': customIconColor });

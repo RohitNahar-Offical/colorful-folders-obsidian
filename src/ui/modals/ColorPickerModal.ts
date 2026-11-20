@@ -232,7 +232,12 @@ modifiedFields: Set<string>;
                                 if (svgEl) {
                                     svgEl.removeAttribute("width");
                                     svgEl.removeAttribute("height");
-                                    (svgEl as unknown as HTMLElement).setCssStyles({ width: `${sizePx}px`, height: `${sizePx}px`, color: effectiveIconColor });
+                                    const isMeteo = currentIconId.startsWith('meteocons-') || currentIconId.startsWith('meteocons:') || currentIconId.startsWith('meteocons_');
+                                    (svgEl as unknown as HTMLElement).setCssStyles({
+                                        width: `${sizePx}px`, height: `${sizePx}px`,
+                                        color: effectiveIconColor,
+                                        ...(isMeteo ? { transform: "scale(1.45)", transformOrigin: "center center" } : {})
+                                    });
                                     target.appendChild(svgEl);
                                 }
                             } else {
@@ -249,7 +254,15 @@ modifiedFields: Set<string>;
 
                 this._prevIconWrap.setCssStyles({ backgroundColor: "transparent" });
                 const prevSvg = this._prevIconWrap.querySelector("svg") as unknown as HTMLElement | null;
-                if (prevSvg) prevSvg.setCssStyles({ color: effectiveIconColor, width: `${previewIconW}px`, height: `${previewIconW}px` });
+                if (prevSvg) {
+                    const isMeteo = currentIconId.startsWith('meteocons-') || currentIconId.startsWith('meteocons:') || currentIconId.startsWith('meteocons_');
+                    prevSvg.setCssStyles({
+                        color: effectiveIconColor,
+                        width: `${previewIconW}px`,
+                        height: `${previewIconW}px`,
+                        ...(isMeteo ? { transform: "scale(1.45)", transformOrigin: "center center" } : {})
+                    });
+                }
                 
                 // Update preview bar background and border
                 if (this._prevBar) {
@@ -987,9 +1000,11 @@ modifiedFields: Set<string>;
                     if (svgEl) {
                         svgEl.removeAttribute("width");
                         svgEl.removeAttribute("height");
+                        const isMeteo = id.startsWith('meteocons-') || id.startsWith('meteocons:') || id.startsWith('meteocons_');
                         (svgEl as unknown as HTMLElement).setCssStyles({
                             width: `${gridIconW}px`, height: `${gridIconW}px`,
-                            color: isSelectedCell ? "#fff" : "var(--text-normal)"
+                            color: isSelectedCell ? "#fff" : "var(--text-normal)",
+                            ...(isMeteo ? { transform: "scale(1.45)", transformOrigin: "center center" } : {})
                         });
                         cell.appendChild(svgEl);
                     }
@@ -1314,11 +1329,31 @@ modifiedFields: Set<string>;
 
     _refreshIconSelection(id: string, curIconBox: HTMLElement) {
         curIconBox.empty();
-        obsidian.setIcon(curIconBox, id || (this.isFolder ? "folder" : "file"));
-        const s = curIconBox.querySelector("svg") as unknown as HTMLElement | null;
-        if (s) {
-            const effectiveIconColor = this.folderStyle.iconColor || this.folderStyle.hex || "#fff";
-            s.setCssStyles({ width: "22px", height: "22px", color: effectiveIconColor });
+        const rawSvg = id ? this.plugin.iconManager.getRawIconSvg(id) : null;
+        if (rawSvg) {
+            const cleanSvg = rawSvg.includes('\\"') ? rawSvg.replace(/\\"/g, '"') : rawSvg;
+            // eslint-disable-next-line no-unsanitized/method -- Contextual fragment is safe here as svg content comes from curated internal asset maps or local files
+            const frag = activeDocument.createRange().createContextualFragment(cleanSvg);
+            const svgEl = frag.querySelector("svg");
+            if (svgEl) {
+                svgEl.removeAttribute("width");
+                svgEl.removeAttribute("height");
+                const effectiveIconColor = this.folderStyle.iconColor || this.folderStyle.hex || "#fff";
+                const isMeteo = id.startsWith('meteocons-') || id.startsWith('meteocons:') || id.startsWith('meteocons_');
+                (svgEl as unknown as HTMLElement).setCssStyles({
+                    width: "22px", height: "22px",
+                    color: effectiveIconColor,
+                    ...(isMeteo ? { transform: "scale(1.45)", transformOrigin: "center center" } : {})
+                });
+                curIconBox.appendChild(svgEl);
+            }
+        } else {
+            obsidian.setIcon(curIconBox, id || (this.isFolder ? "folder" : "file"));
+            const s = curIconBox.querySelector("svg") as unknown as HTMLElement | null;
+            if (s) {
+                const effectiveIconColor = this.folderStyle.iconColor || this.folderStyle.hex || "#fff";
+                s.setCssStyles({ width: "22px", height: "22px", color: effectiveIconColor });
+            }
         }
         if (this._curIconNameEl) this._curIconNameEl.setText(id || (this.isFolder ? "folder" : "file"));
     }

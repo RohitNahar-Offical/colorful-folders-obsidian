@@ -617,7 +617,12 @@ export class IconSettingSection extends SettingSection {
                                 const frag = activeDocument.createRange().createContextualFragment(svg);
                                 const svgEl = frag.querySelector('svg');
                                 if (svgEl) {
-                                    (svgEl as unknown as HTMLElement).setCssStyles({ width: '16px', height: '16px', color: 'currentColor' });
+                                    const isMeteo = currentIcon.startsWith('meteocons-') || currentIcon.startsWith('meteocons:') || currentIcon.startsWith('meteocons_');
+                                    (svgEl as unknown as HTMLElement).setCssStyles({
+                                        width: '16px', height: '16px',
+                                        color: 'currentColor',
+                                        ...(isMeteo ? { transform: "scale(1.45)", transformOrigin: "center center" } : {})
+                                    });
                                     iconBtn.appendChild(svgEl);
                                     return;
                                 }
