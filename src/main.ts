@@ -181,6 +181,14 @@ export default class ColorfulFoldersPlugin
                 downloadedAny = true;
               }
               if (downloadedAny) {
+                // Ensure priority is set to Custom > Simple Icons > Lucide > Tabler > ...
+                const basePacks = ['custom', 'simple-icons', 'lucide', 'tabler'];
+                const currentOrder = this.settings.iconPackPriorityOrder || DEFAULT_ICON_PACK_ORDER;
+                const remaining = currentOrder.filter(p => !basePacks.includes(p) && p !== 'emoji');
+                this.settings.iconPackPriorityOrder = [...basePacks, ...remaining, 'emoji'];
+                this.iconCache?.clear();
+                this.iconManager?.invalidateCategoryCache();
+                this.animatedIconService?.invalidateCache();
                 new obsidian.Notice("Colorful Folders: Downloaded baseline icon packs (Simple Icons & Tabler).", 4000);
               }
               this.settings.lastVersion = currentVersion;
