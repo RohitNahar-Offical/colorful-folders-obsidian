@@ -179,7 +179,7 @@ export default class ColorfulFoldersPlugin
           this.settings.lastVersion = currentVersion;
           await this.saveSettings();
 
-          // Show the collective changelog (reads local version.md first, falls back to GitHub)
+          // Show the collective changelog (Fetched from GitHub)
           await this.openChangelogModal();
         }
       })();
@@ -903,13 +903,6 @@ export default class ColorfulFoldersPlugin
       name: "AI auto-assign icons for vault",
       callback: () => {
         void this.aiIconClassifier.classifyVault();
-      },
-    });
-    this.addCommand({
-      id: "show-changelog",
-      name: "Show what's new (Changelog)",
-      callback: () => {
-        void this.openChangelogModal();
       },
     });
   }
