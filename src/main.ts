@@ -56,6 +56,7 @@ export default class ColorfulFoldersPlugin
   saveDataDebounced: obsidian.Debouncer<[], void>;
   localFileSystemIcons: Record<string, string> = {};
   localCustomIcons: Record<string, string> = {};
+  userCustomIcons: Record<string, string> = {};
   cachedDocuments: Set<Document> = new Set();
   _abortStartupRender: boolean = false;
   _isUnloading: boolean = false;
@@ -433,14 +434,31 @@ export default class ColorfulFoldersPlugin
       const iconsDir = this.getIconsDirPath();
       if (!(await adapter.exists(iconsDir))) {
         this.localCustomIcons = {};
+        this.userCustomIcons = {};
         this._localCustomIconsLoaded = true;
         return;
       }
       this.localCustomIcons = {};
+      this.userCustomIcons = {};
       const listResult = await adapter.list(iconsDir);
+
+      // Collect known dedicated pack file prefixes (excluding custom-icons.json / custom.json)
+      const dedicatedPackPrefixes = new Set<string>();
+      for (const filePath of listResult.files) {
+        const norm = filePath.replace(/\\/g, '/');
+        const fileName = norm.split('/').pop() || '';
+        if (fileName.endsWith('.json') && fileName !== 'custom-icons.json' && fileName !== 'custom.json') {
+          dedicatedPackPrefixes.add(fileName.replace(/\.json$/, '').toLowerCase());
+        }
+      }
+
+      let customIconsPruned = false;
       for (const filePath of listResult.files) {
         if (filePath.endsWith('.json')) {
           try {
+            const norm = filePath.replace(/\\/g, '/');
+            const fileName = norm.split('/').pop() || '';
+            const isCustomFile = fileName === 'custom-icons.json' || fileName === 'custom.json';
             const raw = await adapter.read(filePath);
             const parsed = JSON.parse(raw) as Record<string, string>;
             if (parsed && typeof parsed === 'object') {
@@ -449,6 +467,21 @@ export default class ColorfulFoldersPlugin
                 if (typeof svg === 'string' && svg.includes('\\"')) {
                   svg = svg.replace(/\\"/g, '"');
                 }
+
+                if (isCustomFile) {
+                  // If custom-icons.json contains icons from installed packs (e.g. bi-, simple-, tabler-, line-md-),
+                  // prune them from userCustomIcons so they don't bloat the user's custom file.
+                  const idLower = id.toLowerCase();
+                  const belongsToPack = Array.from(dedicatedPackPrefixes).some(
+                    p => idLower.startsWith(`${p}-`) || idLower.startsWith(`${p}:`) || idLower.startsWith(`${p}_`)
+                  );
+                  if (belongsToPack) {
+                    customIconsPruned = true;
+                    continue;
+                  }
+                  this.userCustomIcons[id] = svg;
+                }
+
                 this.localCustomIcons[id] = svg;
               }
             }
@@ -457,6 +490,14 @@ export default class ColorfulFoldersPlugin
           }
         }
       }
+
+      // Auto-heal: If custom-icons.json was contaminated with duplicate pack icons, re-save it cleanly!
+      if (customIconsPruned) {
+        const customPath = `${iconsDir}/custom-icons.json`;
+        await adapter.write(customPath, JSON.stringify(this.userCustomIcons || {}));
+        console.debug("Colorful Folders: Pruned duplicate pack icons from custom-icons.json");
+      }
+
       this._localCustomIconsLoaded = true;
       this.iconCache?.clear();
       this.iconManager?.invalidateCategoryCache();
@@ -464,6 +505,19 @@ export default class ColorfulFoldersPlugin
     } catch (e) {
       console.error("Colorful Folders: Error loading local custom icons", e);
     }
+  }
+
+  addCustomIcon(id: string, svg: string): void {
+    if (!this.userCustomIcons) this.userCustomIcons = {};
+    if (!this.localCustomIcons) this.localCustomIcons = {};
+    this.userCustomIcons[id] = svg;
+    this.localCustomIcons[id] = svg;
+  }
+
+  removeCustomIcon(id: string): void {
+    if (this.userCustomIcons) delete this.userCustomIcons[id];
+    if (this.localCustomIcons) delete this.localCustomIcons[id];
+    if (this.settings?.customIcons) delete this.settings.customIcons[id];
   }
 
   async saveLocalCustomIcons(): Promise<void> {
@@ -474,7 +528,8 @@ export default class ColorfulFoldersPlugin
         await adapter.mkdir(iconsDir);
       }
       const customPath = `${iconsDir}/custom-icons.json`;
-      await adapter.write(customPath, JSON.stringify(this.localCustomIcons || {}));
+      // CRITICAL FIX: Only save user's personal custom icons, NEVER serialize installed packs!
+      await adapter.write(customPath, JSON.stringify(this.userCustomIcons || {}));
       this.animatedIconService?.invalidateCache();
       this.iconCache?.clear();
     } catch (e) {
@@ -543,6 +598,7 @@ export default class ColorfulFoldersPlugin
   async clearAllIconPacksAndCustomIcons(): Promise<void> {
     this.settings.customIcons = {};
     this.localCustomIcons = {};
+    this.userCustomIcons = {};
     this.localFileSystemIcons = {};
     this.iconCache?.clear();
     this.iconManager?.invalidateCategoryCache();

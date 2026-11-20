@@ -734,8 +734,7 @@ export class IconSettingSection extends SettingSection {
                 new obsidian.Notice(t("notice.valid_id_svg_required"));
                 return;
             }
-            if (!this.plugin.localCustomIcons) this.plugin.localCustomIcons = {};
-            this.plugin.localCustomIcons[id] = svg;
+            this.plugin.addCustomIcon(id, svg);
             await this.plugin.saveLocalCustomIcons();
             this.plugin.registerCustomIcons();
             await this.plugin.saveSettings();
@@ -795,6 +794,7 @@ export class IconSettingSection extends SettingSection {
 
         const packs = [
             { name: "✨ Line icons (Animated)", desc: "1,200+ smooth animated SVG icons from Iconify.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/line-md.json", prefix: "line-md" },
+            { name: "🌦️ Meteocons (Animated)", desc: "440+ smooth animated weather & atmosphere SVG icons.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/meteocons.json", prefix: "meteocons" },
             { name: "✨ Remix icons", desc: "Clean and neutral design system.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/ri.json", prefix: "ri" },
             { name: "🪶 Feather icons", desc: "Simply beautiful open source icons.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/feather.json", prefix: "feather" },
             { name: "📐 Tabler icons", desc: "Over 4000+ well-crafted icons.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/tabler.json", prefix: "tabler" },
@@ -810,6 +810,7 @@ export class IconSettingSection extends SettingSection {
         const matchPack = (id: string, pPrefix: string): boolean => {
             const lower = id.toLowerCase();
             if (pPrefix === 'line-md') return lower.startsWith('line-md-') || lower.startsWith('line-md:');
+            if (pPrefix === 'meteocons') return lower.startsWith('meteocons-') || lower.startsWith('meteocons:');
             if (pPrefix === 'ri' || pPrefix === 'remix') return lower.startsWith('ri-') || lower.startsWith('remix-');
             if (pPrefix === 'feather') return lower.startsWith('feather-');
             if (pPrefix === 'tabler' || pPrefix === 'tb') return lower.startsWith('tb-') || lower.startsWith('tabler-');
@@ -1029,8 +1030,7 @@ export class IconSettingSection extends SettingSection {
                     const del = item.createEl("button", { text: "×", cls: "cf-btn-remove" });
                     del.onclick = async (e) => {
                         e.stopPropagation();
-                        if (this.plugin.settings?.customIcons) delete this.plugin.settings.customIcons[id];
-                        if (this.plugin.localCustomIcons) delete this.plugin.localCustomIcons[id];
+                        this.plugin.removeCustomIcon(id);
                         await this.plugin.saveLocalCustomIcons();
                         await this.plugin.saveSettings();
                         this.refreshTab();

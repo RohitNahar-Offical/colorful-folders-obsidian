@@ -100,7 +100,7 @@ export const DEFAULT_SETTINGS: ColorfulFoldersSettings = {
     glassmorphism: true,
 
     autoIcons: true,
-    iconPackPriorityOrder: ['custom', 'lucide', 'line-md', 'bootstrap', 'simple-icons', 'tabler', 'remix', 'font-awesome', 'material', 'feather', 'emoji'],
+    iconPackPriorityOrder: ['custom', 'lucide', 'line-md', 'meteocons', 'bootstrap', 'simple-icons', 'tabler', 'remix', 'font-awesome', 'material', 'feather', 'emoji'],
     autoIconVariety: true,
     varietySeed: 0,
     wideAutoIcons: true,
@@ -338,6 +338,7 @@ export const DEFAULT_ICON_PACK_ORDER: string[] = [
     'custom',
     'lucide',
     'line-md',
+    'meteocons',
     'bootstrap',
     'simple-icons',
     'tabler',
@@ -352,6 +353,7 @@ export const PACK_PRIORITY: Record<string, number> = {
     'custom': 100,       // 1. Unique brand assets
     'lucide': 90,        // 2. Main UI baseline (Modern, sharp, highly consistent)
     'line-md': 85,       // 3. Line icons (Animated smooth SVG icons from Iconify)
+    'meteocons': 84,     // 3b. Meteocons (Animated weather SVG icons from Iconify)
     'tabler': 80,        // 4. Main UI fallback (Massive library, same aesthetic)
     'simple-icons': 70,  // 5. Brands only (Logos for Google, GitHub, etc.)
     'remix': 60,         // 6. Secondary fallback
@@ -363,7 +365,7 @@ export const PACK_PRIORITY: Record<string, number> = {
 };
 
 export const PACK_PREFIXES: string[] = [
-    'custom', 'line-md', 'linemd', 'simple-icons', 'simple', 'lucide', 'feather',
+    'custom', 'line-md', 'linemd', 'meteocons', 'simple-icons', 'simple', 'lucide', 'feather',
     'fa', 'fas', 'far', 'fab', 'fontawesome', 'ri', 'remix',
     'tb', 'tabler', 'mdi', 'material', 'oct', 'octicons', 'bi', 'bootstrap'
 ];

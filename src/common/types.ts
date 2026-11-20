@@ -218,6 +218,9 @@ export interface IColorfulFoldersPlugin {
     getIconsDirPath(): string;
     localFileSystemIcons?: Record<string, string | null>;
     localCustomIcons: Record<string, string>;
+    userCustomIcons: Record<string, string>;
+    addCustomIcon(id: string, svg: string): void;
+    removeCustomIcon(id: string): void;
     getCustomIcon(id: string): string | undefined;
     getCustomIconsMap(): Record<string, string>;
     loadLocalIcons(): Promise<void>;

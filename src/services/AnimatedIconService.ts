@@ -197,8 +197,11 @@ export class AnimatedIconService {
      */
     public isAnimatedIcon(iconId: string): boolean {
         if (!iconId) return false;
-        // Fast O(1) prefix check for line-md animated icon pack
-        if (iconId.startsWith('line-md-') || iconId.startsWith('linemd-') || iconId.startsWith('line-md:') || iconId.startsWith('line-md_')) {
+        // Fast O(1) prefix check for animated icon packs (line-md, meteocons)
+        if (
+            iconId.startsWith('line-md-') || iconId.startsWith('linemd-') || iconId.startsWith('line-md:') || iconId.startsWith('line-md_') ||
+            iconId.startsWith('meteocons-') || iconId.startsWith('meteocons:') || iconId.startsWith('meteocons_')
+        ) {
             return true;
         }
         const cached = this._isAnimatedIconCache.get(iconId);

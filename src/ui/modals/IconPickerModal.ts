@@ -92,6 +92,7 @@ export class IconPickerModal extends obsidian.Modal {
             'animated': '✨ ANIMATED ICONS',
             'lucide': "✨ Obsidian Official (Lucide)",
             'line-md': 'LINE-MD (ANIMATED)',
+            'meteocons': 'METEOCONS (ANIMATED)',
             'simple-icons': 'SIMPLE ICONS',
             'tabler': 'TABLER',
             'bi': 'BOOTSTRAP',

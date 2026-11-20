@@ -906,6 +906,7 @@ modifiedFields: Set<string>;
             'animated': '✨ ANIMATED ICONS',
             'lucide': 'LUCIDE',
             'line-md': 'LINE-MD (ANIMATED)',
+            'meteocons': 'METEOCONS (ANIMATED)',
             'simple-icons': 'SIMPLE ICONS',
             'tabler': 'TABLER',
             'bi': 'BOOTSTRAP',
