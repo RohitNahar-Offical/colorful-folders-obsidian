@@ -800,6 +800,7 @@ export class IconSettingSection extends SettingSection {
         const packs = [
             { name: "✨ Line icons (Animated)", desc: "1,200+ smooth animated SVG icons from Iconify.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/line-md.json", prefix: "line-md" },
             { name: "🌦️ Meteocons (Animated)", desc: "440+ smooth animated weather & atmosphere SVG icons.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/meteocons.json", prefix: "meteocons" },
+            { name: "✨ Generative UI (Animated)", desc: "1,160+ smooth SMIL animated UI icons by LottieFiles.", url: "https://raw.githubusercontent.com/RohitNahar-Offical/colorful-folders-obsidian/main/icons/generative.json", prefix: "generative" },
             { name: "✨ Remix icons", desc: "Clean and neutral design system.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/ri.json", prefix: "ri" },
             { name: "🪶 Feather icons", desc: "Simply beautiful open source icons.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/feather.json", prefix: "feather" },
             { name: "📐 Tabler icons", desc: "Over 4000+ well-crafted icons.", url: "https://raw.githubusercontent.com/iconify/icon-sets/master/json/tabler.json", prefix: "tabler" },

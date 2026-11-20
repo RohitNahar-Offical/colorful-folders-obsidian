@@ -197,10 +197,11 @@ export class AnimatedIconService {
      */
     public isAnimatedIcon(iconId: string): boolean {
         if (!iconId) return false;
-        // Fast O(1) prefix check for animated icon packs (line-md, meteocons)
+        // Fast O(1) prefix check for animated icon packs (line-md, meteocons, generative)
         if (
             iconId.startsWith('line-md-') || iconId.startsWith('linemd-') || iconId.startsWith('line-md:') || iconId.startsWith('line-md_') ||
-            iconId.startsWith('meteocons-') || iconId.startsWith('meteocons:') || iconId.startsWith('meteocons_')
+            iconId.startsWith('meteocons-') || iconId.startsWith('meteocons:') || iconId.startsWith('meteocons_') ||
+            iconId.startsWith('generative-') || iconId.startsWith('generative:') || iconId.startsWith('generative_')
         ) {
             return true;
         }

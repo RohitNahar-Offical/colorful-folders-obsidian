@@ -1312,6 +1312,29 @@ export default class ColorfulFoldersPlugin
           }
         }
         return true;
+      } else if (data && typeof data === 'object' && !Array.isArray(data)) {
+        for (const [id, rawSvg] of Object.entries(data as Record<string, string>)) {
+          if (typeof rawSvg === 'string' && rawSvg.trim().startsWith('<svg')) {
+            const cleanSvg = this.iconManager ? this.iconManager.normalizeSvg(rawSvg, false) : rawSvg;
+            packIcons[id] = cleanSvg;
+            this.localCustomIcons[id] = cleanSvg;
+            count++;
+          }
+        }
+        if (Object.keys(packIcons).length > 0) {
+          try {
+            const adapter = this.app.vault.adapter;
+            const iconsDir = this.getIconsDirPath();
+            if (!(await adapter.exists(iconsDir))) {
+              await adapter.mkdir(iconsDir);
+            }
+            const packPath = `${iconsDir}/${prefix}.json`;
+            await adapter.write(packPath, JSON.stringify(packIcons));
+          } catch (e) {
+            console.error(`Colorful Folders: Failed to write pack file for ${prefix}`, e);
+          }
+        }
+        return true;
       }
       return false;
     };
