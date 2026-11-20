@@ -67,9 +67,26 @@ export class AnimatedIconService {
         }
     }
 
+    public clearAllLiveAnimatedIconsFromDom(): void {
+        const allContainers = this.getAllNavContainers();
+        for (let i = 0; i < allContainers.length; i++) {
+            const container = allContainers[i];
+            const liveIcons = container.querySelectorAll<HTMLElement>('.cf-live-animated-icon');
+            for (let j = 0; j < liveIcons.length; j++) {
+                const liveIcon = liveIcons[j];
+                const rowEl = liveIcon.closest<HTMLElement>('.nav-folder-title, .nav-file-title, .tree-item-self, .nn-navitem, .nn-file');
+                rowEl?.classList.remove('cf-animated-icon-active', 'cf-has-animated-closed', 'cf-has-animated-open');
+                this._intersectionObserver?.unobserve(liveIcon);
+                liveIcon.remove();
+            }
+        }
+    }
+
     public destroy(): void {
         this._intersectionObserver?.disconnect();
         this._intersectionObserver = null;
+        this.clearAllLiveAnimatedIconsFromDom();
+        this._registeredAnimatedTargets.clear();
         this.invalidateCache();
     }
 
@@ -180,6 +197,10 @@ export class AnimatedIconService {
      */
     public isAnimatedIcon(iconId: string): boolean {
         if (!iconId) return false;
+        // Fast O(1) prefix check for line-md animated icon pack
+        if (iconId.startsWith('line-md-') || iconId.startsWith('linemd-') || iconId.startsWith('line-md:') || iconId.startsWith('line-md_')) {
+            return true;
+        }
         const cached = this._isAnimatedIconCache.get(iconId);
         if (cached !== undefined) {
             return cached;
@@ -278,14 +299,16 @@ export class AnimatedIconService {
         if (this._registeredAnimatedTargets.size > 0) return true;
         if (this._hasAnimatedCache !== null) return this._hasAnimatedCache;
 
-        // If the library itself has no animated icons, return false instantly
-        if (!this.hasAnyAnimatedIconsInLibrary()) {
-            this._hasAnimatedCache = false;
-            return false;
+        if (this.plugin.settings?.defaultClosedFolderIcon && this.isAnimatedIcon(this.plugin.settings.defaultClosedFolderIcon)) {
+            this._hasAnimatedCache = true;
+            return true;
+        }
+        if (this.plugin.settings?.defaultOpenFolderIcon && this.isAnimatedIcon(this.plugin.settings.defaultOpenFolderIcon)) {
+            this._hasAnimatedCache = true;
+            return true;
         }
 
         const customFolderColors = this.plugin.settings?.customFolderColors || {};
-        const customIcons = this.plugin.settings?.customIcons || {};
         for (const p in customFolderColors) {
             const style = customFolderColors[p];
             if (typeof style === 'object' && style !== null) {
@@ -303,6 +326,8 @@ export class AnimatedIconService {
                 }
             }
         }
+
+        const customIcons = this.plugin.settings?.customIcons || {};
         for (const p in customIcons) {
             const style = customIcons[p];
             const iconId = typeof style === 'string' ? style : (typeof style === 'object' && style !== null ? (style as { iconId?: string }).iconId : undefined);
@@ -310,15 +335,6 @@ export class AnimatedIconService {
                 this._hasAnimatedCache = true;
                 return true;
             }
-        }
-
-        if (this.plugin.settings?.defaultClosedFolderIcon && this.isAnimatedIcon(this.plugin.settings.defaultClosedFolderIcon)) {
-            this._hasAnimatedCache = true;
-            return true;
-        }
-        if (this.plugin.settings?.defaultOpenFolderIcon && this.isAnimatedIcon(this.plugin.settings.defaultOpenFolderIcon)) {
-            this._hasAnimatedCache = true;
-            return true;
         }
 
         this._hasAnimatedCache = false;
@@ -372,49 +388,45 @@ export class AnimatedIconService {
 
         const customFolderColors = this.plugin.settings?.customFolderColors || {};
         const customIcons = this.plugin.settings?.customIcons || {};
-
         const animatedTargetsMap = new Map<string, RegisteredAnimatedTarget>();
 
-        for (const p in customFolderColors) {
-            const style = customFolderColors[p];
-            if (typeof style === 'object' && style !== null) {
-                const target: RegisteredAnimatedTarget = {};
-                let hasAny = false;
-                if (style.iconId && this.isAnimatedIcon(style.iconId)) {
-                    target.closedIconId = style.iconId;
-                    hasAny = true;
-                }
-                if (style.expandedIconId && this.isAnimatedIcon(style.expandedIconId)) {
-                    target.openIconId = style.expandedIconId;
-                    hasAny = true;
-                }
-                if (hasAny) {
-                    animatedTargetsMap.set(p, target);
+        // Fast path: use already registered targets from StyleGenerator (O(K) where K is active animated count)
+        if (this._registeredAnimatedTargets.size > 0) {
+            for (const [p, registered] of this._registeredAnimatedTargets.entries()) {
+                animatedTargetsMap.set(p, { ...registered });
+            }
+        } else {
+            // Fallback path: only if no targets registered yet (e.g. pre-render check)
+            for (const p in customFolderColors) {
+                const style = customFolderColors[p];
+                if (typeof style === 'object' && style !== null) {
+                    const target: RegisteredAnimatedTarget = {};
+                    let hasAny = false;
+                    if (style.iconId && this.isAnimatedIcon(style.iconId)) {
+                        target.closedIconId = style.iconId;
+                        hasAny = true;
+                    }
+                    if (style.expandedIconId && this.isAnimatedIcon(style.expandedIconId)) {
+                        target.openIconId = style.expandedIconId;
+                        hasAny = true;
+                    }
+                    if (hasAny) {
+                        animatedTargetsMap.set(p, target);
+                    }
                 }
             }
-        }
-        for (const p in customIcons) {
-            const style = customIcons[p];
-            const iconId = typeof style === 'string' ? style : (typeof style === 'object' && style !== null ? (style as { iconId?: string }).iconId : undefined);
-            if (iconId && this.isAnimatedIcon(iconId)) {
-                let target = animatedTargetsMap.get(p);
-                if (!target) {
-                    target = { iconId };
-                    animatedTargetsMap.set(p, target);
-                } else {
-                    target.iconId = iconId;
+            for (const p in customIcons) {
+                const style = customIcons[p];
+                const iconId = typeof style === 'string' ? style : (typeof style === 'object' && style !== null ? (style as { iconId?: string }).iconId : undefined);
+                if (iconId && this.isAnimatedIcon(iconId)) {
+                    let target = animatedTargetsMap.get(p);
+                    if (!target) {
+                        target = { iconId };
+                        animatedTargetsMap.set(p, target);
+                    } else {
+                        target.iconId = iconId;
+                    }
                 }
-            }
-        }
-        for (const [p, registered] of this._registeredAnimatedTargets.entries()) {
-            let target = animatedTargetsMap.get(p);
-            if (!target) {
-                target = { ...registered };
-                animatedTargetsMap.set(p, target);
-            } else {
-                if (registered.iconId) target.iconId = registered.iconId;
-                if (registered.closedIconId) target.closedIconId = registered.closedIconId;
-                if (registered.openIconId) target.openIconId = registered.openIconId;
             }
         }
 

@@ -91,6 +91,7 @@ export class PluginLifecycleService {
             this.plugin.animatedIconService?.destroy();
             this.plugin.eventTrackerService?.destroy();
             this.plugin.cleanDividers();
+            this.plugin.iconManager?.invalidateCategoryCache();
 
             this.plugin.generateStylesDebounced?.cancel();
             this.plugin.saveDataDebounced?.cancel();

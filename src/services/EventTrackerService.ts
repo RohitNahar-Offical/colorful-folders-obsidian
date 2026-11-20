@@ -198,8 +198,8 @@ export class EventTrackerService {
         this.registerEvent(
             this.plugin.app.workspace.on("file-open", (file) => {
                 this.updateActiveFolderClasses();
-                if (file && file.path) {
-                    this.plugin.animatedIconService?.replayTargetByPath(file.path);
+                if (file && file.path && this.plugin.animatedIconService?.hasAnyAnimatedIcons()) {
+                    this.plugin.animatedIconService.replayTargetByPath(file.path);
                 }
                 window.setTimeout(() => {
                     this.plugin.initStaircaseStyleStripper();
@@ -251,8 +251,8 @@ export class EventTrackerService {
         this.registerEvent(
             this.plugin.app.workspace.on("file-open", (file) => {
                 this.updateActiveFolderClasses();
-                if (file && file.path) {
-                    this.plugin.animatedIconService?.replayTargetByPath(file.path);
+                if (file && file.path && this.plugin.animatedIconService?.hasAnyAnimatedIcons()) {
+                    this.plugin.animatedIconService.replayTargetByPath(file.path);
                 }
                 window.setTimeout(() => {
                     this.plugin.initStaircaseStyleStripper();
@@ -373,6 +373,7 @@ export class EventTrackerService {
 
     public registerClickEventsForDoc(doc: Document) {
         this.registerDomEvent(doc, "click", (evt: Event) => {
+            if (!this.plugin.animatedIconService?.hasAnyAnimatedIcons()) return;
             const target = evt.target as HTMLElement | null;
             if (!target) return;
             const row = target.closest<HTMLElement>(
