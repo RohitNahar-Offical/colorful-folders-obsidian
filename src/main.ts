@@ -161,15 +161,14 @@ export default class ColorfulFoldersPlugin
 
         // Check for first download or version update and ensure baseline icon packs exist
         const currentVersion = this.manifest.version;
-        const isFirstRun = !this.settings.lastVersion;
-        const isVersionChange = Boolean(this.settings.lastVersion && this.settings.lastVersion !== currentVersion);
+        const isFirstRunOrVersionChange = !this.settings.lastVersion || this.settings.lastVersion !== currentVersion;
 
-        const customIconKeys = Object.keys(Object.assign({}, this.settings.customIcons, this.localCustomIcons));
-        const hasSimpleIcons = customIconKeys.some(k => k.startsWith('simple-icons-') || k.startsWith('simple-'));
-        const hasTablerIcons = customIconKeys.some(k => k.startsWith('tabler-') || k.startsWith('tb-'));
+        if (isFirstRunOrVersionChange) {
+          const customIconKeys = Object.keys(Object.assign({}, this.settings.customIcons, this.localCustomIcons));
+          const hasSimpleIcons = customIconKeys.some(k => k.startsWith('simple-icons-') || k.startsWith('simple-'));
+          const hasTablerIcons = customIconKeys.some(k => k.startsWith('tabler-') || k.startsWith('tb-'));
 
-        if (isFirstRun && (!hasSimpleIcons || !hasTablerIcons)) {
-          void (async () => {
+          if (!hasSimpleIcons || !hasTablerIcons) {
             try {
               let downloadedAny = false;
               if (!hasSimpleIcons && !hasTablerIcons) {
@@ -196,18 +195,15 @@ export default class ColorfulFoldersPlugin
                 this.animatedIconService?.invalidateCache();
                 new obsidian.Notice("Colorful Folders: Downloaded baseline icon packs (Simple Icons & Tabler).", 4000);
               }
-              this.settings.lastVersion = currentVersion;
-              await this.saveSettings();
             } catch (err) {
               console.warn("Colorful Folders: Baseline icon pack auto-download deferred:", err);
             }
-          })();
-        } else if (isFirstRun) {
+          }
+
           this.settings.lastVersion = currentVersion;
           await this.saveSettings();
-        } else if (isVersionChange) {
-          this.settings.lastVersion = currentVersion;
-          await this.saveSettings();
+
+          // Show the collective changelog (Fetched from GitHub)
           await this.openChangelogModal();
         }
       })();
@@ -744,9 +740,9 @@ export default class ColorfulFoldersPlugin
     // 1. Completely wipe all downloaded icon packs and custom icons (both disk files and in-memory caches)
     await this.clearAllIconPacksAndCustomIcons();
 
-    // 2. Reset settings to default factory values
+    // 2. Reset settings to default factory values (lastVersion is empty string by default)
     this.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS)) as ColorfulFoldersSettings;
-    this.settings.lastVersion = this.manifest.version;
+    this.settings.lastVersion = "";
 
     // 3. Clear and re-sync internal maps and caches
     this.syncCustomFolderColorsMap();
