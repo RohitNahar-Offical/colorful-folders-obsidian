@@ -133,31 +133,8 @@ export class AnimatedIconService {
         const mode = iconEl.getAttribute('data-cf-anim-mode') || this.plugin.settings?.animationMode || 'click';
         if (mode !== 'click') return;
 
-        // Cancel active compositor animations directly to avoid forced synchronous reflows
-        iconEl.classList.remove('is-cf-animating');
-        const svg = iconEl.querySelector('svg');
-        if (svg && typeof svg.getAnimations === 'function') {
-            const activeAnims = svg.getAnimations();
-            for (let i = 0; i < activeAnims.length; i++) {
-                try { activeAnims[i].cancel(); } catch { void 0; }
-            }
-        }
-
-        // Restart SMIL animation if applicable
+        // Directly replay the actual vector/SMIL animation of the icon (no shake or pop)
         this.replayAnimatedElement(iconEl);
-
-        const currentEl = iconEl;
-        const win = iconEl.ownerDocument?.defaultView || window;
-        win.requestAnimationFrame(() => {
-            currentEl.classList.add('is-cf-animating');
-        });
-
-        const animEndHandler = () => {
-            currentEl.classList.remove('is-cf-animating');
-            currentEl.removeEventListener('animationend', animEndHandler);
-        };
-        currentEl.addEventListener('animationend', animEndHandler, { once: true });
-        win.setTimeout(animEndHandler, 1500);
     }
 
     public handleDelegatedClick = (evt: MouseEvent): void => {
@@ -293,31 +270,94 @@ export class AnimatedIconService {
 
     /**
      * Replays single-shot (non-looping) animated icons upon click or activation.
+     * Plays the actual SVG vector SMIL/CSS animation with no artificial shake or pop.
      * Continuous loop icons are left to run uninterrupted.
      */
     public replayAnimatedElement(el: HTMLElement): void {
         const iconId = el.getAttribute('data-icon-id');
-        if (!iconId || !this.isSmilAnimated(iconId)) return;
+        if (!iconId) return;
         if (this.isLoopingAnimatedIcon(iconId)) return; // Continuous loops keep playing as normal!
 
         const now = Date.now();
-        const targetEl = el as HTMLElement & { _cfLastReplay?: number };
-        if (targetEl._cfLastReplay && (now - targetEl._cfLastReplay) < 300) {
+        const targetEl = el as HTMLElement & { _cfLastReplay?: number; _cfToggleState?: boolean };
+        if (targetEl._cfLastReplay && (now - targetEl._cfLastReplay) < 250) {
             return; // Throttle rapid-fire double clicks
         }
         targetEl._cfLastReplay = now;
 
-        const template = this.getAnimatedIconElement(iconId);
-        if (!template) return;
+        // 1. Check for interactive toggle SMIL animations (e.g. generative icons with _a.click and _b.click)
+        const animElements = el.querySelectorAll<SVGAnimationElement>('animate, animateTransform, animateMotion, set');
+        if (animElements.length > 0) {
+            let hasClickTrigger = false;
+            for (let i = 0; i < animElements.length; i++) {
+                const b = animElements[i].getAttribute('begin') || '';
+                if (b.includes('.click')) {
+                    hasClickTrigger = true;
+                    break;
+                }
+            }
 
-        const freshSvg = template.querySelector('svg')?.cloneNode(true);
-        if (!freshSvg) return;
+            if (hasClickTrigger) {
+                const isStateA = !targetEl._cfToggleState;
+                targetEl._cfToggleState = isStateA;
+                const targetSuffix = isStateA ? '_a.click' : '_b.click';
 
-        const oldSvg = el.querySelector('svg');
-        if (oldSvg) {
-            el.replaceChild(freshSvg, oldSvg);
-        } else {
-            el.appendChild(freshSvg);
+                let triggered = 0;
+                for (let i = 0; i < animElements.length; i++) {
+                    const anim = animElements[i];
+                    const b = anim.getAttribute('begin') || '';
+                    if (b.includes(targetSuffix) || (!b.includes('_a.click') && !b.includes('_b.click') && b.includes('.click'))) {
+                        try {
+                            anim.beginElement();
+                            triggered++;
+                        } catch {
+                            void 0;
+                        }
+                    }
+                }
+                if (triggered > 0) return;
+            }
+        }
+
+        // 2. Standard SMIL animations (e.g. line-md, meteocons)
+        if (this.isSmilAnimated(iconId)) {
+            const template = this.getAnimatedIconElement(iconId);
+            if (!template) return;
+
+            const freshSvg = (template.querySelector('svg')?.cloneNode(true) || null) as SVGElement | null;
+            if (!freshSvg) return;
+
+            const oldSvg = el.querySelector('svg');
+            if (oldSvg) {
+                el.replaceChild(freshSvg, oldSvg);
+            } else {
+                el.appendChild(freshSvg);
+            }
+
+            // Immediately trigger animations on the fresh SVG
+            const freshAnims = freshSvg.querySelectorAll<SVGAnimationElement>('animate, animateTransform, animateMotion, set');
+            for (let i = 0; i < freshAnims.length; i++) {
+                try {
+                    freshAnims[i].beginElement();
+                } catch {
+                    void 0;
+                }
+            }
+            return;
+        }
+
+        // 3. Web Animations API / CSS keyframe animations (e.g. useanimations)
+        const svg = el.querySelector('svg');
+        if (svg && typeof svg.getAnimations === 'function') {
+            const animations = svg.getAnimations({ subtree: true });
+            for (let i = 0; i < animations.length; i++) {
+                try {
+                    animations[i].currentTime = 0;
+                    animations[i].play();
+                } catch {
+                    void 0;
+                }
+            }
         }
     }
 

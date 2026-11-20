@@ -266,27 +266,11 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
 
         /* ── HOLISTIC PLAYBACK ENGINE MODES ── */
         /* Mode 1: Infinite (while visible in viewport, paused when hidden or offscreen) */
-        /* Only apply fallback cf-icon-pop to icons without their own native SMIL/CSS loop */
-        :root[data-cf-anim-mode="infinite"] .cf-live-animated-icon:not(.cf-has-native-loop)[data-cf-visible="true"] svg,
-        :root[data-cf-anim-mode="infinite"] .cf-animated-icon:not(.cf-has-native-loop)[data-cf-visible="true"] svg,
-        .cf-live-animated-icon:not(.cf-has-native-loop)[data-cf-anim-mode="infinite"][data-cf-visible="true"] svg,
-        .cf-animated-icon:not(.cf-has-native-loop)[data-cf-anim-mode="infinite"][data-cf-visible="true"] svg {
-            animation: var(--cf-anim-name, cf-icon-pop) var(--_cf-duration) ease-in-out infinite;
+        :root[data-cf-anim-mode="infinite"] .cf-live-animated-icon[data-cf-visible="true"] svg,
+        :root[data-cf-anim-mode="infinite"] .cf-animated-icon[data-cf-visible="true"] svg,
+        .cf-live-animated-icon[data-cf-anim-mode="infinite"][data-cf-visible="true"] svg,
+        .cf-animated-icon[data-cf-anim-mode="infinite"][data-cf-visible="true"] svg {
             animation-play-state: var(--cf-icon-play-state, running);
-        }
-
-        /* Mode 2: One-Time on viewport entry */
-        :root[data-cf-anim-mode="once"] .cf-live-animated-icon[data-cf-played="true"] svg,
-        :root[data-cf-anim-mode="once"] .cf-animated-icon[data-cf-played="true"] svg,
-        .cf-live-animated-icon[data-cf-anim-mode="once"][data-cf-played="true"] svg,
-        .cf-animated-icon[data-cf-anim-mode="once"][data-cf-played="true"] svg {
-            animation: var(--cf-anim-name, cf-icon-pop) var(--_cf-duration) cubic-bezier(0.22, 1, 0.36, 1) 1 forwards;
-        }
-
-        /* Mode 3: Click-to-Animate */
-        .cf-live-animated-icon.is-cf-animating svg,
-        .cf-animated-icon.is-cf-animating svg {
-            animation: var(--cf-anim-name, cf-icon-pop) var(--_cf-duration) cubic-bezier(0.22, 1, 0.36, 1) 1;
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -295,12 +279,6 @@ export function generateGlobalBaseCss(settings: ColorfulFoldersSettings): string
                 animation: none !important;
                 transition: none !important;
             }
-        }
-
-        @keyframes cf-icon-pop {
-            0%, 100% { transform: scale(var(--cf-optical-scale, 1)) rotate(0deg); }
-            45% { transform: scale(calc(var(--cf-optical-scale, 1) * 1.18)) rotate(6deg); }
-            75% { transform: scale(calc(var(--cf-optical-scale, 1) * 0.96)) rotate(-2deg); }
         }
 
         .cf-icon-wrapper {
