@@ -238,6 +238,7 @@ export interface IColorfulFoldersPlugin {
     saveLocalCustomIcons(): Promise<void>;
     removePackIcons(prefix: string): Promise<number>;
     clearAllIconPacksAndCustomIcons(): Promise<void>;
+    hardReset(): Promise<void>;
     dividerManager: {
         syncDividers(): void;
         clean(): void;

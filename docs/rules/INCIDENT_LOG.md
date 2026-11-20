@@ -777,6 +777,30 @@ In **Settings > Icon Settings > Icon pack priority hierarchy**, all 12 default i
 
 **Lesson**: Priority and hierarchy configuration interfaces must always dynamically reflect only installed or active entities, rather than statically displaying all theoretical providers.
 
+---
+
+## Incident #56 — Hard Reset Fails to Uninstall Downloaded Icon Packs From Disk and Memory (2026-11-20)
+**What was reported**:
+When performing a "Hard reset everything" / Factory Reset in **Settings > Advanced / Privacy**, all custom settings were reset to default, but previously downloaded icon packs (such as Bootstrap, Tabler, Line Icons, Simple Icons, Meteocons, Generative UI, useAnimations) remained on disk in `.obsidian/plugins/colorful-folders/icons/` and in memory (`localCustomIcons`). As a result, the "Icon pack priority hierarchy" and "Featured icon packs" continued to show all downloaded packs as active and installed instead of reverting to the clean factory state.
+
+**Root cause**:
+1. In `PrivacySettingSection.ts`, the "Factory reset" button handler only reassigned `this.plugin.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS))` and saved settings. It completely omitted calling `clearAllIconPacksAndCustomIcons()`, leaving all downloaded `.json` pack files on disk and in memory.
+2. In `IconSettingSection.ts`, `getInstalledPackIds()` and the "Featured icon packs" card read from a static `packCountsMap` computed only once upon initial instantiation, which failed to recalculate on demand.
+3. In `main.ts`, `removePackIcons()` looked only for exact `${iconsDir}/${prefix}.json` paths rather than accounting for aliases (e.g. `si` vs `simple-icons.json`, `tb` vs `tabler.json`, `bi` vs `bootstrap.json`), leaving downloaded JSON files behind when removing certain packs.
+
+**Resolution**:
+1. **Dedicated `hardReset()` Method**: Implemented a comprehensive `hardReset(): Promise<void>` on `ColorfulFoldersPlugin` that:
+   - Calls `clearAllIconPacksAndCustomIcons()` to recursively remove all `.json` pack files in `.obsidian/plugins/colorful-folders/icons` and vault icons in `.obsidian/icons`.
+   - Clears all in-memory icon dictionaries (`localCustomIcons`, `userCustomIcons`, `localFileSystemIcons`) and resets `_localCustomIconsLoaded = false`.
+   - Resets `this.settings` to pristine `DEFAULT_SETTINGS` with `lastVersion = manifest.version`.
+   - Clears caches (`iconCache`, `iconManager.invalidateCategoryCache()`, `animatedIconService.invalidateCache()`).
+   - Wipes custom folder color mappings, cleans dividers via `cleanDividers()`, saves settings, and regenerates styles.
+2. **Privacy / Factory Reset Integration**: Hooked `hardReset()` directly into the "Hard reset everything" confirmation modal in `PrivacySettingSection.ts`.
+3. **Dynamic On-Demand Pack Counting**: Updated `getInstalledPackIds()` and the Featured Icon Packs card in `IconSettingSection.ts` to evaluate current icons dynamically on every call.
+4. **Resilient Pack File Uninstaller**: Updated `removePackIcons()` in `main.ts` to evaluate candidate file names for both `prefix` and `packId`, and used `IconPackIndex.matchesPackId` for thorough cleanup.
+
+**Lesson**: Factory / Hard reset routines must encompass all storage layers—both database settings and filesystem assets. Never leave downloaded asset bundles or in-memory caches intact during a full factory reset.
+
 
 
 

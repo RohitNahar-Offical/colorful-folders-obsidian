@@ -422,23 +422,14 @@ export class PrivacySettingSection extends SettingSection {
 
         new obsidian.Setting(dbCard)
             .setName(t("settings.factory_reset.name"))
-            .setDesc('Critical: this will reset every setting in the plugin to its original default state, including opacities, toggles, and all custom data.')
+            .setDesc('Critical: this will reset every setting in the plugin to its original default state, including opacities, toggles, all custom data, and uninstall all downloaded icon packs.')
             .addButton(btn => {
                 btn.setButtonText(t("settings.factory_reset.btn"));
                 (btn as unknown as { setWarning: () => typeof btn }).setWarning();
                 btn.buttonEl.addClass('cf-btn-danger');
                 btn.onClick(() => {
-                    new ConfirmModal(this.app, "Factory reset", "Are you sure you want to restore all settings to default? This will wipe ALL your customization!", async () => {
-                        this.plugin.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS)) as ColorfulFoldersSettings;
-                        this.plugin.syncCustomFolderColorsMap();
-                        this.plugin.iconCache?.clear();
-                        this.plugin.iconManager?.invalidateCategoryCache();
-                        this.plugin.animatedIconService?.invalidateCache();
-                        await this.plugin.saveSettings();
-                        await this.plugin.generateStyles();
-                        this.plugin.dividerManager.clean();
-                        this.plugin.dividerManager.syncDividers();
-                        this.plugin.animatedIconService?.syncAnimatedIcons();
+                    new ConfirmModal(this.app, t("modal.confirm.factory_reset"), t("modal.confirm.factory_reset.message"), async () => {
+                        await this.plugin.hardReset();
                         new obsidian.Notice(t("notice.factory_reset"));
 
                         this.refreshTab();

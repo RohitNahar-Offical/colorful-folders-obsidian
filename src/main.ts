@@ -6,7 +6,8 @@ import {
   FolderStyle,
   IColorfulFoldersPlugin,
 } from "./common/types";
-import { DEFAULT_SETTINGS, DEFAULT_ICON_PACK_ORDER } from "./common/constants";
+import { DEFAULT_SETTINGS, DEFAULT_ICON_PACK_ORDER, FEATURED_ICON_PACKS } from "./common/constants";
+import { IconPackIndex } from './core/IconPackIndex';
 import { NotebookNavigatorIntegration } from './integrations/NotebookNavigator';
 import { GraphColorSync } from './integrations/GraphColorSync';
 import { ColorPickerModal } from "./ui/modals/ColorPickerModal";
@@ -539,32 +540,83 @@ export default class ColorfulFoldersPlugin
 
   async removePackIcons(prefix: string): Promise<number> {
     let removedCount = 0;
-    const packPrefix = prefix + "-";
+    const targets = new Set<string>([prefix.toLowerCase()]);
+    const feat = FEATURED_ICON_PACKS.find(
+      (p) => p.prefix.toLowerCase() === prefix.toLowerCase() || p.packId.toLowerCase() === prefix.toLowerCase()
+    );
+    if (feat) {
+      targets.add(feat.prefix.toLowerCase());
+      targets.add(feat.packId.toLowerCase());
+    }
+
+    const isTargetMatch = (id: string): boolean => {
+      const lower = id.toLowerCase();
+      for (const t of targets) {
+        if (
+          IconPackIndex.matchesPackId(id, t) ||
+          lower.startsWith(`${t}-`) ||
+          lower.startsWith(`${t}:`) ||
+          lower.startsWith(`${t}_`)
+        ) {
+          return true;
+        }
+      }
+      return false;
+    };
+
     for (const id in this.localCustomIcons) {
-      if (id.startsWith(packPrefix)) {
+      if (isTargetMatch(id)) {
         delete this.localCustomIcons[id];
         removedCount++;
       }
     }
     if (this.settings.customIcons) {
       for (const id in this.settings.customIcons) {
-        if (id.startsWith(packPrefix)) {
+        if (isTargetMatch(id)) {
           delete this.settings.customIcons[id];
         }
       }
     }
     if (this.localFileSystemIcons) {
       for (const id in this.localFileSystemIcons) {
-        if (id.startsWith(packPrefix) || id.startsWith(prefix + "/") || id.startsWith(prefix + ":")) {
+        if (isTargetMatch(id)) {
           delete this.localFileSystemIcons[id];
         }
       }
     }
     const adapter = this.app.vault.adapter;
     const iconsDir = this.getIconsDirPath();
-    const packFilePath = `${iconsDir}/${prefix}.json`;
-    if (await adapter.exists(packFilePath)) {
-      await adapter.remove(packFilePath);
+    for (const t of targets) {
+      const candidates = [`${iconsDir}/${t}.json`];
+      if (t === "bootstrap" || t === "bi") {
+        candidates.push(`${iconsDir}/bi.json`, `${iconsDir}/bootstrap.json`);
+      }
+      if (t === "simple-icons" || t === "si") {
+        candidates.push(`${iconsDir}/simple-icons.json`, `${iconsDir}/si.json`);
+      }
+      if (t === "tabler" || t === "tb") {
+        candidates.push(`${iconsDir}/tabler.json`, `${iconsDir}/tb.json`);
+      }
+      if (t === "remix" || t === "ri") {
+        candidates.push(`${iconsDir}/ri.json`, `${iconsDir}/remix.json`);
+      }
+      if (t === "font-awesome" || t === "fa") {
+        candidates.push(
+          `${iconsDir}/fa.json`,
+          `${iconsDir}/font-awesome.json`,
+          `${iconsDir}/fa-solid.json`,
+          `${iconsDir}/fa-regular.json`
+        );
+      }
+      for (const path of candidates) {
+        if (await adapter.exists(path)) {
+          try {
+            await adapter.remove(path);
+          } catch (e) {
+            console.error(`Failed to remove ${path}`, e);
+          }
+        }
+      }
     }
     const customPath = `${iconsDir}/custom-icons.json`;
     if (await adapter.exists(customPath)) {
@@ -573,7 +625,7 @@ export default class ColorfulFoldersPlugin
         const parsed = JSON.parse(raw) as Record<string, string>;
         let modified = false;
         for (const id in parsed) {
-          if (id.startsWith(packPrefix)) {
+          if (isTargetMatch(id)) {
             delete parsed[id];
             modified = true;
           }
@@ -600,6 +652,8 @@ export default class ColorfulFoldersPlugin
     this.localCustomIcons = {};
     this.userCustomIcons = {};
     this.localFileSystemIcons = {};
+    this._localCustomIconsLoaded = false;
+    this.settings.iconPackPriorityOrder = [...DEFAULT_ICON_PACK_ORDER];
     this.iconCache?.clear();
     this.iconManager?.invalidateCategoryCache();
     this.animatedIconService?.invalidateCache();
@@ -612,10 +666,18 @@ export default class ColorfulFoldersPlugin
       try {
         const list = await adapter.list(pluginIconsDir);
         for (const file of list.files) {
-          try { await adapter.remove(file); } catch (e) { console.error(`Failed to delete ${file}`, e); }
+          try {
+            await adapter.remove(file);
+          } catch (e) {
+            console.error(`Failed to delete ${file}`, e);
+          }
         }
         for (const folder of list.folders) {
-          try { await adapter.rmdir(folder, true); } catch (e) { console.error(`Failed to delete ${folder}`, e); }
+          try {
+            await adapter.rmdir(folder, true);
+          } catch (e) {
+            console.error(`Failed to delete ${folder}`, e);
+          }
         }
       } catch (e) {
         console.error("Colorful Folders: Error listing plugin icons directory", e);
@@ -628,10 +690,18 @@ export default class ColorfulFoldersPlugin
       try {
         const list = await adapter.list(vaultIconsDir);
         for (const file of list.files) {
-          try { await adapter.remove(file); } catch (e) { console.error(`Failed to delete ${file}`, e); }
+          try {
+            await adapter.remove(file);
+          } catch (e) {
+            console.error(`Failed to delete ${file}`, e);
+          }
         }
         for (const folder of list.folders) {
-          try { await adapter.rmdir(folder, true); } catch (e) { console.error(`Failed to delete ${folder}`, e); }
+          try {
+            await adapter.rmdir(folder, true);
+          } catch (e) {
+            console.error(`Failed to delete ${folder}`, e);
+          }
         }
       } catch (e) {
         console.error("Colorful Folders: Error listing vault icons directory", e);
@@ -642,6 +712,31 @@ export default class ColorfulFoldersPlugin
     await this.saveSettings();
     await this.generateStyles();
     this.animatedIconService?.syncAnimatedIcons();
+  }
+
+  async hardReset(): Promise<void> {
+    // 1. Completely wipe all downloaded icon packs and custom icons (both disk files and in-memory caches)
+    await this.clearAllIconPacksAndCustomIcons();
+
+    // 2. Reset settings to default factory values
+    this.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS)) as ColorfulFoldersSettings;
+    this.settings.lastVersion = this.manifest.version;
+
+    // 3. Clear and re-sync internal maps and caches
+    this.syncCustomFolderColorsMap();
+    this.iconCache?.clear();
+    this.iconManager?.invalidateCategoryCache();
+    this.animatedIconService?.invalidateCache();
+
+    // 4. Save clean settings
+    await this.saveSettings();
+
+    // 5. Clean dividers and animated icon listeners
+    this.cleanDividers();
+    this.animatedIconService?.syncAnimatedIcons();
+
+    // 6. Regenerate styles with factory defaults
+    await this.generateStyles();
   }
 
   async loadSettings() {

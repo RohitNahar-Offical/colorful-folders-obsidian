@@ -29,27 +29,25 @@ export class IconSettingSection extends SettingSection {
         });
         priorityDesc.setCssStyles({ fontSize: "0.85em", color: "var(--text-muted)", marginBottom: "12px" });
 
-        const allAvailableIcons = new Set([
-            ...Object.keys(this.plugin.getCustomIconsMap()),
-            ...Object.keys(this.plugin.localFileSystemIcons || {}),
-            ...Object.keys(this.plugin.localCustomIcons || {})
-        ]);
-
-        const packCountsMap = new Map<string, number>();
-        allAvailableIcons.forEach(id => {
-            for (let i = 0; i < FEATURED_ICON_PACKS.length; i++) {
-                const p = FEATURED_ICON_PACKS[i];
-                if (IconPackIndex.matchesPackId(id, p.prefix) || IconPackIndex.matchesPackId(id, p.packId)) {
-                    packCountsMap.set(p.prefix, (packCountsMap.get(p.prefix) || 0) + 1);
-                }
-            }
-        });
-
         const getInstalledPackIds = (): Set<string> => {
+            const currentIcons = new Set([
+                ...Object.keys(this.plugin.getCustomIconsMap()),
+                ...Object.keys(this.plugin.localFileSystemIcons || {}),
+                ...Object.keys(this.plugin.localCustomIcons || {})
+            ]);
+            const dynamicCounts = new Map<string, number>();
+            currentIcons.forEach(id => {
+                for (let i = 0; i < FEATURED_ICON_PACKS.length; i++) {
+                    const p = FEATURED_ICON_PACKS[i];
+                    if (IconPackIndex.matchesPackId(id, p.prefix) || IconPackIndex.matchesPackId(id, p.packId)) {
+                        dynamicCounts.set(p.prefix, (dynamicCounts.get(p.prefix) || 0) + 1);
+                    }
+                }
+            });
             const installed = new Set<string>(['custom', 'lucide']);
             for (let i = 0; i < FEATURED_ICON_PACKS.length; i++) {
                 const p = FEATURED_ICON_PACKS[i];
-                if ((packCountsMap.get(p.prefix) || 0) > 0) {
+                if ((dynamicCounts.get(p.prefix) || 0) > 0) {
                     installed.add(p.packId);
                 }
             }
@@ -882,8 +880,19 @@ export class IconSettingSection extends SettingSection {
         const featCard = this.settingTab.makeCard(containerEl, "⭐", "Featured icon packs");
         featCard.createDiv("cf-grid");
 
+        const currentAvailableIcons = new Set([
+            ...Object.keys(this.plugin.getCustomIconsMap()),
+            ...Object.keys(this.plugin.localFileSystemIcons || {}),
+            ...Object.keys(this.plugin.localCustomIcons || {})
+        ]);
+
         FEATURED_ICON_PACKS.forEach(p => {
-            const installedCount = packCountsMap.get(p.prefix) || 0;
+            let installedCount = 0;
+            currentAvailableIcons.forEach(id => {
+                if (IconPackIndex.matchesPackId(id, p.prefix) || IconPackIndex.matchesPackId(id, p.packId)) {
+                    installedCount++;
+                }
+            });
             const isInstalled = installedCount > 0;
 
             const row = featCard.createDiv("setting-item");
